@@ -77,3 +77,12 @@ def cmds(short=False):
         cmds = [x.split("-", 1)[-1] for x in cmds]
 
     return sorted(cmds)
+
+
+def debug_requests():
+    try:
+        import http.client as http_client
+    except ImportError:
+        # Python 2
+        import httplib as http_client
+    http_client.HTTPConnection.debuglevel = 1

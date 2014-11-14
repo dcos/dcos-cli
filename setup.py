@@ -21,6 +21,7 @@ requires = [
     "blessings>=1.5.1",
     "futures>=2.1.6",
     "importlib>=1.0.3",  # py26
+    "mesos.cli>=0.1.4",
     "ordereddict>=1.1",  # py26
     "prettytable>=0.7.2",
     "requests>=2.3.0"
@@ -46,9 +47,12 @@ config = {
 
             # helpers
             'dcos-config = dcos.cmds.config:main',
-            'dcos-help = dcos.cmds.help:main'
+            'dcos-help = dcos.cmds.help:main',
 
             # commands
+            'dcos-install = dcos.cmds.install:main',
+            'dcos-list = dcos.cmds.list:main',
+            'dcos-search = dcos.cmds.search:main'
         ]
     },
     'setup_requires': [
