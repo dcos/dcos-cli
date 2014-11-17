@@ -57,7 +57,8 @@ config = {
             'dcos-search = dcos.cmds.search:main',
 
             # sub-commands
-            'dcos-marathon-start = dcos.cmds.marathon.start:main'
+            'dcos-marathon-start = dcos.cmds.marathon.start:main',
+            'dcos-marathon-scale = dcos.cmds.marathon.scale:main'
         ]
     },
     'setup_requires': [

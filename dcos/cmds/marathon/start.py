@@ -1,8 +1,6 @@
 from __future__ import absolute_import, print_function
 
 import argparse
-import blessings
-import prettytable
 import sys
 
 from mesos.cli.master import CURRENT as MASTER

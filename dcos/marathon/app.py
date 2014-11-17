@@ -1,7 +1,10 @@
 
+from __future__ import absolute_import, print_function
+
 import copy
 import itertools
 import json
+import urllib
 
 import mesos.cli.util
 
@@ -19,11 +22,11 @@ class Application(util.ServerRequest):
 
     @property
     def _base_url(self):
-        return "/v2/apps/{0}".format(self.id)
+        return "/v2/apps/{0}".format(urllib.quote(self["id"], ''))
 
     @property
     def config(self):
-        return self._version(self.version)
+        return self._version(self["version"])
 
     @mesos.cli.util.CachedProperty(ttl=30)
     def state(self):
@@ -87,4 +90,6 @@ class Application(util.ServerRequest):
         return self._req("delete", "tasks?scale={0}".format(json.dumps(scale)))
 
     def update(self, cfg):
-        return self._req("put", data=cfg)
+        if not isinstance(cfg, basestring):
+            cfg = json.dumps(cfg)
+        return self._req("put", url="?force=true", data=cfg)
