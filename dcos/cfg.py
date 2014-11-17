@@ -17,7 +17,7 @@ class Config(object):
         "response_timeout": 5
     }
 
-    cfg_name = ".dcos.json"
+    cfg_name = ".mesos.json"
 
     _default_config_location = os.path.join(os.path.expanduser("~"), cfg_name)
 
@@ -34,9 +34,6 @@ class Config(object):
         self["profile"] = self._default_profile
 
         self.load()
-
-    def __str__(self):
-        return json.dumps(self.__items, indent=4)
 
     def _config_file(self):
         for path in self.search_path:
@@ -57,6 +54,9 @@ class Config(object):
     @property
     def _profile(self):
         return self.__items.get(self._profile_key, {})
+
+    def items(self):
+        return self.__items
 
     def __getitem__(self, item):
         if item == "profile":

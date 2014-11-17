@@ -1,7 +1,8 @@
+
 from __future__ import absolute_import, print_function
 
-from .. import cli
-from ..cfg import CURRENT as CFG
+from ... import cli
+from ...marathon.cfg import CURRENT as CFG
 
 parser = cli.parser(
     description="interact with your local cli configuration"
@@ -22,4 +23,4 @@ def main(args):
         else:
             cli.json_out(CFG[args.key])
     else:
-        cli.json_out(CFG.items())
+        cli.json_out(CFG)

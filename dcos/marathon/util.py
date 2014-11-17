@@ -4,7 +4,7 @@ import requests
 import urlparse
 
 from .. import log
-from .config import CURRENT as CONFIG
+from .cfg import CURRENT as CONFIG
 
 def get_data(name):
     return open(os.path.join(os.path.dirname(data.__file__), name), "rb").read()
