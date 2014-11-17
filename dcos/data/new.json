@@ -1,0 +1,13 @@
+{
+    "id": "",
+    "instances": 1,
+
+    "mem": 16.0, // MB
+    "cpus": 1.0,
+
+    // ---- Optional
+    "cmd": "",
+    "executor": "",
+    "ports": [ ],
+    "uris": [ ]
+}

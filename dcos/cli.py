@@ -3,10 +3,15 @@ from __future__ import absolute_import, print_function
 
 import argparse
 import functools
+import json
 import logging
 import os
+import select
 
+import blessings
 import dcos
+import pygments.lexers
+import pygments.formatters
 
 from . import log
 from .cfg import CURRENT as CFG
@@ -86,3 +91,33 @@ def debug_requests():
         # Python 2
         import httplib as http_client
     http_client.HTTPConnection.debuglevel = 1
+
+
+def has_data(fd):
+    r, w, e = select.select([ fd ], [], [], 0)
+    return fd in r
+
+
+def edit_txt(content):
+    with tempfile.NamedTemporaryFile() as fobj:
+        fobj.write(content)
+        fobj.flush()
+
+        subprocess.call(shlex.split(os.environ.get("EDITOR")) + [fobj.name])
+
+        return re.sub("//.*$", "", open(fobj.name, "rb").read(), flags=re.M)
+
+json_lexer = pygments.lexers.get_lexer_by_name("json")
+console_formatter = pygments.formatters.Terminal256Formatter()
+
+
+def json_fmt(obj):
+    out = json.dumps(obj, indent=4)
+    if blessings.Terminal().is_a_tty:
+        return pygments.highlight(out, json_lexer, console_formatter)
+    else:
+        return out
+
+
+def json_out(obj):
+    print(json_fmt(obj))

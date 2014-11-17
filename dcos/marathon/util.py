@@ -1,5 +1,13 @@
 
+import os
 import requests
+import urlparse
+
+from .. import log
+from .config import CURRENT as CONFIG
+
+def get_data(name):
+    return open(os.path.join(os.path.dirname(data.__file__), name), "rb").read()
 
 class ServerRequest(object):
 
@@ -16,8 +24,8 @@ class ServerRequest(object):
             u += [ url ]
         try:
             return getattr(requests, method)(urlparse.urljoin(
-                config.current.url, "/".join(u)), **kwargs).json()
+                CONFIG.url, "/".join(u)), **kwargs).json()
         except ValueError:
             return None
         except requests.exceptions.ConnectionError:
-            log.fatal(MISSING_SERVER.format(config.current.host))
+            log.fatal(MISSING_SERVER.format(CONFIG.host))

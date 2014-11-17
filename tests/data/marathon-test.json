@@ -1,0 +1,15 @@
+{
+  "cmd": "while true; do sleep 100; done",
+  "constraints": [],
+  "cpus": 0.1,
+  "env": {},
+  "executor": "",
+  "id": "marathon-test",
+  "instances": 1,
+  "mem": 16,
+  "disk": 0,
+  "ports": [
+    0
+  ],
+  "uris": []
+}

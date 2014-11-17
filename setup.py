@@ -24,6 +24,7 @@ requires = [
     "mesos.cli>=0.1.4",
     "ordereddict>=1.1",  # py26
     "prettytable>=0.7.2",
+    "pygments>=1.6",
     "requests>=2.3.0"
 ]
 
@@ -53,7 +54,10 @@ config = {
             'dcos-install = dcos.cmds.install:main',
             'dcos-list = dcos.cmds.list:main',
             'dcos-overview = dcos.cmds.overview:main',
-            'dcos-search = dcos.cmds.search:main'
+            'dcos-search = dcos.cmds.search:main',
+
+            # sub-commands
+            'dcos-marathon-start = dcos.cmds.marathon.start:main'
         ]
     },
     'setup_requires': [

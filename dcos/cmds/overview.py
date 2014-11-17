@@ -15,7 +15,6 @@ def main(args):
 
     tb = prettytable.PrettyTable(
         [],
-        header=False,
         border=False,
         max_table_width=term.width,
         hrules=prettytable.NONE,
@@ -34,8 +33,8 @@ def main(args):
 
     resources = reduce(sum_resources, MASTER.slaves(), {})
 
-    tb.add_row(["CPUs", resources["cpus"]])
-    tb.add_row(["Memory", mesos.cli.util.humanize_bytes(resources["mem"] * 1024 * 1024)])
-    tb.add_row(["Disk", mesos.cli.util.humanize_bytes(resources["disk"] * 1024 * 1024)])
+    tb.add_column("CPUs", [resources["cpus"]])
+    tb.add_column("Memory", [mesos.cli.util.humanize_bytes(resources["mem"] * 1024 * 1024)])
+    tb.add_column("Disk", [mesos.cli.util.humanize_bytes(resources["disk"] * 1024 * 1024)])
 
     print(tb)
