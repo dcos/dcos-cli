@@ -56,10 +56,13 @@ config = {
             'dcos-overview = dcos.cmds.overview:main',
             'dcos-search = dcos.cmds.search:main',
 
-            # sub-commands
+            # marathon
             'dcos-marathon-config = dcos.cmds.marathon.config:main',
+            'dcos-marathon-help = dcos.cmds.sub_help:main',
             'dcos-marathon-start = dcos.cmds.marathon.start:main',
             'dcos-marathon-scale = dcos.cmds.marathon.scale:main'
+
+            # spark
         ]
     },
     'setup_requires': [
