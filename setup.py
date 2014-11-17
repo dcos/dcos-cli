@@ -52,6 +52,7 @@ config = {
             # commands
             'dcos-install = dcos.cmds.install:main',
             'dcos-list = dcos.cmds.list:main',
+            'dcos-overview = dcos.cmds.overview:main',
             'dcos-search = dcos.cmds.search:main'
         ]
     },
