@@ -28,7 +28,7 @@ def main(args):
         if cmd in cli.cmds():
             exec_cmd(cmd, sys.argv[2+i:])
 
-    if len(sys.argv) > 1 and sys.argv[1] in registry.list():
+    if len(sys.argv) > 1 and sys.argv[1] in registry.names():
         log.fatal(AVAILABLE_PACKAGE.format(sys.argv[1]))
     else:
         log.fatal(FAILURE_MESSAGE.format(cmd))

@@ -70,7 +70,7 @@ def main(args):
 
         # XXX - This is really, really horrible. Without altering, argcomplete
         # can't find the right argument positioning.
-        if w[0] in registry.list():
+        if w[0] in registry.names():
             w.append(words[2])
             os.environ['COMP_LINE'] = "-".join(words[:2]) + " " + \
                 " ".join(words[2:])

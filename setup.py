@@ -56,6 +56,7 @@ config = {
             'dcos-install = dcos.cmds.install:main',
             'dcos-list = dcos.cmds.list:main',
             'dcos-overview = dcos.cmds.overview:main',
+            'dcos-registry = dcos.cmds.registry:main',
             'dcos-search = dcos.cmds.search:main',
 
             # marathon
