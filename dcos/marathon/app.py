@@ -21,6 +21,10 @@ class Application(util.ServerRequest):
         return self.__items[name]
 
     @property
+    def id(self):
+        return self["id"][1:]
+
+    @property
     def _base_url(self):
         return "/v2/apps/{0}".format(urllib.quote(self["id"], ''))
 

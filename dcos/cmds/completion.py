@@ -5,6 +5,7 @@ import importlib
 import os
 import sys
 
+from .. import registry
 from .. import log
 from .. import cli
 
@@ -28,8 +29,8 @@ def cmd_options(cmd):
 
     try:
         mod = importlib.import_module(
-            ".{0}".format(cmd), package="dcos.cmds")
-    except ImportError:
+            ".{0}".format('.'.join(cmd)), package="dcos.cmds")
+    except ImportError, e:
         return
 
     if not hasattr(mod, 'parser'):
@@ -65,4 +66,12 @@ def main(args):
         else:
             return complete_cmd(words[1])
     else:
-        return cmd_options(words[1])
+        w = [words[1]]
+
+        # XXX - This is really, really horrible. Without altering, argcomplete
+        # can't find the right argument positioning.
+        if w[0] in registry.list():
+            w.append(words[2])
+            os.environ['COMP_LINE'] = "-".join(words[:2]) + " " + \
+                " ".join(words[2:])
+        return cmd_options(w)

@@ -62,7 +62,8 @@ config = {
             'dcos-marathon-config = dcos.cmds.marathon.config:main',
             'dcos-marathon-help = dcos.cmds.sub_help:main',
             'dcos-marathon-start = dcos.cmds.marathon.start:main',
-            'dcos-marathon-scale = dcos.cmds.marathon.scale:main'
+            'dcos-marathon-scale = dcos.cmds.marathon.scale:main',
+            'dcos-marathon-update = dcos.cmds.marathon.update:main'
 
             # spark
         ]
