@@ -1,0 +1,15 @@
+{
+  "cmd": "sudo stop mesos-slave && sudo start mesos-slave",
+  "constraints": [],
+  "cpus": 0.1,
+  "env": {},
+  "executor": "",
+  "id": "chaos",
+  "instances": 1,
+  "mem": 16,
+  "disk": 0,
+  "ports": [
+    0
+  ],
+  "uris": []
+}

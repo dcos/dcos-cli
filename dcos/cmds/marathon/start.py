@@ -5,6 +5,7 @@ import sys
 
 from mesos.cli.master import CURRENT as MASTER
 
+from ...marathon import util
 from ...marathon.scheduler import CURRENT as MARATHON
 from ... import cli
 

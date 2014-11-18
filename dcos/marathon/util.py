@@ -4,6 +4,7 @@ import requests
 import urlparse
 
 from .. import log
+from .. import data
 from .cfg import CURRENT as CONFIG
 
 def get_data(name):

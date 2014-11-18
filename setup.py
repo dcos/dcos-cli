@@ -52,6 +52,7 @@ config = {
             'dcos-help = dcos.cmds.help:main',
 
             # commands
+            'dcos-chaos = dcos.cmds.chaos:main',
             'dcos-debug = dcos.cmds.debug:main',
             'dcos-install = dcos.cmds.install:main',
             'dcos-list = dcos.cmds.list:main',
