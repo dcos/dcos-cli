@@ -47,10 +47,12 @@ config = {
             'dcos = dcos.cmds.main:main',
 
             # helpers
+            'dcos-completion = dcos.cmds.completion:main',
             'dcos-config = dcos.cmds.config:main',
             'dcos-help = dcos.cmds.help:main',
 
             # commands
+            'dcos-debug = dcos.cmds.debug:main',
             'dcos-install = dcos.cmds.install:main',
             'dcos-list = dcos.cmds.list:main',
             'dcos-overview = dcos.cmds.overview:main',

@@ -17,5 +17,6 @@ Available commands:
 def main(args=None):
     cmd = sys.argv[0].split("-")[-2]
 
-    print(USAGE.format(name=cmd, cmds='\n\t'.join(map(lambda x: x.split("-")[-1],
+    print(USAGE.format(name=cmd, cmds='\n\t'.join(
+        map(lambda x: x.split("-")[-1],
         filter(lambda x: cmd in x, cli.cmds(short=True))))))
