@@ -23,6 +23,7 @@ requires = [
     "importlib>=1.0.3",  # py26
     "mesos.cli>=0.1.4",
     "ordereddict>=1.1",  # py26
+    "pesos>=0.1.0",
     "prettytable>=0.7.2",
     "pygments>=1.6",
     "requests>=2.3.0"
@@ -40,7 +41,8 @@ config = {
 
     'packages': [
         'dcos',
-        'dcos.cmds'
+        'dcos.cmds',
+        'services'
     ],
     'entry_points': {
         'console_scripts': [
@@ -75,6 +77,10 @@ config = {
         "tox>=1.7.1"
     ],
     'install_requires': requires,
+    'dependency_links': [
+        "https://github.com/wickman/pesos/tarball/master#egg=pesos-0.1.0",
+        "https://github.com/tornadoweb/tornado/tarball/master#egg=tornado-4.1.dev1"
+    ],
     'tests_require': [
         'coverage>=3.7.1',
         'flake8>=2.2.2',
