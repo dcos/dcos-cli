@@ -23,6 +23,7 @@ def main(args):
     try:
         while True:
             sys.stdout.write(".")
+            sys.stdout.flush()
             time.sleep(1)
     finally:
         app.destroy()

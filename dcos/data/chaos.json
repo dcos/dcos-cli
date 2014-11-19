@@ -1,5 +1,5 @@
 {
-  "cmd": "sudo stop mesos-slave && sudo start mesos-slave",
+  "cmd": "bash a.bash",
   "constraints": [],
   "cpus": 0.1,
   "env": {},
@@ -11,5 +11,7 @@
   "ports": [
     0
   ],
-  "uris": []
+  "uris": [
+    "https://gist.githubusercontent.com/pyronicide/6893d4fa83b1576e41b1/raw/366182134e0679243561b6b9780a322b3863c40e/a.bash"
+  ]
 }
