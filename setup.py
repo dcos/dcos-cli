@@ -76,6 +76,14 @@ config = {
             'dcos-cassandra-help = dcos.cmds.sub_help:main',
             'dcos-cassandra-list = dcos.cmds.cassandra.list:main',
             'dcos-cassandra-remove = dcos.cmds.cassandra.remove:main',
+
+            # kafka
+            'dcos-kafka-add = dcos.cmds.kafka.add:main',
+            'dcos-kafka-help = dcos.cmds.sub_help:main',
+            'dcos-kafka-list = dcos.cmds.kafka.list:main',
+            'dcos-kafka-remove = dcos.cmds.kafka.remove:main',
+
+            # kubernetes
         ]
     },
     'setup_requires': [
