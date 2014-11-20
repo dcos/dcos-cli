@@ -24,6 +24,9 @@ def main(args):
 
     cmd = "dcos"
     for i, subcommand in enumerate(sys.argv[1:]):
+        if subcommand in registry.names() and \
+                not subcommand in registry.installed():
+            break
         cmd += "-{}".format(subcommand)
         if cmd in cli.cmds():
             exec_cmd(cmd, sys.argv[2+i:])

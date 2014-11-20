@@ -5,9 +5,9 @@ from ... import cli
 from ... import fake
 
 parser = cli.parser(
-    description="list kafka brokers"
+    description="list running spark jobs"
 )
 
 @cli.init(parser)
 def main(args):
-    fake.list_tasks("kafka")
+    fake.list_tasks("spark")

@@ -25,3 +25,5 @@ def main(args):
     data["env"]["MASTER"] = "127.0.1.1:5050"
 
     cli.json_out(MARATHON.create(json.dumps(data)))
+    CFG["installed"].append(args.service)
+    CFG.save()

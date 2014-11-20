@@ -11,6 +11,8 @@ import threading
 from . import scheduler
 from . import server
 
+SHORT = "sleep $(shuf -i10-60 -n1)"
+
 def setup_logging():
     root = logging.getLogger()
     root.setLevel(logging.DEBUG)
@@ -28,6 +30,9 @@ def main():
     setup_logging()
     scheduler.CURRENT = scheduler.FakeScheduler(
         os.environ["NAME"], os.environ["VERSION"])
+
+    if os.environ["SHORT"]:
+        scheduler.CURRENT._default_cmd = SHORT
 
     scheduler.CURRENT.run()
     server.app.run(

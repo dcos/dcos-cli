@@ -83,7 +83,12 @@ config = {
             'dcos-kafka-list = dcos.cmds.kafka.list:main',
             'dcos-kafka-remove = dcos.cmds.kafka.remove:main',
 
-            # kubernetes
+            # spark
+            'dcos-spark-run = dcos.cmds.spark.run:main',
+            'dcos-spark-help = dcos.cmds.sub_help:main',
+            'dcos-spark-list = dcos.cmds.spark.list:main',
+            'dcos-spark-stop = dcos.cmds.spark.stop:main',
+
         ]
     },
     'setup_requires': [

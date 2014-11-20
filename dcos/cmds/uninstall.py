@@ -1,6 +1,7 @@
 
 from __future__ import absolute_import, print_function
 
+from ..cfg import CURRENT as CFG
 from ..marathon import completion_helpers
 from .. import cli
 from ..marathon.scheduler import CURRENT as MARATHON
@@ -16,3 +17,5 @@ parser.add_argument(
 @cli.init(parser)
 def main(args):
     cli.json_out(MARATHON.app("fwk-{0}".format(args.service)).destroy())
+    CFG["installed"].remove(args.service)
+    CFG.save()

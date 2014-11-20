@@ -14,7 +14,8 @@ class Config(object):
         "log_file": None,
         "log_level": "warning",
         "master": "localhost:5050",
-        "response_timeout": 5
+        "response_timeout": 5,
+        "installed": []
     }
 
     cfg_name = ".mesos.json"
@@ -34,6 +35,9 @@ class Config(object):
         self["profile"] = self._default_profile
 
         self.load()
+
+    def __str__(self):
+        return json.dumps(self.__items, indent=4)
 
     def _config_file(self):
         for path in self.search_path:

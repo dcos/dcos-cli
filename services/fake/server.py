@@ -10,10 +10,10 @@ from . import scheduler
 
 app = Flask(__name__)
 
-@app.route("/long", methods=["POST"])
-def start_long():
+@app.route("/start", methods=["POST"])
+def start():
     spec = request.get_json(force=True)
-    for i in xrange(spec["num"]):
+    for i in xrange(int(spec["num"])):
         scheduler.TASKS.put(spec)
 
     return "ok"
