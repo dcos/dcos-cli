@@ -13,4 +13,6 @@ Available commands:
 
 @cli.init()
 def main(args=None):
-    print(USAGE.format(cmds="\n\t".join(cli.cmds(short=True))))
+    print(USAGE.format(cmds="\n\t".join(
+        [cmd for cmd in cli.cmds(short=True) if not '-' in cmd]
+    )))

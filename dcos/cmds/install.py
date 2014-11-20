@@ -1,9 +1,27 @@
 
 from __future__ import absolute_import, print_function
 
+import json
+
+from ..cfg import CURRENT as CFG
 from .. import cli
+from .. import registry
+from ..marathon import util
+from ..marathon.scheduler import CURRENT as MARATHON
 
 
-@cli.init()
+parser = cli.parser(
+    description="Install a Datacenter service on your DCOS"
+)
+
+parser.add_argument(
+    "service", choices=registry.names()
+)
+
+@cli.init(parser)
 def main(args):
-    pass
+    data = json.loads(util.get_data("{0}.json".format(args.service)))
+#    data["env"]["MASTER"] = CFG["master"]
+    data["env"]["MASTER"] = "127.0.1.1:5050"
+
+    cli.json_out(MARATHON.create(json.dumps(data)))

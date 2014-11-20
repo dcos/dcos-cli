@@ -1,0 +1,24 @@
+ {
+  "id": "/fwk-kafka",
+  "cmd": null,
+  "args": [],
+  "user": null,
+  "env": {
+    "NAME": "kafka",
+    "VERSION": "0.8.2-beta"
+  },
+  "instances": 1,
+  "cpus": 0.1,
+  "mem": 128,
+  "disk": 0,
+  "executor": "",
+  "ports": [ 0 ],
+  "container": {
+    "type": "DOCKER",
+    "volumes": [],
+    "docker": {
+      "image": "trampelb/fserv",
+      "network": "HOST"
+    }
+  }
+}

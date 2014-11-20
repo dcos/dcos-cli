@@ -23,7 +23,6 @@ requires = [
     "importlib>=1.0.3",  # py26
     "mesos.cli>=0.1.4",
     "ordereddict>=1.1",  # py26
-    "pesos>=0.1.0",
     "prettytable>=0.7.2",
     "pygments>=1.6",
     "requests>=2.3.0"
@@ -61,16 +60,20 @@ config = {
             'dcos-overview = dcos.cmds.overview:main',
             'dcos-registry = dcos.cmds.registry:main',
             'dcos-search = dcos.cmds.search:main',
+            'dcos-uninstall = dcos.cmds.uninstall:main',
 
             # marathon
             'dcos-marathon-config = dcos.cmds.marathon.config:main',
+            'dcos-marathon-destroy = dcos.cmds.marathon.destroy:main',
             'dcos-marathon-help = dcos.cmds.sub_help:main',
             'dcos-marathon-start = dcos.cmds.marathon.start:main',
+            'dcos-marathon-stop = dcos.cmds.marathon.stop:main',
             'dcos-marathon-scale = dcos.cmds.marathon.scale:main',
             'dcos-marathon-update = dcos.cmds.marathon.update:main',
 
-            # frameworks
-            'fake-service = services.main:main'
+            # cassandra
+            'dcos-cassandra-add = dcos.cmds.cassandra.add:main',
+            'dcos-cassandra-help = dcos.cmds.sub_help:main',
         ]
     },
     'setup_requires': [
@@ -79,8 +82,6 @@ config = {
     ],
     'install_requires': requires,
     'dependency_links': [
-        "https://github.com/wickman/pesos/tarball/master#egg=pesos-0.1.0",
-        "https://github.com/tornadoweb/tornado/tarball/master#egg=tornado-4.1.dev1"
     ],
     'tests_require': [
         'coverage>=3.7.1',

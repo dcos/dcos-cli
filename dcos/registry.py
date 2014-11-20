@@ -19,7 +19,7 @@ def list():
             ("version", "0.1.1")
         ]),
         OrderedDict([
-            ("name", "casandra"),
+            ("name", "cassandra"),
             ("version", "0.1.1")
         ]),
         OrderedDict([
