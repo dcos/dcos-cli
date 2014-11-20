@@ -11,9 +11,13 @@ from . import scheduler
 app = Flask(__name__)
 
 @app.route("/long", methods=["POST"])
-def hello():
+def start_long():
     spec = request.get_json(force=True)
     for i in xrange(spec["num"]):
         scheduler.tasks.put(spec)
 
     return "ok"
+
+@app.route("/stop")
+def stop():
+    return request.args.get("num")
