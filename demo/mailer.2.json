@@ -1,0 +1,15 @@
+{
+  "cmd": "bash mailer.bash",
+  "constraints": [],
+  "cpus": 0.1,
+  "env": {},
+  "executor": "",
+  "id": "mailer",
+  "instances": 1,
+  "mem": 16,
+  "disk": 0,
+  "ports": [ ],
+  "uris": [
+    "https://gist.githubusercontent.com/pyronicide/e54fe49c9eba5deda784/raw/mailer.bash"
+  ]
+}
