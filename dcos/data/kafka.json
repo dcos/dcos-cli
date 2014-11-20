@@ -17,7 +17,7 @@
     "type": "DOCKER",
     "volumes": [],
     "docker": {
-      "image": "trampelb/fserv",
+      "image": "thomasr/fserv",
       "network": "HOST"
     }
   }

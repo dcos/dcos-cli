@@ -1,0 +1,17 @@
+{
+  "cmd": "sudo docker pull thomasr/fserv",
+  "constraints": [
+    ["hostname", "UNIQUE"]
+  ],
+  "cpus": 0.1,
+  "env": {},
+  "executor": "",
+  "id": "pre-fetch",
+  "instances": 1,
+  "mem": 16,
+  "disk": 0,
+  "ports": [
+    0
+  ],
+  "uris": [ ]
+}
