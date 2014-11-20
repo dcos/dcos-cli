@@ -26,13 +26,10 @@ def setup_logging():
 
 def main():
     setup_logging()
-    driver = scheduler.FakeScheduler(
-        os.environ["NAME"], os.environ["VERSION"]).get_driver()
+    scheduler.CURRENT = scheduler.FakeScheduler(
+        os.environ["NAME"], os.environ["VERSION"])
 
-    t = threading.Thread(target=driver.run)
-    t.setDaemon(True)
-    t.start()
-
+    scheduler.CURRENT.run()
     server.app.run(
         host='0.0.0.0',
         port=int(os.environ["PORT"])

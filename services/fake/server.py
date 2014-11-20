@@ -14,10 +14,12 @@ app = Flask(__name__)
 def start_long():
     spec = request.get_json(force=True)
     for i in xrange(spec["num"]):
-        scheduler.tasks.put(spec)
+        scheduler.TASKS.put(spec)
 
     return "ok"
 
 @app.route("/stop")
 def stop():
-    return request.args.get("num")
+    for i in xrange(int(request.args.get("num"))):
+        scheduler.CURRENT.stop_task()
+    return "ok"
