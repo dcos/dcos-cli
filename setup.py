@@ -74,6 +74,7 @@ config = {
             # cassandra
             'dcos-cassandra-add = dcos.cmds.cassandra.add:main',
             'dcos-cassandra-help = dcos.cmds.sub_help:main',
+            'dcos-cassandra-remove = dcos.cmds.cassandra.remove:main'
         ]
     },
     'setup_requires': [
