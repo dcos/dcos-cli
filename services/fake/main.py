@@ -31,7 +31,7 @@ def main():
     scheduler.CURRENT = scheduler.FakeScheduler(
         os.environ["NAME"], os.environ["VERSION"])
 
-    if os.environ["SHORT"]:
+    if os.environ.get("SHORT", False):
         scheduler.CURRENT._default_cmd = SHORT
 
     scheduler.CURRENT.run()

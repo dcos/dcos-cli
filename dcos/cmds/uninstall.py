@@ -17,5 +17,8 @@ parser.add_argument(
 @cli.init(parser)
 def main(args):
     cli.json_out(MARATHON.app("fwk-{0}".format(args.service)).destroy())
-    CFG["installed"].remove(args.service)
-    CFG.save()
+    try:
+        CFG["installed"].remove(args.service)
+        CFG.save()
+    except:
+        pass
