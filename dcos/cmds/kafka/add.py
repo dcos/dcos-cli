@@ -16,8 +16,8 @@ parser.add_argument(
 )
 
 NODE_CONFIG = {
-    "mem": 10,
-    "cpus": 0.1
+    "mem": 1024,
+    "cpus": 0.5
 }
 
 @cli.init(parser)
