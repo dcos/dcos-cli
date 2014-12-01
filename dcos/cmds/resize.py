@@ -14,8 +14,8 @@ parser.add_argument(
     "num", type=int
 )
 
-cmd = "gcloud --project modern-saga-648 preview managed-instance-groups --zone us-central1-a resize demo --new-size 50"
+cmd = "gcloud --project modern-saga-648 preview managed-instance-groups --zone us-central1-a resize demo --new-size {}"
 
 @cli.init(parser)
 def main(args):
-    print(subprocess.check_output(cmd, shell=True))
+    print(subprocess.check_output(cmd.format(args.num), shell=True))
