@@ -58,6 +58,7 @@ class FakeScheduler(Scheduler):
             spec = TASKS.get()
             if len([v for k,v in r.iteritems() if spec.get(k, 0) > v]) > 0:
                 TASKS.put(spec)
+                driver.declineOffer(offer.id)
                 continue
 
             task = self.make_task(spec, offer)

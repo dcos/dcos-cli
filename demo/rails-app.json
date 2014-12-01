@@ -6,7 +6,7 @@
   "executor": "",
   "id": "rails-app",
   "instances": 1,
-  "mem": 1024,
+  "mem": 128,
   "disk": 0,
   "ports": [ ],
   "uris": [ ]

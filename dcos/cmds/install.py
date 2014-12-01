@@ -22,7 +22,7 @@ parser.add_argument(
 def main(args):
     data = json.loads(util.get_data("{0}.json".format(args.service)))
 #    data["env"]["MASTER"] = CFG["master"]
-    data["env"]["MASTER"] = "10.39.72.164:5050"
+    data["env"]["MASTER"] = "10.11.177.123:5050a"
 
     cli.json_out(MARATHON.create(json.dumps(data)))
     CFG["installed"].append(args.service)

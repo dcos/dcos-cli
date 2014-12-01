@@ -59,6 +59,7 @@ config = {
             'dcos-list = dcos.cmds.list:main',
             'dcos-overview = dcos.cmds.overview:main',
             'dcos-registry = dcos.cmds.registry:main',
+            'dcos-resize = dcos.cmds.resize:main',
             'dcos-search = dcos.cmds.search:main',
             'dcos-uninstall = dcos.cmds.uninstall:main',
 
