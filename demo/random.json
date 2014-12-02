@@ -1,0 +1,13 @@
+{
+  "cmd": "do sleep 30",
+  "constraints": [],
+  "cpus": 0.1,
+  "env": {},
+  "executor": "",
+  "id": "random",
+  "instances": 1,
+  "mem": 512,
+  "disk": 0,
+  "ports": [ ],
+  "uris": [ ]
+}
