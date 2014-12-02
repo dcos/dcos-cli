@@ -41,11 +41,11 @@ def list():
             ("version", "0.1.1")
         ]),
         OrderedDict([
-            ("name", "HDFS"),
+            ("name", "hdfs"),
             ("version", "0.1.1")
         ]),
         OrderedDict([
-            ("name", "DEIS"),
+            ("name", "deis"),
             ("version", "0.1.1")
         ]),
         OrderedDict([
@@ -61,15 +61,15 @@ def list():
             ("version", "0.1.1")
         ]),
         OrderedDict([
-            ("name", "ElasticSearch"),
+            ("name", "elasticsearch"),
             ("version", "0.1.1")
         ]),
         OrderedDict([
-            ("name", "Aurora"),
+            ("name", "aurora"),
             ("version", "0.1.1")
         ]),
         OrderedDict([
-            ("name", "Storm"),
+            ("name", "storm"),
             ("version", "0.1.1")
         ])
     ]
