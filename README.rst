@@ -1,6 +1,6 @@
-CLI-poc
+DCOS CLI
 =======
-Proof-of-concept for a CLI with modular subcommands.
+DCOS CLI with modular subcommands.
 
 Setup
 -----
