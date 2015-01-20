@@ -65,6 +65,12 @@ Running Tests:
 
     > tox
 
+#. Run tests using tox through docker::
+    > CHECKOUT=<path-to-repo> \
+      export DOCKER_REPO=mesosphere/python-tox \
+      export DOCKER_TAG=v1 \
+      sudo docker run -it -v $(CHECKOUT):/dcos-cli $(DOCKER_REPO):$(DOCKER_TAG) tox -c /dcos-cli/tox.ini
+
 Notes
 -----
 Submodule writing notes gathered so far:
