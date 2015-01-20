@@ -8,68 +8,68 @@ Setup
 #. Make sure you meet requirements for installing packages_
 #. Install the "wheel" project::
 
-    > pip install wheel
+    pip install wheel
 
 #. Install the tox project::
 
-    > pip install tox
+    pip install tox
 
 #. Clone git repo for the dcos cli::
 
-    > git clone git@github.com:mesosphere/dcos-cli.git
+    git clone git@github.com:mesosphere/dcos-cli.git
 
 #. Change directory to the repo directory::
 
-    > cd dcos-cli
+    cd dcos-cli
 
 #. Create a virtualenv for the dcos cli project::
 
-    > virtualenv --prompt='(dcos-cli) ' env
+    virtualenv --prompt='(dcos-cli) ' env
 
 Configure Development Environment
 ---------------------------------
 
 #. Activate the virtualenv::
 
-    > source env/bin/activate
+    source env/bin/activate
 
 #. Install project in develop mode::
 
-    > pip install -e .
+    pip install -e .
 
 #. Export DCOS_PATH::
 
-    > export DCOS_PATH=<path-to-project>/env
+    export DCOS_PATH=<path-to-project>/env
 
 #. Export DCOS_CONFIG::
 
-    > mkdir $DCOS_PATH/config
-    > touch $DCOS_PATH/config/Dcos.toml
-    > export DCOS_CONFIG=$DCOS_PATH/env/config/Dcos.toml
+    mkdir $DCOS_PATH/config
+    touch $DCOS_PATH/config/Dcos.toml
+    export DCOS_CONFIG=$DCOS_PATH/env/config/Dcos.toml
 
 Running POC
 -----------
 
 #. List command help::
 
-    > dcos --help
+    dcos --help
 
 #. Run subcommand::
 
-    > dcos config --help
+    dcos config --help
 
 Running Tests:
 --------------
 
 #. Run tests using tox::
 
-    > tox
+    tox
 
 #. Run tests using tox through docker::
-    > CHECKOUT=<path-to-repo> \
-      export DOCKER_REPO=mesosphere/python-tox \
-      export DOCKER_TAG=v1 \
-      sudo docker run -it -v $(CHECKOUT):/dcos-cli $(DOCKER_REPO):$(DOCKER_TAG) tox -c /dcos-cli/tox.ini
+    CHECKOUT=<path-to-repo> \
+    export DOCKER_REPO=mesosphere/python-tox \
+    export DOCKER_TAG=v1 \
+    sudo docker run -it -v $CHECKOUT:/dcos-cli $DOCKER_REPO:$DOCKER_TAG tox -c /dcos-cli/tox.ini
 
 Notes
 -----
