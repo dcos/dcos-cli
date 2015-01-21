@@ -66,6 +66,7 @@ Running Tests:
     tox
 
 #. Run tests using tox through docker::
+
     CHECKOUT=<path-to-repo> \
     export DOCKER_REPO=mesosphere/python-tox \
     export DOCKER_TAG=v1 \
