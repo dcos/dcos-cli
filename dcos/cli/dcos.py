@@ -44,6 +44,13 @@ def main():
 
 
 def _list_external_subcommands(dcos_path):
+    """List external subcommands
+
+    :param dcos_path: Path to the directory where the dcos cli is installed
+    :type dcos_path: str
+    :returns: List of subcommands
+    :rtype: list of str
+    """
     prefix = 'dcos-'
 
     return [filename[len(prefix):]
@@ -59,6 +66,13 @@ def _list_external_subcommands(dcos_path):
 
 
 def _external_command_documentation(commands):
+    """Gather sub-command summary
+
+    :param commands: List of subcommand
+    :type comands: list of str
+    :returns: Returns a list of subcommand and their summary
+    :rtype: list of (str, str)
+    """
     def info(commnand):
         return subprocess.check_output(
             ['dcos-{}'.format(command), command, 'info'])
@@ -67,6 +81,12 @@ def _external_command_documentation(commands):
 
 
 def _is_valid_configuration():
+    """Validates running environment
+
+    :returns: True if the environment is configure correctly, False otherwise.
+    :rtype: bool
+    """
+
     dcos_path = os.environ.get(constants.DCOS_PATH_ENV)
     if dcos_path is None:
         msg = 'Environment variable {!r} not set to the DCOS CLI path.'

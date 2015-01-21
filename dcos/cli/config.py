@@ -46,6 +46,12 @@ def main():
 
 
 def _save_config_file(config_path, toml_config):
+    """Save dictionary as TOML file
+
+    :param config_path: Path to configuration file.
+    :type config_path: str or unicode
+    """
+
     serial = toml.dumps(toml_config)
     with open(config_path, 'w') as config_file:
         config_file.write(serial)

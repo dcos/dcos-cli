@@ -35,11 +35,26 @@ def main():
 
 
 def _info():
+    """Print marathon cli information
+
+    :returns: Process status
+    :rtype: int
+    """
+
     print('Deploy and manage containers for Mesos')
     return 0
 
 
 def _start(app_resource_path, config):
+    """Starts an application with Marathon
+
+    :param app_resource_path: Path to the application resource
+    :type app_resource_path: str
+    :param config: Configuration dictionary
+    :type config: config.Toml
+    :returns: Process status
+    :rtype: int
+    """
     client = marathon.Client(config['marathon.host'], config['marathon.port'])
 
     with open(app_resource_path) as app_resource_file:
