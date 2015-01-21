@@ -1,76 +1,56 @@
-"""
-Usage:
-    dcos config info
-    dcos config <name> [<value>]
-    dcos config --unset <name>
-    dcos config --help
+import collections
 
-Options:
-    -h, --help            Show this screen
-    --unset               Remove property from the config file
-"""
-
-import os
-
-import docopt
 import toml
 
 
-def main():
-    config_path = os.environ['DCOS_CONFIG']
-    args = docopt.docopt(__doc__)
+class Toml(collections.MutableMapping):
 
-    if args['config'] and args['info']:
-        print('Get and set DCOS command line options')
+    """Class for managing CLI configuration through TOML."""
 
-    elif args['config'] and args['--unset']:
-        config = _load_config_file(config_path)
-        _unset_property(config, args['<name>'])
-        _save_config_file(config_path, config)
+    def __init__(self, dictionary):
+        """Constructs interface for managing configurations
 
-    elif args['config'] and args['<value>'] is None:
-        config = _load_config_file(config_path)
-        print(_get_property(config, args['<name>']))
+        :config_path: (string) Path to the TOML configuration file
 
-    elif args['config']:
-        config = _load_config_file(config_path)
-        _set_property(config, args['<name>'], args['<value>'])
-        _save_config_file(config_path, config)
+        """
+        self._dictionary = dictionary
 
-    else:
-        print(args)
+    def __getitem__(self, path):
+        config = self._dictionary
 
+        for section in path.split('.'):
+            config = config[section]
 
-def _load_config_file(config_path):
-    with open(config_path) as config_file:
-        return toml.loads(config_file.read())
+        if isinstance(config, collections.MutableMapping):
+            return Toml(config)
+        else:
+            return config
 
+    def __iter__(self):
+        return iter(self._dictionary)
 
-def _save_config_file(config_path, config):
-    serial = toml.dumps(config)
-    with open(config_path, 'w') as config_file:
-        config_file.write(serial)
+    def __len__(self):
+        return len(self._dictionary)
 
+    def __setitem__(self, path, value):
+        config = self._dictionary
 
-def _get_property(config, name):
-    for section in name.split('.'):
-        config = config[section]
+        sections = path.split('.')
+        for section in sections[:-1]:
+            config = config[section]
 
-    # TODO: Do we want to check that config is not a dictionary?
-    return config
+        config[sections[-1]] = value
 
+    def __delitem__(self, path):
+        config = self._dictionary
 
-def _set_property(config, name, value):
-    sections = name.split('.')
-    for section in sections[:-1]:
-        config = config[section]
+        sections = path.split('.')
+        for section in sections[:-1]:
+            config = config[section]
 
-    config[sections[-1]] = value
+        del config[sections[-1]]
 
-
-def _unset_property(config, name):
-    sections = name.split('.')
-    for section in sections[:-1]:
-        config = config[section]
-
-    del config[sections[-1]]
+    @classmethod
+    def load_from_path(class_, path):
+        with open(path) as config_file:
+            return Toml(toml.loads(config_file.read()))

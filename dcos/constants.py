@@ -1,0 +1,4 @@
+DCOS_PATH_ENV = 'DCOS_PATH'
+DCOS_CONFIG_ENV = 'DCOS_CONFIG'
+
+version = '0.1.0'

@@ -2,6 +2,8 @@ from setuptools import setup, find_packages
 from codecs import open
 from os import path
 
+from dcos import constants
+
 # TODO: what license should we use?
 
 here = path.abspath(path.dirname(__file__))
@@ -16,7 +18,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.1.0',
+    version=constants.version,
 
     description='Dcos cli poc project',
     long_description=long_description,
@@ -69,7 +71,7 @@ setup(
     # project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['docopt', 'toml'],
+    install_requires=['docopt', 'toml', 'requests'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax, for
@@ -98,9 +100,10 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
-            'dcos=dcos:main',
-            'dcos-subcommand=dcos.subcommand:main',
-            'dcos-config=dcos.config:main',
+            'dcos=dcos.cli.dcos:main',
+            'dcos-subcommand=dcos.cli.subcommand:main',
+            'dcos-config=dcos.cli.config:main',
+            'dcos-marathon=dcos.cli.marathon:main',
         ],
     },
 )
