@@ -18,12 +18,15 @@ import docopt
 
 from .. import constants, options
 
+_dcos_command_prefix = 'dcos-'
+
 
 def main():
     if not _is_valid_configuration():
         return 1
 
-    subcommands = _list_external_subcommands(os.environ['DCOS_PATH'])
+    subcommands = _extract_subcommands(
+        _list_subcommand_programs(os.environ[constants.DCOS_PATH_ENV]))
     subcommand_summaries = _external_command_documentation(subcommands)
 
     args = docopt.docopt(
@@ -34,7 +37,7 @@ def main():
     argv = [args['<command>']] + args['<args>']
 
     if args['<command>'] in subcommands:
-        command = 'dcos-{}'.format(args['<command>'])
+        command = '{}{}'.format(_dcos_command_prefix, args['<command>'])
         return subprocess.call([command] + argv)
     else:
         print(
@@ -43,26 +46,51 @@ def main():
         return 1
 
 
-def _list_external_subcommands(dcos_path):
+def _extract_subcommands(sub_programs):
     """List external subcommands
 
-    :param dcos_path: Path to the directory where the dcos cli is installed
-    :type dcos_path: str
+    :param sub_programs: List of the dcos program names
+    :type sub_programs: list of str
     :returns: List of subcommands
     :rtype: list of str
     """
-    prefix = 'dcos-'
 
-    return [filename[len(prefix):]
+    return [filename[len(_dcos_command_prefix):] for filename in sub_programs]
 
-            for dirpath, _, filenames
-            in os.walk(os.path.join(dcos_path, "bin"))
 
-            for filename in filenames
+def _list_subcommand_programs(dcos_path):
+    """List executable programs in the dcos path that start with the dcos
+    prefix
 
-            if filename.startswith(prefix)
-            and os.access(os.path.join(dirpath, filename), os.X_OK)
-            ]
+    :param dcos_path: Path to the dcos cli directory
+    :type dcos_path: str
+    :returns: List of all the dcos program names
+    :rtype: list of str
+    """
+
+    return [
+        filename
+
+        for dirpath, _, filenames
+        in os.walk(_binary_directory(dcos_path))
+
+        for filename in filenames
+
+        if filename.startswith(_dcos_command_prefix)
+        and os.access(os.path.join(dirpath, filename), os.X_OK)
+    ]
+
+
+def _binary_directory(dcos_path):
+    """Construct dcos binary directory
+
+    :param dcos_path: Path to the dcos cli directory
+    :type dcos_path: str
+    :returns: Path to binary directory
+    :rtype: str
+    """
+
+    return os.path.join(dcos_path, "bin")
 
 
 def _external_command_documentation(commands):
@@ -75,7 +103,7 @@ def _external_command_documentation(commands):
     """
     def info(commnand):
         return subprocess.check_output(
-            ['dcos-{}'.format(command), command, 'info'])
+            ['{}{}'.format(_dcos_command_prefix, command), command, 'info'])
 
     return [(command, info(command)) for command in commands]
 
