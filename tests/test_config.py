@@ -1,5 +1,5 @@
-from dcos import config
 import pytest
+from dcos import config
 
 
 @pytest.fixture
