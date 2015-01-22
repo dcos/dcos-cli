@@ -10,6 +10,10 @@ Setup
 
     pip install wheel
 
+#. Install the tox project::
+
+    pip install tox
+
 #. Clone git repo for the dcos cli::
 
     git clone git@github.com:mesosphere/dcos-cli.git
@@ -53,6 +57,19 @@ Running POC
 #. Run subcommand::
 
     dcos config --help
+
+Running Tests:
+--------------
+
+#. Run tests using tox::
+
+    tox
+
+#. Run tests using tox through docker::
+    CHECKOUT=<path-to-repo> \
+    export DOCKER_REPO=mesosphere/python-tox \
+    export DOCKER_TAG=v1 \
+    sudo docker run -it -v $CHECKOUT:/dcos-cli $DOCKER_REPO:$DOCKER_TAG tox -c /dcos-cli/tox.ini
 
 Notes
 -----

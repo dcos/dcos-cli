@@ -1,4 +1,7 @@
 dcos.egg-info/
-.ropeproject/
 env/
+
+.ropeproject/
+.tox/
+
 *.pyc
