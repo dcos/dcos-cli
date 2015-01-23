@@ -14,7 +14,7 @@ import os
 
 import docopt
 
-from ....api import config, constants, marathon
+from ...api import config, constants, marathon, options
 
 
 def main():
@@ -29,8 +29,7 @@ def main():
         toml_config = config.Toml.load_from_path(config_path)
         return _start(args['<app_resource>'], toml_config)
     else:
-        print('Unknown options')
-        print(__doc__)
+        print(options.make_generic_usage_error(__doc__))
         return 1
 
 
