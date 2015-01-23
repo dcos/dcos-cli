@@ -14,7 +14,7 @@ import os
 
 import docopt
 
-from .. import config, constants, marathon
+from ....api import config, constants, marathon
 
 
 def main():

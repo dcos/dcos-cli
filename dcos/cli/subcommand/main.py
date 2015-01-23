@@ -12,7 +12,7 @@ import subprocess
 
 import docopt
 
-from .. import constants
+from ....api import constants
 
 
 def main():

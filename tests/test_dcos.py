@@ -1,4 +1,4 @@
-from dcos import options
+from dcos.api import options
 
 
 def test_extend_usage_docopt():
