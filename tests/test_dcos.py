@@ -1,4 +1,4 @@
-import dcos
+from dcos import options
 
 
 def test_extend_usage_docopt():
@@ -14,4 +14,4 @@ The dcos commands are:
 \tsecond         \tsecond summary
 \tthird          \tthird summary"""
 
-    assert dcos._extend_usage_docopt('', command_summaries) == expected
+    assert options.extend_usage_docopt('', command_summaries) == expected

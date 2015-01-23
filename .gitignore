@@ -3,5 +3,6 @@ env/
 
 .ropeproject/
 .tox/
+.coverage
 
 *.pyc

@@ -12,9 +12,13 @@ import subprocess
 
 import docopt
 
+from .. import constants
+
 
 def main():
-    args = docopt.docopt(__doc__)
+    args = docopt.docopt(
+        __doc__,
+        version='dcos-subcommand version {}'.format(constants.version))
 
     if args['subcommand'] and args['info']:
         print('Manage DCOS external commands')

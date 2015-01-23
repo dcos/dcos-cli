@@ -1,0 +1,7 @@
+{
+  "cmd": "sleep 1000",
+  "cpus": 0.25,
+  "id": "sleeping-app",
+  "instances": 1,
+  "mem": 50
+}
