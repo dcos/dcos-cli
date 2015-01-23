@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 from codecs import open
 from os import path
 
-from dcos import constants
+from dcos.api import constants
 
 # TODO: what license should we use?
 
@@ -100,10 +100,10 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
-            'dcos=dcos.cli.dcos:main',
-            'dcos-subcommand=dcos.cli.subcommand:main',
-            'dcos-config=dcos.cli.config:main',
-            'dcos-marathon=dcos.cli.marathon:main',
+            'dcos=dcos.cli.main:main',
+            'dcos-config=dcos.cli.config.main:main',
+            'dcos-marathon=dcos.cli.marathon.main:main',
+            'dcos-subcommand=dcos.cli.subcommand.main:main',
         ],
     },
 )

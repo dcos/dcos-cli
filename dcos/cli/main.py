@@ -16,7 +16,7 @@ import subprocess
 
 import docopt
 
-from .. import constants, options
+from ..api import constants, options
 
 _dcos_command_prefix = 'dcos-'
 
