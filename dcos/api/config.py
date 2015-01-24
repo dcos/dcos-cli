@@ -31,6 +31,8 @@ def load_from_path(path):
 
 def _get_path(config, path):
     """
+    :param config: Dict with the configuration values
+    :type config: dict
     :param path: Path to the value. E.g. 'path.to.value'
     :type path: str
     :returns: Value stored at the given path
@@ -49,6 +51,8 @@ def _iterator(parent, dictionary):
     :type parent: str
     :param dictionary: Value of the key
     :type dictionary: collection.Mapping
+    :returns: An iterator of tuples for each property and value
+    :rtype: iter of (str, any) where any can be str, int, double, list
     """
 
     for key, value in dictionary.items():
