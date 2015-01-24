@@ -3,6 +3,7 @@ Usage:
     dcos config info
     dcos config <name> [<value>]
     dcos config --unset <name>
+    dcos config --list
     dcos config --help
 
 Options:
@@ -10,11 +11,12 @@ Options:
     --unset               Remove property from the config file
 """
 
+import collections
 import os
 
 import docopt
 import toml
-from dcos.api import config, constants
+from dcos.api import config, constants, options
 
 
 def main():
@@ -27,21 +29,33 @@ def main():
         print('Get and set DCOS command line options')
 
     elif args['config'] and args['--unset']:
-        toml_config = config.Toml.load_from_path(config_path)
-        del toml_config[args['<name>']]
-        _save_config_file(config_path, toml_config)
+        toml_config = config.mutable_load_from_path(config_path)
+        if toml_config.pop(args['<name>'], None):
+            _save_config_file(config_path, toml_config)
+
+    elif args['config'] and args['--list']:
+        toml_config = config.load_from_path(config_path)
+        for key, value in toml_config.property_items():
+            print('{}={}'.format(key, value))
 
     elif args['config'] and args['<value>'] is None:
-        toml_config = config.Toml.load_from_path(config_path)
-        print(toml_config[args['<name>']])
+        toml_config = config.load_from_path(config_path)
+        value = toml_config.get(args['<name>'])
+        if value is not None and not isinstance(value, collections.Mapping):
+            print(value)
+        else:
+            return 1
 
     elif args['config']:
-        toml_config = config.Toml.load_from_path(config_path)
+        toml_config = config.mutable_load_from_path(config_path)
         toml_config[args['<name>']] = args['<value>']
         _save_config_file(config_path, toml_config)
 
     else:
-        print(args)
+        print(options.make_generic_usage_error(__doc__))
+        return 1
+
+    return 0
 
 
 def _save_config_file(config_path, toml_config):
@@ -51,6 +65,6 @@ def _save_config_file(config_path, toml_config):
     :type config_path: str or unicode
     """
 
-    serial = toml.dumps(toml_config)
+    serial = toml.dumps(toml_config._dictionary)
     with open(config_path, 'w') as config_file:
         config_file.write(serial)
