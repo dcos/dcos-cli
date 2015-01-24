@@ -10,7 +10,7 @@ def test_help():
     stdout, stderr = process.communicate()
 
     assert process.returncode == 0
-    assert stdout == """Usage:
+    assert stdout == b"""Usage:
     dcos config info
     dcos config <name> [<value>]
     dcos config --unset <name>
@@ -21,7 +21,7 @@ Options:
     -h, --help            Show this screen
     --unset               Remove property from the config file
 """
-    assert stderr == ''
+    assert stderr == b''
 
 
 def test_info():
@@ -33,8 +33,8 @@ def test_info():
     stdout, stderr = process.communicate()
 
     assert process.returncode == 0
-    assert stdout == 'Get and set DCOS command line options\n'
-    assert stderr == ''
+    assert stdout == b'Get and set DCOS command line options\n'
+    assert stderr == b''
 
 
 def test_list_property():
@@ -46,10 +46,10 @@ def test_list_property():
     stdout, stderr = process.communicate()
 
     assert process.returncode == 0
-    assert stdout == """marathon.host=localhost
-marathon.port=8080
+    assert stdout == b"""marathon.port=8080
+marathon.host=localhost
 """
-    assert stderr == ''
+    assert stderr == b''
 
 
 def test_get_exisiting_property():
@@ -87,8 +87,8 @@ def _set_value(key, value):
     stdout, stderr = process.communicate()
 
     assert process.returncode == 0
-    assert stdout == ''
-    assert stderr == ''
+    assert stdout == b''
+    assert stderr == b''
 
 
 def _get_value(key, value):
@@ -100,8 +100,8 @@ def _get_value(key, value):
     stdout, stderr = process.communicate()
 
     assert process.returncode == 0
-    assert stdout == '{}\n'.format(value)
-    assert stderr == ''
+    assert stdout == b'{}\n'.format(value)
+    assert stderr == b''
 
 
 def _unset_value(key):
@@ -113,8 +113,8 @@ def _unset_value(key):
     stdout, stderr = process.communicate()
 
     assert process.returncode == 0
-    assert stdout == ''
-    assert stderr == ''
+    assert stdout == b''
+    assert stderr == b''
 
 
 def _get_missing_value(key):
@@ -126,5 +126,5 @@ def _get_missing_value(key):
     stdout, stderr = process.communicate()
 
     assert process.returncode == 1
-    assert stdout == ''
-    assert stderr == ''
+    assert stdout == b''
+    assert stderr == b''
