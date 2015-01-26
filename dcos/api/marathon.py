@@ -130,7 +130,7 @@ class Client(object):
             forceQuery = '?force=true'
 
         url = self._create_url('v2/apps' + app_id + forceQuery)
-        scale_json = json.loads('{ "instances": %d }' % int(instances))
+        scale_json = json.loads('{{ "instances": {} }}'.format(int(instances)))
         response = requests.put(url, json=scale_json)
 
         if response.status_code == 200:
