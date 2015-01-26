@@ -61,7 +61,7 @@ setup(
     ],
 
     # What does your project relate to?
-    keywords='mesos apache marathon mesospehere command datacenter',
+    keywords='mesos apache marathon mesosphere command datacenter',
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
