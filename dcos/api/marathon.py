@@ -44,11 +44,11 @@ class Client(object):
         return Error('Error: {}'.format(response.json()['message']))
 
     def get_app(self, app_id):
-        """Get a list of known applications.
-        :param app_id: The ID of the application to suspend.
+        """Returns a representation of the requested application.
+        :param app_id: The ID of the application.
         :type app_id: str
-        :returns: List of known applications.
-        :rtype: (list of dictionaries, Error)
+        :returns: The requested Marathon application
+        :rtype: (dictionary, Error)
         """
 
         app_id = self._sanitize_app_id(app_id)
@@ -95,8 +95,8 @@ class Client(object):
             return (None, self._response_to_error(response))
 
     def scale_app(self, app_id, instances, force=None):
-        """Scales an application to zero instances.
-        :param app_id: The ID of the application to suspend.
+        """Scales an application to the requested number of instances.
+        :param app_id: The ID of the application to scale.
         :type app_id: str
         :param instances: The requested number of instances.
         :type instances: int
