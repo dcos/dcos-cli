@@ -15,7 +15,7 @@ import os
 import docopt
 import toml
 
-from ....api import config, constants
+from ...api import config, constants
 
 
 def main():

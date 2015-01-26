@@ -101,6 +101,7 @@ setup(
     entry_points={
         'console_scripts': [
             'dcos=dcos.cli.main:main',
+            'dcos-help=dcos.cli.help.main:main',
             'dcos-config=dcos.cli.config.main:main',
             'dcos-marathon=dcos.cli.marathon.main:main',
             'dcos-subcommand=dcos.cli.subcommand.main:main',
