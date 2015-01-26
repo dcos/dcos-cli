@@ -35,12 +35,26 @@ class Client(object):
             path=path)
 
     def _sanitize_app_id(self, app_id):
+        """
+        :param app_id: Raw application ID
+        :type app_id: str
+        :returns: Sanitized application ID
+        :rtype: str
+        """
+
         # Add a leading '/' if necessary.
         if not app_id.startswith('/'):
             app_id = '/' + app_id
         return app_id
 
     def _response_to_error(self, response):
+        """
+        :param response: HTTP resonse object
+        :type response: requests.Response
+        :returns: The error embedded in the response JSON
+        :rtype: Error
+        """
+
         return Error('Error: {}'.format(response.json()['message']))
 
     def get_app(self, app_id):
