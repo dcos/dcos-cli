@@ -1,4 +1,5 @@
 import json
+import urllib
 
 import requests
 from dcos.api import errors
@@ -20,19 +21,27 @@ class Client(object):
         self._host = host
         self._port = port
 
-    def _create_url(self, path):
+    def _create_url(self, path, query_params=None):
         """Creates the url from the provided path
 
         :param path: Url path
         :type path: str
+        :param query_params: Query string parameters
+        :type query_params: dict
         :returns: Constructed url
         :rtype: str
         """
 
-        return self._url_pattern.format(
+        url = self._url_pattern.format(
             host=self._host,
             port=self._port,
             path=path)
+
+        if query_params is not None:
+            query_string = urllib.urlencode(query_params)
+            url = (url + '?{}').format(query_string)
+
+        return url
 
     def _sanitize_app_id(self, app_id):
         """
@@ -62,7 +71,7 @@ class Client(object):
         :param app_id: The ID of the application.
         :type app_id: str
         :returns: The requested Marathon application
-        :rtype: (dictionary, Error)
+        :rtype: (dict, Error)
         """
 
         app_id = self._sanitize_app_id(app_id)
@@ -79,7 +88,7 @@ class Client(object):
     def get_apps(self):
         """Get a list of known applications.
         :returns: List of known applications.
-        :rtype: (list of dictionaries, Error)
+        :rtype: (list of dict, Error)
         """
 
         url = self._create_url('v2/apps')
@@ -125,11 +134,11 @@ class Client(object):
 
         app_id = self._sanitize_app_id(app_id)
 
-        forceQuery = ''
+        params = None
         if force:
-            forceQuery = '?force=true'
+            params = {'force': True}
 
-        url = self._create_url('v2/apps' + app_id + forceQuery)
+        url = self._create_url('v2/apps{}'.format(app_id), params)
         scale_json = json.loads('{{ "instances": {} }}'.format(int(instances)))
         response = requests.put(url, json=scale_json)
 
