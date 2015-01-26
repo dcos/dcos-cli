@@ -14,7 +14,6 @@ import os
 
 import docopt
 import toml
-
 from dcos.api import config, constants
 
 

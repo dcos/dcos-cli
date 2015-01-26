@@ -1,7 +1,6 @@
 import json
 
 import requests
-
 from dcos.api import errors
 
 

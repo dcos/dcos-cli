@@ -8,7 +8,6 @@ Options:
 """
 
 import docopt
-
 from dcos.api import constants
 
 

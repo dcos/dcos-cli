@@ -19,7 +19,6 @@ import json
 import os
 
 import docopt
-
 from dcos.api import config, constants, marathon, options
 
 
