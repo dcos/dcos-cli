@@ -9,7 +9,7 @@ Options:
 
 import docopt
 
-from ..api import constants
+from dcos.api import constants
 
 
 def main():
@@ -18,7 +18,7 @@ def main():
         version='dcos-package version {}'.format(constants.version))
 
     if args['package'] and args['info']:
-        print('Work with DCOS packages.')
+        print('Manage DCOS packages and upstream registries')
 
     else:
         print(args)

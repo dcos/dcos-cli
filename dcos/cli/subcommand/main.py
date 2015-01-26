@@ -12,7 +12,7 @@ import subprocess
 
 import docopt
 
-from ...api import constants
+from dcos.api import constants
 
 
 def main():
@@ -21,7 +21,7 @@ def main():
         version='dcos-subcommand version {}'.format(constants.version))
 
     if args['subcommand'] and args['info']:
-        print('Manage DCOS external commands')
+        print('Manage external DCOS commands')
     elif args['subcommand'] and args['install'] and args['python']:
         print('Trying to install a python subcommand')
         command = ['pip', 'install', args['<uri>']]

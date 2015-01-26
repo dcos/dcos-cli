@@ -1,8 +1,19 @@
 import json
 
+import pystache
 from jsonschema import validate
 
-import pystache
+
+class Client(object):
+    """Class for talking to the package server."""
+
+
+class Package(object):
+    """Representation of a software package."""
+
+
+class PackageRegistry(object):
+    """Representation of a package registry."""
 
 
 def render_template(template, params):

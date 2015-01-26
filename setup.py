@@ -74,6 +74,7 @@ setup(
     install_requires=[
         'docopt',
         'jsonschema',
+        'pystache',
         'requests',
         'toml',
     ],
