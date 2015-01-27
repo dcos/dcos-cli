@@ -15,8 +15,7 @@ import os
 import subprocess
 
 import docopt
-
-from ...api import constants, options
+from dcos.api import constants, options
 
 
 def main():

@@ -14,8 +14,7 @@ import os
 
 import docopt
 import toml
-
-from ...api import config, constants
+from dcos.api import config, constants
 
 
 def main():
@@ -34,7 +33,7 @@ def main():
 
     elif args['config'] and args['<value>'] is None:
         toml_config = config.Toml.load_from_path(config_path)
-        print(config[args['<name>']])
+        print(toml_config[args['<name>']])
 
     elif args['config']:
         toml_config = config.Toml.load_from_path(config_path)

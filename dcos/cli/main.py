@@ -18,8 +18,7 @@ import os
 import subprocess
 
 import docopt
-
-from ..api import constants
+from dcos.api import constants
 
 
 def main():
