@@ -160,17 +160,26 @@ class Client(object):
 
         return self.scale_app(app_id, 0, force)
 
-    def remove_app(self, app_id):
+    def remove_app(self, app_id, force=None):
         """Completely removes the requested application.
         :param app_id: The ID of the application to suspend.
         :type app_id: str
+        :param force: Whether to override running deployments.
+        :type force: bool
         :returns: Status of trying to remove the application.
         :rtype: (bool, Error)
         """
 
+        if force is None:
+            force = False
+
         app_id = self._sanitize_app_id(app_id)
 
-        url = self._create_url('v2/apps' + app_id + '?force=true')
+        params = None
+        if force:
+            params = {'force': True}
+
+        url = self._create_url('v2/apps{}'.format(app_id), params)
         response = requests.delete(url)
 
         if response.status_code == 200:

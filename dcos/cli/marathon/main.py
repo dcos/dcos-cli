@@ -6,7 +6,7 @@ Usage:
     dcos marathon start <app_resource>
     dcos marathon scale <app_id> <instances> [--force]
     dcos marathon suspend <app_id> [--force]
-    dcos marathon remove <app_id>
+    dcos marathon remove <app_id> [--force]
     dcos marathon --help
     dcos marathon --version
 
@@ -50,7 +50,7 @@ def main():
         return _suspend(args['<app_id>'], args['--force'], toml_config)
     elif args['marathon'] and args['remove']:
         toml_config = config.Toml.load_from_path(config_path)
-        return _remove(args['<app_id>'], toml_config)
+        return _remove(args['<app_id>'], args['--force'], toml_config)
     else:
         print(options.make_generic_usage_error(__doc__))
         return 1
@@ -154,6 +154,8 @@ def _scale(app_id, instances, force, config):
     :type app_id: str
     :param instances: The requested number of instances.
     :type instances: int
+    :param force: Whether to override running deployments.
+    :type force: bool
     :param config: Configuration dictionary
     :type config: config.Toml
     :returns: Process status
@@ -176,6 +178,8 @@ def _suspend(app_id, force, config):
 
     :param app_id: ID of the app to suspend
     :type app_id: str
+    :param force: Whether to override running deployments.
+    :type force: bool
     :param config: Configuration dictionary
     :type config: config.Toml
     :returns: Process status
@@ -193,11 +197,13 @@ def _suspend(app_id, force, config):
     return 0
 
 
-def _remove(app_id, config):
+def _remove(app_id, force, config):
     """Remove a Marathon application.
 
     :param app_id: ID of the app to remove
     :type app_id: str
+    :param force: Whether to override running deployments.
+    :type force: bool
     :param config: Configuration dictionary
     :type config: config.Toml
     :returns: Process status
@@ -205,7 +211,7 @@ def _remove(app_id, config):
     """
     client = _create_client(config)
 
-    success, err = client.remove_app(app_id)
+    success, err = client.remove_app(app_id, force)
     if err is not None:
         print(err.error())
         return 1
