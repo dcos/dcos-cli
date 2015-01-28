@@ -1,13 +1,10 @@
 """
 Usage:
-    dcos [--mesos=<uri>] <command> [<args>...]
-    dcos --help
-    dcos --version
+    dcos <command> [<args>...]
 
 Options:
     -h, --help           Show this screen
     --version            Show version
-    --mesos=<uri>        URI for the Mesos master
 
 'dcos help -a' lists available subcommands. See 'dcos <command> --help' to read
 about a specific subcommand.
@@ -74,7 +71,8 @@ def _is_valid_configuration():
         return False
 
     if not os.path.isdir(dcos_path):
-        msg = 'Evironment variable {!r} maps to {!r} which is not a directory.'
+        msg = ('Environment variable {!r} maps to {!r} which is not a '
+               'directory.')
         print(msg.format(constants.DCOS_PATH_ENV, dcos_path))
         return False
 
@@ -85,7 +83,7 @@ def _is_valid_configuration():
         return False
 
     if not os.path.isfile(dcos_config):
-        msg = 'Evironment variable {!r} maps to {!r} and it is not a file.'
+        msg = 'Environment variable {!r} maps to {!r} and it is not a file.'
         print(msg.format(constants.DCOS_CONFIG_ENV, dcos_config))
         return False
 

@@ -1,9 +1,8 @@
-import subprocess
+from common import exec_command
 
 
 def test_help():
-    process = _exec_command(['dcos', 'config', '--help'])
-
+    process = exec_command(['dcos', 'config', '--help'])
     stdout, stderr = process.communicate()
 
     assert process.returncode == 0
@@ -22,7 +21,7 @@ Options:
 
 
 def test_info():
-    process = _exec_command(['dcos', 'config', 'info'])
+    process = exec_command(['dcos', 'config', 'info'])
 
     stdout, stderr = process.communicate()
 
@@ -32,7 +31,7 @@ def test_info():
 
 
 def test_list_property():
-    process = _exec_command(['dcos', 'config', '--list'])
+    process = exec_command(['dcos', 'config', '--list'])
 
     stdout, stderr = process.communicate()
 
@@ -70,7 +69,7 @@ def test_set_missing_property():
 
 
 def _set_value(key, value):
-    process = _exec_command(['dcos', 'config', key, value])
+    process = exec_command(['dcos', 'config', key, value])
 
     stdout, stderr = process.communicate()
 
@@ -80,7 +79,7 @@ def _set_value(key, value):
 
 
 def _get_value(key, value):
-    process = _exec_command(['dcos', 'config', key])
+    process = exec_command(['dcos', 'config', key])
 
     stdout, stderr = process.communicate()
 
@@ -90,7 +89,7 @@ def _get_value(key, value):
 
 
 def _unset_value(key):
-    process = _exec_command(['dcos', 'config', '--unset', key])
+    process = exec_command(['dcos', 'config', '--unset', key])
 
     stdout, stderr = process.communicate()
 
@@ -100,17 +99,10 @@ def _unset_value(key):
 
 
 def _get_missing_value(key):
-    process = _exec_command(['dcos', 'config', key])
+    process = exec_command(['dcos', 'config', key])
 
     stdout, stderr = process.communicate()
 
     assert process.returncode == 1
     assert stdout == b''
     assert stderr == b''
-
-
-def _exec_command(cmd):
-    return subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
