@@ -35,7 +35,7 @@ def main():
 
     elif args['config'] and args['--list']:
         toml_config = config.load_from_path(config_path)
-        for key, value in toml_config.property_items():
+        for key, value in sorted(toml_config.property_items()):
             print('{}={}'.format(key, value))
 
     elif args['config'] and args['<value>'] is None:
