@@ -6,8 +6,8 @@ Options:
     -h, --help           Show this screen
     --version            Show version
 
-'dcos help -a' lists available subcommands. See 'dcos <command> --help' to read
-about a specific subcommand.
+'dcos help --all' lists available subcommands. See 'dcos <command> --help' to
+read about a specific subcommand.
 """
 
 
