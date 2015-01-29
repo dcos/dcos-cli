@@ -2,10 +2,9 @@ from common import exec_command
 
 
 def test_package():
-    process = exec_command(['dcos', 'package', '--help'])
-    stdout, stderr = process.communicate()
+    returncode, stdout, stderr = exec_command(['dcos', 'package', '--help'])
 
-    assert process.returncode == 0
+    assert returncode == 0
     assert stdout == b"""Usage:
     dcos package configure <package_name>
     dcos package info
@@ -41,28 +40,25 @@ Configuration:
 
 
 def test_info():
-    process = exec_command(['dcos', 'package', 'info'])
-    stdout, stderr = process.communicate()
+    returncode, stdout, stderr = exec_command(['dcos', 'package', 'info'])
 
-    assert process.returncode == 0
+    assert returncode == 0
     assert stdout == b'Install and manage DCOS software packages.\n'
     assert stderr == b''
 
 
 def test_version():
-    process = exec_command(['dcos', 'package', '--version'])
-    stdout, stderr = process.communicate()
+    returncode, stdout, stderr = exec_command(['dcos', 'package', '--version'])
 
-    assert process.returncode == 0
+    assert returncode == 0
     assert stdout == b'dcos-package version 0.1.0\n'
     assert stderr == b''
 
 
 def test_sources_list():
-    process = exec_command(['dcos', 'package', 'sources'])
-    stdout, stderr = process.communicate()
+    returncode, stdout, stderr = exec_command(['dcos', 'package', 'sources'])
 
-    assert process.returncode == 0
+    assert returncode == 0
     assert stdout == b"""cc5af1bcaec7323400a95e1c38caf61378f6f081 \
 file:///Users/me/test-registry
 0c854fa7f2ede3dcc3122bf2b7db160491cf9f33 \

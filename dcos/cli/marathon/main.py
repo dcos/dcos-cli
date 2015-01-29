@@ -1,24 +1,26 @@
 """
 Usage:
+    dcos marathon describe [--json] <app_id>
     dcos marathon info
     dcos marathon list
-    dcos marathon describe <app_id>
+    dcos marathon remove [--force] <app_id>
+    dcos marathon scale [--force] <app_id> <instances>
     dcos marathon start <app_resource>
-    dcos marathon scale <app_id> <instances> [--force]
-    dcos marathon suspend <app_id> [--force]
-    dcos marathon remove <app_id> [--force]
-    dcos marathon --help
-    dcos marathon --version
+    dcos marathon suspend [--force] <app_id>
 
 Options:
     -h, --help          Show this screen
     --version           Show version
+    --force             This flag disable checks in Marathon during update
+                        operations.
+    --json              Outputs JSON format instead of default (TOML) format
 """
 
 import json
 import os
 
 import docopt
+import toml
 from dcos.api import config, constants, marathon, options
 
 
@@ -35,7 +37,7 @@ def main():
         return _list(toml_config)
     elif args['marathon'] and args['describe']:
         toml_config = config.load_from_path(config_path)
-        return _describe(args['<app_id>'], toml_config)
+        return _describe(args['<app_id>'], args['--json'], toml_config)
     elif args['marathon'] and args['start']:
         toml_config = config.load_from_path(config_path)
         return _start(args['<app_resource>'], toml_config)
@@ -94,7 +96,7 @@ def _list(config):
         return 1
 
     if not apps:
-        print("No apps to list.")
+        print("No applications to list.")
 
     for app in apps:
         print(app['id'])
@@ -102,11 +104,13 @@ def _list(config):
     return 0
 
 
-def _describe(app_id, config):
-    """Show details of a Marathon applications.
+def _describe(app_id, is_json, config):
+    """Show details of a Marathon application.
 
     :param app_id: ID of the app to suspend
     :type app_id: str
+    :param is_json: Whether to print in JSON format or TOML
+    :type is_json: bool
     :param config: Configuration dictionary
     :type config: config.Toml
     :returns: Process status
@@ -119,9 +123,10 @@ def _describe(app_id, config):
         print(err.error())
         return 1
 
-    print(json.dumps(app,
-                     sort_keys=True,
-                     indent=2))
+    if is_json:
+        print(json.dumps(app, sort_keys=True, indent=2))
+    else:
+        print(toml.dumps(app))
 
     return 0
 

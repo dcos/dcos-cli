@@ -2,10 +2,9 @@ from common import exec_command
 
 
 def test_help():
-    process = exec_command(['dcos', 'config', '--help'])
-    stdout, stderr = process.communicate()
+    returncode, stdout, stderr = exec_command(['dcos', 'config', '--help'])
 
-    assert process.returncode == 0
+    assert returncode == 0
     assert stdout == b"""Usage:
     dcos config info
     dcos config <name> [<value>]
@@ -21,29 +20,25 @@ Options:
 
 
 def test_info():
-    process = exec_command(['dcos', 'config', 'info'])
-    stdout, stderr = process.communicate()
+    returncode, stdout, stderr = exec_command(['dcos', 'config', 'info'])
 
-    assert process.returncode == 0
+    assert returncode == 0
     assert stdout == b'Get and set DCOS command line options\n'
     assert stderr == b''
 
 
 def test_version():
-    process = exec_command(['dcos', 'config', '--version'])
-    stdout, stderr = process.communicate()
+    returncode, stdout, stderr = exec_command(['dcos', 'config', '--version'])
 
-    assert process.returncode == 0
+    assert returncode == 0
     assert stdout == b'dcos-config version 0.1.0\n'
     assert stderr == b''
 
 
 def test_list_property():
-    process = exec_command(['dcos', 'config', '--list'])
+    returncode, stdout, stderr = exec_command(['dcos', 'config', '--list'])
 
-    stdout, stderr = process.communicate()
-
-    assert process.returncode == 0
+    assert returncode == 0
     assert stdout == b"""marathon.host=localhost
 marathon.port=8080
 package.cache=tmp/cache
@@ -81,40 +76,33 @@ def test_set_missing_property():
 
 
 def _set_value(key, value):
-    process = exec_command(['dcos', 'config', key, value])
+    returncode, stdout, stderr = exec_command(['dcos', 'config', key, value])
 
-    stdout, stderr = process.communicate()
-
-    assert process.returncode == 0
+    assert returncode == 0
     assert stdout == b''
     assert stderr == b''
 
 
 def _get_value(key, value):
-    process = exec_command(['dcos', 'config', key])
+    returncode, stdout, stderr = exec_command(['dcos', 'config', key])
 
-    stdout, stderr = process.communicate()
-
-    assert process.returncode == 0
+    assert returncode == 0
     assert stdout == '{}\n'.format(value).encode('utf-8')
     assert stderr == b''
 
 
 def _unset_value(key):
-    process = exec_command(['dcos', 'config', '--unset', key])
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'config', '--unset', key])
 
-    stdout, stderr = process.communicate()
-
-    assert process.returncode == 0
+    assert returncode == 0
     assert stdout == b''
     assert stderr == b''
 
 
 def _get_missing_value(key):
-    process = exec_command(['dcos', 'config', key])
+    returncode, stdout, stderr = exec_command(['dcos', 'config', key])
 
-    stdout, stderr = process.communicate()
-
-    assert process.returncode == 1
+    assert returncode == 1
     assert stdout == b''
     assert stderr == b''

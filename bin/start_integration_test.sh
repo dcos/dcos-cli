@@ -13,4 +13,5 @@
 sleep 2
 
 # Run the tox integration tests
-tox -c /dcos-cli/tox.ini
+cd /dcos-cli
+make clean all
