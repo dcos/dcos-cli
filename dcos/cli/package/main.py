@@ -8,8 +8,6 @@ Usage:
     dcos package install <package_name>
     dcos package uninstall <package_name>
     dcos package list
-    dcos package --help
-    dcos package --version
 
 Options:
     -h, --help          Show this screen

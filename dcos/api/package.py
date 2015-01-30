@@ -1,11 +1,11 @@
 import hashlib
 import os
-import portalocker
 import subprocess
 import tempfile
 from shutil import copytree, rmtree
 from urlparse import urlparse
 
+import portalocker
 from dcos.api import errors
 
 
