@@ -9,9 +9,11 @@ import portalocker
 from dcos.api import errors
 
 try:
+    # Python 2
     from urlparse import urlparse
-except ImportError as ie:
-    from urllib import parse as urlparse
+except ImportError:
+    # Python 3
+    from urllib.parse import urlparse
 
 
 def list_sources(config):
@@ -183,7 +185,7 @@ class Source:
         :rtype: str
         """
 
-        return hashlib.sha1(self.url).hexdigest()
+        return hashlib.sha1(self.url.encode('utf-8')).hexdigest()
 
     def copy_to_cache(self, target_dir):
         """Copies the source content to the supplied local directory.
