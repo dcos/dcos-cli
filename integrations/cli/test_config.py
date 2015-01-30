@@ -47,7 +47,9 @@ def test_list_property():
     assert stdout == b"""marathon.host=localhost
 marathon.port=8080
 package.cache=tmp/cache
-package.sources=['file:///Users/you/projects/dcos/registry']
+package.sources=['file:///Users/me/test-registry', \
+'https://my.org/registry', \
+'git://github.com/mesosphere/universe.git']
 """
     assert stderr == b''
 
