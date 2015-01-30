@@ -74,6 +74,7 @@ setup(
     install_requires=[
         'docopt',
         'jsonschema',
+        'portalocker',
         'pystache',
         'requests',
         'toml',

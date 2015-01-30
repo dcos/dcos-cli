@@ -1,6 +1,6 @@
-import fcntl
 import hashlib
 import os
+import portalocker
 import subprocess
 import tempfile
 from shutil import copytree, rmtree
@@ -81,12 +81,12 @@ def acquire_file_lock(lock_file_path):
     """
 
     lock_fd = open(lock_file_path, 'w')
-    acquire_mode = fcntl.LOCK_EX | fcntl.LOCK_NB
+    acquire_mode = portalocker.LOCK_EX | portalocker.LOCK_NB
 
     try:
-        fcntl.flock(lock_fd, acquire_mode)
+        portalocker.lock(lock_fd, acquire_mode)
         return (lock_fd, None)
-    except IOError:
+    except portalocker.LockException:
         return (None, Error("Unable to acquire the package cache lock"))
 
 
