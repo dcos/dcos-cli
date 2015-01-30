@@ -3,7 +3,7 @@ cache = "tmp/cache"
 sources = [
   "file:///Users/me/test-registry",
   "https://my.org/registry",
-  "git://ithub.com/mesosphere/universe.git"
+  "git://github.com/mesosphere/universe.git"
 ]
 
 [marathon]
