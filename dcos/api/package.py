@@ -18,6 +18,12 @@ def list_sources(config):
     :rtype: (list of Source, list of Error)
     """
 
+    source_uris = config.get('package.sources')
+
+    if source_uris is None:
+        config_error = Error('No configured value for [package.sources]')
+        return (None, [config_error])
+
     results = [url_to_source(s) for s in config['package.sources']]
     sources = [source for (source, _) in results if source is not None]
     errors = [error for (_, error) in results if error is not None]
@@ -101,9 +107,15 @@ def update_sources(config):
 
     errors = []
 
-    # ensure the cache directory exists
-    cache_dir = config['package.cache']
+    # ensure the cache directory is properly configured
+    cache_dir = config.get('package.cache')
 
+    if cache_dir is None:
+        config_error = Error("No configured value for [package.cache]")
+        errors.append(config_error)
+        return errors
+
+    # ensure the cache directory exists
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
 
