@@ -6,7 +6,6 @@ from dcos.cli.main import _which
 
 def test_help():
     process = exec_command(['dcos', '--help'])
-
     stdout, stderr = process.communicate()
 
     assert process.returncode == 0
@@ -17,9 +16,18 @@ Options:
     -h, --help           Show this screen
     --version            Show version
 
-'dcos help -a' lists available subcommands. See 'dcos <command> --help' to read
-about a specific subcommand.
+'dcos help --all' lists available subcommands. See 'dcos <command> --help' to
+read about a specific subcommand.
 """
+    assert stderr == b''
+
+
+def test_version():
+    process = exec_command(['dcos', '--version'])
+    stdout, stderr = process.communicate()
+
+    assert process.returncode == 0
+    assert stdout == b'dcos version 0.1.0\n'
     assert stderr == b''
 
 

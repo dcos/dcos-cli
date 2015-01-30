@@ -11,10 +11,10 @@ def test_help():
     dcos config <name> [<value>]
     dcos config --unset <name>
     dcos config --list
-    dcos config --help
 
 Options:
     -h, --help            Show this screen
+    --version             Show version
     --unset               Remove property from the config file
 """
     assert stderr == b''
@@ -22,11 +22,19 @@ Options:
 
 def test_info():
     process = exec_command(['dcos', 'config', 'info'])
-
     stdout, stderr = process.communicate()
 
     assert process.returncode == 0
     assert stdout == b'Get and set DCOS command line options\n'
+    assert stderr == b''
+
+
+def test_version():
+    process = exec_command(['dcos', 'config', '--version'])
+    stdout, stderr = process.communicate()
+
+    assert process.returncode == 0
+    assert stdout == b'dcos-config version 0.1.0\n'
     assert stderr == b''
 
 

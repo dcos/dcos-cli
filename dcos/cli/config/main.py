@@ -4,10 +4,10 @@ Usage:
     dcos config <name> [<value>]
     dcos config --unset <name>
     dcos config --list
-    dcos config --help
 
 Options:
     -h, --help            Show this screen
+    --version             Show version
     --unset               Remove property from the config file
 """
 

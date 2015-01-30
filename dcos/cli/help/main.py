@@ -2,13 +2,11 @@
 Usage:
     dcos help info
     dcos help --all
-    dcos help --help
-    dcos help --version
 
 Options:
     -h, --help          Show this screen
-    --all               Prints all the avaible commands to the standard output
     --version           Show version
+    --all               Prints all the avaible commands to the standard output
 """
 
 import os
@@ -50,11 +48,11 @@ def _extract_subcommands(sub_programs):
     :rtype: list of str
     """
 
-    return [
+    return sorted([
         filename[len(constants.DCOS_COMMAND_PREFIX):]
         for filename
         in sub_programs
-    ]
+    ])
 
 
 def _list_subcommand_programs(dcos_bin_path):
@@ -100,9 +98,10 @@ def _external_command_documentation(commands):
     :returns: Returns a list of subcommand and their summary
     :rtype: list of (str, str)
     """
-    def info(commnand):
-        return subprocess.check_output(
+    def info(command):
+        out = subprocess.check_output(
             ['{}{}'.format(
                 constants.DCOS_COMMAND_PREFIX, command), command, 'info'])
+        return out.decode('utf-8')
 
     return [(command, info(command)) for command in commands]
