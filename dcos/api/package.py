@@ -264,6 +264,3 @@ class Registry():
             errors.append(err)
 
         return errors
-
-
-
