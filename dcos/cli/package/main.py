@@ -44,7 +44,7 @@ def main():
     config_path = os.environ[constants.DCOS_CONFIG_ENV]
     args = docopt.docopt(
         __doc__,
-        version='dcos-marathon version {}'.format(constants.version))
+        version='dcos-package version {}'.format(constants.version))
 
     if args['package'] and args['info']:
         return _info()
