@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import os
 import subprocess
 import tempfile
@@ -54,27 +55,6 @@ def url_to_source(url):
     else:
         err = Error("Source URL uses unsupported protocol [{}]".format(url))
         return (None, err)
-
-
-def validate_source_tree(base_path):
-    """Validates a package source tree on disk.
-
-    "param base_path: Path to the package source tree
-    :type base_path: str
-    :returns: Validation errors
-    :rtype: list of Error
-    """
-
-    # TODO(CD): implement these checks in pure Python?
-    scripts_dir = os.path.join(base_path, 'scripts')
-    validate_script = os.path.join(scripts_dir, '1-validate-packages.sh')
-    errors = []
-    result = subprocess.call(validate_script)
-    if result is not 0:
-        err = Error('Source tree is not valid [{}]'.format(base_path))
-        errors.append(err)
-
-    return errors
 
 
 def acquire_file_lock(lock_file_path):
@@ -140,6 +120,9 @@ def update_sources(config):
         return errors
 
     for source in sources:
+
+        logging.info("Updating source [%s]", source)
+
         # create a temporary staging directory
         tmp_dir = tempfile.mkdtemp()
         stage_dir = os.path.join(tmp_dir, source.hash())
@@ -151,7 +134,10 @@ def update_sources(config):
             continue  # keep updating the other sources
 
         # validate content
-        validate_source_tree(stage_dir)
+        validation_errors = Registry(stage_dir).validate()
+        if len(validation_errors) > 0:
+            errors += validation_errors
+            continue  # keep updating the other sources
 
         # remove the $CACHE/source.hash() directory
         target_dir = os.path.join(cache_dir, source.hash())
@@ -252,3 +238,32 @@ class Error(errors.Error):
         """
 
         return self._message
+
+
+class Registry():
+    """Represents a package registry on disk."""
+
+    def __init__(self, base_path):
+        self.base_path = base_path
+
+
+    def validate(self):
+        """Validates a package registry.
+
+        :returns: Validation errors
+        :rtype: list of Error
+        """
+
+        # TODO(CD): implement these checks in pure Python?
+        scripts_dir = os.path.join(self.base_path, 'scripts')
+        validate_script = os.path.join(scripts_dir, '1-validate-packages.sh')
+        errors = []
+        result = subprocess.call(validate_script)
+        if result is not 0:
+            err = Error('Source tree is not valid [{}]'.format(self.base_path))
+            errors.append(err)
+
+        return errors
+
+
+

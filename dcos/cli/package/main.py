@@ -32,12 +32,15 @@ Configuration:
 """
 
 import os
+import logging
 
 import docopt
 from dcos.api import config, constants, options, package
 
 
 def main():
+    logging.basicConfig(format='%(message)s', level=logging.INFO)
+
     config_path = os.environ[constants.DCOS_CONFIG_ENV]
     args = docopt.docopt(
         __doc__,
