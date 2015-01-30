@@ -4,10 +4,14 @@ import os
 import subprocess
 import tempfile
 from shutil import copytree, rmtree
-from urlparse import urlparse
 
 import portalocker
 from dcos.api import errors
+
+try:
+    from urlparse import urlparse
+except ImportError as ie:
+    from urllib import parse as urlparse
 
 
 def list_sources(config):
@@ -245,7 +249,6 @@ class Registry():
 
     def __init__(self, base_path):
         self.base_path = base_path
-
 
     def validate(self):
         """Validates a package registry.

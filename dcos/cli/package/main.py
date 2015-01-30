@@ -31,8 +31,8 @@ Configuration:
     ]
 """
 
-import os
 import logging
+import os
 
 import docopt
 from dcos.api import config, constants, options, package
