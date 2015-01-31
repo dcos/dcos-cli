@@ -8,7 +8,7 @@ def test_package():
     assert process.returncode == 0
     assert stdout == b"""Usage:
     dcos package info
-    dcos package sources list
+    dcos package sources
     dcos package update
     dcos package configure <package_name>
     dcos package search <query>
@@ -59,7 +59,7 @@ def test_version():
 
 
 def test_sources_list():
-    process = exec_command(['dcos', 'package', 'sources', 'list'])
+    process = exec_command(['dcos', 'package', 'sources'])
     stdout, stderr = process.communicate()
 
     assert process.returncode == 0

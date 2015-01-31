@@ -1,7 +1,7 @@
 """
 Usage:
     dcos package info
-    dcos package sources list
+    dcos package sources
     dcos package update
     dcos package configure <package_name>
     dcos package search <query>
@@ -49,7 +49,7 @@ def main():
     if args['package'] and args['info']:
         return _info()
 
-    elif args['package'] and args['sources'] and args['list']:
+    elif args['package'] and args['sources']:
         cfg = config.load_from_path(config_path)
         return _list_sources(cfg)
 
