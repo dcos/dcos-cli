@@ -170,13 +170,13 @@ def update_sources(config):
 class Source:
     """A source of DCOS packages."""
 
-    def __init__(self, url):
+    def url(self):
         """
-        :param url: Location of the package source
-        :type url: str
+        :returns: Location of the package source
+        :rtype: str
         """
 
-        self.url = url
+        raise NotImplementedError
 
     def hash(self):
         """Returns a cryptographically secure hash derived from this source.
@@ -200,6 +200,17 @@ class Source:
 class FileSource(Source):
     """A registry of DCOS packages."""
 
+    def __init__(self, url):
+        """
+        :param url: Location of the package source
+        :type url: str
+        """
+
+        self.url = url
+
+    def url(self):
+        return self.url
+
     def copy_to_cache(self, target_dir):
         # copy the source to the target_directory
         parse_result = urlparse(self.url)
@@ -215,12 +226,34 @@ class FileSource(Source):
 class HttpSource(Source):
     """A registry of DCOS packages."""
 
+    def __init__(self, url):
+        """
+        :param url: Location of the package source
+        :type url: str
+        """
+
+        self.url = url
+
+    def url(self):
+        return self.url
+
     def copy_to_cache(self, target_dir):
         raise NotImplementedError
 
 
 class GitSource(Source):
     """A registry of DCOS packages."""
+
+    def __init__(self, url):
+        """
+        :param url: Location of the package source
+        :type url: str
+        """
+
+        self.url = url
+
+    def url(self):
+        return self.url
 
     def copy_to_cache(self, target_dir):
         raise NotImplementedError
