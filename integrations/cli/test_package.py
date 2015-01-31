@@ -7,14 +7,14 @@ def test_package():
 
     assert process.returncode == 0
     assert stdout == b"""Usage:
-    dcos package info
-    dcos package sources
-    dcos package update
     dcos package configure <package_name>
-    dcos package search <query>
+    dcos package info
     dcos package install <package_name>
-    dcos package uninstall <package_name>
     dcos package list
+    dcos package search <query>
+    dcos package sources
+    dcos package uninstall <package_name>
+    dcos package update
 
 Options:
     -h, --help          Show this screen
