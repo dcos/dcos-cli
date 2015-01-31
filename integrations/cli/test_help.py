@@ -41,12 +41,6 @@ def test_list_all():
     process = exec_command(['dcos', 'help', '--all'])
     stdout, stderr = process.communicate()
 
-    print("stdout:")
-    print(stdout.decode('utf-8'))
-
-    print("stderr:")
-    print(stderr.decode('utf-8'))
-
     assert process.returncode == 0
     assert stdout == """Available DCOS command in '{}':
 

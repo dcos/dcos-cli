@@ -62,12 +62,6 @@ def test_sources_list():
     process = exec_command(['dcos', 'package', 'sources', 'list'])
     stdout, stderr = process.communicate()
 
-    print("stdout:")
-    print(stdout.decode('utf-8'))
-
-    print("stderr:")
-    print(stderr.decode('utf-8'))
-
     assert process.returncode == 0
     assert stdout == b"""cc5af1bcaec7323400a95e1c38caf61378f6f081 \
 file:///Users/me/test-registry
