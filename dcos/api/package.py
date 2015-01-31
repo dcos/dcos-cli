@@ -1,12 +1,15 @@
 import abc
 import hashlib
+import json
 import logging
 import os
 import shutil
 import subprocess
 
 import git
+import jsonschema
 import portalocker
+import pystache
 from dcos.api import errors, util
 
 try:
@@ -15,6 +18,106 @@ try:
 except ImportError:
     # Python 3
     from urllib.parse import urlparse
+
+
+PACKAGE_NAME_KEY = 'DCOS_PACKAGE_NAME'
+PACKAGE_VERSION_KEY = 'DCOS_PACKAGE_VERSION'
+
+
+def install(pkg, version, init_client, user_options, cfg):
+    """
+    :rtype: Error
+    """
+
+    if user_options is None:
+        user_options = {}
+
+    default_options = extract_default_values(pkg.config_json(version))
+
+    # Merge option overrides
+    options = dict(list(default_options.items()) + list(user_options.items()))
+
+    # Validate options with the config schema
+    try:
+        jsonschema.validate(options, pkg.config_json(version))
+    except jsonschema.ValidationError as ve:
+        return Error(ve.message)
+
+    # Insert option parameters into the init template
+    init_template = pkg.marathon_template(version)
+    init_desc = json.loads(pystache.render(init_template, options))
+
+    # Add package metadata
+    metadata = pkg.package_json(version)
+
+    init_desc['labels'] = {
+        PACKAGE_NAME_KEY: metadata['name'],
+        PACKAGE_VERSION_KEY: metadata['version']
+    }
+
+    # Validate the init descriptor
+    # TODO(CD): Is this necessary / desirable at this point?
+
+    # Send the descriptor to init
+    _, init_error = init_client.start_app(init_desc)
+
+    return init_error
+
+
+def list_installed_packages(init_client):
+    """
+    :rtype: ((str, str), Error)
+    """
+
+    apps, error = init_client.get_apps()
+    if error is not None:
+        return (None, error)
+
+    pkgs = [(a['labels'][PACKAGE_NAME_KEY], a['labels'][PACKAGE_VERSION_KEY])
+            for a in apps
+            if a.get('labels') is not None
+            and a.get('labels').get(PACKAGE_NAME_KEY) is not None
+            and a.get('labels').get(PACKAGE_VERSION_KEY) is not None]
+
+    return (pkgs, None)
+
+
+def extract_default_values(config_schema):
+    # TODO(CD): Implement!
+    return {}
+
+
+def resolve_package(package_name, config):
+    """Returns the first package with the supplied name found by looking at
+    the configured sources in the order they are defined.
+
+    :param package_name: The name of the package to resolve
+    :type config: str
+    :param config: Configuration dictionary
+    :type config: config.Toml
+    :returns: The named package, if found
+    :rtype: Package or None
+    """
+
+    for registry in registries(config):
+        package, error = registry.get_package(package_name)
+        if package is not None:
+            return package
+
+    return None
+
+
+def registries(config):
+    """Returns configured cached package registries.
+
+    :param config: Configuration dictionary
+    :type config: config.Toml
+    :returns: The list of registries, in resolution order
+    :rtype: list of Registry
+    """
+
+    sources, errors = list_sources(config)
+    return [Registry(source.local_cache(config)) for source in sources]
 
 
 def list_sources(config):
@@ -161,8 +264,8 @@ def update_sources(config):
                     errors.append(err)
                     continue  # keep updating the other sources
 
-                # rename the staging directory as $CACHE/source.hash()
-                os.rename(stage_dir, target_dir)
+                # move the staging directory to $CACHE/source.hash()
+                shutil.move(stage_dir, target_dir)
 
     return errors
 
@@ -189,6 +292,19 @@ class Source:
 
         return hashlib.sha1(self.url.encode('utf-8')).hexdigest()
 
+    def local_cache(self, config):
+        """Returns the file system path to this source's local cache.
+
+        :returns: Path to this source's local cache on disk
+        :rtype: str or None
+        """
+
+        cache_dir = config.get('package.cache')
+        if cache_dir is None:
+            return None
+
+        return os.path.join(cache_dir, self.hash())
+
     def copy_to_cache(self, target_dir):
         """Copies the source content to the supplied local directory.
 
@@ -199,6 +315,10 @@ class Source:
         """
 
         raise NotImplementedError
+
+    def __repr__(self):
+
+        return self.url
 
 
 class FileSource(Source):
@@ -230,7 +350,7 @@ class FileSource(Source):
         """
 
         # copy the source to the target_directory
-        parse_result = urlparse(self.url)
+        parse_result = urlparse(self._url)
         source_dir = parse_result.path
         try:
             shutil.copytree(source_dir, target_dir)
@@ -300,15 +420,25 @@ class GitSource(Source):
         """
 
         try:
-            # TODO: add better url parsing
-            # clone git repo into the supplied target_dir
-            git.Repo.clone_from(self.url,
+            # TODO(SS): add better url parsing
+
+            # Ensure git is installed properly.
+            git_program = util.which('git')
+            if git_program is None:
+                return Error("""Could not locate the git program.  Make sure \
+it is installed and on the system search path.
+PATH = {}""".format(os.environ['PATH']))
+
+            # Clone git repo into the supplied target directory.
+            git.Repo.clone_from(self._url,
                                 to_path=target_dir,
                                 progress=None,
                                 branch='master')
-            # remove .git directory to save space
+
+            # Remove .git directory to save space.
             shutil.rmtree(os.path.join(target_dir, ".git"))
             return None
+
         except git.exc.GitCommandError:
             return Error("Unable to clone [{}] to [{}]".format(self.url,
                                                                target_dir))
@@ -361,3 +491,145 @@ class Registry():
                 Error('Source tree is not valid [{}]'.format(self._base_path)))
 
         return errors
+
+    def get_package(self, package_name):
+        """Returns the named package, if it exists.
+
+        :returns: The requested package
+        :rtype: (Package, Error)
+        """
+
+        if len(package_name) is 0:
+            (None, Error('Package name must not be empty.'))
+
+        # Packages are found in $BASE/repo/package/<first_character>/<pkg_name>
+        first_character = package_name[0].title()
+
+        package_path = os.path.join(
+            self._base_path,
+            'repo',
+            'packages',
+            first_character,
+            package_name)
+
+        if not os.path.isdir(package_path):
+            return (None, Error("Package [{}] not found".format(package_name)))
+
+        try:
+            return (Package(package_path), None)
+
+        except:
+            error = Error('Could not read package ')
+            return (None, error)
+
+
+class Package():
+    """Interface to a package on disk."""
+
+    def __init__(self, path):
+
+        assert os.path.isdir(path)
+        self.path = path
+
+    def name(self):
+        """Returns the package name.
+
+        :returns: The name of this package
+        :rtype: str
+        """
+
+        return os.path.basename(self.path)
+
+    def command_json(self, version):
+        """Returns the JSON content of the command.json file.
+
+        :returns: Package command data
+        :rtype: dict or Error
+        """
+
+        data, error = self._data(os.path.join(version, 'command.json'))
+        return json.loads(data)
+
+    def config_json(self, version):
+        """Returns the JSON content of the config.json file.
+
+        :returns: Package config schema
+        :rtype: dict or Error
+        """
+
+        data, error = self._data(os.path.join(version, 'config.json'))
+        return json.loads(data)
+
+    def package_json(self, version):
+        """Returns the JSON content of the package.json file.
+
+        :returns: Package data
+        :rtype: dict or Error
+        """
+
+        data, error = self._data(os.path.join(version, 'package.json'))
+        return json.loads(data)
+
+    def marathon_template(self, version):
+        """Returns the JSON content of the marathon.json file.
+
+        :returns: Package marathon data
+        :rtype: str or Error
+        """
+
+        data, error = self._data(os.path.join(version, 'marathon.json'))
+        return data
+
+    def _data(self, path):
+        """Returns the content of the supplied file, relative to the base path.
+
+        :returns: File content of the supplied path
+        :rtype: (str, Error)
+        """
+
+        full_path = os.path.join(self.path, path)
+        if not os.path.isfile(full_path):
+            return (None, Error('Path [{}] is not a file'.format(full_path)))
+
+        try:
+            with open(full_path) as fd:
+                content = fd.read()
+                return (content, None)
+        except IOError:
+            return (None, Error('Unable to open file [{}]'.format(full_path)))
+
+    def package_versions(self):
+        """Returns all of the available package versions.
+
+        Note that the result does not describe versions of the package, not
+        the software described by the package.
+
+        :returns: Available versions of this package
+        :rtype: list of str
+        """
+
+        return [f for f in os.listdir(self.path) if not f.startswith('.')]
+
+    def software_versions(self):
+        """Returns a mapping from the package version to the version of the
+        software described by the package.
+
+        :returns: Map from package versions to versions of the softwre.
+        :rtype: dict
+        """
+
+        raise NotImplementedError
+
+    def latest_version(self):
+        """Returns the latest package version.
+
+        :returns: The latest version of this package
+        :rtype: str
+        """
+
+        pkg_versions = self.package_versions()
+        return pkg_versions[0]  # TODO(CD): this better!
+
+    def __repr__(self):
+
+        return json.dumps(self.package_json(self.latest_version()))

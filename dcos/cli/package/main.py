@@ -1,8 +1,8 @@
 """
 Usage:
-    dcos package configure <package_name>
+    dcos package describe <package_name>
     dcos package info
-    dcos package install <package_name>
+    dcos package install [--options=<options_file>] <package_name>
     dcos package list
     dcos package search <query>
     dcos package sources
@@ -31,11 +31,13 @@ Configuration:
     ]
 """
 
+import json
 import logging
 import os
 
 import docopt
-from dcos.api import config, constants, options, package
+import toml
+from dcos.api import config, constants, marathon, options, package
 
 
 def main():
@@ -57,9 +59,17 @@ def main():
         cfg = config.load_from_path(config_path)
         return _update(cfg)
 
-    elif args['package'] and args['configure']:
-        mutable_cfg = config.mutable_load_from_path(config_path)
-        return _configure(args['<package_name>'], mutable_cfg)
+    elif args['package'] and args['describe'] and args['<package_name>']:
+        cfg = config.load_from_path(config_path)
+        return _describe(args['<package_name>'], cfg)
+
+    elif args['package'] and args['install']:
+        cfg = config.load_from_path(config_path)
+        return _install(args['<package_name>'], args['--options'], cfg)
+
+    elif args['package'] and args['list']:
+        cfg = config.load_from_path(config_path)
+        return _list(cfg)
 
     else:
         print(options.make_generic_usage_message(__doc__))
@@ -118,27 +128,93 @@ def _update(config):
     return 0
 
 
-def _configure(package_name, mutable_cfg):
-    """Configure the specified package.
+def _describe(package_name, config):
+    """Describe the specified package.
 
     :param package_name: The package to configure
     :type package_name: str
-    :param mutable_cfg: The config object to modify
-    :type mutable_cfg: config.MutableToml
+    :param config: The config object
+    :type config: config.Toml
     :returns: Process status
     :rtype: int
     """
 
-    pkg, pkg_err = package.get_package(package_name)
+    pkg = package.resolve_package(package_name, config)
 
-    if pkg_err is not None:
-        print(pkg_err.error())
+    if pkg is None:
+        print("Package [{}] not found".format(package_name))
         return 1
 
-    success, err = package.configure(mutable_cfg)
+    # TODO(CD): Make package version to describe configurable
+    pkg_json = pkg.package_json(pkg.latest_version())
+    print(toml.dumps(pkg_json))
+    return 0
 
-    if err is not None:
-        print(err.error())
+
+def _install(package_name, options_file, config):
+    """Install the specified package.
+
+    :param package_name: The package to install
+    :type package_name: str
+    :param options_file: Path to file containing option values
+    :type options_file: str
+    :param cfg: The config object to modify
+    :type cfg: config.Toml
+    :returns: Process status
+    :rtype: int
+    """
+
+    pkg = package.resolve_package(package_name, config)
+
+    if pkg is None:
+        print("Package [{}] not found".format(package_name))
+        return 1
+
+    options_json = {}
+
+    if options_file is not None:
+        try:
+            options_fd = open(options_file)
+            options_json = json.load(options_fd)
+        except Exception as e:
+            print(e.message)
+            return 1
+
+    init_client = marathon.create_client(config)
+
+    # TODO(CD): Make package version to install configurable
+    pkg_version = pkg.latest_version()
+    install_error = package.install(
+        pkg,
+        pkg_version,
+        init_client,
+        options_json,
+        config)
+
+    if install_error is not None:
+        print(install_error.error())
+        return 1
+
+    return 0
+
+
+def _list(config):
+    """Describe the specified package.
+
+    :param config: The config object
+    :type config: config.Toml
+    :returns: Process status
+    :rtype: int
+    """
+
+    init_client = marathon.create_client(config)
+    installed, error = package.list_installed_packages(init_client)
+
+    for name, version in installed:
+        print('{} [{}]'.format(name, version))
+
+    if error is not None:
+        print(error.error())
         return 1
 
     return 0
