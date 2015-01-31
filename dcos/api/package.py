@@ -2,11 +2,10 @@ import hashlib
 import logging
 import os
 import subprocess
-import tempfile
 from shutil import copytree, rmtree
 
 import portalocker
-from dcos.api import errors
+from dcos.api import errors, util
 
 try:
     # Python 2
@@ -132,37 +131,35 @@ def update_sources(config):
             logging.info("Updating source [%s]", source)
 
             # create a temporary staging directory
-            tmp_dir = tempfile.mkdtemp()
-            stage_dir = os.path.join(tmp_dir, source.hash())
+            with util.tempdir() as tmp_dir:
 
-            # copy to the staging directory
-            copy_err = source.copy_to_cache(stage_dir)
-            if copy_err is not None:
-                errors.append(copy_err)
-                continue  # keep updating the other sources
+                stage_dir = os.path.join(tmp_dir, source.hash())
 
-            # validate content
-            validation_errors = Registry(stage_dir).validate()
-            if len(validation_errors) > 0:
-                errors += validation_errors
-                continue  # keep updating the other sources
+                # copy to the staging directory
+                copy_err = source.copy_to_cache(stage_dir)
+                if copy_err is not None:
+                    errors.append(copy_err)
+                    continue  # keep updating the other sources
 
-            # remove the $CACHE/source.hash() directory
-            target_dir = os.path.join(cache_dir, source.hash())
-            try:
-                if os.path.exists(target_dir):
-                    rmtree(target_dir, ignore_errors=False)
-            except OSError:
-                err = Error(
-                    'Could not remove directory [{}]'.format(target_dir))
-                errors.append(err)
-                continue  # keep updating the other sources
+                # validate content
+                validation_errors = Registry(stage_dir).validate()
+                if len(validation_errors) > 0:
+                    errors += validation_errors
+                    continue  # keep updating the other sources
 
-            # rename the staging directory as $CACHE/source.hash()
-            os.rename(stage_dir, target_dir)
+                # remove the $CACHE/source.hash() directory
+                target_dir = os.path.join(cache_dir, source.hash())
+                try:
+                    if os.path.exists(target_dir):
+                        rmtree(target_dir, ignore_errors=False)
+                except OSError:
+                    err = Error(
+                        'Could not remove directory [{}]'.format(target_dir))
+                    errors.append(err)
+                    continue  # keep updating the other sources
 
-            # Remove the temporary directory
-            rmtree(tmp_dir, ignore_errors=True)
+                # rename the staging directory as $CACHE/source.hash()
+                os.rename(stage_dir, target_dir)
 
     return errors
 
