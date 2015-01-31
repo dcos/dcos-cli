@@ -78,6 +78,7 @@ def acquire_file_lock(lock_file_path):
         portalocker.lock(lock_fd, acquire_mode)
         return (lock_fd, None)
     except portalocker.LockException:
+        lock_fd.close()
         return (None, Error("Unable to acquire the package cache lock"))
 
 
