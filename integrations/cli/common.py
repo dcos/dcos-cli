@@ -2,7 +2,7 @@ import subprocess
 
 
 def exec_command(cmd, env=None):
-    """Execute CLI commonad
+    """Execute CLI command
 
     :param cmd: Program and arguments
     :type cmd: list of str

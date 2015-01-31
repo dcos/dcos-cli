@@ -1,5 +1,6 @@
 dcos.egg-info/
 env/
+tmp/
 
 .ropeproject/
 .tox/

@@ -74,6 +74,7 @@ setup(
     install_requires=[
         'docopt',
         'jsonschema',
+        'portalocker',
         'pystache',
         'requests',
         'toml',
@@ -110,6 +111,7 @@ setup(
             'dcos-help=dcos.cli.help.main:main',
             'dcos-config=dcos.cli.config.main:main',
             'dcos-marathon=dcos.cli.marathon.main:main',
+            'dcos-package=dcos.cli.package.main:main',
             'dcos-subcommand=dcos.cli.subcommand.main:main',
         ],
     },

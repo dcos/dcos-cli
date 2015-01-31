@@ -1,3 +1,11 @@
+[package]
+cache = "tmp/cache"
+sources = [
+  "file:///Users/me/test-registry",
+  "https://my.org/registry",
+  "git://github.com/mesosphere/universe.git"
+]
+
 [marathon]
-host = "localhost"
 port = 8080
+host = "localhost"

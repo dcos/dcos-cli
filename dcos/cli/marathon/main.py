@@ -31,25 +31,25 @@ def main():
     if args['marathon'] and args['info']:
         return _info()
     elif args['marathon'] and args['list']:
-        toml_config = config.Toml.load_from_path(config_path)
+        toml_config = config.load_from_path(config_path)
         return _list(toml_config)
     elif args['marathon'] and args['describe']:
-        toml_config = config.Toml.load_from_path(config_path)
+        toml_config = config.load_from_path(config_path)
         return _describe(args['<app_id>'], toml_config)
     elif args['marathon'] and args['start']:
-        toml_config = config.Toml.load_from_path(config_path)
+        toml_config = config.load_from_path(config_path)
         return _start(args['<app_resource>'], toml_config)
     elif args['marathon'] and args['scale']:
-        toml_config = config.Toml.load_from_path(config_path)
+        toml_config = config.load_from_path(config_path)
         return _scale(args['<app_id>'],
                       args['<instances>'],
                       args['--force'],
                       toml_config)
     elif args['marathon'] and args['suspend']:
-        toml_config = config.Toml.load_from_path(config_path)
+        toml_config = config.load_from_path(config_path)
         return _suspend(args['<app_id>'], args['--force'], toml_config)
     elif args['marathon'] and args['remove']:
-        toml_config = config.Toml.load_from_path(config_path)
+        toml_config = config.load_from_path(config_path)
         return _remove(args['<app_id>'], args['--force'], toml_config)
     else:
         print(options.make_generic_usage_error(__doc__))
