@@ -36,6 +36,7 @@ import logging
 import os
 
 import docopt
+import toml
 from dcos.api import config, constants, options, package
 
 
@@ -140,7 +141,8 @@ def _describe(package_name, config):
         print("Package [{}] not found".format(package_name))
         return 1
 
-    print(pkg)
+    pkg_json = pkg.package_json(pkg.latest_version())
+    print(toml.dumps(pkg_json))
     return 0
 
 

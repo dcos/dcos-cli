@@ -1,4 +1,5 @@
 import hashlib
+import json
 import logging
 import os
 import subprocess
@@ -400,25 +401,25 @@ class Package():
 
         return os.path.basename(self.path)
 
-    def _command_data(self, version):
+    def command_json(self, version):
         """
         :returns: Package command data
-        :rtype: str or Error
+        :rtype: dict or Error
         """
 
         f = os.path.join(self.path, version, 'command.json')
-        return self._data(f)
+        return json.loads(self._data(f))
 
-    def _package_data(self, version):
+    def package_json(self, version):
         """
         :returns: Package data
-        :rtype: str or Error
+        :rtype: dict or Error
         """
 
         f = os.path.join(self.path, version, 'package.json')
-        return self._data(f)
+        return json.loads(self._data(f))
 
-    def _marathon_data(self, version):
+    def marathon_template(self, version):
         """
         :returns: Package marathon data
         :rtype: str or Error
@@ -438,7 +439,7 @@ class Package():
 
         return open(path).read()
 
-    def _package_versions(self):
+    def package_versions(self):
         """
         :returns: Available versions of this package
         :rtype: list of str
@@ -446,14 +447,23 @@ class Package():
 
         return os.listdir(self.path)
 
-    def _versions(self):
+    def versions(self):
         """
         :returns: Mapping from software version to latest package version
         :rtype: dict
         """
+
         raise NotImplementedError
 
+    def latest_version(self):
+        """
+        :returns: The latest version of this package
+        :rtype: str
+        """
+
+        pkg_versions = self.package_versions()
+        return pkg_versions[0]
+
     def __repr__(self):
-        pkg_versions = self._package_versions()
-        latest_version = pkg_versions[0]
-        return self._package_data(latest_version)
+
+        return json.dumps(self.package_json(self.latest_version()))
