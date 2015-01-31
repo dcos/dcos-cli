@@ -20,12 +20,14 @@ except ImportError:
 
 
 def resolve_package(package_name, config):
-    """
+    """Returns the first package with the supplied name found by looking at
+    the configured sources in the order they are defined.
+
     :param package_name: The name of the package to resolve
     :type config: str
     :param config: Configuration dictionary
     :type config: config.Toml
-    :returns: The named package
+    :returns: The named package, if found
     :rtype: Package or None
     """
 
@@ -38,7 +40,7 @@ def resolve_package(package_name, config):
 
 
 def registries(config):
-    """Returns cached package registries.
+    """Returns configured cached package registries.
 
     :param config: Configuration dictionary
     :type config: config.Toml
@@ -221,7 +223,8 @@ class Source:
         return hashlib.sha1(self.url.encode('utf-8')).hexdigest()
 
     def local_cache(self, config):
-        """
+        """Returns the file system path to this source's local cache.
+
         :returns: Path to this source's local cache on disk
         :rtype: str or None
         """
@@ -361,18 +364,23 @@ class Registry():
         return errors
 
     def get_package(self, package_name):
-        """Returns the named package, if it exists
+        """Returns the named package, if it exists.
+
         :returns: The requested package
         :rtype: (Package, Error)
         """
 
-        first_letter = package_name[0]
+        if len(package_name) is 0:
+            (None, Error('Package name must not be empty.'))
+
+        # Packages are found in $BASE/repo/package/<first_character>/<pkg_name>
+        first_character = package_name[0]
 
         package_path = os.path.join(
             self.base_path,
             'repo',
             'packages',
-            first_letter,
+            first_character,
             package_name)
 
         if not os.path.isdir(package_path):
