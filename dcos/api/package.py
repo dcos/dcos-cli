@@ -398,11 +398,13 @@ class Package():
     """Interface to a package on disk."""
 
     def __init__(self, path):
+
         assert os.path.isdir(path)
         self.path = path
 
     def name(self):
-        """
+        """Returns the package name.
+
         :returns: The name of this package
         :rtype: str
         """
@@ -410,61 +412,73 @@ class Package():
         return os.path.basename(self.path)
 
     def command_json(self, version):
-        """
+        """Returns the JSON content of the command.json file.
+
         :returns: Package command data
         :rtype: dict or Error
         """
 
-        f = os.path.join(self.path, version, 'command.json')
-        return json.loads(self._data(f))
+        data = self._data(os.path.join(version, 'command.json'))
+        return json.loads(data)
 
     def package_json(self, version):
-        """
+        """Returns the JSON content of the package.json file.
+
         :returns: Package data
         :rtype: dict or Error
         """
 
-        f = os.path.join(self.path, version, 'package.json')
-        return json.loads(self._data(f))
+        data = self._data(os.path.join(version, 'package.json'))
+        return json.loads(data)
 
     def marathon_template(self, version):
-        """
+        """Returns the JSON content of the marathon.json file.
+
         :returns: Package marathon data
         :rtype: str or Error
         """
 
-        f = os.path.join(self.path, version, 'marathon.json')
-        return self._data(f)
+        data = self._data(os.path.join(version, 'marathon.json'))
+        return json.loads(data)
 
     def _data(self, path):
-        """
+        """Returns the content of the supplied file, relative to the base path.
+
         :returns: File content of the supplied path
         :rtype: str or Error
         """
 
-        if not os.path.isfile(path):
-            return Error("Path [{}] is not a file".format(path))
+        full_path = os.path.join(self.path, path)
+        if not os.path.isfile(full_path):
+            return Error("Path [{}] is not a file".format(full_path))
 
-        return open(path).read()
+        return open(full_path).read()
 
     def package_versions(self):
-        """
+        """Returns all of the available package versions.
+
+        Note that the result does not describe versions of the package, not
+        the software described by the package.
+
         :returns: Available versions of this package
         :rtype: list of str
         """
 
         return os.listdir(self.path)
 
-    def versions(self):
-        """
-        :returns: Mapping from software version to latest package version
+    def software_versions(self):
+        """Returns a mapping from the package version to the version of the
+        software described by the package.
+
+        :returns: Map from package versions to versions of the softwre.
         :rtype: dict
         """
 
         raise NotImplementedError
 
     def latest_version(self):
-        """
+        """Returns the latest package version.
+
         :returns: The latest version of this package
         :rtype: str
         """
