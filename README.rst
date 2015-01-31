@@ -45,7 +45,7 @@ Configure Development Environment
 
     mkdir $DCOS_PATH/config
     touch $DCOS_PATH/config/Dcos.toml
-    export DCOS_CONFIG=$DCOS_PATH/env/config/Dcos.toml
+    export DCOS_CONFIG=$DCOS_PATH/config/Dcos.toml
 
 Running POC
 -----------
