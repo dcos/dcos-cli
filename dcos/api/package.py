@@ -118,51 +118,51 @@ def update_sources(config):
         errors.append(lock_error)
         return errors
 
-    # list sources
-    sources, list_errors = list_sources(config)
+    with lock_fd:
 
-    if len(list_errors) > 0:
-        errors = errors + list_errors
-        return errors
+        # list sources
+        sources, list_errors = list_sources(config)
 
-    for source in sources:
+        if len(list_errors) > 0:
+            errors = errors + list_errors
+            return errors
 
-        logging.info("Updating source [%s]", source)
+        for source in sources:
 
-        # create a temporary staging directory
-        tmp_dir = tempfile.mkdtemp()
-        stage_dir = os.path.join(tmp_dir, source.hash())
+            logging.info("Updating source [%s]", source)
 
-        # copy to the staging directory
-        copy_err = source.copy_to_cache(stage_dir)
-        if copy_err is not None:
-            errors.append(copy_err)
-            continue  # keep updating the other sources
+            # create a temporary staging directory
+            tmp_dir = tempfile.mkdtemp()
+            stage_dir = os.path.join(tmp_dir, source.hash())
 
-        # validate content
-        validation_errors = Registry(stage_dir).validate()
-        if len(validation_errors) > 0:
-            errors += validation_errors
-            continue  # keep updating the other sources
+            # copy to the staging directory
+            copy_err = source.copy_to_cache(stage_dir)
+            if copy_err is not None:
+                errors.append(copy_err)
+                continue  # keep updating the other sources
 
-        # remove the $CACHE/source.hash() directory
-        target_dir = os.path.join(cache_dir, source.hash())
-        try:
-            if os.path.exists(target_dir):
-                rmtree(target_dir, ignore_errors=False)
-        except OSError:
-            err = Error('Could not remove directory [{}]'.format(target_dir))
-            errors.append(err)
-            continue  # keep updating the other sources
+            # validate content
+            validation_errors = Registry(stage_dir).validate()
+            if len(validation_errors) > 0:
+                errors += validation_errors
+                continue  # keep updating the other sources
 
-        # rename the staging directory as $CACHE/source.hash()
-        os.rename(stage_dir, target_dir)
+            # remove the $CACHE/source.hash() directory
+            target_dir = os.path.join(cache_dir, source.hash())
+            try:
+                if os.path.exists(target_dir):
+                    rmtree(target_dir, ignore_errors=False)
+            except OSError:
+                err = Error(
+                    'Could not remove directory [{}]'.format(target_dir))
+                errors.append(err)
+                continue  # keep updating the other sources
 
-        # Remove the temporary directory
-        rmtree(tmp_dir, ignore_errors=True)
+            # rename the staging directory as $CACHE/source.hash()
+            os.rename(stage_dir, target_dir)
 
-    # release the lock
-    lock_fd.close()
+            # Remove the temporary directory
+            rmtree(tmp_dir, ignore_errors=True)
 
     return errors
 
