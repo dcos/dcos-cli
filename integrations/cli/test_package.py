@@ -7,6 +7,7 @@ def test_package():
     assert returncode == 0
     assert stdout == b"""Usage:
     dcos package configure <package_name>
+    dcos package describe <package_name>
     dcos package info
     dcos package install <package_name>
     dcos package list

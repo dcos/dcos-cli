@@ -1,6 +1,7 @@
 """
 Usage:
     dcos package configure <package_name>
+    dcos package describe <package_name>
     dcos package info
     dcos package install <package_name>
     dcos package list
@@ -56,6 +57,10 @@ def main():
     elif args['package'] and args['update']:
         cfg = config.load_from_path(config_path)
         return _update(cfg)
+
+    elif args['package'] and args['describe'] and args['<package_name>']:
+        cfg = config.load_from_path(config_path)
+        return _describe(args['<package_name>'], cfg)
 
     elif args['package'] and args['configure']:
         mutable_cfg = config.mutable_load_from_path(config_path)
@@ -115,6 +120,27 @@ def _update(config):
             print(err.error())
         return 1
 
+    return 0
+
+
+def _describe(package_name, config):
+    """Describe the specified package.
+
+    :param package_name: The package to configure
+    :type package_name: str
+    :param config: The config object
+    :type config: config.Toml
+    :returns: Process status
+    :rtype: int
+    """
+
+    pkg = package.resolve_package(package_name, config)
+
+    if pkg is None:
+        print("Package [{}] not found".format(package_name))
+        return 1
+
+    print(pkg)
     return 0
 
 

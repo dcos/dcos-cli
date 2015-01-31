@@ -18,6 +18,37 @@ except ImportError:
     from urllib.parse import urlparse
 
 
+def resolve_package(package_name, config):
+    """
+    :param package_name: The name of the package to resolve
+    :type config: str
+    :param config: Configuration dictionary
+    :type config: config.Toml
+    :returns: The named package
+    :rtype: Package or None
+    """
+
+    for registry in registries(config):
+        package, error = registry.get_package(package_name)
+        if package is not None:
+            return package
+
+    return None
+
+
+def registries(config):
+    """Returns cached package registries.
+
+    :param config: Configuration dictionary
+    :type config: config.Toml
+    :returns: The list of registries, in resolution order
+    :rtype: list of Registry
+    """
+
+    sources, errors = list_sources(config)
+    return [Registry(source.local_cache(config)) for source in sources]
+
+
 def list_sources(config):
     """List configured package sources.
 
@@ -188,6 +219,18 @@ class Source:
 
         return hashlib.sha1(self.url.encode('utf-8')).hexdigest()
 
+    def local_cache(self, config):
+        """
+        :returns: Path to this source's local cache on disk
+        :rtype: str or None
+        """
+
+        cache_dir = config.get('package.cache')
+        if cache_dir is None:
+            return None
+
+        return os.path.join(cache_dir, self.hash())
+
     def copy_to_cache(self, target_dir):
         """Copies the source content to the supplied local directory.
 
@@ -293,7 +336,7 @@ class Error(errors.Error):
 
 
 class Registry():
-    """Represents a package registry on disk."""
+    """Interface to a package registry on disk."""
 
     def __init__(self, base_path):
         self.base_path = base_path
@@ -315,3 +358,102 @@ class Registry():
             errors.append(err)
 
         return errors
+
+    def get_package(self, package_name):
+        """Returns the named package, if it exists
+        :returns: The requested package
+        :rtype: (Package, Error)
+        """
+
+        first_letter = package_name[0]
+
+        package_path = os.path.join(
+            self.base_path,
+            'repo',
+            'packages',
+            first_letter,
+            package_name)
+
+        if not os.path.isdir(package_path):
+            return (None, Error("Package [{}] not found".format(package_name)))
+
+        try:
+            return (Package(package_path), None)
+
+        except:
+            error = Error('Could not read package ')
+            return (None, error)
+
+
+class Package():
+    """Interface to a package on disk."""
+
+    def __init__(self, path):
+        assert os.path.isdir(path)
+        self.path = path
+
+    def name(self):
+        """
+        :returns: The name of this package
+        :rtype: str
+        """
+
+        return os.path.basename(self.path)
+
+    def _command_data(self, version):
+        """
+        :returns: Package command data
+        :rtype: str or Error
+        """
+
+        f = os.path.join(self.path, version, 'command.json')
+        return self._data(f)
+
+    def _package_data(self, version):
+        """
+        :returns: Package data
+        :rtype: str or Error
+        """
+
+        f = os.path.join(self.path, version, 'package.json')
+        return self._data(f)
+
+    def _marathon_data(self, version):
+        """
+        :returns: Package marathon data
+        :rtype: str or Error
+        """
+
+        f = os.path.join(self.path, version, 'marathon.json')
+        return self._data(f)
+
+    def _data(self, path):
+        """
+        :returns: File content of the supplied path
+        :rtype: str or Error
+        """
+
+        if not os.path.isfile(path):
+            return Error("Path [{}] is not a file".format(path))
+
+        return open(path).read()
+
+    def _package_versions(self):
+        """
+        :returns: Available versions of this package
+        :rtype: list of str
+        """
+
+        return os.listdir(self.path)
+
+    def _versions(self):
+        """
+        :returns: Mapping from software version to latest package version
+        :rtype: dict
+        """
+        raise NotImplementedError
+
+    def __repr__(self):
+        pkg_versions = self._package_versions()
+        latest_version = pkg_versions[0]
+        return self._package_data(latest_version)
