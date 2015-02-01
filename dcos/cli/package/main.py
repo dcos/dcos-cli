@@ -62,7 +62,7 @@ def main():
         return _configure(args['<package_name>'], mutable_cfg)
 
     else:
-        print(options.make_generic_usage_error(__doc__))
+        print(options.make_generic_usage_message(__doc__))
         return 1
 
 
