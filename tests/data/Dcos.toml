@@ -5,7 +5,5 @@ port = 8080
 [package]
 cache = "tmp/cache"
 sources = [
-  "file:///Users/me/test-registry",
-  "https://my.org/registry",
-   "git://github.com/mesosphere/universe.git"
+   "git://github.com/mesosphere/universe.git",
 ]

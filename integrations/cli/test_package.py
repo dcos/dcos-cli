@@ -59,11 +59,7 @@ def test_sources_list():
     returncode, stdout, stderr = exec_command(['dcos', 'package', 'sources'])
 
     assert returncode == 0
-    assert stdout == b"""cc5af1bcaec7323400a95e1c38caf61378f6f081 \
-file:///Users/me/test-registry
-0c854fa7f2ede3dcc3122bf2b7db160491cf9f33 \
-https://my.org/registry
-c3f1a0df1d2068e6b11d40224f5e500d3183a97e \
+    assert stdout == b"""c3f1a0df1d2068e6b11d40224f5e500d3183a97e \
 git://github.com/mesosphere/universe.git
 """
     assert stderr == b''
