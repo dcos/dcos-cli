@@ -1,3 +1,4 @@
+import abc
 import hashlib
 import logging
 import os
@@ -20,7 +21,7 @@ def list_sources(config):
     """List configured package sources.
 
     :param config: Configuration dictionary
-    :type config: config.Toml
+    :type config: dcos.api.config.Toml
     :returns: The list of sources, in resolution order
     :rtype: (list of Source, list of Error)
     """
@@ -66,7 +67,7 @@ def url_to_source(url):
 def acquire_file_lock(lock_file_path):
     """Acquires an exclusive lock on the supplied file.
 
-    "param lock_file_path: Path to the lock file
+    :param lock_file_path: Path to the lock file
     :type lock_file_path: str
     :returns: Lock file descriptor
     :rtype: (file_descriptor, Error)
@@ -87,7 +88,7 @@ def update_sources(config):
     """Overwrites the local package cache with the latest source data.
 
     :param config: Configuration dictionary
-    :type config: config.Toml
+    :type config: dcos.api.config.Toml
     :returns: Error, if any.
     :rtype: list of Error
     """
@@ -169,6 +170,8 @@ def update_sources(config):
 class Source:
     """A source of DCOS packages."""
 
+    @property
+    @abc.abstractmethod
     def url(self):
         """
         :returns: Location of the package source
@@ -189,6 +192,8 @@ class Source:
     def copy_to_cache(self, target_dir):
         """Copies the source content to the supplied local directory.
 
+        :param target_dir: Path to the destination directory.
+        :type target_dir: str
         :returns: The error, if one occurred
         :rtype: Error
         """
@@ -197,20 +202,33 @@ class Source:
 
 
 class FileSource(Source):
-    """A registry of DCOS packages."""
+    """A registry of DCOS packages.
+
+    :param url: Location of the package source
+    :type url: str
+    """
 
     def __init__(self, url):
-        """
-        :param url: Location of the package source
-        :type url: str
-        """
+        self._url = url
 
-        self.url = url
-
+    @property
     def url(self):
-        return self.url
+        """
+        :returns: Location of the package source
+        :rtype: str
+        """
+
+        return self._url
 
     def copy_to_cache(self, target_dir):
+        """Copies the source content to the supplied local directory.
+
+        :param target_dir: Path to the destination directory.
+        :type target_dir: str
+        :returns: The error, if one occurred
+        :rtype: Error
+        """
+
         # copy the source to the target_directory
         parse_result = urlparse(self.url)
         source_dir = parse_result.path
@@ -223,38 +241,64 @@ class FileSource(Source):
 
 
 class HttpSource(Source):
-    """A registry of DCOS packages."""
+    """A registry of DCOS packages.
+
+    :param url: Location of the package source
+    :type url: str
+    """
 
     def __init__(self, url):
-        """
-        :param url: Location of the package source
-        :type url: str
-        """
+        self._url = url
 
-        self.url = url
-
+    @property
     def url(self):
-        return self.url
+        """
+        :returns: Location of the package source
+        :rtype: str
+        """
+
+        return self._url
 
     def copy_to_cache(self, target_dir):
+        """Copies the source content to the supplied local directory.
+
+        :param target_dir: Path to the destination directory.
+        :type target_dir: str
+        :returns: The error, if one occurred
+        :rtype: Error
+        """
+
         raise NotImplementedError
 
 
 class GitSource(Source):
-    """A registry of DCOS packages."""
+    """A registry of DCOS packages.
+
+    :param url: Location of the package source
+    :type url: str
+    """
 
     def __init__(self, url):
-        """
-        :param url: Location of the package source
-        :type url: str
-        """
+        self._url = url
 
-        self.url = url
-
+    @property
     def url(self):
-        return self.url
+        """
+        :returns: Location of the package source
+        :rtype: str
+        """
+
+        return self._url
 
     def copy_to_cache(self, target_dir):
+        """Copies the source content to the supplied local directory.
+
+        :param target_dir: Path to the destination directory.
+        :type target_dir: str
+        :returns: The error, if one occurred
+        :rtype: Error
+        """
+
         try:
             # TODO: add better url parsing
             # clone git repo into the supplied target_dir
@@ -271,13 +315,13 @@ class GitSource(Source):
 
 
 class Error(errors.Error):
+    """Class for describing errors during packaging operations.
+
+    :param message: Error message
+    :type message: str
+    """
+
     def __init__(self, message):
-        """Constructs error for packages and sources
-
-        :param message: Error message
-        :type message: str
-        """
-
         self._message = message
 
     def error(self):
@@ -291,10 +335,14 @@ class Error(errors.Error):
 
 
 class Registry():
-    """Represents a package registry on disk."""
+    """Represents a package registry on disk.
+
+    :param base_path: Path to the registry
+    :type base_path: str
+    """
 
     def __init__(self, base_path):
-        self.base_path = base_path
+        self._base_path = base_path
 
     def validate(self):
         """Validates a package registry.
@@ -304,12 +352,12 @@ class Registry():
         """
 
         # TODO(CD): implement these checks in pure Python?
-        scripts_dir = os.path.join(self.base_path, 'scripts')
+        scripts_dir = os.path.join(self._base_path, 'scripts')
         validate_script = os.path.join(scripts_dir, '1-validate-packages.sh')
         errors = []
         result = subprocess.call(validate_script)
         if result is not 0:
-            err = Error('Source tree is not valid [{}]'.format(self.base_path))
-            errors.append(err)
+            errors.append(
+                Error('Source tree is not valid [{}]'.format(self._base_path)))
 
         return errors
