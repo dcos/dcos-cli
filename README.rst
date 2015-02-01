@@ -1,6 +1,7 @@
 DCOS Command Line Interface
 ===========================
-The DCOS Command Line Interface is collection of command for managing your DCOS.
+The DCOS Command Line Interface (CLI) is a command line utility supporting several commands to
+provide an user friendly yet powerful way to manage DCOS installations.
 
 Setup
 -----
@@ -43,12 +44,16 @@ Running POC
 Running Tests:
 --------------
 
-#. Run all DCOS CLI tests::
+#. Run all DCOS CLI tests (make sure that you are running Zookeeper, Mesos and Marathon)::
 
     tox
 
 #. List all of the supported test environments::
 
     tox --listenvs
+
+#. Run a specific set of tests::
+
+    tox -e <testenv>
 
 .. _packages: https://packaging.python.org/en/latest/installing.html#installing-requirements
