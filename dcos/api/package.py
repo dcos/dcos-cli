@@ -4,8 +4,11 @@ import os
 import subprocess
 from shutil import copytree, rmtree
 
-import portalocker
 from dcos.api import errors, util
+
+import git
+import portalocker
+from git.exc import GitCommandError
 
 try:
     # Python 2
@@ -254,7 +257,19 @@ class GitSource(Source):
         return self.url
 
     def copy_to_cache(self, target_dir):
-        raise NotImplementedError
+        try:
+            # TODO: add better url parsing
+            # clone git repo into the supplied target_dir
+            git.Repo.clone_from(self.url,
+                                to_path=target_dir,
+                                progress=None,
+                                branch='master')
+            # remove .git directory to save space
+            rmtree(os.path.join(target_dir, ".git"))
+            return None
+        except GitCommandError:
+            return Error("Unable to clone [{}] to [{}]".format(self.url,
+                                                               target_dir))
 
 
 class Error(errors.Error):
