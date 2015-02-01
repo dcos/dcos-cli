@@ -1,4 +1,5 @@
 import hashlib
+import json
 import logging
 import os
 import shutil
@@ -14,6 +15,39 @@ try:
 except ImportError:
     # Python 3
     from urllib.parse import urlparse
+
+
+def resolve_package(package_name, config):
+    """Returns the first package with the supplied name found by looking at
+    the configured sources in the order they are defined.
+
+    :param package_name: The name of the package to resolve
+    :type config: str
+    :param config: Configuration dictionary
+    :type config: config.Toml
+    :returns: The named package, if found
+    :rtype: Package or None
+    """
+
+    for registry in registries(config):
+        package, error = registry.get_package(package_name)
+        if package is not None:
+            return package
+
+    return None
+
+
+def registries(config):
+    """Returns configured cached package registries.
+
+    :param config: Configuration dictionary
+    :type config: config.Toml
+    :returns: The list of registries, in resolution order
+    :rtype: list of Registry
+    """
+
+    sources, errors = list_sources(config)
+    return [Registry(source.local_cache(config)) for source in sources]
 
 
 def list_sources(config):
@@ -186,6 +220,19 @@ class Source:
 
         return hashlib.sha1(self.url.encode('utf-8')).hexdigest()
 
+    def local_cache(self, config):
+        """Returns the file system path to this source's local cache.
+
+        :returns: Path to this source's local cache on disk
+        :rtype: str or None
+        """
+
+        cache_dir = config.get('package.cache')
+        if cache_dir is None:
+            return None
+
+        return os.path.join(cache_dir, self.hash())
+
     def copy_to_cache(self, target_dir):
         """Copies the source content to the supplied local directory.
 
@@ -291,7 +338,7 @@ class Error(errors.Error):
 
 
 class Registry():
-    """Represents a package registry on disk."""
+    """Interface to a package registry on disk."""
 
     def __init__(self, base_path):
         self.base_path = base_path
@@ -313,3 +360,130 @@ class Registry():
             errors.append(err)
 
         return errors
+
+    def get_package(self, package_name):
+        """Returns the named package, if it exists.
+
+        :returns: The requested package
+        :rtype: (Package, Error)
+        """
+
+        if len(package_name) is 0:
+            (None, Error('Package name must not be empty.'))
+
+        # Packages are found in $BASE/repo/package/<first_character>/<pkg_name>
+        first_character = package_name[0]
+
+        package_path = os.path.join(
+            self.base_path,
+            'repo',
+            'packages',
+            first_character,
+            package_name)
+
+        if not os.path.isdir(package_path):
+            return (None, Error("Package [{}] not found".format(package_name)))
+
+        try:
+            return (Package(package_path), None)
+
+        except:
+            error = Error('Could not read package ')
+            return (None, error)
+
+
+class Package():
+    """Interface to a package on disk."""
+
+    def __init__(self, path):
+
+        assert os.path.isdir(path)
+        self.path = path
+
+    def name(self):
+        """Returns the package name.
+
+        :returns: The name of this package
+        :rtype: str
+        """
+
+        return os.path.basename(self.path)
+
+    def command_json(self, version):
+        """Returns the JSON content of the command.json file.
+
+        :returns: Package command data
+        :rtype: dict or Error
+        """
+
+        data = self._data(os.path.join(version, 'command.json'))
+        return json.loads(data)
+
+    def package_json(self, version):
+        """Returns the JSON content of the package.json file.
+
+        :returns: Package data
+        :rtype: dict or Error
+        """
+
+        data = self._data(os.path.join(version, 'package.json'))
+        return json.loads(data)
+
+    def marathon_template(self, version):
+        """Returns the JSON content of the marathon.json file.
+
+        :returns: Package marathon data
+        :rtype: str or Error
+        """
+
+        data = self._data(os.path.join(version, 'marathon.json'))
+        return json.loads(data)
+
+    def _data(self, path):
+        """Returns the content of the supplied file, relative to the base path.
+
+        :returns: File content of the supplied path
+        :rtype: str or Error
+        """
+
+        full_path = os.path.join(self.path, path)
+        if not os.path.isfile(full_path):
+            return Error("Path [{}] is not a file".format(full_path))
+
+        return open(full_path).read()
+
+    def package_versions(self):
+        """Returns all of the available package versions.
+
+        Note that the result does not describe versions of the package, not
+        the software described by the package.
+
+        :returns: Available versions of this package
+        :rtype: list of str
+        """
+
+        return os.listdir(self.path)
+
+    def software_versions(self):
+        """Returns a mapping from the package version to the version of the
+        software described by the package.
+
+        :returns: Map from package versions to versions of the softwre.
+        :rtype: dict
+        """
+
+        raise NotImplementedError
+
+    def latest_version(self):
+        """Returns the latest package version.
+
+        :returns: The latest version of this package
+        :rtype: str
+        """
+
+        pkg_versions = self.package_versions()
+        return pkg_versions[0]
+
+    def __repr__(self):
+
+        return json.dumps(self.package_json(self.latest_version()))
