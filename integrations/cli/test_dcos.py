@@ -5,10 +5,9 @@ from dcos.cli.main import _which
 
 
 def test_help():
-    process = exec_command(['dcos', '--help'])
-    stdout, stderr = process.communicate()
+    returncode, stdout, stderr = exec_command(['dcos', '--help'])
 
-    assert process.returncode == 0
+    assert returncode == 0
     assert stdout == b"""Usage:
     dcos <command> [<args>...]
 
@@ -23,10 +22,9 @@ read about a specific subcommand.
 
 
 def test_version():
-    process = exec_command(['dcos', '--version'])
-    stdout, stderr = process.communicate()
+    returncode, stdout, stderr = exec_command(['dcos', '--version'])
 
-    assert process.returncode == 0
+    assert returncode == 0
     assert stdout == b'dcos version 0.1.0\n'
     assert stderr == b''
 
@@ -37,10 +35,9 @@ def test_missing_dcos_config():
         'DCOS_PATH': os.environ['DCOS_PATH'],
     }
 
-    process = exec_command(['dcos'], env=env)
-    stdout, stderr = process.communicate()
+    returncode, stdout, stderr = exec_command(['dcos'], env=env)
 
-    assert process.returncode == 1
+    assert returncode == 1
     assert stdout == (b"Environment variable 'DCOS_CONFIG' must be set "
                       b"to the DCOS config file.\n")
     assert stderr == b''
@@ -53,10 +50,9 @@ def test_dcos_config_not_a_file():
         'DCOS_CONFIG': 'missing/file',
     }
 
-    process = exec_command(['dcos'], env=env)
-    stdout, stderr = process.communicate()
+    returncode, stdout, stderr = exec_command(['dcos'], env=env)
 
-    assert process.returncode == 1
+    assert returncode == 1
     assert stdout == (b"Environment variable 'DCOS_CONFIG' maps to "
                       b"'missing/file' and it is not a file.\n")
     assert stderr == b''
@@ -68,10 +64,9 @@ def test_missing_dcos_path():
         'DCOS_CONFIG': os.environ['DCOS_CONFIG'],
     }
 
-    process = exec_command(['dcos'], env=env)
-    stdout, stderr = process.communicate()
+    returncode, stdout, stderr = exec_command(['dcos'], env=env)
 
-    assert process.returncode == 1
+    assert returncode == 1
     assert stdout == (b"Environment variable 'DCOS_PATH' not set to the DCOS "
                       b"CLI path.\n")
     assert stderr == b''
@@ -84,10 +79,9 @@ def test_dcos_path_not_a_dir():
         'DCOS_PATH': 'missing/dir',
     }
 
-    process = exec_command(['dcos'], env=env)
-    stdout, stderr = process.communicate()
+    returncode, stdout, stderr = exec_command(['dcos'], env=env)
 
-    assert process.returncode == 1
+    assert returncode == 1
     assert stdout == (b"Environment variable 'DCOS_PATH' maps to "
                       b"'missing/dir' which is not a directory.\n")
     assert stderr == b''
@@ -99,9 +93,8 @@ def test_missing_path():
         'DCOS_PATH': os.environ['DCOS_PATH'],
     }
 
-    process = exec_command([_which('dcos')], env=env)
-    stdout, stderr = process.communicate()
+    returncode, stdout, stderr = exec_command([_which('dcos')], env=env)
 
-    assert process.returncode == 1
+    assert returncode == 1
     assert stdout == b"Environment variable 'PATH' not set.\n"
     assert stderr == b''

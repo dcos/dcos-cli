@@ -1,8 +1,13 @@
 import json
-import urllib
+import logging
 
 import requests
 from dcos.api import errors
+
+try:
+    from urllib import urlencode
+except ImportError:
+    from urllib.parse import urlencode
 
 
 class Client(object):
@@ -38,7 +43,7 @@ class Client(object):
             path=path)
 
         if query_params is not None:
-            query_string = urllib.urlencode(query_params)
+            query_string = urlencode(query_params)
             url = (url + '?{}').format(query_string)
 
         return url
@@ -63,6 +68,11 @@ class Client(object):
         :returns: The error embedded in the response JSON
         :rtype: Error
         """
+
+        message = response.json().get('message')
+        if message is None:
+            logging.error('Missing message from json: %s', response.json())
+            return Error('Unknown error from Marathon')
 
         return Error('Error: {}'.format(response.json()['message']))
 

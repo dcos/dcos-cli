@@ -3,10 +3,9 @@ from common import exec_command
 
 
 def test_help():
-    process = exec_command(['dcos', 'help', '--help'])
-    stdout, stderr = process.communicate()
+    returncode, stdout, stderr = exec_command(['dcos', 'help', '--help'])
 
-    assert process.returncode == 0
+    assert returncode == 0
     assert stdout == b"""Usage:
     dcos help info
     dcos help --all
@@ -20,28 +19,25 @@ Options:
 
 
 def test_info():
-    process = exec_command(['dcos', 'help', 'info'])
-    stdout, stderr = process.communicate()
+    returncode, stdout, stderr = exec_command(['dcos', 'help', 'info'])
 
-    assert process.returncode == 0
+    assert returncode == 0
     assert stdout == b'Display help information about DCOS\n'
     assert stderr == b''
 
 
 def test_version():
-    process = exec_command(['dcos', 'help', '--version'])
-    stdout, stderr = process.communicate()
+    returncode, stdout, stderr = exec_command(['dcos', 'help', '--version'])
 
-    assert process.returncode == 0
+    assert returncode == 0
     assert stdout == b'dcos-help version 0.1.0\n'
     assert stderr == b''
 
 
 def test_list_all():
-    process = exec_command(['dcos', 'help', '--all'])
-    stdout, stderr = process.communicate()
+    returncode, stdout, stderr = exec_command(['dcos', 'help', '--all'])
 
-    assert process.returncode == 0
+    assert returncode == 0
     assert stdout == """Available DCOS command in '{}':
 
 \tconfig         \tGet and set DCOS command line options
