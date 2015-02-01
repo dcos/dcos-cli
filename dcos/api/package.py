@@ -1,14 +1,12 @@
 import hashlib
 import logging
 import os
+import shutil
 import subprocess
-from shutil import copytree, rmtree
-
-from dcos.api import errors, util
 
 import git
 import portalocker
-from git.exc import GitCommandError
+from dcos.api import errors, util
 
 try:
     # Python 2
@@ -155,7 +153,7 @@ def update_sources(config):
                 target_dir = os.path.join(cache_dir, source.hash())
                 try:
                     if os.path.exists(target_dir):
-                        rmtree(target_dir, ignore_errors=False)
+                        shutil.rmtree(target_dir, ignore_errors=False)
                 except OSError:
                     err = Error(
                         'Could not remove directory [{}]'.format(target_dir))
@@ -217,7 +215,7 @@ class FileSource(Source):
         parse_result = urlparse(self.url)
         source_dir = parse_result.path
         try:
-            copytree(source_dir, target_dir)
+            shutil.copytree(source_dir, target_dir)
             return None
         except OSError:
             return Error('Could not copy [{}] to [{}]'.format(source_dir,
@@ -265,9 +263,9 @@ class GitSource(Source):
                                 progress=None,
                                 branch='master')
             # remove .git directory to save space
-            rmtree(os.path.join(target_dir, ".git"))
+            shutil.rmtree(os.path.join(target_dir, ".git"))
             return None
-        except GitCommandError:
+        except git.exc.GitCommandError:
             return Error("Unable to clone [{}] to [{}]".format(self.url,
                                                                target_dir))
 
