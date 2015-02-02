@@ -13,10 +13,15 @@ import os
 import subprocess
 
 import docopt
-from dcos.api import constants, options
+from dcos.api import constants, options, util
 
 
 def main():
+    error = util.configure_logger_from_environ()
+    if error is not None:
+        print(error.error())
+        return 1
+
     args = docopt.docopt(
         __doc__,
         version='dcos-help version {}'.format(constants.version))

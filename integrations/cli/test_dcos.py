@@ -9,11 +9,27 @@ def test_help():
 
     assert returncode == 0
     assert stdout == b"""Usage:
-    dcos <command> [<args>...]
+    dcos [--log-level=<log-level>] <command> [<args>...]
 
 Options:
-    -h, --help           Show this screen
-    --version            Show version
+    -h, --help                  Show this screen
+    --version                   Show version
+    --log-level=<log-level>     If set then print supplementary messages to
+                                stderr at or above this level. The severity
+                                levels in the order of severity are: debug,
+                                info, warning, error, and critical. E.g.
+                                Setting the option to warning will print
+                                warning, error and critical messages to stderr.
+                                Note: that this does not affect the output sent
+                                to stdout by the command.
+
+Environment Variables:
+    DCOS_LOG_LEVEL              If set then it specifies that message should be
+                                printed to stderr at or above this level. See
+                                the --log-level option for details.
+
+    DCOS_CONFIG                 This environment variable points to the
+                                location of the DCOS configuration file.
 
 'dcos help --all' lists available subcommands. See 'dcos <command> --help' to
 read about a specific subcommand.
@@ -97,4 +113,33 @@ def test_missing_path():
 
     assert returncode == 1
     assert stdout == b"Environment variable 'PATH' not set.\n"
+    assert stderr == b''
+
+
+def test_log_level_flag():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', '--log-level=info', 'config', 'info'])
+
+    assert returncode == 0
+    assert stdout == b"Get and set DCOS command line options\n"
+    assert stderr == b''
+
+
+def test_capital_log_level_flag():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', '--log-level=INFO', 'config', 'info'])
+
+    assert returncode == 0
+    assert stdout == b"Get and set DCOS command line options\n"
+    assert stderr == b''
+
+
+def test_invalid_log_level_flag():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', '--log-level=blah', 'config', 'info'])
+
+    assert returncode == 1
+    assert stdout == (b"Log level set to an unknown value 'blah'. Valid "
+                      b"values are ['debug', 'info', 'warning', 'error', "
+                      b"'critical']\n")
     assert stderr == b''

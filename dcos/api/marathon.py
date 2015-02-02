@@ -1,17 +1,14 @@
 import json
-import logging
 
 import requests
-from dcos.api import errors
+from dcos.api import errors, util
 
 try:
     from urllib import urlencode, quote
 except ImportError:
     from urllib.parse import urlencode, quote
 
-
-# Decrease logging verbosity of the http client
-logging.getLogger("requests").setLevel(logging.WARNING)
+logger = util.get_logger(__name__)
 
 
 def create_client(config):
@@ -84,7 +81,9 @@ class Client(object):
 
         message = response.json().get('message')
         if message is None:
-            logging.error('Missing message from json: %s', response.json())
+            logger.error(
+                'Marathon server did not return a message: %s',
+                response.json())
             return Error('Unknown error from Marathon')
 
         return Error('Error: {}'.format(response.json()['message']))

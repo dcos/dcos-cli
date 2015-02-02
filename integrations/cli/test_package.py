@@ -69,11 +69,9 @@ def test_update():
     returncode, stdout, stderr = exec_command(['dcos', 'package', 'update'])
 
     assert returncode == 0
-    assert stderr == b"""Updating source \
-[git://github.com/mesosphere/universe.git]
-"""
     assert stdout.startswith(b'Validating package definitions...')
     assert stdout.endswith(b'OK\n')
+    assert stderr == b''
 
 
 def test_describe_nonexistent():

@@ -2,7 +2,6 @@ import abc
 import collections
 import hashlib
 import json
-import logging
 import os
 import shutil
 import subprocess
@@ -19,6 +18,8 @@ try:
 except ImportError:
     # Python 3
     from urllib.parse import urlparse
+
+logger = util.get_logger(__name__)
 
 
 PACKAGE_NAME_KEY = 'DCOS_PACKAGE_NAME'
@@ -277,7 +278,7 @@ def update_sources(config):
 
         for source in sources:
 
-            logging.info("Updating source [%s]", source)
+            logger.info("Updating source [%s]", source)
 
             # create a temporary staging directory
             with util.tempdir() as tmp_dir:
