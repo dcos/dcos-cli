@@ -5,9 +5,9 @@ import requests
 from dcos.api import errors
 
 try:
-    from urllib import urlencode
+    from urllib import urlencode, quote
 except ImportError:
-    from urllib.parse import urlencode
+    from urllib.parse import urlencode, quote
 
 
 class Client(object):
@@ -59,7 +59,7 @@ class Client(object):
         # Add a leading '/' if necessary.
         if not app_id.startswith('/'):
             app_id = '/' + app_id
-        return app_id
+        return quote(app_id)
 
     def _response_to_error(self, response):
         """
