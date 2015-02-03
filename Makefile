@@ -8,3 +8,6 @@ env:
 
 test:
 	bin/test.sh
+
+doc:
+	bin/doc.sh

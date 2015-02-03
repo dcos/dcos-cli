@@ -52,7 +52,7 @@ def _iterator(parent, dictionary):
     :param dictionary: Value of the key
     :type dictionary: collection.Mapping
     :returns: An iterator of tuples for each property and value
-    :rtype: iter of (str, any) where any can be str, int, double, list
+    :rtype: iterator of (str, any) where any can be str, int, double, list
     """
 
     for key, value in dictionary.items():
@@ -69,14 +69,13 @@ def _iterator(parent, dictionary):
 
 
 class Toml(collections.Mapping):
-    """Class for getting value from TOML."""
+    """Class for getting value from TOML.
+
+    :param dictionary: configuration dictionary
+    :type dictionary: dict
+    """
 
     def __init__(self, dictionary):
-        """
-        :param dictionary: configuration dictionary
-        :type dictionary: dict
-        """
-
         self._dictionary = dictionary
 
     def __getitem__(self, path):
@@ -120,14 +119,13 @@ class Toml(collections.Mapping):
 
 
 class MutableToml(collections.MutableMapping):
-    """Class for managing CLI configuration through TOML."""
+    """Class for managing CLI configuration through TOML.
+
+    :param dictionary: configuration dictionary
+    :type dictionary: dict
+    """
 
     def __init__(self, dictionary):
-        """
-        :param dictionary: configuration dictionary
-        :type dictionary: dict
-        """
-
         self._dictionary = dictionary
 
     def __getitem__(self, path):

@@ -11,17 +11,15 @@ except ImportError:
 
 
 class Client(object):
-    """Class for talking to the Marathon server. """
+    """Class for talking to the Marathon server.
+
+    :param host: Host for the Marathon server.
+    :type host: str
+    :param port: Port for the Marathon server.
+    :type port: int
+    """
 
     def __init__(self, host, port):
-        """Constructs interface for talking Marathon.
-
-        :param host: Host for the Marathon server.
-        :type host: str
-        :param port: Port for the Marathon server.
-        :type port: int
-        """
-
         self._url_pattern = "http://{host}:{port}/{path}"
         self._host = host
         self._port = port
@@ -78,6 +76,7 @@ class Client(object):
 
     def get_app(self, app_id):
         """Returns a representation of the requested application.
+
         :param app_id: The ID of the application.
         :type app_id: str
         :returns: The requested Marathon application
@@ -97,6 +96,7 @@ class Client(object):
 
     def get_apps(self):
         """Get a list of known applications.
+
         :returns: List of known applications.
         :rtype: (list of dict, Error)
         """
@@ -114,7 +114,7 @@ class Client(object):
         """Create and start a new application.
 
         :param app_resource: Application resource
-        :type app_resource: dict, bytes, or file
+        :type app_resource: dict, bytes or file
         :returns: Status of trying to start the application
         :rtype: (bool, Error)
         """
@@ -129,6 +129,7 @@ class Client(object):
 
     def scale_app(self, app_id, instances, force=None):
         """Scales an application to the requested number of instances.
+
         :param app_id: The ID of the application to scale.
         :type app_id: str
         :param instances: The requested number of instances.
@@ -160,6 +161,7 @@ class Client(object):
 
     def suspend_app(self, app_id, force=None):
         """Scales an application to zero instances.
+
         :param app_id: The ID of the application to suspend.
         :type app_id: str
         :param force: Whether to override running deployments.
@@ -172,6 +174,7 @@ class Client(object):
 
     def remove_app(self, app_id, force=None):
         """Completely removes the requested application.
+
         :param app_id: The ID of the application to suspend.
         :type app_id: str
         :param force: Whether to override running deployments.
@@ -199,13 +202,13 @@ class Client(object):
 
 
 class Error(errors.Error):
+    """ Class for describing erros while talking to the Marathon server.
+
+    :param message: Error message
+    :type message: str
+    """
+
     def __init__(self, message):
-        """Constructs error for Marathon calls
-
-        :param message: Error message
-        :type message: str
-        """
-
         self._message = message
 
     def error(self):

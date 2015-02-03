@@ -1,6 +1,7 @@
 dcos.egg-info/
 env/
 tmp/
+pydoc/_build/
 
 .ropeproject/
 .tox/
