@@ -73,7 +73,7 @@ def _info():
     :rtype: int
     """
 
-    print('Install and manage DCOS software packages.')
+    print('Install and manage DCOS software packages')
     return 0
 
 
