@@ -43,7 +43,7 @@ def test_info():
     returncode, stdout, stderr = exec_command(['dcos', 'package', 'info'])
 
     assert returncode == 0
-    assert stdout == b'Install and manage DCOS software packages.\n'
+    assert stdout == b'Install and manage DCOS software packages\n'
     assert stderr == b''
 
 
