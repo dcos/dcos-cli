@@ -15,6 +15,10 @@ Setup
 
     cd dcos-cli
 
+#. Make sure that you have virtual env installed. If not type:
+
+    sudo pip install virtualenv
+
 #. Create a virtualenv for the dcos cli project::
 
     make env
