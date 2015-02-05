@@ -43,7 +43,7 @@ def test_list_all():
 \tconfig         \tGet and set DCOS command line options
 \thelp           \tDisplay help information about DCOS
 \tmarathon       \tDeploy and manage applications on Apache Mesos
-\tpackage        \tInstall and manage DCOS software packages.
+\tpackage        \tInstall and manage DCOS software packages
 \tsubcommand     \tManage external DCOS commands
 
 Get detail command description with 'dcos <command> --help'.
