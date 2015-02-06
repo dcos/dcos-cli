@@ -148,6 +148,11 @@ def _describe(package_name, config):
     # TODO(CD): Make package version to describe configurable
     pkg_json = pkg.package_json(pkg.latest_version())
     print(toml.dumps(pkg_json))
+    print('Available versions:')
+    version_map = pkg.software_versions()
+    for pkg_ver in version_map:
+        print(version_map[pkg_ver])
+
     return 0
 
 

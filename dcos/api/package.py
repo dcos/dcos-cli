@@ -1,4 +1,5 @@
 import abc
+import collections
 import hashlib
 import json
 import logging
@@ -612,7 +613,7 @@ class Package():
             return (None, Error('Unable to open file [{}]'.format(full_path)))
 
     def package_versions(self):
-        """Returns all of the available package versions.
+        """Returns all of the available package versions, most recent first.
 
         Note that the result does not describe versions of the package, not
         the software described by the package.
@@ -621,7 +622,9 @@ class Package():
         :rtype: list of str
         """
 
-        return [f for f in os.listdir(self.path) if not f.startswith('.')]
+        vs = [f for f in os.listdir(self.path) if not f.startswith('.')]
+        vs.reverse()
+        return vs
 
     def software_versions(self):
         """Returns a mapping from the package version to the version of the
@@ -631,17 +634,25 @@ class Package():
         :rtype: dict
         """
 
-        raise NotImplementedError
+        software_package_map = collections.OrderedDict()
+        for v in self.package_versions():
+            software_package_map[v] = self.package_json(v)['version']
+        return software_package_map
 
     def latest_version(self):
         """Returns the latest package version.
 
         :returns: The latest version of this package
-        :rtype: str
+        :rtype: str or Error
         """
 
         pkg_versions = self.package_versions()
-        return pkg_versions[0]  # TODO(CD): this better!
+        if len(pkg_versions) is 0:
+            return Error(
+                'No versions found for package [{}]'.format(self.name()))
+
+        pkg_versions.sort()
+        return pkg_versions[-1]
 
     def __repr__(self):
 
