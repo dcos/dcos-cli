@@ -44,7 +44,7 @@ def install(pkg, version, init_client, user_options, cfg):
     if user_options is None:
         user_options = {}
 
-    default_options = extract_default_values(pkg.config_json(version))
+    default_options = _extract_default_values(pkg.config_json(version))
 
     # Merge option overrides
     options = dict(list(default_options.items()) + list(user_options.items()))
@@ -96,9 +96,13 @@ def list_installed_packages(init_client):
     return (pkgs, None)
 
 
-def extract_default_values(config_schema):
-    # TODO(CD): Implement!
-    return {}
+def _extract_default_values(config_schema):
+
+    properties = config_schema['properties']
+    defaults = [(p, properties[p]['default'])
+                for p in properties
+                if 'default' in properties[p]]
+    return dict(defaults)
 
 
 def resolve_package(package_name, config):
