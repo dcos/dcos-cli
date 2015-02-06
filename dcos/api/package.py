@@ -25,7 +25,18 @@ PACKAGE_VERSION_KEY = 'DCOS_PACKAGE_VERSION'
 
 
 def install(pkg, version, init_client, user_options, cfg):
-    """
+    """Installs a package.
+
+    :param pkg: The package to install
+    :type pkg: Package
+    :param version: The package version to install
+    :type version: str
+    :param init_client: The program to use to run the package
+    :type init_client: object
+    :param user_options: Package parameters
+    :type user_options: dict
+    :param cfg: Configuration dictionary
+    :type cfg: config.Toml
     :rtype: Error
     """
 
@@ -66,6 +77,8 @@ def install(pkg, version, init_client, user_options, cfg):
 
 def list_installed_packages(init_client):
     """
+    :param init_client: The program to use to list packages
+    :type init_client: object
     :rtype: ((str, str), Error)
     """
 
@@ -519,7 +532,7 @@ class Registry():
             return (Package(package_path), None)
 
         except:
-            error = Error('Could not read package ')
+            error = Error('Could not read package [{}]'.format(package_name))
             return (None, error)
 
 
