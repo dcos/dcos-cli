@@ -91,7 +91,7 @@ def _list_sources(config):
     """List configured package sources.
 
     :param config: Configuration dictionary
-    :type config: config.Toml
+    :type config: dcos.api.config.Toml
     :returns: Process status
     :rtype: int
     """
@@ -113,7 +113,7 @@ def _update(config):
     """Update local package definitions from sources.
 
     :param config: Configuration dictionary
-    :type config: config.Toml
+    :type config: dcos.api.config.Toml
     :returns: Process status
     :rtype: int
     """
@@ -134,7 +134,7 @@ def _describe(package_name, config):
     :param package_name: The package to configure
     :type package_name: str
     :param config: The config object
-    :type config: config.Toml
+    :type config: dcos.api.config.Toml
     :returns: Process status
     :rtype: int
     """
@@ -164,7 +164,7 @@ def _install(package_name, options_file, config):
     :param options_file: Path to file containing option values
     :type options_file: str
     :param cfg: The config object to modify
-    :type cfg: config.Toml
+    :type cfg: dcos.api.config.Toml
     :returns: Process status
     :rtype: int
     """
@@ -207,7 +207,7 @@ def _list(config):
     """Describe the specified package.
 
     :param config: The config object
-    :type config: config.Toml
+    :type config: dcos.api.config.Toml
     :returns: Process status
     :rtype: int
     """

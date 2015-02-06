@@ -37,7 +37,7 @@ def install(pkg, version, init_client, user_options, cfg):
     :param user_options: Package parameters
     :type user_options: dict
     :param cfg: Configuration dictionary
-    :type cfg: config.Toml
+    :type cfg: dcos.api.config.Toml
     :rtype: Error
     """
 
@@ -108,7 +108,7 @@ def resolve_package(package_name, config):
     :param package_name: The name of the package to resolve
     :type config: str
     :param config: Configuration dictionary
-    :type config: config.Toml
+    :type config: dcos.api.config.Toml
     :returns: The named package, if found
     :rtype: Package or None
     """
@@ -125,7 +125,7 @@ def registries(config):
     """Returns configured cached package registries.
 
     :param config: Configuration dictionary
-    :type config: config.Toml
+    :type config: dcos.api.config.Toml
     :returns: The list of registries, in resolution order
     :rtype: list of Registry
     """
