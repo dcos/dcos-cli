@@ -148,22 +148,22 @@ def _describe(package_name, config):
     # TODO(CD): Make package version to describe configurable
     pkg_version, version_error = pkg.latest_version()
     if version_error is not None:
-        print(error.error())
+        print(version_error.error())
         return 1
 
-    pkg_json, error = pkg.package_json(pkg_version)
+    pkg_json, pkg_error = pkg.package_json(pkg_version)
 
-    if error is not None:
-        print(error.error())
+    if pkg_error is not None:
+        print(pkg_error.error())
         return 1
 
     print(toml.dumps(pkg_json))
     print('Available versions:')
 
-    version_map, error = pkg.software_versions()
+    version_map, version_error = pkg.software_versions()
 
-    if error is not None:
-        print(error.error())
+    if version_error is not None:
+        print(version_error.error())
         return 1
 
     for pkg_ver in version_map:
