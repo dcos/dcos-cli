@@ -44,23 +44,38 @@ def install(pkg, version, init_client, user_options, cfg):
     if user_options is None:
         user_options = {}
 
-    default_options = _extract_default_values(pkg.config_json(version))
+    config_schema, schema_error = pkg.config_json(version)
+
+    if schema_error is not None:
+        return schema_error
+
+    default_options, default_error = _extract_default_values(config_schema)
+
+    if default_error is not None:
+        return default_error
 
     # Merge option overrides
     options = dict(list(default_options.items()) + list(user_options.items()))
 
     # Validate options with the config schema
     try:
-        jsonschema.validate(options, pkg.config_json(version))
+        jsonschema.validate(options, config_schema)
     except jsonschema.ValidationError as ve:
         return Error(ve.message)
 
     # Insert option parameters into the init template
-    init_template = pkg.marathon_template(version)
+    init_template, tmpl_error = pkg.marathon_template(version)
+
+    if tmpl_error is not None:
+        return tmpl_error
+
     init_desc = json.loads(pystache.render(init_template, options))
 
     # Add package metadata
-    metadata = pkg.package_json(version)
+    metadata, meta_error = pkg.package_json(version)
+
+    if meta_error is not None:
+        return meta_error
 
     init_desc['labels'] = {
         PACKAGE_NAME_KEY: metadata['name'],
@@ -97,12 +112,22 @@ def list_installed_packages(init_client):
 
 
 def _extract_default_values(config_schema):
+    """
+    :param config_schema: A json-schema describing configuration options.
+    :type config_schema: (dict, Error)
+    """
 
-    properties = config_schema['properties']
+    properties = config_schema.get('properties')
+    schema_type = config_schema.get('type')
+
+    if schema_type != 'object' or properties is None:
+        return ({}, None)
+
     defaults = [(p, properties[p]['default'])
                 for p in properties
                 if 'default' in properties[p]]
-    return dict(defaults)
+
+    return (dict(defaults), None)
 
 
 def resolve_package(package_name, config):
@@ -110,7 +135,7 @@ def resolve_package(package_name, config):
     the configured sources in the order they are defined.
 
     :param package_name: The name of the package to resolve
-    :type config: str
+    :type package_name: str
     :param config: Configuration dictionary
     :type config: dcos.api.config.Toml
     :returns: The named package, if found
@@ -313,6 +338,8 @@ class Source:
     def local_cache(self, config):
         """Returns the file system path to this source's local cache.
 
+        :param config: Configuration dictionary
+        :type config: dcos.api.config.Toml
         :returns: Path to this source's local cache on disk
         :rtype: str or None
         """
@@ -513,6 +540,8 @@ class Registry():
     def get_package(self, package_name):
         """Returns the named package, if it exists.
 
+        :param package_name: The name of the package to fetch
+        :type package_name: str
         :returns: The requested package
         :rtype: (Package, Error)
         """
@@ -542,7 +571,11 @@ class Registry():
 
 
 class Package():
-    """Interface to a package on disk."""
+    """Interface to a package on disk.
+
+    :param path: Path to the package description on disk
+    :type path: str
+    """
 
     def __init__(self, path):
 
@@ -562,31 +595,28 @@ class Package():
         """Returns the JSON content of the command.json file.
 
         :returns: Package command data
-        :rtype: dict or Error
+        :rtype: (dict, Error)
         """
 
-        data, error = self._data(os.path.join(version, 'command.json'))
-        return json.loads(data)
+        return self._json(os.path.join(version, 'command.json'))
 
     def config_json(self, version):
         """Returns the JSON content of the config.json file.
 
         :returns: Package config schema
-        :rtype: dict or Error
+        :rtype: (dict, Error)
         """
 
-        data, error = self._data(os.path.join(version, 'config.json'))
-        return json.loads(data)
+        return self._json(os.path.join(version, 'config.json'))
 
     def package_json(self, version):
         """Returns the JSON content of the package.json file.
 
         :returns: Package data
-        :rtype: dict or Error
+        :rtype: (dict, Error)
         """
 
-        data, error = self._data(os.path.join(version, 'package.json'))
-        return json.loads(data)
+        return self._json(os.path.join(version, 'package.json'))
 
     def marathon_template(self, version):
         """Returns the JSON content of the marathon.json file.
@@ -595,12 +625,34 @@ class Package():
         :rtype: str or Error
         """
 
-        data, error = self._data(os.path.join(version, 'marathon.json'))
-        return data
+        return self._data(os.path.join(version, 'marathon.json'))
+
+    def _json(self, path):
+        """Returns the json content of the supplied file, relative to the
+        base path.
+
+        :param path: The relative path to the file to read
+        :type path: str
+        :rtype: (dict, Error)
+        """
+
+        data, error = self._data(path)
+
+        if error is not None:
+            return (None, error)
+
+        try:
+            result = json.loads(data)
+        except ValueError:
+            return (None, Error(''))
+
+        return (result, None)
 
     def _data(self, path):
         """Returns the content of the supplied file, relative to the base path.
 
+        :param path: The relative path to the file to read
+        :type path: str
         :returns: File content of the supplied path
         :rtype: (str, Error)
         """
@@ -635,29 +687,42 @@ class Package():
         software described by the package.
 
         :returns: Map from package versions to versions of the softwre.
-        :rtype: dict
+        :rtype: (dict, Error)
         """
 
         software_package_map = collections.OrderedDict()
         for v in self.package_versions():
-            software_package_map[v] = self.package_json(v)['version']
-        return software_package_map
+            pkg_json, error = self.package_json(v)
+            if error is not None:
+                return (None, error)
+            software_package_map[v] = pkg_json['version']
+        return (software_package_map, None)
 
     def latest_version(self):
         """Returns the latest package version.
 
         :returns: The latest version of this package
-        :rtype: str or Error
+        :rtype: (str, Error)
         """
 
         pkg_versions = self.package_versions()
+
         if len(pkg_versions) is 0:
-            return Error(
-                'No versions found for package [{}]'.format(self.name()))
+            return (None, Error(
+                'No versions found for package [{}]'.format(self.name())))
 
         pkg_versions.sort()
-        return pkg_versions[-1]
+        return (pkg_versions[-1], None)
 
     def __repr__(self):
 
-        return json.dumps(self.package_json(self.latest_version()))
+        v, error = self.latest_version()
+        if error is not None:
+            return error.error()
+
+        pkg_json, error = self.package_json(v)
+
+        if error is not None:
+            return error.error()
+
+        return json.dumps(pkg_json)

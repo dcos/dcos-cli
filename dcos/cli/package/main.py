@@ -146,10 +146,26 @@ def _describe(package_name, config):
         return 1
 
     # TODO(CD): Make package version to describe configurable
-    pkg_json = pkg.package_json(pkg.latest_version())
+    pkg_version, version_error = pkg.latest_version()
+    if version_error is not None:
+        print(error.error())
+        return 1
+
+    pkg_json, error = pkg.package_json(pkg_version)
+
+    if error is not None:
+        print(error.error())
+        return 1
+
     print(toml.dumps(pkg_json))
     print('Available versions:')
-    version_map = pkg.software_versions()
+
+    version_map, error = pkg.software_versions()
+
+    if error is not None:
+        print(error.error())
+        return 1
+
     for pkg_ver in version_map:
         print(version_map[pkg_ver])
 
@@ -188,7 +204,12 @@ def _install(package_name, options_file, config):
     init_client = marathon.create_client(config)
 
     # TODO(CD): Make package version to install configurable
-    pkg_version = pkg.latest_version()
+    pkg_version, version_error = pkg.latest_version()
+
+    if version_error is not None:
+        print(version_error.error())
+        return 1
+
     install_error = package.install(
         pkg,
         pkg_version,

@@ -25,6 +25,13 @@ def tempdir():
 
 
 def which(program):
+    """Returns the path to the named executable program.
+
+    :param program: The program to locate:
+    :type program: str
+    :rtype: str or Error
+    """
+
     def is_exe(file_path):
         return os.path.isfile(file_path) and os.access(file_path, os.X_OK)
 
