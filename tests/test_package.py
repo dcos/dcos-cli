@@ -27,4 +27,7 @@ def test_extract_default_values():
 
     expected = {'foo.baz': 4}
 
-    assert package._extract_default_values(config_schema) == expected
+    result, error = package._extract_default_values(config_schema)
+
+    assert error is None
+    assert result == expected
