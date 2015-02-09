@@ -1,6 +1,9 @@
 import contextlib
+import os
 import shutil
 import tempfile
+
+from dcos.api import constants
 
 
 @contextlib.contextmanager
@@ -19,3 +22,28 @@ def tempdir():
         yield tmpdir
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+def which(program):
+    """Returns the path to the named executable program.
+
+    :param program: The program to locate:
+    :type program: str
+    :rtype: str or Error
+    """
+
+    def is_exe(file_path):
+        return os.path.isfile(file_path) and os.access(file_path, os.X_OK)
+
+    file_path, filename = os.path.split(program)
+    if file_path:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ[constants.PATH_ENV].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None

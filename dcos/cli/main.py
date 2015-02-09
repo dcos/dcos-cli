@@ -15,7 +15,7 @@ import os
 import subprocess
 
 import docopt
-from dcos.api import constants
+from dcos.api import constants, util
 
 
 def main():
@@ -27,7 +27,7 @@ def main():
         version='dcos version {}'.format(constants.version),
         options_first=True)
 
-    command = _which(
+    command = util.which(
         '{}{}'.format(constants.DCOS_COMMAND_PREFIX, args['<command>']))
     if command is not None:
         argv = [args['<command>']] + args['<args>']
@@ -37,24 +37,6 @@ def main():
             "{!r} is not a dcos command. See 'dcos --help'.".format(
                 args['<command>']))
         return 1
-
-
-def _which(program):
-    def is_exe(file_path):
-        return os.path.isfile(file_path) and os.access(file_path, os.X_OK)
-
-    file_path, filename = os.path.split(program)
-    if file_path:
-        if is_exe(program):
-            return program
-    else:
-        for path in os.environ[constants.PATH_ENV].split(os.pathsep):
-            path = path.strip('"')
-            exe_file = os.path.join(path, program)
-            if is_exe(exe_file):
-                return exe_file
-
-    return None
 
 
 def _is_valid_configuration():

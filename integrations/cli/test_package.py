@@ -6,9 +6,9 @@ def test_package():
 
     assert returncode == 0
     assert stdout == b"""Usage:
-    dcos package configure <package_name>
+    dcos package describe <package_name>
     dcos package info
-    dcos package install <package_name>
+    dcos package install [--options=<options_file>] <package_name>
     dcos package list
     dcos package search <query>
     dcos package sources
@@ -62,4 +62,63 @@ def test_sources_list():
     assert stdout == b"""c3f1a0df1d2068e6b11d40224f5e500d3183a97e \
 git://github.com/mesosphere/universe.git
 """
+    assert stderr == b''
+
+
+def test_update():
+    returncode, stdout, stderr = exec_command(['dcos', 'package', 'update'])
+
+    assert returncode == 0
+    assert stderr == b"""Updating source \
+[git://github.com/mesosphere/universe.git]
+"""
+    assert stdout.startswith(b'Validating package definitions...')
+    assert stdout.endswith(b'OK\n')
+
+
+def test_describe_nonexistent():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'describe', 'xyzzy'])
+
+    assert returncode == 1
+    assert stdout == b'Package [xyzzy] not found\n'
+    assert stderr == b''
+
+
+def test_describe():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'describe', 'mesos-dns'])
+
+    assert returncode == 0
+    assert b'description = "DNS-based service discovery for Mesos."' in stdout
+    assert stderr == b''
+
+
+def test_install():
+    returncode, stdout, stderr = exec_command(
+        ['dcos',
+            'package',
+            'install',
+            'mesos-dns',
+            '--options=tests/data/package/mesos-dns-config.json'])
+
+    assert returncode == 0
+    assert stdout == b''
+    assert stderr == b''
+
+
+def test_list():
+    returncode, stdout, stderr = exec_command(['dcos', 'package', 'list'])
+
+    assert returncode == 0
+    assert stdout == b'mesos-dns [alpha]\n'
+    assert stderr == b''
+
+
+def test_cleanup():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'marathon', 'remove', 'mesos-dns'])
+
+    assert returncode == 0
+    assert stdout == b''
     assert stderr == b''

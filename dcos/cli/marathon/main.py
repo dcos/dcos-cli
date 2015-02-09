@@ -69,17 +69,6 @@ def _info():
     return 0
 
 
-def _create_client(config):
-    """Creates a Marathon client with the supplied configuration.
-
-    :param config: Configuration dictionary
-    :type config: config.Toml
-    :returns: Marathon client
-    :rtype: dcos.api.marathon.Client
-    """
-    return marathon.Client(config['marathon.host'], config['marathon.port'])
-
-
 def _list(config):
     """Lists known Marathon applications.
 
@@ -88,7 +77,7 @@ def _list(config):
     :returns: Process status
     :rtype: int
     """
-    client = _create_client(config)
+    client = marathon.create_client(config)
 
     apps, err = client.get_apps()
     if err is not None:
@@ -116,7 +105,7 @@ def _describe(app_id, is_json, config):
     :returns: Process status
     :rtype: int
     """
-    client = _create_client(config)
+    client = marathon.create_client(config)
 
     app, err = client.get_app(app_id)
     if err is not None:
@@ -141,7 +130,7 @@ def _start(app_resource_path, config):
     :returns: Process status
     :rtype: int
     """
-    client = _create_client(config)
+    client = marathon.create_client(config)
 
     with open(app_resource_path) as app_resource_file:
         success, err = client.start_app(app_resource_file)
@@ -166,7 +155,7 @@ def _scale(app_id, instances, force, config):
     :returns: Process status
     :rtype: int
     """
-    client = _create_client(config)
+    client = marathon.create_client(config)
 
     deployment, err = client.scale_app(app_id, instances, force)
     if err is not None:
@@ -190,7 +179,7 @@ def _suspend(app_id, force, config):
     :returns: Process status
     :rtype: int
     """
-    client = _create_client(config)
+    client = marathon.create_client(config)
 
     deployment, err = client.suspend_app(app_id, force)
     if err is not None:
@@ -214,7 +203,7 @@ def _remove(app_id, force, config):
     :returns: Process status
     :rtype: int
     """
-    client = _create_client(config)
+    client = marathon.create_client(config)
 
     success, err = client.remove_app(app_id, force)
     if err is not None:

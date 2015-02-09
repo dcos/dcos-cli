@@ -3,6 +3,11 @@ DCOS Command Line Interface
 The DCOS Command Line Interface (CLI) is a command line utility supporting several commands to
 provide an user friendly yet powerful way to manage DCOS installations.
 
+Dependencies
+------------
+
+#. Git
+
 Setup
 -----
 

@@ -1,0 +1,5 @@
+{
+  "mesos-dns/host": "",
+  "mesos-dns/config-url": "http://localhost/cfg"
+}
+

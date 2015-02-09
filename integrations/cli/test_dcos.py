@@ -1,7 +1,7 @@
 import os
 
 from common import exec_command
-from dcos.cli.main import _which
+from dcos.api import util
 
 
 def test_help():
@@ -93,7 +93,7 @@ def test_missing_path():
         'DCOS_PATH': os.environ['DCOS_PATH'],
     }
 
-    returncode, stdout, stderr = exec_command([_which('dcos')], env=env)
+    returncode, stdout, stderr = exec_command([util.which('dcos')], env=env)
 
     assert returncode == 1
     assert stdout == b"Environment variable 'PATH' not set.\n"

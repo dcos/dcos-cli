@@ -10,6 +10,21 @@ except ImportError:
     from urllib.parse import urlencode, quote
 
 
+# Decrease logging verbosity of the http client
+logging.getLogger("requests").setLevel(logging.WARNING)
+
+
+def create_client(config):
+    """Creates a Marathon client with the supplied configuration.
+
+    :param config: Configuration dictionary
+    :type config: config.Toml
+    :returns: Marathon client
+    :rtype: dcos.api.marathon.Client
+    """
+    return Client(config['marathon.host'], config['marathon.port'])
+
+
 class Client(object):
     """Class for talking to the Marathon server.
 
@@ -120,7 +135,14 @@ class Client(object):
         """
 
         url = self._create_url('v2/apps')
-        response = requests.post(url, data=app_resource)
+
+        app_json = app_resource
+
+        # The file type exists only in Python 2, preventing type(...) is file.
+        if hasattr(app_resource, 'read'):
+            app_json = json.load(app_resource)
+
+        response = requests.post(url, json=app_json)
 
         if response.status_code == 201:
             return (True, None)

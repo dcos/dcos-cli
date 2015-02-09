@@ -1,5 +1,15 @@
 #!/bin/bash
 
+# Install Git (TODO(CD): Remove this, for testing only)
+apt-get -y install git
+
+# Install the latest Marathon
+apt-get -y update
+apt-get -y install marathon
+
+# List installed versions of external systems
+dpkg -l marathon mesos zookeeper | grep '^ii'
+
 # Start zookeeper
 /usr/share/zookeeper/bin/zkServer.sh start
 

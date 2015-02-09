@@ -1,4 +1,6 @@
+build/
 dcos.egg-info/
+dist/
 env/
 tmp/
 pydoc/_build/
