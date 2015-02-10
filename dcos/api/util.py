@@ -1,4 +1,5 @@
 import contextlib
+import json
 import logging
 import os
 import shutil
@@ -96,3 +97,24 @@ def get_logger(name):
     """
 
     return logging.getLogger(name)
+
+
+def load_jsons(value):
+    """Deserialize a string to a python object
+
+    :param value: The JSON string
+    :type value: str
+    :returns: The deserealized JSON object
+    :type: (any, Error) where any is one of dict, list, str, int, float or bool
+    """
+
+    try:
+        return (json.loads(value), None)
+    except:
+        error = sys.exc_info()[0]
+        logger = get_logger(__name__)
+        logger.error(
+            'Unhandled exception while loading JSON: %r -- %r',
+            value,
+            error)
+        return (None, errors.DefaultError('Error loading JSON.'))

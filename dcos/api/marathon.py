@@ -124,29 +124,30 @@ class Client(object):
         else:
             return (None, self._response_to_error(response))
 
-    def start_app(self, app_resource):
-        """Create and start a new application.
+    def add_app(self, app_resource):
+        """Add a new application.
 
         :param app_resource: Application resource
         :type app_resource: dict, bytes or file
         :returns: Status of trying to start the application
-        :rtype: (bool, Error)
+        :rtype: Error
         """
 
         url = self._create_url('v2/apps')
 
-        app_json = app_resource
-
         # The file type exists only in Python 2, preventing type(...) is file.
         if hasattr(app_resource, 'read'):
             app_json = json.load(app_resource)
+        else:
+            app_json = app_resource
 
+        logger.info("Posting %r to %r", app_json, url)
         response = requests.post(url, json=app_json)
 
         if response.status_code == 201:
-            return (True, None)
+            return None
         else:
-            return (None, self._response_to_error(response))
+            return self._response_to_error(response)
 
     def scale_app(self, app_id, instances, force=None):
         """Scales an application to the requested number of instances.
@@ -200,8 +201,8 @@ class Client(object):
         :type app_id: str
         :param force: Whether to override running deployments.
         :type force: bool
-        :returns: Status of trying to remove the application.
-        :rtype: (bool, Error)
+        :returns: Error if it failed to remove the app; None otherwise.
+        :rtype: Error
         """
 
         if force is None:
@@ -217,9 +218,9 @@ class Client(object):
         response = requests.delete(url)
 
         if response.status_code == 200:
-            return (True, None)
+            return None
         else:
-            return (None, self._response_to_error(response))
+            return self._response_to_error(response)
 
 
 class Error(errors.Error):

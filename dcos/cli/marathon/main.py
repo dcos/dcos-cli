@@ -138,7 +138,7 @@ def _start(app_resource_path, config):
     client = marathon.create_client(config)
 
     with open(app_resource_path) as app_resource_file:
-        success, err = client.start_app(app_resource_file)
+        err = client.add_app(app_resource_file)
         if err is not None:
             print(err.error())
             return 1
@@ -210,7 +210,7 @@ def _remove(app_id, force, config):
     """
     client = marathon.create_client(config)
 
-    success, err = client.remove_app(app_id, force)
+    err = client.remove_app(app_id, force)
     if err is not None:
         print(err.error())
         return 1

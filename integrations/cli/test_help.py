@@ -40,6 +40,7 @@ def test_list_all():
     assert returncode == 0
     assert stdout == """Available DCOS command in '{}':
 
+\tapp            \tDeploy and manage applications on Apache Mesos
 \tconfig         \tGet and set DCOS command line options
 \thelp           \tDisplay help information about DCOS
 \tmarathon       \tDeploy and manage applications on Apache Mesos
