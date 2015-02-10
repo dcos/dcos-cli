@@ -1,10 +1,12 @@
 #!/bin/bash
 
+# Need to first update the local repo before installing anything
+apt-get -y update
+
 # Install Git (TODO(CD): Remove this, for testing only)
 apt-get -y install git
 
 # Install the latest Marathon
-apt-get -y update
 apt-get -y install marathon
 
 # List installed versions of external systems
