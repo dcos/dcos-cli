@@ -6,7 +6,8 @@ provide an user friendly yet powerful way to manage DCOS installations.
 Dependencies
 ------------
 
-#. Git
+#. git_ must be installed and on the system path in order to fetch
+   packages from `git` sources.
 
 Setup
 -----
@@ -66,3 +67,4 @@ Running Tests:
     tox -e <testenv>
 
 .. _packages: https://packaging.python.org/en/latest/installing.html#installing-requirements
+.. _git: http://git-scm.com
