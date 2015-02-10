@@ -1,10 +1,26 @@
 """
 Usage:
-    dcos <command> [<args>...]
+    dcos [--log-level=<log-level>] <command> [<args>...]
 
 Options:
-    -h, --help           Show this screen
-    --version            Show version
+    -h, --help                  Show this screen
+    --version                   Show version
+    --log-level=<log-level>     If set then print supplementary messages to
+                                stderr at or above this level. The severity
+                                levels in the order of severity are: debug,
+                                info, warning, error, and critical. E.g.
+                                Setting the option to warning will print
+                                warning, error and critical messages to stderr.
+                                Note: that this does not affect the output sent
+                                to stdout by the command.
+
+Environment Variables:
+    DCOS_LOG_LEVEL              If set then it specifies that message should be
+                                printed to stderr at or above this level. See
+                                the --log-level option for details.
+
+    DCOS_CONFIG                 This environment variable points to the
+                                location of the DCOS configuration file.
 
 'dcos help --all' lists available subcommands. See 'dcos <command> --help' to
 read about a specific subcommand.
@@ -27,6 +43,14 @@ def main():
         version='dcos version {}'.format(constants.version),
         options_first=True)
 
+    if not _config_log_level_environ(args['--log-level']):
+        return 1
+
+    error = util.configure_logger_from_environ()
+    if error is not None:
+        print(error.error())
+        return 1
+
     command = util.which(
         '{}{}'.format(constants.DCOS_COMMAND_PREFIX, args['<command>']))
     if command is not None:
@@ -39,10 +63,33 @@ def main():
         return 1
 
 
+def _config_log_level_environ(log_level):
+    """
+    :param log_level: Log level to set
+    :type log_level: str
+    :returns: True if the log level was configured correctly; False otherwise.
+    :rtype: bool
+    """
+
+    if log_level is None:
+        os.environ.pop(constants.DCOS_LOG_LEVEL_ENV, None)
+        return True
+
+    log_level = log_level.lower()
+    if log_level in constants.VALID_LOG_LEVEL_VALUES:
+        os.environ[constants.DCOS_LOG_LEVEL_ENV] = log_level
+        return True
+
+    msg = 'Log level set to an unknown value {!r}. Valid values are {!r}'
+    print(msg.format(log_level, constants.VALID_LOG_LEVEL_VALUES))
+
+    return False
+
+
 def _is_valid_configuration():
     """Validates running environment
 
-    :returns: True if the environment is configure correctly, False otherwise.
+    :returns: True if the environment is configure correctly; False otherwise.
     :rtype: bool
     """
 

@@ -1,9 +1,11 @@
 import contextlib
+import logging
 import os
 import shutil
+import sys
 import tempfile
 
-from dcos.api import constants
+from dcos.api import constants, errors
 
 
 @contextlib.contextmanager
@@ -47,3 +49,50 @@ def which(program):
                 return exe_file
 
     return None
+
+
+def configure_logger_from_environ():
+    """Configure the program's logger using the environment variable
+
+    :returns: An Error if we were unable to configure logging from the
+              environment; None otherwise
+    :rtype: dcos.api.errors.DefaultError
+    """
+
+    return configure_logger(os.environ.get(constants.DCOS_LOG_LEVEL_ENV))
+
+
+def configure_logger(log_level):
+    """Configure the program's logger.
+
+    :param log_level: Log level for configuring logging
+    :type log_level: str
+    :returns: An Error if we were unable to configure logging; None otherwise
+    :rtype: dcos.api.errors.DefaultError
+    """
+    if log_level is None:
+        logging.disable(logging.CRITICAL)
+        return None
+
+    if log_level in constants.VALID_LOG_LEVEL_VALUES:
+        logging.basicConfig(
+            format='%(message)s',
+            stream=sys.stderr,
+            level=log_level.upper())
+        return None
+
+    msg = 'Log level set to an unknown value {!r}. Valid values are {!r}'
+    return errors.DefaultError(
+        msg.format(log_level, constants.VALID_LOG_LEVEL_VALUES))
+
+
+def get_logger(name):
+    """Get a logger
+
+    :param name: The name of the logger. E.g. __name__
+    :type name: str
+    :returns: The logger for the specified name
+    :rtype: logging.Logger
+    """
+
+    return logging.getLogger(name)

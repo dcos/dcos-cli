@@ -13,3 +13,17 @@ class Error(object):
         """
 
         raise NotImplementedError
+
+
+class DefaultError(Error):
+    """Construct a basic Error class based on a string
+
+    :param message: String to use for the error message
+    :param type: str
+    """
+
+    def __init__(self, message):
+        self._message = message
+
+    def error(self):
+        return self._message

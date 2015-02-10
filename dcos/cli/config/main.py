@@ -16,10 +16,15 @@ import os
 
 import docopt
 import toml
-from dcos.api import config, constants, options
+from dcos.api import config, constants, options, util
 
 
 def main():
+    error = util.configure_logger_from_environ()
+    if error is not None:
+        print(error.error())
+        return 1
+
     config_path = os.environ[constants.DCOS_CONFIG_ENV]
     args = docopt.docopt(
         __doc__,
