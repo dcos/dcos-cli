@@ -15,6 +15,8 @@ def exec_command(cmd, env=None, stdin=None):
     :rtype: (int, bytes, bytes)
     """
 
+    logging.error('CMD: %r', cmd)
+
     process = subprocess.Popen(
         cmd,
         stdin=stdin,

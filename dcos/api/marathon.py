@@ -66,10 +66,7 @@ class Client(object):
         :rtype: str
         """
 
-        # Add a leading '/' if necessary.
-        if not app_id.startswith('/'):
-            app_id = '/' + app_id
-        return quote(app_id)
+        return quote(app_id.strip('/'))
 
     def _response_to_error(self, response):
         """
@@ -88,23 +85,66 @@ class Client(object):
 
         return Error('Error: {}'.format(response.json()['message']))
 
-    def get_app(self, app_id):
+    def get_app(self, app_id, version=None):
         """Returns a representation of the requested application.
 
-        :param app_id: The ID of the application.
+        :param app_id: The ID of the application
         :type app_id: str
+        :param version: Application version as a ISO8601 datetime
+        :type version: str
         :returns: The requested Marathon application
         :rtype: (dict, Error)
         """
 
         app_id = self._sanitize_app_id(app_id)
+        if version is None:
+            url = self._create_url('/'.join(['v2', 'apps', app_id]))
+        else:
+            url = self._create_url(
+                '/'.join(['v2', 'apps', app_id, 'versions', version]))
 
-        url = self._create_url('v2/apps' + app_id)
+        logger.info('Getting %r', url)
+
         response = requests.get(url)
 
+        logger.info('Got (%r): %r', response.status_code, response.json())
+
         if response.status_code == 200:
-            app = response.json()['app']
-            return (app, None)
+            # Looks like Marathon return different JSON for versions
+            if version is None:
+                return (response.json()['app'], None)
+            else:
+                return (response.json(), None)
+        else:
+            return (None, self._response_to_error(response))
+
+    def get_app_versions(self, app_id, max_count=None):
+        """Asks Marathon for all the versions of the Application up to a
+        maximum count.
+
+        :param app_id: The ID of the application
+        :type app_id: str
+        :param max_count: The maximum number of version to fetch
+        :type max_count: int
+        :returns: A list of all the version of the application
+        :rtype: (list of str, Error)
+        """
+
+        app_id = self._sanitize_app_id(app_id)
+
+        url = self._create_url('v2/apps/{}/versions'.format(app_id))
+
+        logger.info('Getting %r', url)
+
+        response = requests.get(url)
+
+        logger.info('Got (%r): %r', response.status_code, response.json())
+
+        if response.status_code == 200:
+            if max_count is None:
+                return (response.json()['versions'], None)
+            else:
+                return (response.json()['versions'][:max_count], None)
         else:
             return (None, self._response_to_error(response))
 
@@ -171,9 +211,8 @@ class Client(object):
         if force:
             params = {'force': True}
 
-        url = self._create_url('v2/apps{}'.format(app_id), params)
-        scale_json = json.loads('{{ "instances": {} }}'.format(int(instances)))
-        response = requests.put(url, json=scale_json)
+        url = self._create_url('v2/apps/{}'.format(app_id), params)
+        response = requests.put(url, json={'instances': int(instances)})
 
         if response.status_code == 200:
             deployment = response.json()['deploymentId']
@@ -214,7 +253,7 @@ class Client(object):
         if force:
             params = {'force': True}
 
-        url = self._create_url('v2/apps{}'.format(app_id), params)
+        url = self._create_url('v2/apps/{}'.format(app_id), params)
         response = requests.delete(url)
 
         if response.status_code == 200:
