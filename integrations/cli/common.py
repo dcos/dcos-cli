@@ -2,19 +2,22 @@ import logging
 import subprocess
 
 
-def exec_command(cmd, env=None):
+def exec_command(cmd, env=None, stdin=None):
     """Execute CLI command
 
     :param cmd: Program and arguments
     :type cmd: list of str
     :param env: Environment variables
     :type env: dict of str to str
+    :param stdin: File to use for stdin
+    :type stdin: file
     :returns: A tuple with the returncode, stdout and stderr
     :rtype: (int, bytes, bytes)
     """
 
     process = subprocess.Popen(
         cmd,
+        stdin=stdin,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         env=env)

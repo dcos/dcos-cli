@@ -87,9 +87,7 @@ def install(pkg, version, init_client, user_options, cfg):
     # TODO(CD): Is this necessary / desirable at this point?
 
     # Send the descriptor to init
-    _, init_error = init_client.start_app(init_desc)
-
-    return init_error
+    return init_client.add_app(init_desc)
 
 
 def list_installed_packages(init_client):
