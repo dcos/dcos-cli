@@ -66,7 +66,7 @@ class Client(object):
         :rtype: str
         """
 
-        return quote(app_id.strip('/'))
+        return quote('/' + app_id.strip('/'))
 
     def _response_to_error(self, response):
         """
@@ -86,7 +86,8 @@ class Client(object):
         return Error('Error: {}'.format(response.json()['message']))
 
     def get_app(self, app_id, version=None):
-        """Returns a representation of the requested application.
+        """Returns a representation of the requested application version. If
+        version is None the return the latest version.
 
         :param app_id: The ID of the application
         :type app_id: str
@@ -98,10 +99,10 @@ class Client(object):
 
         app_id = self._sanitize_app_id(app_id)
         if version is None:
-            url = self._create_url('/'.join(['v2', 'apps', app_id]))
+            url = self._create_url('v2/apps{}'.format(app_id))
         else:
             url = self._create_url(
-                '/'.join(['v2', 'apps', app_id, 'versions', version]))
+                'v2/apps{}/versions/{}'.format(app_id, version))
 
         logger.info('Getting %r', url)
 
@@ -132,7 +133,7 @@ class Client(object):
 
         app_id = self._sanitize_app_id(app_id)
 
-        url = self._create_url('v2/apps/{}/versions'.format(app_id))
+        url = self._create_url('v2/apps{}/versions'.format(app_id))
 
         logger.info('Getting %r', url)
 
@@ -211,7 +212,7 @@ class Client(object):
         if force:
             params = {'force': True}
 
-        url = self._create_url('v2/apps/{}'.format(app_id), params)
+        url = self._create_url('v2/apps{}'.format(app_id), params)
         response = requests.put(url, json={'instances': int(instances)})
 
         if response.status_code == 200:
@@ -253,7 +254,7 @@ class Client(object):
         if force:
             params = {'force': True}
 
-        url = self._create_url('v2/apps/{}'.format(app_id), params)
+        url = self._create_url('v2/apps{}'.format(app_id), params)
         response = requests.delete(url)
 
         if response.status_code == 200:
