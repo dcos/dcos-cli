@@ -34,6 +34,14 @@ The :mod:`dcos.api.errors` Module
     :undoc-members:
     :show-inheritance:
 
+The :mod:`dcos.api.jsonitem` Module
+------------------------------------
+
+.. automodule:: dcos.api.jsonitem
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 The :mod:`dcos.api.marathon` Module
 ------------------------------------
 
