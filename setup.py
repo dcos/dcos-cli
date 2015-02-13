@@ -20,7 +20,7 @@ setup(
     # https://packaging.python.org/en/latest/single_source_version.html
     version=constants.version,
 
-    description='Dcos cli poc project',
+    description='DCOS Command Line Interface',
     long_description=long_description,
 
     # The project's main homepage.
@@ -76,7 +76,6 @@ setup(
         'portalocker',
         'pystache',
         'requests',
-        # 'toml',
     ],
 
     # List additional groups of dependencies here (e.g. development
@@ -92,7 +91,7 @@ setup(
     # installed, specify them here.  If using Python 2.6 or less, then these
     # have to be included in MANIFEST.in as well.
     package_data={
-        'sample': ['package_data.dat'],
+        'dcos': ['data/*'],
     },
 
     # Although 'package_data' is the preferred approach, in some case you may

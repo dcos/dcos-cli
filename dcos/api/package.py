@@ -7,7 +7,6 @@ import shutil
 import subprocess
 
 import git
-import jsonschema
 import portalocker
 import pystache
 from dcos.api import errors, util
@@ -59,10 +58,9 @@ def install(pkg, version, init_client, user_options, cfg):
     options = dict(list(default_options.items()) + list(user_options.items()))
 
     # Validate options with the config schema
-    try:
-        jsonschema.validate(options, config_schema)
-    except jsonschema.ValidationError as ve:
-        return Error(ve.message)
+    err = util.validate_json(options, config_schema)
+    if err is not None:
+        return err
 
     # Insert option parameters into the init template
     init_template, tmpl_error = pkg.marathon_template(version)
@@ -87,7 +85,8 @@ def install(pkg, version, init_client, user_options, cfg):
     # TODO(CD): Is this necessary / desirable at this point?
 
     # Send the descriptor to init
-    return init_client.add_app(init_desc)
+    _, err = init_client.add_app(init_desc)
+    return err
 
 
 def list_installed_packages(init_client):
