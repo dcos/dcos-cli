@@ -1,4 +1,3 @@
-import logging
 import subprocess
 
 
@@ -15,6 +14,8 @@ def exec_command(cmd, env=None, stdin=None):
     :rtype: (int, bytes, bytes)
     """
 
+    print('CMD: %r', cmd)
+
     process = subprocess.Popen(
         cmd,
         stdin=stdin,
@@ -25,7 +26,7 @@ def exec_command(cmd, env=None, stdin=None):
     stdout, stderr = process.communicate()
 
     # We should always print the stdout and stderr
-    logging.error('STDOUT: %s', stdout.decode('utf-8'))
-    logging.error('STDERR: %s', stderr.decode('utf-8'))
+    print('STDOUT: %s', stdout.decode('utf-8'))
+    print('STDERR: %s', stderr.decode('utf-8'))
 
     return (process.returncode, stdout, stderr)
