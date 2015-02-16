@@ -103,9 +103,9 @@ def list_installed_packages(init_client):
 
     pkgs = [(a['labels'][PACKAGE_NAME_KEY], a['labels'][PACKAGE_VERSION_KEY])
             for a in apps
-            if a.get('labels') is not None
-            and a.get('labels').get(PACKAGE_NAME_KEY) is not None
-            and a.get('labels').get(PACKAGE_VERSION_KEY) is not None]
+            if (a.get('labels') is not None and
+                a.get('labels').get(PACKAGE_NAME_KEY) is not None and
+                a.get('labels').get(PACKAGE_VERSION_KEY) is not None)]
 
     return (pkgs, None)
 

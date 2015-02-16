@@ -78,8 +78,8 @@ def _list_subcommand_programs(dcos_bin_path):
 
         for filename in filenames
 
-        if filename.startswith(constants.DCOS_COMMAND_PREFIX)
-        and os.access(os.path.join(dirpath, filename), os.X_OK)
+        if (filename.startswith(constants.DCOS_COMMAND_PREFIX) and
+            os.access(os.path.join(dirpath, filename), os.X_OK))
     ]
 
 
