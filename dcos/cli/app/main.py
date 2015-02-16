@@ -6,6 +6,7 @@ Usage:
     dcos app remove [--force] <app-id>
     dcos app show [--app-version=<app-version>] <app-id>
     dcos app start [--force] <app-id> [<instances>]
+    dcos app stop [--force] <app-id>
 
 Options:
     -h, --help                   Show this screen
@@ -65,10 +66,10 @@ def main():
         return _show(args['<app-id>'], args['--app-version'])
 
     if args['start']:
-        return _start(
-            args['<app-id>'],
-            args['<instances>'],
-            args['--force'])
+        return _start(args['<app-id>'], args['<instances>'], args['--force'])
+
+    if args['stop']:
+        return _stop(args['<app-id>'], args['--force'])
 
     emitter.publish(options.make_generic_usage_error(__doc__))
 
@@ -264,6 +265,44 @@ def _start(app_id, instances, force):
     emitter.publish('Created deployment {}'.format(deployment))
 
     return 0
+
+
+def _stop(app_id, force):
+    """Stop a Marathon application
+
+    :param app_id: the id of the application
+    :type app_id: str
+    :param force: whether to override running deployments
+    :type force: bool
+    :returns: process status
+    :rtype: int
+    """
+
+    # Check that the application exists
+    client = marathon.create_client(
+        config.load_from_path(
+            os.environ[constants.DCOS_CONFIG_ENV]))
+
+    desc, err = client.get_app(app_id)
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    if desc['instances'] <= 0:
+        emitter.publish(
+            'Application {!r} already stopped: {!r} instances.'.format(
+                app_id,
+                desc['instances']))
+        return 1
+
+    app_json = {'instances': 0}
+
+    deployment, err = client.update_app(app_id, app_json, force)
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    emitter.publish('Created deployment {}'.format(deployment))
 
 
 def _calculate_version(client, app_id, version):

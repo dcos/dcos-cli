@@ -186,7 +186,7 @@ def _suspend(app_id, force, config):
     """
     client = marathon.create_client(config)
 
-    deployment, err = client.suspend_app(app_id, force)
+    deployment, err = client.stop_app(app_id, force)
     if err is not None:
         print(err.error())
         return 1
