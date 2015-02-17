@@ -13,13 +13,15 @@ import os
 import subprocess
 
 import docopt
-from dcos.api import constants, options, util
+from dcos.api import constants, emitting, options, util
+
+emitter = emitting.FlatEmitter()
 
 
 def main():
-    error = util.configure_logger_from_environ()
-    if error is not None:
-        print(error.error())
+    err = util.configure_logger_from_environ()
+    if err is not None:
+        emitter.publish(err)
         return 1
 
     args = docopt.docopt(
@@ -27,20 +29,21 @@ def main():
         version='dcos-help version {}'.format(constants.version))
 
     if args['help'] and args['info']:
-        print('Display help information about DCOS')
+        emitter.publish('Display help information about DCOS')
     elif args['help'] and args['--all']:
         directory = _binary_directory(os.environ[constants.DCOS_PATH_ENV])
-        print("Available DCOS command in '{}':".format(directory))
-        print(
+        emitter.publish("Available DCOS command in '{}':".format(directory))
+        emitter.publish(
             options.make_command_summary_string(
                 _external_command_documentation(
                     _extract_subcommands(
                         _list_subcommand_programs(directory)))))
-        print("\nGet detail command description with 'dcos <command> --help'.")
+        emitter.publish(
+            "\nGet detail command description with 'dcos <command> --help'.")
 
         return 0
     else:
-        print(options.make_generic_usage_error(__doc__))
+        emitter.publish(options.make_generic_usage_error(__doc__))
         return 1
 
 

@@ -112,7 +112,6 @@ setup(
             'dcos-marathon=dcos.cli.marathon.main:main',
             'dcos-app=dcos.cli.app.main:main',
             'dcos-package=dcos.cli.package.main:main',
-            'dcos-subcommand=dcos.cli.subcommand.main:main',
         ],
     },
 )

@@ -21,20 +21,21 @@ Options:
                                  version from the currently deployed
                                  application definition.
 """
-import json
 import os
 import sys
 
 import docopt
-from dcos.api import config, constants, errors, marathon, options, util
+from dcos.api import (config, constants, emitting, errors, marathon, options,
+                      util)
 
 logger = util.get_logger(__name__)
+emitter = emitting.FlatEmitter()
 
 
 def main():
-    error = util.configure_logger_from_environ()
-    if error is not None:
-        print(error.error())
+    err = util.configure_logger_from_environ()
+    if err is not None:
+        emitter.publish(err)
         return 1
 
     args = docopt.docopt(
@@ -42,7 +43,7 @@ def main():
         version='dcos-app version {}'.format(constants.version))
 
     if not args['app']:
-        print(options.make_generic_usage_error(__doc__))
+        emitter.publish(options.make_generic_usage_error(__doc__))
         return 1
 
     if args['info']:
@@ -60,7 +61,7 @@ def main():
     if args['show']:
         return _show(args['<app-id>'], args['--app-version'])
 
-    print(options.make_generic_usage_error(__doc__))
+    emitter.publish(options.make_generic_usage_error(__doc__))
     return 1
 
 
@@ -70,7 +71,7 @@ def _info():
     :rtype: int
     """
 
-    print('Deploy and manage applications on Apache Mesos')
+    emitter.publish('Deploy and manage applications on Apache Mesos')
     return 0
 
 
@@ -83,14 +84,15 @@ def _add():
     # Check that stdin is not tty
     if sys.stdin.isatty():
         # We don't support TTY right now. In the future we will start an editor
-        print("We currently don't support reading from the TTY. Please "
-              "specify an application JSON.")
-        print("E.g. dcos app add < app_resource.json")
+        emitter.publish(
+            "We currently don't support reading from the TTY. Please specify "
+            "an application JSON.\n"
+            "E.g. dcos app add < app_resource.json")
         return 1
 
     application_resource, err = util.load_jsons(sys.stdin.read())
     if err is not None:
-        print(err.error())
+        emitter.publish(err)
         return 1
 
     # Add application to marathon
@@ -99,7 +101,7 @@ def _add():
             os.environ[constants.DCOS_CONFIG_ENV]))
     err = client.add_app(application_resource)
     if err is not None:
-        print(err.error())
+        emitter.publish(err)
         return 1
 
     return 0
@@ -117,14 +119,14 @@ def _list():
 
     apps, err = client.get_apps()
     if err is not None:
-        print(err.error())
+        emitter.publish(err)
         return 1
 
     if not apps:
-        print("No applications to list.")
+        emitter.publish("No applications to list.")
 
     for app in apps:
-        print(app['id'])
+        emitter.publish(app['id'])
 
     return 0
 
@@ -145,7 +147,7 @@ def _remove(app_id, force):
 
     err = client.remove_app(app_id, force)
     if err is not None:
-        print(err.error())
+        emitter.publish(err)
         return 1
 
     return 0
@@ -169,15 +171,15 @@ def _show(app_id, version):
     if version is not None:
         version, err = _calculate_version(client, app_id, version)
         if err is not None:
-            print(err.error())
+            emitter.publish(err)
             return 1
 
     app, err = client.get_app(app_id, version=version)
     if err is not None:
-        print(err.error())
+        emitter.publish(err)
         return 1
 
-    print(json.dumps(app, sort_keys=True, indent=2))
+    emitter.publish(app)
 
     return 0
 

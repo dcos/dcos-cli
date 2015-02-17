@@ -16,13 +16,15 @@ import os
 
 import docopt
 import toml
-from dcos.api import config, constants, options, util
+from dcos.api import config, constants, emitting, options, util
+
+emitter = emitting.FlatEmitter()
 
 
 def main():
-    error = util.configure_logger_from_environ()
-    if error is not None:
-        print(error.error())
+    err = util.configure_logger_from_environ()
+    if err is not None:
+        emitter.publish(err)
         return 1
 
     config_path = os.environ[constants.DCOS_CONFIG_ENV]
@@ -31,7 +33,7 @@ def main():
         version='dcos-config version {}'.format(constants.version))
 
     if args['config'] and args['info']:
-        print('Get and set DCOS command line options')
+        emitter.publish('Get and set DCOS command line options')
 
     elif args['config'] and args['--unset']:
         toml_config = config.mutable_load_from_path(config_path)
@@ -41,13 +43,13 @@ def main():
     elif args['config'] and args['--list']:
         toml_config = config.load_from_path(config_path)
         for key, value in sorted(toml_config.property_items()):
-            print('{}={}'.format(key, value))
+            emitter.publish('{}={}'.format(key, value))
 
     elif args['config'] and args['<value>'] is None:
         toml_config = config.load_from_path(config_path)
         value = toml_config.get(args['<name>'])
         if value is not None and not isinstance(value, collections.Mapping):
-            print(value)
+            emitter.publish(value)
         else:
             return 1
 
@@ -57,7 +59,7 @@ def main():
         _save_config_file(config_path, toml_config)
 
     else:
-        print(options.make_generic_usage_error(__doc__))
+        emitter.publish(options.make_generic_usage_error(__doc__))
         return 1
 
     return 0

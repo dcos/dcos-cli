@@ -18,6 +18,14 @@ The :mod:`dcos.api.constants` Module
     :undoc-members:
     :show-inheritance:
 
+The :mod:`dcos.api.emitting` Module
+------------------------------------
+
+.. automodule:: dcos.api.emitting
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 The :mod:`dcos.api.errors` Module
 ------------------------------------
 
