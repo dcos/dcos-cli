@@ -76,6 +76,10 @@ def main():
         cfg = config.load_from_path(config_path)
         return _list(cfg)
 
+    elif args['package'] and args['search']:
+        cfg = config.load_from_path(config_path)
+        return _search(cfg, args['<query>'])
+
     else:
         emitter.publish(options.make_generic_usage_message(__doc__))
         return 1
@@ -241,11 +245,33 @@ def _list(config):
     init_client = marathon.create_client(config)
     installed, error = package.list_installed_packages(init_client)
 
+    if error is not None:
+        emitter.publish(error)
+        return 1
+
     for name, version in installed:
         emitter.publish('{} [{}]'.format(name, version))
+
+    return 0
+
+
+def _search(config, query):
+    """Search for matching packages.
+
+    :param config: The config object
+    :type config: dcos.api.config.Toml
+    :param query: The search term
+    :type query: str
+    :returns: Process status
+    :rtype: int
+    """
+
+    results, error = package.search(query, config)
 
     if error is not None:
         emitter.publish(error)
         return 1
+
+    emitter.publish([r.as_dict() for r in results])
 
     return 0

@@ -113,6 +113,29 @@ def test_list():
     assert stderr == b''
 
 
+def test_search():
+    returncode, stdout, stderr = exec_command(
+        ['dcos',
+            'package',
+            'search',
+            'framework'])
+
+    assert returncode == 0
+    assert b'chronos' in stdout
+    assert stderr == b''
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos',
+            'package',
+            'search',
+            'xyzzy'])
+
+    assert returncode == 0
+    assert b'"packages": []' in stdout
+    assert b'"source": "git://github.com/mesosphere/universe.git"' in stdout
+    assert stderr == b''
+
+
 def test_cleanup():
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'remove', 'mesos-dns'])

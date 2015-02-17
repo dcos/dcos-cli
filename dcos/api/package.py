@@ -109,6 +109,69 @@ def list_installed_packages(init_client):
     return (pkgs, None)
 
 
+def search(query, cfg):
+    """Returns a list of index entry collections, one for each registry in
+    the supplied config.
+
+    :param query: The search term
+    :type query: str
+    :param cfg: Configuration dictionary
+    :type cfg: dcos.api.config.Toml
+    :rtype: (list of IndexEntries, Error)
+    """
+
+    threshold = 0.5  # Minimum rank required to appear in results
+    results = []
+
+    def clean_package_entry(entry):
+        result = entry.copy()
+        result.update({
+            'versions': list(entry['versions'].keys())
+        })
+        return result
+
+    for registry in registries(cfg):
+        source_results = []
+        index, error = registry.get_index()
+        if error is not None:
+            return (None, error)
+
+        for pkg in index['packages']:
+            rank = _search_rank(pkg, query)
+            if rank >= threshold:
+                source_results.append(clean_package_entry(pkg))
+
+        entries = IndexEntries(registry.source, source_results)
+        results.append(entries)
+
+    return (results, None)
+
+
+def _search_rank(pkg, query):
+    """
+    :param pkg: Index entry to rank for affinity with the search term
+    :type pkg: object
+    :param query: Search term
+    :type query: str
+    :rtype: float
+    """
+
+    q = query.lower()
+
+    result = 0.0
+    if q in pkg['name'].lower():
+        result += 2.0
+
+    for tag in pkg['tags']:
+        if q in tag.lower():
+            result += 1.0
+
+    if q in pkg['description'].lower():
+        result += 0.5
+
+    return result
+
+
 def _extract_default_values(config_schema):
     """
     :param config_schema: A json-schema describing configuration options.
@@ -158,7 +221,7 @@ def registries(config):
     """
 
     sources, errors = list_sources(config)
-    return [Registry(source.local_cache(config)) for source in sources]
+    return [Registry(source, source.local_cache(config)) for source in sources]
 
 
 def list_sources(config):
@@ -289,7 +352,7 @@ def update_sources(config):
                     continue  # keep updating the other sources
 
                 # validate content
-                validation_errors = Registry(stage_dir).validate()
+                validation_errors = Registry(source, stage_dir).validate()
                 if len(validation_errors) > 0:
                     errors += validation_errors
                     continue  # keep updating the other sources
@@ -512,10 +575,13 @@ class Registry():
 
     :param base_path: Path to the registry
     :type base_path: str
+    :param source: The associated package source
+    :type source: Source
     """
 
-    def __init__(self, base_path):
+    def __init__(self, source, base_path):
         self._base_path = base_path
+        self._source = source
 
     def validate(self):
         """Validates a package registry.
@@ -534,6 +600,39 @@ class Registry():
                 Error('Source tree is not valid [{}]'.format(self._base_path)))
 
         return errors
+
+    @property
+    def source(self):
+        """Returns the associated upstream package source for this registry.
+
+        :rtype: str
+        """
+
+        return self._source
+
+    def get_index(self):
+        """Returns the index of packages in this registry.
+
+        :rtype: (object, Error)
+        """
+
+        # The package index is found in $BASE/repo/meta/index.json
+        index_path = os.path.join(
+            self._base_path,
+            'repo',
+            'meta',
+            'index.json')
+
+        if not os.path.isfile(index_path):
+            return (None, Error('Path [{}] is not a file'.format(index_path)))
+
+        try:
+            with open(index_path) as fd:
+                return (json.load(fd), None)
+        except IOError:
+            return (None, Error('Unable to open file [{}]'.format(index_path)))
+        except ValueError:
+            return (None, Error('Unable to parse [{}]'.format(index_path)))
 
     def get_package(self, package_name):
         """Returns the named package, if it exists.
@@ -724,3 +823,47 @@ class Package():
             return error.error()
 
         return json.dumps(pkg_json)
+
+
+class IndexEntries():
+    """A collection of package index entries from a single source.
+    Each entry is a dict as described by the JSON schema for the package index:
+    https://github.com/mesosphere/universe/blob/master/repo/meta/schema/index-schema.json
+
+    :param source: The source of these index entries
+    :type source: Source
+    :param packages: The index entries
+    :type packages: list of dict
+    """
+
+    def __init__(self, source, packages):
+        self._source = source
+        self._packages = packages
+
+    @property
+    def source(self):
+        """Returns the source of these index entries.
+
+        :rtype: Source
+        """
+
+        return self._source
+
+    @property
+    def packages(self):
+        """Returns the package index entries.
+
+        :rtype: list of dict
+        """
+
+        return self._packages
+
+    def as_dict(self):
+        """
+        :rtype: dict
+        """
+
+        return {
+          'source': self.source.url,
+          'packages': self.packages
+        }
