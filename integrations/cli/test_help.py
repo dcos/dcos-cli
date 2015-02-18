@@ -45,7 +45,6 @@ def test_list_all():
 \thelp           \tDisplay help information about DCOS
 \tmarathon       \tDeploy and manage applications on Apache Mesos
 \tpackage        \tInstall and manage DCOS software packages
-\tsubcommand     \tManage external DCOS commands
 
 Get detail command description with 'dcos <command> --help'.
 """.format(os.path.join(os.environ['DCOS_PATH'], 'bin')).encode('utf-8')

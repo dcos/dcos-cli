@@ -36,13 +36,16 @@ import os
 
 import docopt
 import toml
-from dcos.api import config, constants, marathon, options, package, util
+from dcos.api import (config, constants, emitting, marathon, options, package,
+                      util)
+
+emitter = emitting.FlatEmitter()
 
 
 def main():
-    error = util.configure_logger_from_environ()
-    if error is not None:
-        print(error.error())
+    err = util.configure_logger_from_environ()
+    if err is not None:
+        emitter.publish(err)
         return 1
 
     config_path = os.environ[constants.DCOS_CONFIG_ENV]
@@ -74,7 +77,7 @@ def main():
         return _list(cfg)
 
     else:
-        print(options.make_generic_usage_message(__doc__))
+        emitter.publish(options.make_generic_usage_message(__doc__))
         return 1
 
 
@@ -85,7 +88,7 @@ def _info():
     :rtype: int
     """
 
-    print('Install and manage DCOS software packages')
+    emitter.publish('Install and manage DCOS software packages')
     return 0
 
 
@@ -102,11 +105,11 @@ def _list_sources(config):
 
     if len(errors) > 0:
         for err in errors:
-            print(err.error())
+            emitter.publish(err)
         return 1
 
     for source in sources:
-        print("{} {}".format(source.hash(), source.url))
+        emitter.publish("{} {}".format(source.hash(), source.url))
 
     return 0
 
@@ -124,7 +127,7 @@ def _update(config):
 
     if len(errors) > 0:
         for err in errors:
-            print(err.error())
+            emitter.publish(err)
         return 1
 
     return 0
@@ -144,32 +147,32 @@ def _describe(package_name, config):
     pkg = package.resolve_package(package_name, config)
 
     if pkg is None:
-        print("Package [{}] not found".format(package_name))
+        emitter.publish("Package [{}] not found".format(package_name))
         return 1
 
     # TODO(CD): Make package version to describe configurable
     pkg_version, version_error = pkg.latest_version()
     if version_error is not None:
-        print(version_error.error())
+        emitter.publish(version_error)
         return 1
 
     pkg_json, pkg_error = pkg.package_json(pkg_version)
 
     if pkg_error is not None:
-        print(pkg_error.error())
+        emitter.publish(pkg_error)
         return 1
 
-    print(toml.dumps(pkg_json))
-    print('Available versions:')
+    emitter.publish(toml.dumps(pkg_json))
+    emitter.publish('Available versions:')
 
     version_map, version_error = pkg.software_versions()
 
     if version_error is not None:
-        print(version_error.error())
+        emitter.publish(version_error)
         return 1
 
     for pkg_ver in version_map:
-        print(version_map[pkg_ver])
+        emitter.publish(version_map[pkg_ver])
 
     return 0
 
@@ -190,7 +193,7 @@ def _install(package_name, options_file, config):
     pkg = package.resolve_package(package_name, config)
 
     if pkg is None:
-        print("Package [{}] not found".format(package_name))
+        emitter.publish("Package [{}] not found".format(package_name))
         return 1
 
     options_json = {}
@@ -200,7 +203,7 @@ def _install(package_name, options_file, config):
             options_fd = open(options_file)
             options_json = json.load(options_fd)
         except Exception as e:
-            print(e.message)
+            emitter.publish(e.message)
             return 1
 
     init_client = marathon.create_client(config)
@@ -209,7 +212,7 @@ def _install(package_name, options_file, config):
     pkg_version, version_error = pkg.latest_version()
 
     if version_error is not None:
-        print(version_error.error())
+        emitter.publish(version_error)
         return 1
 
     install_error = package.install(
@@ -220,7 +223,7 @@ def _install(package_name, options_file, config):
         config)
 
     if install_error is not None:
-        print(install_error.error())
+        emitter.publish(install_error)
         return 1
 
     return 0
@@ -239,10 +242,10 @@ def _list(config):
     installed, error = package.list_installed_packages(init_client)
 
     for name, version in installed:
-        print('{} [{}]'.format(name, version))
+        emitter.publish('{} [{}]'.format(name, version))
 
     if error is not None:
-        print(error.error())
+        emitter.publish(error)
         return 1
 
     return 0

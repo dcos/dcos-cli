@@ -20,3 +20,5 @@ fi
 pip install tox
 echo "Tox installed."
 
+pip install Sphinx
+echo "Sphinx installed."

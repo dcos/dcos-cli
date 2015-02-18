@@ -19,7 +19,7 @@ class DefaultError(Error):
     """Construct a basic Error class based on a string
 
     :param message: String to use for the error message
-    :param type: str
+    :type message: str
     """
 
     def __init__(self, message):
