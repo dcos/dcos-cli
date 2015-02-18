@@ -5,6 +5,7 @@ Usage:
     dcos app list
     dcos app remove [--force] <app-id>
     dcos app show [--app-version=<app-version>] <app-id>
+    dcos app start [--force] <app-id> [<instances>]
 
 Options:
     -h, --help                   Show this screen
@@ -21,10 +22,12 @@ Options:
                                  version from the currently deployed
                                  application definition.
 """
+import json
 import os
 import sys
 
 import docopt
+import pkg_resources
 from dcos.api import (config, constants, emitting, errors, marathon, options,
                       util)
 
@@ -61,7 +64,14 @@ def main():
     if args['show']:
         return _show(args['<app-id>'], args['--app-version'])
 
+    if args['start']:
+        return _start(
+            args['<app-id>'],
+            args['<instances>'],
+            args['--force'])
+
     emitter.publish(options.make_generic_usage_error(__doc__))
+
     return 1
 
 
@@ -99,7 +109,7 @@ def _add():
     client = marathon.create_client(
         config.load_from_path(
             os.environ[constants.DCOS_CONFIG_ENV]))
-    err = client.add_app(application_resource)
+    _, err = client.add_app(application_resource)
     if err is not None:
         emitter.publish(err)
         return 1
@@ -180,6 +190,78 @@ def _show(app_id, version):
         return 1
 
     emitter.publish(app)
+
+    return 0
+
+
+def _start(app_id, instances, force):
+    """Start a Marathon application.
+
+    :param app_id: the id for the application
+    :type app_id: str
+    :param json_items: the list of json item
+    :type json_items: list of str
+    :param force: whether to override running deployments
+    :type force: bool
+    :returns: Process status
+    :rtype: int
+    """
+
+    # Check that the application exists
+    client = marathon.create_client(
+        config.load_from_path(
+            os.environ[constants.DCOS_CONFIG_ENV]))
+
+    desc, err = client.get_app(app_id)
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    if desc['instances'] > 0:
+        emitter.publish(
+            'Application {!r} already started: {!r} instances.'.format(
+                app_id,
+                desc['instances']))
+        return 1
+
+    schema = json.loads(
+        pkg_resources.resource_string(
+            'dcos',
+            'data/marathon-schema.json').decode('utf-8'))
+
+    app_json = {}
+
+    # Need to add the 'id' because it is required
+    app_json['id'] = app_id
+
+    # Set instances to 1 if not specified
+    if instances is None:
+        instances = 1
+    else:
+        instances, err = _parse_int(instances)
+        if err is not None:
+            emitter.publish(err)
+            return 1
+
+        if instances <= 0:
+            emitter.publish(
+                'The number of instances must be positive: {!r}.'.format(
+                    instances))
+            return 1
+
+    app_json['instances'] = instances
+
+    err = util.validate_json(app_json, schema)
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    deployment, err = client.update_app(app_id, app_json, force)
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    emitter.publish('Created deployment {}'.format(deployment))
 
     return 0
 

@@ -105,12 +105,10 @@ class Client(object):
                 'v2/apps{}/versions/{}'.format(app_id, version))
 
         logger.info('Getting %r', url)
-
         response = requests.get(url)
-
         logger.info('Got (%r): %r', response.status_code, response.json())
 
-        if response.status_code == 200:
+        if _success(response.status_code):
             # Looks like Marathon return different JSON for versions
             if version is None:
                 return (response.json()['app'], None)
@@ -136,12 +134,10 @@ class Client(object):
         url = self._create_url('v2/apps{}/versions'.format(app_id))
 
         logger.info('Getting %r', url)
-
         response = requests.get(url)
-
         logger.info('Got (%r): %r', response.status_code, response.json())
 
-        if response.status_code == 200:
+        if _success(response.status_code):
             if max_count is None:
                 return (response.json()['versions'], None)
             else:
@@ -159,7 +155,7 @@ class Client(object):
         url = self._create_url('v2/apps')
         response = requests.get(url)
 
-        if response.status_code == 200:
+        if _success(response.status_code):
             apps = response.json()['apps']
             return (apps, None)
         else:
@@ -170,8 +166,8 @@ class Client(object):
 
         :param app_resource: Application resource
         :type app_resource: dict, bytes or file
-        :returns: Status of trying to start the application
-        :rtype: Error
+        :returns: the application description
+        :rtype: (dict, Error)
         """
 
         url = self._create_url('v2/apps')
@@ -182,13 +178,46 @@ class Client(object):
         else:
             app_json = app_resource
 
-        logger.info("Posting %r to %r", app_json, url)
+        logger.info('Posting %r to %r', app_json, url)
         response = requests.post(url, json=app_json)
+        logger.info('Got (%r): %r', response.status_code, response.json())
 
-        if response.status_code == 201:
-            return None
+        if _success(response.status_code):
+            return (response.json(), None)
         else:
-            return self._response_to_error(response)
+            return (None, self._response_to_error(response))
+
+    def update_app(self, app_id, payload, force=None):
+        """Update an application.
+
+        :param app_id: the application id
+        :type app_id: str
+        :param payload: the json payload
+        :type payload: dict
+        :param force: whether to override running deployments.
+        :type force: bool
+        :returns: the resulting deployment ID.
+        :rtype: (str, Error)
+        """
+
+        app_id = self._sanitize_app_id(app_id)
+
+        if force is None or not force:
+            params = None
+        else:
+            params = {'force': True}
+
+        url = self._create_url('v2/apps{}'.format(app_id), params)
+
+        logger.info('Putting %r to %r', payload, url)
+        response = requests.put(url, json=payload)
+        logger.info('Got (%r): %r', response.status_code, response.json())
+
+        if _success(response.status_code):
+            deployment = response.json()['deploymentId']
+            return (deployment, None)
+        else:
+            return (None, self._response_to_error(response))
 
     def scale_app(self, app_id, instances, force=None):
         """Scales an application to the requested number of instances.
@@ -215,7 +244,7 @@ class Client(object):
         url = self._create_url('v2/apps{}'.format(app_id), params)
         response = requests.put(url, json={'instances': int(instances)})
 
-        if response.status_code == 200:
+        if _success(response.status_code):
             deployment = response.json()['deploymentId']
             return (deployment, None)
         else:
@@ -257,7 +286,7 @@ class Client(object):
         url = self._create_url('v2/apps{}'.format(app_id), params)
         response = requests.delete(url)
 
-        if response.status_code == 200:
+        if _success(response.status_code):
             return None
         else:
             return self._response_to_error(response)
@@ -281,3 +310,15 @@ class Error(errors.Error):
         """
 
         return self._message
+
+
+def _success(status_code):
+    """Returns true if the success status is between [200, 300).
+
+    :param response_status: the http response status
+    :type response_status: int
+    :returns: True for success status; False otherwise
+    :rtype: bool
+    """
+
+    return status_code >= 200 and status_code < 300

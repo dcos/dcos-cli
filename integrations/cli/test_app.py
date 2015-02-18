@@ -13,6 +13,7 @@ def test_help():
     dcos app list
     dcos app remove [--force] <app-id>
     dcos app show [--app-version=<app-version>] <app-id>
+    dcos app start [--force] <app-id> [<instances>]
 
 Options:
     -h, --help                   Show this screen
@@ -160,6 +161,36 @@ def test_show_bad_relative_app_version():
     _remove_app('zero-instance-app')
 
 
+def test_start_missing_app():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'start', 'missing-id'])
+
+    assert returncode == 1
+    assert stdout == b"Error: App '/missing-id' does not exist\n"
+    assert stderr == b''
+
+
+def test_start_app():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _start_app('zero-instance-app')
+    _remove_app('zero-instance-app')
+
+
+def test_start_already_started_app():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _start_app('zero-instance-app')
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'start', 'zero-instance-app'])
+
+    assert returncode == 1
+    assert (stdout ==
+            b"Application 'zero-instance-app' already started: 1 instances.\n")
+    assert stderr == b''
+
+    _remove_app('zero-instance-app')
+
+
 def _list_apps(app_id=None):
     returncode, stdout, stderr = exec_command(['dcos', 'app', 'list'])
 
@@ -212,3 +243,12 @@ def _show_app(app_id, version=None):
     assert stderr == b''
 
     return result
+
+
+def _start_app(app_id):
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'start', app_id])
+
+    assert returncode == 0
+    assert stdout.decode().startswith('Created deployment ')
+    assert stderr == b''

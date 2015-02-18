@@ -138,7 +138,7 @@ def _start(app_resource_path, config):
     client = marathon.create_client(config)
 
     with open(app_resource_path) as app_resource_file:
-        err = client.add_app(app_resource_file)
+        _, err = client.add_app(app_resource_file)
         if err is not None:
             print(err.error())
             return 1

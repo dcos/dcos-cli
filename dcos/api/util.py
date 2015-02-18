@@ -6,6 +6,7 @@ import shutil
 import sys
 import tempfile
 
+import jsonschema
 from dcos.api import constants, errors
 
 
@@ -118,3 +119,20 @@ def load_jsons(value):
             value,
             error)
         return (None, errors.DefaultError('Error loading JSON.'))
+
+
+def validate_json(instance, schema):
+    """Validate an instance under the given schema.
+
+    :param instance: the instance to validate
+    :type instance: dict
+    :param schema: the schema to validate with
+    :type schema: dict
+    :returns: an error if the validation failed; None otherwise
+    :rtype: Error
+    """
+    try:
+        jsonschema.validate(instance, schema)
+        return None
+    except jsonschema.ValidationError as ve:
+        return errors.DefaultError(ve.message)
