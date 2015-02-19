@@ -16,6 +16,7 @@ def test_help():
     dcos app show [--app-version=<app-version>] <app-id>
     dcos app start [--force] <app-id> [<instances>]
     dcos app stop [--force] <app-id>
+    dcos app update [--force] <app-id> [<properties>...]
 
 Options:
     -h, --help                   Show this screen
@@ -31,6 +32,12 @@ Options:
                                  negative integer and they represent the
                                  version from the currently deployed
                                  application definition.
+
+Positional arguments:
+    <app-id>                The application id
+    <properties>            Optional key-value pairs to be included in the
+                            command. The separator between the key and value
+                            must be the '=' character. E.g. cpus=2.0.
 """
     assert stderr == b''
 
@@ -227,6 +234,74 @@ def test_stop_already_stopped_app():
     assert (stdout ==
             b"Application 'zero-instance-app' already stopped: 0 instances.\n")
     assert stderr == b''
+
+    _remove_app('zero-instance-app')
+
+
+def test_update_missing_app():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'update', 'missing-id'])
+
+    assert returncode == 1
+    assert stdout == b"Error: App '/missing-id' does not exist\n"
+    assert stderr == b''
+
+
+def test_update_missing_field():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'update', 'zero-instance-app', 'missing="a string"'])
+
+    assert returncode == 1
+    assert stdout.decode('utf-8').startswith(
+        "The property 'missing' does not conform to the expected format. "
+        "Possible values are: ")
+    assert stderr == b''
+
+    _remove_app('zero-instance-app')
+
+
+def test_update_bad_type():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'update', 'zero-instance-app', 'cpus="a string"'])
+
+    assert returncode == 1
+    assert stdout.decode('utf-8').startswith(
+        "Unable to parse 'a string' as a float: could not convert string to "
+        "float: ")
+    assert stderr == b''
+
+    _remove_app('zero-instance-app')
+
+
+def test_update_app():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'update', 'zero-instance-app',
+         'cpus=1', 'mem=20', "cmd='sleep 100'"])
+
+    assert returncode == 0
+    assert stdout.decode().startswith('Created deployment ')
+    assert stderr == b''
+
+    _remove_app('zero-instance-app')
+
+
+def test_update_app_from_stdin():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+
+    with open('tests/data/marathon/update_zero_instance_sleep.json') as fd:
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'app', 'update', 'zero-instance-app'],
+            stdin=fd)
+
+        assert returncode == 0
+        assert stdout == b''
+        assert stderr == b''
 
     _remove_app('zero-instance-app')
 
