@@ -148,7 +148,10 @@ class Client(object):
         """
 
         url = self._create_url('v2/apps')
+
+        logger.info('Getting %r', url)
         response = requests.get(url)
+        logger.info('Got (%r): %r', response.status_code, response.json())
 
         if _success(response.status_code):
             apps = response.json()['apps']
@@ -197,10 +200,10 @@ class Client(object):
 
         app_id = normalize_app_id(app_id)
 
-        if force is None or not force:
+        if not force:
             params = None
         else:
-            params = {'force': True}
+            params = {'force': 'true'}
 
         url = self._create_url('v2/apps{}'.format(app_id), params)
 
@@ -226,17 +229,18 @@ class Client(object):
         :rtype: (bool, Error)
         """
 
-        if force is None:
-            force = False
-
         app_id = normalize_app_id(app_id)
 
-        params = None
-        if force:
-            params = {'force': True}
+        if not force:
+            params = None
+        else:
+            params = {'force': 'true'}
 
         url = self._create_url('v2/apps{}'.format(app_id), params)
+
+        logger.info('Putting to %r', url)
         response = requests.put(url, json={'instances': int(instances)})
+        logger.info('Got (%r): %r', response.status_code, response.json())
 
         if _success(response.status_code):
             deployment = response.json()['deploymentId']
@@ -268,26 +272,56 @@ class Client(object):
         :rtype: Error
         """
 
-        if force is None:
-            force = False
-
         app_id = normalize_app_id(app_id)
 
-        params = None
-        if force:
-            params = {'force': True}
+        if not force:
+            params = None
+        else:
+            params = {'force': 'true'}
 
         url = self._create_url('v2/apps{}'.format(app_id), params)
+
+        logger.info('Deleting %r', url)
         response = requests.delete(url)
+        logger.info('Got (%r)', response.status_code)
 
         if _success(response.status_code):
             return None
         else:
             return self._response_to_error(response)
 
+    def restart_app(self, app_id, force=None):
+        """Performs a rolling restart of all of the tasks.
+
+        :param app_id: the id of the application to restart
+        :type app_id: str
+        :param force: whether to override running deployments
+        :type force: bool
+        :returns: the deployment id and version; Error otherwise
+        :rtype: (dict, Error)
+        """
+
+        app_id = normalize_app_id(app_id)
+
+        if not force:
+            params = None
+        else:
+            params = {'force': 'true'}
+
+        url = self._create_url('v2/apps{}/restart'.format(app_id), params)
+
+        logger.info('Posting %r', url)
+        response = requests.post(url)
+        logger.info('Got (%r): %r', response.status_code, response.json())
+
+        if _success(response.status_code):
+            return (response.json(), None)
+        else:
+            return (None, self._response_to_error(response))
+
 
 class Error(errors.Error):
-    """ Class for describing erros while talking to the Marathon server.
+    """ Class for describing errors while talking to the Marathon server.
 
     :param message: Error message
     :type message: str

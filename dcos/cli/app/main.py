@@ -4,6 +4,7 @@ Usage:
     dcos app info
     dcos app list
     dcos app remove [--force] <app-id>
+    dcos app restart [--force] <app-id>
     dcos app show [--app-version=<app-version>] <app-id>
     dcos app start [--force] <app-id> [<instances>]
     dcos app stop [--force] <app-id>
@@ -80,6 +81,9 @@ def main():
 
     if args['update']:
         return _update(args['<app-id>'], args['<properties>'], args['--force'])
+
+    if args['restart']:
+        return _restart(args['<app-id>'], args['--force'])
 
     emitter.publish(options.make_generic_usage_error(__doc__))
 
@@ -402,6 +406,43 @@ def _update(app_id, json_items, force):
         return 1
 
     emitter.publish('Created deployment {}'.format(deployment))
+
+    return 0
+
+
+def _restart(app_id, force):
+    """
+    :param app_id: the id of the application
+    :type app_id: str
+    :param force: whether to override running deployments
+    :type force: bool
+    :returns: process status
+    :rtype: int
+    """
+
+    client = marathon.create_client(
+        config.load_from_path(
+            os.environ[constants.DCOS_CONFIG_ENV]))
+
+    desc, err = client.get_app(app_id)
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    if desc['instances'] <= 0:
+        app_id = marathon.normalize_app_id(app_id)
+        emitter.publish(
+            'Unable to restart application {!r} because it is stopped'.format(
+                app_id,
+                desc['instances']))
+        return 1
+
+    payload, err = client.restart_app(app_id, force)
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    emitter.publish('Created deployment {}'.format(payload['deploymentId']))
 
     return 0
 

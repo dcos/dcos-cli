@@ -13,6 +13,7 @@ def test_help():
     dcos app info
     dcos app list
     dcos app remove [--force] <app-id>
+    dcos app restart [--force] <app-id>
     dcos app show [--app-version=<app-version>] <app-id>
     dcos app start [--force] <app-id> [<instances>]
     dcos app stop [--force] <app-id>
@@ -323,6 +324,45 @@ def test_update_app_from_stdin():
     _update_app(
         'zero-instance-app',
         'tests/data/marathon/update_zero_instance_sleep.json')
+
+    _remove_app('zero-instance-app')
+
+
+def test_restarting_stopped_app():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'restart', 'zero-instance-app'])
+
+    assert returncode == 1
+    assert stdout == (
+        b"Unable to restart application '/zero-instance-app' "
+        b"because it is stopped\n")
+    assert stderr == b''
+
+    _remove_app('zero-instance-app')
+
+
+def test_restarting_missing_app():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'restart', 'missing-id'])
+
+    assert returncode == 1
+    assert stdout == b"Error: App '/missing-id' does not exist\n"
+    assert stderr == b''
+
+
+@pytest.mark.skipif(True, reason='We need to wait for the start to finish')
+def test_restarting_app():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _start_app('zero-instance-app')
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'restart', 'zero-instance-app'])
+
+    assert returncode == 1
+    assert stdout.decode().startswith('Created deployment ')
+    assert stderr == b''
 
     _remove_app('zero-instance-app')
 
