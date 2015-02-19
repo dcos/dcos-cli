@@ -14,7 +14,7 @@ logger = util.get_logger(__name__)
 def create_client(config):
     """Creates a Marathon client with the supplied configuration.
 
-    :param config: Configuration dictionary
+    :param config: configuration dictionary
     :type config: config.Toml
     :returns: Marathon client
     :rtype: dcos.api.marathon.Client
@@ -25,9 +25,9 @@ def create_client(config):
 class Client(object):
     """Class for talking to the Marathon server.
 
-    :param host: Host for the Marathon server.
+    :param host: host for the Marathon server
     :type host: str
-    :param port: Port for the Marathon server.
+    :param port: port for the Marathon server
     :type port: int
     """
 
@@ -37,13 +37,13 @@ class Client(object):
         self._port = port
 
     def _create_url(self, path, query_params=None):
-        """Creates the url from the provided path
+        """Creates the url from the provided path.
 
-        :param path: Url path
+        :param path: url path
         :type path: str
-        :param query_params: Query string parameters
+        :param query_params: query string parameters
         :type query_params: dict
-        :returns: Constructed url
+        :returns: constructed url
         :rtype: str
         """
 
@@ -60,9 +60,9 @@ class Client(object):
 
     def _sanitize_app_id(self, app_id):
         """
-        :param app_id: Raw application ID
+        :param app_id: raw application ID
         :type app_id: str
-        :returns: Sanitized application ID
+        :returns: sanitized application ID
         :rtype: str
         """
 
@@ -72,7 +72,7 @@ class Client(object):
         """
         :param response: HTTP resonse object
         :type response: requests.Response
-        :returns: The error embedded in the response JSON
+        :returns: the error embedded in the response JSON
         :rtype: Error
         """
 
@@ -89,11 +89,11 @@ class Client(object):
         """Returns a representation of the requested application version. If
         version is None the return the latest version.
 
-        :param app_id: The ID of the application
+        :param app_id: the ID of the application
         :type app_id: str
-        :param version: Application version as a ISO8601 datetime
+        :param version: application version as a ISO8601 datetime
         :type version: str
-        :returns: The requested Marathon application
+        :returns: the requested Marathon application
         :rtype: (dict, Error)
         """
 
@@ -121,11 +121,11 @@ class Client(object):
         """Asks Marathon for all the versions of the Application up to a
         maximum count.
 
-        :param app_id: The ID of the application
+        :param app_id: the ID of the application
         :type app_id: str
-        :param max_count: The maximum number of version to fetch
+        :param max_count: the maximum number of version to fetch
         :type max_count: int
-        :returns: A list of all the version of the application
+        :returns: a list of all the version of the application
         :rtype: (list of str, Error)
         """
 
@@ -148,7 +148,7 @@ class Client(object):
     def get_apps(self):
         """Get a list of known applications.
 
-        :returns: List of known applications.
+        :returns: list of known applications
         :rtype: (list of dict, Error)
         """
 
@@ -164,7 +164,7 @@ class Client(object):
     def add_app(self, app_resource):
         """Add a new application.
 
-        :param app_resource: Application resource
+        :param app_resource: application resource
         :type app_resource: dict, bytes or file
         :returns: the application description
         :rtype: (dict, Error)
@@ -194,9 +194,9 @@ class Client(object):
         :type app_id: str
         :param payload: the json payload
         :type payload: dict
-        :param force: whether to override running deployments.
+        :param force: whether to override running deployments
         :type force: bool
-        :returns: the resulting deployment ID.
+        :returns: the resulting deployment ID
         :rtype: (str, Error)
         """
 
@@ -222,13 +222,13 @@ class Client(object):
     def scale_app(self, app_id, instances, force=None):
         """Scales an application to the requested number of instances.
 
-        :param app_id: The ID of the application to scale.
+        :param app_id: the ID of the application to scale
         :type app_id: str
-        :param instances: The requested number of instances.
+        :param instances: the requested number of instances
         :type instances: int
-        :param force: Whether to override running deployments.
+        :param force: whether to override running deployments
         :type force: bool
-        :returns: The resulting deployment ID.
+        :returns: the resulting deployment ID
         :rtype: (bool, Error)
         """
 
@@ -250,14 +250,14 @@ class Client(object):
         else:
             return (None, self._response_to_error(response))
 
-    def suspend_app(self, app_id, force=None):
+    def stop_app(self, app_id, force=None):
         """Scales an application to zero instances.
 
-        :param app_id: The ID of the application to suspend.
+        :param app_id: the ID of the application to stop
         :type app_id: str
-        :param force: Whether to override running deployments.
+        :param force: whether to override running deployments
         :type force: bool
-        :returns: The resulting deployment ID.
+        :returns: the resulting deployment ID
         :rtype: (bool, Error)
         """
 
@@ -266,11 +266,11 @@ class Client(object):
     def remove_app(self, app_id, force=None):
         """Completely removes the requested application.
 
-        :param app_id: The ID of the application to suspend.
+        :param app_id: the ID of the application to remove
         :type app_id: str
-        :param force: Whether to override running deployments.
+        :param force: whether to override running deployments
         :type force: bool
-        :returns: Error if it failed to remove the app; None otherwise.
+        :returns: Error if it failed to remove the app; None otherwise
         :rtype: Error
         """
 

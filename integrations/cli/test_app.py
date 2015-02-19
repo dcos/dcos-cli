@@ -1,5 +1,6 @@
 import json
 
+import pytest
 from common import exec_command
 
 
@@ -14,6 +15,7 @@ def test_help():
     dcos app remove [--force] <app-id>
     dcos app show [--app-version=<app-version>] <app-id>
     dcos app start [--force] <app-id> [<instances>]
+    dcos app stop [--force] <app-id>
 
 Options:
     -h, --help                   Show this screen
@@ -186,6 +188,44 @@ def test_start_already_started_app():
     assert returncode == 1
     assert (stdout ==
             b"Application 'zero-instance-app' already started: 1 instances.\n")
+    assert stderr == b''
+
+    _remove_app('zero-instance-app')
+
+
+def test_stop_missing_app():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'stop', 'missing-id'])
+
+    assert returncode == 1
+    assert stdout == b"Error: App '/missing-id' does not exist\n"
+    assert stderr == b''
+
+
+@pytest.mark.skipif(True, reason='We need to wait for the start to finish')
+def test_stop_app():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _start_app('zero-instance-app')
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'stop', 'zero-instance-app'])
+
+    assert returncode == 0
+    assert stdout.decode().startswith('Created deployment ')
+    assert stderr == b''
+
+    _remove_app('zero-instance-app')
+
+
+def test_stop_already_stopped_app():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'stop', 'zero-instance-app'])
+
+    assert returncode == 1
+    assert (stdout ==
+            b"Application 'zero-instance-app' already stopped: 0 instances.\n")
     assert stderr == b''
 
     _remove_app('zero-instance-app')
