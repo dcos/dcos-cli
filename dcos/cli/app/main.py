@@ -116,10 +116,28 @@ def _add():
         emitter.publish(err)
         return 1
 
+    schema = json.loads(
+        pkg_resources.resource_string(
+            'dcos',
+            'data/marathon-schema.json').decode('utf-8'))
+
+    err = util.validate_json(application_resource, schema)
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
     # Add application to marathon
     client = marathon.create_client(
         config.load_from_path(
             os.environ[constants.DCOS_CONFIG_ENV]))
+
+    # Check that the application doesn't exist
+    app_id = marathon.normalize_app_id(application_resource['id'])
+    app, err = client.get_app(app_id)
+    if app is not None:
+        emitter.publish("Application '{}' already exists".format(app_id))
+        return 1
+
     _, err = client.add_app(application_resource)
     if err is not None:
         emitter.publish(err)
