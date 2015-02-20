@@ -42,7 +42,8 @@ def test_list_property():
     assert stdout == b"""marathon.host=localhost
 marathon.port=8080
 package.cache=tmp/cache
-package.sources=['git://github.com/mesosphere/universe.git']
+package.sources=['git://github.com/mesosphere/universe.git', \
+'https://github.com/mesosphere/universe/archive/master.zip']
 """
     assert stderr == b''
 

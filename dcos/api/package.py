@@ -4,21 +4,27 @@ import hashlib
 import json
 import os
 import shutil
+import stat
 import subprocess
+import zipfile
 
 import git
 import portalocker
 import pystache
-from dcos.api import errors, util
+from dcos.api import emitting, errors, util
 
 try:
     # Python 2
     from urlparse import urlparse
+    from urllib import urlretrieve
 except ImportError:
     # Python 3
     from urllib.parse import urlparse
+    from urllib.request import urlretrieve
 
 logger = util.get_logger(__name__)
+
+emitter = emitting.FlatEmitter()
 
 
 PACKAGE_NAME_KEY = 'DCOS_PACKAGE_NAME'
@@ -338,7 +344,7 @@ def update_sources(config):
 
         for source in sources:
 
-            logger.info("Updating source [%s]", source)
+            emitter.publish('Updating source [{}]'.format(source))
 
             # create a temporary staging directory
             with util.tempdir() as tmp_dir:
@@ -462,8 +468,7 @@ class FileSource(Source):
             shutil.copytree(source_dir, target_dir)
             return None
         except OSError:
-            return Error('Could not copy [{}] to [{}]'.format(source_dir,
-                                                              target_dir))
+            return Error('Unable to fetch packages from [{}]'.format(self.url))
 
 
 class HttpSource(Source):
@@ -494,7 +499,47 @@ class HttpSource(Source):
         :rtype: Error
         """
 
-        raise NotImplementedError
+        try:
+            with util.tempdir() as tmp_dir:
+
+                tmp_file = os.path.join(tmp_dir, 'packages.zip')
+
+                # Download the zip file.
+                urlretrieve(self.url, tmp_file)
+
+                # Unzip the downloaded file.
+                packages_zip = zipfile.ZipFile(tmp_file, 'r')
+                packages_zip.extractall(tmp_dir)
+
+                # Move the enclosing directory to the target directory
+                enclosing_dirs = [item
+                                  for item in os.listdir(tmp_dir)
+                                  if os.path.isdir(
+                                      os.path.join(tmp_dir, item))]
+
+                # There should only be one directory present after extracting.
+                assert(len(enclosing_dirs) is 1)
+
+                enclosing_dir = os.path.join(tmp_dir, enclosing_dirs[0])
+
+                shutil.copytree(enclosing_dir, target_dir)
+
+                # Set appropriate file permissions on the scripts.
+                x_mode = (stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
+                          stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP)
+
+                scripts_dir = os.path.join(target_dir, 'scripts')
+                scripts = os.listdir(scripts_dir)
+
+                for script in scripts:
+                    script_path = os.path.join(scripts_dir, script)
+                    if os.path.isfile(script_path):
+                        os.chmod(script_path, x_mode)
+
+                return None
+
+        except Exception:
+            return Error('Unable to fetch packages from [{}]'.format(self.url))
 
 
 class GitSource(Source):
@@ -546,8 +591,7 @@ PATH = {}""".format(os.environ['PATH']))
             return None
 
         except git.exc.GitCommandError:
-            return Error("Unable to clone [{}] to [{}]".format(self.url,
-                                                               target_dir))
+            return Error("Unable to fetch packages from [{}]".format(self.url))
 
 
 class Error(errors.Error):
