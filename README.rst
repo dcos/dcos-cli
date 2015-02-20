@@ -47,16 +47,37 @@ Configure Development Environment
 Running POC
 -----------
 
-#. Get started by calling DCOS CLI help::
+#. Get started by calling the DCOS CLI help::
 
-    dcos --help
+    dcos help
 
 Running Tests:
 --------------
 
-#. Run all DCOS CLI tests (make sure that you are running Zookeeper, Mesos and Marathon)::
+Setup
+#####
+
+Tox, our test runner, tests against both Python 2.7 and Python 3.4 environments.
+
+If you're using OS X, be sure to install the officially distributed Python 3.4 installer_ since the Homebrew version is missing a necessary library.
+
+
+Running
+#######
+
+Tox will run unit and integration tests in both Python environments using a temporarily created virtualenv. For integration tests to work, you need a Marathon instance running on localhost.
+
+There are two ways to run tests, you can either use the virtualenv created by `make env` above::
+
+    make test
+
+Or, assuming you have tox installed (via `sudo pip install tox`)::
 
     tox
+
+
+Other Useful Commands
+#####################
 
 #. List all of the supported test environments::
 
@@ -68,3 +89,4 @@ Running Tests:
 
 .. _packages: https://packaging.python.org/en/latest/installing.html#installing-requirements
 .. _git: http://git-scm.com
+.. _installer: https://www.python.org/downloads/
