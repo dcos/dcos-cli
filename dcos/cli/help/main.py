@@ -31,8 +31,15 @@ def main():
 
     if args['help'] and args['info']:
         emitter.publish('Display usage information')
-    # Note: this covers --all. When --all is different,
+    # Note: this covers --all also.
+    # Eventually we will only show commonly used commands for help
+    # and use --all to show, well, all commands.
     elif args['help']:
+        emitter.publish(
+            "Command line utility for the Mesosphere DataCenter Operating "
+            "System (DCOS). The Mesosphere DCOS is a distributed operating "
+            "system built around Apache Mesos. This utility provides tools "
+            "for easy management of a DCOS installation.\n")
         directory = _binary_directory(os.environ[constants.DCOS_PATH_ENV])
         emitter.publish("Available DCOS commands in '{}':".format(directory))
         emitter.publish(
@@ -41,7 +48,7 @@ def main():
                     _extract_subcommands(
                         _list_subcommand_programs(directory)))))
         emitter.publish(
-            "\nGet detail command description with 'dcos <command> --help'.")
+            "\nGet detailed command description with 'dcos <command> --help'.")
 
         return 0
     else:

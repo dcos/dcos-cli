@@ -133,7 +133,7 @@ def _info():
     :rtype: int
     """
 
-    emitter.publish('Deploy and manage applications on Apache Mesos')
+    emitter.publish('Deploy and manage applications on the DCOS')
     return 0
 
 

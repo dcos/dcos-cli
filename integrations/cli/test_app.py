@@ -60,7 +60,7 @@ def test_info():
     returncode, stdout, stderr = exec_command(['dcos', 'app', 'info'])
 
     assert returncode == 0
-    assert stdout == b'Deploy and manage applications on Apache Mesos\n'
+    assert stdout == b'Deploy and manage applications on the DCOS\n'
     assert stderr == b''
 
 
