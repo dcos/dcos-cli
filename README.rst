@@ -59,7 +59,7 @@ Setup
 
 Tox, our test runner, tests against both Python 2.7 and Python 3.4 environments.
 
-If you're using OS X, be sure to install the officially distributed Python 3.4 installer_ since the Homebrew version is missing a necessary library.
+If you're using OS X, be sure to use the officially distributed Python 3.4 installer_ since the Homebrew version is missing a necessary library.
 
 
 Running
