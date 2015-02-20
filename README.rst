@@ -67,11 +67,11 @@ Running
 
 Tox will run unit and integration tests in both Python environments using a temporarily created virtualenv. For integration tests to work, you need a Marathon instance running on localhost.
 
-There are two ways to run tests, you can either use the virtualenv created by `make env` above::
+There are two ways to run tests, you can either use the virtualenv created by :code:`make env` above::
 
     make test
 
-Or, assuming you have tox installed (via `sudo pip install tox`)::
+Or, assuming you have tox installed (via :code:`sudo pip install tox`)::
 
     tox
 
