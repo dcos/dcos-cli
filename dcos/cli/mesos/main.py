@@ -15,6 +15,8 @@ def main():
 
     if len(sys.argv) == 2:
         cmd = "mesos-help"
+    elif sys.argv[2] == "--help":
+        cmd = "mesos-help"
     elif sys.argv[2] == "info":
         return _info()
     else:
