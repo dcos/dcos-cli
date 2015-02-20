@@ -7,13 +7,14 @@ def test_help():
 
     assert returncode == 0
     assert stdout == b"""Usage:
-    dcos help info
+    dcos help
     dcos help --all
+    dcos help info
 
 Options:
-    -h, --help          Show this screen
+    --help              Show this screen
     --version           Show version
-    --all               Prints all the avaible commands to the standard output
+    --all               Prints all available commands to the standard output
 """
     assert stderr == b''
 
@@ -22,7 +23,7 @@ def test_info():
     returncode, stdout, stderr = exec_command(['dcos', 'help', 'info'])
 
     assert returncode == 0
-    assert stdout == b'Display help information about DCOS\n'
+    assert stdout == b'Display usage information\n'
     assert stderr == b''
 
 
@@ -38,11 +39,11 @@ def test_list_all():
     returncode, stdout, stderr = exec_command(['dcos', 'help', '--all'])
 
     assert returncode == 0
-    assert stdout == """Available DCOS command in '{}':
+    assert stdout == """Available DCOS commands in '{}':
 
 \tapp            \tDeploy and manage applications on Apache Mesos
 \tconfig         \tGet and set DCOS command line options
-\thelp           \tDisplay help information about DCOS
+\thelp           \tDisplay usage information
 \tmarathon       \tDeploy and manage applications on Apache Mesos
 \tpackage        \tInstall and manage DCOS software packages
 

@@ -1,12 +1,13 @@
 """
 Usage:
-    dcos help info
+    dcos help
     dcos help --all
+    dcos help info
 
 Options:
-    -h, --help          Show this screen
+    --help              Show this screen
     --version           Show version
-    --all               Prints all the avaible commands to the standard output
+    --all               Prints all available commands to the standard output
 """
 
 import os
@@ -29,10 +30,11 @@ def main():
         version='dcos-help version {}'.format(constants.version))
 
     if args['help'] and args['info']:
-        emitter.publish('Display help information about DCOS')
-    elif args['help'] and args['--all']:
+        emitter.publish('Display usage information')
+    # Note: this covers --all. When --all is different,
+    elif args['help']:
         directory = _binary_directory(os.environ[constants.DCOS_PATH_ENV])
-        emitter.publish("Available DCOS command in '{}':".format(directory))
+        emitter.publish("Available DCOS commands in '{}':".format(directory))
         emitter.publish(
             options.make_command_summary_string(
                 _external_command_documentation(
@@ -101,9 +103,9 @@ def _binary_directory(dcos_path):
 def _external_command_documentation(commands):
     """Gather sub-command summary
 
-    :param commands: List of subcommand
+    :param commands: List of subcommands
     :type comands: list of str
-    :returns: Returns a list of subcommand and their summary
+    :returns: Returns a list of subcommands and their summary
     :rtype: list of (str, str)
     """
     def info(command):
