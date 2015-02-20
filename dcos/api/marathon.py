@@ -78,10 +78,15 @@ class Client(object):
 
         message = response.json().get('message')
         if message is None:
-            logger.error(
-                'Marathon server did not return a message: %s',
-                response.json())
-            return Error('Unknown error from Marathon')
+            errors = response.json().get('errors')
+            if errors is None:
+                logger.error(
+                    'Marathon server did not return a message: %s',
+                    response.json())
+                return Error('Unknown error from Marathon')
+
+            msg = '\n'.join(error['error'] for error in errors)
+            return Error('Error(s): {}'.format(msg))
 
         return Error('Error: {}'.format(response.json()['message']))
 
@@ -214,8 +219,7 @@ class Client(object):
         logger.info('Got (%r): %r', response.status_code, response.json())
 
         if _success(response.status_code):
-            deployment = response.json()['deploymentId']
-            return (deployment, None)
+            return (response.json().get('deploymentId'), None)
         else:
             return (None, self._response_to_error(response))
 

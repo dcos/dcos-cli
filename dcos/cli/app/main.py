@@ -7,6 +7,7 @@ Usage:
     dcos app show [--app-version=<app-version>] <app-id>
     dcos app start [--force] <app-id> [<instances>]
     dcos app stop [--force] <app-id>
+    dcos app update [--force] <app-id> [<properties>...]
 
 Options:
     -h, --help                   Show this screen
@@ -22,6 +23,12 @@ Options:
                                  negative integer and they represent the
                                  version from the currently deployed
                                  application definition.
+
+Positional arguments:
+    <app-id>                The application id
+    <properties>            Optional key-value pairs to be included in the
+                            command. The separator between the key and value
+                            must be the '=' character. E.g. cpus=2.0.
 """
 import json
 import os
@@ -29,8 +36,8 @@ import sys
 
 import docopt
 import pkg_resources
-from dcos.api import (config, constants, emitting, errors, marathon, options,
-                      util)
+from dcos.api import (config, constants, emitting, errors, jsonitem, marathon,
+                      options, util)
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -70,6 +77,9 @@ def main():
 
     if args['stop']:
         return _stop(args['<app-id>'], args['--force'])
+
+    if args['update']:
+        return _update(args['<app-id>'], args['<properties>'], args['--force'])
 
     emitter.publish(options.make_generic_usage_error(__doc__))
 
@@ -303,6 +313,109 @@ def _stop(app_id, force):
         return 1
 
     emitter.publish('Created deployment {}'.format(deployment))
+
+
+def _update(app_id, json_items, force):
+    """
+    :param app_id: the id of the application
+    :type app_id: str
+    :param json_items: json update items
+    :type json_items: list of str
+    :param force: whether to override running deployments
+    :type force: bool
+    :returns: process status
+    :rtype: int
+    """
+
+    # Check that the application exists
+    client = marathon.create_client(
+        config.load_from_path(
+            os.environ[constants.DCOS_CONFIG_ENV]))
+
+    _, err = client.get_app(app_id)
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    if len(json_items) == 0:
+        if sys.stdin.isatty():
+            # We don't support TTY right now. In the future we will start an
+            # editor
+            emitter.publish(
+                "We currently don't support reading from the TTY. Please "
+                "specify an application JSON.\n"
+                "E.g. dcos app update < app_update.json")
+            return 1
+        else:
+            return _update_from_stdin(app_id, force)
+
+    schema = json.loads(
+        pkg_resources.resource_string(
+            'dcos',
+            'data/marathon-schema.json').decode('utf-8'))
+
+    app_json = {}
+
+    # Need to add the 'id' because it is required
+    app_json['id'] = app_id
+
+    for json_item in json_items:
+        key_value, err = jsonitem.parse_json_item(json_item, schema)
+        if err is not None:
+            emitter.publish(err)
+            return 1
+
+        key, value = key_value
+        if key in app_json:
+            emitter.publish(
+                'Key {!r} was specified more than once'.format(key))
+            return 1
+        else:
+            app_json[key] = value
+
+    err = util.validate_json(app_json, schema)
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    deployment, err = client.update_app(app_id, app_json, force)
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    emitter.publish('Created deployment {}'.format(deployment))
+
+    return 0
+
+
+def _update_from_stdin(app_id, force):
+    """
+    :param app_id: the id of the application
+    :type app_id: str
+    :param force: whether to override running deployments
+    :type force: bool
+    :returns: process status
+    :rtype: int
+    """
+
+    logger.info('Updating %r from JSON object from stdin', app_id)
+
+    application_resource, err = util.load_jsons(sys.stdin.read())
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    # Add application to marathon
+    client = marathon.create_client(
+        config.load_from_path(
+            os.environ[constants.DCOS_CONFIG_ENV]))
+
+    _, err = client.update_app(app_id, application_resource, force)
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    return 0
 
 
 def _calculate_version(client, app_id, version):
