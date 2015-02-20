@@ -1,9 +1,9 @@
 """
 Usage:
-    dcos [--log-level=<log-level>] <command> [<args>...]
+    dcos [options] <command> [<args>...]
 
 Options:
-    -h, --help                  Show this screen
+    --help                      Show this screen
     --version                   Show version
     --log-level=<log-level>     If set then print supplementary messages to
                                 stderr at or above this level. The severity
@@ -22,8 +22,8 @@ Environment Variables:
     DCOS_CONFIG                 This environment variable points to the
                                 location of the DCOS configuration file.
 
-'dcos help --all' lists available subcommands. See 'dcos <command> --help' to
-read about a specific subcommand.
+'dcos help --all' lists all available subcommands. See 'dcos <command> --help'
+to read about a specific subcommand.
 """
 
 
@@ -60,7 +60,7 @@ def main():
         return subprocess.call([command] + argv)
     else:
         emitter.publish(
-            "{!r} is not a dcos command. See 'dcos --help'.".format(
+            "{!r} is not a dcos command. See 'dcos help'.".format(
                 args['<command>']))
         return 1
 

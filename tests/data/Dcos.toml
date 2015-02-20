@@ -1,6 +1,6 @@
 [package]
-cache = "tmp/cache"
 sources = [ "git://github.com/mesosphere/universe.git",]
+cache = "tmp/cache"
 [marathon]
 host = "localhost"
 port = 8080
