@@ -9,6 +9,7 @@ Usage:
     dcos app start [--force] <app-id> [<instances>]
     dcos app stop [--force] <app-id>
     dcos app update [--force] <app-id> [<properties>...]
+    dcos app version list [--max-count=<max-count>] <app-id>
 
 Options:
     -h, --help                   Show this screen
@@ -24,12 +25,15 @@ Options:
                                  negative integer and they represent the
                                  version from the currently deployed
                                  application definition.
+    --max-count=<max-count>      Maximun number of entries to try to fetch and
+                                 return
 
 Positional arguments:
     <app-id>                The application id
+    <instances>             The number of instances to start
     <properties>            Optional key-value pairs to be included in the
                             command. The separator between the key and value
-                            must be the '=' character. E.g. cpus=2.0.
+                            must be the '=' character. E.g. cpus=2.0
 """
 import json
 import os
@@ -63,6 +67,9 @@ def main():
 
     if args['add']:
         return _add()
+
+    if args['version'] and args['list']:
+        return _version_list(args['<app-id>'], args['--max-count'])
 
     if args['list']:
         return _list()
@@ -232,8 +239,8 @@ def _start(app_id, instances, force):
 
     :param app_id: the id for the application
     :type app_id: str
-    :param json_items: the list of json item
-    :type json_items: list of str
+    :param instances: the number of instances to start
+    :type instances: str
     :param force: whether to override running deployments
     :type force: bool
     :returns: Process status
@@ -443,6 +450,36 @@ def _restart(app_id, force):
         return 1
 
     emitter.publish('Created deployment {}'.format(payload['deploymentId']))
+
+    return 0
+
+
+def _version_list(app_id, max_count):
+    """
+    :param app_id: the id of the application
+    :type app_id: str
+    :param max_count: the maximum number of version to fetch and return
+    :type max_count: str
+    :returns: process status
+    :rtype: int
+    """
+
+    if max_count is not None:
+        max_count, err = _parse_int(max_count)
+        if err is not None:
+            emitter.publish(err)
+            return 1
+
+    client = marathon.create_client(
+        config.load_from_path(
+            os.environ[constants.DCOS_CONFIG_ENV]))
+
+    versions, err = client.get_app_versions(app_id, max_count)
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    emitter.publish(versions)
 
     return 0
 

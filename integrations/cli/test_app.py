@@ -18,6 +18,7 @@ def test_help():
     dcos app start [--force] <app-id> [<instances>]
     dcos app stop [--force] <app-id>
     dcos app update [--force] <app-id> [<properties>...]
+    dcos app version list [--max-count=<max-count>] <app-id>
 
 Options:
     -h, --help                   Show this screen
@@ -33,12 +34,15 @@ Options:
                                  negative integer and they represent the
                                  version from the currently deployed
                                  application definition.
+    --max-count=<max-count>      Maximun number of entries to try to fetch and
+                                 return
 
 Positional arguments:
     <app-id>                The application id
+    <instances>             The number of instances to start
     <properties>            Optional key-value pairs to be included in the
                             command. The separator between the key and value
-                            must be the '=' character. E.g. cpus=2.0.
+                            must be the '=' character. E.g. cpus=2.0
 """
     assert stderr == b''
 
@@ -367,6 +371,49 @@ def test_restarting_app():
     _remove_app('zero-instance-app')
 
 
+def test_list_version_missing_app():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'version', 'list', 'missing-id'])
+
+    assert returncode == 1
+    assert stdout == b"Error: App '/missing-id' does not exist\n"
+    assert stderr == b''
+
+
+def test_list_version_negative_max_count():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'version', 'list', 'missing-id', '--max-count=-1'])
+
+    assert returncode == 1
+    assert stdout == b'Maximum count must be a positive number: -1\n'
+    assert stderr == b''
+
+
+def test_list_version_app():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _list_versions('zero-instance-app', 1)
+
+    _update_app(
+        'zero-instance-app',
+        'tests/data/marathon/update_zero_instance_sleep.json')
+    _list_versions('zero-instance-app', 2)
+
+    _remove_app('zero-instance-app')
+
+
+def test_list_version_max_count():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _update_app(
+        'zero-instance-app',
+        'tests/data/marathon/update_zero_instance_sleep.json')
+
+    _list_versions('zero-instance-app', 1, 1)
+    _list_versions('zero-instance-app', 2, 2)
+    _list_versions('zero-instance-app', 2, 3)
+
+    _remove_app('zero-instance-app')
+
+
 def _list_apps(app_id=None):
     returncode, stdout, stderr = exec_command(['dcos', 'app', 'list'])
 
@@ -439,3 +486,20 @@ def _update_app(app_id, file_path):
         assert returncode == 0
         assert stdout == b''
         assert stderr == b''
+
+
+def _list_versions(app_id, expected_count, max_count=None):
+    cmd = ['dcos', 'app', 'version', 'list', app_id]
+    if max_count is not None:
+        cmd.append('--max-count={}'.format(max_count))
+
+    returncode, stdout, stderr = exec_command(cmd)
+
+    result = json.loads(stdout.decode('utf-8'))
+
+    assert returncode == 0
+    assert isinstance(result, list)
+    assert len(result) == expected_count
+    assert stderr == b''
+
+    return result
