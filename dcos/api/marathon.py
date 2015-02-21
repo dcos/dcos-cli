@@ -58,16 +58,6 @@ class Client(object):
 
         return url
 
-    def _sanitize_app_id(self, app_id):
-        """
-        :param app_id: raw application ID
-        :type app_id: str
-        :returns: sanitized application ID
-        :rtype: str
-        """
-
-        return quote('/' + app_id.strip('/'))
-
     def _response_to_error(self, response):
         """
         :param response: HTTP resonse object
@@ -102,7 +92,7 @@ class Client(object):
         :rtype: (dict, Error)
         """
 
-        app_id = self._sanitize_app_id(app_id)
+        app_id = normalize_app_id(app_id)
         if version is None:
             url = self._create_url('v2/apps{}'.format(app_id))
         else:
@@ -134,7 +124,7 @@ class Client(object):
         :rtype: (list of str, Error)
         """
 
-        app_id = self._sanitize_app_id(app_id)
+        app_id = normalize_app_id(app_id)
 
         url = self._create_url('v2/apps{}/versions'.format(app_id))
 
@@ -205,7 +195,7 @@ class Client(object):
         :rtype: (str, Error)
         """
 
-        app_id = self._sanitize_app_id(app_id)
+        app_id = normalize_app_id(app_id)
 
         if force is None or not force:
             params = None
@@ -239,7 +229,7 @@ class Client(object):
         if force is None:
             force = False
 
-        app_id = self._sanitize_app_id(app_id)
+        app_id = normalize_app_id(app_id)
 
         params = None
         if force:
@@ -281,7 +271,7 @@ class Client(object):
         if force is None:
             force = False
 
-        app_id = self._sanitize_app_id(app_id)
+        app_id = normalize_app_id(app_id)
 
         params = None
         if force:
@@ -314,6 +304,18 @@ class Error(errors.Error):
         """
 
         return self._message
+
+
+def normalize_app_id(app_id):
+    """Normalizes the application id.
+
+    :param app_id: raw application ID
+    :type app_id: str
+    :returns: normalized application ID
+    :rtype: str
+    """
+
+    return quote('/' + app_id.strip('/'))
 
 
 def _success(status_code):

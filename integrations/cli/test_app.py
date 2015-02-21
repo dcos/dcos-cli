@@ -85,6 +85,21 @@ def test_add_bad_json_app():
         assert stderr == b''
 
 
+def test_add_existing_app():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+
+    with open('tests/data/marathon/zero_instance_sleep_v2.json') as fd:
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'app', 'add'],
+            stdin=fd)
+
+        assert returncode == 1
+        assert stdout == b"Application '/zero-instance-app' already exists\n"
+        assert stderr == b''
+
+    _remove_app('zero-instance-app')
+
+
 def test_show_app():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
     _show_app('zero-instance-app')
@@ -93,7 +108,9 @@ def test_show_app():
 
 def test_show_absolute_app_version():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
-    _add_app('tests/data/marathon/zero_instance_sleep_v2.json')
+    _update_app(
+        'zero-instance-app',
+        'tests/data/marathon/update_zero_instance_sleep.json')
 
     result = _show_app('zero-instance-app')
     _show_app('zero-instance-app', result['version'])
@@ -103,14 +120,18 @@ def test_show_absolute_app_version():
 
 def test_show_relative_app_version():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
-    _add_app('tests/data/marathon/zero_instance_sleep_v2.json')
+    _update_app(
+        'zero-instance-app',
+        'tests/data/marathon/update_zero_instance_sleep.json')
     _show_app('zero-instance-app', "-1")
     _remove_app('zero-instance-app')
 
 
 def test_show_missing_relative_app_ersion():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
-    _add_app('tests/data/marathon/zero_instance_sleep_v2.json')
+    _update_app(
+        'zero-instance-app',
+        'tests/data/marathon/update_zero_instance_sleep.json')
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'app', 'show', '--app-version=-2', 'zero-instance-app'])
@@ -125,7 +146,9 @@ def test_show_missing_relative_app_ersion():
 
 def test_show_missing_absolute_app_version():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
-    _add_app('tests/data/marathon/zero_instance_sleep_v2.json')
+    _update_app(
+        'zero-instance-app',
+        'tests/data/marathon/update_zero_instance_sleep.json')
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'app', 'show', '--app-version=2000-02-11T20:39:32.972Z',
@@ -141,7 +164,9 @@ def test_show_missing_absolute_app_version():
 
 def test_show_bad_app_version():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
-    _add_app('tests/data/marathon/zero_instance_sleep_v2.json')
+    _update_app(
+        'zero-instance-app',
+        'tests/data/marathon/update_zero_instance_sleep.json')
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'app', 'show', '--app-version=20:39:32.972Z',
@@ -158,7 +183,9 @@ def test_show_bad_app_version():
 
 def test_show_bad_relative_app_version():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
-    _add_app('tests/data/marathon/zero_instance_sleep_v2.json')
+    _update_app(
+        'zero-instance-app',
+        'tests/data/marathon/update_zero_instance_sleep.json')
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'app', 'show', '--app-version=2', 'zero-instance-app'])
@@ -293,15 +320,9 @@ def test_update_app():
 
 def test_update_app_from_stdin():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
-
-    with open('tests/data/marathon/update_zero_instance_sleep.json') as fd:
-        returncode, stdout, stderr = exec_command(
-            ['dcos', 'app', 'update', 'zero-instance-app'],
-            stdin=fd)
-
-        assert returncode == 0
-        assert stdout == b''
-        assert stderr == b''
+    _update_app(
+        'zero-instance-app',
+        'tests/data/marathon/update_zero_instance_sleep.json')
 
     _remove_app('zero-instance-app')
 
@@ -367,3 +388,14 @@ def _start_app(app_id):
     assert returncode == 0
     assert stdout.decode().startswith('Created deployment ')
     assert stderr == b''
+
+
+def _update_app(app_id, file_path):
+    with open(file_path) as fd:
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'app', 'update', app_id],
+            stdin=fd)
+
+        assert returncode == 0
+        assert stdout == b''
+        assert stderr == b''
