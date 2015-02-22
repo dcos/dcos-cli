@@ -11,6 +11,8 @@ def test_help():
     assert stdout == b"""Usage:
     dcos app add
     dcos app deployment list [<app-id>]
+    dcos app deployment rollback <deployment-id>
+    dcos app deployment stop <deployment-id>
     dcos app info
     dcos app list
     dcos app remove [--force] <app-id>
@@ -40,6 +42,7 @@ Options:
 
 Positional arguments:
     <app-id>                The application id
+    <deployment-id>         The deployment id
     <instances>             The number of instances to start
     <properties>            Optional key-value pairs to be included in the
                             command. The separator between the key and value
@@ -416,58 +419,70 @@ def test_list_version_max_count():
 
 
 def test_list_empty_deployment():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'app', 'deployment', 'list'])
-
-    assert returncode == 0
-    assert stdout == b'[]\n'
-    assert stderr == b''
+    _list_deployments(0)
 
 
 def test_list_deployment():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
-    _start_app('zero-instance-app')
-
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'app', 'deployment', 'list'])
-
-    result = json.loads(stdout.decode('utf-8'))
-
-    assert returncode == 0
-    assert len(result) == 1
-    assert stderr == b''
-
+    _start_app('zero-instance-app', 3)
+    _list_deployments(1)
     _remove_app('zero-instance-app')
 
 
 def test_list_deployment_missing_app():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
     _start_app('zero-instance-app')
-
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'app', 'deployment', 'list', 'missing-id'])
-
-    result = json.loads(stdout.decode('utf-8'))
-
-    assert returncode == 0
-    assert len(result) == 0
-    assert stderr == b''
-
+    _list_deployments(0, 'missing-id')
     _remove_app('zero-instance-app')
 
 
 def test_list_deployment_app():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
-    _start_app('zero-instance-app')
+    _start_app('zero-instance-app', 3)
+    _list_deployments(1, 'zero-instance-app')
+    _remove_app('zero-instance-app')
+
+
+def test_rollback_missing_deployment():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'deployment', 'rollback', 'missing-deployment'])
+
+    assert returncode == 1
+    assert (stdout ==
+            b'Error: DeploymentPlan missing-deployment does not exist\n')
+    assert stderr == b''
+
+
+def test_rollback_deployment():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _start_app('zero-instance-app', 3)
+    result = _list_deployments(1, 'zero-instance-app')
 
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'app', 'deployment', 'list', 'zero-instance-app'])
-
-    result = json.loads(stdout.decode('utf-8'))
+        ['dcos', 'app', 'deployment', 'rollback', result[0]['id']])
 
     assert returncode == 0
-    assert len(result) == 1
+    assert stdout == b''
     assert stderr == b''
+
+    _list_deployments(0)
+
+    _remove_app('zero-instance-app')
+
+
+def test_stop_deployment():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _start_app('zero-instance-app', 3)
+    result = _list_deployments(1, 'zero-instance-app')
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'deployment', 'stop', result[0]['id']])
+
+    assert returncode == 0
+    assert stdout == b''
+    assert stderr == b''
+
+    _list_deployments(0)
 
     _remove_app('zero-instance-app')
 
@@ -526,9 +541,12 @@ def _show_app(app_id, version=None):
     return result
 
 
-def _start_app(app_id):
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'app', 'start', app_id])
+def _start_app(app_id, instances=None):
+    cmd = ['dcos', 'app', 'start', app_id]
+    if instances is not None:
+        cmd.append(str(instances))
+
+    returncode, stdout, stderr = exec_command(cmd)
 
     assert returncode == 0
     assert stdout.decode().startswith('Created deployment ')
@@ -557,6 +575,20 @@ def _list_versions(app_id, expected_count, max_count=None):
 
     assert returncode == 0
     assert isinstance(result, list)
+    assert len(result) == expected_count
+    assert stderr == b''
+
+
+def _list_deployments(expected_count, app_id=None):
+    cmd = ['dcos', 'app', 'deployment', 'list']
+    if app_id is not None:
+        cmd.append(app_id)
+
+    returncode, stdout, stderr = exec_command(cmd)
+
+    result = json.loads(stdout.decode('utf-8'))
+
+    assert returncode == 0
     assert len(result) == expected_count
     assert stderr == b''
 

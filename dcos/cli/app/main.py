@@ -2,6 +2,8 @@
 Usage:
     dcos app add
     dcos app deployment list [<app-id>]
+    dcos app deployment rollback <deployment-id>
+    dcos app deployment stop <deployment-id>
     dcos app info
     dcos app list
     dcos app remove [--force] <app-id>
@@ -31,6 +33,7 @@ Options:
 
 Positional arguments:
     <app-id>                The application id
+    <deployment-id>         The deployment id
     <instances>             The number of instances to start
     <properties>            Optional key-value pairs to be included in the
                             command. The separator between the key and value
@@ -79,10 +82,6 @@ def _cmds():
     """
 
     return [
-        cmds.Command(hierarchy=['info'], arg_keys=[], function=_info),
-
-        cmds.Command(hierarchy=['add'], arg_keys=[], function=_add),
-
         cmds.Command(
             hierarchy=['version', 'list'],
             arg_keys=['<app-id>', '--max-count'],
@@ -92,6 +91,20 @@ def _cmds():
             hierarchy=['deployment', 'list'],
             arg_keys=['<app-id>'],
             function=_deployment_list),
+
+        cmds.Command(
+            hierarchy=['deployment', 'rollback'],
+            arg_keys=['<deployment-id>'],
+            function=_deployment_rollback),
+
+        cmds.Command(
+            hierarchy=['deployment', 'stop'],
+            arg_keys=['<deployment-id>'],
+            function=_deployment_stop),
+
+        cmds.Command(hierarchy=['info'], arg_keys=[], function=_info),
+
+        cmds.Command(hierarchy=['add'], arg_keys=[], function=_add),
 
         cmds.Command(hierarchy=['list'], arg_keys=[], function=_list),
 
@@ -532,6 +545,46 @@ def _deployment_list(app_id):
         return 1
 
     emitter.publish(deployments)
+
+    return 0
+
+
+def _deployment_stop(deployment_id):
+    """
+    :param deployment_id: the application id
+    :type deployment_di: str
+    :returns: process status
+    :rtype: int
+    """
+
+    client = marathon.create_client(
+        config.load_from_path(
+            os.environ[constants.DCOS_CONFIG_ENV]))
+
+    err = client.stop_deployment(deployment_id)
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    return 0
+
+
+def _deployment_rollback(deployment_id):
+    """
+    :param deployment_id: the application id
+    :type deployment_di: str
+    :returns: process status
+    :rtype: int
+    """
+
+    client = marathon.create_client(
+        config.load_from_path(
+            os.environ[constants.DCOS_CONFIG_ENV]))
+
+    err = client.rollback_deployment(deployment_id)
+    if err is not None:
+        emitter.publish(err)
+        return 1
 
     return 0
 

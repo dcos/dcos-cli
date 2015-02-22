@@ -101,7 +101,7 @@ class Client(object):
 
         logger.info('Getting %r', url)
         response = requests.get(url)
-        logger.info('Got (%r): %r', response.status_code, response.json())
+        logger.info('Got (%r): %r', response.status_code, response.text)
 
         if _success(response.status_code):
             # Looks like Marathon return different JSON for versions
@@ -138,7 +138,7 @@ class Client(object):
 
         logger.info('Getting %r', url)
         response = requests.get(url)
-        logger.info('Got (%r): %r', response.status_code, response.json())
+        logger.info('Got (%r): %r', response.status_code, response.text)
 
         if _success(response.status_code):
             if max_count is None:
@@ -159,7 +159,7 @@ class Client(object):
 
         logger.info('Getting %r', url)
         response = requests.get(url)
-        logger.info('Got (%r): %r', response.status_code, response.json())
+        logger.info('Got (%r): %r', response.status_code, response.text)
 
         if _success(response.status_code):
             apps = response.json()['apps']
@@ -186,7 +186,7 @@ class Client(object):
 
         logger.info('Posting %r to %r', app_json, url)
         response = requests.post(url, json=app_json)
-        logger.info('Got (%r): %r', response.status_code, response.json())
+        logger.info('Got (%r): %r', response.status_code, response.text)
 
         if _success(response.status_code):
             return (response.json(), None)
@@ -217,7 +217,7 @@ class Client(object):
 
         logger.info('Putting %r to %r', payload, url)
         response = requests.put(url, json=payload)
-        logger.info('Got (%r): %r', response.status_code, response.json())
+        logger.info('Got (%r): %r', response.status_code, response.text)
 
         if _success(response.status_code):
             return (response.json().get('deploymentId'), None)
@@ -248,7 +248,7 @@ class Client(object):
 
         logger.info('Putting to %r', url)
         response = requests.put(url, json={'instances': int(instances)})
-        logger.info('Got (%r): %r', response.status_code, response.json())
+        logger.info('Got (%r): %r', response.status_code, response.text)
 
         if _success(response.status_code):
             deployment = response.json()['deploymentId']
@@ -320,7 +320,7 @@ class Client(object):
 
         logger.info('Posting %r', url)
         response = requests.post(url)
-        logger.info('Got (%r): %r', response.status_code, response.json())
+        logger.info('Got (%r): %r', response.status_code, response.text)
 
         if _success(response.status_code):
             return (response.json(), None)
@@ -340,7 +340,7 @@ class Client(object):
 
         logger.info('Getting %r', url)
         response = requests.get(url)
-        logger.info('Got (%r): %r', response.status_code, response.json())
+        logger.info('Got (%r): %r', response.status_code, response.text)
 
         if _success(response.status_code):
             if app_id is not None:
@@ -355,6 +355,60 @@ class Client(object):
             return (deployments, None)
         else:
             return (None, self._response_to_error(response))
+
+    def _cancel_deployment(self, deployment_id, force):
+        """Cancels an application deployment.
+
+        :param deployment_id: the deployment id
+        :type deployment_id: str
+        :param force: if set to `False`, stop the deployment and
+                      create a new rollback deployment to reinstate the
+                      previous configuration. If set to `True`, simply stop the
+                      deployment.
+        :type force: bool
+        :returns: an error if unable to rollback the deployment; None otherwise
+        :rtype: Error
+        """
+
+        if not force:
+            params = None
+        else:
+            params = {'force': 'true'}
+
+        url = self._create_url(
+            'v2/deployments/{}'.format(deployment_id),
+            params)
+
+        logger.info('Deleting %r', url)
+        response = requests.delete(url)
+        logger.info('Got (%r): %r', response.status_code, response.text)
+
+        if _success(response.status_code):
+            return None
+        else:
+            return self._response_to_error(response)
+
+    def rollback_deployment(self, deployment_id):
+        """Rolls back an application deployment.
+
+        :param deployment_id: the deployment id
+        :type deployment_id: str
+        :returns: an error if unable to rollback the deployment; None otherwise
+        :rtype: Error
+        """
+
+        return self._cancel_deployment(deployment_id, False)
+
+    def stop_deployment(self, deployment_id):
+        """Stops an application deployment.
+
+        :param deployment_id: the deployment id
+        :type deployment_id: str
+        :returns: an error if unable to stop the deployment; None otherwise
+        :rtype: Error
+        """
+
+        return self._cancel_deployment(deployment_id, True)
 
 
 class Error(errors.Error):
