@@ -10,6 +10,7 @@ def test_help():
     assert returncode == 0
     assert stdout == b"""Usage:
     dcos app add
+    dcos app deployment list [<app-id>]
     dcos app info
     dcos app list
     dcos app remove [--force] <app-id>
@@ -34,7 +35,7 @@ Options:
                                  negative integer and they represent the
                                  version from the currently deployed
                                  application definition.
-    --max-count=<max-count>      Maximun number of entries to try to fetch and
+    --max-count=<max-count>      Maximum number of entries to try to fetch and
                                  return
 
 Positional arguments:
@@ -410,6 +411,63 @@ def test_list_version_max_count():
     _list_versions('zero-instance-app', 1, 1)
     _list_versions('zero-instance-app', 2, 2)
     _list_versions('zero-instance-app', 2, 3)
+
+    _remove_app('zero-instance-app')
+
+
+def test_list_empty_deployment():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'deployment', 'list'])
+
+    assert returncode == 0
+    assert stdout == b'[]\n'
+    assert stderr == b''
+
+
+def test_list_deployment():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _start_app('zero-instance-app')
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'deployment', 'list'])
+
+    result = json.loads(stdout.decode('utf-8'))
+
+    assert returncode == 0
+    assert len(result) == 1
+    assert stderr == b''
+
+    _remove_app('zero-instance-app')
+
+
+def test_list_deployment_missing_app():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _start_app('zero-instance-app')
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'deployment', 'list', 'missing-id'])
+
+    result = json.loads(stdout.decode('utf-8'))
+
+    assert returncode == 0
+    assert len(result) == 0
+    assert stderr == b''
+
+    _remove_app('zero-instance-app')
+
+
+def test_list_deployment_app():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _start_app('zero-instance-app')
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'deployment', 'list', 'zero-instance-app'])
+
+    result = json.loads(stdout.decode('utf-8'))
+
+    assert returncode == 0
+    assert len(result) == 1
+    assert stderr == b''
 
     _remove_app('zero-instance-app')
 
