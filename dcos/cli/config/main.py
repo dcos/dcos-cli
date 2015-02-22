@@ -59,7 +59,7 @@ def main():
         _save_config_file(config_path, toml_config)
 
     else:
-        emitter.publish(options.make_generic_usage_error(__doc__))
+        emitter.publish(options.make_generic_usage_message(__doc__))
         return 1
 
     return 0

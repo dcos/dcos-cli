@@ -4,6 +4,8 @@ Usage:
     dcos app deployment list [<app-id>]
     dcos app deployment rollback <deployment-id>
     dcos app deployment stop <deployment-id>
+    dcos app deployment watch [--max-count=<max-count>] [--interval=<interval>]
+         <deployment-id>
     dcos app info
     dcos app list
     dcos app remove [--force] <app-id>
@@ -30,6 +32,7 @@ Options:
                                  application definition.
     --max-count=<max-count>      Maximum number of entries to try to fetch and
                                  return
+    --interval=<interval>        Number of seconds to wait between actions
 
 Positional arguments:
     <app-id>                The application id
@@ -42,6 +45,7 @@ Positional arguments:
 import json
 import os
 import sys
+import time
 
 import docopt
 import pkg_resources
@@ -63,13 +67,13 @@ def main():
         version='dcos-app version {}'.format(constants.version))
 
     if not args['app']:
-        emitter.publish(options.make_generic_usage_error(__doc__))
+        emitter.publish(options.make_generic_usage_message(__doc__))
         return 1
 
     returncode, err = cmds.execute(_cmds(), args)
     if err is not None:
         emitter.publish(err)
-        emitter.publish(options.make_generic_usage_error(__doc__))
+        emitter.publish(options.make_generic_usage_message(__doc__))
         return 1
 
     return returncode
@@ -101,6 +105,11 @@ def _cmds():
             hierarchy=['deployment', 'stop'],
             arg_keys=['<deployment-id>'],
             function=_deployment_stop),
+
+        cmds.Command(
+            hierarchy=['deployment', 'watch'],
+            arg_keys=['<deployment-id>', '--max-count', '--interval'],
+            function=_deployment_watch),
 
         cmds.Command(hierarchy=['info'], arg_keys=[], function=_info),
 
@@ -585,6 +594,53 @@ def _deployment_rollback(deployment_id):
     if err is not None:
         emitter.publish(err)
         return 1
+
+    return 0
+
+
+def _deployment_watch(deployment_id, max_count, interval):
+    """
+    :param deployment_id: the application id
+    :type deployment_di: str
+    :param max_count: maximum number of polling calls
+    :type max_count: str
+    :param interval: wait interval in seconds between polling calls
+    :type interval: str
+    :returns: process status
+    :rtype: int
+    """
+
+    if max_count is not None:
+        max_count, err = _parse_int(max_count)
+        if err is not None:
+            emitter.publish(err)
+            return 1
+
+    if interval is not None:
+        interval, err = _parse_int(interval)
+        if err is not None:
+            emitter.publish(err)
+            return 1
+    else:
+        interval = 1
+
+    client = marathon.create_client(
+        config.load_from_path(
+            os.environ[constants.DCOS_CONFIG_ENV]))
+
+    count = 0
+    while max_count is None or count < max_count:
+        deployment, err = client.get_deployment(deployment_id)
+        if err is not None:
+            emitter.publish(err)
+            return 1
+
+        if deployment is None:
+            return 0
+
+        emitter.publish(deployment)
+        time.sleep(interval)
+        count += 1
 
     return 0
 

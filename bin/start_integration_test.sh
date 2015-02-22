@@ -15,8 +15,11 @@ dpkg -l marathon mesos zookeeper | grep '^ii'
 # Start zookeeper
 /usr/share/zookeeper/bin/zkServer.sh start
 
-# Start Mesos and redirect stdout to /dev/null
-/usr/bin/mesos-local --num_slaves=2 --quiet &
+# Start Mesos master
+/etc/init.d/mesos-master start
+
+# Start Mesos slave
+/etc/init.d/mesos-slave start
 
 # Start Marathon
 /etc/init.d/marathon start

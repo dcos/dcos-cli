@@ -327,6 +327,31 @@ class Client(object):
         else:
             return (None, self._response_to_error(response))
 
+    def get_deployment(self, deployment_id):
+        """Returns a deployment.
+
+        :param deployemnt_id: the id of the application to restart
+        :type deployemnt_id: str
+        :returns: a deployment
+        :rtype: (dict, Error)
+        """
+
+        url = self._create_url('v2/deployments')
+
+        logger.info('Getting %r', url)
+        response = requests.get(url)
+        logger.info('Got (%r): %r', response.status_code, response.text)
+
+        if _success(response.status_code):
+            deployment = next(
+                (deployment for deployment in response.json()
+                 if deployment_id == deployment['id']),
+                None)
+
+            return (deployment, None)
+        else:
+            return (None, self._response_to_error(response))
+
     def get_deployments(self, app_id=None):
         """Returns a list of deployments, optionally limited to an app.
 
