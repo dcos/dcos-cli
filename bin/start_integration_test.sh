@@ -24,6 +24,12 @@ dpkg -l marathon mesos zookeeper | grep '^ii'
 # Give all of the processes above some time.
 sleep 2
 
-# Run the tox integration tests
+# Clean and recreate environment
 cd /dcos-cli
-make clean all
+make clean env
+
+# Activate the virtual environment so that we can run make
+source env/bin/activate
+
+# Run the default target: E.g. test and package
+make
