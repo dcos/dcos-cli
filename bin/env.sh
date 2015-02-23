@@ -17,8 +17,4 @@ if [ ! -f "$BASEDIR/env/updated" -o $BASEDIR/setup.py -nt $BASEDIR/env/updated ]
     echo "Requirements installed."
 fi
 
-pip install tox
-echo "Tox installed."
-
-pip install Sphinx
-echo "Sphinx installed."
+pip install -r $BASEDIR/requirements.txt
