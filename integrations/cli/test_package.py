@@ -61,6 +61,8 @@ def test_sources_list():
     assert returncode == 0
     assert stdout == b"""c3f1a0df1d2068e6b11d40224f5e500d3183a97e \
 git://github.com/mesosphere/universe.git
+f4ba0923d14eb75c1c0afca61c2adf9b2b355bd5 \
+https://github.com/mesosphere/universe/archive/master.zip
 """
     assert stderr == b''
 
@@ -69,8 +71,9 @@ def test_update():
     returncode, stdout, stderr = exec_command(['dcos', 'package', 'update'])
 
     assert returncode == 0
-    assert stdout.startswith(b'Validating package definitions...')
-    assert stdout.endswith(b'OK\n')
+    assert b'source' in stdout
+    assert b'Validating package definitions...' in stdout
+    assert b'OK' in stdout
     assert stderr == b''
 
 
