@@ -11,3 +11,6 @@ test:
 
 doc:
 	bin/doc.sh
+
+packages:
+	bin/packages.sh
