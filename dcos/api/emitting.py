@@ -63,7 +63,8 @@ def print_handler(event):
     if isinstance(event, basestring):
         print(event)
     elif isinstance(event, collections.Mapping) or isinstance(event, list):
-        print(json.dumps(event, sys.stdout, sort_keys=True, indent=2))
+        json.dump(event, sys.stdout, sort_keys=True, indent=2)
+        print('')
     elif isinstance(event, errors.Error):
         print(event.error())
     else:

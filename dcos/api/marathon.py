@@ -124,6 +124,14 @@ class Client(object):
         :rtype: (list of str, Error)
         """
 
+        if max_count is not None and max_count <= 0:
+            return (
+                None,
+                Error(
+                    'Maximum count must be a positive number: {}'.format(
+                        max_count))
+            )
+
         app_id = normalize_app_id(app_id)
 
         url = self._create_url('v2/apps{}/versions'.format(app_id))
