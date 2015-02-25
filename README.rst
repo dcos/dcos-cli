@@ -65,7 +65,11 @@ If you're using OS X, be sure to use the officially distributed Python 3.4 insta
 Running
 #######
 
-Tox will run unit and integration tests in both Python environments using a temporarily created virtualenv. For integration tests to work, you need a Marathon instance running on localhost.
+Tox will run unit and integration tests in both Python environments using a temporarily created virtualenv
+
+You should ensure `DCOS_CONFIG` is set and that the config file points to the Marathon instance you want to use for integration tests. If you're happy to use the default test configuration which assumes there is a Marathon instance running on localhost, set `DCOS_CONFIG` as follows::
+
+    export DCOS_CONFIG=$(pwd)/tests/data/Dcos.toml
 
 There are two ways to run tests, you can either use the virtualenv created by :code:`make env` above::
 

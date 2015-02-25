@@ -1,4 +1,16 @@
+import os
+import pytest
+
 from common import exec_command
+
+
+@pytest.fixture
+def env():
+    return {
+        'PATH': os.environ['PATH'],
+        'DCOS_PATH': os.environ['DCOS_PATH'],
+        'DCOS_CONFIG': os.path.join("tests", "data", "Dcos.toml")
+    }
 
 
 def test_help():
@@ -35,9 +47,9 @@ def test_version():
     assert stderr == b''
 
 
-def test_list_property():
-    returncode, stdout, stderr = exec_command(['dcos', 'config', '--list'])
-
+def test_list_property(env):
+    returncode, stdout, stderr = exec_command(['dcos', 'config', '--list'],
+                                              env)
     assert returncode == 0
     assert stdout == b"""marathon.host=localhost
 marathon.port=8080
@@ -47,60 +59,62 @@ package.sources=['git://github.com/mesosphere/universe.git']
     assert stderr == b''
 
 
-def test_get_existing_property():
-    _get_value('marathon.host', 'localhost')
+def test_get_existing_property(env):
+    _get_value('marathon.host', 'localhost', env)
 
 
-def test_get_missing_proerty():
-    _get_missing_value('missing.property')
+def test_get_missing_proerty(env):
+    _get_missing_value('missing.property', env)
 
 
-def test_set_existing_property():
-    _set_value('marathon.host', 'newhost')
-    _get_value('marathon.host', 'newhost')
-    _set_value('marathon.host', 'localhost')
+def test_set_existing_property(env):
+    _set_value('marathon.host', 'newhost', env)
+    _get_value('marathon.host', 'newhost', env)
+    _set_value('marathon.host', 'localhost', env)
 
 
-def test_unset_property():
-    _unset_value('marathon.host')
-    _get_missing_value('marathon.host')
-    _set_value('marathon.host', 'localhost')
+def test_unset_property(env):
+    _unset_value('marathon.host', env)
+    _get_missing_value('marathon.host', env)
+    _set_value('marathon.host', 'localhost', env)
 
 
-def test_set_missing_property():
-    _set_value('path.to.value', 'cool new value')
-    _get_value('path.to.value', 'cool new value')
-    _unset_value('path.to.value')
+def test_set_missing_property(env):
+    _set_value('path.to.value', 'cool new value', env)
+    _get_value('path.to.value', 'cool new value', env)
+    _unset_value('path.to.value', env)
 
 
-def _set_value(key, value):
-    returncode, stdout, stderr = exec_command(['dcos', 'config', key, value])
-
+def _set_value(key, value, env):
+    returncode, stdout, stderr = exec_command(['dcos', 'config', key, value],
+                                              env)
     assert returncode == 0
     assert stdout == b''
     assert stderr == b''
 
 
-def _get_value(key, value):
-    returncode, stdout, stderr = exec_command(['dcos', 'config', key])
-
+def _get_value(key, value, env):
+    returncode, stdout, stderr = exec_command(['dcos', 'config', key],
+                                              env)
     assert returncode == 0
     assert stdout == '{}\n'.format(value).encode('utf-8')
     assert stderr == b''
 
 
-def _unset_value(key):
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'config', '--unset', key])
-
+def _unset_value(key, env):
+    returncode, stdout, stderr = exec_command(['dcos',
+                                               'config',
+                                               '--unset',
+                                               key],
+                                              env)
     assert returncode == 0
     assert stdout == b''
     assert stderr == b''
 
 
-def _get_missing_value(key):
-    returncode, stdout, stderr = exec_command(['dcos', 'config', key])
-
+def _get_missing_value(key, env):
+    returncode, stdout, stderr = exec_command(['dcos', 'config', key],
+                                              env)
     assert returncode == 1
     assert stdout == b''
     assert stderr == b''
