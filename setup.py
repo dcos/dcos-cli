@@ -114,4 +114,8 @@ setup(
             'dcos-package=dcos.cli.package.main:main',
         ],
     },
+
+    scripts=[
+        'bin/env-setup',
+    ]
 )
