@@ -39,14 +39,19 @@ def test_list_all():
     returncode, stdout, stderr = exec_command(['dcos', 'help', '--all'])
 
     assert returncode == 0
-    assert stdout == """Available DCOS commands in '{}':
+    assert stdout == """Command line utility for \
+the Mesosphere DataCenter Operating System (DCOS). The Mesosphere DCOS is \
+a distributed operating system built around Apache Mesos. This utility \
+provides tools for easy management of a DCOS installation.
 
-\tapp            \tDeploy and manage applications on Apache Mesos
+Available DCOS commands in '{}':
+
+\tapp            \tDeploy and manage applications on the DCOS
 \tconfig         \tGet and set DCOS command line options
 \thelp           \tDisplay usage information
 \tmarathon       \tDeploy and manage applications on Apache Mesos
 \tpackage        \tInstall and manage DCOS software packages
 
-Get detail command description with 'dcos <command> --help'.
+Get detailed command description with 'dcos <command> --help'.
 """.format(os.path.join(os.environ['DCOS_PATH'], 'bin')).encode('utf-8')
     assert stderr == b''
