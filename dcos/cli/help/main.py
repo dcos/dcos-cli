@@ -52,7 +52,7 @@ def main():
 
         return 0
     else:
-        emitter.publish(options.make_generic_usage_error(__doc__))
+        emitter.publish(options.make_generic_usage_message(__doc__))
         return 1
 
 

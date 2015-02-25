@@ -1,6 +1,5 @@
 import json
 
-import pytest
 from common import exec_command
 
 
@@ -13,6 +12,8 @@ def test_help():
     dcos app deployment list [<app-id>]
     dcos app deployment rollback <deployment-id>
     dcos app deployment stop <deployment-id>
+    dcos app deployment watch [--max-count=<max-count>] [--interval=<interval>]
+         <deployment-id>
     dcos app info
     dcos app list
     dcos app remove [--force] <app-id>
@@ -39,6 +40,7 @@ Options:
                                  application definition.
     --max-count=<max-count>      Maximum number of entries to try to fetch and
                                  return
+    --interval=<interval>        Number of seconds to wait between actions
 
 Positional arguments:
     <app-id>                The application id
@@ -245,10 +247,11 @@ def test_stop_missing_app():
     assert stderr == b''
 
 
-@pytest.mark.skipif(True, reason='We need to wait for the start to finish')
 def test_stop_app():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
-    _start_app('zero-instance-app')
+    _start_app('zero-instance-app', 3)
+    result = _list_deployments(1, 'zero-instance-app')
+    _watch_deployment(result[0]['id'])
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'app', 'stop', 'zero-instance-app'])
@@ -360,15 +363,16 @@ def test_restarting_missing_app():
     assert stderr == b''
 
 
-@pytest.mark.skipif(True, reason='We need to wait for the start to finish')
 def test_restarting_app():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
-    _start_app('zero-instance-app')
+    _start_app('zero-instance-app', 3)
+    result = _list_deployments(1, 'zero-instance-app')
+    _watch_deployment(result[0]['id'])
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'app', 'restart', 'zero-instance-app'])
 
-    assert returncode == 1
+    assert returncode == 0
     assert stdout.decode().startswith('Created deployment ')
     assert stderr == b''
 
@@ -487,6 +491,19 @@ def test_stop_deployment():
     _remove_app('zero-instance-app')
 
 
+def test_watching_missing_deployment():
+    _watch_deployment('missing-deployment')
+
+
+def test_watching_deployment():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _start_app('zero-instance-app', 3)
+    result = _list_deployments(1, 'zero-instance-app')
+    _watch_deployment(result[0]['id'])
+    _list_deployments(0, 'zero-instance-app')
+    _remove_app('zero-instance-app')
+
+
 def _list_apps(app_id=None):
     returncode, stdout, stderr = exec_command(['dcos', 'app', 'list'])
 
@@ -593,3 +610,11 @@ def _list_deployments(expected_count, app_id=None):
     assert stderr == b''
 
     return result
+
+
+def _watch_deployment(deployment_id):
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'deployment', 'watch', deployment_id])
+
+    assert returncode == 0
+    assert stderr == b''
