@@ -136,7 +136,7 @@ def test_show_relative_app_version():
     _remove_app('zero-instance-app')
 
 
-def test_show_missing_relative_app_ersion():
+def test_show_missing_relative_app_version():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
     _update_app(
         'zero-instance-app',
