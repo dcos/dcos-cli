@@ -41,8 +41,8 @@ import sys
 
 import docopt
 import pkg_resources
-from dcos.api import (config, constants, emitting, errors, jsonitem, marathon,
-                      options, util)
+from dcos.api import (cmds, config, constants, emitting, errors, jsonitem,
+                      marathon, options, util)
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -62,39 +62,63 @@ def main():
         emitter.publish(options.make_generic_usage_error(__doc__))
         return 1
 
-    if args['info']:
-        return _info()
+    returncode, err = cmds.execute(_cmds(), args)
+    if err is not None:
+        emitter.publish(err)
+        emitter.publish(options.make_generic_usage_error(__doc__))
+        return 1
 
-    if args['add']:
-        return _add()
+    return returncode
 
-    if args['version'] and args['list']:
-        return _version_list(args['<app-id>'], args['--max-count'])
 
-    if args['list']:
-        return _list()
+def _cmds():
+    """
+    :returns: all the supported commands
+    :rtype: dcos.api.cmds.Command
+    """
 
-    if args['remove']:
-        return _remove(args['<app-id>'], args['--force'])
+    return [
+        cmds.Command(hierarchy=['info'], arg_keys=[], function=_info),
 
-    if args['show']:
-        return _show(args['<app-id>'], args['--app-version'])
+        cmds.Command(hierarchy=['add'], arg_keys=[], function=_add),
 
-    if args['start']:
-        return _start(args['<app-id>'], args['<instances>'], args['--force'])
+        cmds.Command(
+            hierarchy=['version', 'list'],
+            arg_keys=['<app-id>', '--max-count'],
+            function=_version_list),
 
-    if args['stop']:
-        return _stop(args['<app-id>'], args['--force'])
+        cmds.Command(hierarchy=['list'], arg_keys=[], function=_list),
 
-    if args['update']:
-        return _update(args['<app-id>'], args['<properties>'], args['--force'])
+        cmds.Command(
+            hierarchy=['remove'],
+            arg_keys=['<app-id>', '--force'],
+            function=_remove),
 
-    if args['restart']:
-        return _restart(args['<app-id>'], args['--force'])
+        cmds.Command(
+            hierarchy=['show'],
+            arg_keys=['<app-id>', '--app-version'],
+            function=_show),
 
-    emitter.publish(options.make_generic_usage_error(__doc__))
+        cmds.Command(
+            hierarchy=['start'],
+            arg_keys=['<app-id>', '<instances>', '--force'],
+            function=_start),
 
-    return 1
+        cmds.Command(
+            hierarchy=['stop'],
+            arg_keys=['<app-id>', '--force'],
+            function=_stop),
+
+        cmds.Command(
+            hierarchy=['update'],
+            arg_keys=['<app-id>', '<properties>', '--force'],
+            function=_update),
+
+        cmds.Command(
+            hierarchy=['restart'],
+            arg_keys=['<app-id>', '--force'],
+            function=_restart),
+    ]
 
 
 def _info():

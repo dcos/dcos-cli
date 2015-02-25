@@ -1,6 +1,15 @@
 API Documentation
 =================
 
+The :mod:`dcos.api.cmds` Module
+---------------------------------
+
+.. automodule:: dcos.api.cmds
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+
 The :mod:`dcos.api.config` Module
 ---------------------------------
 
