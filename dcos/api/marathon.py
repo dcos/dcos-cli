@@ -327,6 +327,35 @@ class Client(object):
         else:
             return (None, self._response_to_error(response))
 
+    def get_deployments(self, app_id=None):
+        """Returns a list of deployments, optionally limited to an app.
+
+        :param app_id: the id of the application to restart
+        :type app_id: str
+        :returns: a list of deployments
+        :rtype: list of dict
+        """
+
+        url = self._create_url('v2/deployments')
+
+        logger.info('Getting %r', url)
+        response = requests.get(url)
+        logger.info('Got (%r): %r', response.status_code, response.json())
+
+        if _success(response.status_code):
+            if app_id is not None:
+                app_id = normalize_app_id(app_id)
+                deployments = [
+                    deployment for deployment in response.json()
+                    if app_id in deployment['affectedApps']
+                ]
+            else:
+                deployments = response.json()
+
+            return (deployments, None)
+        else:
+            return (None, self._response_to_error(response))
+
 
 class Error(errors.Error):
     """ Class for describing errors while talking to the Marathon server.

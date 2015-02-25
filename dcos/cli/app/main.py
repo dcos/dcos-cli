@@ -1,6 +1,7 @@
 """
 Usage:
     dcos app add
+    dcos app deployment list [<app-id>]
     dcos app info
     dcos app list
     dcos app remove [--force] <app-id>
@@ -25,7 +26,7 @@ Options:
                                  negative integer and they represent the
                                  version from the currently deployed
                                  application definition.
-    --max-count=<max-count>      Maximun number of entries to try to fetch and
+    --max-count=<max-count>      Maximum number of entries to try to fetch and
                                  return
 
 Positional arguments:
@@ -86,6 +87,11 @@ def _cmds():
             hierarchy=['version', 'list'],
             arg_keys=['<app-id>', '--max-count'],
             function=_version_list),
+
+        cmds.Command(
+            hierarchy=['deployment', 'list'],
+            arg_keys=['<app-id>'],
+            function=_deployment_list),
 
         cmds.Command(hierarchy=['list'], arg_keys=[], function=_list),
 
@@ -504,6 +510,28 @@ def _version_list(app_id, max_count):
         return 1
 
     emitter.publish(versions)
+
+    return 0
+
+
+def _deployment_list(app_id):
+    """
+    :param app_id: the application id
+    :type app_id: str
+    :returns: process status
+    :rtype: int
+    """
+
+    client = marathon.create_client(
+        config.load_from_path(
+            os.environ[constants.DCOS_CONFIG_ENV]))
+
+    deployments, err = client.get_deployments(app_id)
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    emitter.publish(deployments)
 
     return 0
 
