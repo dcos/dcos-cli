@@ -7,7 +7,7 @@ Dependencies
 ------------
 
 #. git_ must be installed and on the system path in order to fetch
-   packages from `git` sources.
+   packages from :code:`git` sources.
 
 Setup
 -----
@@ -29,23 +29,18 @@ Setup
 
     make env
 
-Configure Development Environment
----------------------------------
+Configure Environment and Run
+-----------------------------
 
-#. Activate the virtualenv::
+#. :code:`source` the setup file to add the :code:`dcos` command line interface to your
+   :code:`PATH` and create an empty configuration file::
 
-    source env/bin/activate
+    source env/bin/env-setup
 
-#. Export DCOS_PATH::
+#. Configure Marathon, changing the values below as appropriate for your local installation::
 
-    export DCOS_PATH=$(pwd)/env
-
-#. Export DCOS_CONFIG::
-
-    export DCOS_CONFIG=$(pwd)/tests/data/Dcos.toml
-
-Running POC
------------
+    dcos config marathon.host localhost
+    dcos config marathon.port 8080
 
 #. Get started by calling the DCOS CLI help::
 
@@ -59,19 +54,25 @@ Setup
 
 Tox, our test runner, tests against both Python 2.7 and Python 3.4 environments.
 
-If you're using OS X, be sure to use the officially distributed Python 3.4 installer_ since the Homebrew version is missing a necessary library.
+If you're using OS X, be sure to use the officially distributed Python 3.4 installer_ since the
+Homebrew version is missing a necessary library.
 
 
 Running
 #######
 
-Tox will run unit and integration tests in both Python environments using a temporarily created virtualenv
+Tox will run unit and integration tests in both Python environments using a temporarily created
+virtualenv.
 
-You should ensure `DCOS_CONFIG` is set and that the config file points to the Marathon instance you want to use for integration tests. If you're happy to use the default test configuration which assumes there is a Marathon instance running on localhost, set `DCOS_CONFIG` as follows::
+You should ensure :code:`DCOS_CONFIG` is set and that the config file points to the Marathon
+instance you want to use for integration tests. If you're happy to use the default test
+configuration which assumes there is a Marathon instance running on localhost, set
+:code:`DCOS_CONFIG` as follows::
 
     export DCOS_CONFIG=$(pwd)/tests/data/Dcos.toml
 
-There are two ways to run tests, you can either use the virtualenv created by :code:`make env` above::
+There are two ways to run tests, you can either use the virtualenv created by :code:`make env`
+above::
 
     make test
 
