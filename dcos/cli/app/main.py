@@ -1,6 +1,6 @@
 """
 Usage:
-    dcos app add
+    dcos app add [<app-resource>]
     dcos app deployment list [<app-id>]
     dcos app deployment rollback <deployment-id>
     dcos app deployment stop <deployment-id>
@@ -36,6 +36,9 @@ Options:
 
 Positional arguments:
     <app-id>                The application id
+    <app-resource>          The application resource; for a detailed
+                            description see (https://mesosphere.github.io/
+                            marathon/docs/rest-api.html#post-/v2/apps)
     <deployment-id>         The deployment id
     <instances>             The number of instances to start
     <properties>            Optional key-value pairs to be included in the
@@ -113,7 +116,10 @@ def _cmds():
 
         cmds.Command(hierarchy=['info'], arg_keys=[], function=_info),
 
-        cmds.Command(hierarchy=['add'], arg_keys=[], function=_add),
+        cmds.Command(
+            hierarchy=['add'],
+            arg_keys=['<app-resource>'],
+            function=_add),
 
         cmds.Command(hierarchy=['list'], arg_keys=[], function=_list),
 
@@ -159,22 +165,30 @@ def _info():
     return 0
 
 
-def _add():
+def _add(app_resource):
     """
+    :param app_resource: optional filename for the application resource
+    :type app_resource: str
     :returns: Process status
     :rtype: int
     """
 
-    # Check that stdin is not tty
-    if sys.stdin.isatty():
-        # We don't support TTY right now. In the future we will start an editor
-        emitter.publish(
-            "We currently don't support reading from the TTY. Please specify "
-            "an application JSON.\n"
-            "E.g. dcos app add < app_resource.json")
-        return 1
+    if app_resource is not None:
+        with open(app_resource) as fd:
+            application_resource, err = util.load_json(fd)
+    else:
+        # Check that stdin is not tty
+        if sys.stdin.isatty():
+            # We don't support TTY right now. In the future we will start an
+            # editor
+            emitter.publish(
+                "We currently don't support reading from the TTY. Please "
+                "specify an application JSON.\n"
+                "E.g. dcos app add < app_resource.json")
+            return 1
 
-    application_resource, err = util.load_jsons(sys.stdin.read())
+        application_resource, err = util.load_json(sys.stdin)
+
     if err is not None:
         emitter.publish(err)
         return 1

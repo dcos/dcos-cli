@@ -8,7 +8,7 @@ def test_help():
 
     assert returncode == 0
     assert stdout == b"""Usage:
-    dcos app add
+    dcos app add [<app-resource>]
     dcos app deployment list [<app-id>]
     dcos app deployment rollback <deployment-id>
     dcos app deployment stop <deployment-id>
@@ -44,6 +44,9 @@ Options:
 
 Positional arguments:
     <app-id>                The application id
+    <app-resource>          The application resource; for a detailed
+                            description see (https://mesosphere.github.io/
+                            marathon/docs/rest-api.html#post-/v2/apps)
     <deployment-id>         The deployment id
     <instances>             The number of instances to start
     <properties>            Optional key-value pairs to be included in the
@@ -75,6 +78,18 @@ def test_empty_list():
 
 def test_add_app():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _list_apps('zero-instance-app')
+    _remove_app('zero-instance-app')
+
+
+def test_optional_add_app():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'add', 'tests/data/marathon/zero_instance_sleep.json'])
+
+    assert returncode == 0
+    assert stdout == b''
+    assert stderr == b''
+
     _list_apps('zero-instance-app')
     _remove_app('zero-instance-app')
 
