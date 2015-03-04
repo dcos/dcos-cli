@@ -60,7 +60,10 @@ def print_handler(event):
     :type event: str, dict or dcos.api.errors.Error
     """
 
-    if isinstance(event, basestring):
+    if event is None:
+        # Do nothing
+        pass
+    elif isinstance(event, basestring):
         print(event)
     elif isinstance(event, collections.Mapping) or isinstance(event, list):
         json.dump(event, sys.stdout, sort_keys=True, indent=2)

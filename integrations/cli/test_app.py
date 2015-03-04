@@ -22,6 +22,7 @@ def test_help():
     dcos app start [--force] <app-id> [<instances>]
     dcos app stop [--force] <app-id>
     dcos app task list [<app-id>]
+    dcos app task show <task-id>
     dcos app update [--force] <app-id> [<properties>...]
     dcos app version list [--max-count=<max-count>] <app-id>
 
@@ -53,6 +54,7 @@ Positional arguments:
     <properties>            Optional key-value pairs to be included in the
                             command. The separator between the key and value
                             must be the '=' character. E.g. cpus=2.0
+    <task-id>               The task id
 """
     assert stderr == b''
 
@@ -554,6 +556,34 @@ def test_list_missing_app_tasks():
     result = _list_deployments(1, 'zero-instance-app')
     _watch_deployment(result[0]['id'], 60)
     _list_tasks(0, 'missing-id')
+    _remove_app('zero-instance-app')
+
+
+def test_show_missing_task():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'task', 'show', 'missing-id'])
+
+    assert returncode == 0
+    assert stdout == b''
+    assert stderr == b''
+
+
+def test_show_task():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _start_app('zero-instance-app', 3)
+    result = _list_deployments(1, 'zero-instance-app')
+    _watch_deployment(result[0]['id'], 60)
+    result = _list_tasks(3, 'zero-instance-app')
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'app', 'task', 'show', result[0]['id']])
+
+    result = json.loads(stdout.decode('utf-8'))
+
+    assert returncode == 0
+    assert result['appId'] == '/zero-instance-app'
+    assert stderr == b''
+
     _remove_app('zero-instance-app')
 
 

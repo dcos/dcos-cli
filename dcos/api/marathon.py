@@ -319,8 +319,8 @@ class Client(object):
     def get_deployment(self, deployment_id):
         """Returns a deployment.
 
-        :param deployemnt_id: the id of the application to restart
-        :type deployemnt_id: str
+        :param deployment_id: the deployment id
+        :type deployment_id: str
         :returns: a deployment
         :rtype: (dict, Error)
         """
@@ -343,7 +343,7 @@ class Client(object):
     def get_deployments(self, app_id=None):
         """Returns a list of deployments, optionally limited to an app.
 
-        :param app_id: the id of the application to restart
+        :param app_id: the id of the application
         :type app_id: str
         :returns: a list of deployments
         :rtype: list of dict
@@ -422,13 +422,12 @@ class Client(object):
         :param app_id: the id of the application to restart
         :type app_id: str
         :returns: a list of tasks
-        :rtype: list of dict
+        :rtype: (list of dict, dcos.api.errors.Error)
         """
 
         url = self._create_url('v2/tasks')
 
         response, error = http.get(url, response_to_error=_response_to_error)
-
         if error is not None:
             return (None, error)
 
@@ -442,6 +441,28 @@ class Client(object):
             tasks = response.json()['tasks']
 
         return (tasks, None)
+
+    def get_task(self, task_id):
+        """Returns a task
+
+        :param task_id: the id of the task
+        :type task_id: str
+        :returns: a tasks
+        :rtype: (dict, dcos.api.errors.Error)
+        """
+
+        url = self._create_url('v2/tasks')
+
+        response, error = http.get(url, response_to_error=_response_to_error)
+        if error is not None:
+            return (None, error)
+
+        task = next(
+            (task for task in response.json()['tasks']
+             if task_id == task['id']),
+            None)
+
+        return (task, None)
 
 
 def normalize_app_id(app_id):
