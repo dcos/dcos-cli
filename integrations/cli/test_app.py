@@ -251,7 +251,7 @@ def test_stop_app():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
     _start_app('zero-instance-app', 3)
     result = _list_deployments(1, 'zero-instance-app')
-    _watch_deployment(result[0]['id'])
+    _watch_deployment(result[0]['id'], 60)
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'app', 'stop', 'zero-instance-app'])
@@ -367,7 +367,7 @@ def test_restarting_app():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
     _start_app('zero-instance-app', 3)
     result = _list_deployments(1, 'zero-instance-app')
-    _watch_deployment(result[0]['id'])
+    _watch_deployment(result[0]['id'], 60)
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'app', 'restart', 'zero-instance-app'])
@@ -492,14 +492,14 @@ def test_stop_deployment():
 
 
 def test_watching_missing_deployment():
-    _watch_deployment('missing-deployment')
+    _watch_deployment('missing-deployment', 1)
 
 
 def test_watching_deployment():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
     _start_app('zero-instance-app', 3)
     result = _list_deployments(1, 'zero-instance-app')
-    _watch_deployment(result[0]['id'])
+    _watch_deployment(result[0]['id'], 60)
     _list_deployments(0, 'zero-instance-app')
     _remove_app('zero-instance-app')
 
@@ -612,9 +612,10 @@ def _list_deployments(expected_count, app_id=None):
     return result
 
 
-def _watch_deployment(deployment_id):
+def _watch_deployment(deployment_id, count):
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'app', 'deployment', 'watch', deployment_id])
+        ['dcos', 'app', 'deployment', 'watch', '--max-count={}'.format(count),
+         deployment_id])
 
     assert returncode == 0
     assert stderr == b''
