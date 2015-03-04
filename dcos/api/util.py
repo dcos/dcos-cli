@@ -100,13 +100,35 @@ def get_logger(name):
     return logging.getLogger(name)
 
 
+def load_json(reader):
+    """Deserialize a reader into a python object
+
+    :param reader: the json reader
+    :type reader: a :code:`.read()`-supporting object
+    :returns: the deserialized JSON object
+    :rtype: (any, Error) where any is one of dict, list, str, int, float or
+            bool
+    """
+
+    try:
+        return (json.load(reader), None)
+    except:
+        error = sys.exc_info()[0]
+        logger = get_logger(__name__)
+        logger.error(
+            'Unhandled exception while loading JSON: %r',
+            error)
+        return (None, errors.DefaultError('Error loading JSON.'))
+
+
 def load_jsons(value):
     """Deserialize a string to a python object
 
     :param value: The JSON string
     :type value: str
-    :returns: The deserealized JSON object
-    :type: (any, Error) where any is one of dict, list, str, int, float or bool
+    :returns: The deserialized JSON object
+    :rtype: (any, Error) where any is one of dict, list, str, int, float or
+            bool
     """
 
     try:
