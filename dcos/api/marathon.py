@@ -416,6 +416,33 @@ class Client(object):
 
         return self._cancel_deployment(deployment_id, True)
 
+    def get_tasks(self, app_id):
+        """Returns a list of tasks, optionally limited to an app.
+
+        :param app_id: the id of the application to restart
+        :type app_id: str
+        :returns: a list of tasks
+        :rtype: list of dict
+        """
+
+        url = self._create_url('v2/tasks')
+
+        response, error = http.get(url, response_to_error=_response_to_error)
+
+        if error is not None:
+            return (None, error)
+
+        if app_id is not None:
+            app_id = normalize_app_id(app_id)
+            tasks = [
+                task for task in response.json()['tasks']
+                if app_id == task['appId']
+            ]
+        else:
+            tasks = response.json()['tasks']
+
+        return (tasks, None)
+
 
 def normalize_app_id(app_id):
     """Normalizes the application id.

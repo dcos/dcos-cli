@@ -13,6 +13,7 @@ Usage:
     dcos app show [--app-version=<app-version>] <app-id>
     dcos app start [--force] <app-id> [<instances>]
     dcos app stop [--force] <app-id>
+    dcos app task list [<app-id>]
     dcos app update [--force] <app-id> [<properties>...]
     dcos app version list [--max-count=<max-count>] <app-id>
 
@@ -113,6 +114,11 @@ def _cmds():
             hierarchy=['deployment', 'watch'],
             arg_keys=['<deployment-id>', '--max-count', '--interval'],
             function=_deployment_watch),
+
+        cmds.Command(
+            hierarchy=['task', 'list'],
+            arg_keys=['<app-id>'],
+            function=_task_list),
 
         cmds.Command(hierarchy=['info'], arg_keys=[], function=_info),
 
@@ -651,6 +657,28 @@ def _deployment_watch(deployment_id, max_count, interval):
         emitter.publish(deployment)
         time.sleep(interval)
         count += 1
+
+    return 0
+
+
+def _task_list(app_id):
+    """
+    :param app_id: the id of the application
+    :type app_id: str
+    :returns: process status
+    :rtype: int
+    """
+
+    client = marathon.create_client(
+        config.load_from_path(
+            os.environ[constants.DCOS_CONFIG_ENV]))
+
+    tasks, err = client.get_tasks(app_id)
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    emitter.publish(tasks)
 
     return 0
 
