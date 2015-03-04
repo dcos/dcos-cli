@@ -49,7 +49,6 @@ Available DCOS commands in '{}':
 \tapp            \tDeploy and manage applications on the DCOS
 \tconfig         \tGet and set DCOS command line options
 \thelp           \tDisplay usage information
-\tmarathon       \tDeploy and manage applications on Apache Mesos
 \tpackage        \tInstall and manage DCOS software packages
 
 Get detailed command description with 'dcos <command> --help'.

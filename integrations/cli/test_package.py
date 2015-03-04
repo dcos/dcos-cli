@@ -141,7 +141,7 @@ def test_search():
 
 def test_cleanup():
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'remove', 'mesos-dns'])
+        ['dcos', 'app', 'remove', 'mesos-dns'])
 
     assert returncode == 0
     assert stdout == b''
