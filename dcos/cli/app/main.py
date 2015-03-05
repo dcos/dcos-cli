@@ -225,7 +225,7 @@ def _add(app_resource):
 
 def _list():
     """
-    :returns: Process status
+    :returns: process status
     :rtype: int
     """
 
@@ -238,11 +238,7 @@ def _list():
         emitter.publish(err)
         return 1
 
-    if not apps:
-        emitter.publish("No applications to list.")
-
-    for app in apps:
-        emitter.publish(app['id'])
+    emitter.publish(apps)
 
     return 0
 

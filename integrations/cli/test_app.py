@@ -522,16 +522,18 @@ def test_watching_deployment():
 def _list_apps(app_id=None):
     returncode, stdout, stderr = exec_command(['dcos', 'app', 'list'])
 
+    result = json.loads(stdout.decode('utf-8'))
+
     if app_id is None:
-        result = b'No applications to list.\n'
-    elif isinstance(app_id, str):
-        result = '/{}\n'.format(app_id).encode('utf-8')
+        assert len(result) == 0
     else:
-        assert False
+        assert len(result) == 1
+        assert result[0]['id'] == '/' + app_id
 
     assert returncode == 0
-    assert stdout == result
     assert stderr == b''
+
+    return result
 
 
 def _remove_app(app_id):
