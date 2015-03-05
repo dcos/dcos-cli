@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import abc
 import collections
 import json
@@ -69,7 +71,7 @@ def print_handler(event):
         json.dump(event, sys.stdout, sort_keys=True, indent=2)
         print('')
     elif isinstance(event, errors.Error):
-        print(event.error())
+        print(event.error(), file=sys.stderr)
     else:
         logger.error(
             'Unable to print event. Type not supported: %s, %r.',

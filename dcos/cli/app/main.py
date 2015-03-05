@@ -707,6 +707,11 @@ def _task_show(task_id):
         emitter.publish(err)
         return 1
 
+    if task is None:
+        emitter.publish(
+            errors.DefaultError("Task '{}' does not exist".format(task_id)))
+        return 1
+
     emitter.publish(task)
 
     return 0

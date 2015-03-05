@@ -110,8 +110,8 @@ def test_add_bad_json_app():
             stdin=fd)
 
         assert returncode == 1
-        assert stdout == b'Error loading JSON.\n'
-        assert stderr == b''
+        assert stdout == b''
+        assert stderr == b'Error loading JSON.\n'
 
 
 def test_add_existing_app():
@@ -166,9 +166,9 @@ def test_show_missing_relative_app_version():
         ['dcos', 'app', 'show', '--app-version=-2', 'zero-instance-app'])
 
     assert returncode == 1
-    assert (stdout ==
+    assert stdout == b''
+    assert (stderr ==
             b"Application 'zero-instance-app' only has 2 version(s).\n")
-    assert stderr == b''
 
     _remove_app('zero-instance-app')
 
@@ -184,9 +184,9 @@ def test_show_missing_absolute_app_version():
          'zero-instance-app'])
 
     assert returncode == 1
-    assert (stdout ==
+    assert stdout == b''
+    assert (stderr ==
             b"Error: App '/zero-instance-app' does not exist\n")
-    assert stderr == b''
 
     _remove_app('zero-instance-app')
 
@@ -202,10 +202,10 @@ def test_show_bad_app_version():
          'zero-instance-app'])
 
     assert returncode == 1
-    assert (stdout ==
+    assert stdout == b''
+    assert (stderr ==
             (b'Error: Invalid format: "20:39:32.972Z" is malformed at '
              b'":39:32.972Z"\n'))
-    assert stderr == b''
 
     _remove_app('zero-instance-app')
 
@@ -220,8 +220,8 @@ def test_show_bad_relative_app_version():
         ['dcos', 'app', 'show', '--app-version=2', 'zero-instance-app'])
 
     assert returncode == 1
-    assert (stdout == b"Relative versions must be negative: 2\n")
-    assert stderr == b''
+    assert stdout == b''
+    assert (stderr == b"Relative versions must be negative: 2\n")
 
     _remove_app('zero-instance-app')
 
@@ -231,8 +231,8 @@ def test_start_missing_app():
         ['dcos', 'app', 'start', 'missing-id'])
 
     assert returncode == 1
-    assert stdout == b"Error: App '/missing-id' does not exist\n"
-    assert stderr == b''
+    assert stdout == b''
+    assert stderr == b"Error: App '/missing-id' does not exist\n"
 
 
 def test_start_app():
@@ -261,8 +261,8 @@ def test_stop_missing_app():
         ['dcos', 'app', 'stop', 'missing-id'])
 
     assert returncode == 1
-    assert stdout == b"Error: App '/missing-id' does not exist\n"
-    assert stderr == b''
+    assert stdout == b''
+    assert stderr == b"Error: App '/missing-id' does not exist\n"
 
 
 def test_stop_app():
@@ -300,8 +300,8 @@ def test_update_missing_app():
         ['dcos', 'app', 'update', 'missing-id'])
 
     assert returncode == 1
-    assert stdout == b"Error: App '/missing-id' does not exist\n"
-    assert stderr == b''
+    assert stdout == b''
+    assert stderr == b"Error: App '/missing-id' does not exist\n"
 
 
 def test_update_missing_field():
@@ -311,10 +311,10 @@ def test_update_missing_field():
         ['dcos', 'app', 'update', 'zero-instance-app', 'missing="a string"'])
 
     assert returncode == 1
-    assert stdout.decode('utf-8').startswith(
+    assert stdout == b''
+    assert stderr.decode('utf-8').startswith(
         "The property 'missing' does not conform to the expected format. "
         "Possible values are: ")
-    assert stderr == b''
 
     _remove_app('zero-instance-app')
 
@@ -326,10 +326,10 @@ def test_update_bad_type():
         ['dcos', 'app', 'update', 'zero-instance-app', 'cpus="a string"'])
 
     assert returncode == 1
-    assert stdout.decode('utf-8').startswith(
+    assert stderr.decode('utf-8').startswith(
         "Unable to parse 'a string' as a float: could not convert string to "
         "float: ")
-    assert stderr == b''
+    assert stdout == b''
 
     _remove_app('zero-instance-app')
 
@@ -377,8 +377,8 @@ def test_restarting_missing_app():
         ['dcos', 'app', 'restart', 'missing-id'])
 
     assert returncode == 1
-    assert stdout == b"Error: App '/missing-id' does not exist\n"
-    assert stderr == b''
+    assert stdout == b''
+    assert stderr == b"Error: App '/missing-id' does not exist\n"
 
 
 def test_restarting_app():
@@ -402,8 +402,8 @@ def test_list_version_missing_app():
         ['dcos', 'app', 'version', 'list', 'missing-id'])
 
     assert returncode == 1
-    assert stdout == b"Error: App '/missing-id' does not exist\n"
-    assert stderr == b''
+    assert stdout == b''
+    assert stderr == b"Error: App '/missing-id' does not exist\n"
 
 
 def test_list_version_negative_max_count():
@@ -411,8 +411,8 @@ def test_list_version_negative_max_count():
         ['dcos', 'app', 'version', 'list', 'missing-id', '--max-count=-1'])
 
     assert returncode == 1
-    assert stdout == b'Maximum count must be a positive number: -1\n'
-    assert stderr == b''
+    assert stdout == b''
+    assert stderr == b'Maximum count must be a positive number: -1\n'
 
 
 def test_list_version_app():
@@ -470,9 +470,9 @@ def test_rollback_missing_deployment():
         ['dcos', 'app', 'deployment', 'rollback', 'missing-deployment'])
 
     assert returncode == 1
-    assert (stdout ==
+    assert stdout == b''
+    assert (stderr ==
             b'Error: DeploymentPlan missing-deployment does not exist\n')
-    assert stderr == b''
 
 
 def test_rollback_deployment():
@@ -563,9 +563,12 @@ def test_show_missing_task():
     returncode, stdout, stderr = exec_command(
         ['dcos', 'app', 'task', 'show', 'missing-id'])
 
-    assert returncode == 0
+    stderr = stderr.decode('utf-8')
+
+    assert returncode == 1
     assert stdout == b''
-    assert stderr == b''
+    assert stderr.startswith("Task '")
+    assert stderr.endswith("' does not exist\n")
 
 
 def test_show_task():
