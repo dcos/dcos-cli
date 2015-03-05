@@ -21,6 +21,7 @@ def test_help():
     dcos app show [--app-version=<app-version>] <app-id>
     dcos app start [--force] <app-id> [<instances>]
     dcos app stop [--force] <app-id>
+    dcos app task list [<app-id>]
     dcos app update [--force] <app-id> [<properties>...]
     dcos app version list [--max-count=<max-count>] <app-id>
 
@@ -519,6 +520,43 @@ def test_watching_deployment():
     _remove_app('zero-instance-app')
 
 
+def test_list_empty_task():
+    _list_tasks(0)
+
+
+def test_list_empty_task_not_running_app():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _list_tasks(0)
+    _remove_app('zero-instance-app')
+
+
+def test_list_tasks():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _start_app('zero-instance-app', 3)
+    result = _list_deployments(1, 'zero-instance-app')
+    _watch_deployment(result[0]['id'], 60)
+    _list_tasks(3)
+    _remove_app('zero-instance-app')
+
+
+def test_list_app_tasks():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _start_app('zero-instance-app', 3)
+    result = _list_deployments(1, 'zero-instance-app')
+    _watch_deployment(result[0]['id'], 60)
+    _list_tasks(3, 'zero-instance-app')
+    _remove_app('zero-instance-app')
+
+
+def test_list_missing_app_tasks():
+    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _start_app('zero-instance-app', 3)
+    result = _list_deployments(1, 'zero-instance-app')
+    _watch_deployment(result[0]['id'], 60)
+    _list_tasks(0, 'missing-id')
+    _remove_app('zero-instance-app')
+
+
 def _list_apps(app_id=None):
     returncode, stdout, stderr = exec_command(['dcos', 'app', 'list'])
 
@@ -636,3 +674,19 @@ def _watch_deployment(deployment_id, count):
 
     assert returncode == 0
     assert stderr == b''
+
+
+def _list_tasks(expected_count, app_id=None):
+    cmd = ['dcos', 'app', 'task', 'list']
+    if app_id is not None:
+        cmd.append(app_id)
+
+    returncode, stdout, stderr = exec_command(cmd)
+
+    result = json.loads(stdout.decode('utf-8'))
+
+    assert returncode == 0
+    assert len(result) == expected_count
+    assert stderr == b''
+
+    return result
