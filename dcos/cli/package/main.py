@@ -36,8 +36,8 @@ import os
 
 import docopt
 import toml
-from dcos.api import (config, constants, emitting, marathon, options, package,
-                      util)
+from dcos.api import (cmds, config, constants, emitting, marathon, options,
+                      package, util)
 
 emitter = emitting.FlatEmitter()
 
@@ -48,41 +48,74 @@ def main():
         emitter.publish(err)
         return 1
 
-    config_path = os.environ[constants.DCOS_CONFIG_ENV]
     args = docopt.docopt(
         __doc__,
         version='dcos-package version {}'.format(constants.version))
 
-    if args['package'] and args['info']:
-        return _info()
-
-    elif args['package'] and args['sources']:
-        cfg = config.load_from_path(config_path)
-        return _list_sources(cfg)
-
-    elif args['package'] and args['update']:
-        cfg = config.load_from_path(config_path)
-        return _update(cfg)
-
-    elif args['package'] and args['describe'] and args['<package_name>']:
-        cfg = config.load_from_path(config_path)
-        return _describe(args['<package_name>'], cfg)
-
-    elif args['package'] and args['install']:
-        cfg = config.load_from_path(config_path)
-        return _install(args['<package_name>'], args['--options'], cfg)
-
-    elif args['package'] and args['list']:
-        cfg = config.load_from_path(config_path)
-        return _list(cfg)
-
-    elif args['package'] and args['search']:
-        cfg = config.load_from_path(config_path)
-        return _search(cfg, args['<query>'])
-
-    else:
+    if not args['package']:
         emitter.publish(options.make_generic_usage_message(__doc__))
         return 1
+
+    returncode, err = cmds.execute(_cmds(), args)
+    if err is not None:
+        emitter.publish(err)
+        emitter.publish(options.make_generic_usage_message(__doc__))
+        return 1
+
+    return returncode
+
+
+def _cmds():
+    """
+    :returns: All of the supported commands
+    :rtype: dcos.api.cmds.Command
+    """
+
+    return [
+        cmds.Command(
+            hierarchy=['info'],
+            arg_keys=[],
+            function=_info),
+
+        cmds.Command(
+            hierarchy=['sources'],
+            arg_keys=[],
+            function=_list_sources),
+
+        cmds.Command(
+            hierarchy=['update'],
+            arg_keys=[],
+            function=_update),
+
+        cmds.Command(
+            hierarchy=['describe'],
+            arg_keys=['<package_name>'],
+            function=_describe),
+
+        cmds.Command(
+            hierarchy=['install'],
+            arg_keys=['<package_name>', '--options'],
+            function=_install),
+
+        cmds.Command(
+            hierarchy=['list'],
+            arg_keys=[],
+            function=_list),
+
+        cmds.Command(
+            hierarchy=['search'],
+            arg_keys=['<query>'],
+            function=_search),
+    ]
+
+
+def _load_config():
+    """
+    :returns: Configuration object
+    :rtype: Toml
+    """
+    return config.load_from_path(
+        os.environ[constants.DCOS_CONFIG_ENV])
 
 
 def _info():
@@ -96,14 +129,14 @@ def _info():
     return 0
 
 
-def _list_sources(config):
+def _list_sources():
     """List configured package sources.
 
-    :param config: Configuration dictionary
-    :type config: dcos.api.config.Toml
     :returns: Process status
     :rtype: int
     """
+
+    config = _load_config()
 
     sources, errors = package.list_sources(config)
 
@@ -118,14 +151,14 @@ def _list_sources(config):
     return 0
 
 
-def _update(config):
+def _update():
     """Update local package definitions from sources.
 
-    :param config: Configuration dictionary
-    :type config: dcos.api.config.Toml
     :returns: Process status
     :rtype: int
     """
+
+    config = _load_config()
 
     errors = package.update_sources(config)
 
@@ -137,16 +170,16 @@ def _update(config):
     return 0
 
 
-def _describe(package_name, config):
+def _describe(package_name):
     """Describe the specified package.
 
     :param package_name: The package to configure
     :type package_name: str
-    :param config: The config object
-    :type config: dcos.api.config.Toml
     :returns: Process status
     :rtype: int
     """
+
+    config = _load_config()
 
     pkg = package.resolve_package(package_name, config)
 
@@ -181,18 +214,18 @@ def _describe(package_name, config):
     return 0
 
 
-def _install(package_name, options_file, config):
+def _install(package_name, options_file):
     """Install the specified package.
 
     :param package_name: The package to install
     :type package_name: str
     :param options_file: Path to file containing option values
     :type options_file: str
-    :param cfg: The config object to modify
-    :type cfg: dcos.api.config.Toml
     :returns: Process status
     :rtype: int
     """
+
+    config = _load_config()
 
     pkg = package.resolve_package(package_name, config)
 
@@ -233,14 +266,14 @@ def _install(package_name, options_file, config):
     return 0
 
 
-def _list(config):
+def _list():
     """Describe the specified package.
 
-    :param config: The config object
-    :type config: dcos.api.config.Toml
     :returns: Process status
     :rtype: int
     """
+
+    config = _load_config()
 
     init_client = marathon.create_client(config)
     installed, error = package.list_installed_packages(init_client)
@@ -255,16 +288,16 @@ def _list(config):
     return 0
 
 
-def _search(config, query):
+def _search(query):
     """Search for matching packages.
 
-    :param config: The config object
-    :type config: dcos.api.config.Toml
     :param query: The search term
     :type query: str
     :returns: Process status
     :rtype: int
     """
+
+    config = _load_config()
 
     results, error = package.search(query, config)
 
