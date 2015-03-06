@@ -14,6 +14,7 @@ Usage:
     dcos app start [--force] <app-id> [<instances>]
     dcos app stop [--force] <app-id>
     dcos app task list [<app-id>]
+    dcos app task show <task-id>
     dcos app update [--force] <app-id> [<properties>...]
     dcos app version list [--max-count=<max-count>] <app-id>
 
@@ -45,6 +46,7 @@ Positional arguments:
     <properties>            Optional key-value pairs to be included in the
                             command. The separator between the key and value
                             must be the '=' character. E.g. cpus=2.0
+    <task-id>               The task id
 """
 import json
 import os
@@ -119,6 +121,11 @@ def _cmds():
             hierarchy=['task', 'list'],
             arg_keys=['<app-id>'],
             function=_task_list),
+
+        cmds.Command(
+            hierarchy=['task', 'show'],
+            arg_keys=['<task-id>'],
+            function=_task_show),
 
         cmds.Command(hierarchy=['info'], arg_keys=[], function=_info),
 
@@ -679,6 +686,33 @@ def _task_list(app_id):
         return 1
 
     emitter.publish(tasks)
+
+    return 0
+
+
+def _task_show(task_id):
+    """
+    :param task_id: the task id
+    :type task_id: str
+    :returns: process status
+    :rtype: int
+    """
+
+    client = marathon.create_client(
+        config.load_from_path(
+            os.environ[constants.DCOS_CONFIG_ENV]))
+
+    task, err = client.get_task(task_id)
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    if task is None:
+        emitter.publish(
+            errors.DefaultError("Task '{}' does not exist".format(task_id)))
+        return 1
+
+    emitter.publish(task)
 
     return 0
 
