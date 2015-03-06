@@ -7,7 +7,7 @@ apt-get -y update
 apt-get -y install git
 
 # Install the latest Marathon
-apt-get -y install marathon
+apt-get -y install marathon=0.8.0-1.1.97.ubuntu1404
 
 # List installed versions of external systems
 dpkg -l marathon mesos zookeeper | grep '^ii'
