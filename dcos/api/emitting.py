@@ -5,7 +5,10 @@ import collections
 import json
 import sys
 
+import pygments
 from dcos.api import errors, util
+from pygments.formatters import Terminal256Formatter
+from pygments.lexers import JsonLexer
 
 try:
     basestring = basestring
@@ -65,13 +68,22 @@ def print_handler(event):
     if event is None:
         # Do nothing
         pass
+
     elif isinstance(event, basestring):
         print(event)
+
     elif isinstance(event, collections.Mapping) or isinstance(event, list):
-        json.dump(event, sys.stdout, sort_keys=True, indent=2)
-        print('')
+        json_output = json.dumps(event, sort_keys=True, indent=2)
+
+        if sys.stdout.isatty():
+            json_output = pygments.highlight(
+                json_output, JsonLexer(), Terminal256Formatter())
+
+        print(json_output)
+
     elif isinstance(event, errors.Error):
         print(event.error(), file=sys.stderr)
+
     else:
         logger.error(
             'Unable to print event. Type not supported: %s, %r.',

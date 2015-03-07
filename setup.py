@@ -74,6 +74,7 @@ setup(
         'gitpython',
         'jsonschema',
         'portalocker',
+        'pygments',
         'pystache',
         'requests',
         'toml',
