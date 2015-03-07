@@ -109,7 +109,7 @@ setup(
             'dcos=dcos.cli.main:main',
             'dcos-help=dcos.cli.help.main:main',
             'dcos-config=dcos.cli.config.main:main',
-            'dcos-app=dcos.cli.app.main:main',
+            'dcos-marathon=dcos.cli.marathon.main:main',
             'dcos-package=dcos.cli.package.main:main',
         ],
     },
