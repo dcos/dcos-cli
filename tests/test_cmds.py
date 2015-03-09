@@ -1,5 +1,6 @@
-import pytest
 from dcos.api import cmds, errors
+
+import pytest
 
 
 @pytest.fixture

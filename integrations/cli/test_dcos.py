@@ -1,7 +1,8 @@
 import os
 
-from common import exec_command
 from dcos.api import util
+
+from common import exec_command
 
 
 def test_help():
