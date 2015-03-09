@@ -75,6 +75,7 @@ setup(
         'jsonschema',
         'pkginfo',
         'portalocker',
+        'pager',
         'pygments',
         'pystache',
         'requests',
