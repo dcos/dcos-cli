@@ -1,5 +1,6 @@
-import pytest
 from dcos.api import errors, jsonitem
+
+import pytest
 
 
 @pytest.fixture(params=range(6))

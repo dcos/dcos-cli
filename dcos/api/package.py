@@ -908,6 +908,6 @@ class IndexEntries():
         """
 
         return {
-          'source': self.source.url,
-          'packages': self.packages
+            'source': self.source.url,
+            'packages': self.packages
         }
