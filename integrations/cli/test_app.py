@@ -483,8 +483,11 @@ def test_rollback_deployment():
     returncode, stdout, stderr = exec_command(
         ['dcos', 'app', 'deployment', 'rollback', result[0]['id']])
 
+    result = json.loads(stdout.decode('utf-8'))
+
     assert returncode == 0
-    assert stdout == b''
+    assert 'deploymentId' in result
+    assert 'version' in result
     assert stderr == b''
 
     _list_deployments(0)
