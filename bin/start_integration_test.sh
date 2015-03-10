@@ -1,13 +1,17 @@
 #!/bin/bash
 
-# Need to first update the local repo before installing anything
+# Add Mesosphere releases as a package source
+echo "deb http://repos.mesosphere.io/ubuntu trusty main" >> \
+  /etc/apt/sources.list.d/mesosphere.list
+
+# Update the local repo before installing anything
 apt-get -y update
 
 # Install Git (TODO(CD): Remove this, for testing only)
 apt-get -y install git
 
 # Install the latest Marathon
-apt-get -y install marathon
+apt-get -y install marathon=0.8.0-1.1.97.ubuntu1404
 
 # List installed versions of external systems
 dpkg -l marathon mesos zookeeper | grep '^ii'
