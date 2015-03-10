@@ -1,6 +1,10 @@
 #!/bin/bash
 
-# Need to first update the local repo before installing anything
+# Add Mesosphere releases as a package source
+echo "deb http://repos.mesosphere.io/ubuntu trusty main" >> \
+  /etc/apt/sources.list.d/mesosphere.list
+
+# Update the local repo before installing anything
 apt-get -y update
 
 # Install Git (TODO(CD): Remove this, for testing only)
