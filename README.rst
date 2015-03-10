@@ -39,8 +39,8 @@ Configure Environment and Run
 
 #. Configure Marathon, changing the values below as appropriate for your local installation::
 
-    dcos config marathon.host localhost
-    dcos config marathon.port 8080
+    dcos config set marathon.host localhost
+    dcos config set marathon.port 8080
 
 #. Get started by calling the DCOS CLI help::
 

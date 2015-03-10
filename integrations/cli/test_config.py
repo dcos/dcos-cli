@@ -17,16 +17,17 @@ def test_help():
     returncode, stdout, stderr = exec_command(['dcos', 'config', '--help'])
 
     assert returncode == 0
-    assert stdout == b"""Usage:
+    assert stdout == b"""Get and set DCOS command line options
+
+Usage:
     dcos config info
-    dcos config <name> [<value>]
-    dcos config --unset <name>
-    dcos config --list
+    dcos config set <name> <value>
+    dcos config unset <name>
+    dcos config show [<name>]
 
 Options:
     -h, --help            Show this screen
     --version             Show version
-    --unset               Remove property from the config file
 """
     assert stderr == b''
 
@@ -48,8 +49,10 @@ def test_version():
 
 
 def test_list_property(env):
-    returncode, stdout, stderr = exec_command(['dcos', 'config', '--list'],
-                                              env)
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'config', 'show'],
+        env)
+
     assert returncode == 0
     assert stdout == b"""marathon.host=localhost
 marathon.port=8080
@@ -64,8 +67,23 @@ def test_get_existing_property(env):
     _get_value('marathon.host', 'localhost', env)
 
 
-def test_get_missing_proerty(env):
+def test_get_missing_property(env):
     _get_missing_value('missing.property', env)
+
+
+def test_get_top_property(env):
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'config', 'show', 'marathon'],
+        env)
+
+    assert returncode == 1
+    assert stdout == b''
+    assert stderr == (
+        b"Property 'marathon' doesn't fully specify a value - "
+        b"possible properties are:\n"
+        b"marathon.host\n"
+        b"marathon.port\n"
+    )
 
 
 def test_set_existing_property(env):
@@ -80,6 +98,31 @@ def test_unset_property(env):
     _set_value('marathon.host', 'localhost', env)
 
 
+def test_unset_missing_property(env):
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'config', 'unset', 'missing.property'],
+        env)
+
+    assert returncode == 1
+    assert stdout == b''
+    assert stderr == b"Property 'missing.property' doesn't exist\n"
+
+
+def test_unset_top_property(env):
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'config', 'unset', 'marathon'],
+        env)
+
+    assert returncode == 1
+    assert stdout == b''
+    assert stderr == (
+        b"Property 'marathon' doesn't fully specify a value - "
+        b"possible properties are:\n"
+        b"marathon.host\n"
+        b"marathon.port\n"
+    )
+
+
 def test_set_missing_property(env):
     _set_value('path.to.value', 'cool new value', env)
     _get_value('path.to.value', 'cool new value', env)
@@ -87,35 +130,41 @@ def test_set_missing_property(env):
 
 
 def _set_value(key, value, env):
-    returncode, stdout, stderr = exec_command(['dcos', 'config', key, value],
-                                              env)
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'config', 'set', key, value],
+        env)
+
     assert returncode == 0
     assert stdout == b''
     assert stderr == b''
 
 
 def _get_value(key, value, env):
-    returncode, stdout, stderr = exec_command(['dcos', 'config', key],
-                                              env)
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'config', 'show', key],
+        env)
+
     assert returncode == 0
     assert stdout == '{}\n'.format(value).encode('utf-8')
     assert stderr == b''
 
 
 def _unset_value(key, env):
-    returncode, stdout, stderr = exec_command(['dcos',
-                                               'config',
-                                               '--unset',
-                                               key],
-                                              env)
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'config', 'unset', key],
+        env)
+
     assert returncode == 0
     assert stdout == b''
     assert stderr == b''
 
 
 def _get_missing_value(key, env):
-    returncode, stdout, stderr = exec_command(['dcos', 'config', key],
-                                              env)
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'config', 'show', key],
+        env)
+
     assert returncode == 1
     assert stdout == b''
-    assert stderr == b''
+    assert (stderr.decode('utf-8') ==
+            "Property {!r} doesn't exist\n".format(key))
