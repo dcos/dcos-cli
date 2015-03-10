@@ -1,22 +1,22 @@
 """
 Usage:
-    dcos app add [<app-resource>]
-    dcos app deployment list [<app-id>]
-    dcos app deployment rollback <deployment-id>
-    dcos app deployment stop <deployment-id>
-    dcos app deployment watch [--max-count=<max-count>] [--interval=<interval>]
-         <deployment-id>
-    dcos app info
-    dcos app list
-    dcos app remove [--force] <app-id>
-    dcos app restart [--force] <app-id>
-    dcos app show [--app-version=<app-version>] <app-id>
-    dcos app start [--force] <app-id> [<instances>]
-    dcos app stop [--force] <app-id>
-    dcos app task list [<app-id>]
-    dcos app task show <task-id>
-    dcos app update [--force] <app-id> [<properties>...]
-    dcos app version list [--max-count=<max-count>] <app-id>
+    dcos marathon app add [<app-resource>]
+    dcos marathon app list
+    dcos marathon app remove [--force] <app-id>
+    dcos marathon app restart [--force] <app-id>
+    dcos marathon app show [--app-version=<app-version>] <app-id>
+    dcos marathon app start [--force] <app-id> [<instances>]
+    dcos marathon app stop [--force] <app-id>
+    dcos marathon app update [--force] <app-id> [<properties>...]
+    dcos marathon app version list [--max-count=<max-count>] <app-id>
+    dcos marathon deployment list [<app-id>]
+    dcos marathon deployment rollback <deployment-id>
+    dcos marathon deployment stop <deployment-id>
+    dcos marathon deployment watch [--max-count=<max-count>]
+         [--interval=<interval>] <deployment-id>
+    dcos marathon info
+    dcos marathon task list [<app-id>]
+    dcos marathon task show <task-id>
 
 Options:
     -h, --help                   Show this screen
@@ -70,9 +70,9 @@ def main():
 
     args = docopt.docopt(
         __doc__,
-        version='dcos-app version {}'.format(constants.version))
+        version='dcos-marathon version {}'.format(constants.version))
 
-    if not args['app']:
+    if not args['marathon']:
         emitter.publish(options.make_generic_usage_message(__doc__))
         return 1
 
@@ -130,39 +130,39 @@ def _cmds():
         cmds.Command(hierarchy=['info'], arg_keys=[], function=_info),
 
         cmds.Command(
-            hierarchy=['add'],
+            hierarchy=['app', 'add'],
             arg_keys=['<app-resource>'],
             function=_add),
 
         cmds.Command(hierarchy=['list'], arg_keys=[], function=_list),
 
         cmds.Command(
-            hierarchy=['remove'],
+            hierarchy=['app', 'remove'],
             arg_keys=['<app-id>', '--force'],
             function=_remove),
 
         cmds.Command(
-            hierarchy=['show'],
+            hierarchy=['app', 'show'],
             arg_keys=['<app-id>', '--app-version'],
             function=_show),
 
         cmds.Command(
-            hierarchy=['start'],
+            hierarchy=['app', 'start'],
             arg_keys=['<app-id>', '<instances>', '--force'],
             function=_start),
 
         cmds.Command(
-            hierarchy=['stop'],
+            hierarchy=['app', 'stop'],
             arg_keys=['<app-id>', '--force'],
             function=_stop),
 
         cmds.Command(
-            hierarchy=['update'],
+            hierarchy=['app', 'update'],
             arg_keys=['<app-id>', '<properties>', '--force'],
             function=_update),
 
         cmds.Command(
-            hierarchy=['restart'],
+            hierarchy=['app', 'restart'],
             arg_keys=['<app-id>', '--force'],
             function=_restart),
     ]
