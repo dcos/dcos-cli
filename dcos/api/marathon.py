@@ -377,8 +377,8 @@ class Client(object):
                       previous configuration. If set to `True`, simply stop the
                       deployment.
         :type force: bool
-        :returns: an error if unable to rollback the deployment; None otherwise
-        :rtype: Error
+        :returns: cancelation deployment
+        :rtype: (dict, Error)
         """
 
         if not force:
@@ -388,19 +388,25 @@ class Client(object):
 
         url = self._create_url('v2/deployments/{}'.format(deployment_id))
 
-        _, error = http.delete(url,
-                               params=params,
-                               response_to_error=_response_to_error)
+        response, error = http.delete(
+            url,
+            params=params,
+            response_to_error=_response_to_error)
+        if error is not None:
+            return (None, error)
 
-        return error
+        if not force:
+            return (response.json(), None)
+        else:
+            return (None, None)
 
     def rollback_deployment(self, deployment_id):
         """Rolls back an application deployment.
 
         :param deployment_id: the deployment id
         :type deployment_id: str
-        :returns: an error if unable to rollback the deployment; None otherwise
-        :rtype: Error
+        :returns: cancelation deployment
+        :rtype: (dict, Error)
         """
 
         return self._cancel_deployment(deployment_id, False)
@@ -414,7 +420,8 @@ class Client(object):
         :rtype: Error
         """
 
-        return self._cancel_deployment(deployment_id, True)
+        _, err = self._cancel_deployment(deployment_id, True)
+        return err
 
     def get_tasks(self, app_id):
         """Returns a list of tasks, optionally limited to an app.

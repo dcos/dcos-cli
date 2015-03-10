@@ -613,10 +613,12 @@ def _deployment_rollback(deployment_id):
         config.load_from_path(
             os.environ[constants.DCOS_CONFIG_ENV]))
 
-    err = client.rollback_deployment(deployment_id)
+    deployment, err = client.rollback_deployment(deployment_id)
     if err is not None:
         emitter.publish(err)
         return 1
+
+    emitter.publish(deployment)
 
     return 0
 
