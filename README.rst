@@ -92,6 +92,10 @@ Other Useful Commands
 
     tox -e <testenv>
 
+#. Run a specific integration test module::
+
+    tox -e py27-integration /cli/test_config.py
+
 .. _packages: https://packaging.python.org/en/latest/installing.html#installing-requirements
 .. _git: http://git-scm.com
 .. _installer: https://www.python.org/downloads/
