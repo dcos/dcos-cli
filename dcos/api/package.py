@@ -907,7 +907,4 @@ class IndexEntries():
         :rtype: dict
         """
 
-        return {
-            'source': self.source.url,
-            'packages': self.packages
-        }
+        return {'source': self.source.url, 'packages': self.packages}
