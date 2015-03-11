@@ -29,6 +29,8 @@ emitter = emitting.FlatEmitter()
 
 PACKAGE_NAME_KEY = 'DCOS_PACKAGE_NAME'
 PACKAGE_VERSION_KEY = 'DCOS_PACKAGE_VERSION'
+PACKAGE_SOURCE_KEY = 'DCOS_PACKAGE_SOURCE'
+PACKAGE_FRAMEWORK_KEY = 'DCOS_PACKAGE_IS_FRAMEWORK'
 
 
 def install(pkg, version, init_client, user_options, cfg):
@@ -82,9 +84,15 @@ def install(pkg, version, init_client, user_options, cfg):
     if meta_error is not None:
         return meta_error
 
+    is_framework = metadata.get('framework')
+    if not is_framework:
+        is_framework = False
+
     init_desc['labels'] = {
         PACKAGE_NAME_KEY: metadata['name'],
-        PACKAGE_VERSION_KEY: metadata['version']
+        PACKAGE_VERSION_KEY: metadata['version'],
+        PACKAGE_SOURCE_KEY: pkg.registry.source,
+        PACKAGE_FRAMEWORK_KEY: is_framework
     }
 
     # Validate the init descriptor
@@ -704,7 +712,7 @@ class Registry():
             return (None, Error("Package [{}] not found".format(package_name)))
 
         try:
-            return (Package(package_path), None)
+            return (Package(self, package_path), None)
 
         except:
             error = Error('Could not read package [{}]'.format(package_name))
@@ -718,9 +726,10 @@ class Package():
     :type path: str
     """
 
-    def __init__(self, path):
+    def __init__(self, registry, path):
 
         assert os.path.isdir(path)
+        self._registry = registry
         self.path = path
 
     def name(self):
@@ -731,6 +740,15 @@ class Package():
         """
 
         return os.path.basename(self.path)
+
+    @property
+    def registry(self):
+        """Returns the containing registry for this package.
+
+        :rtype: Registry
+        """
+
+        return self._registry
 
     def command_json(self, version):
         """Returns the JSON content of the command.json file.
