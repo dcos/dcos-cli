@@ -722,6 +722,8 @@ class Registry():
 class Package():
     """Interface to a package on disk.
 
+    :param registry: The containing registry for this package.
+    :type registry: Registry
     :param path: Path to the package description on disk
     :type path: str
     """
