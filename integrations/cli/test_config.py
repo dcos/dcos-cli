@@ -1,5 +1,7 @@
 import os
 
+from dcos.api import constants
+
 import pytest
 from common import exec_command
 
@@ -7,8 +9,7 @@ from common import exec_command
 @pytest.fixture
 def env():
     return {
-        'PATH': os.environ['PATH'],
-        'DCOS_PATH': os.environ['DCOS_PATH'],
+        constants.PATH_ENV: os.environ[constants.PATH_ENV],
         'DCOS_CONFIG': os.path.join("tests", "data", "Dcos.toml")
     }
 
