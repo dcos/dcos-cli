@@ -1,18 +1,5 @@
 #!/bin/bash
 
-# Add Mesosphere releases as a package source
-echo "deb http://repos.mesosphere.io/ubuntu trusty main" >> \
-  /etc/apt/sources.list.d/mesosphere.list
-
-# Update the local repo before installing anything
-apt-get -y update
-
-# Install Git (TODO(CD): Remove this, for testing only)
-apt-get -y install git
-
-# Install the latest Marathon
-apt-get -y install marathon=0.8.0-1.1.97.ubuntu1404
-
 # List installed versions of external systems
 dpkg -l marathon mesos zookeeper | grep '^ii'
 
@@ -20,13 +7,15 @@ dpkg -l marathon mesos zookeeper | grep '^ii'
 /usr/share/zookeeper/bin/zkServer.sh start
 
 # Start Mesos master
-/etc/init.d/mesos-master start
+mesos-master --zk=zk://localhost:2181/mesos --quorum=1 --log_dir=/var/log/mesos \
+--work_dir=/var/lib/mesos 1>/dev/null 2>/dev/null &
 
 # Start Mesos slave
-/etc/init.d/mesos-slave start
+mesos-slave --master=zk://localhost:2181/mesos --log_dir=/var/log/mesos \
+ 1>/dev/null 2>/dev/null &
 
 # Start Marathon
-/etc/init.d/marathon start
+service marathon start
 
 # Give all of the processes above some time.
 sleep 2
