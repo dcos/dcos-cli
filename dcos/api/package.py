@@ -91,12 +91,9 @@ def install(pkg, version, init_client, user_options, cfg):
     init_desc['labels'] = {
         PACKAGE_NAME_KEY: metadata['name'],
         PACKAGE_VERSION_KEY: metadata['version'],
-        PACKAGE_SOURCE_KEY: pkg.registry.source,
-        PACKAGE_FRAMEWORK_KEY: is_framework
+        PACKAGE_SOURCE_KEY: pkg.registry.source.url,
+        PACKAGE_FRAMEWORK_KEY: str(is_framework)
     }
-
-    # Validate the init descriptor
-    # TODO(CD): Is this necessary / desirable at this point?
 
     # Send the descriptor to init
     _, err = init_client.add_app(init_desc)
