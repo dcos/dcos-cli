@@ -73,11 +73,13 @@ setup(
         'docopt',
         'gitpython',
         'jsonschema',
+        'pkginfo',
         'portalocker',
         'pygments',
         'pystache',
         'requests',
         'toml',
+        'virtualenv',
     ],
 
     # List additional groups of dependencies here (e.g. development
@@ -112,6 +114,7 @@ setup(
             'dcos-config=dcos.cli.config.main:main',
             'dcos-marathon=dcos.cli.marathon.main:main',
             'dcos-package=dcos.cli.package.main:main',
+            'dcos-subcommand=dcos.cli.subcommand.main:main',
         ],
     },
 

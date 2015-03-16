@@ -1,5 +1,6 @@
-DCOS_PATH_ENV = 'DCOS_PATH'
-"""Name of the environment variable pointing to the DCOS path."""
+DCOS_SUBCOMMAND_SUBDIR = 'subcommands'
+"""Name of the subdirectory that contains all of the subcommands. This is
+relative to the location of the executable."""
 
 DCOS_CONFIG_ENV = 'DCOS_CONFIG'
 """Name of the environment variable pointing to the DCOS config."""

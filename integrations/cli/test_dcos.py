@@ -1,6 +1,6 @@
 import os
 
-from dcos.api import util
+from dcos.api import constants
 
 from common import exec_command
 
@@ -48,8 +48,7 @@ def test_version():
 
 def test_missing_dcos_config():
     env = {
-        'PATH': os.environ['PATH'],
-        'DCOS_PATH': os.environ['DCOS_PATH'],
+        constants.PATH_ENV: os.environ[constants.PATH_ENV],
     }
 
     returncode, stdout, stderr = exec_command(['dcos'], env=env)
@@ -62,8 +61,7 @@ def test_missing_dcos_config():
 
 def test_dcos_config_not_a_file():
     env = {
-        'PATH': os.environ['PATH'],
-        'DCOS_PATH': os.environ['DCOS_PATH'],
+        constants.PATH_ENV: os.environ[constants.PATH_ENV],
         'DCOS_CONFIG': 'missing/file',
     }
 
@@ -72,48 +70,6 @@ def test_dcos_config_not_a_file():
     assert returncode == 1
     assert stdout == (b"Environment variable 'DCOS_CONFIG' maps to "
                       b"'missing/file' and it is not a file.\n")
-    assert stderr == b''
-
-
-def test_missing_dcos_path():
-    env = {
-        'PATH': os.environ['PATH'],
-        'DCOS_CONFIG': os.environ['DCOS_CONFIG'],
-    }
-
-    returncode, stdout, stderr = exec_command(['dcos'], env=env)
-
-    assert returncode == 1
-    assert stdout == (b"Environment variable 'DCOS_PATH' not set to the DCOS "
-                      b"CLI path.\n")
-    assert stderr == b''
-
-
-def test_dcos_path_not_a_dir():
-    env = {
-        'PATH': os.environ['PATH'],
-        'DCOS_CONFIG': os.environ['DCOS_CONFIG'],
-        'DCOS_PATH': 'missing/dir',
-    }
-
-    returncode, stdout, stderr = exec_command(['dcos'], env=env)
-
-    assert returncode == 1
-    assert stdout == (b"Environment variable 'DCOS_PATH' maps to "
-                      b"'missing/dir' which is not a directory.\n")
-    assert stderr == b''
-
-
-def test_missing_path():
-    env = {
-        'DCOS_CONFIG': os.environ['DCOS_CONFIG'],
-        'DCOS_PATH': os.environ['DCOS_PATH'],
-    }
-
-    returncode, stdout, stderr = exec_command([util.which('dcos')], env=env)
-
-    assert returncode == 1
-    assert stdout == b"Environment variable 'PATH' not set.\n"
     assert stderr == b''
 
 

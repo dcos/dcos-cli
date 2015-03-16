@@ -79,7 +79,7 @@ def print_handler(event):
 
         if sys.stdout.isatty() and supports_colors:
             json_output = pygments.highlight(
-                json_output, JsonLexer(), Terminal256Formatter())
+                json_output, JsonLexer(), Terminal256Formatter()).strip()
 
         print(json_output)
 

@@ -11,7 +11,7 @@ import zipfile
 import git
 import portalocker
 import pystache
-from dcos.api import emitting, errors, util
+from dcos.api import constants, emitting, errors, util
 
 try:
     # Python 2
@@ -583,7 +583,7 @@ class GitSource(Source):
             if git_program is None:
                 return Error("""Could not locate the git program.  Make sure \
 it is installed and on the system search path.
-PATH = {}""".format(os.environ['PATH']))
+PATH = {}""".format(os.environ[constants.PATH_ENV]))
 
             # Clone git repo into the supplied target directory.
             git.Repo.clone_from(self._url,

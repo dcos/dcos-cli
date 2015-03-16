@@ -1,5 +1,7 @@
 import os
 
+from dcos.api import util
+
 from common import exec_command
 
 
@@ -7,7 +9,9 @@ def test_help():
     returncode, stdout, stderr = exec_command(['dcos', 'help', '--help'])
 
     assert returncode == 0
-    assert stdout == b"""Usage:
+    assert stdout == b"""Display usage information
+
+Usage:
     dcos help
     dcos help --all
     dcos help info
@@ -37,6 +41,7 @@ def test_version():
 
 
 def test_list_all():
+    dcos_path = os.path.dirname(os.path.dirname(util.which('dcos')))
     returncode, stdout, stderr = exec_command(['dcos', 'help', '--all'])
 
     assert returncode == 0
@@ -51,7 +56,8 @@ Available DCOS commands in '{}':
 \thelp           \tDisplay usage information
 \tmarathon       \tDeploy and manage applications on the DCOS
 \tpackage        \tInstall and manage DCOS software packages
+\tsubcommand     \tInstall and manage DCOS CLI Subcommands
 
 Get detailed command description with 'dcos <command> --help'.
-""".format(os.path.join(os.environ['DCOS_PATH'], 'bin')).encode('utf-8')
+""".format(dcos_path).encode('utf-8')
     assert stderr == b''

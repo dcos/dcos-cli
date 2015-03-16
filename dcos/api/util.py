@@ -1,4 +1,5 @@
 import contextlib
+import inspect
 import json
 import logging
 import os
@@ -43,7 +44,7 @@ def which(program):
     if file_path:
         if is_exe(program):
             return program
-    else:
+    elif constants.PATH_ENV in os.environ:
         for path in os.environ[constants.PATH_ENV].split(os.pathsep):
             path = path.strip('"')
             exe_file = os.path.join(path, program)
@@ -51,6 +52,25 @@ def which(program):
                 return exe_file
 
     return None
+
+
+def process_executable_path():
+    """Returns the real path to the program for this running process
+
+    :returns: the real path to the program
+    :rtype: str
+    """
+
+    return os.path.realpath(inspect.stack()[-1][1])
+
+
+def dcos_path():
+    """Returns the real path to the DCOS path based on the executable
+
+    :returns: the real path to the DCOS path
+    :rtype: str
+    """
+    return os.path.dirname(os.path.dirname(process_executable_path()))
 
 
 def configure_logger_from_environ():
