@@ -75,7 +75,9 @@ def print_handler(event):
     elif isinstance(event, collections.Mapping) or isinstance(event, list):
         json_output = json.dumps(event, sort_keys=True, indent=2)
 
-        if sys.stdout.isatty():
+        supports_colors = sys.platform != 'win32' # Note: Not tested on Win32
+
+        if sys.stdout.isatty() and supports_colors:
             json_output = pygments.highlight(
                 json_output, JsonLexer(), Terminal256Formatter())
 
