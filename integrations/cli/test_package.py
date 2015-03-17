@@ -8,7 +8,8 @@ def test_package():
     assert stdout == b"""Usage:
     dcos package describe <package_name>
     dcos package info
-    dcos package install [--options=<options_file>] <package_name>
+    dcos package install [--options=<options_file> --app-id=<app_id>]
+         <package_name>
     dcos package list
     dcos package search <query>
     dcos package sources
@@ -102,6 +103,27 @@ def test_install():
             'install',
             'mesos-dns',
             '--options=tests/data/package/mesos-dns-config.json'])
+
+    assert returncode == 0
+    assert stdout == b''
+    assert stderr == b''
+
+
+def test_install_with_id():
+    returncode, stdout, stderr = exec_command(
+        ['dcos',
+            'package',
+            'install',
+            'mesos-dns',
+            '--options=tests/data/package/mesos-dns-config.json',
+            '--app-id=dns'])
+
+    assert returncode == 0
+    assert stdout == b''
+    assert stderr == b''
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'marathon', 'app', 'remove', 'dns'])
 
     assert returncode == 0
     assert stdout == b''
