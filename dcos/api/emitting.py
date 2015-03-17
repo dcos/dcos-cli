@@ -87,10 +87,8 @@ def print_handler(event):
         print(event.error(), file=sys.stderr)
 
     else:
-        logger.error(
-            'Unable to print event. Type not supported: %s, %r.',
-            type(event),
-            event)
+        logger.debug('Printing unknown type: %s, %r.', type(event), event)
+        print(event)
 
 
 DEFAULT_HANDLER = print_handler

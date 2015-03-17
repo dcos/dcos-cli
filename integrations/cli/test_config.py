@@ -55,7 +55,8 @@ def test_list_property(env):
         env)
 
     assert returncode == 0
-    assert stdout == b"""marathon.host=localhost
+    assert stdout == b"""foo.bar=True
+marathon.host=localhost
 marathon.port=8080
 package.cache=tmp/cache
 package.sources=['git://github.com/mesosphere/universe.git', \
@@ -64,8 +65,16 @@ package.sources=['git://github.com/mesosphere/universe.git', \
     assert stderr == b''
 
 
-def test_get_existing_property(env):
+def test_get_existing_string_property(env):
     _get_value('marathon.host', 'localhost', env)
+
+
+def test_get_existing_integral_property(env):
+    _get_value('marathon.port', 8080, env)
+
+
+def test_get_existing_boolean_property(env):
+    _get_value('foo.bar', True, env)
 
 
 def test_get_missing_property(env):
