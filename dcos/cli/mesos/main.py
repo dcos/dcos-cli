@@ -1,7 +1,7 @@
 import os
 import sys
 
-from dcos.api import (constants, emitting, util)
+from dcos.api import constants, emitting, util
 from mesos.cli import cli
 
 emitter = emitting.FlatEmitter()
