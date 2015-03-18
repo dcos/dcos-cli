@@ -1,8 +1,10 @@
 import os
 import sys
 
-from dcos.api import constants, util
+from dcos.api import (constants, emitting, util)
 from mesos.cli import cli
+
+emitter = emitting.FlatEmitter()
 
 
 def main():
@@ -28,16 +30,16 @@ def main():
 
 def _version():
     """
-    :returns: Command version
-    :rtype: str
+    :returns: Process status
+    :rtype: int
     """
-    version = 'dcos-mesos version {}'.format(constants.version)
-    return version
+    emitter.publish('dcos-mesos version {}'.format(constants.version))
+    return 0
 
 
 def _info():
     """
-    :returns: Command info message
+    :returns: Process status
     :rtype: int
     """
 
