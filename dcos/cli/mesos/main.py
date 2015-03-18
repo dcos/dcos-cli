@@ -32,5 +32,5 @@ def _info():
     :rtype: int
     """
 
-    print('Interact with the configured Apache Mesos installation')
+    print('Inspect and manage the Apache Mesos installation')
     return 0
