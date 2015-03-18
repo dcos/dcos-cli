@@ -33,7 +33,7 @@ PACKAGE_SOURCE_KEY = 'DCOS_PACKAGE_SOURCE'
 PACKAGE_FRAMEWORK_KEY = 'DCOS_PACKAGE_IS_FRAMEWORK'
 
 
-def install(pkg, version, init_client, user_options, cfg):
+def install(pkg, version, init_client, user_options, app_id, cfg):
     """Installs a package.
 
     :param pkg: The package to install
@@ -44,6 +44,8 @@ def install(pkg, version, init_client, user_options, cfg):
     :type init_client: object
     :param user_options: Package parameters
     :type user_options: dict
+    :param app_id: App ID for installation of this package
+    :type app_id: str
     :param cfg: Configuration dictionary
     :type cfg: dcos.api.config.Toml
     :rtype: Error
@@ -88,12 +90,24 @@ def install(pkg, version, init_client, user_options, cfg):
     if not is_framework:
         is_framework = False
 
-    init_desc['labels'] = {
+    package_labels = {
         PACKAGE_NAME_KEY: metadata['name'],
         PACKAGE_VERSION_KEY: metadata['version'],
         PACKAGE_SOURCE_KEY: pkg.registry.source.url,
         PACKAGE_FRAMEWORK_KEY: str(is_framework)
     }
+
+    # Preserve existing labels
+    labels = init_desc.get('labels', {})
+
+    labels.update(package_labels)
+    init_desc['labels'] = labels
+
+    if app_id is not None:
+        logger.debug('Setting app ID to "%s" (was "%s")',
+                     app_id,
+                     init_desc['id'])
+        init_desc['id'] = app_id
 
     # Send the descriptor to init
     _, err = init_client.add_app(init_desc)

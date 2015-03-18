@@ -2,7 +2,8 @@
 Usage:
     dcos package describe <package_name>
     dcos package info
-    dcos package install [--options=<options_file>] <package_name>
+    dcos package install [--options=<options_file> --app-id=<app_id>]
+         <package_name>
     dcos package list
     dcos package search <query>
     dcos package sources
@@ -94,7 +95,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['install'],
-            arg_keys=['<package_name>', '--options'],
+            arg_keys=['<package_name>', '--options', '--app-id'],
             function=_install),
 
         cmds.Command(
@@ -214,13 +215,15 @@ def _describe(package_name):
     return 0
 
 
-def _install(package_name, options_file):
+def _install(package_name, options_file, app_id):
     """Install the specified package.
 
     :param package_name: The package to install
     :type package_name: str
     :param options_file: Path to file containing option values
     :type options_file: str
+    :param app_id: App ID for installation of this package
+    :type app_id: str
     :returns: Process status
     :rtype: int
     """
@@ -257,6 +260,7 @@ def _install(package_name, options_file):
         pkg_version,
         init_client,
         options_json,
+        app_id,
         config)
 
     if install_error is not None:
