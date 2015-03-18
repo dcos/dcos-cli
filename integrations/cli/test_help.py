@@ -9,7 +9,7 @@ def test_help():
     returncode, stdout, stderr = exec_command(['dcos', 'help', '--help'])
 
     assert returncode == 0
-    assert stdout == b"""Display usage information
+    assert stdout == b"""Display command line usage information
 
 Usage:
     dcos help
@@ -28,7 +28,7 @@ def test_info():
     returncode, stdout, stderr = exec_command(['dcos', 'help', 'info'])
 
     assert returncode == 0
-    assert stdout == b'Display usage information\n'
+    assert stdout == b'Display command line usage information\n'
     assert stderr == b''
 
 
@@ -53,7 +53,7 @@ provides tools for easy management of a DCOS installation.
 Available DCOS commands in '{}':
 
 \tconfig         \tGet and set DCOS command line options
-\thelp           \tDisplay usage information
+\thelp           \tDisplay command line usage information
 \tmarathon       \tDeploy and manage applications on the DCOS
 \tpackage        \tInstall and manage DCOS software packages
 \tsubcommand     \tInstall and manage DCOS CLI Subcommands

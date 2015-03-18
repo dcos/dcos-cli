@@ -1,4 +1,4 @@
-"""Display usage information
+"""Display command line usage information
 
 Usage:
     dcos help
