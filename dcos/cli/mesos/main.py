@@ -1,9 +1,9 @@
-import json
 import os
 import sys
 
 from dcos.api import constants, util
 from mesos.cli import cli
+
 
 def main():
     error = util.configure_logger_from_environ()
@@ -11,12 +11,12 @@ def main():
         print(error.error())
         return 1
 
-    config_path = os.environ[constants.DCOS_CONFIG_ENV]
-
     if len(sys.argv) == 2:
         cmd = "mesos-help"
     elif sys.argv[2] == "--help":
         cmd = "mesos-help"
+    elif sys.argv[2] == "--version":
+        return _version()
     elif sys.argv[2] == "info":
         return _info()
     else:
@@ -25,10 +25,19 @@ def main():
     if cmd in cli.cmds():
         return os.execvp(cmd, [cmd] + sys.argv[3:])
 
-def _info():
-    """Print Mesos CLI information.
 
-    :returns: Process status
+def _version():
+    """
+    :returns: Command version
+    :rtype: str
+    """
+    version = 'dcos-mesos version {}'.format(constants.version)
+    return version
+
+
+def _info():
+    """
+    :returns: Command info message
     :rtype: int
     """
 

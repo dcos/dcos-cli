@@ -55,6 +55,7 @@ Available DCOS commands in '{}':
 \tconfig         \tGet and set DCOS command line options
 \thelp           \tDisplay usage information
 \tmarathon       \tDeploy and manage applications on the DCOS
+\tmesos          \tInspect and manage the Apache Mesos installation
 \tpackage        \tInstall and manage DCOS software packages
 \tsubcommand     \tInstall and manage DCOS CLI Subcommands
 
