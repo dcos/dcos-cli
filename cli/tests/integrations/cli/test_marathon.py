@@ -188,8 +188,8 @@ def test_show_missing_absolute_app_version():
 
     assert returncode == 1
     assert stdout == b''
-    assert (stderr ==
-            b"Error: App '/zero-instance-app' does not exist\n")
+    assert stderr.decode('utf-8').startswith(
+        "Error: App '/zero-instance-app' does not exist")
 
     _remove_app('zero-instance-app')
 

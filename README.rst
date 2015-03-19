@@ -29,8 +29,14 @@ Setup
 
     sudo pip install virtualenv
 
-#. Create a virtualenv for the dcos cli project::
+#. Create a virtualenv and packages for the dcos project::
 
+    make env
+    make packages
+
+#. Create a virtualenv for the dcoscli project::
+
+    cd cli
     make env
 
 Configure Environment and Run
@@ -96,7 +102,6 @@ There are two ways to run tests, you can either use the virtualenv created by
 Or, assuming you have tox installed (via :code:`sudo pip install tox`)::
 
     tox
-
 
 Other Useful Commands
 #####################

@@ -50,9 +50,20 @@ def request(method,
     """
 
     try:
-        request = requests.Request(method=method, url=url, **kwargs)
+        if 'headers' in kwargs:
+            request = requests.Request(method=method, url=url, **kwargs)
+        else:
+            request = requests.Request(
+                method=method,
+                url=url,
+                headers={'Accept': 'application/json'},
+                **kwargs)
 
-        logger.info('Sending HTTP [%r] to [%r]', request.method, request.url)
+        logger.info(
+            'Sending HTTP [%r] to [%r]: %r',
+            request.method,
+            request.url,
+            request.headers)
 
         with requests.Session() as session:
             response = session.send(request.prepare())

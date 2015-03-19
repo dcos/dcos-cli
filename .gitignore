@@ -1,5 +1,5 @@
 build/
-dcos.egg-info/
+*.egg-info/
 dist/
 env/
 tmp/

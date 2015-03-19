@@ -18,10 +18,11 @@ import os
 import shutil
 import subprocess
 
+import dcoscli
 import docopt
 import pkginfo
-from dcos.api import (cmds, constants, emitting, errors, options, subcommand,
-                      util)
+from dcos.api import (cmds, config, constants, emitting, errors, options,
+                      subcommand, util)
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -35,7 +36,7 @@ def main():
 
     args = docopt.docopt(
         __doc__,
-        version='dcos-subcommand version {}'.format(constants.version))
+        version='dcos-subcommand version {}'.format(dcoscli.version))
 
     returncode, err = cmds.execute(_cmds(), args)
     if err is not None:
@@ -103,6 +104,8 @@ def _install(package):
     :rtype: int
     """
 
+    dcos_config = config.load_from_path(os.environ[constants.DCOS_CONFIG_ENV])
+
     bin_directory = os.path.dirname(util.process_executable_path())
 
     subcommand_directory = os.path.join(
@@ -112,14 +115,18 @@ def _install(package):
         logger.info('Creating directory: %r', subcommand_directory)
         os.mkdir(subcommand_directory, 0o775)
 
-    package_directory = os.path.join(
-        subcommand_directory,
-        _distribution_name(package))
-    if not os.path.exists(package_directory):
-        logger.info('Creating directory: %r', package_directory)
-        os.mkdir(package_directory, 0o775)
+    distribution_name, err = _distribution_name(package)
+    if err is not None:
+        emitter.publish(err)
+        return 1
 
-    err = _install_subcommand(bin_directory, package_directory, package)
+    package_directory = os.path.join(subcommand_directory, distribution_name)
+
+    err = _install_subcommand(
+        bin_directory,
+        package_directory,
+        package,
+        dcos_config.get('subcommand.pip_find_links'))
     if err is not None:
         emitter.publish(err)
         return 1
@@ -147,14 +154,25 @@ def _uninstall(package_name):
 def _distribution_name(package_path):
     """
     :returns: the distribution's name
-    :rtype: str
+    :rtype: (str, dcos.api.errors.Error)
     """
 
-    distribution = pkginfo.Wheel(package_path)
-    return distribution.name
+    try:
+        return (pkginfo.Wheel(package_path).name, None)
+    except ValueError as error:
+        logger.error('Failed to read wheel (%s): %r', package_path, error)
+        return (
+            None,
+            errors.DefaultError(
+                'Failed to read file: {}'.format(error))
+        )
 
 
-def _install_subcommand(bin_directory, package_directory, package):
+def _install_subcommand(
+        bin_directory,
+        package_directory,
+        package,
+        wheel_cache):
     """
     :param: bin_directory: the path to the directory containing the
                            executables (virtualenv, etc).
@@ -167,9 +185,10 @@ def _install_subcommand(bin_directory, package_directory, package):
     :rtype: dcos.api.errors.Error
     """
 
-    if not os.path.exists(os.path.join(package_directory, 'bin', 'activate')):
+    new_package_dir = not os.path.exists(package_directory)
+
+    if not os.path.exists(os.path.join(package_directory, 'bin', 'pip')):
         cmd = [os.path.join(bin_directory, 'virtualenv'), package_directory]
-        logger.info('Calling: %r', cmd)
 
         if _execute_command(cmd) != 0:
             return _generic_error(package)
@@ -179,10 +198,19 @@ def _install_subcommand(bin_directory, package_directory, package):
         'install',
         '--upgrade',
         '--force-reinstall',
-        package,
     ]
 
+    if wheel_cache is not None:
+        cmd.append('--find-links')
+        cmd.append(wheel_cache)
+
+    cmd.append(package)
+
     if _execute_command(cmd) != 0:
+        # We should remove the diretory that we just created
+        if new_package_dir:
+            shutil.rmtree(package_directory)
+
         return _generic_error(package)
 
     return None
@@ -222,7 +250,9 @@ def _generic_error(package):
     :returns: generic error when installing package
     :rtype: dcos.api.errors.Error
     """
+    distribution_name, err = _distribution_name(package)
+    if err is not None:
+        return err
 
     return errors.DefaultError(
-        'Error installing {!r} package'.format(
-            _distribution_name(package)))
+        'Error installing {!r} package'.format(distribution_name))

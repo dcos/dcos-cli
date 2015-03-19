@@ -1,0 +1,4 @@
+sphinx
+tox
+wheel
+-e .. # Install the DCOS package

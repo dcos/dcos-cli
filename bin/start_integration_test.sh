@@ -20,12 +20,18 @@ service marathon start
 # Give all of the processes above some time.
 sleep 2
 
-# Clean and recreate environment
+# move the dcos package
 cd /dcos-cli
+
 make clean env
-
-# Activate the virtual environment so that we can run make
 source env/bin/activate
+make || exit $?
+deactivate
 
-# Run the default target: E.g. test and package
-make
+# Move down to the dcoscli package
+cd cli
+
+make clean env
+source env/bin/activate
+make || exit $?
+deactivate

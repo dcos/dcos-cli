@@ -44,6 +44,18 @@ def test_uninstall_helloworld(package):
     _list_subcommands(0)
 
 
+def test_missing_wheel():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'subcommand', 'install', 'missing_file.whl'])
+
+    assert returncode == 1
+    assert stdout == b''
+    assert stderr.decode('utf-8').startswith(
+        'Failed to read file: No such file: ')
+
+    _list_subcommands(0)
+
+
 def _list_subcommands(size):
     returncode, stdout, stderr = exec_command(['dcos', 'subcommand', 'list'])
 

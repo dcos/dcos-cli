@@ -26,7 +26,7 @@ def exec_command(cmd, env=None, stdin=None):
     stdout, stderr = process.communicate()
 
     # We should always print the stdout and stderr
-    print('STDOUT: {!r}'.format(stdout.decode('utf-8')))
-    print('STDERR: {!r}'.format(stderr.decode('utf-8')))
+    print('STDOUT: {}'.format(stdout.decode('utf-8')))
+    print('STDERR: {}'.format(stderr.decode('utf-8')))
 
     return (process.returncode, stdout, stderr)
