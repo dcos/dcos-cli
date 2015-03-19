@@ -8,6 +8,9 @@ DCOS_CONFIG_ENV = 'DCOS_CONFIG'
 DCOS_LOG_LEVEL_ENV = 'DCOS_LOG_LEVEL'
 """Name of the environment variable for the DCOS log level"""
 
+DCOS_PAGER_COMMAND_ENV = 'PAGER'
+"""Command to use to page long command output (e.g. 'less -R')"""
+
 PATH_ENV = 'PATH'
 """Name of the environment variable pointing to the executable directories."""
 
