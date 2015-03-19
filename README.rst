@@ -63,19 +63,17 @@ environments.
 If you're using OS X, be sure to use the officially distributed Python 3.4
 installer_ since the Homebrew version is missing a necessary library.
 
-Setup Dcos-Helloworld
-#####################
+To support subcommand integration tests, you'll need to clone, package and
+configure your environment to point to the packaged `dcos-helloworld` account.
 
-To run the integration tests for managing subcommands you need to package the
-dcos-helloworld_ example project. After following the setup_ instructions make
-the wheel package by running the following command in that project::
+#. Check out the dcos-helloworld_ project
 
-    make packages
+#. :code:`cd dcos-helloworld`
 
-Set the :code:`DCOS_TEST_WHEEL` environment variable to the path of the created
-wheel package::
+#. :code:`make packages`
 
-    export DCOS_TEST_WHEEL=$(pwd)/dist/dcos_helloworld-0.1.0-py2.py3-none-any.whl
+#. Set the :code:`DCOS_TEST_WHEEL` environment variable to the path of the created
+   wheel package: :code:`export DCOS_TEST_WHEEL=$(pwd)/dist/dcos_helloworld-0.1.0-py2.py3-none-any.whl`
 
 Running
 #######
