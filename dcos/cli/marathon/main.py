@@ -197,7 +197,7 @@ def _add(app_resource):
             emitter.publish(
                 "We currently don't support reading from the TTY. Please "
                 "specify an application JSON.\n"
-                "E.g. dcos app add < app_resource.json")
+                "Usage: dcos app add < app_resource.json")
             return 1
 
         application_resource, err = util.load_json(sys.stdin)
