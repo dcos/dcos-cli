@@ -223,7 +223,7 @@ def _add(app_resource):
             os.environ[constants.DCOS_CONFIG_ENV]))
 
     # Check that the application doesn't exist
-    app_id = marathon.normalize_app_id(application_resource['id'])
+    app_id = client.normalize_app_id(application_resource['id'])
     app, err = client.get_app(app_id)
     if app is not None:
         emitter.publish("Application '{}' already exists".format(app_id))
@@ -513,7 +513,7 @@ def _restart(app_id, force):
         return 1
 
     if desc['instances'] <= 0:
-        app_id = marathon.normalize_app_id(app_id)
+        app_id = client.normalize_app_id(app_id)
         emitter.publish(
             'Unable to restart application {!r} because it is stopped'.format(
                 app_id,
