@@ -9,6 +9,7 @@ import sys
 
 import pager
 import pygments
+import six
 from dcos.api import constants, errors, util
 from pygments.formatters import Terminal256Formatter
 from pygments.lexers import JsonLexer
@@ -74,15 +75,18 @@ def print_handler(event):
         # Do nothing
         pass
 
-    elif isinstance(event, basestring):
+    elif isinstance(event, six.string_types):
         _page(event, pager_command)
-
-    elif isinstance(event, collections.Mapping) or isinstance(event, list):
-        processed_json = _process_json(event, pager_command)
-        _page(processed_json, pager_command)
 
     elif isinstance(event, errors.Error):
         print(event.error(), file=sys.stderr)
+
+    elif (isinstance(event, collections.Mapping) or
+          isinstance(event, collections.Sequence) or isinstance(event, bool) or
+          isinstance(event, six.integer_types) or isinstance(event, float)):
+        # These are all valid JSON types let's treat them different
+        processed_json = _process_json(event, pager_command)
+        _page(processed_json, pager_command)
 
     else:
         logger.debug('Printing unknown type: %s, %r.', type(event), event)

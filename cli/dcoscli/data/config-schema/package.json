@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Package sources",
+      "description": "The list of package source in search order",
+      "default": [ "git://github.com/mesosphere/universe.git" ],
+      "additionalItems": false
+    },
+    "cache": {
+      "type": "string",
+      "title": "Package cache directory",
+      "description": "Path to the local package cache directory",
+      "default": "/tmp/cache"
+    }
+  },
+  "additionalProperties": false,
+  "required": ["sources", "cache"]
+}

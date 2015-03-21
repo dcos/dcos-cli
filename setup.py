@@ -70,8 +70,8 @@ setup(
     install_requires=[
         'gitpython',
         'jsonschema',
-        'portalocker',
         'pager',
+        'portalocker',
         'pygments',
         'pystache',
         'requests',

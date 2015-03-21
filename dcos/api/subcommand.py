@@ -1,7 +1,36 @@
+import json
 import os
 import subprocess
 
-from dcos.api import constants
+from dcos.api import constants, errors
+
+
+def command_executables(subcommand, dcos_path):
+    """List the real path to executable dcos program for specified subcommand.
+
+    :param subcommand: name of subcommand. E.g. marathon
+    :type subcommand: str
+    :param dcos_path: path to the dcos cli directory
+    :type dcos_path: str
+    :returns: the dcos program path
+    :rtype: (str, dcos.api.errors.Error)
+    """
+
+    executables = [
+        command_path
+        for command_path in list_paths(dcos_path)
+        if noun(command_path) == subcommand
+    ]
+
+    if len(executables) > 1:
+        msg = 'Found more than one executable for command {!r}.'
+        return (None, errors.DefaultError(msg.format(subcommand)))
+
+    if len(executables) == 0:
+        msg = "{!r} is not a dcos command."
+        return (None, errors.DefaultError(msg.format(subcommand)))
+
+    return (executables[0], None)
 
 
 def list_paths(dcos_path):
@@ -92,6 +121,21 @@ def info(executable_path):
         [executable_path, noun(executable_path), 'info'])
 
     return out.decode('utf-8').strip()
+
+
+def config_schema(executable_path):
+    """Collects subcommand config schema
+
+    :param executable_path: real path to the dcos subcommand
+    :type executable_path: str
+    :returns: the subcommand config schema
+    :rtype: dict
+    """
+
+    out = subprocess.check_output(
+        [executable_path, noun(executable_path), '--config-schema'])
+
+    return json.loads(out.decode('utf-8'))
 
 
 def noun(executable_path):

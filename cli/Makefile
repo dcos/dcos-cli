@@ -6,11 +6,11 @@ clean:
 env:
 	bin/env.sh
 
-test:
+test: env
 	bin/test.sh
 
-doc:
+doc: env
 	bin/doc.sh
 
-packages:
+packages: env
 	bin/packages.sh

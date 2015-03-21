@@ -1,6 +1,7 @@
 """Install and manage DCOS CLI Subcommands
 
 Usage:
+    dcos subcommand --config-schema
     dcos subcommand info
     dcos subcommand install <package>
     dcos subcommand list
@@ -14,12 +15,14 @@ Positional arguments:
     <package>          The subcommand package wheel
     <package_name>     The name of the subcommand package
 """
+import json
 import os
 import shutil
 import subprocess
 
 import dcoscli
 import docopt
+import pkg_resources
 import pkginfo
 from dcos.api import (cmds, config, constants, emitting, errors, options,
                       subcommand, util)
@@ -73,7 +76,31 @@ def _cmds():
             hierarchy=['subcommand', 'info'],
             arg_keys=[],
             function=_info),
+
+        cmds.Command(
+            hierarchy=['subcommand'],
+            arg_keys=['--config-schema'],
+            function=_subcommand),
     ]
+
+
+def _subcommand(config_schema):
+    """
+    :returns: Process status
+    :rtype: int
+    """
+
+    if config_schema:
+        schema = json.loads(
+            pkg_resources.resource_string(
+                'dcoscli',
+                'data/config-schema/subcommand.json').decode('utf-8'))
+        emitter.publish(schema)
+    else:
+        emitter.publish(options.make_generic_usage_message(__doc__))
+        return 1
+
+    return 0
 
 
 def _info():
