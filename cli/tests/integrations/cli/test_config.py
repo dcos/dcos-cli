@@ -38,8 +38,8 @@ Options:
                      index of zero
 
 Positional Arguments:
-    <name>      The name of the property
-    <value>     The value of the property
+    <name>           The name of the property
+    <value>          The value of the property
 """
     assert stderr == b''
 

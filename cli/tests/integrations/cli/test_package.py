@@ -15,8 +15,8 @@ Usage:
     dcos package --config-schema
     dcos package describe <package_name>
     dcos package info
-    dcos package install [--options=<options_file> --app-id=<app_id>]
-         <package_name>
+    dcos package install [--options=<file> --app-id=<app_id> --cli --app]
+                 <package_name>
     dcos package list-installed [--endpoints --app-id=<app-id> <package_name>]
     dcos package search <query>
     dcos package sources
@@ -24,8 +24,14 @@ Usage:
     dcos package update
 
 Options:
-    -h, --help          Show this screen
-    --version           Show version
+    --all              Apply the operation to all matching packages
+    --app-id=<app-id>  The application id
+    --cli              Apply the operation only to the package's CLI
+    --help             Show this screen
+    --options=<file>   Path to a JSON file containing package installation
+                       options
+    --app              Apply the operation only to the package's application
+    --version          Show version
 
 Configuration:
     [package]

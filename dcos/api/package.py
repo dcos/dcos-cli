@@ -11,17 +11,11 @@ import zipfile
 
 import git
 import portalocker
+import pystache
 import six
-from dcos.api import constants, emitting, errors, util
+from dcos.api import constants, emitting, errors, subcommand, util
 
-try:
-    # Python 2
-    from urlparse import urlparse
-    from urllib import urlretrieve
-except ImportError:
-    # Python 3
-    from urllib.parse import urlparse
-    from urllib.request import urlretrieve
+from six.moves import urllib
 
 logger = util.get_logger(__name__)
 
@@ -36,36 +30,27 @@ PACKAGE_SOURCE_KEY = 'DCOS_PACKAGE_SOURCE'
 PACKAGE_FRAMEWORK_KEY = 'DCOS_PACKAGE_IS_FRAMEWORK'
 
 
-def install(pkg, version, init_client, user_options, app_id, cfg):
-    """Installs a package.
-
-    :param pkg: The package to install
-    :type pkg: Package
-    :param version: The package version to install
-    :type version: str
-    :param init_client: The program to use to run the package
-    :type init_client: object
-    :param user_options: Package parameters
-    :type user_options: dict
-    :param app_id: App ID for installation of this package
-    :type app_id: str
-    :param cfg: Configuration dictionary
-    :type cfg: dcos.api.config.Toml
-    :rtype: Error
+def _merge_options(pkg, version, user_options):
     """
-
+    :param pkg: the package to install
+    :type pkg: Package
+    :param version: the package version to install
+    :type version: str
+    :param user_options: package parameters
+    :type user_options: dict
+    :returns: a dictionary with the user supplied options
+    :rtype: (dict, dcos.api.errors.Error)
+    """
     if user_options is None:
         user_options = {}
 
-    config_schema, schema_error = pkg.config_json(version)
+    config_schema, err = pkg.config_json(version)
+    if err is not None:
+        return (None, err)
 
-    if schema_error is not None:
-        return schema_error
-
-    default_options, default_error = _extract_default_values(config_schema)
-
-    if default_error is not None:
-        return default_error
+    default_options, err = _extract_default_values(config_schema)
+    if err is not None:
+        return (None, err)
 
     # Merge option overrides
     options = dict(list(default_options.items()) + list(user_options.items()))
@@ -73,25 +58,45 @@ def install(pkg, version, init_client, user_options, app_id, cfg):
     # Validate options with the config schema
     err = util.validate_json(options, config_schema)
     if err is not None:
+        return (None, err)
+
+    return (options, None)
+
+
+def install_app(pkg, version, init_client, user_options, app_id):
+    """Installs a package's application
+
+    :param pkg: the package to install
+    :type pkg: Package
+    :param version: the package version to install
+    :type version: str
+    :param init_client: the program to use to run the package
+    :type init_client: object
+    :param user_options: package parameters
+    :type user_options: dict
+    :param app_id: app ID for installation of this package
+    :type app_id: str
+    :rtype: Error
+    """
+
+    options, err = _merge_options(pkg, version, user_options)
+    if err is not None:
         return err
 
     # Insert option parameters into the init template
-    template, tmpl_error = pkg.marathon_template(version)
-
-    if tmpl_error is not None:
-        return tmpl_error
+    template, err = pkg.marathon_template(version)
+    if err is not None:
+        return err
 
     # Render the init template with the marshaled options
-    init_desc, render_error = util.render_mustache_json(template, options)
-
-    if render_error is not None:
-        return render_error
+    init_desc, err = util.render_mustache_json(template, options)
+    if err is not None:
+        return err
 
     # Add package metadata
-    package_labels, label_error = _make_package_labels(pkg, version)
-
-    if label_error is not None:
-        return label_error
+    package_labels, err = _make_package_labels(pkg, version)
+    if err is not None:
+        return err
 
     # Preserve existing labels
     labels = init_desc.get('labels', {})
@@ -149,7 +154,40 @@ def _make_package_labels(pkg, version):
     return (package_labels, None)
 
 
-def uninstall(package_name, remove_all, app_id, init_client, config):
+def install_subcommand(pkg, version, user_options):
+    """Installs a package's command line interface
+
+    :param pkg: the package to install
+    :type pkg: Package
+    :param version: the package version to install
+    :type version: str
+    :param user_options: package parameters
+    :type user_options: dict
+    :rtype: dcos.api.errors.Error
+    """
+
+    options, err = _merge_options(pkg, version, user_options)
+    if err is not None:
+        return err
+
+    # Insert option parameters into the init template
+    init_template, err = pkg.command_template(version)
+    if err is not None:
+        return err
+
+    rendered_template = pystache.render(init_template, options)
+
+    install_operation, err = util.load_jsons(rendered_template)
+    if err is not None:
+        return err
+
+    return subcommand.install(
+        pkg.name(),
+        install_operation,
+        util.dcos_path())
+
+
+def uninstall(package_name, remove_all, app_id, init_client):
     """Uninstalls a package.
 
     :param package_name: The package to uninstall
@@ -160,8 +198,6 @@ def uninstall(package_name, remove_all, app_id, init_client, config):
     :type app_id: str
     :param init_client: The program to use to run the package
     :type init_client: object
-    :param cfg: Configuration dictionary
-    :type cfg: dcos.api.config.Toml
     :rtype: Error
     """
 
@@ -410,7 +446,7 @@ def url_to_source(url):
     :rtype: (Source, Error)
     """
 
-    parse_result = urlparse(url)
+    parse_result = urllib.parse.urlparse(url)
     scheme = parse_result.scheme
 
     if scheme == 'file':
@@ -612,7 +648,7 @@ class FileSource(Source):
         """
 
         # copy the source to the target_directory
-        parse_result = urlparse(self._url)
+        parse_result = urllib.parse.urlparse(self._url)
         source_dir = parse_result.path
         try:
             shutil.copytree(source_dir, target_dir)
@@ -655,7 +691,7 @@ class HttpSource(Source):
                 tmp_file = os.path.join(tmp_dir, 'packages.zip')
 
                 # Download the zip file.
-                urlretrieve(self.url, tmp_file)
+                urllib.request.urlretrieve(self.url, tmp_file)
 
                 # Unzip the downloaded file.
                 packages_zip = zipfile.ZipFile(tmp_file, 'r')
@@ -919,14 +955,27 @@ class Package():
 
         return self._registry
 
-    def command_json(self, version):
+    def is_command_defined(self, version):
+        """Returns true if the package defines a command; false otherwise.
+
+        :param version: package version
+        :type version: str
+        :rtype: bool
+        """
+
+        return os.path.isfile(
+            os.path.join(
+                self.path,
+                os.path.join(version, 'command.json')))
+
+    def command_template(self, version):
         """Returns the JSON content of the command.json file.
 
         :returns: Package command data
-        :rtype: (dict, Error)
+        :rtype: (str, Error)
         """
 
-        return self._json(os.path.join(version, 'command.json'))
+        return self._data(os.path.join(version, 'command.json'))
 
     def config_json(self, version):
         """Returns the JSON content of the config.json file.
@@ -950,7 +999,7 @@ class Package():
         """Returns the JSON content of the marathon.json file.
 
         :returns: Package marathon data
-        :rtype: str or Error
+        :rtype: (str, Error)
         """
 
         return self._data(os.path.join(version, 'marathon.json'))

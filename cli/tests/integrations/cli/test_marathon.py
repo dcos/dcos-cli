@@ -118,7 +118,7 @@ def test_add_bad_json_app():
 
         assert returncode == 1
         assert stdout == b''
-        assert stderr == b'Error loading JSON.\n'
+        assert stderr.decode('utf-8').startswith('Error loading JSON: ')
 
 
 def test_add_existing_app():
