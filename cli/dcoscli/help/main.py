@@ -10,8 +10,9 @@ Options:
     --version           Show version
     --all               Prints all available commands to the standard output
 """
+import dcoscli
 import docopt
-from dcos.api import constants, emitting, options, subcommand, util
+from dcos.api import emitting, options, subcommand, util
 
 emitter = emitting.FlatEmitter()
 
@@ -24,7 +25,7 @@ def main():
 
     args = docopt.docopt(
         __doc__,
-        version='dcos-help version {}'.format(constants.version))
+        version='dcos-help version {}'.format(dcoscli.version))
 
     if args['help'] and args['info']:
         emitter.publish(__doc__.split('\n')[0])

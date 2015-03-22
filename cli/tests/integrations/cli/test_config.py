@@ -61,6 +61,7 @@ marathon.port=8080
 package.cache=tmp/cache
 package.sources=['git://github.com/mesosphere/universe.git', \
 'https://github.com/mesosphere/universe/archive/master.zip']
+subcommand.pip_find_links=../dist
 """
     assert stderr == b''
 

@@ -14,6 +14,7 @@ Options:
 import collections
 import os
 
+import dcoscli
 import docopt
 import toml
 from dcos.api import cmds, config, constants, emitting, errors, options, util
@@ -29,7 +30,7 @@ def main():
 
     args = docopt.docopt(
         __doc__,
-        version='dcos-config version {}'.format(constants.version))
+        version='dcos-config version {}'.format(dcoscli.version))
 
     returncode, err = cmds.execute(_cmds(), args)
     if err is not None:

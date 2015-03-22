@@ -53,6 +53,7 @@ import os
 import sys
 import time
 
+import dcoscli
 import docopt
 import pkg_resources
 from dcos.api import (cmds, config, constants, emitting, errors, jsonitem,
@@ -70,7 +71,7 @@ def main():
 
     args = docopt.docopt(
         __doc__,
-        version='dcos-marathon version {}'.format(constants.version))
+        version='dcos-marathon version {}'.format(dcoscli.version))
 
     if not args['marathon']:
         emitter.publish(options.make_generic_usage_message(__doc__))
@@ -208,7 +209,7 @@ def _add(app_resource):
 
     schema = json.loads(
         pkg_resources.resource_string(
-            'dcos',
+            'dcoscli',
             'data/marathon-schema.json').decode('utf-8'))
 
     err = util.validate_json(application_resource, schema)
@@ -341,7 +342,7 @@ def _start(app_id, instances, force):
 
     schema = json.loads(
         pkg_resources.resource_string(
-            'dcos',
+            'dcoscli',
             'data/marathon-schema.json').decode('utf-8'))
 
     app_json = {}
@@ -455,7 +456,7 @@ def _update(app_id, json_items, force):
 
     schema = json.loads(
         pkg_resources.resource_string(
-            'dcos',
+            'dcoscli',
             'data/marathon-schema.json').decode('utf-8'))
 
     app_json = {}

@@ -1,3 +1,5 @@
+[subcommand]
+pip_find_links = "../dist"
 [foo]
 bar = true
 [marathon]

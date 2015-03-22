@@ -14,9 +14,6 @@ DCOS_PAGER_COMMAND_ENV = 'PAGER'
 PATH_ENV = 'PATH'
 """Name of the environment variable pointing to the executable directories."""
 
-version = '0.1.0'
-"""DCOS CLI version"""
-
 DCOS_COMMAND_PREFIX = 'dcos-'
 """Prefix for all the DCOS CLI commands."""
 

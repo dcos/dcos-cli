@@ -4,7 +4,7 @@ BASEDIR=`dirname $0`/..
 
 if [ ! -d "$BASEDIR/env" ]; then
 
-    virtualenv -q $BASEDIR/env --prompt='(dcos) '
+    virtualenv -q $BASEDIR/env --prompt='(dcoscli) '
     echo "Virtualenv created."
 
     source $BASEDIR/env/bin/activate
@@ -24,4 +24,3 @@ elif [ ! -f "$BASEDIR/env/bin/activate" -o "$BASEDIR/setup.py" -nt "$BASEDIR/env
     echo "Requirements installed."
 
 fi
-

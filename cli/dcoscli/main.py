@@ -30,6 +30,7 @@ to read about a specific subcommand.
 import os
 import subprocess
 
+import dcoscli
 import docopt
 from dcos.api import constants, emitting, errors, subcommand, util
 
@@ -42,7 +43,7 @@ def main():
 
     args = docopt.docopt(
         __doc__,
-        version='dcos version {}'.format(constants.version),
+        version='dcos version {}'.format(dcoscli.version),
         options_first=True)
 
     if not _config_log_level_environ(args['--log-level']):

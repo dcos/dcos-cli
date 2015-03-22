@@ -35,6 +35,7 @@ Configuration:
 import json
 import os
 
+import dcoscli
 import docopt
 import toml
 from dcos.api import (cmds, config, constants, emitting, marathon, options,
@@ -51,7 +52,7 @@ def main():
 
     args = docopt.docopt(
         __doc__,
-        version='dcos-package version {}'.format(constants.version))
+        version='dcos-package version {}'.format(dcoscli.version))
 
     if not args['package']:
         emitter.publish(options.make_generic_usage_message(__doc__))
