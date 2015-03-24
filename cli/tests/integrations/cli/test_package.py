@@ -96,6 +96,27 @@ def test_describe():
     assert stderr == b''
 
 
+def test_bad_install():
+    returncode, stdout, stderr = exec_command(
+        ['dcos',
+            'package',
+            'install',
+            'mesos-dns',
+            '--options=tests/data/package/mesos-dns-config-bad.json'])
+
+    assert returncode == 1
+    assert stdout == b''
+
+    assert stderr == b"""\
+Error: 'mesos-dns/config-url' is a required property
+Value: {"mesos-dns/host": false}
+
+Error: False is not of type 'string'
+Path:  mesos-dns/host
+Value: false
+"""
+
+
 def test_install():
     returncode, stdout, stderr = exec_command(
         ['dcos',

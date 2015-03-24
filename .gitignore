@@ -10,3 +10,5 @@ pydoc/_build/
 .coverage
 
 *.pyc
+
+Vagrantfile

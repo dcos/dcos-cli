@@ -75,6 +75,7 @@ setup(
         'pygments',
         'pystache',
         'requests',
+        'six',
         'toml',
     ],
 )

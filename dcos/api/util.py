@@ -3,11 +3,13 @@ import inspect
 import json
 import logging
 import os
+import re
 import shutil
 import sys
 import tempfile
 
 import jsonschema
+import six
 from dcos.api import constants, errors
 
 
@@ -173,8 +175,38 @@ def validate_json(instance, schema):
     :returns: an error if the validation failed; None otherwise
     :rtype: Error
     """
-    try:
-        jsonschema.validate(instance, schema)
+
+    # TODO: clean up this hack
+    #
+    # The error string from jsonschema already contains improperly formatted
+    # JSON values, so we have to resort to removing the unicode prefix using
+    # a regular expression.
+    def hack_error_message_fix(message):
+        # This regular expression matches the character 'u' followed by the
+        # single-quote character, all optionally preceded by a left square
+        # bracket, parenthesis, curly brace, or whitespace character.
+        return re.compile("([\[\(\{\s])u'").sub(
+            "\g<1>'",
+            re.compile("^u'").sub("'", message))
+
+    def sort_key(ve):
+        return six.u(hack_error_message_fix(ve.message))
+
+    validator = jsonschema.Draft4Validator(schema)
+    validation_errors = list(validator.iter_errors(instance))
+    validation_errors = sorted(validation_errors, key=sort_key)
+
+    def format(error):
+        message = 'Error: {}\n'.format(hack_error_message_fix(error.message))
+        if len(error.absolute_path) > 0:
+            message += 'Path:  {}\n'.format(error.absolute_path[0])
+        message += 'Value: {}'.format(json.dumps(error.instance))
+        return message
+
+    formatted_errors = [format(e) for e in validation_errors]
+
+    if len(formatted_errors) is 0:
         return None
-    except jsonschema.ValidationError as ve:
-        return errors.DefaultError(ve.message)
+    else:
+        errors_as_str = str.join('\n\n', formatted_errors)
+        return errors.DefaultError(errors_as_str)
