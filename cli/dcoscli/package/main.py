@@ -7,7 +7,7 @@ Usage:
     dcos package list
     dcos package search <query>
     dcos package sources
-    dcos package uninstall <package_name>
+    dcos package uninstall [--all | --app-id=<app-id>] <package_name>
     dcos package update
 
 Options:
@@ -108,6 +108,11 @@ def _cmds():
             hierarchy=['search'],
             arg_keys=['<query>'],
             function=_search),
+
+        cmds.Command(
+            hierarchy=['uninstall'],
+            arg_keys=['<package_name>', '--all', '--app-id'],
+            function=_uninstall),
     ]
 
 
@@ -311,5 +316,36 @@ def _search(query):
         return 1
 
     emitter.publish([r.as_dict() for r in results])
+
+    return 0
+
+
+def _uninstall(package_name, remove_all, app_id):
+    """Uninstall the specified package.
+
+    :param package_name: The package to uninstall
+    :type package_name: str
+    :param remove_all: Whether to remove all instances of the named package
+    :type remove_all: boolean
+    :param app_id: App ID of the package instance to uninstall
+    :type app_id: str
+    :returns: Process status
+    :rtype: int
+    """
+
+    config = _load_config()
+
+    init_client = marathon.create_client(config)
+
+    uninstall_error = package.uninstall(
+        package_name,
+        remove_all,
+        app_id,
+        init_client,
+        config)
+
+    if uninstall_error is not None:
+        emitter.publish(uninstall_error)
+        return 1
 
     return 0

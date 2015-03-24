@@ -114,6 +114,61 @@ def install(pkg, version, init_client, user_options, app_id, cfg):
     return err
 
 
+def uninstall(package_name, remove_all, app_id, init_client, config):
+    """Uninstalls a package.
+
+    :param package_name: The package to uninstall
+    :type package_name: str
+    :param remove_all: Whether to remove all instances of the named package
+    :type remove_all: boolean
+    :param app_id: App ID of the package instance to uninstall
+    :type app_id: str
+    :param init_client: The program to use to run the package
+    :type init_client: object
+    :param cfg: Configuration dictionary
+    :type cfg: dcos.api.config.Toml
+    :rtype: Error
+    """
+
+    apps, appsError = init_client.get_apps()
+
+    if appsError is not None:
+        return appsError
+
+    def is_match(app):
+        encoding = 'utf-8'  # We normalize encoding for byte-wise comparison
+        name_label = app.get('labels', {}).get(PACKAGE_NAME_KEY, u'')
+        name_label_enc = name_label.encode(encoding)
+        package_name_enc = package_name.encode(encoding)
+        name_matches = name_label_enc == package_name_enc
+
+        if app_id is not None:
+            pkg_app_id = app.get('id', '')
+            normalized_app_id = init_client.normalize_app_id(app_id)
+            return name_matches and pkg_app_id == normalized_app_id
+        else:
+            return name_matches
+
+    matching_apps = [a for a in apps if is_match(a)]
+
+    if not remove_all and len(matching_apps) > 1:
+        app_ids = [a.get('id') for a in matching_apps]
+        return Error("""Multiple instances of package [{}] are installed. \
+Please specify the app id of the instance to uninstall or uninstall all. \
+The app ids of the installed package instances are: [{}].""".format(
+            package_name, ', '.join(app_ids)))
+
+    if len(matching_apps) is 0:
+        msg = 'No instances of package [{}]'.format(package_name)
+        if app_id is not None:
+            msg += ' with id [{}]'.format(app_id)
+        msg += ' are installed.'
+        return Error(msg)
+
+    for app in matching_apps:
+        init_client.remove_app(app['id'], force=True)
+
+
 def list_installed_packages(init_client):
     """
     :param init_client: The program to use to list packages

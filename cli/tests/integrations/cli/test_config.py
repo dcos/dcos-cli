@@ -10,7 +10,7 @@ from common import exec_command
 def env():
     return {
         constants.PATH_ENV: os.environ[constants.PATH_ENV],
-        'DCOS_CONFIG': os.path.join("tests", "data", "Dcos.toml")
+        constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "Dcos.toml")
     }
 
 

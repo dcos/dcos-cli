@@ -13,7 +13,7 @@ def test_package():
     dcos package list
     dcos package search <query>
     dcos package sources
-    dcos package uninstall <package_name>
+    dcos package uninstall [--all | --app-id=<app-id>] <package_name>
     dcos package update
 
 Options:
@@ -116,21 +116,78 @@ def test_install_with_id():
             'install',
             'mesos-dns',
             '--options=tests/data/package/mesos-dns-config.json',
-            '--app-id=dns'])
+            '--app-id=dns-1'])
 
     assert returncode == 0
     assert stdout == b''
     assert stderr == b''
 
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'remove', 'dns'])
+        ['dcos',
+            'package',
+            'install',
+            'mesos-dns',
+            '--options=tests/data/package/mesos-dns-config.json',
+            '--app-id=dns-2'])
 
     assert returncode == 0
     assert stdout == b''
     assert stderr == b''
 
 
+def test_uninstall_with_id():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'uninstall', 'mesos-dns', '--app-id=dns-1'])
+
+    assert returncode == 0
+    assert stdout == b''
+    assert stderr == b''
+
+
+def test_uninstall_all():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'uninstall', 'mesos-dns', '--all'])
+
+    assert returncode == 0
+    assert stdout == b''
+    assert stderr == b''
+
+
+def test_uninstall_missing():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'uninstall', 'mesos-dns'])
+
+    assert returncode == 1
+    assert stdout == b''
+    assert stderr == b'No instances of package [mesos-dns] are installed.\n'
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'uninstall', 'mesos-dns', '--app-id=dns-1'])
+
+    assert returncode == 1
+    assert stdout == b''
+    assert stderr == b"""No instances of package [mesos-dns] with \
+id [dns-1] are installed.\n"""
+
+
 def test_list():
+    returncode, stdout, stderr = exec_command(['dcos', 'package', 'list'])
+
+    assert returncode == 0
+    assert stdout == b''
+    assert stderr == b''
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos',
+            'package',
+            'install',
+            'mesos-dns',
+            '--options=tests/data/package/mesos-dns-config.json'])
+
+    assert returncode == 0
+    assert stdout == b''
+    assert stderr == b''
+
     returncode, stdout, stderr = exec_command(['dcos', 'package', 'list'])
 
     assert returncode == 0
@@ -163,7 +220,7 @@ def test_search():
 
 def test_cleanup():
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'remove', 'mesos-dns'])
+        ['dcos', 'package', 'uninstall', 'mesos-dns'])
 
     assert returncode == 0
     assert stdout == b''

@@ -85,7 +85,7 @@ class Client(object):
         :rtype: (dict, errors.Error)
         """
 
-        app_id = normalize_app_id(app_id)
+        app_id = self.normalize_app_id(app_id)
         if version is None:
             url = self._create_url('v2/apps{}'.format(app_id))
         else:
@@ -123,7 +123,7 @@ class Client(object):
                         max_count))
             )
 
-        app_id = normalize_app_id(app_id)
+        app_id = self.normalize_app_id(app_id)
 
         url = self._create_url('v2/apps{}/versions'.format(app_id))
 
@@ -193,7 +193,7 @@ class Client(object):
         :rtype: (str, errors.Error)
         """
 
-        app_id = normalize_app_id(app_id)
+        app_id = self.normalize_app_id(app_id)
 
         if not force:
             params = None
@@ -225,7 +225,7 @@ class Client(object):
         :rtype: (bool, errors.Error)
         """
 
-        app_id = normalize_app_id(app_id)
+        app_id = self.normalize_app_id(app_id)
 
         if not force:
             params = None
@@ -269,7 +269,7 @@ class Client(object):
         :rtype: errors.Error
         """
 
-        app_id = normalize_app_id(app_id)
+        app_id = self.normalize_app_id(app_id)
 
         if not force:
             params = None
@@ -298,7 +298,7 @@ class Client(object):
         :rtype: (dict, errors.Error)
         """
 
-        app_id = normalize_app_id(app_id)
+        app_id = self.normalize_app_id(app_id)
 
         if not force:
             params = None
@@ -357,7 +357,7 @@ class Client(object):
             return (None, error)
 
         if app_id is not None:
-            app_id = normalize_app_id(app_id)
+            app_id = self.normalize_app_id(app_id)
             deployments = [
                 deployment for deployment in response.json()
                 if app_id in deployment['affectedApps']
@@ -439,7 +439,7 @@ class Client(object):
             return (None, error)
 
         if app_id is not None:
-            app_id = normalize_app_id(app_id)
+            app_id = self.normalize_app_id(app_id)
             tasks = [
                 task for task in response.json()['tasks']
                 if app_id == task['appId']
@@ -471,14 +471,13 @@ class Client(object):
 
         return (task, None)
 
+    def normalize_app_id(self, app_id):
+        """Normalizes the application id.
 
-def normalize_app_id(app_id):
-    """Normalizes the application id.
+        :param app_id: raw application ID
+        :type app_id: str
+        :returns: normalized application ID
+        :rtype: str
+        """
 
-    :param app_id: raw application ID
-    :type app_id: str
-    :returns: normalized application ID
-    :rtype: str
-    """
-
-    return quote('/' + app_id.strip('/'))
+        return quote('/' + app_id.strip('/'))
