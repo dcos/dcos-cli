@@ -121,7 +121,7 @@ def install(pkg, version, init_client, user_options, app_id, cfg):
     return err
 
 
-def uninstall(package_name, remove_all, app_id, init_client, config):
+def uninstall(package_name, remove_all, app_id, init_client):
     """Uninstalls a package.
 
     :param package_name: The package to uninstall
@@ -132,8 +132,6 @@ def uninstall(package_name, remove_all, app_id, init_client, config):
     :type app_id: str
     :param init_client: The program to use to run the package
     :type init_client: object
-    :param cfg: Configuration dictionary
-    :type cfg: dcos.api.config.Toml
     :rtype: Error
     """
 
@@ -217,7 +215,11 @@ def search(query, cfg):
         })
         return result
 
-    for registry in registries(cfg):
+    regs, reg_error = registries(cfg)
+    if reg_error is not None:
+        return (None, reg_error)
+
+    for registry in regs:
         source_results = []
         index, error = registry.get_index()
         if error is not None:
@@ -278,55 +280,55 @@ def _extract_default_values(config_schema):
     return (dict(defaults), None)
 
 
-def resolve_package(package_name, config):
+def resolve_package(package_name, cfg):
     """Returns the first package with the supplied name found by looking at
     the configured sources in the order they are defined.
 
     :param package_name: The name of the package to resolve
     :type package_name: str
-    :param config: Configuration dictionary
-    :type config: dcos.api.config.Toml
+    :param cfg: Configuration dictionary
+    :type cfg: dcos.api.config.Toml
     :returns: The named package, if found
-    :rtype: Package or None
+    :rtype: (Package, Error)
     """
 
-    for registry in registries(config):
+    regs, reg_error = registries(cfg)
+    if reg_error is not None:
+        return (None, reg_error)
+
+    for registry in regs:
         package, error = registry.get_package(package_name)
         if package is not None:
-            return package
+            return (package, None)
 
-    return None
+    return (None, None)
 
 
-def registries(config):
+def registries(cfg):
     """Returns configured cached package registries.
 
-    :param config: Configuration dictionary
-    :type config: dcos.api.config.Toml
+    :param cfg: Configuration dictionary
+    :type cfg: dcos.api.config.Toml
     :returns: The list of registries, in resolution order
-    :rtype: list of Registry
+    :rtype: (list of Registry, Error)
     """
 
-    sources, errors = list_sources(config)
-    return [Registry(source, source.local_cache(config)) for source in sources]
+    sources, errors = list_sources(cfg)
+    rs = [Registry(source, source.local_cache(cfg)) for source in sources]
+    return (rs, None)
 
 
-def list_sources(config):
+def list_sources(cfg):
     """List configured package sources.
 
-    :param config: Configuration dictionary
-    :type config: dcos.api.config.Toml
+    :param cfg: Configuration dictionary
+    :type cfg: dcos.api.config.Toml
     :returns: The list of sources, in resolution order
     :rtype: (list of Source, list of Error)
     """
 
-    source_uris = config.get('package.sources')
-
-    if source_uris is None:
-        config_error = Error('No configured value for [package.sources]')
-        return (None, [config_error])
-
-    results = [url_to_source(s) for s in config['package.sources']]
+    source_uris = cfg.get('package.sources')
+    results = [url_to_source(s) for s in source_uris]
     sources = [source for (source, _) in results if source is not None]
     errors = [error for (_, error) in results if error is not None]
     return (sources, errors)
@@ -378,11 +380,11 @@ def acquire_file_lock(lock_file_path):
         return (None, Error("Unable to acquire the package cache lock"))
 
 
-def update_sources(config):
+def update_sources(cfg):
     """Overwrites the local package cache with the latest source data.
 
-    :param config: Configuration dictionary
-    :type config: dcos.api.config.Toml
+    :param cfg: Configuration dictionary
+    :type cfg: dcos.api.config.Toml
     :returns: Error, if any.
     :rtype: list of Error
     """
@@ -390,7 +392,7 @@ def update_sources(config):
     errors = []
 
     # ensure the cache directory is properly configured
-    cache_dir = config.get('package.cache')
+    cache_dir = cfg.get('package.cache')
 
     if cache_dir is None:
         config_error = Error("No configured value for [package.cache]")
@@ -417,7 +419,7 @@ def update_sources(config):
     with lock_fd:
 
         # list sources
-        sources, list_errors = list_sources(config)
+        sources, list_errors = list_sources(cfg)
 
         if len(list_errors) > 0:
             errors = errors + list_errors
@@ -483,16 +485,16 @@ class Source:
 
         return hashlib.sha1(self.url.encode('utf-8')).hexdigest()
 
-    def local_cache(self, config):
+    def local_cache(self, cfg):
         """Returns the file system path to this source's local cache.
 
-        :param config: Configuration dictionary
-        :type config: dcos.api.config.Toml
+        :param cfg: Configuration dictionary
+        :type cfg: dcos.api.config.Toml
         :returns: Path to this source's local cache on disk
         :rtype: str or None
         """
 
-        cache_dir = config.get('package.cache')
+        cache_dir = cfg.get('package.cache')
         if cache_dir is None:
             return None
 
