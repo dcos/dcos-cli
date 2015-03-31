@@ -1,4 +1,5 @@
 import abc
+import base64
 import collections
 import hashlib
 import json
@@ -11,6 +12,7 @@ import zipfile
 import git
 import portalocker
 import pystache
+import six
 from dcos.api import constants, emitting, errors, util
 
 try:
@@ -27,6 +29,8 @@ logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
 
 
+PACKAGE_METADATA_KEY = 'DCOS_PACKAGE_METADATA'
+PACKAGE_REGISTRY_VERSION_KEY = 'DCOS_PACKAGE_REGISTRY_VERSION'
 PACKAGE_NAME_KEY = 'DCOS_PACKAGE_NAME'
 PACKAGE_VERSION_KEY = 'DCOS_PACKAGE_VERSION'
 PACKAGE_SOURCE_KEY = 'DCOS_PACKAGE_SOURCE'
@@ -88,21 +92,10 @@ def install(pkg, version, init_client, user_options, app_id, cfg):
         return Error(message)
 
     # Add package metadata
-    metadata, meta_error = pkg.package_json(version)
+    package_labels, label_error = _make_package_labels(pkg, version)
 
-    if meta_error is not None:
-        return meta_error
-
-    is_framework = metadata.get('framework')
-    if not is_framework:
-        is_framework = False
-
-    package_labels = {
-        PACKAGE_NAME_KEY: metadata['name'],
-        PACKAGE_VERSION_KEY: metadata['version'],
-        PACKAGE_SOURCE_KEY: pkg.registry.source.url,
-        PACKAGE_FRAMEWORK_KEY: str(is_framework)
-    }
+    if label_error is not None:
+        return label_error
 
     # Preserve existing labels
     labels = init_desc.get('labels', {})
@@ -119,6 +112,45 @@ def install(pkg, version, init_client, user_options, app_id, cfg):
     # Send the descriptor to init
     _, err = init_client.add_app(init_desc)
     return err
+
+
+def _make_package_labels(pkg, version):
+    """
+    :param pkg: The package to install
+    :type pkg: Package
+    :param version: The package version to install
+    :type version: str
+    :rtype: (dict, Error)
+    """
+
+    metadata, meta_error = pkg.package_json(version)
+
+    if meta_error is not None:
+        return (None, meta_error)
+
+    metadata_json_string = json.dumps(metadata, sort_keys=True)
+    metadata_bytes = six.b(metadata_json_string)
+    encoded_metadata = base64.b64encode(metadata_bytes).decode('utf-8')
+
+    is_framework = metadata.get('framework')
+    if not is_framework:
+        is_framework = False
+
+    package_registry_version, version_error = pkg.registry.get_version()
+
+    if version_error is not None:
+        return (None, version_error)
+
+    package_labels = {
+        PACKAGE_METADATA_KEY: encoded_metadata,
+        PACKAGE_NAME_KEY: metadata['name'],
+        PACKAGE_VERSION_KEY: metadata['version'],
+        PACKAGE_SOURCE_KEY: pkg.registry.source.url,
+        PACKAGE_FRAMEWORK_KEY: str(is_framework),
+        PACKAGE_REGISTRY_VERSION_KEY: package_registry_version
+    }
+
+    return (package_labels, None)
 
 
 def uninstall(package_name, remove_all, app_id, init_client, config):
@@ -734,6 +766,31 @@ class Registry():
         """
 
         return self._source
+
+    def get_version(self):
+        """Returns the version of this registry.
+
+        :rtype: (str, Error)
+        """
+
+        # The package version is found in $BASE/repo/meta/version.json
+        index_path = os.path.join(
+            self._base_path,
+            'repo',
+            'meta',
+            'version.json')
+
+        if not os.path.isfile(index_path):
+            return (None, Error('Path [{}] is not a file'.format(index_path)))
+
+        try:
+            with open(index_path) as fd:
+                version_json = json.load(fd)
+                return (version_json.get('version'), None)
+        except IOError:
+            return (None, Error('Unable to open file [{}]'.format(index_path)))
+        except ValueError:
+            return (None, Error('Unable to parse [{}]'.format(index_path)))
 
     def get_index(self):
         """Returns the index of packages in this registry.
