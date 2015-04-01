@@ -104,6 +104,24 @@ def test_describe():
     assert stderr == b''
 
 
+def test_show():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'show', 'mesos-dns'])
+
+    assert returncode == 0
+    assert b""""id": "/mesos-dns", \n"name": "mesos-dns",""" in stdout
+    assert stderr == b''
+
+
+def test_show_nonexistent():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'show', 'xyzzy'])
+
+    assert returncode == 1
+    assert b'No app found with package [xyzzy]' in stdout
+    assert stderr == b''
+
+
 def test_bad_install():
     returncode, stdout, stderr = exec_command(
         ['dcos',
