@@ -19,6 +19,7 @@ Usage:
          <package_name>
     dcos package list
     dcos package search <query>
+    dcos package show <package_name> [--app-id=<app-id>]
     dcos package sources
     dcos package uninstall [--all | --app-id=<app-id>] <package_name>
     dcos package update
