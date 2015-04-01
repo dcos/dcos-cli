@@ -78,7 +78,14 @@ def install(pkg, version, init_client, user_options, app_id, cfg):
     if tmpl_error is not None:
         return tmpl_error
 
-    init_desc = json.loads(pystache.render(init_template, options))
+    rendered_template = pystache.render(init_template, options)
+
+    try:
+        init_desc = json.loads(rendered_template)
+    except Exception as e:
+        message = 'Error: {}\n'.format(e.message)
+        message += 'Rendered JSON: \n{}'.format(rendered_template)
+        return Error(message)
 
     # Add package metadata
     metadata, meta_error = pkg.package_json(version)
