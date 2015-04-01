@@ -223,6 +223,7 @@ def list_installed_packages(init_client):
 
     return (pkgs, None)
 
+
 def show_concise(init_client, apps):
     """Returns concise info about one or more apps
     :param init_client: The program to use to list packages
@@ -237,15 +238,15 @@ def show_concise(init_client, apps):
     for app in apps:
         tasks, err = init_client.get_tasks(app["id"])
         if err is not None:
-            return ({}, err)
+            return (None, err)
         mapped = {}
         mapped["id"] = app["id"]
-        if "DCOS_PACKAGE_NAME" in app["labels"]:
-            mapped["name"] = app["labels"]["DCOS_PACKAGE_NAME"]
-        if "DCOS_PACKAGE_VERSION" in app["labels"]:
-            mapped["version"] = app["labels"]["DCOS_PACKAGE_VERSION"]
-        if "DCOS_PACKAGE_SOURCE" in app["labels"]:
-            mapped["source"] = app["labels"]["DCOS_PACKAGE_SOURCE"]
+        if PACKAGE_NAME_KEY in app["labels"]:
+            mapped["name"] = app["labels"][PACKAGE_NAME_KEY]
+        if PACKAGE_VERSION_KEY in app["labels"]:
+            mapped["version"] = app["labels"][PACKAGE_VERSION_KEY]
+        if PACKAGE_SOURCE_KEY in app["labels"]:
+            mapped["source"] = app["labels"][PACKAGE_SOURCE_KEY]
         mapped["endpoints"] = [{"host":t["host"],"ports":t["ports"]} for t in tasks]
         concise_apps.append(mapped)
 

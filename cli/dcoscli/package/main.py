@@ -276,7 +276,7 @@ def _show(package_name, app_id):
         return 1
 
     apps = [app for app in apps
-            if app.get("labels", {}).get("DCOS_PACKAGE_NAME", "") == package_name]
+            if app.get("labels", {}).get(package.PACKAGE_NAME_KEY, "") == package_name]
 
     if not apps:
         emitter.publish("No app found with package [{}]".format(package_name))
