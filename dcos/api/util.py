@@ -264,7 +264,7 @@ class CustomJsonRenderer(pystache.Renderer):
         for string interpolation is not a string).
 
         :param val: the mustache template to render
-        :type val: str
+        :type val: any
         :returns: a string containing a JSON representation of the value
         :rtype: str
         """
