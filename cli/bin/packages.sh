@@ -1,8 +1,9 @@
 #!/bin/bash -e
 
+BASEDIR=`dirname $0`/..
+
 echo "Building wheel..."
-python setup.py bdist_wheel
+"$BASEDIR/env/bin/python" setup.py bdist_wheel
 
 echo "Building egg..."
-python setup.py sdist
-
+"$BASEDIR/env/bin/python" setup.py sdist
