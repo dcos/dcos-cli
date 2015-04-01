@@ -265,9 +265,6 @@ def _show(package_name, app_id):
 
     client = marathon.create_client(config)
 
-    apps = {}
-    err = None
-
     if app_id is not None:
         app, err = client.get_app(app_id)
         apps = [app]
