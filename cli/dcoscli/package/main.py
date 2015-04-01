@@ -3,6 +3,7 @@
 Usage:
     dcos package --config-schema
     dcos package describe <package_name>
+    dcos package show <package_name> [--app-id=<app-id>]
     dcos package info
     dcos package install [--options=<options_file> --app-id=<app_id>]
          <package_name>
@@ -92,6 +93,11 @@ def _cmds():
             hierarchy=['package', 'describe'],
             arg_keys=['<package_name>'],
             function=_describe),
+
+        cmds.Command(
+            hierarchy=['package', 'show'],
+            arg_keys=['<package_name>', '--app-id'],
+            function=_show),
 
         cmds.Command(
             hierarchy=['package', 'install'],
@@ -240,6 +246,65 @@ def _describe(package_name):
 
     for pkg_ver in version_map:
         emitter.publish(version_map[pkg_ver])
+
+    return 0
+
+
+def _show(package_name, app_id):
+    """Show running apps of the specified package.
+
+    :param package_name: The package to show
+    :type package_name: str
+    :param app_id: App ID of app to show
+    :type app_id: str
+    :returns: Process status
+    :rtype: int
+    """
+
+    config = _load_config()
+
+    client = marathon.create_client(config)
+
+    apps = {}
+    err = None
+
+    if app_id is not None:
+        app, err = client.get_app(app_id)
+        apps = [app]
+    else:
+        apps, err = client.get_apps()
+
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    def is_valid(app):
+        if app.get("labels", {}).get("DCOS_PACKAGE_NAME", {}) == package_name:
+            return True
+        return False
+
+    valid_apps = filter(is_valid, apps)
+
+    if not valid_apps:
+        emitter.publish("No apps found for package [{}]".format(package_name))
+        return 1
+
+    def extract_info(app):
+        mapped = {}
+        mapped["id"] = app["id"]
+        if "DCOS_PACKAGE_NAME" in app["labels"]:
+            mapped["name"] = app["labels"]["DCOS_PACKAGE_NAME"]
+        if "DCOS_PACKAGE_VERSION" in app["labels"]:
+            mapped["version"] = app["labels"]["DCOS_PACKAGE_VERSION"]
+        if "DCOS_PACKAGE_SOURCE" in app["labels"]:
+            mapped["source"] = app["labels"]["DCOS_PACKAGE_SOURCE"]
+        if "tasks" in app:
+            mapped["endpoints"] = [{"host":task["host"],"ports":task["ports"]} for task in app["tasks"]]
+        return mapped
+
+    package_info = map(extract_info, valid_apps)
+
+    emitter.publish(package_info)
 
     return 0
 
