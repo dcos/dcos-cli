@@ -1,3 +1,7 @@
+import json
+
+import six
+
 from common import exec_command
 
 
@@ -133,6 +137,38 @@ def test_install():
     assert stderr == b''
 
 
+def test_package_labels():
+    app_labels = get_app_labels('mesos-dns')
+    expected_metadata = b"""\
+eyJkZXNjcmlwdGlvbiI6ICJETlMtYmFzZWQgc2VydmljZSBkaXNjb3ZlcnkgZm9yIE1lc29zLiIsI\
+CJtYWludGFpbmVyIjogInN1cHBvcnRAbWVzb3NwaGVyZS5pbyIsICJuYW1lIjogIm1lc29zLWRucy\
+IsICJwb3N0SW5zdGFsbE5vdGVzIjogIlBsZWFzZSByZWZlciB0byB0aGUgdHV0b3JpYWwgaW5zdHJ\
+1Y3Rpb25zIGZvciBmdXJ0aGVyIHNldHVwIHJlcXVpcmVtZW50czogaHR0cDovL21lc29zcGhlcmUu\
+Z2l0aHViLmlvL21lc29zLWRucy9kb2NzL3R1dG9yaWFsLWdjZS5odG1sIiwgInNjbSI6ICJodHRwc\
+zovL2dpdGh1Yi5jb20vbWVzb3NwaGVyZS9tZXNvcy1kbnMuZ2l0IiwgInRhZ3MiOiBbIm1lc29zcG\
+hlcmUiXSwgInZlcnNpb24iOiAiYWxwaGEiLCAid2Vic2l0ZSI6ICJodHRwOi8vbWVzb3NwaGVyZS5\
+naXRodWIuaW8vbWVzb3MtZG5zIn0=\
+"""
+    actual_metadata = app_labels.get('DCOS_PACKAGE_METADATA')
+    assert(six.b(actual_metadata) == expected_metadata)
+
+    expected_registry_version = b'0.1.0-alpha'
+    actual_registry_version = app_labels.get('DCOS_PACKAGE_REGISTRY_VERSION')
+    assert(six.b(actual_registry_version) == expected_registry_version)
+
+    expected_name = b'mesos-dns'
+    actual_name = app_labels.get('DCOS_PACKAGE_NAME')
+    assert(six.b(actual_name) == expected_name)
+
+    expected_version = b'alpha'
+    actual_version = app_labels.get('DCOS_PACKAGE_VERSION')
+    assert(six.b(actual_version) == expected_version)
+
+    expected_source = b'git://github.com/mesosphere/universe.git'
+    actual_source = app_labels.get('DCOS_PACKAGE_SOURCE')
+    assert(six.b(actual_source) == expected_source)
+
+
 def test_install_with_id():
     returncode, stdout, stderr = exec_command(
         ['dcos',
@@ -249,3 +285,14 @@ def test_cleanup():
     assert returncode == 0
     assert stdout == b''
     assert stderr == b''
+
+
+def get_app_labels(app_id):
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'marathon', 'app', 'show', app_id])
+
+    assert returncode == 0
+    assert stderr == b''
+
+    app_json = json.loads(stdout.decode('utf-8'))
+    return app_json.get('labels')
