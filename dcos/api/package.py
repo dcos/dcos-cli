@@ -235,7 +235,7 @@ def show_concise(init_client, apps):
 
     concise_apps = []
 
-    for app in apps: 
+    for app in apps:
         tasks, err = init_client.get_tasks(app["id"])
         if err is not None:
             return (None, err)
