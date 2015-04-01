@@ -11,7 +11,6 @@ import zipfile
 
 import git
 import portalocker
-import pystache
 import six
 from dcos.api import constants, emitting, errors, util
 
@@ -77,19 +76,16 @@ def install(pkg, version, init_client, user_options, app_id, cfg):
         return err
 
     # Insert option parameters into the init template
-    init_template, tmpl_error = pkg.marathon_template(version)
+    template, tmpl_error = pkg.marathon_template(version)
 
     if tmpl_error is not None:
         return tmpl_error
 
-    rendered_template = pystache.render(init_template, options)
+    # Render the init template with the marshaled options
+    init_desc, render_error = util.render_mustache_json(template, options)
 
-    try:
-        init_desc = json.loads(rendered_template)
-    except Exception as e:
-        message = 'Error: {}\n'.format(e.message)
-        message += 'Rendered JSON: \n{}'.format(rendered_template)
-        return Error(message)
+    if render_error is not None:
+        return render_error
 
     # Add package metadata
     package_labels, label_error = _make_package_labels(pkg, version)
