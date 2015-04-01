@@ -12,3 +12,4 @@ pydoc/_build/
 *.pyc
 
 Vagrantfile
+.vagrant

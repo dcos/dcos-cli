@@ -9,6 +9,7 @@ import sys
 import tempfile
 
 import jsonschema
+import pystache
 import six
 from dcos.api import constants, errors
 
@@ -231,3 +232,40 @@ def parse_int(string):
             string,
             error)
         return (None, errors.DefaultError('Error parsing string as int'))
+
+
+def render_mustache_json(template, data):
+    """Render the supplied mustache template and data as a JSON value
+
+    :param template: the mustache template to render
+    :type template: str
+    :param data: the data to use as a rendering context
+    :type data: dict
+    :returns: the rendered template
+    :rtype: (any, Error) where any is one of dict, list, str, int, float or
+            bool
+    """
+
+    try:
+        r = CustomJsonRenderer()
+        rendered = r.render(template, data)
+    except Exception as e:
+        return (None, errors.DefaultError(e.message))
+
+    return load_jsons(rendered)
+
+
+class CustomJsonRenderer(pystache.Renderer):
+    def str_coerce(self, val):
+        """
+        Coerce a non-string value to a string.
+        This method is called whenever a non-string is encountered during the
+        rendering process when a string is needed (e.g. if a context value
+        for string interpolation is not a string).
+
+        :param val: the mustache template to render
+        :type val: str
+        :returns: a string containing a JSON representation of the value
+        :rtype: str
+        """
+        return json.dumps(val)
