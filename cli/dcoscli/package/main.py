@@ -3,12 +3,12 @@
 Usage:
     dcos package --config-schema
     dcos package describe <package_name>
-    dcos package show <package_name> [--app-id=<app-id>]
     dcos package info
     dcos package install [--options=<options_file> --app-id=<app_id>]
          <package_name>
     dcos package list
     dcos package search <query>
+    dcos package show <package_name> [--app-id=<app-id>]
     dcos package sources
     dcos package uninstall [--all | --app-id=<app-id>] <package_name>
     dcos package update
@@ -263,46 +263,30 @@ def _show(package_name, app_id):
 
     config = _load_config()
 
-    client = marathon.create_client(config)
+    init_client = marathon.create_client(config)
 
     if app_id is not None:
-        app, err = client.get_app(app_id)
+        app, err = init_client.get_app(app_id)
         apps = [app]
     else:
-        apps, err = client.get_apps()
+        apps, err = init_client.get_apps()
 
     if err is not None:
         emitter.publish(err)
         return 1
 
-    def is_valid(app):
-        if app.get("labels", {}).get("DCOS_PACKAGE_NAME", {}) == package_name:
-            return True
-        return False
+    apps = [app for app in apps
+                  if app.get("labels", {}).get("DCOS_PACKAGE_NAME", {}) == package_name]
 
-    valid_apps = filter(is_valid, apps)
-
-    if not valid_apps:
-        emitter.publish("No apps found for package [{}]".format(package_name))
+    if not apps:
+        emitter.publish("No app found with package [{}]".format(package_name))
         return 1
 
-    def extract_info(app):
-        mapped = {}
-        mapped["id"] = app["id"]
-        if "DCOS_PACKAGE_NAME" in app["labels"]:
-            mapped["name"] = app["labels"]["DCOS_PACKAGE_NAME"]
-        if "DCOS_PACKAGE_VERSION" in app["labels"]:
-            mapped["version"] = app["labels"]["DCOS_PACKAGE_VERSION"]
-        if "DCOS_PACKAGE_SOURCE" in app["labels"]:
-            mapped["source"] = app["labels"]["DCOS_PACKAGE_SOURCE"]
-        tasks, err = client.get_tasks(app["id"])
-        if err is not None:
-            emitter.publish(err)
-            return 1
-        mapped["endpoints"] = [{"host":t["host"],"ports":t["ports"]} for t in tasks]
-        return mapped
+    package_info, err = package.show_concise(init_client, apps)
 
-    package_info = map(extract_info, valid_apps)
+    if err is not None:
+        emitter.publish(err)
+        return 1
 
     emitter.publish(package_info)
 
