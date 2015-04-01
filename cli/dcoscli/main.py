@@ -32,7 +32,7 @@ import subprocess
 
 import dcoscli
 import docopt
-from dcos.api import constants, emitting, errors, subcommand, util
+from dcos.api import constants, emitting, subcommand, util
 
 emitter = emitting.FlatEmitter()
 
@@ -56,22 +56,12 @@ def main():
 
     command = args['<command>']
 
-    executables = [
-        command_path
-        for command_path in subcommand.list_paths(util.dcos_path())
-        if subcommand.noun(command_path) == command
-    ]
+    executable, err = subcommand.command_executables(command, util.dcos_path())
+    if err is not None:
+        emitter.publish(err)
+        return 1
 
-    if len(executables) > 1:
-        msg = 'Found more than one executable for command {!r}.'
-        emitter.publish(errors.DefaultError(msg.format(command)))
-        return 1
-    if len(executables) == 0:
-        msg = "{!r} is not a dcos command. See 'dcos help'."
-        emitter.publish(errors.DefaultError(msg.format(command)))
-        return 1
-    else:
-        return subprocess.call(executables + [command] + args['<args>'])
+    return subprocess.call([executable,  command] + args['<args>'])
 
 
 def _config_log_level_environ(log_level):

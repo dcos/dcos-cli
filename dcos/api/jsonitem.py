@@ -26,25 +26,46 @@ def parse_json_item(json_item, schema):
 
     # Check that it is a valid key in our jsonschema
     key = terms[0]
-    value_type, err = _check_key_with_schema(key, schema)
-    if err is not None:
-        return (None, err)
-
-    value, err = value_type(terms[1])
+    value, err = parse_json_value(key, terms[1], schema)
     if err is not None:
         return (None, err)
 
     return ((key, value), None)
 
 
-def _check_key_with_schema(key, schema):
+def parse_json_value(key, value, schema):
+    """Parse the json value based on a schema.
+
+    :param key: the key property
+    :type key: str
+    :param value: the value of property
+    :type value: str
+    :param schema: The JSON schema to use for parsing
+    :type schema: dict
+    :returns: parsed value
+    :rtype: (any, Error) where any is one of str, int, float, bool,
+            list or dict
+    """
+
+    value_type, err = find_parser(key, schema)
+    if err is not None:
+        return (None, err)
+
+    python_value, err = value_type(value)
+    if err is not None:
+        return (None, err)
+
+    return (python_value, None)
+
+
+def find_parser(key, schema):
     """
     :param key: JSON field
     :type key: str
     :param schema: The JSON schema to use
     :type schema: dict
     :returns: A callable capable of parsing a string to its type
-    :rtype: (_ValueTypeParser, Error)
+    :rtype: (ValueTypeParser, Error)
     """
 
     key_schema = schema['properties'].get(key)
@@ -57,18 +78,18 @@ def _check_key_with_schema(key, schema):
                 'Possible values are: {}'.format(key, keys))
         )
     else:
-        return (_ValueTypeParser(key_schema['type']), None)
+        return (ValueTypeParser(key_schema), None)
 
 
-class _ValueTypeParser(object):
+class ValueTypeParser(object):
     """Callable for parsing a string against a known JSON type.
 
-    :param value_type: The JSON type as a string
-    :type value_type: str
+    :param schema: The JSON type as a schema
+    :type schema: dict
     """
 
-    def __init__(self, value_type):
-        self._value_type = value_type
+    def __init__(self, schema):
+        self.schema = schema
 
     def __call__(self, value):
         """
@@ -81,17 +102,17 @@ class _ValueTypeParser(object):
 
         value = _clean_value(value)
 
-        if self._value_type == 'string':
+        if self.schema['type'] == 'string':
             return _parse_string(value)
-        elif self._value_type == 'object':
+        elif self.schema['type'] == 'object':
             return _parse_object(value)
-        elif self._value_type == 'number':
+        elif self.schema['type'] == 'number':
             return _parse_number(value)
-        elif self._value_type == 'integer':
+        elif self.schema['type'] == 'integer':
             return _parse_integer(value)
-        elif self._value_type == 'boolean':
+        elif self.schema['type'] == 'boolean':
             return _parse_boolean(value)
-        elif self._value_type == 'array':
+        elif self.schema['type'] == 'array':
             return _parse_array(value)
         else:
             return (

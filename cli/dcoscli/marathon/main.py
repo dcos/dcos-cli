@@ -1,5 +1,7 @@
-"""
+"""Deploy and manage applications on the DCOS
+
 Usage:
+    dcos marathon --config-schema
     dcos marathon app add [<app-resource>]
     dcos marathon app list
     dcos marathon app remove [--force] <app-id>
@@ -22,7 +24,7 @@ Options:
     -h, --help                   Show this screen
     --version                    Show version
     --force                      This flag disable checks in Marathon during
-                                 update operations.
+                                 update operations
     --app-version=<app-version>  This flag specifies the application version to
                                  use for the command. The application version
                                  (<app-version>) can be specified as an
@@ -31,22 +33,24 @@ Options:
                                  Relative values must be specified as a
                                  negative integer and they represent the
                                  version from the currently deployed
-                                 application definition.
+                                 application definition
+    --config-schema              Show the configuration schema for the Marathon
+                                 subcommand
     --max-count=<max-count>      Maximum number of entries to try to fetch and
                                  return
     --interval=<interval>        Number of seconds to wait between actions
 
 Positional arguments:
-    <app-id>                The application id
-    <app-resource>          The application resource; for a detailed
-                            description see (https://mesosphere.github.io/
-                            marathon/docs/rest-api.html#post-/v2/apps)
-    <deployment-id>         The deployment id
-    <instances>             The number of instances to start
-    <properties>            Optional key-value pairs to be included in the
-                            command. The separator between the key and value
-                            must be the '=' character. E.g. cpus=2.0
-    <task-id>               The task id
+    <app-id>                    The application id
+    <app-resource>              The application resource; for a detailed
+                                description see (https://mesosphere.github.io/
+                                marathon/docs/rest-api.html#post-/v2/apps)
+    <deployment-id>             The deployment id
+    <instances>                 The number of instances to start
+    <properties>                Optional key-value pairs to be included in the
+                                command. The separator between the key and
+                                value must be the '=' character. E.g. cpus=2.0
+    <task-id>                   The task id
 """
 import json
 import os
@@ -73,10 +77,6 @@ def main():
         __doc__,
         version='dcos-marathon version {}'.format(dcoscli.version))
 
-    if not args['marathon']:
-        emitter.publish(options.make_generic_usage_message(__doc__))
-        return 1
-
     returncode, err = cmds.execute(_cmds(), args)
     if err is not None:
         emitter.publish(err)
@@ -94,79 +94,109 @@ def _cmds():
 
     return [
         cmds.Command(
-            hierarchy=['version', 'list'],
+            hierarchy=['marathon', 'version', 'list'],
             arg_keys=['<app-id>', '--max-count'],
             function=_version_list),
 
         cmds.Command(
-            hierarchy=['deployment', 'list'],
+            hierarchy=['marathon', 'deployment', 'list'],
             arg_keys=['<app-id>'],
             function=_deployment_list),
 
         cmds.Command(
-            hierarchy=['deployment', 'rollback'],
+            hierarchy=['marathon', 'deployment', 'rollback'],
             arg_keys=['<deployment-id>'],
             function=_deployment_rollback),
 
         cmds.Command(
-            hierarchy=['deployment', 'stop'],
+            hierarchy=['marathon', 'deployment', 'stop'],
             arg_keys=['<deployment-id>'],
             function=_deployment_stop),
 
         cmds.Command(
-            hierarchy=['deployment', 'watch'],
+            hierarchy=['marathon', 'deployment', 'watch'],
             arg_keys=['<deployment-id>', '--max-count', '--interval'],
             function=_deployment_watch),
 
         cmds.Command(
-            hierarchy=['task', 'list'],
+            hierarchy=['marathon', 'task', 'list'],
             arg_keys=['<app-id>'],
             function=_task_list),
 
         cmds.Command(
-            hierarchy=['task', 'show'],
+            hierarchy=['marathon', 'task', 'show'],
             arg_keys=['<task-id>'],
             function=_task_show),
 
-        cmds.Command(hierarchy=['info'], arg_keys=[], function=_info),
+        cmds.Command(
+            hierarchy=['marathon', 'info'],
+            arg_keys=[],
+            function=_info),
 
         cmds.Command(
-            hierarchy=['app', 'add'],
+            hierarchy=['marathon', 'app', 'add'],
             arg_keys=['<app-resource>'],
             function=_add),
 
-        cmds.Command(hierarchy=['list'], arg_keys=[], function=_list),
+        cmds.Command(
+            hierarchy=['marathon', 'app', 'list'],
+            arg_keys=[],
+            function=_list),
 
         cmds.Command(
-            hierarchy=['app', 'remove'],
+            hierarchy=['marathon', 'app', 'remove'],
             arg_keys=['<app-id>', '--force'],
             function=_remove),
 
         cmds.Command(
-            hierarchy=['app', 'show'],
+            hierarchy=['marathon', 'app', 'show'],
             arg_keys=['<app-id>', '--app-version'],
             function=_show),
 
         cmds.Command(
-            hierarchy=['app', 'start'],
+            hierarchy=['marathon', 'app', 'start'],
             arg_keys=['<app-id>', '<instances>', '--force'],
             function=_start),
 
         cmds.Command(
-            hierarchy=['app', 'stop'],
+            hierarchy=['marathon', 'app', 'stop'],
             arg_keys=['<app-id>', '--force'],
             function=_stop),
 
         cmds.Command(
-            hierarchy=['app', 'update'],
+            hierarchy=['marathon', 'app', 'update'],
             arg_keys=['<app-id>', '<properties>', '--force'],
             function=_update),
 
         cmds.Command(
-            hierarchy=['app', 'restart'],
+            hierarchy=['marathon', 'app', 'restart'],
             arg_keys=['<app-id>', '--force'],
             function=_restart),
+
+        cmds.Command(
+            hierarchy=['marathon'],
+            arg_keys=['--config-schema'],
+            function=_marathon),
     ]
+
+
+def _marathon(config_schema):
+    """
+    :returns: Process status
+    :rtype: int
+    """
+
+    if config_schema:
+        schema = json.loads(
+            pkg_resources.resource_string(
+                'dcoscli',
+                'data/config-schema/marathon.json').decode('utf-8'))
+        emitter.publish(schema)
+    else:
+        emitter.publish(options.make_generic_usage_message(__doc__))
+        return 1
+
+    return 0
 
 
 def _info():
@@ -175,7 +205,7 @@ def _info():
     :rtype: int
     """
 
-    emitter.publish('Deploy and manage applications on the DCOS')
+    emitter.publish(__doc__.split('\n')[0])
     return 0
 
 
@@ -354,7 +384,7 @@ def _start(app_id, instances, force):
     if instances is None:
         instances = 1
     else:
-        instances, err = _parse_int(instances)
+        instances, err = util.parse_int(instances)
         if err is not None:
             emitter.publish(err)
             return 1
@@ -541,7 +571,7 @@ def _version_list(app_id, max_count):
     """
 
     if max_count is not None:
-        max_count, err = _parse_int(max_count)
+        max_count, err = util.parse_int(max_count)
         if err is not None:
             emitter.publish(err)
             return 1
@@ -637,13 +667,13 @@ def _deployment_watch(deployment_id, max_count, interval):
     """
 
     if max_count is not None:
-        max_count, err = _parse_int(max_count)
+        max_count, err = util.parse_int(max_count)
         if err is not None:
             emitter.publish(err)
             return 1
 
     if interval is not None:
-        interval, err = _parse_int(interval)
+        interval, err = util.parse_int(interval)
         if err is not None:
             emitter.publish(err)
             return 1
@@ -763,7 +793,7 @@ def _calculate_version(client, app_id, version):
     """
 
     # First let's try to parse it as a negative integer
-    value, err = _parse_int(version)
+    value, err = util.parse_int(version)
     if err is None and value < 0:
         value = -1 * value
         # We have a negative value let's ask Marathon for the last abs(value)
@@ -789,23 +819,3 @@ def _calculate_version(client, app_id, version):
     else:
         # Let's assume that we have an absolute version
         return (version, None)
-
-
-def _parse_int(string):
-    """
-    :param string: String to parse as an integer
-    :type string: str
-    :returns: The interger value of the string
-    :rtype: (int, Error)
-    """
-
-    try:
-        return (int(string), None)
-    except:
-        error = sys.exc_info()[0]
-        logger = util.get_logger(__name__)
-        logger.error(
-            'Unhandled exception while parsing string as int: %r -- %r',
-            string,
-            error)
-        return (None, errors.DefaultError('Error parsing string as int'))

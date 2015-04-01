@@ -199,7 +199,7 @@ def validate_json(instance, schema):
     def format(error):
         message = 'Error: {}\n'.format(hack_error_message_fix(error.message))
         if len(error.absolute_path) > 0:
-            message += 'Path:  {}\n'.format(error.absolute_path[0])
+            message += 'Path: {}\n'.format('.'.join(error.absolute_path))
         message += 'Value: {}'.format(json.dumps(error.instance))
         return message
 
@@ -210,3 +210,24 @@ def validate_json(instance, schema):
     else:
         errors_as_str = str.join('\n\n', formatted_errors)
         return errors.DefaultError(errors_as_str)
+
+
+def parse_int(string):
+    """Parse string and an integer
+
+    :param string: string to parse as an integer
+    :type string: str
+    :returns: the interger value of the string
+    :rtype: (int, Error)
+    """
+
+    try:
+        return (int(string), None)
+    except:
+        error = sys.exc_info()[0]
+        logger = get_logger(__name__)
+        logger.error(
+            'Unhandled exception while parsing string as int: %r -- %r',
+            string,
+            error)
+        return (None, errors.DefaultError('Error parsing string as int'))

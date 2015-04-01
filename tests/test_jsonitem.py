@@ -197,9 +197,9 @@ def test_parse_invalid_arrays(bad_array):
     assert isinstance(error, errors.Error)
 
 
-def test_check_key_with_schema(schema, jsonitem_tuple):
+def test_find_parser(schema, jsonitem_tuple):
     key, string_value, value = jsonitem_tuple
-    value_type, err = jsonitem._check_key_with_schema(key, schema)
+    value_type, err = jsonitem.find_parser(key, schema)
 
     assert err is None
     assert value_type(string_value) == (value, None)

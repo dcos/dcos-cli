@@ -5,7 +5,10 @@ def test_package():
     returncode, stdout, stderr = exec_command(['dcos', 'package', '--help'])
 
     assert returncode == 0
-    assert stdout == b"""Usage:
+    assert stdout == b"""Install and manage DCOS software packages
+
+Usage:
+    dcos package --config-schema
     dcos package describe <package_name>
     dcos package info
     dcos package install [--options=<options_file> --app-id=<app_id>]
@@ -112,7 +115,7 @@ Error: 'mesos-dns/config-url' is a required property
 Value: {"mesos-dns/host": false}
 
 Error: False is not of type 'string'
-Path:  mesos-dns/host
+Path: mesos-dns/host
 Value: false
 """
 

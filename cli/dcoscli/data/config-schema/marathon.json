@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "host": {
+      "type": "string",
+      "title": "Marathon hostname or IP address",
+      "description": "",
+      "default": "localhost"
+    },
+    "port": {
+      "type": "integer",
+      "title": "Marathon port",
+      "description": "",
+      "default": 8080,
+      "minimum": 1,
+      "maximum": 65535
+    }
+  },
+  "additionalProperties": false,
+  "required": ["host", "port"]
+}

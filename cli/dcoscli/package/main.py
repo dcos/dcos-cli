@@ -1,5 +1,7 @@
-"""
+"""Install and manage DCOS software packages
+
 Usage:
+    dcos package --config-schema
     dcos package describe <package_name>
     dcos package info
     dcos package install [--options=<options_file> --app-id=<app_id>]
@@ -37,6 +39,7 @@ import os
 
 import dcoscli
 import docopt
+import pkg_resources
 import toml
 from dcos.api import (cmds, config, constants, emitting, marathon, options,
                       package, util)
@@ -53,10 +56,6 @@ def main():
     args = docopt.docopt(
         __doc__,
         version='dcos-package version {}'.format(dcoscli.version))
-
-    if not args['package']:
-        emitter.publish(options.make_generic_usage_message(__doc__))
-        return 1
 
     returncode, err = cmds.execute(_cmds(), args)
     if err is not None:
@@ -75,45 +74,69 @@ def _cmds():
 
     return [
         cmds.Command(
-            hierarchy=['info'],
+            hierarchy=['package', 'info'],
             arg_keys=[],
             function=_info),
 
         cmds.Command(
-            hierarchy=['sources'],
+            hierarchy=['package', 'sources'],
             arg_keys=[],
             function=_list_sources),
 
         cmds.Command(
-            hierarchy=['update'],
+            hierarchy=['package', 'update'],
             arg_keys=[],
             function=_update),
 
         cmds.Command(
-            hierarchy=['describe'],
+            hierarchy=['package', 'describe'],
             arg_keys=['<package_name>'],
             function=_describe),
 
         cmds.Command(
-            hierarchy=['install'],
+            hierarchy=['package', 'install'],
             arg_keys=['<package_name>', '--options', '--app-id'],
             function=_install),
 
         cmds.Command(
-            hierarchy=['list'],
+            hierarchy=['package', 'list'],
             arg_keys=[],
             function=_list),
 
         cmds.Command(
-            hierarchy=['search'],
+            hierarchy=['package', 'search'],
             arg_keys=['<query>'],
             function=_search),
 
         cmds.Command(
-            hierarchy=['uninstall'],
+            hierarchy=['package', 'uninstall'],
             arg_keys=['<package_name>', '--all', '--app-id'],
             function=_uninstall),
+
+        cmds.Command(
+            hierarchy=['package'],
+            arg_keys=['--config-schema'],
+            function=_package),
     ]
+
+
+def _package(config_schema):
+    """
+    :returns: Process status
+    :rtype: int
+    """
+
+    if config_schema:
+        schema = json.loads(
+            pkg_resources.resource_string(
+                'dcoscli',
+                'data/config-schema/package.json').decode('utf-8'))
+        emitter.publish(schema)
+    else:
+        emitter.publish(options.make_generic_usage_message(__doc__))
+        return 1
+
+    return 0
 
 
 def _load_config():
@@ -132,7 +155,7 @@ def _info():
     :rtype: int
     """
 
-    emitter.publish('Install and manage DCOS software packages')
+    emitter.publish(__doc__.split('\n')[0])
     return 0
 
 

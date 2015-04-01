@@ -7,7 +7,10 @@ def test_help():
     returncode, stdout, stderr = exec_command(['dcos', 'marathon', '--help'])
 
     assert returncode == 0
-    assert stdout == b"""Usage:
+    assert stdout == b"""Deploy and manage applications on the DCOS
+
+Usage:
+    dcos marathon --config-schema
     dcos marathon app add [<app-resource>]
     dcos marathon app list
     dcos marathon app remove [--force] <app-id>
@@ -30,7 +33,7 @@ Options:
     -h, --help                   Show this screen
     --version                    Show version
     --force                      This flag disable checks in Marathon during
-                                 update operations.
+                                 update operations
     --app-version=<app-version>  This flag specifies the application version to
                                  use for the command. The application version
                                  (<app-version>) can be specified as an
@@ -39,22 +42,24 @@ Options:
                                  Relative values must be specified as a
                                  negative integer and they represent the
                                  version from the currently deployed
-                                 application definition.
+                                 application definition
+    --config-schema              Show the configuration schema for the Marathon
+                                 subcommand
     --max-count=<max-count>      Maximum number of entries to try to fetch and
                                  return
     --interval=<interval>        Number of seconds to wait between actions
 
 Positional arguments:
-    <app-id>                The application id
-    <app-resource>          The application resource; for a detailed
-                            description see (https://mesosphere.github.io/
-                            marathon/docs/rest-api.html#post-/v2/apps)
-    <deployment-id>         The deployment id
-    <instances>             The number of instances to start
-    <properties>            Optional key-value pairs to be included in the
-                            command. The separator between the key and value
-                            must be the '=' character. E.g. cpus=2.0
-    <task-id>               The task id
+    <app-id>                    The application id
+    <app-resource>              The application resource; for a detailed
+                                description see (https://mesosphere.github.io/
+                                marathon/docs/rest-api.html#post-/v2/apps)
+    <deployment-id>             The deployment id
+    <instances>                 The number of instances to start
+    <properties>                Optional key-value pairs to be included in the
+                                command. The separator between the key and
+                                value must be the '=' character. E.g. cpus=2.0
+    <task-id>                   The task id
 """
     assert stderr == b''
 
