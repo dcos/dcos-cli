@@ -92,7 +92,7 @@ to the Marathon instance you want to use for integration tests. If you're
 happy to use the default test configuration which assumes there is a Marathon
 instance running on localhost, set :code:`DCOS_CONFIG` as follows::
 
-    export DCOS_CONFIG=$(pwd)/tests/data/Dcos.toml
+    export DCOS_CONFIG=$(pwd)/tests/data/dcos.toml
 
 There are two ways to run tests, you can either use the virtualenv created by
 :code:`make env` above::
