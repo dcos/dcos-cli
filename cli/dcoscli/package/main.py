@@ -259,7 +259,11 @@ def _install(package_name, options_file, app_id):
 
     config = _load_config()
 
-    pkg = package.resolve_package(package_name, config)
+    pkg, resolve_error = package.resolve_package(package_name, config)
+
+    if resolve_error is not None:
+        emitter.publish(resolve_error)
+        return 1
 
     if pkg is None:
         emitter.publish("Package [{}] not found".format(package_name))
@@ -364,8 +368,7 @@ def _uninstall(package_name, remove_all, app_id):
         package_name,
         remove_all,
         app_id,
-        init_client,
-        config)
+        init_client)
 
     if uninstall_error is not None:
         emitter.publish(uninstall_error)
