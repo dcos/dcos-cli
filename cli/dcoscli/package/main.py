@@ -298,8 +298,11 @@ def _show(package_name, app_id):
             mapped["version"] = app["labels"]["DCOS_PACKAGE_VERSION"]
         if "DCOS_PACKAGE_SOURCE" in app["labels"]:
             mapped["source"] = app["labels"]["DCOS_PACKAGE_SOURCE"]
-        if "tasks" in app:
-            mapped["endpoints"] = [{"host":task["host"],"ports":task["ports"]} for task in app["tasks"]]
+        tasks, err = client.get_tasks(app["id"])
+        if err is not None:
+            emitter.publish(err)
+            return 1
+        mapped["endpoints"] = [{"host":t["host"],"ports":t["ports"]} for t in tasks]
         return mapped
 
     package_info = map(extract_info, valid_apps)
