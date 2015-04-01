@@ -203,7 +203,7 @@ def _update():
 def _describe(package_name):
     """Describe the specified package.
 
-    :param package_name: The package to configure
+    :param package_name: The package to describe
     :type package_name: str
     :returns: Process status
     :rtype: int
