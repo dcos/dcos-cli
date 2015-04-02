@@ -261,7 +261,17 @@ def test_show():
         ['dcos', 'package', 'show', 'mesos-dns'])
 
     assert returncode == 0
-    assert b""""id": "/mesos-dns", \n"name": "mesos-dns",""" in stdout
+    assert b""""\
+[
+  {
+    "endpoints": [], 
+    "id": "/mesos-dns", 
+    "name": "mesos-dns", 
+    "source": "git://github.com/mesosphere/universe.git", 
+    "version": "alpha"
+  }
+]
+""" in stdout
     assert stderr == b''
 
 
