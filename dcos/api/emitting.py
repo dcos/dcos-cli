@@ -5,6 +5,7 @@ import collections
 import json
 import os
 import pydoc
+import re
 import sys
 
 import pager
@@ -104,6 +105,9 @@ def _process_json(event, pager_command):
     """
 
     json_output = json.dumps(event, sort_keys=True, indent=2)
+
+    # Strip trailing whitespace
+    json_output = re.sub(r'\s+$', '', json_output, 0, re.M)
 
     force_colors = False  # TODO(CD): Introduce a --colors flag
 
