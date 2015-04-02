@@ -261,7 +261,7 @@ def test_show():
         ['dcos', 'package', 'show', 'mesos-dns'])
 
     assert returncode == 0
-    assert stdout == b"""\
+    raw_out = b"""\
 [
   {
     "endpoints": [],
@@ -272,6 +272,7 @@ def test_show():
   }
 ]
 """
+    assert json.loads(stdout.decode("utf-8")) == json.loads(raw_out.decode("utf-8"))
     assert stderr == b''
 
 
