@@ -261,7 +261,7 @@ def test_show():
         ['dcos', 'package', 'show', 'mesos-dns'])
 
     assert returncode == 0
-    assert b"""\
+    assert stdout == b"""\
 [
   {
     "endpoints": [],
@@ -271,7 +271,7 @@ def test_show():
     "version": "alpha"
   }
 ]
-""" in stdout
+"""
     assert stderr == b''
 
 
