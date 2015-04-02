@@ -264,10 +264,10 @@ def test_show():
     assert b"""\
 [
   {
-    "endpoints": [], 
-    "id": "/mesos-dns", 
-    "name": "mesos-dns", 
-    "source": "git://github.com/mesosphere/universe.git", 
+    "endpoints": [],
+    "id": "/mesos-dns",
+    "name": "mesos-dns",
+    "source": "git://github.com/mesosphere/universe.git",
     "version": "alpha"
   }
 ]
