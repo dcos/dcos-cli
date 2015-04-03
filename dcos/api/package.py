@@ -204,22 +204,43 @@ The app ids of the installed package instances are: [{}].""".format(
         init_client.remove_app(app['id'], force=True)
 
 
-def list_installed_packages(init_client):
+def list_installed_packages(init_client, result_predicate=lambda x: True):
     """
     :param init_client: The program to use to list packages
     :type init_client: object
-    :rtype: ((str, str), Error)
+    :param result_predicate: The predicate to use to filter results
+    :type result_predicate: function
+    :rtype: (list of dict, Error)
     """
 
     apps, error = init_client.get_apps()
     if error is not None:
         return (None, error)
 
-    pkgs = [(a['labels'][PACKAGE_NAME_KEY], a['labels'][PACKAGE_VERSION_KEY])
+    encoded_pkgs = [(a['id'], a['labels'])
             for a in apps
-            if (a.get('labels') is not None and
-                a.get('labels').get(PACKAGE_NAME_KEY) is not None and
-                a.get('labels').get(PACKAGE_VERSION_KEY) is not None)]
+            if a.get('labels', {}).get(PACKAGE_METADATA_KEY) is not None]
+
+    def decode_and_add_context(pair):
+        app_id, labels = pair
+        encoded = labels.get(PACKAGE_METADATA_KEY, {})
+        source = labels.get(PACKAGE_SOURCE_KEY)
+        registry_version = labels.get(PACKAGE_REGISTRY_VERSION_KEY)
+
+        decoded, error = util.load_jsons(base64.b64decode(six.b(encoded)))
+        if error is None:
+            decoded['appId'] = app_id
+            decoded['packageSource'] = source
+            decoded['registryVersion'] = registry_version
+        return (decoded, error)
+
+    decoded_pkgs = [decode_and_add_context(encoded)
+            for encoded in encoded_pkgs]
+
+    # Filter elements that failed to parse correctly as JSON,
+    # or do not match the supplied predicate
+    pkgs = [pair[0] for pair in decoded_pkgs
+            if pair[1] is None and result_predicate(pair[0])]
 
     return (pkgs, None)
 

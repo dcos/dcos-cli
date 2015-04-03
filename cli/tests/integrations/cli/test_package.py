@@ -235,7 +235,7 @@ def test_list():
     returncode, stdout, stderr = exec_command(['dcos', 'package', 'list'])
 
     assert returncode == 0
-    assert stdout == b''
+    assert stdout == b'[]\n'
     assert stderr == b''
 
     returncode, stdout, stderr = exec_command(
@@ -252,7 +252,25 @@ def test_list():
     returncode, stdout, stderr = exec_command(['dcos', 'package', 'list'])
 
     assert returncode == 0
-    assert stdout == b'mesos-dns [alpha]\n'
+    assert stdout == b"""\
+[
+  {
+    "appId": "/mesos-dns",
+    "description": "DNS-based service discovery for Mesos.",
+    "maintainer": "support@mesosphere.io",
+    "name": "mesos-dns",
+    "packageSource": "git://github.com/mesosphere/universe.git",
+    "postInstallNotes": "Please refer to the tutorial instructions for further setup requirements: http://mesosphere.github.io/mesos-dns/docs/tutorial-gce.html",
+    "registryVersion": "0.1.0-alpha",
+    "scm": "https://github.com/mesosphere/mesos-dns.git",
+    "tags": [
+      "mesosphere"
+    ],
+    "version": "alpha",
+    "website": "http://mesosphere.github.io/mesos-dns"
+  }
+]
+"""
     assert stderr == b''
 
 
