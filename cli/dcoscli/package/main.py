@@ -6,7 +6,12 @@ Usage:
     dcos package info
     dcos package install [--options=<options_file> --app-id=<app_id>]
          <package_name>
+<<<<<<< HEAD
     dcos package list-installed
+=======
+>>>>>>> 40b1146... updates to `package list` instead of adding cmd
+    dcos package list_installed [--include-endpoints]
+         [--app-id=<app-id> | <package_name>]
     dcos package search <query>
     dcos package sources
     dcos package uninstall [--all | --app-id=<app-id>] <package_name>
@@ -98,9 +103,9 @@ def _cmds():
             function=_install),
 
         cmds.Command(
-            hierarchy=['package', 'list-installed'],
-            arg_keys=[],
-            function=_list),
+            hierarchy=['package', 'list_installed'],
+            arg_keys=['--include-endpoints', '--app-id', '<package_name>'],
+            function=_list_installed),
 
         cmds.Command(
             hierarchy=['package', 'search'],
@@ -202,7 +207,7 @@ def _update():
 def _describe(package_name):
     """Describe the specified package.
 
-    :param package_name: The package to configure
+    :param package_name: The package to describe
     :type package_name: str
     :returns: Process status
     :rtype: int
@@ -245,6 +250,92 @@ def _describe(package_name):
     del pkg_json['version']
     pkg_json['versions'] = versions
     emitter.publish(pkg_json)
+
+    return 0
+
+
+def _show(package_name, app_id):
+    """Show running apps of the specified package.
+
+    :param package_name: The package to show
+    :type package_name: str
+    :param app_id: App ID of app to show
+    :type app_id: str
+    :returns: Process status
+    :rtype: int
+    """
+
+    config = _load_config()
+
+    init_client = marathon.create_client(config)
+
+    if app_id is not None:
+        app, err = init_client.get_app(app_id)
+        apps = [app]
+    else:
+        apps, err = init_client.get_apps()
+
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    apps = [app for app in apps
+            if app.get("labels", {}).get(package.PACKAGE_NAME_KEY, "") == package_name]
+
+    if not apps:
+        emitter.publish("No app found with package [{}]".format(package_name))
+        return 1
+
+    package_info, err = package.show_concise(init_client, apps)
+
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    emitter.publish(package_info)
+
+    return 0
+
+
+def _show(package_name, app_id):
+    """Show running apps of the specified package.
+
+    :param package_name: The package to show
+    :type package_name: str
+    :param app_id: App ID of app to show
+    :type app_id: str
+    :returns: Process status
+    :rtype: int
+    """
+
+    config = _load_config()
+
+    init_client = marathon.create_client(config)
+
+    if app_id is not None:
+        app, err = init_client.get_app(app_id)
+        apps = [app]
+    else:
+        apps, err = init_client.get_apps()
+
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    apps = [app for app in apps
+            if app.get("labels", {}).get(package.PACKAGE_NAME_KEY, "") == package_name]
+
+    if not apps:
+        emitter.publish("No app found with package [{}]".format(package_name))
+        return 1
+
+    package_info, err = package.show_concise(init_client, apps)
+
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    emitter.publish(package_info)
 
     return 0
 
@@ -304,9 +395,16 @@ def _install(package_name, options_file, app_id):
     return 0
 
 
-def _list():
-    """Describe the specified package.
+def _list_installed(include_endpoints, app_id, package_name):
+    """Show installed apps
 
+    :param include_endpoints: Whether to include a list of
+        endpoints as port-host pairs
+    :type include_endpoints: boolean
+    :param package_name: The package to show
+    :type package_name: str
+    :param app_id: App ID of app to show
+    :type app_id: str
     :returns: Process status
     :rtype: int
     """
@@ -314,11 +412,20 @@ def _list():
     config = _load_config()
 
     init_client = marathon.create_client(config)
-    installed, error = package.list_installed_packages(init_client)
+    installed, error = package.list_installed_packages(init_client, lambda pkg:
+        not package_name and not app_id or
+        app_id and pkg.get("appId","") == app_id or
+        package_name and pkg.get("name","") == package_name)
 
     if error is not None:
         emitter.publish(error)
         return 1
+
+    if include_endpoints:
+        installed, error = package.get_tasks_multiple(init_client, installed)
+        if error is not None:
+            emitter.publish(error)
+            return 1
 
     emitter.publish(installed)
 
