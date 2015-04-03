@@ -6,8 +6,8 @@ Usage:
     dcos package info
     dcos package install [--options=<options_file> --app-id=<app_id>]
          <package_name>
-    dcos package list_installed
-         [--include-endpoints | --app-id=<app-id> | <package_name>]
+    dcos package list_installed [--include-endpoints]
+         [--app-id=<app-id> | <package_name>]
     dcos package search <query>
     dcos package sources
     dcos package uninstall [--all | --app-id=<app-id>] <package_name>
@@ -300,7 +300,7 @@ def _install(package_name, options_file, app_id):
     return 0
 
 
-def _list_installed(include_endpoints, package_name, app_id):
+def _list_installed(include_endpoints, app_id, package_name):
     """Show installed apps
 
     :param include_endpoints: Whether to include a list of
@@ -317,24 +317,22 @@ def _list_installed(include_endpoints, package_name, app_id):
     config = _load_config()
 
     init_client = marathon.create_client(config)
-    installed, error = package.list_installed_packages(init_client,
-        lambda pkg:
-            not package_name and not app_id or
-            package_name and pkg.get("id","") == package_name or
-            app_id and
-            pkg.get("labels",{}).get(package.PACKAGE_NAME_KEY,"") == app_id)
+    installed, error = package.list_installed_packages(init_client, lambda pkg:
+        not package_name and not app_id or
+        app_id and pkg.get("appId","") == app_id or
+        package_name and pkg.get("name","") == package_name)
 
     if error is not None:
         emitter.publish(error)
         return 1
 
-    complete, error = package.get_tasks_multiple(init_client, installed)
+    if include_endpoints:
+        installed, error = package.get_tasks_multiple(init_client, installed)
+        if error is not None:
+            emitter.publish(error)
+            return 1
 
-    if error is not None:
-        emitter.publish(error)
-        return 1
-
-    emitter.publish(complete)
+    emitter.publish(installed)
 
     return 0
 

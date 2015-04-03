@@ -255,7 +255,7 @@ def get_tasks_multiple(init_client, apps):
     """
 
     for app in apps:
-        tasks, err = init_client.get_tasks(app["id"])
+        tasks, err = init_client.get_tasks(app["appId"])
         if err is not None:
             return (None, err)
         app["endpoints"] = [{"host": t["host"], "ports": t["ports"]}
