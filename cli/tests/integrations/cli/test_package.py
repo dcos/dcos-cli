@@ -135,7 +135,7 @@ def test_bad_install():
             '--options=tests/data/package/mesos-dns-config-bad.json'])
 
     assert returncode == 1
-    assert stdout == b''
+    assert stdout == b'Installing package [mesos-dns] version [alpha]\n'
 
     assert stderr == b"""\
 Error: 'mesos-dns/config-url' is a required property
@@ -156,7 +156,7 @@ def test_install():
             '--options=tests/data/package/mesos-dns-config.json'])
 
     assert returncode == 0
-    assert stdout == b''
+    assert stdout == b'Installing package [mesos-dns] version [alpha]\n'
     assert stderr == b''
 
 
@@ -202,7 +202,9 @@ def test_install_with_id():
             '--app-id=dns-1'])
 
     assert returncode == 0
-    assert stdout == b''
+    assert stdout == b"""Installing package [mesos-dns] version [alpha] \
+with app id [dns-1]
+"""
     assert stderr == b''
 
     returncode, stdout, stderr = exec_command(
@@ -214,7 +216,8 @@ def test_install_with_id():
             '--app-id=dns-2'])
 
     assert returncode == 0
-    assert stdout == b''
+    assert stdout == b"""Installing package [mesos-dns] version [alpha] \
+with app id [dns-2]\n"""
     assert stderr == b''
 
 
@@ -284,7 +287,7 @@ def test_list_installed():
             '--options=tests/data/package/mesos-dns-config.json'])
 
     assert returncode == 0
-    assert stdout == b''
+    assert stdout == b'Installing package [mesos-dns] version [alpha]\n'
     assert stderr == b''
 
     expected_output = b"""\

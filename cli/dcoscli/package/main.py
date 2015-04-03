@@ -299,6 +299,21 @@ def _install(package_name, options_file, app_id, cli, app):
 
     if app:
         # Install in Marathon
+        version_map, version_error = pkg.software_versions()
+
+        if version_error is not None:
+            emitter.publish(version_error)
+            return 1
+
+        sw_version = version_map.get(pkg_version, '?')
+
+        message = 'Installing package [{}] version [{}]'.format(
+            pkg.name(), sw_version)
+        if app_id is not None:
+            message += ' with app id [{}]'.format(app_id)
+
+        emitter.publish(message)
+
         init_client = marathon.create_client(config)
 
         install_error = package.install_app(
@@ -313,6 +328,9 @@ def _install(package_name, options_file, app_id, cli, app):
 
     if cli and pkg.is_command_defined(pkg_version):
         # Install subcommand
+        emitter.publish('Installing CLI subcommand for package [{}]'.format(
+            pkg.name()))
+
         err = package.install_subcommand(pkg, pkg_version, options_json)
         if err is not None:
             emitter.publish(err)
