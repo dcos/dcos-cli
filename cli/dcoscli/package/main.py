@@ -6,17 +6,8 @@ Usage:
     dcos package info
     dcos package install [--options=<options_file> --app-id=<app_id>]
          <package_name>
-<<<<<<< HEAD
-<<<<<<< HEAD
-    dcos package list-installed
-=======
-    dcos package list_installed
-         [--include-endpoints | --app-id=<app-id> | <package_name>]
->>>>>>> updated to add to list instead of show
-=======
     dcos package list_installed [--include-endpoints]
          [--app-id=<app-id> | <package_name>]
->>>>>>> updates to `package list` instead of adding cmd
     dcos package search <query>
     dcos package sources
     dcos package uninstall [--all | --app-id=<app-id>] <package_name>
