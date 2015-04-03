@@ -15,8 +15,8 @@ Usage:
     dcos package --config-schema
     dcos package describe <package_name>
     dcos package info
-    dcos package install [--options=<options_file> --app-id=<app_id>]
-         <package_name>
+    dcos package install [--options=<file> --app-id=<app_id> --cli --app]
+                 <package_name>
     dcos package list-installed [--endpoints --app-id=<app-id> <package_name>]
     dcos package search <query>
     dcos package sources
@@ -24,8 +24,14 @@ Usage:
     dcos package update
 
 Options:
-    -h, --help          Show this screen
-    --version           Show version
+    --all              Apply the operation to all matching packages
+    --app-id=<app-id>  The application id
+    --cli              Apply the operation only to the package's CLI
+    --help             Show this screen
+    --options=<file>   Path to a JSON file containing package installation
+                       options
+    --app              Apply the operation only to the package's application
+    --version          Show version
 
 Configuration:
     [package]
@@ -129,7 +135,7 @@ def test_bad_install():
             '--options=tests/data/package/mesos-dns-config-bad.json'])
 
     assert returncode == 1
-    assert stdout == b''
+    assert stdout == b'Installing package [mesos-dns] version [alpha]\n'
 
     assert stderr == b"""\
 Error: 'mesos-dns/config-url' is a required property
@@ -150,7 +156,7 @@ def test_install():
             '--options=tests/data/package/mesos-dns-config.json'])
 
     assert returncode == 0
-    assert stdout == b''
+    assert stdout == b'Installing package [mesos-dns] version [alpha]\n'
     assert stderr == b''
 
 
@@ -196,7 +202,9 @@ def test_install_with_id():
             '--app-id=dns-1'])
 
     assert returncode == 0
-    assert stdout == b''
+    assert stdout == b"""Installing package [mesos-dns] version [alpha] \
+with app id [dns-1]
+"""
     assert stderr == b''
 
     returncode, stdout, stderr = exec_command(
@@ -208,7 +216,8 @@ def test_install_with_id():
             '--app-id=dns-2'])
 
     assert returncode == 0
-    assert stdout == b''
+    assert stdout == b"""Installing package [mesos-dns] version [alpha] \
+with app id [dns-2]\n"""
     assert stderr == b''
 
 
@@ -278,7 +287,7 @@ def test_list_installed():
             '--options=tests/data/package/mesos-dns-config.json'])
 
     assert returncode == 0
-    assert stdout == b''
+    assert stdout == b'Installing package [mesos-dns] version [alpha]\n'
     assert stderr == b''
 
     expected_output = b"""\

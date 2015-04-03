@@ -22,7 +22,7 @@ def tempdir():
     lexical scope of the returned file descriptor.
 
     :return: Reference to a temporary directory
-    :rtype: file descriptor
+    :rtype: str
     """
 
     tmpdir = tempfile.mkdtemp()
@@ -30,6 +30,31 @@ def tempdir():
         yield tmpdir
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+@contextlib.contextmanager
+def temptext():
+    """A context manager for temporary files.
+
+    The lifetime of the returned temporary file corresponds to the
+    lexical scope of the returned file descriptor.
+
+    :return: reference to a temporary file
+    :rtype: (fd, str)
+    """
+
+    fd, path = tempfile.mkstemp()
+    try:
+        yield (fd, path)
+    finally:
+        # Close the file descriptor and ignore errors
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+
+        # delete the path
+        shutil.rmtree(path, ignore_errors=True)
 
 
 def which(program):
@@ -135,13 +160,15 @@ def load_json(reader):
 
     try:
         return (json.load(reader), None)
-    except:
-        error = sys.exc_info()[0]
+    except Exception as error:
         logger = get_logger(__name__)
         logger.error(
             'Unhandled exception while loading JSON: %r',
             error)
-        return (None, errors.DefaultError('Error loading JSON.'))
+        return (
+            None,
+            errors.DefaultError('Error loading JSON: {}'.format(error))
+        )
 
 
 def load_jsons(value):

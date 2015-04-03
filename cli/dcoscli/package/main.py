@@ -4,8 +4,8 @@ Usage:
     dcos package --config-schema
     dcos package describe <package_name>
     dcos package info
-    dcos package install [--options=<options_file> --app-id=<app_id>]
-         <package_name>
+    dcos package install [--options=<file> --app-id=<app_id> --cli --app]
+                 <package_name>
     dcos package list-installed [--endpoints --app-id=<app-id> <package_name>]
     dcos package search <query>
     dcos package sources
@@ -13,8 +13,14 @@ Usage:
     dcos package update
 
 Options:
-    -h, --help          Show this screen
-    --version           Show version
+    --all              Apply the operation to all matching packages
+    --app-id=<app-id>  The application id
+    --cli              Apply the operation only to the package's CLI
+    --help             Show this screen
+    --options=<file>   Path to a JSON file containing package installation
+                       options
+    --app              Apply the operation only to the package's application
+    --version          Show version
 
 Configuration:
     [package]
@@ -94,7 +100,8 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['package', 'install'],
-            arg_keys=['<package_name>', '--options', '--app-id'],
+            arg_keys=['<package_name>', '--options', '--app-id', '--cli',
+                      '--app'],
             function=_install),
 
         cmds.Command(
@@ -243,18 +250,27 @@ def _describe(package_name):
     return 0
 
 
-def _install(package_name, options_file, app_id):
+def _install(package_name, options_file, app_id, cli, app):
     """Install the specified package.
 
-    :param package_name: The package to install
+    :param package_name: the package to install
     :type package_name: str
-    :param options_file: Path to file containing option values
+    :param options_file: path to file containing option values
     :type options_file: str
-    :param app_id: App ID for installation of this package
+    :param app_id: app ID for installation of this package
     :type app_id: str
-    :returns: Process status
+    :param cli: indicates if the cli should be installed
+    :type cli: bool
+    :param app: indicate if the application should be installed
+    :type app: bool
+    :returns: process status
     :rtype: int
     """
+
+    if cli is False and app is False:
+        # Install both if neither flag is specified
+        cli = True
+        app = True
 
     config = _load_config()
 
@@ -274,8 +290,6 @@ def _install(package_name, options_file, app_id):
             emitter.publish(e.message)
             return 1
 
-    init_client = marathon.create_client(config)
-
     # TODO(CD): Make package version to install configurable
     pkg_version, version_error = pkg.latest_version()
 
@@ -283,17 +297,44 @@ def _install(package_name, options_file, app_id):
         emitter.publish(version_error)
         return 1
 
-    install_error = package.install(
-        pkg,
-        pkg_version,
-        init_client,
-        options_json,
-        app_id,
-        config)
+    if app:
+        # Install in Marathon
+        version_map, version_error = pkg.software_versions()
 
-    if install_error is not None:
-        emitter.publish(install_error)
-        return 1
+        if version_error is not None:
+            emitter.publish(version_error)
+            return 1
+
+        sw_version = version_map.get(pkg_version, '?')
+
+        message = 'Installing package [{}] version [{}]'.format(
+            pkg.name(), sw_version)
+        if app_id is not None:
+            message += ' with app id [{}]'.format(app_id)
+
+        emitter.publish(message)
+
+        init_client = marathon.create_client(config)
+
+        install_error = package.install_app(
+            pkg,
+            pkg_version,
+            init_client,
+            options_json,
+            app_id)
+        if install_error is not None:
+            emitter.publish(install_error)
+            return 1
+
+    if cli and pkg.is_command_defined(pkg_version):
+        # Install subcommand
+        emitter.publish('Installing CLI subcommand for package [{}]'.format(
+            pkg.name()))
+
+        err = package.install_subcommand(pkg, pkg_version, options_json)
+        if err is not None:
+            emitter.publish(err)
+            return 1
 
     return 0
 
@@ -383,8 +424,7 @@ def _uninstall(package_name, remove_all, app_id):
         package_name,
         remove_all,
         app_id,
-        init_client,
-        config)
+        init_client)
 
     if uninstall_error is not None:
         emitter.publish(uninstall_error)
