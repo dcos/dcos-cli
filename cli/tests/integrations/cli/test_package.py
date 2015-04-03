@@ -332,15 +332,6 @@ def test_list():
 """
 
 
-def test_show_nonexistent():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'package', 'show', 'xyzzy'])
-
-    assert returncode == 1
-    assert b'No app found with package [xyzzy]' in stdout
-    assert stderr == b''
-
-
 def test_search():
     returncode, stdout, stderr = exec_command(
         ['dcos',
