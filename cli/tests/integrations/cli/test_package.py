@@ -248,7 +248,7 @@ def test_uninstall_missing():
 id [dns-1] are installed.\n"""
 
 
-def test_list():
+def test_list_installed():
     returncode, stdout, stderr = exec_command(
         ['dcos', 'package', 'list_installed'])
 

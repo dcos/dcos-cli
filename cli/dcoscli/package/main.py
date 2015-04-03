@@ -6,10 +6,6 @@ Usage:
     dcos package info
     dcos package install [--options=<options_file> --app-id=<app_id>]
          <package_name>
-<<<<<<< HEAD
-    dcos package list-installed
-=======
->>>>>>> 40b1146... updates to `package list` instead of adding cmd
     dcos package list_installed [--include-endpoints]
          [--app-id=<app-id> | <package_name>]
     dcos package search <query>
@@ -239,103 +235,11 @@ def _describe(package_name):
         emitter.publish(version_error)
         return 1
 
-    version_map, version_error = pkg.software_versions()
-
-    if version_error is not None:
-        emitter.publish(version_error)
-        return 1
-
     versions = [version_map[pkg_ver] for pkg_ver in version_map]
 
     del pkg_json['version']
     pkg_json['versions'] = versions
     emitter.publish(pkg_json)
-
-    return 0
-
-
-def _show(package_name, app_id):
-    """Show running apps of the specified package.
-
-    :param package_name: The package to show
-    :type package_name: str
-    :param app_id: App ID of app to show
-    :type app_id: str
-    :returns: Process status
-    :rtype: int
-    """
-
-    config = _load_config()
-
-    init_client = marathon.create_client(config)
-
-    if app_id is not None:
-        app, err = init_client.get_app(app_id)
-        apps = [app]
-    else:
-        apps, err = init_client.get_apps()
-
-    if err is not None:
-        emitter.publish(err)
-        return 1
-
-    apps = [app for app in apps
-            if app.get("labels", {}).get(package.PACKAGE_NAME_KEY, "") == package_name]
-
-    if not apps:
-        emitter.publish("No app found with package [{}]".format(package_name))
-        return 1
-
-    package_info, err = package.show_concise(init_client, apps)
-
-    if err is not None:
-        emitter.publish(err)
-        return 1
-
-    emitter.publish(package_info)
-
-    return 0
-
-
-def _show(package_name, app_id):
-    """Show running apps of the specified package.
-
-    :param package_name: The package to show
-    :type package_name: str
-    :param app_id: App ID of app to show
-    :type app_id: str
-    :returns: Process status
-    :rtype: int
-    """
-
-    config = _load_config()
-
-    init_client = marathon.create_client(config)
-
-    if app_id is not None:
-        app, err = init_client.get_app(app_id)
-        apps = [app]
-    else:
-        apps, err = init_client.get_apps()
-
-    if err is not None:
-        emitter.publish(err)
-        return 1
-
-    apps = [app for app in apps
-            if app.get("labels", {}).get(package.PACKAGE_NAME_KEY, "") == package_name]
-
-    if not apps:
-        emitter.publish("No app found with package [{}]".format(package_name))
-        return 1
-
-    package_info, err = package.show_concise(init_client, apps)
-
-    if err is not None:
-        emitter.publish(err)
-        return 1
-
-    emitter.publish(package_info)
 
     return 0
 
