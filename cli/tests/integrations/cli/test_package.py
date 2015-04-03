@@ -17,7 +17,7 @@ Usage:
     dcos package info
     dcos package install [--options=<options_file> --app-id=<app_id>]
          <package_name>
-    dcos package list-installed
+    dcos package list-installed [--endpoints --app-id=<app-id> <package_name>]
     dcos package search <query>
     dcos package sources
     dcos package uninstall [--all | --app-id=<app-id>] <package_name>
@@ -257,6 +257,20 @@ def test_list_installed():
     assert stderr == b''
 
     returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'list-installed', 'xyzzy'])
+
+    assert returncode == 0
+    assert stdout == b'[]\n'
+    assert stderr == b''
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'list-installed', '--app-id=/xyzzy'])
+
+    assert returncode == 0
+    assert stdout == b'[]\n'
+    assert stderr == b''
+
+    returncode, stdout, stderr = exec_command(
         ['dcos',
             'package',
             'install',
@@ -267,12 +281,7 @@ def test_list_installed():
     assert stdout == b''
     assert stderr == b''
 
-    returncode, stdout, stderr = exec_command(['dcos',
-                                               'package',
-                                               'list-installed'])
-
-    assert returncode == 0
-    assert stdout == b"""\
+    expected_output = b"""\
 [
   {
     "appId": "/mesos-dns",
@@ -293,7 +302,26 @@ further setup requirements: http://mesosphere.github.io/mesos-dns/docs\
   }
 ]
 """
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'list-installed'])
+
+    assert returncode == 0
     assert stderr == b''
+    assert stdout == expected_output
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'list-installed', 'mesos-dns'])
+
+    assert returncode == 0
+    assert stderr == b''
+    assert stdout == expected_output
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'list-installed', '--app-id=/mesos-dns'])
+
+    assert returncode == 0
+    assert stderr == b''
+    assert stdout == expected_output
 
 
 def test_search():
