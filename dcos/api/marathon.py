@@ -426,7 +426,7 @@ class Client(object):
     def get_tasks(self, app_id):
         """Returns a list of tasks, optionally limited to an app.
 
-        :param app_id: the id of the application to restart
+        :param app_id: the id of the application
         :type app_id: str
         :returns: a list of tasks
         :rtype: (list of dict, dcos.api.errors.Error)

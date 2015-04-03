@@ -246,6 +246,25 @@ def list_installed_packages(init_client, result_predicate=lambda x: True):
     return (pkgs, None)
 
 
+def get_tasks_multiple(init_client, apps):
+    """Adds tasks to app dictionary
+    :param init_client: The program to use to list packages
+    :type init_client: object
+    :param apps: A list of app dictionaries
+    :type apps: object
+    :rtype: (list, Error)
+    """
+
+    for app in apps:
+        tasks, err = init_client.get_tasks(app["appId"])
+        if err is not None:
+            return (None, err)
+        app["endpoints"] = [{"host": t["host"], "ports": t["ports"]}
+                            for t in tasks]
+
+    return (apps, None)
+
+
 def search(query, cfg):
     """Returns a list of index entry collections, one for each registry in
     the supplied config.
