@@ -224,8 +224,8 @@ def list_installed_packages(init_client):
     return (pkgs, None)
 
 
-def show_concise(init_client, apps):
-    """Returns concise info about one or more apps
+def get_tasks_multiple(init_client, apps):
+    """Adds tasks to app dictionary
     :param init_client: The program to use to list packages
     :type init_client: object
     :param apps: A list of app dictionaries
@@ -233,25 +233,14 @@ def show_concise(init_client, apps):
     :rtype: (list, Error)
     """
 
-    concise_apps = []
-
     for app in apps:
         tasks, err = init_client.get_tasks(app["id"])
         if err is not None:
             return (None, err)
-        mapped = {}
-        mapped["id"] = app["id"]
-        if PACKAGE_NAME_KEY in app["labels"]:
-            mapped["name"] = app["labels"][PACKAGE_NAME_KEY]
-        if PACKAGE_VERSION_KEY in app["labels"]:
-            mapped["version"] = app["labels"][PACKAGE_VERSION_KEY]
-        if PACKAGE_SOURCE_KEY in app["labels"]:
-            mapped["source"] = app["labels"][PACKAGE_SOURCE_KEY]
-        mapped["endpoints"] = [{"host": t["host"], "ports": t["ports"]}
-                               for t in tasks]
-        concise_apps.append(mapped)
+        app["endpoints"] = [{"host": t["host"], "ports": t["ports"]}
+                            for t in tasks]
 
-    return (concise_apps, None)
+    return (apps, None)
 
 
 def search(query, cfg):

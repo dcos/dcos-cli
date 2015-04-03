@@ -17,7 +17,7 @@ Usage:
     dcos package info
     dcos package install [--options=<options_file> --app-id=<app_id>]
          <package_name>
-    dcos package list
+    dcos package list_installed 
     dcos package search <query>
     dcos package show <package_name> [--app-id=<app-id>]
     dcos package sources
