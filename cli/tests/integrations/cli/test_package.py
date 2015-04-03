@@ -17,7 +17,7 @@ Usage:
     dcos package info
     dcos package install [--options=<options_file> --app-id=<app_id>]
          <package_name>
-    dcos package list
+    dcos package list-installed
     dcos package search <query>
     dcos package sources
     dcos package uninstall [--all | --app-id=<app-id>] <package_name>
@@ -247,8 +247,10 @@ def test_uninstall_missing():
 id [dns-1] are installed.\n"""
 
 
-def test_list():
-    returncode, stdout, stderr = exec_command(['dcos', 'package', 'list'])
+def test_list_installed():
+    returncode, stdout, stderr = exec_command(['dcos',
+                                               'package',
+                                               'list-installed'])
 
     assert returncode == 0
     assert stdout == b'[]\n'
@@ -265,7 +267,9 @@ def test_list():
     assert stdout == b''
     assert stderr == b''
 
-    returncode, stdout, stderr = exec_command(['dcos', 'package', 'list'])
+    returncode, stdout, stderr = exec_command(['dcos',
+                                               'package',
+                                               'list-installed'])
 
     assert returncode == 0
     assert stdout == b"""\

@@ -6,7 +6,7 @@ Usage:
     dcos package info
     dcos package install [--options=<options_file> --app-id=<app_id>]
          <package_name>
-    dcos package list
+    dcos package list-installed
     dcos package search <query>
     dcos package sources
     dcos package uninstall [--all | --app-id=<app-id>] <package_name>
@@ -98,7 +98,7 @@ def _cmds():
             function=_install),
 
         cmds.Command(
-            hierarchy=['package', 'list'],
+            hierarchy=['package', 'list-installed'],
             arg_keys=[],
             function=_list),
 
