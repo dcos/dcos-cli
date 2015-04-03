@@ -315,8 +315,7 @@ def _list():
         emitter.publish(error)
         return 1
 
-    for name, version in installed:
-        emitter.publish('{} [{}]'.format(name, version))
+    emitter.publish(installed)
 
     return 0
 
