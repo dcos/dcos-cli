@@ -40,7 +40,6 @@ import os
 import dcoscli
 import docopt
 import pkg_resources
-import toml
 from dcos.api import (cmds, config, constants, emitting, marathon, options,
                       package, util)
 
@@ -229,8 +228,11 @@ def _describe(package_name):
         emitter.publish(pkg_error)
         return 1
 
-    emitter.publish(toml.dumps(pkg_json))
-    emitter.publish('Available versions:')
+    version_map, version_error = pkg.software_versions()
+
+    if version_error is not None:
+        emitter.publish(version_error)
+        return 1
 
     version_map, version_error = pkg.software_versions()
 
@@ -238,8 +240,11 @@ def _describe(package_name):
         emitter.publish(version_error)
         return 1
 
-    for pkg_ver in version_map:
-        emitter.publish(version_map[pkg_ver])
+    versions = [version_map[pkg_ver] for pkg_ver in version_map]
+
+    del pkg_json['version']
+    pkg_json['versions'] = versions
+    emitter.publish(pkg_json)
 
     return 0
 

@@ -99,7 +99,24 @@ def test_describe():
         ['dcos', 'package', 'describe', 'mesos-dns'])
 
     assert returncode == 0
-    assert b'description = "DNS-based service discovery for Mesos."' in stdout
+    assert stdout == b"""\
+{
+  "description": "DNS-based service discovery for Mesos.",
+  "maintainer": "support@mesosphere.io",
+  "name": "mesos-dns",
+  "postInstallNotes": "Please refer to the tutorial instructions for further \
+setup requirements: http://mesosphere.github.io/mesos-dns/docs/\
+tutorial-gce.html",
+  "scm": "https://github.com/mesosphere/mesos-dns.git",
+  "tags": [
+    "mesosphere"
+  ],
+  "versions": [
+    "alpha"
+  ],
+  "website": "http://mesosphere.github.io/mesos-dns"
+}
+"""
     assert stderr == b''
 
 
