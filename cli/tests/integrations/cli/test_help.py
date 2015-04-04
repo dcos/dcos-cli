@@ -46,7 +46,7 @@ def test_list_all():
 
     assert returncode == 0
     assert stdout == """Command line utility for \
-the Mesosphere DataCenter Operating System (DCOS). The Mesosphere DCOS is \
+the Mesosphere Datacenter Operating System (DCOS). The Mesosphere DCOS is \
 a distributed operating system built around Apache Mesos. This utility \
 provides tools for easy management of a DCOS installation.
 
