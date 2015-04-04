@@ -41,7 +41,7 @@ def main():
                 in subcommand.list_paths(directory)))
 
         emitter.publish(
-            "Command line utility for the Mesosphere DataCenter Operating "
+            "Command line utility for the Mesosphere Datacenter Operating "
             "System (DCOS). The Mesosphere DCOS is a distributed operating "
             "system built around Apache Mesos. This utility provides tools "
             "for easy management of a DCOS installation.\n")
