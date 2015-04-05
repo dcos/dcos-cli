@@ -52,8 +52,17 @@ def _merge_options(pkg, version, user_options):
     if err is not None:
         return (None, err)
 
+    logger.debug('\nDefault package config:\n%s',
+        json.dumps(default_options, sort_keys=True))
+
+    logger.debug('\nSupplied package config:\n%s',
+        json.dumps(user_options, sort_keys=True))
+
     # Merge option overrides
     options = dict(list(default_options.items()) + list(user_options.items()))
+
+    logger.info('\nResulting package config:\n%s',
+        json.dumps(default_options, sort_keys=True))
 
     # Validate options with the config schema
     err = util.validate_json(options, config_schema)
