@@ -13,13 +13,11 @@ def test_help():
 
 Usage:
     dcos help
-    dcos help --all
     dcos help info
 
 Options:
     --help              Show this screen
     --version           Show version
-    --all               Prints all available commands to the standard output
 """
     assert stderr == b''
 
