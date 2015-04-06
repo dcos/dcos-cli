@@ -11,6 +11,7 @@ def test_help():
 
 Usage:
     dcos marathon --config-schema
+    dcos marathon --info
     dcos marathon app add [<app-resource>]
     dcos marathon app list
     dcos marathon app remove [--force] <app-id>
@@ -25,12 +26,12 @@ Usage:
     dcos marathon deployment stop <deployment-id>
     dcos marathon deployment watch [--max-count=<max-count>]
          [--interval=<interval>] <deployment-id>
-    dcos marathon info
     dcos marathon task list [<app-id>]
     dcos marathon task show <task-id>
 
 Options:
     -h, --help                   Show this screen
+    --info                       Show a short description of this subcommand
     --version                    Show version
     --force                      This flag disable checks in Marathon during
                                  update operations
@@ -74,7 +75,7 @@ def test_version():
 
 
 def test_info():
-    returncode, stdout, stderr = exec_command(['dcos', 'marathon', 'info'])
+    returncode, stdout, stderr = exec_command(['dcos', 'marathon', '--info'])
 
     assert returncode == 0
     assert stdout == b'Deploy and manage applications on the DCOS\n'

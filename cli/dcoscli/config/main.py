@@ -1,8 +1,8 @@
 """Get and set DCOS command line options
 
 Usage:
+    dcos config --info
     dcos config append <name> <value>
-    dcos config info
     dcos config prepend <name> <value>
     dcos config set <name> <value>
     dcos config show [<name>]
@@ -11,6 +11,7 @@ Usage:
 
 Options:
     -h, --help       Show this screen
+    --info           Show a short description of this subcommand
     --version        Show version
     --index=<index>  Index into the list. The first element in the list has an
                      index of zero
@@ -60,11 +61,6 @@ def _cmds():
 
     return [
         cmds.Command(
-            hierarchy=['config', 'info'],
-            arg_keys=[],
-            function=_info),
-
-        cmds.Command(
             hierarchy=['config', 'set'],
             arg_keys=['<name>', '<value>'],
             function=_set),
@@ -93,11 +89,18 @@ def _cmds():
             hierarchy=['config', 'validate'],
             arg_keys=[],
             function=_validate),
+
+        cmds.Command(
+            hierarchy=['config'],
+            arg_keys=['--info'],
+            function=_info),
     ]
 
 
-def _info():
+def _info(info):
     """
+    :param info: Whether to output a description of this subcommand
+    :type info: boolean
     :returns: process status
     :rtype: int
     """

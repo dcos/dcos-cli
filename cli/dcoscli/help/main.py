@@ -1,12 +1,13 @@
 """Display command line usage information
 
 Usage:
+    dcos help --info
     dcos help
-    dcos help info
 
 Options:
-    --help              Show this screen
-    --version           Show version
+    --help     Show this screen
+    --info     Show a short description of this subcommand
+    --version  Show version
 """
 import dcoscli
 import docopt
@@ -25,7 +26,7 @@ def main():
         __doc__,
         version='dcos-help version {}'.format(dcoscli.version))
 
-    if args['help'] and args['info']:
+    if args['help'] and args['--info']:
         emitter.publish(__doc__.split('\n')[0])
     # Note: this covers --all also.
     # Eventually we will only show commonly used commands for help

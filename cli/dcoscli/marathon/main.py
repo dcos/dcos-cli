@@ -2,6 +2,7 @@
 
 Usage:
     dcos marathon --config-schema
+    dcos marathon --info
     dcos marathon app add [<app-resource>]
     dcos marathon app list
     dcos marathon app remove [--force] <app-id>
@@ -16,12 +17,12 @@ Usage:
     dcos marathon deployment stop <deployment-id>
     dcos marathon deployment watch [--max-count=<max-count>]
          [--interval=<interval>] <deployment-id>
-    dcos marathon info
     dcos marathon task list [<app-id>]
     dcos marathon task show <task-id>
 
 Options:
     -h, --help                   Show this screen
+    --info                       Show a short description of this subcommand
     --version                    Show version
     --force                      This flag disable checks in Marathon during
                                  update operations
@@ -129,11 +130,6 @@ def _cmds():
             function=_task_show),
 
         cmds.Command(
-            hierarchy=['marathon', 'info'],
-            arg_keys=[],
-            function=_info),
-
-        cmds.Command(
             hierarchy=['marathon', 'app', 'add'],
             arg_keys=['<app-resource>'],
             function=_add),
@@ -175,13 +171,17 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['marathon'],
-            arg_keys=['--config-schema'],
+            arg_keys=['--config-schema', '--info'],
             function=_marathon),
     ]
 
 
-def _marathon(config_schema):
+def _marathon(config_schema, info):
     """
+    :param config_schema: Whether to output the config schema
+    :type config_schema: boolean
+    :param info: Whether to output a description of this subcommand
+    :type info: boolean
     :returns: Process status
     :rtype: int
     """
@@ -192,6 +192,8 @@ def _marathon(config_schema):
                 'dcoscli',
                 'data/config-schema/marathon.json').decode('utf-8'))
         emitter.publish(schema)
+    elif info:
+        _info()
     else:
         emitter.publish(options.make_generic_usage_message(__doc__))
         return 1

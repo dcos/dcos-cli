@@ -75,7 +75,7 @@ def test_dcos_config_not_a_file():
 
 def test_log_level_flag():
     returncode, stdout, stderr = exec_command(
-        ['dcos', '--log-level=info', 'config', 'info'])
+        ['dcos', '--log-level=info', 'config', '--info'])
 
     assert returncode == 0
     assert stdout == b"Get and set DCOS command line options\n"
@@ -84,7 +84,7 @@ def test_log_level_flag():
 
 def test_capital_log_level_flag():
     returncode, stdout, stderr = exec_command(
-        ['dcos', '--log-level=INFO', 'config', 'info'])
+        ['dcos', '--log-level=INFO', 'config', '--info'])
 
     assert returncode == 0
     assert stdout == b"Get and set DCOS command line options\n"
@@ -93,7 +93,7 @@ def test_capital_log_level_flag():
 
 def test_invalid_log_level_flag():
     returncode, stdout, stderr = exec_command(
-        ['dcos', '--log-level=blah', 'config', 'info'])
+        ['dcos', '--log-level=blah', 'config', '--info'])
 
     assert returncode == 1
     assert stdout == (b"Log level set to an unknown value 'blah'. Valid "

@@ -10,6 +10,40 @@ def package():
     return os.environ['DCOS_TEST_WHEEL']
 
 
+def test_help():
+    returncode, stdout, stderr = exec_command(['dcos', 'subcommand', '--help'])
+
+    assert returncode == 0
+    assert stdout == b"""Install and manage DCOS CLI subcommands
+
+Usage:
+    dcos subcommand --config-schema
+    dcos subcommand --info
+    dcos subcommand info
+    dcos subcommand install <package>
+    dcos subcommand list
+    dcos subcommand uninstall <package_name>
+
+Options:
+    --help     Show this screen
+    --info     Show a short description of this subcommand
+    --version  Show version
+
+Positional arguments:
+    <package>          The subcommand package wheel
+    <package_name>     The name of the subcommand package
+"""
+    assert stderr == b''
+
+
+def test_info():
+    returncode, stdout, stderr = exec_command(['dcos', 'subcommand', '--info'])
+
+    assert returncode == 0
+    assert stdout == b'Install and manage DCOS CLI subcommands\n'
+    assert stderr == b''
+
+
 def test_list_empty_subcommand():
     _list_subcommands(0)
 

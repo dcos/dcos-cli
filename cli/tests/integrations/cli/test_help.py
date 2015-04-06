@@ -12,18 +12,19 @@ def test_help():
     assert stdout == b"""Display command line usage information
 
 Usage:
+    dcos help --info
     dcos help
-    dcos help info
 
 Options:
-    --help              Show this screen
-    --version           Show version
+    --help     Show this screen
+    --info     Show a short description of this subcommand
+    --version  Show version
 """
     assert stderr == b''
 
 
 def test_info():
-    returncode, stdout, stderr = exec_command(['dcos', 'help', 'info'])
+    returncode, stdout, stderr = exec_command(['dcos', 'help', '--info'])
 
     assert returncode == 0
     assert stdout == b'Display command line usage information\n'
