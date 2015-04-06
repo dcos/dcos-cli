@@ -13,13 +13,11 @@ def test_help():
 
 Usage:
     dcos help
-    dcos help --all
     dcos help info
 
 Options:
     --help              Show this screen
     --version           Show version
-    --all               Prints all available commands to the standard output
 """
     assert stderr == b''
 
@@ -40,9 +38,9 @@ def test_version():
     assert stderr == b''
 
 
-def test_list_all():
+def test_list():
     dcos_path = os.path.dirname(os.path.dirname(util.which('dcos')))
-    returncode, stdout, stderr = exec_command(['dcos', 'help', '--all'])
+    returncode, stdout, stderr = exec_command(['dcos', 'help'])
 
     assert returncode == 0
     assert stdout == """Command line utility for \
