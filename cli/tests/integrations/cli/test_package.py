@@ -13,6 +13,7 @@ def test_package():
 
 Usage:
     dcos package --config-schema
+    dcos package --info
     dcos package describe <package_name>
     dcos package info
     dcos package install [--options=<file> --app-id=<app_id> --cli --app]
@@ -24,14 +25,15 @@ Usage:
     dcos package update
 
 Options:
+    -h, --help         Show this screen
+    --info             Show a short description of this subcommand
+    --version          Show version
     --all              Apply the operation to all matching packages
     --app-id=<app-id>  The application id
     --cli              Apply the operation only to the package's CLI
-    --help             Show this screen
     --options=<file>   Path to a JSON file containing package installation
                        options
     --app              Apply the operation only to the package's application
-    --version          Show version
 
 Configuration:
     [package]
@@ -54,7 +56,7 @@ Configuration:
 
 
 def test_info():
-    returncode, stdout, stderr = exec_command(['dcos', 'package', 'info'])
+    returncode, stdout, stderr = exec_command(['dcos', 'package', '--info'])
 
     assert returncode == 0
     assert stdout == b'Install and manage DCOS software packages\n'

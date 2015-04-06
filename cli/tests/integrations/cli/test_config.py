@@ -23,8 +23,8 @@ def test_help():
     assert stdout == b"""Get and set DCOS command line options
 
 Usage:
+    dcos config --info
     dcos config append <name> <value>
-    dcos config info
     dcos config prepend <name> <value>
     dcos config set <name> <value>
     dcos config show [<name>]
@@ -33,6 +33,7 @@ Usage:
 
 Options:
     -h, --help       Show this screen
+    --info           Show a short description of this subcommand
     --version        Show version
     --index=<index>  Index into the list. The first element in the list has an
                      index of zero
@@ -45,7 +46,7 @@ Positional Arguments:
 
 
 def test_info():
-    returncode, stdout, stderr = exec_command(['dcos', 'config', 'info'])
+    returncode, stdout, stderr = exec_command(['dcos', 'config', '--info'])
 
     assert returncode == 0
     assert stdout == b'Get and set DCOS command line options\n'

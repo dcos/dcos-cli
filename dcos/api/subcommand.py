@@ -123,7 +123,7 @@ def info(executable_path):
     """
 
     out = subprocess.check_output(
-        [executable_path, noun(executable_path), 'info'])
+        [executable_path, noun(executable_path), '--info'])
 
     return out.decode('utf-8').strip()
 

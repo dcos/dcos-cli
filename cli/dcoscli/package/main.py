@@ -2,6 +2,7 @@
 
 Usage:
     dcos package --config-schema
+    dcos package --info
     dcos package describe <package_name>
     dcos package info
     dcos package install [--options=<file> --app-id=<app_id> --cli --app]
@@ -13,14 +14,15 @@ Usage:
     dcos package update
 
 Options:
+    -h, --help         Show this screen
+    --info             Show a short description of this subcommand
+    --version          Show version
     --all              Apply the operation to all matching packages
     --app-id=<app-id>  The application id
     --cli              Apply the operation only to the package's CLI
-    --help             Show this screen
     --options=<file>   Path to a JSON file containing package installation
                        options
     --app              Apply the operation only to the package's application
-    --version          Show version
 
 Configuration:
     [package]
@@ -79,11 +81,6 @@ def _cmds():
 
     return [
         cmds.Command(
-            hierarchy=['package', 'info'],
-            arg_keys=[],
-            function=_info),
-
-        cmds.Command(
             hierarchy=['package', 'sources'],
             arg_keys=[],
             function=_list_sources),
@@ -121,13 +118,17 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['package'],
-            arg_keys=['--config-schema'],
+            arg_keys=['--config-schema', '--info'],
             function=_package),
     ]
 
 
-def _package(config_schema):
+def _package(config_schema, info):
     """
+    :param config_schema: Whether to output the config schema
+    :type config_schema: boolean
+    :param info: Whether to output a description of this subcommand
+    :type info: boolean
     :returns: Process status
     :rtype: int
     """
@@ -138,6 +139,8 @@ def _package(config_schema):
                 'dcoscli',
                 'data/config-schema/package.json').decode('utf-8'))
         emitter.publish(schema)
+    elif info:
+        _info()
     else:
         emitter.publish(options.make_generic_usage_message(__doc__))
         return 1

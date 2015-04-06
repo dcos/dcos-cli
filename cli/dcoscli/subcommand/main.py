@@ -2,14 +2,16 @@
 
 Usage:
     dcos subcommand --config-schema
+    dcos subcommand --info
     dcos subcommand info
     dcos subcommand install <package>
     dcos subcommand list
     dcos subcommand uninstall <package_name>
 
 Options:
-    --help             Show this screen
-    --version          Show version
+    --help     Show this screen
+    --info     Show a short description of this subcommand
+    --version  Show version
 
 Positional arguments:
     <package>          The subcommand package wheel
@@ -71,18 +73,13 @@ def _cmds():
             function=_list),
 
         cmds.Command(
-            hierarchy=['subcommand', 'info'],
-            arg_keys=[],
-            function=_info),
-
-        cmds.Command(
             hierarchy=['subcommand'],
-            arg_keys=['--config-schema'],
+            arg_keys=['--config-schema', '--info'],
             function=_subcommand),
     ]
 
 
-def _subcommand(config_schema):
+def _subcommand(config_schema, info):
     """
     :returns: Process status
     :rtype: int
@@ -94,6 +91,8 @@ def _subcommand(config_schema):
                 'dcoscli',
                 'data/config-schema/subcommand.json').decode('utf-8'))
         emitter.publish(schema)
+    elif info:
+        _info()
     else:
         emitter.publish(options.make_generic_usage_message(__doc__))
         return 1
@@ -108,7 +107,6 @@ def _info():
     """
 
     emitter.publish(__doc__.split('\n')[0])
-
     return 0
 
 
