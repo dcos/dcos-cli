@@ -32,7 +32,7 @@ Environment Variables:
     DCOS_CONFIG                 This environment variable points to the
                                 location of the DCOS configuration file.
 
-'dcos help --all' lists all available subcommands. See 'dcos <command> --help'
+'dcos help' lists all available subcommands. See 'dcos <command> --help'
 to read about a specific subcommand.
 """
     assert stderr == b''
