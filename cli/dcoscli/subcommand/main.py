@@ -1,4 +1,4 @@
-"""Install and manage DCOS CLI Subcommands
+"""Install and manage DCOS CLI subcommands
 
 Usage:
     dcos subcommand --config-schema
