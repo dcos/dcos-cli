@@ -377,8 +377,8 @@ def test_restarting_stopped_app():
 
     assert returncode == 1
     assert stdout == (
-        b"Unable to restart application '/zero-instance-app' "
-        b"because it is stopped\n")
+        b"Unable to perform rolling restart of application '"
+        b"/zero-instance-app' because it has no running tasks\n")
     assert stderr == b''
 
     _remove_app('zero-instance-app')

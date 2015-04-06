@@ -547,7 +547,8 @@ def _restart(app_id, force):
     if desc['instances'] <= 0:
         app_id = client.normalize_app_id(app_id)
         emitter.publish(
-            'Unable to restart application {!r} because it is stopped'.format(
+            'Unable to perform rolling restart of application {!r} '
+            'because it has no running tasks'.format(
                 app_id,
                 desc['instances']))
         return 1
