@@ -1,8 +1,31 @@
 import os
 
-from dcos.api import constants
+from dcos.api import constants, util
 
 from common import exec_command
+
+
+def test_default():
+    dcos_path = os.path.dirname(os.path.dirname(util.which('dcos')))
+    returncode, stdout, stderr = exec_command(['dcos'])
+
+    assert returncode == 0
+    assert stdout == """Command line utility for \
+the Mesosphere Datacenter Operating System (DCOS). The Mesosphere DCOS is \
+a distributed operating system built around Apache Mesos. This utility \
+provides tools for easy management of a DCOS installation.
+
+Available DCOS commands in '{}':
+
+\tconfig         \tGet and set DCOS command line options
+\thelp           \tDisplay command line usage information
+\tmarathon       \tDeploy and manage applications on the DCOS
+\tpackage        \tInstall and manage DCOS software packages
+\tsubcommand     \tInstall and manage DCOS CLI subcommands
+
+Get detailed command description with 'dcos <command> --help'.
+""".format(dcos_path).encode('utf-8')
+    assert stderr == b''
 
 
 def test_help():
@@ -10,7 +33,7 @@ def test_help():
 
     assert returncode == 0
     assert stdout == b"""Usage:
-    dcos [options] <command> [<args>...]
+    dcos [options] [<command>] [<args>...]
 
 Options:
     --help                      Show this screen
