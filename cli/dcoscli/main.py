@@ -1,6 +1,6 @@
 """
 Usage:
-    dcos [options] <command> [<args>...]
+    dcos [options] [<command>] [<args>...]
 
 Options:
     --help                      Show this screen
@@ -55,6 +55,9 @@ def main():
         return 1
 
     command = args['<command>']
+
+    if not command:
+        command = "help"
 
     executable, err = subcommand.command_executables(command, util.dcos_path())
     if err is not None:
