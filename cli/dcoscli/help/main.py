@@ -38,7 +38,7 @@ def main():
 def _cmds():
     """
     :returns: All of the supported commands
-    :rtype: dcos.api.cmds.Command
+    :rtype: list of dcos.api.cmds.Command
     """
 
     return [
