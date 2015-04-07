@@ -44,10 +44,11 @@ def test_list():
     returncode, stdout, stderr = exec_command(['dcos', 'help'])
 
     assert returncode == 0
-    assert stdout == """Command line utility for \
-the Mesosphere Datacenter Operating System (DCOS). The Mesosphere DCOS is \
-a distributed operating system built around Apache Mesos. This utility \
-provides tools for easy management of a DCOS installation.
+    assert stdout == """\
+Command line utility for the Mesosphere Datacenter Operating
+System (DCOS). The Mesosphere DCOS is a distributed operating
+system built around Apache Mesos. This utility provides tools
+for easy management of a DCOS installation.
 
 Available DCOS commands in '{}':
 
