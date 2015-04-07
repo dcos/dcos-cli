@@ -139,6 +139,8 @@ def _install(package):
     distribution_name, err = _distribution_name(package)
     if err is not None:
         emitter.publish(err)
+        emitter.publish(errors.DefaultError("Note: To install only the \
+subcommand for a package, run `dcos package install <package> --cli` instead"))
         return 1
 
     err = subcommand.install(
