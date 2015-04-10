@@ -52,6 +52,9 @@ Configure Environment and Run
 
     dcos config set marathon.host localhost
     dcos config set marathon.port 8080
+    dcos config append package.sources https://github.com/mesosphere/universe/archive/master.zip
+    dcos config set package.cache /tmp/dcos
+    dcos package update
 
 #. Get started by calling the DCOS CLI help::
 
