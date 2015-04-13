@@ -606,6 +606,35 @@ def test_show_task():
     _remove_app('zero-instance-app')
 
 
+def test_bad_configuration():
+    returncode, port, stderr = exec_command(
+        ['dcos', 'config', 'show', 'marathon.port'])
+
+    assert returncode == 0
+    assert stderr == b''
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'config', 'set', 'marathon.port', str(int(port) + 1)])
+    assert returncode == 0
+    assert stdout == b''
+    assert stderr == b''
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'marathon', 'app', 'list'])
+
+    expected_message = b"Error: Marathon likely misconfigured. " +  \
+                       b"Please check your marathon port and host settings. "
+
+    assert stderr.startswith(expected_message)
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'config', 'set', 'marathon.port', port])
+
+    assert returncode == 0
+    assert stdout == b''
+    assert stderr == b''
+
+
 def _list_apps(app_id=None):
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'list'])
