@@ -28,8 +28,11 @@ to read about a specific subcommand.
 
 
 import os
-import subprocess
+import sys
+import logging
+from subprocess import Popen, PIPE
 
+import analytics
 import dcoscli
 import docopt
 from dcos.api import constants, emitting, subcommand, util
@@ -54,6 +57,10 @@ def main():
         emitter.publish(err)
         return 1
 
+    # The requests package emits INFO logs.  We want to exclude those,
+    # even if the user has selected --log-level=INFO.
+    logging.getLogger('requests').setLevel(logging.WARNING)
+
     command = args['<command>']
 
     if not command:
@@ -64,7 +71,43 @@ def main():
         emitter.publish(err)
         return 1
 
-    return subprocess.call([executable,  command] + args['<args>'])
+    subproc = Popen([executable,  command] + args['<args>'],
+                    stderr=PIPE)
+
+    return wait_and_track(subproc)
+
+
+
+WRITE_KEY = '51ybGTeFEFU1xo6u10XMDrr6kATFyRyh'
+def wait_and_track(subproc):
+    # capture and print stderr
+    err = ''
+    while subproc.poll() is None:
+        err_buff = subproc.stderr.read()
+        sys.stderr.write(err_buff)
+        err += err_buff
+
+    exit_code = subproc.poll()
+
+    # segment.io analytics
+    analytics.write_key = WRITE_KEY
+    try:
+        # We don't have user id's right now, but segment.io requires
+        # them, so we use a constant (1)
+        analytics.track(1, 'dcos-cli', {
+            'cmd': ' '.join(sys.argv),
+            'exit_code': exit_code,
+            'err': err or None
+        })
+
+        analytics.flush()
+    except:
+        # ignore segment.io exceptions
+        pass
+
+    return exit_code
+
+
 
 
 def _config_log_level_environ(log_level):
