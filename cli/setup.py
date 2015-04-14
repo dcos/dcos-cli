@@ -1,7 +1,7 @@
-from setuptools import setup, find_packages
 from os import path
 
 import dcoscli
+from setuptools import find_packages, setup
 
 here = path.abspath(path.dirname(__file__))
 
@@ -37,7 +37,7 @@ setup(
         'Topic :: Software Development :: User Interfaces',
 
         # Pick your license as you wish (should match "license" above)
-        'License :: OSI Approved :: TODO License',
+        'License :: OSI Approved :: Apache Software License',
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
@@ -57,8 +57,8 @@ setup(
     # simple. Or you can use find_packages().
     packages=find_packages(exclude=['tests', 'bin']),
 
-    # List run-time dependencies here.  These will be installed by pip when your
-    # project is installed. For an analysis of "install_requires" vs pip's
+    # List run-time dependencies here.  These will be installed by pip when
+    # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
