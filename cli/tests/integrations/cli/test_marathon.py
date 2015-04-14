@@ -632,6 +632,11 @@ def _remove_app(app_id):
     assert stdout == b''
     assert stderr == b''
 
+    # Let's make sure that we don't return until the deployment has finished
+    result = _list_deployments(None, app_id)
+    if len(result) != 0:
+        _watch_deployment(result[0]['id'], 60)
+
 
 def _add_app(file_path):
     with open(file_path) as fd:
@@ -711,7 +716,8 @@ def _list_deployments(expected_count, app_id=None):
     result = json.loads(stdout.decode('utf-8'))
 
     assert returncode == 0
-    assert len(result) == expected_count
+    if expected_count is not None:
+        assert len(result) == expected_count
     assert stderr == b''
 
     return result
