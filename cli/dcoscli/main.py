@@ -35,6 +35,7 @@ from subprocess import Popen, PIPE
 import analytics
 import dcoscli
 import docopt
+import requests
 from dcos.api import constants, emitting, subcommand, util
 
 emitter = emitting.FlatEmitter()
@@ -60,6 +61,10 @@ def main():
     # The requests package emits INFO logs.  We want to exclude those,
     # even if the user has selected --log-level=INFO.
     logging.getLogger('requests').setLevel(logging.WARNING)
+
+    # urllib3 is printing an SSL warning we want to silence.  See
+    # DCOS-1007.
+    requests.packages.urllib3.disable_warnings()
 
     command = args['<command>']
 
