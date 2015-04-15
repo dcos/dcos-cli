@@ -27,7 +27,6 @@ to read about a specific subcommand.
 """
 
 
-import logging
 import os
 import sys
 from subprocess import PIPE, Popen
@@ -36,12 +35,10 @@ import analytics
 import dcoscli
 import docopt
 import requests
-from dcos.api import constants, emitting, subcommand, util, config
+from dcos.api import config, constants, emitting, subcommand, util
 from dcoscli.constants import SEGMENT_IO_WRITE_KEY
 
 emitter = emitting.FlatEmitter()
-
-
 
 
 def main():
@@ -100,6 +97,7 @@ def wait_and_track(subproc):
 
     return exit_code
 
+
 def track(exit_code, err):
     # segment.io analytics
     try:
@@ -115,7 +113,6 @@ def track(exit_code, err):
     except:
         # ignore segment.io exceptions
         pass
-
 
 
 def _config_log_level_environ(log_level):

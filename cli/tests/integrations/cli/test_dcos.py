@@ -127,6 +127,7 @@ def test_invalid_log_level_flag():
                       b"'critical']\n")
     assert stderr == b''
 
+
 def _mock_analytics_run(args):
     with mock.patch('sys.argv', args):
         analytics.track = Mock()
