@@ -88,7 +88,7 @@ def wait_and_track(subproc):
     # capture and print stderr
     err = ''
     while subproc.poll() is None:
-        err_buff = subproc.stderr.read()
+        err_buff = subproc.stderr.read().decode('utf-8')
         sys.stderr.write(err_buff)
         err += err_buff
 
