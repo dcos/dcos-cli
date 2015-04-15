@@ -26,7 +26,7 @@ Environment Variables:
 to read about a specific subcommand.
 """
 
-
+import json
 import os
 import sys
 from subprocess import PIPE, Popen
@@ -89,24 +89,26 @@ def wait_and_track(subproc):
 
     exit_code = subproc.poll()
 
-    con = config.load_from_path(
+    conf = config.load_from_path(
         os.environ[constants.DCOS_CONFIG_ENV])
 
-    if con.get('core.report', True):
-        track(exit_code, err)
+    if conf.get('core.report', True):
+        track(exit_code, err, conf)
 
     return exit_code
 
 
-def track(exit_code, err):
+def track(exit_code, err, conf):
     # segment.io analytics
     try:
         # We don't have user id's right now, but segment.io requires
         # them, so we use a constant (1)
-        analytics.track(1, 'dcos-cli', {
+        analytics.track('<dcos-cli-user>', 'dcos-cli', {
             'cmd': ' '.join(sys.argv),
             'exit_code': exit_code,
-            'err': err or None
+            'err': err or None,
+            'dcoscli.version': dcoscli.version,
+            'config': json.dumps(list(conf.property_items()))
         })
 
         analytics.flush()

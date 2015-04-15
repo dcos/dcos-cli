@@ -1,7 +1,9 @@
+import json
 import os
 
 import analytics
-from dcos.api import constants, util
+import dcoscli
+from dcos.api import config, constants, util
 from dcoscli.main import main
 
 import mock
@@ -135,13 +137,21 @@ def _mock_analytics_run(args):
         return main()
 
 
+def _analytics_base_properties(args):
+    conf = config.load_from_path(os.environ[constants.DCOS_CONFIG_ENV])
+    return {'cmd': ' '.join(args),
+            'exit_code': 0,
+            'err': None,
+            'dcoscli.version': dcoscli.version,
+            'config': json.dumps(list(conf.property_items()))}
+
+
 def test_analytics_no_err():
     args = ['dcos']
     exit_code = _mock_analytics_run(args)
-    analytics.track.assert_called_with(1, 'dcos-cli',
-                                       {'cmd': ' '.join(args),
-                                        'exit_code': 0,
-                                        'err': None})
+
+    props = _analytics_base_properties(args)
+    analytics.track.assert_called_with('<dcos-cli-user>', 'dcos-cli', props)
     analytics.flush.assert_called_with()
     assert exit_code == 0
 
@@ -149,10 +159,11 @@ def test_analytics_no_err():
 def test_analytics_err():
     args = ['dcos', 'marathon', 'task', 'show', 'asdf']
     exit_code = _mock_analytics_run(args)
-    attrs = {'cmd': ' '.join(args),
-             'exit_code': 1,
-             'err': "Task 'asdf' does not exist\n"}
-    analytics.track.assert_called_with(1, 'dcos-cli', attrs)
+
+    props = _analytics_base_properties(args)
+    props['exit_code'] = 1
+    props['err'] = "Task 'asdf' does not exist\n"
+    analytics.track.assert_called_with('<dcos-cli-user>', 'dcos-cli', props)
     analytics.flush.assert_called_with()
     assert exit_code == 1
 
