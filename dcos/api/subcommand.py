@@ -110,20 +110,23 @@ def documentation(executable_path):
     :rtype: (str, str)
     """
 
-    return (noun(executable_path), info(executable_path))
+    path_noun = noun(executable_path)
+    return (path_noun, info(executable_path, path_noun))
 
 
-def info(executable_path):
+def info(executable_path, path_noun):
     """Collects subcommand information
 
     :param executable_path: real path to the dcos subcommand
     :type executable_path: str
+    :param path_noun: subcommand
+    :type path_noun: str
     :returns: the subcommand information
     :rtype: str
     """
 
     out = subprocess.check_output(
-        [executable_path, noun(executable_path), '--info'])
+        [executable_path, path_noun, '--info'])
 
     return out.decode('utf-8').strip()
 
