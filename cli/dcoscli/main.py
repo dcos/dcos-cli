@@ -26,13 +26,17 @@ Environment Variables:
 to read about a specific subcommand.
 """
 
-
+import json
 import os
-import subprocess
+import sys
+from subprocess import PIPE, Popen
 
+import analytics
 import dcoscli
 import docopt
-from dcos.api import constants, emitting, subcommand, util
+import requests
+from dcos.api import config, constants, emitting, subcommand, util
+from dcoscli.constants import SEGMENT_IO_WRITE_KEY
 
 emitter = emitting.FlatEmitter()
 
@@ -54,6 +58,10 @@ def main():
         emitter.publish(err)
         return 1
 
+    # urllib3 is printing an SSL warning we want to silence.  See
+    # DCOS-1007.
+    requests.packages.urllib3.disable_warnings()
+
     command = args['<command>']
 
     if not command:
@@ -64,7 +72,49 @@ def main():
         emitter.publish(err)
         return 1
 
-    return subprocess.call([executable,  command] + args['<args>'])
+    subproc = Popen([executable,  command] + args['<args>'],
+                    stderr=PIPE)
+
+    analytics.write_key = SEGMENT_IO_WRITE_KEY
+    return wait_and_track(subproc)
+
+
+def wait_and_track(subproc):
+    # capture and print stderr
+    err = ''
+    while subproc.poll() is None:
+        err_buff = subproc.stderr.read().decode('utf-8')
+        sys.stderr.write(err_buff)
+        err += err_buff
+
+    exit_code = subproc.poll()
+
+    conf = config.load_from_path(
+        os.environ[constants.DCOS_CONFIG_ENV])
+
+    if conf.get('core.report', True):
+        track(exit_code, err, conf)
+
+    return exit_code
+
+
+def track(exit_code, err, conf):
+    # segment.io analytics
+    try:
+        # We don't have user id's right now, but segment.io requires
+        # them, so we use a constant (1)
+        analytics.track('<dcos-cli-user>', 'dcos-cli', {
+            'cmd': ' '.join(sys.argv),
+            'exit_code': exit_code,
+            'err': err or None,
+            'dcoscli.version': dcoscli.version,
+            'config': json.dumps(list(conf.property_items()))
+        })
+
+        analytics.flush()
+    except:
+        # ignore segment.io exceptions
+        pass
 
 
 def _config_log_level_environ(log_level):
