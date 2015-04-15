@@ -1,14 +1,12 @@
 import os
 
-import mock
-from mock import Mock
 import analytics
-
-from dcoscli.main import main
 from dcos.api import constants, util
+from dcoscli.main import main
 
+import mock
 from common import exec_command
-
+from mock import Mock
 
 
 def test_default():
@@ -131,6 +129,7 @@ def test_invalid_log_level_flag():
                       b"'critical']\n")
     assert stderr == b''
 
+
 def test_analytics_no_err():
     args = ['dcos']
     with mock.patch('sys.argv', args):
@@ -145,16 +144,17 @@ def test_analytics_no_err():
 
         assert exit_code == 0
 
+
 def test_analytics_err():
     args = ['dcos', 'marathon', 'task', 'show', 'asdf']
     with mock.patch('sys.argv', args):
         analytics.track = Mock()
         analytics.flush = Mock()
         exit_code = main()
-        analytics.track.assert_called_with(1, 'dcos-cli',
-                                           {'cmd': ' '.join(args),
-                                            'exit_code': 1,
-                                            'err': "Task 'asdf' does not exist\n"})
+        attrs = {'cmd': ' '.join(args),
+                 'exit_code': 1,
+                 'err': "Task 'asdf' does not exist\n"}
+        analytics.track.assert_called_with(1, 'dcos-cli', attrs)
         analytics.flush.assert_called_with()
 
         assert exit_code == 1

@@ -27,10 +27,10 @@ to read about a specific subcommand.
 """
 
 
+import logging
 import os
 import sys
-import logging
-from subprocess import Popen, PIPE
+from subprocess import PIPE, Popen
 
 import analytics
 import dcoscli
@@ -39,6 +39,8 @@ import requests
 from dcos.api import constants, emitting, subcommand, util
 
 emitter = emitting.FlatEmitter()
+
+WRITE_KEY = '51ybGTeFEFU1xo6u10XMDrr6kATFyRyh'
 
 
 def main():
@@ -82,8 +84,6 @@ def main():
     return wait_and_track(subproc)
 
 
-
-WRITE_KEY = '51ybGTeFEFU1xo6u10XMDrr6kATFyRyh'
 def wait_and_track(subproc):
     # capture and print stderr
     err = ''
@@ -111,8 +111,6 @@ def wait_and_track(subproc):
         pass
 
     return exit_code
-
-
 
 
 def _config_log_level_environ(log_level):
