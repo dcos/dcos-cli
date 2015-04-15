@@ -36,11 +36,12 @@ import analytics
 import dcoscli
 import docopt
 import requests
-from dcos.api import constants, emitting, subcommand, util
+from dcos.api import constants, emitting, subcommand, util, config
+from dcoscli.constants import SEGMENT_IO_WRITE_KEY
 
 emitter = emitting.FlatEmitter()
 
-WRITE_KEY = '51ybGTeFEFU1xo6u10XMDrr6kATFyRyh'
+
 
 
 def main():
@@ -60,10 +61,6 @@ def main():
         emitter.publish(err)
         return 1
 
-    # The requests package emits INFO logs.  We want to exclude those,
-    # even if the user has selected --log-level=INFO.
-    logging.getLogger('requests').setLevel(logging.WARNING)
-
     # urllib3 is printing an SSL warning we want to silence.  See
     # DCOS-1007.
     requests.packages.urllib3.disable_warnings()
@@ -81,6 +78,7 @@ def main():
     subproc = Popen([executable,  command] + args['<args>'],
                     stderr=PIPE)
 
+    analytics.write_key = SEGMENT_IO_WRITE_KEY
     return wait_and_track(subproc)
 
 
@@ -94,8 +92,16 @@ def wait_and_track(subproc):
 
     exit_code = subproc.poll()
 
+    con = config.load_from_path(
+        os.environ[constants.DCOS_CONFIG_ENV])
+
+    if con.get('core.report', True):
+        track(exit_code, err)
+
+    return exit_code
+
+def track(exit_code, err):
     # segment.io analytics
-    analytics.write_key = WRITE_KEY
     try:
         # We don't have user id's right now, but segment.io requires
         # them, so we use a constant (1)
@@ -110,7 +116,6 @@ def wait_and_track(subproc):
         # ignore segment.io exceptions
         pass
 
-    return exit_code
 
 
 def _config_log_level_environ(log_level):

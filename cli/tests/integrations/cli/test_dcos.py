@@ -6,7 +6,7 @@ from dcoscli.main import main
 
 import mock
 from common import exec_command
-from mock import Mock
+from mock import Mock, patch
 
 
 def test_default():
@@ -107,7 +107,6 @@ def test_log_level_flag():
 
     assert returncode == 0
     assert stdout == b"Get and set DCOS command line options\n"
-    assert stderr == b''
 
 
 def test_capital_log_level_flag():
@@ -116,7 +115,6 @@ def test_capital_log_level_flag():
 
     assert returncode == 0
     assert stdout == b"Get and set DCOS command line options\n"
-    assert stderr == b''
 
 
 def test_invalid_log_level_flag():
@@ -129,32 +127,41 @@ def test_invalid_log_level_flag():
                       b"'critical']\n")
     assert stderr == b''
 
-
-def test_analytics_no_err():
-    args = ['dcos']
+def _mock_analytics_run(args):
     with mock.patch('sys.argv', args):
         analytics.track = Mock()
         analytics.flush = Mock()
-        exit_code = main()
-        analytics.track.assert_called_with(1, 'dcos-cli',
-                                           {'cmd': ' '.join(args),
-                                            'exit_code': 0,
-                                            'err': None})
-        analytics.flush.assert_called_with()
+        return main()
 
-        assert exit_code == 0
+
+def test_analytics_no_err():
+    args = ['dcos']
+    exit_code = _mock_analytics_run(args)
+    analytics.track.assert_called_with(1, 'dcos-cli',
+                                       {'cmd': ' '.join(args),
+                                        'exit_code': 0,
+                                        'err': None})
+    analytics.flush.assert_called_with()
+    assert exit_code == 0
 
 
 def test_analytics_err():
     args = ['dcos', 'marathon', 'task', 'show', 'asdf']
-    with mock.patch('sys.argv', args):
-        analytics.track = Mock()
-        analytics.flush = Mock()
-        exit_code = main()
-        attrs = {'cmd': ' '.join(args),
-                 'exit_code': 1,
-                 'err': "Task 'asdf' does not exist\n"}
-        analytics.track.assert_called_with(1, 'dcos-cli', attrs)
-        analytics.flush.assert_called_with()
+    exit_code = _mock_analytics_run(args)
+    attrs = {'cmd': ' '.join(args),
+             'exit_code': 1,
+             'err': "Task 'asdf' does not exist\n"}
+    analytics.track.assert_called_with(1, 'dcos-cli', attrs)
+    analytics.flush.assert_called_with()
+    assert exit_code == 1
 
-        assert exit_code == 1
+
+def test_analytics_report_config():
+    args = ['dcos']
+    new_env = {constants.DCOS_CONFIG_ENV:
+               os.path.join('tests', 'data', 'dcos', 'dcos_no_reporting.toml')}
+    with patch.dict(os.environ, new_env):
+        exit_code = _mock_analytics_run(args)
+        assert analytics.track.call_count == 0
+        assert analytics.flush.call_count == 0
+        assert exit_code == 0
