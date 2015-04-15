@@ -10,10 +10,9 @@ from common import exec_command
 
 @pytest.fixture
 def env():
-    config_path = os.path.join("tests", "data", "config", "dcos.toml")
     return {
         constants.PATH_ENV: os.environ[constants.PATH_ENV],
-        constants.DCOS_CONFIG_ENV: config_path
+        constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "dcos.toml")
     }
 
 
