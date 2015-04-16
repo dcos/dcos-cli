@@ -118,7 +118,7 @@ def test_set_existing_integral_property(env):
 
 
 def test_append_empty_list(env):
-    _unset_value('package.sources', None, env)
+    _set_value('package.sources', '[]', env)
     _append_value(
         'package.sources',
         'git://github.com/mesosphere/universe.git',
@@ -139,7 +139,7 @@ def test_append_empty_list(env):
 
 
 def test_prepend_empty_list(env):
-    _unset_value('package.sources', None, env)
+    _set_value('package.sources', '[]', env)
     _prepend_value(
         'package.sources',
         'https://github.com/mesosphere/universe/archive/master.zip',
@@ -212,19 +212,22 @@ def test_prepend_non_list(env):
 
 
 def test_unset_property(env):
-    _unset_value('marathon.host', None, env)
-    _get_missing_value('marathon.host', env)
-    _set_value('marathon.host', 'localhost', env)
+    _unset_value('core.reporting', None, env)
+    _get_missing_value('core.reporting', env)
+    _set_value('core.reporting', 'false', env)
 
 
-def test_unset_missing_property(env):
+def test_property_validation(env):
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'config', 'unset', 'missing.property'],
+        ['dcos', 'config', 'unset', 'marathon.host'],
         env)
 
     assert returncode == 1
     assert stdout == b''
-    assert stderr == b"Property 'missing.property' doesn't exist\n"
+    assert stderr == b"""Error: 'host' is a required property
+Path: marathon
+Value: {"port": 8080}
+"""
 
 
 def test_unset_top_property(env):
@@ -242,9 +245,8 @@ def test_unset_top_property(env):
     )
 
 
-def test_unset_whole_list(env):
-    _unset_value('package.sources', None, env)
-    _get_missing_value('package.sources', env)
+def test_set_whole_list(env):
+    _set_value('package.sources', '[]', env)
     _set_value(
         'package.sources',
         '["git://github.com/mesosphere/universe.git", '
@@ -307,23 +309,6 @@ def test_validate(env):
     assert stderr == b''
 
 
-def test_validation_error(env):
-    _unset_value('marathon.host', None, env)
-
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'config', 'validate'],
-        env)
-
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr == b"""Error: 'host' is a required property
-Path: marathon
-Value: {"port": 8080}
-"""
-
-    _set_value('marathon.host', 'localhost', env)
-
-
 def test_set_property_key(env):
     returncode, stdout, stderr = exec_command(
         ['dcos', 'config', 'set', 'path.to.value', 'cool new value'],
@@ -335,9 +320,9 @@ def test_set_property_key(env):
 
 
 def test_set_missing_property(env):
-    _unset_value('marathon.host', None, env)
-    _set_value('marathon.host', 'localhost', env)
-    _get_value('marathon.host', 'localhost', env)
+    _unset_value('core.reporting', None, env)
+    _set_value('core.reporting', 'false', env)
+    _get_value('core.reporting', 'false', env)
 
 
 def test_set_core_property(env):
@@ -347,6 +332,7 @@ def test_set_core_property(env):
 
 
 def _set_value(key, value, env):
+
     returncode, stdout, stderr = exec_command(
         ['dcos', 'config', 'set', key, value],
         env)

@@ -132,9 +132,7 @@ def _set(name, value):
         return 1
 
     toml_config[name] = python_value
-    _save_config_file(config_path, toml_config)
-
-    return 0
+    return _save_config_file(config_path, toml_config)
 
 
 def _append(name, value):
@@ -151,9 +149,7 @@ def _append(name, value):
         return 1
 
     toml_config[name] = toml_config.get(name, []) + python_value
-    _save_config_file(config_path, toml_config)
-
-    return 0
+    return _save_config_file(config_path, toml_config)
 
 
 def _prepend(name, value):
@@ -170,9 +166,7 @@ def _prepend(name, value):
         return 1
 
     toml_config[name] = python_value + toml_config.get(name, [])
-    _save_config_file(config_path, toml_config)
-
-    return 0
+    return _save_config_file(config_path, toml_config)
 
 
 def _unset(name, index):
@@ -215,9 +209,7 @@ def _unset(name, index):
                 'Unsetting based on an index is only supported for lists'))
         return 1
 
-    _save_config_file(config_path, toml_config)
-
-    return 0
+    return _save_config_file(config_path, toml_config)
 
 
 def _show(name):
@@ -244,38 +236,6 @@ def _show(name):
         # Let's list all of the values
         for key, value in sorted(toml_config.property_items()):
             emitter.publish('{}={}'.format(key, value))
-
-    return 0
-
-
-def _validate():
-    """
-    :returns: process status
-    :rtype: int
-    """
-
-    _, toml_config = _load_config()
-
-    root_schema = {
-        '$schema': 'http://json-schema.org/schema#',
-        'type': 'object',
-        'properties': {},
-        'additionalProperties': False,
-    }
-
-    # Load the config schema from all the subsections into the root schema
-    for section in toml_config.keys():
-        config_schema, err = _get_config_schema(section)
-        if err is not None:
-            emitter.publish(err)
-            return 1
-
-        root_schema['properties'][section] = config_schema
-
-    err = util.validate_json(toml_config._dictionary, root_schema)
-    if err is not None:
-        emitter.publish(err)
-        return 1
 
     return 0
 
@@ -308,17 +268,57 @@ def _load_config():
     return (config_path, config.mutable_load_from_path(config_path))
 
 
+def _validate(toml_config=_load_config()[1]):
+    """
+    :param toml_config: TOML configuration object
+    :type toml_config: MutableToml or Toml
+    :returns: process status
+    :rtype: int
+    """
+
+    root_schema = {
+        '$schema': 'http://json-schema.org/schema#',
+        'type': 'object',
+        'properties': {},
+        'additionalProperties': False,
+    }
+
+    # Load the config schema from all the subsections into the root schema
+    for section in toml_config.keys():
+        config_schema, err = _get_config_schema(section)
+        if err is not None:
+            emitter.publish(err)
+            return 1
+
+        root_schema['properties'][section] = config_schema
+
+    err = util.validate_json(toml_config._dictionary, root_schema)
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
+    return 0
+
+
 def _save_config_file(config_path, toml_config):
     """
     :param config_path: path to configuration file.
     :type config_path: str
     :param toml_config: TOML configuration object
     :type toml_config: MutableToml or Toml
+    :returns: process status
+    :rtype: int
     """
 
     serial = toml.dumps(toml_config._dictionary)
+    error_status = _validate(toml_config)
+    if error_status != 0:
+        return error_status
+
     with open(config_path, 'w') as config_file:
         config_file.write(serial)
+
+    return 0
 
 
 def _get_config_schema(command):
