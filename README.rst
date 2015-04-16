@@ -45,7 +45,7 @@ Configure Environment and Run
 #. :code:`source` the setup file to add the :code:`dcos` command line
    interface to your :code:`PATH` and create an empty configuration file::
 
-    source env/bin/env-setup
+    source bin/env-setup-dev
 
 #. Configure Marathon, changing the values below as appropriate for your local
    installation::

@@ -63,7 +63,6 @@ def list_paths(dcos_path):
     subcommands = [
         os.path.join(subcommand_directory, package, 'bin', filename)
 
-
         for package in distributions(dcos_path)
 
         for filename in os.listdir(

@@ -103,7 +103,6 @@ def test_log_level_flag():
 
     assert returncode == 0
     assert stdout == b"Get and set DCOS command line options\n"
-    assert stderr == b''
 
 
 def test_capital_log_level_flag():
@@ -112,7 +111,6 @@ def test_capital_log_level_flag():
 
     assert returncode == 0
     assert stdout == b"Get and set DCOS command line options\n"
-    assert stderr == b''
 
 
 def test_invalid_log_level_flag():
