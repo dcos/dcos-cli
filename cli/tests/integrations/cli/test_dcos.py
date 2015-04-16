@@ -1,6 +1,9 @@
+import json
 import os
 
-from dcos.api import constants, util
+import dcoscli
+import rollbar
+from dcos.api import config, constants, util
 
 from common import exec_command
 
@@ -103,7 +106,6 @@ def test_log_level_flag():
 
     assert returncode == 0
     assert stdout == b"Get and set DCOS command line options\n"
-    assert stderr == b''
 
 
 def test_capital_log_level_flag():
@@ -112,7 +114,6 @@ def test_capital_log_level_flag():
 
     assert returncode == 0
     assert stdout == b"Get and set DCOS command line options\n"
-    assert stderr == b''
 
 
 def test_invalid_log_level_flag():

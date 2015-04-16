@@ -1,5 +1,5 @@
 [core]
-reporting = true
+reporting = false
 [subcommand]
 pip_find_links = "../dist"
 [marathon]

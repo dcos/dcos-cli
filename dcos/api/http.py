@@ -171,3 +171,8 @@ def delete(url, **kwargs):
     """
 
     return request('delete', url, **kwargs)
+
+
+def silence_requests_warnings():
+    """Silence warnings from requests.packages.urllib3.  See DCOS-1007."""
+    requests.packages.urllib3.disable_warnings()

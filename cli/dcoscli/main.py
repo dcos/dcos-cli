@@ -26,14 +26,20 @@ Environment Variables:
 to read about a specific subcommand.
 """
 
-
+import json
+import logging
 import os
-import subprocess
+import sys
+from subprocess import PIPE, Popen
 
 import dcoscli
 import docopt
-from dcos.api import constants, emitting, subcommand, util
+import rollbar
+from dcos.api import config, constants, emitting, http, subcommand, util
+from dcoscli.constants import ROLLBAR_SERVER_POST_KEY
+import dcoscli.settings as settings
 
+logger = logging.getLogger(__name__)
 emitter = emitting.FlatEmitter()
 
 
@@ -55,6 +61,7 @@ def main():
         return 1
 
     command = args['<command>']
+    http.silence_requests_warnings()
 
     if not command:
         command = "help"
@@ -64,7 +71,65 @@ def main():
         emitter.publish(err)
         return 1
 
-    return subprocess.call([executable,  command] + args['<args>'])
+    subproc = Popen([executable,  command] + args['<args>'],
+                    stderr=PIPE)
+
+    rollbar.init(ROLLBAR_SERVER_POST_KEY, 'prod' if settings.PRODUCTION else 'dev')
+    return _wait_and_track(subproc)
+
+def _wait_and_capture(subproc):
+    # capture and print stderr
+    err = ''
+    while subproc.poll() is None:
+        err_buff = subproc.stderr.read().decode('utf-8')
+        sys.stderr.write(err_buff)
+        err += err_buff
+
+    exit_code = subproc.poll()
+
+    return exit_code, err
+
+
+def _wait_and_track(subproc):
+    """
+    :param subproc: Subprocess to capture
+    :type subproc: Popen
+    :returns: exit code of subproc
+    :rtype: int
+    """
+
+    exit_code, err = _wait_and_capture(subproc)
+
+    conf = config.load_from_path(
+        os.environ[constants.DCOS_CONFIG_ENV])
+
+    if err.startswith('Traceback') and conf.get('core.reporting', True):
+        _track(exit_code, err, conf)
+
+    return exit_code
+
+
+def _track(exit_code, err, conf):
+    """
+    :param exit_code: exit code of tracked process
+    :type exit_code: int
+    :param err: stderr of tracked process
+    :type err: str
+    :param conf: dcos config file
+    :type conf: Toml
+    :rtype: None
+    """
+
+    # rollbar analytics
+    try:
+        rollbar.report_message(err, 'error', extra_data={
+            'cmd': ' '.join(sys.argv),
+            'exit_code': exit_code,
+            'dcoscli.version': dcoscli.version,
+            'config': json.dumps(list(conf.property_items()))
+        })
+    except Exception as e:
+        logger.exception(e)
 
 
 def _config_log_level_environ(log_level):
