@@ -1,14 +1,8 @@
-import json
 import os
 
-import analytics
-import dcoscli
-from dcos.api import config, constants, util
-from dcoscli.main import main
+from dcos.api import constants, util
 
-import mock
 from common import exec_command
-from mock import Mock, patch
 
 
 def test_default():
@@ -109,6 +103,7 @@ def test_log_level_flag():
 
     assert returncode == 0
     assert stdout == b"Get and set DCOS command line options\n"
+    assert stderr == b''
 
 
 def test_capital_log_level_flag():
@@ -117,6 +112,7 @@ def test_capital_log_level_flag():
 
     assert returncode == 0
     assert stdout == b"Get and set DCOS command line options\n"
+    assert stderr == b''
 
 
 def test_invalid_log_level_flag():
@@ -128,52 +124,3 @@ def test_invalid_log_level_flag():
                       b"values are ['debug', 'info', 'warning', 'error', "
                       b"'critical']\n")
     assert stderr == b''
-
-
-def _mock_analytics_run(args):
-    with mock.patch('sys.argv', args):
-        analytics.track = Mock()
-        analytics.flush = Mock()
-        return main()
-
-
-def _analytics_base_properties(args):
-    conf = config.load_from_path(os.environ[constants.DCOS_CONFIG_ENV])
-    return {'cmd': ' '.join(args),
-            'exit_code': 0,
-            'err': None,
-            'dcoscli.version': dcoscli.version,
-            'config': json.dumps(list(conf.property_items()))}
-
-
-def test_analytics_no_err():
-    args = ['dcos']
-    exit_code = _mock_analytics_run(args)
-
-    props = _analytics_base_properties(args)
-    analytics.track.assert_called_with('<dcos-cli-user>', 'dcos-cli', props)
-    analytics.flush.assert_called_with()
-    assert exit_code == 0
-
-
-def test_analytics_err():
-    args = ['dcos', 'marathon', 'task', 'show', 'asdf']
-    exit_code = _mock_analytics_run(args)
-
-    props = _analytics_base_properties(args)
-    props['exit_code'] = 1
-    props['err'] = "Task 'asdf' does not exist\n"
-    analytics.track.assert_called_with('<dcos-cli-user>', 'dcos-cli', props)
-    analytics.flush.assert_called_with()
-    assert exit_code == 1
-
-
-def test_analytics_report_config():
-    args = ['dcos']
-    new_env = {constants.DCOS_CONFIG_ENV:
-               os.path.join('tests', 'data', 'dcos', 'dcos_no_reporting.toml')}
-    with patch.dict(os.environ, new_env):
-        exit_code = _mock_analytics_run(args)
-        assert analytics.track.call_count == 0
-        assert analytics.flush.call_count == 0
-        assert exit_code == 0
