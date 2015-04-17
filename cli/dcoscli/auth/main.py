@@ -39,6 +39,10 @@ def main():
 
 
 def _cmds():
+    """
+    :returns: all the supported commands
+    :rtype: dcos.api.cmds.Command
+    """
 
     return [cmds.Command(
         hierarchy=['auth'],
@@ -47,6 +51,15 @@ def _cmds():
 
 
 def _auth(config_schema, info):
+    """
+    :param config_schema: Whether to output the config schema
+    :type config_schema: boolean
+    :param info: Whether to output a description of this subcommand
+    :type info: boolean
+    :returns: Process status
+    :rtype: int
+    """
+
     if config_schema:
         schema = json.loads(
             pkg_resources.resource_string(
