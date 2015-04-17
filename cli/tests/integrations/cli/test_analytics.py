@@ -69,11 +69,11 @@ def test_production_setting_false():
 
 
 def _config_path_reporting():
-    return os.path.join('tests', 'data', 'dcos', 'dcos_reporting.toml')
+    return os.path.join('tests', 'data', 'analytics', 'dcos_reporting.toml')
 
 
 def _config_path_no_reporting():
-    return os.path.join('tests', 'data', 'dcos', 'dcos_no_reporting.toml')
+    return os.path.join('tests', 'data', 'analytics', 'dcos_no_reporting.toml')
 
 
 def _env_reporting():
