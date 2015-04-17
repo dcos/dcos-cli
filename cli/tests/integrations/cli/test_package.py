@@ -223,6 +223,17 @@ with app id [dns-2]\n"""
     assert stderr == b''
 
 
+def test_install_missing_package():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'install', 'missing-package'])
+
+    assert returncode == 1
+    assert stdout == b''
+    assert stderr == b"""Package [missing-package] not found
+You may need to run 'dcos package update' to update your repositories
+"""
+
+
 def test_uninstall_with_id():
     returncode, stdout, stderr = exec_command(
         ['dcos', 'package', 'uninstall', 'mesos-dns', '--app-id=dns-1'])
