@@ -48,8 +48,8 @@ import os
 import dcoscli
 import docopt
 import pkg_resources
-from dcos.api import (cmds, config, constants, emitting, marathon, options,
-                      package, util)
+from dcos.api import (cmds, config, constants, emitting, errors, marathon,
+                      options, package, util)
 
 emitter = emitting.FlatEmitter()
 
@@ -177,10 +177,10 @@ def _list_sources():
 
     config = _load_config()
 
-    sources, errors = package.list_sources(config)
+    sources, errs = package.list_sources(config)
 
-    if len(errors) > 0:
-        for err in errors:
+    if len(errs) > 0:
+        for err in errs:
             emitter.publish(err)
         return 1
 
@@ -199,10 +199,10 @@ def _update():
 
     config = _load_config()
 
-    errors = package.update_sources(config)
+    errs = package.update_sources(config)
 
-    if len(errors) > 0:
-        for err in errors:
+    if len(errs) > 0:
+        for err in errs:
             emitter.publish(err)
         return 1
 
@@ -278,9 +278,14 @@ def _install(package_name, options_file, app_id, cli, app):
     config = _load_config()
 
     pkg = package.resolve_package(package_name, config)
-
     if pkg is None:
-        emitter.publish("Package [{}] not found".format(package_name))
+        emitter.publish(
+            errors.DefaultError(
+                "Package [{}] not found".format(package_name)))
+        emitter.publish(
+            errors.DefaultError(
+                "You may need to run 'dcos package update' to update your "
+                "repositories"))
         return 1
 
     options_json = {}
