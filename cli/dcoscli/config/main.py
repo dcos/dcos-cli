@@ -22,10 +22,12 @@ Positional Arguments:
 """
 
 import collections
+import json
 import os
 
 import dcoscli
 import docopt
+import pkg_resources
 import six
 import toml
 from dcos.api import (cmds, config, constants, emitting, errors, jsonitem,
@@ -326,6 +328,16 @@ def _get_config_schema(command):
     :returns: the subcommand's configuration schema
     :rtype: (dict, dcos.api.errors.Error)
     """
+
+    # core.* config variables are special.  They're valid, but don't
+    # correspond to any particular subcommand, so we must handle them
+    # separately.
+    if command == "core":
+        return (json.loads(
+            pkg_resources.resource_string(
+                'dcoscli',
+                'data/config-schema/core.json').decode('utf-8')),
+                None)
 
     executable, err = subcommand.command_executables(
         command,

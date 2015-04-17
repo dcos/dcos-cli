@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "reporting": {
+      "type": "boolean",
+      "title": "Usage Reporting",
+      "description": "Whether to report usage events to Mesosphere",
+      "default": true
+    },
+    "email": {
+      "type": "string",
+      "title": "Your email address",
+      "description": "Your email address"
+    },
+    "token": {
+      "type": "string",
+      "title": "Your OAuth token",
+      "description": "Your OAuth token"
+    }
+  },
+  "additionalProperties": false
+}
