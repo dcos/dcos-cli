@@ -1,9 +1,6 @@
-import json
 import os
 
-import dcoscli
-import rollbar
-from dcos.api import config, constants, util
+from dcos.api import constants, util
 
 from common import exec_command
 

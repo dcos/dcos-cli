@@ -33,11 +33,11 @@ import sys
 from subprocess import PIPE, Popen
 
 import dcoscli
+import dcoscli.settings as settings
 import docopt
 import rollbar
 from dcos.api import config, constants, emitting, http, subcommand, util
 from dcoscli.constants import ROLLBAR_SERVER_POST_KEY
-import dcoscli.settings as settings
 
 logger = logging.getLogger(__name__)
 emitter = emitting.FlatEmitter()
@@ -74,8 +74,10 @@ def main():
     subproc = Popen([executable,  command] + args['<args>'],
                     stderr=PIPE)
 
-    rollbar.init(ROLLBAR_SERVER_POST_KEY, 'prod' if settings.PRODUCTION else 'dev')
+    rollbar.init(ROLLBAR_SERVER_POST_KEY,
+                 'prod' if settings.PRODUCTION else 'dev')
     return _wait_and_track(subproc)
+
 
 def _wait_and_capture(subproc):
     # capture and print stderr

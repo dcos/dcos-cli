@@ -1,12 +1,15 @@
-import rollbar
+
 import json
 import os
-import mock
-from mock import Mock, patch
-from dcos.api import config, constants
+
 import dcoscli
+import rollbar
+from dcos.api import config, constants
 from dcoscli.constants import ROLLBAR_SERVER_POST_KEY
 from dcoscli.main import main
+
+from mock import Mock, patch
+
 
 def test_no_exc():
     '''Tests that a command which does not raise an exception does not
@@ -29,7 +32,8 @@ def test_exc():
     exit_code = _mock_analytics_run_exc(args)
 
     props = _analytics_properties(args, exit_code=1)
-    rollbar.report_message.assert_called_with('Traceback', 'error', extra_data=props)
+    rollbar.report_message.assert_called_with('Traceback', 'error',
+                                              extra_data=props)
     assert exit_code == 1
 
 
@@ -47,7 +51,7 @@ def test_production_setting_true():
     the 'prod' environment.
 
     '''
-    args=['dcos']
+    args = ['dcos']
     with patch('dcoscli.settings.PRODUCTION', True):
         _mock_analytics_run(args)
         rollbar.init.assert_called_with(ROLLBAR_SERVER_POST_KEY, 'prod')
@@ -58,11 +62,10 @@ def test_production_setting_false():
     the 'dev' environment.
 
     '''
-    args=['dcos']
+    args = ['dcos']
     with patch('dcoscli.settings.PRODUCTION', False):
         _mock_analytics_run(args)
         rollbar.init.assert_called_with(ROLLBAR_SERVER_POST_KEY, 'dev')
-
 
 
 def _config_path_reporting():
