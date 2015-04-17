@@ -90,6 +90,7 @@ setup(
             'dcos-marathon=dcoscli.marathon.main:main',
             'dcos-package=dcoscli.package.main:main',
             'dcos-subcommand=dcoscli.subcommand.main:main',
+            'dcos-auth=dcoscli.auth.main:main',
         ],
     },
 

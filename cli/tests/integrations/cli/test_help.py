@@ -52,6 +52,7 @@ for easy management of a DCOS installation.
 
 Available DCOS commands in '{}':
 
+\tauth           \tStore user authentication information
 \tconfig         \tGet and set DCOS command line options
 \thelp           \tDisplay command line usage information
 \tmarathon       \tDeploy and manage applications on the DCOS
