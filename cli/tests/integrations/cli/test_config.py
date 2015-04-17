@@ -67,7 +67,8 @@ def test_list_property(env):
         env)
 
     assert returncode == 0
-    assert stdout == b"""marathon.host=localhost
+    assert stdout == b"""core.reporting=True
+marathon.host=localhost
 marathon.port=8080
 package.cache=tmp/cache
 package.sources=['git://github.com/mesosphere/universe.git', \
@@ -337,6 +338,12 @@ def test_set_missing_property(env):
     _unset_value('marathon.host', None, env)
     _set_value('marathon.host', 'localhost', env)
     _get_value('marathon.host', 'localhost', env)
+
+
+def test_set_core_property(env):
+    _set_value('core.reporting', 'false', env)
+    _get_value('core.reporting', False, env)
+    _set_value('core.reporting', 'true', env)
 
 
 def _set_value(key, value, env):
