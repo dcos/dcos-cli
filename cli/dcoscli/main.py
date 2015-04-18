@@ -74,8 +74,9 @@ def main():
     subproc = Popen([executable,  command] + args['<args>'],
                     stderr=PIPE)
 
+    prod = os.environ.get('DCOS_PRODUCTION', 'true') != 'false'
     rollbar.init(ROLLBAR_SERVER_POST_KEY,
-                 'prod' if settings.PRODUCTION else 'dev')
+                 'prod' if prod else 'dev')
     return _wait_and_track(subproc)
 
 
