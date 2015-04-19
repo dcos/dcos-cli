@@ -11,18 +11,19 @@ Usage:
     dcos package search <query>
     dcos package sources
     dcos package uninstall [--all | --app-id=<app-id>] <package_name>
-    dcos package update
+    dcos package update [--validate]
 
 Options:
     -h, --help         Show this screen
     --info             Show a short description of this subcommand
     --version          Show version
     --all              Apply the operation to all matching packages
+    --app              Apply the operation only to the package's application
     --app-id=<app-id>  The application id
     --cli              Apply the operation only to the package's CLI
     --options=<file>   Path to a JSON file containing package installation
                        options
-    --app              Apply the operation only to the package's application
+    --validate         Validate package content when updating sources
 
 Configuration:
     [package]
@@ -87,7 +88,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['package', 'update'],
-            arg_keys=[],
+            arg_keys=['--validate'],
             function=_update),
 
         cmds.Command(
@@ -190,16 +191,18 @@ def _list_sources():
     return 0
 
 
-def _update():
+def _update(validate):
     """Update local package definitions from sources.
 
+    :param validate: Whether to validate package content when updating sources.
+    :type validate: bool
     :returns: Process status
     :rtype: int
     """
 
     config = _load_config()
 
-    errs = package.update_sources(config)
+    errs = package.update_sources(config, validate)
 
     if len(errs) > 0:
         for err in errs:
