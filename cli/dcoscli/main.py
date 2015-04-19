@@ -105,6 +105,11 @@ def _wait_and_track(subproc):
     conf = config.load_from_path(
         os.environ[constants.DCOS_CONFIG_ENV])
 
+    # We only want to catch exceptions, not other stderr messages
+    # (such as "task does not exist", so we look for the 'Traceback'
+    # string.  This only works for python, so we'll need to revisit
+    # this in the future when we support subcommands written in other
+    # languages.
     if err.startswith('Traceback') and conf.get('core.reporting', True):
         _track(exit_code, err, conf)
 
