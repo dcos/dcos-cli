@@ -52,9 +52,8 @@ def test_production_setting_true():
 
     '''
     args = ['dcos']
-    with patch('dcoscli.settings.PRODUCTION', True):
-        _mock_analytics_run(args)
-        rollbar.init.assert_called_with(ROLLBAR_SERVER_POST_KEY, 'prod')
+    _mock_analytics_run(args)
+    rollbar.init.assert_called_with(ROLLBAR_SERVER_POST_KEY, 'prod')
 
 
 def test_production_setting_false():
@@ -63,7 +62,7 @@ def test_production_setting_false():
 
     '''
     args = ['dcos']
-    with patch('dcoscli.settings.PRODUCTION', False):
+    with patch.dict(os.environ, {'DCOS_PRODUCTION': 'false'}):
         _mock_analytics_run(args)
         rollbar.init.assert_called_with(ROLLBAR_SERVER_POST_KEY, 'dev')
 

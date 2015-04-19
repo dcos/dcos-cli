@@ -33,7 +33,6 @@ import sys
 from subprocess import PIPE, Popen
 
 import dcoscli
-import dcoscli.settings as settings
 import docopt
 import rollbar
 from dcos.api import config, constants, emitting, http, subcommand, util
