@@ -3,6 +3,7 @@ import inspect
 import json
 import logging
 import os
+import platform
 import re
 import shutil
 import sys
@@ -88,8 +89,10 @@ def process_executable_path():
     :returns: the real path to the program
     :rtype: str
     """
-
-    return os.path.realpath(inspect.stack()[-1][1])
+    if is_windows_platform():
+        return os.path.realpath(inspect.stack()[-1][1])
+    else:
+        return os.path.realpath(inspect.stack()[-1][1])
 
 
 def dcos_path():
@@ -296,3 +299,11 @@ class CustomJsonRenderer(pystache.Renderer):
         :rtype: str
         """
         return json.dumps(val)
+
+
+def is_windows_platform():
+    """
+    :returns: True is program is running on Windows platform, False in other case
+    :rtype: boolean
+    """
+    return platform.system() == "Windows"
