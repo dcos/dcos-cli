@@ -164,7 +164,8 @@ def noun(executable_path):
 
     basename = os.path.basename(executable_path)
     if util.is_windows_platform():
-        return basename[len(constants.DCOS_COMMAND_PREFIX):].replace('.exe', '')
+        return basename[len(constants.DCOS_COMMAND_PREFIX):].replace('.exe',
+                                                                     '')
     else:
         return basename[len(constants.DCOS_COMMAND_PREFIX):]
 
@@ -242,7 +243,8 @@ def _install_with_pip(
 
     new_package_dir = not os.path.exists(package_directory)
 
-    if not os.path.exists(os.path.join(package_directory, BIN_DIRECTORY, 'pip')):
+    if not os.path.exists(os.path.join(package_directory,
+                                       BIN_DIRECTORY, 'pip')):
         cmd = [os.path.join(bin_directory, 'virtualenv'), package_directory]
         print(cmd)
         if _execute_command(cmd) != 0:

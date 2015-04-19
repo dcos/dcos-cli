@@ -303,7 +303,8 @@ class CustomJsonRenderer(pystache.Renderer):
 
 def is_windows_platform():
     """
-    :returns: True is program is running on Windows platform, False in other case
+    :returns: True is program is running on Windows platform, False
+     in other case
     :rtype: boolean
     """
     return platform.system() == "Windows"
