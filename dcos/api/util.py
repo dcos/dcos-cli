@@ -88,7 +88,7 @@ def process_executable_path():
     :returns: the real path to the program
     :rtype: str
     """
-
+    print(inspect.stack()[-1][1])
     return os.path.realpath(inspect.stack()[-1][1])
 
 
