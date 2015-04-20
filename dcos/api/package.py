@@ -483,7 +483,7 @@ def acquire_file_lock(lock_file_path):
         return (None, Error("Unable to acquire the package cache lock"))
 
 
-def update_sources(config):
+def update_sources(config, validate=False):
     """Overwrites the local package cache with the latest source data.
 
     :param config: Configuration dictionary
@@ -544,10 +544,11 @@ def update_sources(config):
                     continue  # keep updating the other sources
 
                 # validate content
-                validation_errors = Registry(source, stage_dir).validate()
-                if len(validation_errors) > 0:
-                    errors += validation_errors
-                    continue  # keep updating the other sources
+                if validate:
+                    validation_errors = Registry(source, stage_dir).validate()
+                    if len(validation_errors) > 0:
+                        errors += validation_errors
+                        continue  # keep updating the other sources
 
                 # remove the $CACHE/source.hash() directory
                 target_dir = os.path.join(cache_dir, source.hash())
