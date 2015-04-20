@@ -20,7 +20,9 @@ def command_executables(subcommand, dcos_path):
     :returns: the dcos program path
     :rtype: (str, dcos.api.errors.Error)
     """
+    import inspect
     print(dcos_path)
+    print('inspect {}'.format(inspect.stack()[-1][1]))
     paths = list_paths(dcos_path)
     print(paths)
 
