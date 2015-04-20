@@ -19,7 +19,7 @@ def test_no_exc():
 
     args = ['dcos']
     exit_code = _mock_analytics_run(args)
-    print 'test_no_exc'
+    print 'test_no_exc2'
 
     assert rollbar.report_message.call_count == 0
     assert exit_code == 0
