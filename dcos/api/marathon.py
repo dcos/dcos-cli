@@ -1,7 +1,7 @@
 import json
 
 from dcos.api import http, util
-from dcos.api.errors import DefaultError
+from dcos.api.errors import DefaultError, Error
 
 try:
     from urllib import quote
@@ -22,13 +22,16 @@ def create_client(config):
     return Client(config['marathon.host'], config['marathon.port'])
 
 
-def _response_to_error(response):
+def _to_error(response):
     """
-    :param response: HTTP resonse object
-    :type response: requests.Response
+    :param response: HTTP response object or Error
+    :type response: requests.Response or Error
     :returns: the error embedded in the response JSON
     :rtype: Error
     """
+
+    if isinstance(response, Error):
+        return DefaultMarathonError(response.error())
 
     message = response.json().get('message')
     if message is None:
@@ -37,10 +40,10 @@ def _response_to_error(response):
             logger.error(
                 'Marathon server did not return a message: %s',
                 response.json())
-            return DefaultError('Unknown error from Marathon')
+            return DefaultMarathonError()
 
         msg = '\n'.join(error['error'] for error in errs)
-        return DefaultError('Error(s): {}'.format(msg))
+        return DefaultMarathonError(msg)
 
     return DefaultError('Error: {}'.format(response.json()['message']))
 
@@ -92,7 +95,7 @@ class Client(object):
             url = self._create_url(
                 'v2/apps{}/versions/{}'.format(app_id, version))
 
-        response, error = http.get(url, response_to_error=_response_to_error)
+        response, error = http.get(url, to_error=_to_error)
 
         if error is not None:
             return (None, error)
@@ -127,7 +130,7 @@ class Client(object):
 
         url = self._create_url('v2/apps{}/versions'.format(app_id))
 
-        response, error = http.get(url, response_to_error=_response_to_error)
+        response, error = http.get(url, to_error=_to_error)
 
         if error is not None:
             return (None, error)
@@ -146,7 +149,7 @@ class Client(object):
 
         url = self._create_url('v2/apps')
 
-        response, error = http.get(url, response_to_error=_response_to_error)
+        response, error = http.get(url, to_error=_to_error)
 
         if error is not None:
             return (None, error)
@@ -173,7 +176,7 @@ class Client(object):
 
         response, error = http.post(url,
                                     json=app_json,
-                                    response_to_error=_response_to_error)
+                                    to_error=_to_error)
 
         if error is not None:
             return (None, error)
@@ -205,7 +208,7 @@ class Client(object):
         response, error = http.put(url,
                                    params=params,
                                    json=payload,
-                                   response_to_error=_response_to_error)
+                                   to_error=_to_error)
 
         if error is not None:
             return (None, error)
@@ -237,7 +240,7 @@ class Client(object):
         response, error = http.put(url,
                                    params=params,
                                    json={'instances': int(instances)},
-                                   response_to_error=_response_to_error)
+                                   to_error=_to_error)
 
         if error is not None:
             return (None, error)
@@ -280,7 +283,7 @@ class Client(object):
 
         response, error = http.delete(url,
                                       params=params,
-                                      response_to_error=_response_to_error)
+                                      to_error=_to_error)
 
         if error is not None:
             return error
@@ -309,7 +312,7 @@ class Client(object):
 
         response, error = http.post(url,
                                     params=params,
-                                    response_to_error=_response_to_error)
+                                    to_error=_to_error)
 
         if error is not None:
             return (None, error)
@@ -328,7 +331,7 @@ class Client(object):
         url = self._create_url('v2/deployments')
 
         response, error = http.get(url,
-                                   response_to_error=_response_to_error)
+                                   to_error=_to_error)
 
         if error is not None:
             return (None, error)
@@ -351,7 +354,7 @@ class Client(object):
 
         url = self._create_url('v2/deployments')
 
-        response, error = http.get(url, response_to_error=_response_to_error)
+        response, error = http.get(url, to_error=_to_error)
 
         if error is not None:
             return (None, error)
@@ -391,7 +394,7 @@ class Client(object):
         response, error = http.delete(
             url,
             params=params,
-            response_to_error=_response_to_error)
+            to_error=_to_error)
         if error is not None:
             return (None, error)
 
@@ -434,7 +437,7 @@ class Client(object):
 
         url = self._create_url('v2/tasks')
 
-        response, error = http.get(url, response_to_error=_response_to_error)
+        response, error = http.get(url, to_error=_to_error)
         if error is not None:
             return (None, error)
 
@@ -460,7 +463,7 @@ class Client(object):
 
         url = self._create_url('v2/tasks')
 
-        response, error = http.get(url, response_to_error=_response_to_error)
+        response, error = http.get(url, to_error=_to_error)
         if error is not None:
             return (None, error)
 
@@ -481,3 +484,16 @@ class Client(object):
         """
 
         return quote('/' + app_id.strip('/'))
+
+
+class DefaultMarathonError(DefaultError):
+    """Construct a basic Error class for Marathon
+
+    :param message: String to use for additional messaging
+    :type message: str
+    """
+
+    def __init__(self, message=""):
+        self._message = "Error: Marathon likely misconfigured. " +  \
+                        "Please check your marathon port and host settings. " + \
+                        message
