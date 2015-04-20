@@ -3,6 +3,7 @@ import inspect
 import json
 import logging
 import os
+import platform
 import re
 import shutil
 import sys
@@ -282,6 +283,15 @@ def render_mustache_json(template, data):
         return (None, errors.DefaultError(e.message))
 
     return load_jsons(rendered)
+
+
+def is_windows_platform():
+    """
+    :returns: True is program is running on Windows platform, False
+     in other case
+    :rtype: boolean
+    """
+    return platform.system() == "Windows"
 
 
 class CustomJsonRenderer(pystache.Renderer):

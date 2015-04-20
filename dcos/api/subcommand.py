@@ -38,6 +38,9 @@ def command_executables(subcommand, dcos_path):
     return (executables[0], None)
 
 
+BIN_DIRECTORY = 'Scripts' if util.is_windows_platform() else 'bin'
+
+
 def list_paths(dcos_path):
     """List the real path to executable dcos subcommand programs.
 
@@ -48,7 +51,7 @@ def list_paths(dcos_path):
     """
 
     # Let's get all the default subcommands
-    binpath = os.path.join(dcos_path, 'bin')
+    binpath = os.path.join(dcos_path, BIN_DIRECTORY)
     commands = [
         os.path.join(binpath, filename)
         for filename in os.listdir(binpath)
@@ -61,20 +64,20 @@ def list_paths(dcos_path):
         constants.DCOS_SUBCOMMAND_SUBDIR)
 
     subcommands = [
-        os.path.join(subcommand_directory, package, 'bin', filename)
+        os.path.join(subcommand_directory, package, BIN_DIRECTORY, filename)
 
 
         for package in distributions(dcos_path)
 
         for filename in os.listdir(
-            os.path.join(subcommand_directory, package, 'bin'))
+            os.path.join(subcommand_directory, package, BIN_DIRECTORY))
 
         if (filename.startswith(constants.DCOS_COMMAND_PREFIX) and
             os.access(
                 os.path.join(
                     subcommand_directory,
                     package,
-                    'bin',
+                    BIN_DIRECTORY,
                     filename),
                 os.X_OK))
     ]
@@ -154,7 +157,8 @@ def noun(executable_path):
     """
 
     basename = os.path.basename(executable_path)
-    return basename[len(constants.DCOS_COMMAND_PREFIX):]
+    noun = basename[len(constants.DCOS_COMMAND_PREFIX):].replace('.exe', '')
+    return noun
 
 
 def install(distribution_name, install_operation, dcos_path):
