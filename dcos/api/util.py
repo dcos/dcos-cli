@@ -88,7 +88,7 @@ def process_executable_path():
     :returns: the real path to the program
     :rtype: str
     """
-
+    print('inspect {}'.format(inspect.stack()[-1][1]))
     return os.path.realpath(inspect.stack()[-1][1])
 
 
@@ -98,6 +98,7 @@ def dcos_path():
     :returns: the real path to the DCOS path
     :rtype: str
     """
+    print 'here in dcos_path'
     return os.path.dirname(os.path.dirname(process_executable_path()))
 
 

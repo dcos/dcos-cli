@@ -20,12 +20,19 @@ def command_executables(subcommand, dcos_path):
     :returns: the dcos program path
     :rtype: (str, dcos.api.errors.Error)
     """
+    import inspect
+    print(dcos_path)
+    print('inspect {}'.format(inspect.stack()[-1][1]))
+    paths = list_paths(dcos_path)
+    print(paths)
 
     executables = [
         command_path
-        for command_path in list_paths(dcos_path)
+        for command_path in paths
         if noun(command_path) == subcommand
     ]
+
+    print(executables)
 
     if len(executables) > 1:
         msg = 'Found more than one executable for command {!r}.'
@@ -62,7 +69,6 @@ def list_paths(dcos_path):
 
     subcommands = [
         os.path.join(subcommand_directory, package, 'bin', filename)
-
 
         for package in distributions(dcos_path)
 
