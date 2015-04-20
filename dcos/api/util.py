@@ -89,10 +89,8 @@ def process_executable_path():
     :returns: the real path to the program
     :rtype: str
     """
-    if is_windows_platform():
-        return os.path.realpath(inspect.stack()[-1][1])
-    else:
-        return os.path.realpath(inspect.stack()[-1][1])
+
+    return os.path.realpath(inspect.stack()[-1][1])
 
 
 def dcos_path():

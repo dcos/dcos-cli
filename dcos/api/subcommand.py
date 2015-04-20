@@ -246,7 +246,7 @@ def _install_with_pip(
     if not os.path.exists(os.path.join(package_directory,
                                        BIN_DIRECTORY, 'pip')):
         cmd = [os.path.join(bin_directory, 'virtualenv'), package_directory]
-        print(cmd)
+
         if _execute_command(cmd) != 0:
             return _generic_error(distribution_name)
 
