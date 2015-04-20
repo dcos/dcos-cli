@@ -80,6 +80,13 @@ def main():
 
 
 def _wait_and_capture(subproc):
+    """
+    :param subproc: Subprocess to capture
+    :type subproc: Popen
+    :returns: exit code of subproc
+    :rtype: int
+    """
+
     # capture and print stderr
     err = ''
     while subproc.poll() is None:
@@ -110,7 +117,7 @@ def _wait_and_track(subproc):
     # string.  This only works for python, so we'll need to revisit
     # this in the future when we support subcommands written in other
     # languages.
-    if err.startswith('Traceback') and conf.get('core.reporting', True):
+    if 'Traceback' in err and conf.get('core.reporting', True):
         _track(exit_code, err, conf)
 
     return exit_code

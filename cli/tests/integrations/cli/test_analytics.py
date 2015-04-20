@@ -16,6 +16,7 @@ def test_no_exc():
     report an exception.
 
     '''
+
     args = ['dcos']
     exit_code = _mock_analytics_run(args)
 
@@ -28,6 +29,7 @@ def test_exc():
     exception.
 
     '''
+
     args = ['dcos']
     exit_code = _mock_analytics_run_exc(args)
 
@@ -39,6 +41,7 @@ def test_exc():
 
 def test_config_reporting_false():
     '''Test that "core.reporting = false" blocks exception reporting.'''
+
     args = ['dcos']
     exit_code = _mock_analytics_run_exc(args, False)
 
@@ -47,20 +50,23 @@ def test_config_reporting_false():
 
 
 def test_production_setting_true():
-    '''Test that "dcoscli.settings.PRODUCTION = True" sends exceptions to
+    '''Test that env var DCOS_PRODUCTION=true sends exceptions to
     the 'prod' environment.
 
     '''
+
     args = ['dcos']
-    _mock_analytics_run(args)
-    rollbar.init.assert_called_with(ROLLBAR_SERVER_POST_KEY, 'prod')
+    with patch.dict(os.environ, {'DCOS_PRODUCTION': 'true'}):
+        _mock_analytics_run(args)
+        rollbar.init.assert_called_with(ROLLBAR_SERVER_POST_KEY, 'prod')
 
 
 def test_production_setting_false():
-    '''Test that "dcoscli.settings.PRODUCTION = False" sends exceptions to
+    '''Test that env var DCOS_PRODUCTION=false sends exceptions to
     the 'dev' environment.
 
     '''
+
     args = ['dcos']
     with patch.dict(os.environ, {'DCOS_PRODUCTION': 'false'}):
         _mock_analytics_run(args)
