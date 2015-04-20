@@ -94,12 +94,14 @@ def process_executable_path():
 
 
 def dcos_path():
-    """Returns the real path to the DCOS path based on the executable
+    """Returns the real DCOS path based on the current executable
 
     :returns: the real path to the DCOS path
     :rtype: str
     """
-    return os.path.dirname(os.path.dirname(process_executable_path()))
+    dcos_bin_dir = os.path.realpath(sys.argv[0])
+    dcos_dir = os.path.dirname(os.path.dirname(dcos_bin_dir))
+    return dcos_dir
 
 
 def configure_logger_from_environ():

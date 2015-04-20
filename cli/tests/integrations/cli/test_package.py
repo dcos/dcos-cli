@@ -22,18 +22,19 @@ Usage:
     dcos package search <query>
     dcos package sources
     dcos package uninstall [--all | --app-id=<app-id>] <package_name>
-    dcos package update
+    dcos package update [--validate]
 
 Options:
     -h, --help         Show this screen
     --info             Show a short description of this subcommand
     --version          Show version
     --all              Apply the operation to all matching packages
+    --app              Apply the operation only to the package's application
     --app-id=<app-id>  The application id
     --cli              Apply the operation only to the package's CLI
     --options=<file>   Path to a JSON file containing package installation
                        options
-    --app              Apply the operation only to the package's application
+    --validate         Validate package content when updating sources
 
 Configuration:
     [package]
@@ -83,8 +84,19 @@ https://github.com/mesosphere/universe/archive/master.zip
     assert stderr == b''
 
 
-def test_update():
+def test_update_without_validation():
     returncode, stdout, stderr = exec_command(['dcos', 'package', 'update'])
+
+    assert returncode == 0
+    assert b'source' in stdout
+    assert b'Validating package definitions...' not in stdout
+    assert b'OK' not in stdout
+    assert stderr == b''
+
+
+def test_update_with_validation():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'update', '--validate'])
 
     assert returncode == 0
     assert b'source' in stdout
