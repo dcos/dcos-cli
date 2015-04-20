@@ -186,7 +186,7 @@ def install(distribution_name, install_operation, dcos_path):
     if 'pip' in install_operation:
         return _install_with_pip(
             distribution_name,
-            os.path.join(dcos_path, 'bin'),
+            os.path.join(dcos_path, BIN_DIRECTORY),
             package_directory,
             install_operation['pip'])
     else:
@@ -234,7 +234,8 @@ def _install_with_pip(
 
     new_package_dir = not os.path.exists(package_directory)
 
-    if not os.path.exists(os.path.join(package_directory, 'bin', 'pip')):
+    pip_path = os.path.join(package_directory, BIN_DIRECTORY, 'pip')
+    if not os.path.exists(pip_path):
         cmd = [os.path.join(bin_directory, 'virtualenv'), package_directory]
 
         if _execute_command(cmd) != 0:
@@ -249,7 +250,7 @@ def _install_with_pip(
                 print(line, file=requirements_file)
 
         cmd = [
-            os.path.join(package_directory, 'bin', 'pip'),
+            os.path.join(package_directory, BIN_DIRECTORY, 'pip'),
             'install',
             '--requirement',
             requirement_path,
