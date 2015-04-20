@@ -20,9 +20,9 @@ def command_executables(subcommand, dcos_path):
     :returns: the dcos program path
     :rtype: (str, dcos.api.errors.Error)
     """
-    print dcos_path
+    print(dcos_path)
     paths = list_paths(dcos_path)
-    print paths
+    print(paths)
 
     executables = [
         command_path
@@ -30,7 +30,7 @@ def command_executables(subcommand, dcos_path):
         if noun(command_path) == subcommand
     ]
 
-    print executables
+    print(executables)
 
     if len(executables) > 1:
         msg = 'Found more than one executable for command {!r}.'
