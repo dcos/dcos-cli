@@ -88,6 +88,7 @@ def dcos_path():
     :returns: the real path to the DCOS path
     :rtype: str
     """
+
     dcos_bin_dir = os.path.realpath(sys.argv[0])
     dcos_dir = os.path.dirname(os.path.dirname(dcos_bin_dir))
     return dcos_dir
