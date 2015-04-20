@@ -1,5 +1,4 @@
 import contextlib
-import inspect
 import json
 import logging
 import os
@@ -80,16 +79,6 @@ def which(program):
                 return exe_file
 
     return None
-
-
-def process_executable_path():
-    """Returns the real path to the program for this running process
-
-    :returns: the real path to the program
-    :rtype: str
-    """
-
-    return os.path.realpath(inspect.stack()[-1][1])
 
 
 def dcos_path():
