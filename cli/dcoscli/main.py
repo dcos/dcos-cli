@@ -29,13 +29,15 @@ to read about a specific subcommand.
 import json
 import logging
 import os
+import signal
 import sys
 from subprocess import PIPE, Popen
 
 import dcoscli
 import docopt
 import rollbar
-from dcos.api import config, constants, emitting, http, subcommand, util
+from dcos.api import (config, constants, emitting, errors, http, subcommand,
+                      util)
 from dcoscli.constants import ROLLBAR_SERVER_POST_KEY
 
 logger = logging.getLogger(__name__)
@@ -43,6 +45,8 @@ emitter = emitting.FlatEmitter()
 
 
 def main():
+    signal.signal(signal.SIGINT, signal_handler)
+
     if not _is_valid_configuration():
         return 1
 
@@ -189,3 +193,9 @@ def _is_valid_configuration():
         return False
 
     return True
+
+
+def signal_handler(signal, frame):
+    emitter.publish(
+        errors.DefaultError("User interrupted command with Ctrl-C"))
+    sys.exit(0)
