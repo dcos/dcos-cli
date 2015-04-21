@@ -11,6 +11,7 @@ Options:
 """
 import dcoscli
 import docopt
+import futures
 from dcos.api import cmds, emitting, options, subcommand, util
 
 emitter = emitting.FlatEmitter()
@@ -55,11 +56,11 @@ def _help(show_info):
         return 0
 
     directory = util.dcos_path()
-    commands_message = options.make_command_summary_string(
-        sorted(
-            subcommand.documentation(command_path)
-            for command_path
-            in subcommand.list_paths(directory)))
+
+    paths = subcommand.list_paths(directory)
+    with futures.ThreadPoolExecutor(max_workers=len(paths)) as executor:
+        results = executor.map(subcommand.documentation, paths)
+        commands_message = options.make_command_summary_string(sorted(results))
 
     emitter.publish(
         "Command line utility for the Mesosphere Datacenter Operating\n"

@@ -77,5 +77,6 @@ setup(
         'requests',
         'six',
         'toml',
+        'futures',
     ],
 )
