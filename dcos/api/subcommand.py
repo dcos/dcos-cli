@@ -41,6 +41,10 @@ def command_executables(subcommand, dcos_path):
 BIN_DIRECTORY = 'Scripts' if util.is_windows_platform() else 'bin'
 
 
+def _subcommand_dir():
+    return os.path.expanduser(os.path.join("~", ".dcos", "subcommands"))
+
+
 def list_paths(dcos_path):
     """List the real path to executable dcos subcommand programs.
 
@@ -59,9 +63,7 @@ def list_paths(dcos_path):
             os.access(os.path.join(binpath, filename), os.X_OK))
     ]
 
-    subcommand_directory = os.path.join(
-        dcos_path,
-        constants.DCOS_SUBCOMMAND_SUBDIR)
+    subcommand_directory = _subcommand_dir()
 
     subcommands = [
         os.path.join(subcommand_directory, package, BIN_DIRECTORY, filename)
@@ -93,9 +95,7 @@ def distributions(dcos_path):
     :rtype: list of str
     """
 
-    subcommand_directory = os.path.join(
-        dcos_path,
-        constants.DCOS_SUBCOMMAND_SUBDIR)
+    subcommand_directory = _subcommand_dir()
 
     if os.path.isdir(subcommand_directory):
         return os.listdir(subcommand_directory)
@@ -176,12 +176,11 @@ def install(distribution_name, install_operation, dcos_path):
     :rtype: dcos.api.errors.Error
     """
 
-    subcommand_directory = os.path.join(
-        dcos_path,
-        constants.DCOS_SUBCOMMAND_SUBDIR)
+    subcommand_directory = _subcommand_dir()
+
     if not os.path.exists(subcommand_directory):
         logger.info('Creating directory: %r', subcommand_directory)
-        os.mkdir(subcommand_directory, 0o775)
+        os.makedirs(subcommand_directory, 0o775)
 
     package_directory = os.path.join(subcommand_directory, distribution_name)
 
@@ -206,10 +205,7 @@ def uninstall(distribution_name, dcos_path):
     :type dcos_path: str
     """
 
-    subcommand_directory = os.path.join(
-        dcos_path,
-        constants.DCOS_SUBCOMMAND_SUBDIR,
-        distribution_name)
+    subcommand_directory = os.path.join(_subcommand_dir(), distribution_name)
 
     if os.path.isdir(subcommand_directory):
         shutil.rmtree(subcommand_directory)
