@@ -321,7 +321,7 @@ def _install(package_name, options_path, app_id, cli, app):
             return 1
     except Exception as e:
         logger.exception('Exception while generating options')
-        emitter.publish(errors.DefaultError(e.message))
+        emitter.publish(errors.DefaultError(e))
         return 1
 
     if app:
