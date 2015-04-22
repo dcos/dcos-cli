@@ -42,6 +42,12 @@ BIN_DIRECTORY = 'Scripts' if util.is_windows_platform() else 'bin'
 
 
 def _subcommand_dir():
+    """Returns path to the subcommand directory.  This directory contains
+    a virtualenv for each installed subcommand.
+
+    :returns: path to the subcommand directory
+    :rtype: str
+    """
     return os.path.expanduser(os.path.join("~",
                                            constants.DCOS_DIR,
                                            constants.DCOS_SUBCOMMAND_SUBDIR))
