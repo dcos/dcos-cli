@@ -1,6 +1,7 @@
 import json
 import os
 
+import dcoscli.constants as cli_constants
 import six
 from dcos.api import constants
 
@@ -12,7 +13,8 @@ from common import exec_command
 def env():
     return {
         constants.PATH_ENV: os.environ[constants.PATH_ENV],
-        constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "dcos.toml")
+        constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "dcos.toml"),
+        cli_constants.DCOS_PRODUCTION_ENV: 'false'
     }
 
 
@@ -67,7 +69,7 @@ def test_list_property(env):
         env)
 
     assert returncode == 0
-    assert stdout == b"""core.reporting=True
+    assert stdout == b"""core.reporting=False
 marathon.host=localhost
 marathon.port=8080
 package.cache=tmp/cache
@@ -341,9 +343,9 @@ def test_set_missing_property(env):
 
 
 def test_set_core_property(env):
-    _set_value('core.reporting', 'false', env)
-    _get_value('core.reporting', False, env)
     _set_value('core.reporting', 'true', env)
+    _get_value('core.reporting', True, env)
+    _set_value('core.reporting', 'false', env)
 
 
 def _set_value(key, value, env):

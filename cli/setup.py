@@ -67,7 +67,8 @@ setup(
         'pkginfo',
         'toml',
         'virtualenv',
-        'rollbar'
+        'rollbar',
+        'futures'
     ],
 
     # If there are data files included in your packages that need to be
