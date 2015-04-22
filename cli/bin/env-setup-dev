@@ -3,7 +3,7 @@
 
 if [ -n "$BASH_SOURCE" ] ; then
     BIN_DIR=$(dirname "$BASH_SOURCE")
-elif [ $(basename -- "$0") = "env-setup" ]; then
+elif [ $(basename -- "$0") = "env-setup-dev" ]; then
     BIN_DIR=$(dirname "$0")
 else
     BIN_DIR=$PWD/bin
