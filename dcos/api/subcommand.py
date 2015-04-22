@@ -42,7 +42,9 @@ BIN_DIRECTORY = 'Scripts' if util.is_windows_platform() else 'bin'
 
 
 def _subcommand_dir():
-    return os.path.expanduser(os.path.join("~", ".dcos", "subcommands"))
+    return os.path.expanduser(os.path.join("~",
+                                           constants.DCOS_DIR,
+                                           constants.DCOS_SUBCOMMAND_SUBDIR))
 
 
 def list_paths(dcos_path):
