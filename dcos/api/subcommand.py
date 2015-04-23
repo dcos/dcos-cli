@@ -222,12 +222,17 @@ def uninstall(distribution_name, dcos_path):
     :type distribution_name: str
     :param dcos_path: the path to the dcos cli directory
     :type dcos_path: str
+    :returns: True if the subcommand was uninstalled
+    :rtype: bool
     """
 
     subcommand_directory = os.path.join(_subcommand_dir(), distribution_name)
 
     if os.path.isdir(subcommand_directory):
         shutil.rmtree(subcommand_directory)
+        return True
+
+    return False
 
 
 def _install_with_pip(

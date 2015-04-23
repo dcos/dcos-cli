@@ -270,15 +270,38 @@ def test_uninstall_missing():
 
     assert returncode == 1
     assert stdout == b''
-    assert stderr == b'No instances of package [mesos-dns] are installed.\n'
+    assert stderr == b'Package [mesos-dns] is not installed.\n'
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'package', 'uninstall', 'mesos-dns', '--app-id=dns-1'])
 
     assert returncode == 1
     assert stdout == b''
-    assert stderr == b"""No instances of package [mesos-dns] with \
-id [dns-1] are installed.\n"""
+    assert stderr == b"""Package [mesos-dns] with id [dns-1] is not \
+installed.\n"""
+
+
+def test_uninstall_subcommand():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'install', 'helloworld'])
+
+    assert returncode == 0
+    assert stdout == b"""Installing package [helloworld] version [0.1.0]
+Installing CLI subcommand for package [helloworld]
+"""
+    assert stderr == b''
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'uninstall', 'helloworld'])
+    assert returncode == 0
+    assert stdout == b''
+    assert stderr == b''
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'subcommand', 'list'])
+    assert returncode == 0
+    assert stdout == b'[]\n'
+    assert stderr == b''
 
 
 def test_list_installed():
