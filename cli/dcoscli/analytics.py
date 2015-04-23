@@ -71,7 +71,7 @@ def _send_segment_event(event, properties):
         requests.post(SEGMENT_URL,
                       json=data,
                       auth=HTTPBasicAuth(key, ''),
-                      timeout=3)
+                      timeout=1)
     except Exception as e:
         logger.exception(e)
 

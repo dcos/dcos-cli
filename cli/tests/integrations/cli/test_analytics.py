@@ -53,7 +53,7 @@ def test_no_exc():
         assert kwargs['json'] == {'anonymousId': ANON_ID,
                                   'event': SEGMENT_IO_CLI_EVENT,
                                   'properties': props}
-        assert kwargs['timeout'] == 3
+        assert kwargs['timeout'] == 1
 
         # rollbar
         assert rollbar.report_message.call_count == 0

@@ -23,13 +23,13 @@ emitter = emitting.FlatEmitter()
 
 
 PACKAGE_METADATA_KEY = 'DCOS_PACKAGE_METADATA'
-PACKAGE_REGISTRY_VERSION_KEY = 'DCOS_PACKAGE_REGISTRY_VERSION'
 PACKAGE_NAME_KEY = 'DCOS_PACKAGE_NAME'
 PACKAGE_VERSION_KEY = 'DCOS_PACKAGE_VERSION'
 PACKAGE_SOURCE_KEY = 'DCOS_PACKAGE_SOURCE'
 PACKAGE_FRAMEWORK_KEY = 'DCOS_PACKAGE_IS_FRAMEWORK'
 PACKAGE_RELEASE_KEY = 'DCOS_PACKAGE_RELEASE'
 PACKAGE_COMMAND_KEY = 'DCOS_PACKAGE_COMMAND'
+PACKAGE_REGISTRY_VERSION_KEY = 'DCOS_PACKAGE_REGISTRY_VERSION'
 
 
 def install_app(pkg, version, init_client, options, app_id):
@@ -229,12 +229,162 @@ The app ids of the installed package instances are: [{}].""".format(
     return (len(matching_apps), None)
 
 
-def list_installed_packages(init_client, result_predicate=lambda x: True):
+class InstalledPackage(object):
+    """Represents an intalled DCOS package.  One of `app` and
+    `subcommand` must be supplied.
+
+    :param app: A dictionary representing a marathon app.  Of the
+                format returned by `installed_apps()`
+    :type app: dict
+    :param subcommand: Installed subcommand
+    :type subcommand: subcommand.InstalledSubcommand
     """
+
+    def __init__(self, app=None, subcommand=None):
+        assert app or subcommand
+        self.app = app
+        self.subcommand = subcommand
+
+    def name(self):
+        """
+        :returns: The name of the package
+        :rtype: str
+        """
+        if self.subcommand:
+            return self.subcommand.name
+        else:
+            return self.app['name']
+
+    def dict(self):
+        """ A dictionary representation of the package.  Used by `dcos package
+        list-installed`.
+
+        :returns: A dictionary representation of the package.
+        :rtype: (dict, None)
+        """
+        ret = {'name': self.name}
+
+        if self.subcommand:
+            ret['command'] = {'name': self.subcommand.name}
+
+        if self.app:
+            ret['app'] = {'appId': self.app['appId']}
+
+        if self.subcommand:
+            package_json, err = self.subcommand.package_json()
+            if err is not None:
+                return (None, err)
+
+            ret.update(package_json)
+
+            package_source, err = self.subcommand.package_source()
+            if err is not None:
+                return (None, err)
+
+            ret['packageSource'] = package_source
+
+            package_version, err = self.subcommand.package_version()
+            if err is not None:
+                return (None, err)
+
+            ret['releaseVersion'] = package_version
+        else:
+            ret.update(self.app)
+            ret.pop('appId')
+
+        return (ret, None)
+
+
+def installed_packages(init_client, endpoints):
+    """Returns all installed packages in the format:
+
+    [{
+       'app': {
+         'id': <id>
+       },
+       'command': {
+         'name': <name>
+       }
+       ...<metadata>...
+    }]
+
     :param init_client: The program to use to list packages
     :type init_client: object
-    :param result_predicate: The predicate to use to filter results
-    :type result_predicate: function(dict): bool
+    :param endpoints: Whether to include a list of
+                      endpoints as port-host pairs
+    :type endpoints: boolean
+    :returns: A list of installed packages
+    :rtype: ([InstalledPackage], Error)
+    """
+
+    apps, error = installed_apps(init_client, endpoints)
+    if error is not None:
+        return (None, error)
+
+    subcommands, error = installed_subcommands()
+    if error is not None:
+        return (None, error)
+
+    dicts = collections.defaultdict(lambda: {'app': None, 'command': None})
+
+    for app in apps:
+        key = (app['name'], app['releaseVersion'], app['packageSource'])
+        dicts[key]['app'] = app
+
+    for subcmd in subcommands:
+        package_version, err = subcmd.package_version()
+        if err is not None:
+            return (None, err)
+
+        package_source, err = subcmd.package_source()
+        if err is not None:
+            return (None, err)
+
+        key = (subcmd.name, package_version, package_source)
+        dicts[key]['command'] = subcmd
+
+    pkgs = []
+
+    for key, pkg in dicts.items():
+        pkgs.append(InstalledPackage(pkg['app'], pkg['command']))
+
+    return (pkgs, None)
+
+
+def installed_subcommands():
+    """Returns all installed subcommands.
+
+    :returns: all installed subcommands
+    :rtype: ([InstalledSubcommand], Error)
+    """
+
+    ret = [subcommand.InstalledSubcommand(name) for name in
+           subcommand.distributions(util.dcos_path())]
+    return (ret, None)
+
+
+def installed_apps(init_client, endpoints=False):
+    """
+    Returns all installed apps.  An app is of the format:
+
+    {
+      'appId': <appId>,
+      'packageSource': <source>,
+      'registryVersion': <app_version>,
+      'releaseVersion': <release_version>
+      'endpoints' (optional): [{
+        'host': <host>,
+        'ports': <ports>,
+      }]
+      ..<package.json properties>..
+    }
+
+    :param init_client: The program to use to list packages
+    :type init_client: object
+    :param endpoints: Whether to include a list of
+                      endpoints as port-host pairs
+    :type endpoints: boolean
+    :returns: all installed apps
     :rtype: (list of dict, Error)
     """
 
@@ -242,7 +392,7 @@ def list_installed_packages(init_client, result_predicate=lambda x: True):
     if error is not None:
         return (None, error)
 
-    encoded_pkgs = [(a['id'], a['labels'])
+    encoded_apps = [(a['id'], a['labels'])
                     for a in apps
                     if a.get('labels', {}).get(PACKAGE_METADATA_KEY)]
 
@@ -250,44 +400,33 @@ def list_installed_packages(init_client, result_predicate=lambda x: True):
         app_id, labels = pair
         encoded = labels.get(PACKAGE_METADATA_KEY, {})
         source = labels.get(PACKAGE_SOURCE_KEY)
-        registry_version = labels.get(PACKAGE_REGISTRY_VERSION_KEY)
+        release_version = labels.get(PACKAGE_RELEASE_KEY)
 
         decoded = base64.b64decode(six.b(encoded)).decode()
         decoded_json, error = util.load_jsons(decoded)
         if error is None:
             decoded_json['appId'] = app_id
             decoded_json['packageSource'] = source
-            decoded_json['registryVersion'] = registry_version
+            decoded_json['releaseVersion'] = release_version
         return (decoded_json, error)
 
-    decoded_pkgs = [decode_and_add_context(encoded)
-                    for encoded in encoded_pkgs]
+    decoded_apps = [decode_and_add_context(encoded)
+                    for encoded in encoded_apps]
 
     # Filter elements that failed to parse correctly as JSON,
     # or do not match the supplied predicate
-    pkgs = [pair[0] for pair in decoded_pkgs
-            if pair[1] is None and result_predicate(pair[0])]
+    valid_apps = [pair[0] for pair in decoded_apps if pair[1] is None]
 
-    return (pkgs, None)
+    if endpoints:
+        for app in valid_apps:
+            tasks, err = init_client.get_tasks(app["appId"])
+            if err is not None:
+                return (None, err)
 
+            app['endpoints'] = [{"host": t["host"], "ports": t["ports"]}
+                                for t in tasks]
 
-def get_tasks_multiple(init_client, apps):
-    """Adds tasks to app dictionary
-    :param init_client: The program to use to list packages
-    :type init_client: object
-    :param apps: list of dict
-    :type apps: object
-    :rtype: (list, Error)
-    """
-
-    for app in apps:
-        tasks, err = init_client.get_tasks(app["appId"])
-        if err is not None:
-            return (None, err)
-        app["endpoints"] = [{"host": t["host"], "ports": t["ports"]}
-                            for t in tasks]
-
-    return (apps, None)
+    return (valid_apps, None)
 
 
 def search(query, cfg):
@@ -1075,16 +1214,10 @@ class Package():
         """
 
         data, error = self._data(path)
-
         if error is not None:
             return (None, error)
 
-        try:
-            result = json.loads(data)
-        except ValueError:
-            return (None, Error(''))
-
-        return (result, None)
+        return util.load_jsons(data)
 
     def _data(self, path):
         """Returns the content of the supplied file, relative to the base path.
@@ -1096,15 +1229,7 @@ class Package():
         """
 
         full_path = os.path.join(self.path, path)
-        if not os.path.isfile(full_path):
-            return (None, Error('Path [{}] is not a file'.format(full_path)))
-
-        try:
-            with open(full_path) as fd:
-                content = fd.read()
-                return (content, None)
-        except IOError:
-            return (None, Error('Unable to open file [{}]'.format(full_path)))
+        return util.read_file(full_path)
 
     def package_versions(self):
         """Returns all of the available package versions, most recent first.

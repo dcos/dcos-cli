@@ -30,3 +30,33 @@ def exec_command(cmd, env=None, stdin=None):
     print('STDERR: {}'.format(stderr.decode('utf-8')))
 
     return (process.returncode, stdout, stderr)
+
+
+def assert_command(cmd,
+                   returncode=0,
+                   stdout=b'',
+                   stderr=b'',
+                   env=None,
+                   stdin=None):
+    """Execute CLI command and assert expected behavior.
+
+    :param cmd: Program and arguments
+    :type cmd: list of str
+    :param returncode: Expected return code
+    :type returncode: int
+    :param stdout: Expected stdout
+    :type stdout: str
+    :param stderr: Expected stderr
+    :type stderr: str
+    :param env: Environment variables
+    :type env: dict of str to str
+    :param stdin: File to use for stdin
+    :type stdin: file
+    :rtype: None
+    """
+
+    returncode_, stdout_, stderr_ = exec_command(cmd, env, stdin)
+
+    assert returncode_ == returncode
+    assert stdout_ == stdout
+    assert stderr_ == stderr

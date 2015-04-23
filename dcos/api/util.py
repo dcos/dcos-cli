@@ -70,6 +70,26 @@ def ensure_dir(directory):
         os.makedirs(directory, 0o775)
 
 
+def read_file(path):
+    """
+    :param path: path to file
+    :type path: str
+    :returns: contents of file
+    :rtype: (str, Error)
+    """
+    if not os.path.isfile(path):
+        return (None, errors.DefaultError(
+            'Path [{}] is not a file'.format(path)))
+
+    try:
+        with open(path) as fd:
+            content = fd.read()
+            return (content, None)
+    except IOError:
+        return (None, errors.DefaultError(
+            'Unable to open file [{}]'.format(path)))
+
+
 def which(program):
     """Returns the path to the named executable program.
 
@@ -103,8 +123,7 @@ def dcos_path():
     """
 
     dcos_bin_dir = os.path.realpath(sys.argv[0])
-    dcos_dir = os.path.dirname(os.path.dirname(dcos_bin_dir))
-    return dcos_dir
+    return os.path.dirname(os.path.dirname(dcos_bin_dir))
 
 
 def configure_logger_from_environ():

@@ -376,26 +376,23 @@ def _list(endpoints, app_id, package_name):
 
     init_client = marathon.create_client(config)
 
-    def keep(pkg):
-        if package_name and pkg.get('name', '') != package_name:
-            return False
-        if app_id and pkg.get('appId', '') != app_id:
-            return False
-        return True
-
-    installed, error = package.list_installed_packages(init_client, keep)
-
+    installed, error = package.installed_packages(init_client, endpoints)
     if error is not None:
         emitter.publish(error)
         return 1
 
-    if endpoints:
-        installed, error = package.get_tasks_multiple(init_client, installed)
-        if error is not None:
-            emitter.publish(error)
-            return 1
+    results = []
+    for pkg in installed:
+        if not ((package_name and pkg.name() != package_name) or
+                (app_id and pkg.app and pkg.app['appId'] != app_id)):
+            result, err = pkg.dict()
+            if err is not None:
+                emitter.publish(err)
+                return 1
 
-    emitter.publish(installed)
+            results.append(result)
+
+    emitter.publish(results)
 
     return 0
 

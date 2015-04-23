@@ -415,3 +415,50 @@ def _generic_error(package_name):
 
     return errors.DefaultError(
         'Error installing {!r} package'.format(package_name))
+
+
+class InstalledSubcommand(object):
+    """ Represents an installed subcommand.
+
+    :param name: The name of the subcommand
+    :type name: str
+    """
+
+    def __init__(self, name):
+        self.name = name
+
+    def _dir(self):
+        """
+        :returns: path to this subcommand's directory.
+        :rtype: (str, Error)
+        """
+
+        return package_dir(self.name)
+
+    def package_version(self):
+        """
+        :returns: this subcommand's version.
+        :rtype: (str, Error)
+        """
+
+        version_path = os.path.join(self._dir(), 'version')
+        return util.read_file(version_path)
+
+    def package_source(self):
+        """
+        :returns: this subcommand's source.
+        :rtype: (str, Error)
+        """
+
+        source_path = os.path.join(self._dir(), 'source')
+        return util.read_file(source_path)
+
+    def package_json(self):
+        """
+        :returns: contents of this subcommand's package.json file.
+        :rtype: (dict, Error)
+        """
+
+        package_json_path = os.path.join(self._dir(), 'package.json')
+        with open(package_json_path) as package_json_file:
+            return util.load_json(package_json_file)

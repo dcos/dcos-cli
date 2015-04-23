@@ -4,7 +4,7 @@ import os
 import six
 from dcos.api import subcommand
 
-from common import exec_command
+from common import assert_command, exec_command
 
 
 def test_package():
@@ -143,17 +143,8 @@ tutorial-gce.html",
 
 
 def test_bad_install():
-    returncode, stdout, stderr = exec_command(
-        ['dcos',
-            'package',
-            'install',
-            'mesos-dns',
-            '--options=tests/data/package/mesos-dns-config-bad.json'])
-
-    assert returncode == 1
-    assert stdout == b''
-
-    assert stderr == b"""\
+    args = ['--options=tests/data/package/mesos-dns-config-bad.json']
+    stderr = b"""\
 Error: 'mesos-dns/config-url' is a required property
 Value: {"mesos-dns/host": false}
 
@@ -161,19 +152,14 @@ Error: False is not of type 'string'
 Path: mesos-dns/host
 Value: false
 """
+    _install_mesos_dns(args=args,
+                       returncode=1,
+                       stdout=b'',
+                       stderr=stderr)
 
 
 def test_install():
-    returncode, stdout, stderr = exec_command(
-        ['dcos',
-            'package',
-            'install',
-            'mesos-dns',
-            '--options=tests/data/package/mesos-dns-config.json'])
-
-    assert returncode == 0
-    assert stdout == b'Installing package [mesos-dns] version [alpha]\n'
-    assert stderr == b''
+    _install_mesos_dns()
 
 
 def test_package_metadata():
@@ -254,32 +240,17 @@ wLjEuMCJdfQ=="""
 
 
 def test_install_with_id():
-    returncode, stdout, stderr = exec_command(
-        ['dcos',
-            'package',
-            'install',
-            'mesos-dns',
-            '--options=tests/data/package/mesos-dns-config.json',
-            '--app-id=dns-1'])
+    args = ['--options=tests/data/package/mesos-dns-config.json',
+            '--app-id=dns-1']
+    stdout = b"""Installing package [mesos-dns] version [alpha] \
+with app id [dns-1]\n"""
+    _install_mesos_dns(args=args, stdout=stdout)
 
-    assert returncode == 0
-    assert stdout == b"""Installing package [mesos-dns] version [alpha] \
-with app id [dns-1]
-"""
-    assert stderr == b''
-
-    returncode, stdout, stderr = exec_command(
-        ['dcos',
-            'package',
-            'install',
-            'mesos-dns',
-            '--options=tests/data/package/mesos-dns-config.json',
-            '--app-id=dns-2'])
-
-    assert returncode == 0
-    assert stdout == b"""Installing package [mesos-dns] version [alpha] \
+    args = ['--options=tests/data/package/mesos-dns-config.json',
+            '--app-id=dns-2']
+    stdout = b"""Installing package [mesos-dns] version [alpha] \
 with app id [dns-2]\n"""
-    assert stderr == b''
+    _install_mesos_dns(args=args, stdout=stdout)
 
 
 def test_install_missing_package():
@@ -294,38 +265,19 @@ You may need to run 'dcos package update' to update your repositories
 
 
 def test_uninstall_with_id():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'package', 'uninstall', 'mesos-dns', '--app-id=dns-1'])
-
-    assert returncode == 0
-    assert stdout == b''
-    assert stderr == b''
+    _uninstall_mesos_dns(args=['--app-id=dns-1'])
 
 
 def test_uninstall_all():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'package', 'uninstall', 'mesos-dns', '--all'])
-
-    assert returncode == 0
-    assert stdout == b''
-    assert stderr == b''
+    _uninstall_mesos_dns(args=['--all'])
 
 
 def test_uninstall_missing():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'package', 'uninstall', 'mesos-dns'])
+    stderr = b'Package [mesos-dns] is not installed.\n'
+    _uninstall_mesos_dns(returncode=1, stderr=stderr)
 
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr == b'Package [mesos-dns] is not installed.\n'
-
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'package', 'uninstall', 'mesos-dns', '--app-id=dns-1'])
-
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr == b"""Package [mesos-dns] with id [dns-1] is not \
-installed.\n"""
+    stderr = b'Package [mesos-dns] with id [dns-1] is not installed.\n'
+    _uninstall_mesos_dns(args=['--app-id=dns-1'], returncode=1, stderr=stderr)
 
 
 def test_uninstall_subcommand():
@@ -352,43 +304,23 @@ Installing CLI subcommand for package [helloworld]
 
 
 def test_list_installed():
-    returncode, stdout, stderr = exec_command(['dcos',
-                                               'package',
-                                               'list-installed'])
+    assert_command(['dcos', 'package', 'list-installed'],
+                   stdout=b'[]\n')
 
-    assert returncode == 0
-    assert stdout == b'[]\n'
-    assert stderr == b''
+    assert_command(['dcos', 'package', 'list-installed', 'xyzzy'],
+                   stdout=b'[]\n')
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'package', 'list-installed', 'xyzzy'])
+    assert_command(['dcos', 'package', 'list-installed', '--app-id=/xyzzy'],
+                   stdout=b'[]\n')
 
-    assert returncode == 0
-    assert stdout == b'[]\n'
-    assert stderr == b''
-
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'package', 'list-installed', '--app-id=/xyzzy'])
-
-    assert returncode == 0
-    assert stdout == b'[]\n'
-    assert stderr == b''
-
-    returncode, stdout, stderr = exec_command(
-        ['dcos',
-            'package',
-            'install',
-            'mesos-dns',
-            '--options=tests/data/package/mesos-dns-config.json'])
-
-    assert returncode == 0
-    assert stdout == b'Installing package [mesos-dns] version [alpha]\n'
-    assert stderr == b''
+    _install_mesos_dns()
 
     expected_output = b"""\
 [
   {
-    "appId": "/mesos-dns",
+    "app": {
+      "appId": "/mesos-dns"
+    },
     "description": "DNS-based service discovery for Mesos.",
     "maintainer": "support@mesosphere.io",
     "name": "mesos-dns",
@@ -396,7 +328,7 @@ def test_list_installed():
     "postInstallNotes": "Please refer to the tutorial instructions for \
 further setup requirements: http://mesosphere.github.io/mesos-dns/docs\
 /tutorial-gce.html",
-    "registryVersion": "0.1.0-alpha",
+    "releaseVersion": "0",
     "scm": "https://github.com/mesosphere/mesos-dns.git",
     "tags": [
       "mesosphere"
@@ -406,26 +338,93 @@ further setup requirements: http://mesosphere.github.io/mesos-dns/docs\
   }
 ]
 """
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'package', 'list-installed'])
+    assert_command(['dcos', 'package', 'list-installed'],
+                   stdout=expected_output)
 
-    assert returncode == 0
-    assert stderr == b''
-    assert stdout == expected_output
+    assert_command(['dcos', 'package', 'list-installed', 'mesos-dns'],
+                   stdout=expected_output)
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'package', 'list-installed', 'mesos-dns'])
+    assert_command(
+        ['dcos', 'package', 'list-installed', '--app-id=/mesos-dns'],
+        stdout=expected_output)
 
-    assert returncode == 0
-    assert stderr == b''
-    assert stdout == expected_output
+    assert_command(
+        ['dcos', 'package', 'list-installed', 'ceci-nest-pas-une-package'],
+        stdout=b'[]\n')
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'package', 'list-installed', '--app-id=/mesos-dns'])
+    assert_command(
+        ['dcos', 'package', 'list-installed',
+         '--app-id=/ceci-nest-pas-une-package'],
+        stdout=b'[]\n')
 
-    assert returncode == 0
-    assert stderr == b''
-    assert stdout == expected_output
+    _uninstall_mesos_dns()
+
+
+def test_list_installed_cli():
+    stdout = b"""Installing package [helloworld] version [0.1.0]
+Installing CLI subcommand for package [helloworld]
+"""
+    assert_command(['dcos', 'package', 'install', 'helloworld'],
+                   stdout=stdout)
+
+    stdout = b"""\
+[
+  {
+    "app": {
+      "appId": "/helloworld"
+    },
+    "command": {
+      "name": "helloworld"
+    },
+    "description": "Example DCOS application package",
+    "maintainer": "support@mesosphere.io",
+    "name": "helloworld",
+    "packageSource": "git://github.com/mesosphere/universe.git",
+    "releaseVersion": "0",
+    "tags": [
+      "mesosphere",
+      "example",
+      "subcommand"
+    ],
+    "version": "0.1.0",
+    "website": "https://github.com/mesosphere/dcos-helloworld"
+  }
+]
+"""
+    assert_command(['dcos', 'package', 'list-installed'],
+                   stdout=stdout)
+
+    assert_command(['dcos', 'package', 'uninstall', 'helloworld'])
+
+    stdout = b"Installing CLI subcommand for package [helloworld]\n"
+    assert_command(['dcos', 'package', 'install', 'helloworld', '--cli'],
+                   stdout=stdout)
+
+    stdout = b"""\
+[
+  {
+    "command": {
+      "name": "helloworld"
+    },
+    "description": "Example DCOS application package",
+    "maintainer": "support@mesosphere.io",
+    "name": "helloworld",
+    "packageSource": "git://github.com/mesosphere/universe.git",
+    "releaseVersion": "0",
+    "tags": [
+      "mesosphere",
+      "example",
+      "subcommand"
+    ],
+    "version": "0.1.0",
+    "website": "https://github.com/mesosphere/dcos-helloworld"
+  }
+]
+"""
+    assert_command(['dcos', 'package', 'list-installed'],
+                   stdout=stdout)
+
+    assert_command(['dcos', 'package', 'uninstall', 'helloworld'])
 
 
 def test_search():
@@ -451,15 +450,6 @@ def test_search():
     assert stderr == b''
 
 
-def test_cleanup():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'package', 'uninstall', 'mesos-dns'])
-
-    assert returncode == 0
-    assert stdout == b''
-    assert stderr == b''
-
-
 def get_app_labels(app_id):
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'show', app_id])
@@ -469,3 +459,21 @@ def get_app_labels(app_id):
 
     app_json = json.loads(stdout.decode('utf-8'))
     return app_json.get('labels')
+
+
+def _uninstall_mesos_dns(args=[],
+                         returncode=0,
+                         stdout=b'',
+                         stderr=b''):
+    cmd = ['dcos', 'package', 'uninstall', 'mesos-dns'] + args
+    assert_command(cmd, returncode, stdout, stderr)
+
+
+def _install_mesos_dns(
+        args=['--options=tests/data/package/mesos-dns-config.json'],
+        returncode=0,
+        stdout=b'Installing package [mesos-dns] version [alpha]\n',
+        stderr=b''):
+
+    cmd = ['dcos', 'package', 'install', 'mesos-dns'] + args
+    assert_command(cmd, returncode, stdout, stderr)
