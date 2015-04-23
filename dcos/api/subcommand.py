@@ -68,7 +68,7 @@ def list_paths(dcos_path):
         os.path.join(binpath, filename)
         for filename in os.listdir(binpath)
         if (filename.startswith(constants.DCOS_COMMAND_PREFIX) and
-            os.access(os.path.join(binpath, filename), os.X_OK))
+            _is_executable(os.path.join(binpath, filename)))
     ]
 
     subcommand_directory = _subcommand_dir()
@@ -82,16 +82,27 @@ def list_paths(dcos_path):
             os.path.join(subcommand_directory, package, BIN_DIRECTORY))
 
         if (filename.startswith(constants.DCOS_COMMAND_PREFIX) and
-            os.access(
+            _is_executable(
                 os.path.join(
                     subcommand_directory,
                     package,
                     BIN_DIRECTORY,
-                    filename),
-                os.X_OK))
+                    filename)))
     ]
 
     return commands + subcommands
+
+
+def _is_executable(path):
+    """
+    :param path: the path to a program
+    :type path: str
+    :returns: True if the path is an executable; False otherwise
+    :rtype: bool
+    """
+
+    return os.access(path, os.X_OK) and (
+        not util.is_windows_platform() or path.endswith('.exe'))
 
 
 def distributions(dcos_path):
