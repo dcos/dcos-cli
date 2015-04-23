@@ -28,42 +28,11 @@ PACKAGE_NAME_KEY = 'DCOS_PACKAGE_NAME'
 PACKAGE_VERSION_KEY = 'DCOS_PACKAGE_VERSION'
 PACKAGE_SOURCE_KEY = 'DCOS_PACKAGE_SOURCE'
 PACKAGE_FRAMEWORK_KEY = 'DCOS_PACKAGE_IS_FRAMEWORK'
+PACKAGE_RELEASE_KEY = 'DCOS_PACKAGE_RELEASE'
+PACKAGE_COMMAND_KEY = 'DCOS_PACKAGE_COMMAND'
 
 
-def _merge_options(pkg, version, user_options):
-    """
-    :param pkg: the package to install
-    :type pkg: Package
-    :param version: the package version to install
-    :type version: str
-    :param user_options: package parameters
-    :type user_options: dict
-    :returns: a dictionary with the user supplied options
-    :rtype: (dict, dcos.api.errors.Error)
-    """
-    if user_options is None:
-        user_options = {}
-
-    config_schema, err = pkg.config_json(version)
-    if err is not None:
-        return (None, err)
-
-    default_options, err = _extract_default_values(config_schema)
-    if err is not None:
-        return (None, err)
-
-    # Merge option overrides
-    options = dict(list(default_options.items()) + list(user_options.items()))
-
-    # Validate options with the config schema
-    err = util.validate_json(options, config_schema)
-    if err is not None:
-        return (None, err)
-
-    return (options, None)
-
-
-def install_app(pkg, version, init_client, user_options, app_id):
+def install_app(pkg, version, init_client, options, app_id):
     """Installs a package's application
 
     :param pkg: the package to install
@@ -72,29 +41,20 @@ def install_app(pkg, version, init_client, user_options, app_id):
     :type version: str
     :param init_client: the program to use to run the package
     :type init_client: object
-    :param user_options: package parameters
-    :type user_options: dict
+    :param options: package parameters
+    :type options: dict
     :param app_id: app ID for installation of this package
     :type app_id: str
     :rtype: Error
     """
 
-    options, err = _merge_options(pkg, version, user_options)
-    if err is not None:
-        return err
-
     # Insert option parameters into the init template
-    template, err = pkg.marathon_template(version)
-    if err is not None:
-        return err
-
-    # Render the init template with the marshaled options
-    init_desc, err = util.render_mustache_json(template, options)
+    init_desc, err = pkg.marathon_json(version, options)
     if err is not None:
         return err
 
     # Add package metadata
-    package_labels, err = _make_package_labels(pkg, version)
+    package_labels, err = _make_package_labels(pkg, version, options)
     if err is not None:
         return err
 
@@ -115,23 +75,24 @@ def install_app(pkg, version, init_client, user_options, app_id):
     return err
 
 
-def _make_package_labels(pkg, version):
-    """
+def _make_package_labels(pkg, version, options):
+    """Returns Marathon app labels for a package.
+
     :param pkg: The package to install
     :type pkg: Package
     :param version: The package version to install
     :type version: str
+    :param options: package parameters
+    :type options: dict
+    :returns: Marathon app labels
     :rtype: (dict, Error)
     """
 
     metadata, meta_error = pkg.package_json(version)
-
     if meta_error is not None:
         return (None, meta_error)
 
-    metadata_json_string = json.dumps(metadata, sort_keys=True)
-    metadata_bytes = six.b(metadata_json_string)
-    encoded_metadata = base64.b64encode(metadata_bytes).decode('utf-8')
+    encoded_metadata = _base64_encode(metadata)
 
     is_framework = metadata.get('framework')
     if not is_framework:
@@ -148,43 +109,32 @@ def _make_package_labels(pkg, version):
         PACKAGE_VERSION_KEY: metadata['version'],
         PACKAGE_SOURCE_KEY: pkg.registry.source.url,
         PACKAGE_FRAMEWORK_KEY: str(is_framework),
-        PACKAGE_REGISTRY_VERSION_KEY: package_registry_version
+        PACKAGE_REGISTRY_VERSION_KEY: package_registry_version,
+        PACKAGE_RELEASE_KEY: str(version)
     }
+
+    if pkg.is_command_defined(version):
+        command, cmd_error = pkg.command_json(version, options)
+        if cmd_error is not None:
+            return (None, cmd_error)
+
+        package_labels[PACKAGE_COMMAND_KEY] = _base64_encode(command)
 
     return (package_labels, None)
 
 
-def install_subcommand(pkg, version, user_options):
-    """Installs a package's command line interface
+def _base64_encode(dictionary):
+    """Returns base64(json(dictionary)).
 
-    :param pkg: the package to install
-    :type pkg: Package
-    :param version: the package version to install
-    :type version: str
-    :param user_options: package parameters
-    :type user_options: dict
-    :rtype: dcos.api.errors.Error
+    :param dictionary: dict to encode
+    :type dictionary: dict
+    :returns: base64 encoding
+    :rtype: str
     """
 
-    options, err = _merge_options(pkg, version, user_options)
-    if err is not None:
-        return err
-
-    # Insert option parameters into the init template
-    init_template, err = pkg.command_template(version)
-    if err is not None:
-        return err
-
-    rendered_template = pystache.render(init_template, options)
-
-    install_operation, err = util.load_jsons(rendered_template)
-    if err is not None:
-        return err
-
-    return subcommand.install(
-        pkg.name(),
-        install_operation,
-        util.dcos_path())
+    json_str = json.dumps(dictionary, sort_keys=True)
+    str_bytes = six.b(json_str)
+    return base64.b64encode(str_bytes).decode('utf-8')
 
 
 def uninstall(package_name, remove_all, app_id, init_client):
@@ -875,7 +825,7 @@ class Registry():
     def source(self):
         """Returns the associated upstream package source for this registry.
 
-        :rtype: str
+        :rtype: Source
         """
 
         return self._source
@@ -972,7 +922,6 @@ class Package():
     """
 
     def __init__(self, registry, path):
-
         assert os.path.isdir(path)
         self._registry = registry
         self.path = path
@@ -985,6 +934,40 @@ class Package():
         """
 
         return os.path.basename(self.path)
+
+    def options(self, version, user_options):
+        """Merges package options with user supplied options, validates, and
+        returns the result.
+
+        :param version: the package version to install
+        :type version: str
+        :param user_options: package parameters
+        :type user_options: dict
+        :returns: a dictionary with the user supplied options
+        :rtype: (dict, dcos.api.errors.Error)
+        """
+
+        if user_options is None:
+            user_options = {}
+
+        config_schema, err = self.config_json(version)
+        if err is not None:
+            return (None, err)
+
+        default_options, err = _extract_default_values(config_schema)
+        if err is not None:
+            return (None, err)
+
+        # Merge option overrides
+        options = dict(list(default_options.items()) +
+                       list(user_options.items()))
+
+        # Validate options with the config schema
+        err = util.validate_json(options, config_schema)
+        if err is not None:
+            return (None, err)
+
+        return (options, None)
 
     @property
     def registry(self):
@@ -1008,15 +991,6 @@ class Package():
                 self.path,
                 os.path.join(version, 'command.json')))
 
-    def command_template(self, version):
-        """Returns the JSON content of the command.json file.
-
-        :returns: Package command data
-        :rtype: (str, Error)
-        """
-
-        return self._data(os.path.join(version, 'command.json'))
-
     def config_json(self, version):
         """Returns the JSON content of the config.json file.
 
@@ -1029,20 +1003,67 @@ class Package():
     def package_json(self, version):
         """Returns the JSON content of the package.json file.
 
+        :param version: the package version
+        :type version: str
         :returns: Package data
         :rtype: (dict, Error)
         """
 
         return self._json(os.path.join(version, 'package.json'))
 
-    def marathon_template(self, version):
-        """Returns the JSON content of the marathon.json file.
+    def marathon_json(self, version, options):
+        """Returns the JSON content of the marathon.json template, after
+        rendering it with options.
 
-        :returns: Package marathon data
-        :rtype: (str, Error)
+        :param version: the package version
+        :type version: str
+        :param options: the template options to use in rendering
+        :type options: dict
+        :rtype: (dict, Error)
         """
 
-        return self._data(os.path.join(version, 'marathon.json'))
+        return self._render_template('marathon.json', version, options)
+
+    def command_json(self, version, options):
+        """Returns the JSON content of the comand.json template, after
+        rendering it with options.
+
+        :param version: the package version
+        :type version: str
+        :param options: the template options to use in rendering
+        :type options: dict
+        :returns: Package data
+        :rtype: (dict, Error)
+        """
+
+        template, err = self._data(os.path.join(version, 'command.json'))
+        if err is not None:
+            return (None, err)
+
+        rendered = pystache.render(template, options)
+        return (json.loads(rendered), None)
+
+    def _render_template(self, name, version, options):
+        """Render a template.
+
+        :param name: the file name of the template
+        :type name: str
+        :param version: the package version
+        :type version: str
+        :param options: the template options to use in rendering
+        :type options: dict
+        :rtype: (dict, Error)
+        """
+
+        template, err = self._data(os.path.join(version, name))
+        if err is not None:
+            return (None, err)
+
+        json, err = util.render_mustache_json(template, options)
+        if err is not None:
+            return (None, err)
+
+        return (json, None)
 
     def _json(self, path):
         """Returns the json content of the supplied file, relative to the
