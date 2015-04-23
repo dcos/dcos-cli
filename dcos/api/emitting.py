@@ -117,7 +117,7 @@ def _process_json(event, pager_command):
         else:
             return json_output
 
-    supports_colors = sys.platform != 'win32'  # Note: Not tested on Win32
+    supports_colors = not util.is_windows_platform()
 
     pager_is_set = pager_command is not None
 
@@ -143,7 +143,7 @@ def _page(output, pager_command=None):
     if pager_command is None:
         pager_command = 'less -R'
 
-    if not sys.stdout.isatty():
+    if not sys.stdout.isatty() or util.is_windows_platform():
         print(output)
         return
 
