@@ -10,7 +10,8 @@
       "title": "Package sources",
       "description": "The list of package source in search order",
       "default": [ "git://github.com/mesosphere/universe.git" ],
-      "additionalItems": false
+      "additionalItems": false,
+      "uniqueItems": true
     },
     "cache": {
       "type": "string",

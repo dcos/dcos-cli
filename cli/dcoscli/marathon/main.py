@@ -242,9 +242,9 @@ def _add(app_resource):
             'dcoscli',
             'data/marathon-schema.json').decode('utf-8'))
 
-    err = util.validate_json(application_resource, schema)
-    if err is not None:
-        emitter.publish(err)
+    errs = util.validate_json(application_resource, schema)
+    if len(errs) != 0:
+        emitter.publish(util.list_to_err(errs))
         return 1
 
     # Add application to marathon
@@ -387,9 +387,9 @@ def _start(app_id, instances, force):
 
     app_json['instances'] = instances
 
-    err = util.validate_json(app_json, schema)
-    if err is not None:
-        emitter.publish(err)
+    errs = util.validate_json(app_json, schema)
+    if len(errs) != 0:
+        emitter.publish(util.list_to_err(errs))
         return 1
 
     deployment, err = client.update_app(app_id, app_json, force)
@@ -494,9 +494,9 @@ def _update(app_id, json_items, force):
         else:
             app_json[key] = value
 
-    err = util.validate_json(app_json, schema)
-    if err is not None:
-        emitter.publish(err)
+    errs = util.validate_json(app_json, schema)
+    if len(errs) != 0:
+        emitter.publish(util.list_to_err(errs))
         return 1
 
     deployment, err = client.update_app(app_id, app_json, force)

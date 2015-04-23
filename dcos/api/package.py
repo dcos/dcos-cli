@@ -1163,9 +1163,9 @@ class Package():
         logger.info('Merged options: %r', options)
 
         # Validate options with the config schema
-        err = util.validate_json(options, config_schema)
-        if err is not None:
-            return (None, err)
+        errs = util.validate_json(options, config_schema)
+        if len(errs) != 0:
+            return (None, util.list_to_err(errs))
 
         return (options, None)
 

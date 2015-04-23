@@ -22,6 +22,7 @@ Positional Arguments:
 """
 
 import collections
+import copy
 import json
 import os
 
@@ -56,6 +57,36 @@ def main():
         return 1
 
     return returncode
+
+
+def compare_validations(toml_config_pre, toml_config_post):
+    """
+    :param toml_config_pre: dictionary for the value before change
+    :type toml_config_pre: dcos.api.config.Toml
+    :param toml_config_post: dictionary for the value with change
+    :type toml_config_post: dcos.api.config.Toml
+    :returns: process status
+    :rtype: int
+    """
+
+    errors_pre = util.validate_json(toml_config_pre._dictionary,
+                                    _generate_root_schema(toml_config_pre))
+    errors_post = util.validate_json(toml_config_post._dictionary,
+                                     _generate_root_schema(toml_config_post))
+    if len(errors_post) != 0:
+        if len(errors_pre) == 0:
+            emitter.publish(util.list_to_err(errors_post))
+            return 1
+
+        def _errs(errs):
+            return set([e.split('\n')[0] for e in errs])
+
+        diff_errors = _errs(errors_post) - _errs(errors_pre)
+        if len(diff_errors) != 0:
+            emitter.publish(util.list_to_err(errors_post))
+            return 1
+
+    return 0
 
 
 def _cmds():
@@ -134,6 +165,9 @@ def _set(name, value):
         emitter.publish(err)
         return 1
 
+    toml_config_pre = copy.deepcopy(toml_config)
+    if section not in toml_config_pre._dictionary:
+        toml_config_pre._dictionary[section] = {}
     toml_config[name] = python_value
 
     if (name == 'core.reporting' and python_value is True) or \
@@ -142,6 +176,10 @@ def _set(name, value):
 
     _save_config_file(config_path, toml_config)
 
+    if compare_validations(toml_config_pre, toml_config) == 1:
+        return 1
+
+    _save_config_file(config_path, toml_config)
     return 0
 
 
@@ -157,10 +195,16 @@ def _append(name, value):
     if err is not None:
         emitter.publish(err)
         return 1
-
+    toml_config_pre = copy.deepcopy(toml_config)
+    section = name.split(".", 1)[0]
+    if section not in toml_config_pre._dictionary:
+        toml_config_pre._dictionary[section] = {}
     toml_config[name] = toml_config.get(name, []) + python_value
-    _save_config_file(config_path, toml_config)
 
+    if compare_validations(toml_config_pre, toml_config) == 1:
+        return 1
+
+    _save_config_file(config_path, toml_config)
     return 0
 
 
@@ -177,9 +221,15 @@ def _prepend(name, value):
         emitter.publish(err)
         return 1
 
+    toml_config_pre = copy.deepcopy(toml_config)
+    section = name.split(".", 1)[0]
+    if section not in toml_config_pre._dictionary:
+        toml_config_pre._dictionary[section] = {}
     toml_config[name] = python_value + toml_config.get(name, [])
-    _save_config_file(config_path, toml_config)
+    if compare_validations(toml_config_pre, toml_config) == 1:
+        return 1
 
+    _save_config_file(config_path, toml_config)
     return 0
 
 
@@ -190,7 +240,10 @@ def _unset(name, index):
     """
 
     config_path, toml_config = _load_config()
-
+    toml_config_pre = copy.deepcopy(toml_config)
+    section = name.split(".", 1)[0]
+    if section not in toml_config_pre._dictionary:
+        toml_config_pre._dictionary[section] = {}
     value = toml_config.pop(name, None)
     if value is None:
         emitter.publish(
@@ -223,8 +276,10 @@ def _unset(name, index):
                 'Unsetting based on an index is only supported for lists'))
         return 1
 
-    _save_config_file(config_path, toml_config)
+    if compare_validations(toml_config_pre, toml_config) == 1:
+        return 1
 
+    _save_config_file(config_path, toml_config)
     return 0
 
 
@@ -264,6 +319,23 @@ def _validate():
 
     _, toml_config = _load_config()
 
+    errs = util.validate_json(toml_config._dictionary,
+                              _generate_root_schema(toml_config))
+    if len(errs) != 0:
+        emitter.publish(util.list_to_err(errs))
+        return 1
+
+    return 0
+
+
+def _generate_root_schema(toml_config):
+    """
+    :param toml_configs: dictionary of values
+    :type toml_config: TomlConfig
+    :returns: configuration_schema
+    :rtype: jsonschema
+    """
+
     root_schema = {
         '$schema': 'http://json-schema.org/schema#',
         'type': 'object',
@@ -280,12 +352,7 @@ def _validate():
 
         root_schema['properties'][section] = config_schema
 
-    err = util.validate_json(toml_config._dictionary, root_schema)
-    if err is not None:
-        emitter.publish(err)
-        return 1
-
-    return 0
+    return root_schema
 
 
 def _generate_choice_msg(name, value):

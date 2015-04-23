@@ -18,6 +18,15 @@ def env():
     }
 
 
+@pytest.fixture
+def missing_env():
+    return {
+        constants.PATH_ENV: os.environ[constants.PATH_ENV],
+        constants.DCOS_CONFIG_ENV:
+            os.path.join("tests", "data", "missing_params_dcos.toml")
+    }
+
+
 def test_help():
     stdout = b"""Get and set DCOS CLI configuration properties
 
@@ -109,7 +118,7 @@ def test_set_existing_integral_property(env):
 
 
 def test_append_empty_list(env):
-    _unset_value('package.sources', None, env)
+    _set_value('package.sources', '[]', env)
     _append_value(
         'package.sources',
         'git://github.com/mesosphere/universe.git',
@@ -130,7 +139,7 @@ def test_append_empty_list(env):
 
 
 def test_prepend_empty_list(env):
-    _unset_value('package.sources', None, env)
+    _set_value('package.sources', '[]', env)
     _prepend_value(
         'package.sources',
         'https://github.com/mesosphere/universe/archive/master.zip',
@@ -201,9 +210,9 @@ def test_prepend_non_list(env):
 
 
 def test_unset_property(env):
-    _unset_value('marathon.host', None, env)
-    _get_missing_value('marathon.host', env)
-    _set_value('marathon.host', 'localhost', env)
+    _unset_value('core.reporting', None, env)
+    _get_missing_value('core.reporting', env)
+    _set_value('core.reporting', 'false', env)
 
 
 def test_unset_missing_property(env):
@@ -212,6 +221,14 @@ def test_unset_missing_property(env):
         returncode=1,
         stderr=b"Property 'missing.property' doesn't exist\n",
         env=env)
+
+
+def test_set_whole_list(env):
+    _set_value(
+        'package.sources',
+        '["git://github.com/mesosphere/universe.git", '
+        '"https://github.com/mesosphere/universe/archive/master.zip"]',
+        env)
 
 
 def test_unset_top_property(env):
@@ -227,16 +244,6 @@ def test_unset_top_property(env):
         returncode=1,
         stderr=stderr,
         env=env)
-
-
-def test_unset_whole_list(env):
-    _unset_value('package.sources', None, env)
-    _get_missing_value('package.sources', env)
-    _set_value(
-        'package.sources',
-        '["git://github.com/mesosphere/universe.git", '
-        '"https://github.com/mesosphere/universe/archive/master.zip"]',
-        env)
 
 
 def test_unset_list_index(env):
@@ -290,13 +297,11 @@ def test_validate(env):
 
 
 def test_validation_error(env):
-    _unset_value('marathon.host', None, env)
-
-    stderr = b"""\
-Error: missing required property 'host'. \
+    stderr = b"""Error: missing required property 'host'. \
 Add to JSON file and pass in /path/to/file with the --options argument.
 """
-    assert_command(['dcos', 'config', 'validate'],
+
+    assert_command(['dcos', 'config', 'unset', 'marathon.host'],
                    returncode=1,
                    stderr=stderr,
                    env=env)
@@ -312,10 +317,11 @@ def test_set_property_key(env):
         env=env)
 
 
-def test_set_missing_property(env):
-    _unset_value('marathon.host', None, env)
-    _set_value('marathon.host', 'localhost', env)
-    _get_value('marathon.host', 'localhost', env)
+def test_set_missing_property(missing_env):
+    _set_value('marathon.host', 'localhost', missing_env)
+    _get_value('marathon.host', 'localhost', missing_env)
+    _set_value('marathon.port', '8080', missing_env)
+    _get_value('marathon.port', '8080', missing_env)
 
 
 def test_set_core_property(env):
