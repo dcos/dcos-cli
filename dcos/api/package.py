@@ -192,26 +192,70 @@ def uninstall(package_name, remove_all, app_id, init_client):
 
     :param package_name: The package to uninstall
     :type package_name: str
-    :param remove_all: Whether to remove all instances of the named package
+    :param remove_all: Whether to remove all instances of the named app
     :type remove_all: boolean
-    :param app_id: App ID of the package instance to uninstall
+    :param app_id: App ID of the app instance to uninstall
     :type app_id: str
-    :param init_client: The program to use to run the package
+    :param init_client: The program to use to run the app
     :type init_client: object
-    :rtype: Error
+    :rtype: None or Error
+    """
+
+    num_apps, err = uninstall_app(package_name,
+                                  remove_all,
+                                  app_id,
+                                  init_client)
+    if err:
+        return err
+
+    cmd_uninstalled = uninstall_subcommand(package_name)
+
+    if num_apps == 0 and not cmd_uninstalled:
+        msg = "Package [{}]".format(package_name)
+        if app_id is not None:
+            msg += " with id [{}]".format(app_id)
+        msg += " is not installed."
+        return Error(msg)
+
+
+def uninstall_subcommand(distribution_name):
+    """Uninstalls a subcommand.
+
+    :param distribution_name: the name of the package
+    :type distribution_name: str
+    :returns: True if the subcommand was uninstalled
+    :rtype: bool
+    """
+
+    return subcommand.uninstall(distribution_name, util.dcos_path())
+
+
+def uninstall_app(app_name, remove_all, app_id, init_client):
+    """Uninstalls an app.
+
+    :param app_name: The app to uninstall
+    :type app_name: str
+    :param remove_all: Whether to remove all instances of the named app
+    :type remove_all: boolean
+    :param app_id: App ID of the app instance to uninstall
+    :type app_id: str
+    :param init_client: The program to use to run the app
+    :type init_client: object
+    :returns: (number of apps uninstalled, Error or None)
+    :rtype: (int, Error or None)
     """
 
     apps, appsError = init_client.get_apps()
 
     if appsError is not None:
-        return appsError
+        return (0, appsError)
 
     def is_match(app):
         encoding = 'utf-8'  # We normalize encoding for byte-wise comparison
         name_label = app.get('labels', {}).get(PACKAGE_NAME_KEY, u'')
         name_label_enc = name_label.encode(encoding)
-        package_name_enc = package_name.encode(encoding)
-        name_matches = name_label_enc == package_name_enc
+        app_name_enc = app_name.encode(encoding)
+        name_matches = name_label_enc == app_name_enc
 
         if app_id is not None:
             pkg_app_id = app.get('id', '')
@@ -224,20 +268,15 @@ def uninstall(package_name, remove_all, app_id, init_client):
 
     if not remove_all and len(matching_apps) > 1:
         app_ids = [a.get('id') for a in matching_apps]
-        return Error("""Multiple instances of package [{}] are installed. \
+        return (0, Error("""Multiple instances of app [{}] are installed. \
 Please specify the app id of the instance to uninstall or uninstall all. \
 The app ids of the installed package instances are: [{}].""".format(
-            package_name, ', '.join(app_ids)))
-
-    if len(matching_apps) is 0:
-        msg = 'No instances of package [{}]'.format(package_name)
-        if app_id is not None:
-            msg += ' with id [{}]'.format(app_id)
-        msg += ' are installed.'
-        return Error(msg)
+            app_name, ', '.join(app_ids))))
 
     for app in matching_apps:
         init_client.remove_app(app['id'], force=True)
+
+    return (len(matching_apps), None)
 
 
 def list_installed_packages(init_client, result_predicate=lambda x: True):
