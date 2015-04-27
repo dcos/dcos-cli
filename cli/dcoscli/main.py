@@ -33,7 +33,7 @@ from subprocess import PIPE, Popen
 
 import dcoscli
 import docopt
-from dcos.api import constants, emitting, errors, http, subcommand, util
+from dcos.api import auth, constants, emitting, errors, http, subcommand, util
 from dcoscli import analytics
 
 emitter = emitting.FlatEmitter()
@@ -44,6 +44,11 @@ def main():
 
     if not _is_valid_configuration():
         return 1
+
+    if not auth.check_if_user_authenticated():
+        auth_status = auth.force_auth()
+        if not auth_status:
+            return 1
 
     args = docopt.docopt(
         __doc__,

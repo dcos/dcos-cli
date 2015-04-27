@@ -69,7 +69,8 @@ def test_list_property(env):
         env)
 
     assert returncode == 0
-    assert stdout == b"""core.reporting=False
+    assert stdout == b"""core.email=test@mail.com
+core.reporting=False
 marathon.host=localhost
 marathon.port=8080
 package.cache=tmp/cache
