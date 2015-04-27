@@ -1,6 +1,8 @@
 import json
+import os
 
 import six
+from dcos.api import subcommand
 
 from common import exec_command
 
@@ -149,7 +151,7 @@ def test_bad_install():
             '--options=tests/data/package/mesos-dns-config-bad.json'])
 
     assert returncode == 1
-    assert stdout == b'Installing package [mesos-dns] version [alpha]\n'
+    assert stdout == b''
 
     assert stderr == b"""\
 Error: 'mesos-dns/config-url' is a required property
@@ -174,36 +176,81 @@ def test_install():
     assert stderr == b''
 
 
-def test_package_labels():
-    app_labels = get_app_labels('mesos-dns')
-    expected_metadata = b"""\
-eyJkZXNjcmlwdGlvbiI6ICJETlMtYmFzZWQgc2VydmljZSBkaXNjb3ZlcnkgZm9yIE1lc29zLiIsI\
-CJtYWludGFpbmVyIjogInN1cHBvcnRAbWVzb3NwaGVyZS5pbyIsICJuYW1lIjogIm1lc29zLWRucy\
-IsICJwb3N0SW5zdGFsbE5vdGVzIjogIlBsZWFzZSByZWZlciB0byB0aGUgdHV0b3JpYWwgaW5zdHJ\
-1Y3Rpb25zIGZvciBmdXJ0aGVyIHNldHVwIHJlcXVpcmVtZW50czogaHR0cDovL21lc29zcGhlcmUu\
-Z2l0aHViLmlvL21lc29zLWRucy9kb2NzL3R1dG9yaWFsLWdjZS5odG1sIiwgInNjbSI6ICJodHRwc\
-zovL2dpdGh1Yi5jb20vbWVzb3NwaGVyZS9tZXNvcy1kbnMuZ2l0IiwgInRhZ3MiOiBbIm1lc29zcG\
-hlcmUiXSwgInZlcnNpb24iOiAiYWxwaGEiLCAid2Vic2l0ZSI6ICJodHRwOi8vbWVzb3NwaGVyZS5\
-naXRodWIuaW8vbWVzb3MtZG5zIn0=\
+def test_package_metadata():
+    returncode, stdout, stderr = exec_command(['dcos',
+                                               'package',
+                                               'install',
+                                               'helloworld'])
+
+    assert returncode == 0
+    assert stdout == b"""Installing package [helloworld] version [0.1.0]
+Installing CLI subcommand for package [helloworld]
 """
-    actual_metadata = app_labels.get('DCOS_PACKAGE_METADATA')
-    assert(six.b(actual_metadata) == expected_metadata)
+    assert stderr == b''
 
-    expected_registry_version = b'0.1.0-alpha'
-    actual_registry_version = app_labels.get('DCOS_PACKAGE_REGISTRY_VERSION')
-    assert(six.b(actual_registry_version) == expected_registry_version)
+    # test marathon labels
+    expected_metadata = b"""eyJkZXNjcmlwdGlvbiI6ICJFeGFtcGxlIERDT1MgYXBwbGljYX\
+Rpb24gcGFja2FnZSIsICJtYWludGFpbmVyIjogInN1cHBvcnRAbWVzb3NwaGVyZS5pbyIsICJuYW1l\
+IjogImhlbGxvd29ybGQiLCAidGFncyI6IFsibWVzb3NwaGVyZSIsICJleGFtcGxlIiwgInN1YmNvbW\
+1hbmQiXSwgInZlcnNpb24iOiAiMC4xLjAiLCAid2Vic2l0ZSI6ICJodHRwczovL2dpdGh1Yi5jb20v\
+bWVzb3NwaGVyZS9kY29zLWhlbGxvd29ybGQifQ=="""
 
-    expected_name = b'mesos-dns'
-    actual_name = app_labels.get('DCOS_PACKAGE_NAME')
-    assert(six.b(actual_name) == expected_name)
-
-    expected_version = b'alpha'
-    actual_version = app_labels.get('DCOS_PACKAGE_VERSION')
-    assert(six.b(actual_version) == expected_version)
+    expected_command = b"""eyJwaXAiOiBbImh0dHA6Ly9kb3dubG9hZHMubWVzb3NwaGVyZS5\
+pby9kY29zLWNsaS9kY29zLTAuMS4wLXB5Mi5weTMtbm9uZS1hbnkud2hsIiwgImdpdCtodHRwczovL\
+2dpdGh1Yi5jb20vbWVzb3NwaGVyZS9kY29zLWhlbGxvd29ybGQuZ2l0I2Rjb3MtaGVsbG93b3JsZD0\
+wLjEuMCJdfQ=="""
 
     expected_source = b'git://github.com/mesosphere/universe.git'
-    actual_source = app_labels.get('DCOS_PACKAGE_SOURCE')
-    assert(six.b(actual_source) == expected_source)
+
+    expected_labels = {
+        'DCOS_PACKAGE_METADATA': expected_metadata,
+        'DCOS_PACKAGE_COMMAND': expected_command,
+        'DCOS_PACKAGE_REGISTRY_VERSION': b'0.1.0-alpha',
+        'DCOS_PACKAGE_NAME': b'helloworld',
+        'DCOS_PACKAGE_VERSION': b'0.1.0',
+        'DCOS_PACKAGE_SOURCE': expected_source,
+        'DCOS_PACKAGE_RELEASE': b'0',
+    }
+
+    app_labels = get_app_labels('helloworld')
+
+    for label, value in expected_labels.items():
+        assert value == six.b(app_labels.get(label))
+
+    # test local package.json
+    package = {
+        "website": "https://github.com/mesosphere/dcos-helloworld",
+        "maintainer": "support@mesosphere.io",
+        "name": "helloworld",
+        "tags": ["mesosphere", "example", "subcommand"],
+        "version": "0.1.0",
+        "description": "Example DCOS application package"
+    }
+
+    package_dir = subcommand.package_dir('helloworld')
+
+    # test local package.json
+    package_path = os.path.join(package_dir, 'package.json')
+    with open(package_path) as f:
+        assert json.load(f) == package
+
+    # test local source
+    source_path = os.path.join(package_dir, 'source')
+    with open(source_path) as f:
+        assert six.b(f.read()) == expected_source
+
+    # test local version
+    version_path = os.path.join(package_dir, 'version')
+    with open(version_path) as f:
+        assert six.b(f.read()) == b'0'
+
+    # uninstall helloworld
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'uninstall', 'helloworld'])
+
+    assert returncode == 0
+    assert stdout == b''
+    assert stderr == b''
 
 
 def test_install_with_id():

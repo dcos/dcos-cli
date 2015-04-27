@@ -38,21 +38,6 @@ def command_executables(subcommand, dcos_path):
     return (executables[0], None)
 
 
-BIN_DIRECTORY = 'Scripts' if util.is_windows_platform() else 'bin'
-
-
-def _subcommand_dir():
-    """Returns path to the subcommand directory.  This directory contains
-    a virtualenv for each installed subcommand.
-
-    :returns: path to the subcommand directory
-    :rtype: str
-    """
-    return os.path.expanduser(os.path.join("~",
-                                           constants.DCOS_DIR,
-                                           constants.DCOS_SUBCOMMAND_SUBDIR))
-
-
 def list_paths(dcos_path):
     """List the real path to executable dcos subcommand programs.
 
@@ -71,24 +56,19 @@ def list_paths(dcos_path):
             _is_executable(os.path.join(binpath, filename)))
     ]
 
-    subcommand_directory = _subcommand_dir()
+    subcommands = []
+    for package in distributions(dcos_path):
+        bin_dir = os.path.join(package_dir(package),
+                               constants.DCOS_SUBCOMMAND_VIRTUALENV_SUBDIR,
+                               BIN_DIRECTORY)
 
-    subcommands = [
-        os.path.join(subcommand_directory, package, BIN_DIRECTORY, filename)
+        for filename in os.listdir(bin_dir):
+            path = os.path.join(bin_dir, filename)
 
-        for package in distributions(dcos_path)
+            if (filename.startswith(constants.DCOS_COMMAND_PREFIX) and
+                    _is_executable(path)):
 
-        for filename in os.listdir(
-            os.path.join(subcommand_directory, package, BIN_DIRECTORY))
-
-        if (filename.startswith(constants.DCOS_COMMAND_PREFIX) and
-            _is_executable(
-                os.path.join(
-                    subcommand_directory,
-                    package,
-                    BIN_DIRECTORY,
-                    filename)))
-    ]
+                subcommands.append(path)
 
     return commands + subcommands
 
@@ -114,10 +94,17 @@ def distributions(dcos_path):
     :rtype: list of str
     """
 
-    subcommand_directory = _subcommand_dir()
+    subcommand_dir = _subcommand_dir()
 
-    if os.path.isdir(subcommand_directory):
-        return os.listdir(subcommand_directory)
+    if os.path.isdir(subcommand_dir):
+        return [
+            subdir for subdir in os.listdir(subcommand_dir)
+            if os.path.isdir(
+                os.path.join(
+                    subcommand_dir,
+                    subdir,
+                    constants.DCOS_SUBCOMMAND_VIRTUALENV_SUBDIR))
+        ]
     else:
         return []
 
@@ -182,32 +169,88 @@ def noun(executable_path):
     return noun
 
 
-def install(distribution_name, install_operation, dcos_path):
-    """Installs the dcos cli subcommand
+def _write_package_json(pkg, version):
+    """ Write package.json locally.
 
-    :param distribution_name: the name of the package
-    :type distribution_name: str
-    :param install_operation: operation to use to install subcommand
-    :type install_operation: dict
-    :param dcos_path: path to the dcos cli directory
-    :type dcos_path: str
+    :param pkg: the package being installed
+    :type pkg: Package
+    :param version: the package version to install
+    :type version: str
+    :rtype: Error
+    """
+
+    pkg_dir = package_dir(pkg.name())
+
+    package_path = os.path.join(pkg_dir, 'package.json')
+
+    package_json, err = pkg.package_json(version)
+    if err is not None:
+        return err
+
+    with open(package_path, 'w') as package_file:
+        json.dump(package_json, package_file)
+
+
+def _write_package_version(pkg, version):
+    """ Write package version locally.
+
+    :param pkg: the package being installed
+    :type pkg: Package
+    :param version: the package version to install
+    :type version: str
+    :rtype: None
+    """
+
+    pkg_dir = package_dir(pkg.name())
+
+    version_path = os.path.join(pkg_dir, 'version')
+
+    with open(version_path, 'w') as version_file:
+        version_file.write(version)
+
+
+def _write_package_source(pkg):
+    """ Write package source locally.
+
+    :param pkg: the package being installed
+    :type pkg: Package
+    :rtype: None
+    """
+
+    pkg_dir = package_dir(pkg.name())
+
+    source_path = os.path.join(pkg_dir, 'source')
+
+    with open(source_path, 'w') as source_file:
+        source_file.write(pkg.registry.source.url)
+
+
+def _install_env(pkg, version, options):
+    """ Install subcommand virtual env.
+
+    :param pkg: the package to install
+    :type pkg: Package
+    :param version: the package version to install
+    :type version: str
+    :param options: package parameters
+    :type options: dict
     :returns: an error if the subcommand failed; None otherwise
     :rtype: dcos.api.errors.Error
     """
 
-    subcommand_directory = _subcommand_dir()
+    pkg_dir = package_dir(pkg.name())
 
-    if not os.path.exists(subcommand_directory):
-        logger.info('Creating directory: %r', subcommand_directory)
-        os.makedirs(subcommand_directory, 0o775)
+    install_operation, err = pkg.command_json(version, options)
+    if err is not None:
+        return err
 
-    package_directory = os.path.join(subcommand_directory, distribution_name)
+    env_dir = os.path.join(pkg_dir,
+                           constants.DCOS_SUBCOMMAND_VIRTUALENV_SUBDIR)
 
     if 'pip' in install_operation:
-        return _install_with_pip(
-            distribution_name,
-            os.path.join(dcos_path, BIN_DIRECTORY),
-            package_directory,
+        return install_with_pip(
+            pkg.name(),
+            env_dir,
             install_operation['pip'])
     else:
         return errors.DefaultError(
@@ -215,53 +258,100 @@ def install(distribution_name, install_operation, dcos_path):
                 install_operation.keys()))
 
 
-def uninstall(distribution_name, dcos_path):
+def install(pkg, version, options):
+    """Installs the dcos cli subcommand
+
+    :param pkg: the package to install
+    :type pkg: Package
+    :param version: the package version to install
+    :type version: str
+    :param options: package parameters
+    :type options: dict
+    :returns: an error if the subcommand failed; None otherwise
+    :rtype: dcos.api.errors.Error
+    """
+
+    pkg_dir = package_dir(pkg.name())
+    util.ensure_dir(pkg_dir)
+
+    err = _write_package_json(pkg, version)
+    if err is not None:
+        return err
+
+    _write_package_version(pkg, version)
+
+    _write_package_source(pkg)
+
+    return _install_env(pkg, version, options)
+
+
+def _subcommand_dir():
+    """ Returns ~/.dcos/subcommands """
+    return os.path.expanduser(os.path.join("~",
+                                           constants.DCOS_DIR,
+                                           constants.DCOS_SUBCOMMAND_SUBDIR))
+
+
+# TODO(mgummelt): should be made private after "dcos subcommand" is removed
+def package_dir(name):
+    """ Returns ~/.dcos/subcommands/<name>
+
+    :param name: package name
+    :type name: str
+    :rtype: str
+    """
+    return os.path.join(_subcommand_dir(),
+                        name)
+
+
+def uninstall(package_name, dcos_path):
     """Uninstall the dcos cli subcommand
 
-    :param distribution_name: the name of the package
-    :type distribution_name: str
+    :param package_name: the name of the package
+    :type package_name: str
     :param dcos_path: the path to the dcos cli directory
     :type dcos_path: str
     :returns: True if the subcommand was uninstalled
     :rtype: bool
     """
 
-    subcommand_directory = os.path.join(_subcommand_dir(), distribution_name)
+    pkg_dir = package_dir(package_name)
 
-    if os.path.isdir(subcommand_directory):
-        shutil.rmtree(subcommand_directory)
+    if os.path.isdir(pkg_dir):
+        shutil.rmtree(pkg_dir)
         return True
 
     return False
 
+BIN_DIRECTORY = 'Scripts' if util.is_windows_platform() else 'bin'
 
-def _install_with_pip(
-        distribution_name,
-        bin_directory,
-        package_directory,
+
+# TODO (mgummelt): should be made private after "dcos subcommand" is removed
+def install_with_pip(
+        package_name,
+        env_directory,
         requirements):
     """
-    :param distribution_name: the name of the package
-    :type distribution_name: str
-    :param bin_directory: the path to the directory containing the
-                           executables (virtualenv, etc).
-    :type bin_directory: str
-    :param package_directory: the path to the directory for the package
-    :type package_directory: str
+    :param package_name: the name of the package
+    :type package_name: str
+    :param env_directory: the path to the directory in which to install the
+                          package's virtual env
+    :type env_directory: str
     :param requirements: the list of pip requirements
     :type requirements: list of str
     :returns: an Error if it failed to install the package; None otherwise
     :rtype: dcos.api.errors.Error
     """
 
-    new_package_dir = not os.path.exists(package_directory)
+    bin_directory = os.path.join(util.dcos_path(), BIN_DIRECTORY)
+    new_package_dir = not os.path.exists(env_directory)
 
-    pip_path = os.path.join(package_directory, BIN_DIRECTORY, 'pip')
+    pip_path = os.path.join(env_directory, BIN_DIRECTORY, 'pip')
     if not os.path.exists(pip_path):
-        cmd = [os.path.join(bin_directory, 'virtualenv'), package_directory]
+        cmd = [os.path.join(bin_directory, 'virtualenv'), env_directory]
 
         if _execute_command(cmd) != 0:
-            return _generic_error(distribution_name)
+            return _generic_error(package_name)
 
     with util.temptext() as text_file:
         fd, requirement_path = text_file
@@ -272,7 +362,7 @@ def _install_with_pip(
                 print(line, file=requirements_file)
 
         cmd = [
-            os.path.join(package_directory, BIN_DIRECTORY, 'pip'),
+            os.path.join(env_directory, BIN_DIRECTORY, 'pip'),
             'install',
             '--requirement',
             requirement_path,
@@ -281,9 +371,9 @@ def _install_with_pip(
         if _execute_command(cmd) != 0:
             # We should remove the diretory that we just created
             if new_package_dir:
-                shutil.rmtree(package_directory)
+                shutil.rmtree(env_directory)
 
-            return _generic_error(distribution_name)
+            return _generic_error(package_name)
 
     return None
 
@@ -315,7 +405,7 @@ def _execute_command(command):
     return process.returncode
 
 
-def _generic_error(distribution_name):
+def _generic_error(package_name):
     """
     :param package: package name
     :type: str
@@ -324,4 +414,4 @@ def _generic_error(distribution_name):
     """
 
     return errors.DefaultError(
-        'Error installing {!r} package'.format(distribution_name))
+        'Error installing {!r} package'.format(package_name))

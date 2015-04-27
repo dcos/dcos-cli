@@ -50,7 +50,7 @@ import dcoscli
 import docopt
 import pkg_resources
 from dcos.api import (cmds, config, constants, emitting, errors, marathon,
-                      options, package, util)
+                      options, package, subcommand, util)
 
 emitter = emitting.FlatEmitter()
 
@@ -256,13 +256,13 @@ def _describe(package_name):
     return 0
 
 
-def _install(package_name, options_file, app_id, cli, app):
+def _install(package_name, options_path, app_id, cli, app):
     """Install the specified package.
 
     :param package_name: the package to install
     :type package_name: str
-    :param options_file: path to file containing option values
-    :type options_file: str
+    :param options_path: path to file containing option values
+    :type options_path: str
     :param app_id: app ID for installation of this package
     :type app_id: str
     :param cli: indicates if the cli should be installed
@@ -291,22 +291,25 @@ def _install(package_name, options_file, app_id, cli, app):
                 "repositories"))
         return 1
 
-    options_json = {}
-
-    if options_file is not None:
-        try:
-            options_fd = open(options_file)
-            options_json = json.load(options_fd)
-        except Exception as e:
-            emitter.publish(e.message)
-            return 1
-
     # TODO(CD): Make package version to install configurable
     pkg_version, version_error = pkg.latest_version()
-
     if version_error is not None:
         emitter.publish(version_error)
         return 1
+
+    if options_path is None:
+        options = {}
+    else:
+        try:
+            with open(options_path) as options_file:
+                user_options = json.load(options_file)
+                options, err = pkg.options(pkg_version, user_options)
+                if err is not None:
+                    emitter.publish(err)
+                    return 1
+        except Exception as e:
+            emitter.publish(errors.DefaultError(e.message))
+            return 1
 
     if app:
         # Install in Marathon
@@ -331,8 +334,9 @@ def _install(package_name, options_file, app_id, cli, app):
             pkg,
             pkg_version,
             init_client,
-            options_json,
+            options,
             app_id)
+
         if install_error is not None:
             emitter.publish(install_error)
             return 1
@@ -342,7 +346,7 @@ def _install(package_name, options_file, app_id, cli, app):
         emitter.publish('Installing CLI subcommand for package [{}]'.format(
             pkg.name()))
 
-        err = package.install_subcommand(pkg, pkg_version, options_json)
+        err = subcommand.install(pkg, pkg_version, options)
         if err is not None:
             emitter.publish(err)
             return 1

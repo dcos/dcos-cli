@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 import sys
 import uuid
@@ -7,7 +6,7 @@ import uuid
 import dcoscli
 import requests
 import rollbar
-from dcos.api import config, constants
+from dcos.api import config, constants, util
 from dcoscli.constants import (ROLLBAR_SERVER_POST_KEY,
                                SEGMENT_IO_CLI_ERROR_EVENT,
                                SEGMENT_IO_CLI_EVENT, SEGMENT_IO_WRITE_KEY_DEV,
@@ -15,7 +14,7 @@ from dcoscli.constants import (ROLLBAR_SERVER_POST_KEY,
 from futures import ThreadPoolExecutor
 from requests.auth import HTTPBasicAuth
 
-logger = logging.getLogger(__name__)
+logger = util.get_logger(__name__)
 session_id = uuid.uuid4().hex
 
 

@@ -57,6 +57,19 @@ def temptext():
         shutil.rmtree(path, ignore_errors=True)
 
 
+def ensure_dir(directory):
+    """If `directory` does not exist, create it.
+
+    :param directory: path to the directory
+    :type directory: string
+    :rtype: None
+    """
+
+    if not os.path.exists(directory):
+        logger.info('Creating directory: %r', directory)
+        os.makedirs(directory, 0o775)
+
+
 def which(program):
     """Returns the path to the named executable program.
 
@@ -178,7 +191,6 @@ def load_jsons(value):
         return (json.loads(value), None)
     except:
         error = sys.exc_info()[0]
-        logger = get_logger(__name__)
         logger.error(
             'Unhandled exception while loading JSON: %r -- %r',
             value,
@@ -298,3 +310,5 @@ class CustomJsonRenderer(pystache.Renderer):
         :rtype: str
         """
         return json.dumps(val)
+
+logger = get_logger(__name__)

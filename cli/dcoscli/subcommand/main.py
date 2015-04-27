@@ -129,11 +129,9 @@ def _install(package):
 
     dcos_config = config.load_from_path(os.environ[constants.DCOS_CONFIG_ENV])
 
-    install_operation = {
-        'pip': [package]
-    }
+    pip_operation = [package]
     if 'subcommand.pip_find_links' in dcos_config:
-        install_operation['pip'].append(
+        pip_operation.append(
             '--find-links {}'.format(dcos_config['subcommand.pip_find_links']))
 
     distribution_name, err = _distribution_name(package)
@@ -143,10 +141,13 @@ def _install(package):
 subcommand for a package, run `dcos package install <package> --cli` instead"))
         return 1
 
-    err = subcommand.install(
+    env_dir = os.path.join(subcommand.package_dir(distribution_name),
+                           constants.DCOS_SUBCOMMAND_VIRTUALENV_SUBDIR)
+
+    err = subcommand.install_with_pip(
         distribution_name,
-        install_operation,
-        util.dcos_path())
+        env_dir,
+        pip_operation)
     if err is not None:
         emitter.publish(err)
         return 1
