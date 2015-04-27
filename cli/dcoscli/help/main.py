@@ -15,6 +15,7 @@ import futures
 from dcos.api import cmds, emitting, options, subcommand, util
 
 emitter = emitting.FlatEmitter()
+logger = util.get_logger(__name__)
 
 
 def main():
@@ -56,6 +57,7 @@ def _help(show_info):
         return 0
 
     directory = util.dcos_path()
+    logger.debug("DCOS Path: {!r}".format(directory))
 
     paths = subcommand.list_paths(directory)
     with futures.ThreadPoolExecutor(max_workers=len(paths)) as executor:
@@ -67,7 +69,7 @@ def _help(show_info):
         "System (DCOS). The Mesosphere DCOS is a distributed operating\n"
         "system built around Apache Mesos. This utility provides tools\n"
         "for easy management of a DCOS installation.\n")
-    emitter.publish("Available DCOS commands in {!r}:".format(directory))
+    emitter.publish("Available DCOS commands:")
     emitter.publish(commands_message)
     emitter.publish(
         "\nGet detailed command description with 'dcos <command> --help'.")

@@ -1,4 +1,4 @@
-"""Get and set DCOS command line options
+"""Get and set DCOS CLI configuration properties
 
 Usage:
     dcos config --info

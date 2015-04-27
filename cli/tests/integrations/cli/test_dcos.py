@@ -1,12 +1,11 @@
 import os
 
-from dcos.api import constants, util
+from dcos.api import constants
 
 from common import exec_command
 
 
 def test_default():
-    dcos_path = os.path.dirname(os.path.dirname(util.which('dcos')))
     returncode, stdout, stderr = exec_command(['dcos'])
 
     assert returncode == 0
@@ -16,16 +15,16 @@ System (DCOS). The Mesosphere DCOS is a distributed operating
 system built around Apache Mesos. This utility provides tools
 for easy management of a DCOS installation.
 
-Available DCOS commands in '{}':
+Available DCOS commands:
 
-\tconfig         \tGet and set DCOS command line options
+\tconfig         \tGet and set DCOS CLI configuration properties
 \thelp           \tDisplay command line usage information
 \tmarathon       \tDeploy and manage applications on the DCOS
 \tpackage        \tInstall and manage DCOS software packages
 \tsubcommand     \tInstall and manage DCOS CLI subcommands
 
 Get detailed command description with 'dcos <command> --help'.
-""".format(dcos_path).encode('utf-8')
+""".encode('utf-8')
     assert stderr == b''
 
 
@@ -33,7 +32,14 @@ def test_help():
     returncode, stdout, stderr = exec_command(['dcos', '--help'])
 
     assert returncode == 0
-    assert stdout == b"""Usage:
+    assert stdout == b"""\
+Command line utility for the Mesosphere Datacenter Operating
+System (DCOS)
+
+'dcos help' lists all available subcommands. See 'dcos <command> --help'
+to read about a specific subcommand.
+
+Usage:
     dcos [options] [<command>] [<args>...]
 
 Options:
@@ -55,9 +61,6 @@ Environment Variables:
 
     DCOS_CONFIG                 This environment variable points to the
                                 location of the DCOS configuration file.
-
-'dcos help' lists all available subcommands. See 'dcos <command> --help'
-to read about a specific subcommand.
 """
     assert stderr == b''
 
@@ -102,7 +105,7 @@ def test_log_level_flag():
         ['dcos', '--log-level=info', 'config', '--info'])
 
     assert returncode == 0
-    assert stdout == b"Get and set DCOS command line options\n"
+    assert stdout == b"Get and set DCOS CLI configuration properties\n"
 
 
 def test_capital_log_level_flag():
@@ -110,7 +113,7 @@ def test_capital_log_level_flag():
         ['dcos', '--log-level=INFO', 'config', '--info'])
 
     assert returncode == 0
-    assert stdout == b"Get and set DCOS command line options\n"
+    assert stdout == b"Get and set DCOS CLI configuration properties\n"
 
 
 def test_invalid_log_level_flag():

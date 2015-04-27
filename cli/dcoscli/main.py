@@ -1,4 +1,10 @@
 """
+Command line utility for the Mesosphere Datacenter Operating
+System (DCOS)
+
+'dcos help' lists all available subcommands. See 'dcos <command> --help'
+to read about a specific subcommand.
+
 Usage:
     dcos [options] [<command>] [<args>...]
 
@@ -22,8 +28,6 @@ Environment Variables:
     DCOS_CONFIG                 This environment variable points to the
                                 location of the DCOS configuration file.
 
-'dcos help' lists all available subcommands. See 'dcos <command> --help'
-to read about a specific subcommand.
 """
 
 import os
