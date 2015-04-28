@@ -298,18 +298,22 @@ def _install(package_name, options_path, app_id, cli, app):
         return 1
 
     if options_path is None:
-        options = {}
+        user_options = {}
     else:
-        try:
-            with open(options_path) as options_file:
-                user_options = json.load(options_file)
-                options, err = pkg.options(pkg_version, user_options)
-                if err is not None:
-                    emitter.publish(err)
-                    return 1
-        except Exception as e:
-            emitter.publish(errors.DefaultError(e.message))
+        with open(options_path) as options_file:
+            user_options, err = util.load_json(options_file)
+            if err is not None:
+                emitter.publish(err)
+                return 1
+
+    try:
+        options, err = pkg.options(pkg_version, user_options)
+        if err is not None:
+            emitter.publish(err)
             return 1
+    except Exception as e:
+        emitter.publish(errors.DefaultError(e.message))
+        return 1
 
     if app:
         # Install in Marathon
