@@ -22,7 +22,7 @@ def test_help():
     returncode, stdout, stderr = exec_command(['dcos', 'config', '--help'])
 
     assert returncode == 0
-    assert stdout == b"""Get and set DCOS command line options
+    assert stdout == b"""Get and set DCOS CLI configuration properties
 
 Usage:
     dcos config --info
@@ -51,7 +51,7 @@ def test_info():
     returncode, stdout, stderr = exec_command(['dcos', 'config', '--info'])
 
     assert returncode == 0
-    assert stdout == b'Get and set DCOS command line options\n'
+    assert stdout == b'Get and set DCOS CLI configuration properties\n'
     assert stderr == b''
 
 
