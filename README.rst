@@ -124,8 +124,8 @@ Other Useful Commands
 Using the CLI
 -------------
 
-Detailed help and usage information is available through the `dcos help` command and
-for specific subcommands through `dcos <subcommand> --help`.
+Detailed help and usage information is available through the :code:`dcos help` command and
+for specific subcommands through :code:`dcos <subcommand> --help`.
 
 Full documentation is available for the DCOS CLI on the `Mesosphere docs website`_.
 
