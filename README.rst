@@ -1,8 +1,7 @@
 DCOS Command Line Interface
 ===========================
-The DCOS Command Line Interface (CLI) is a command line utility supporting
-several commands to provide an user friendly yet powerful way to manage DCOS
-installations.
+The DCOS Command Line Interface (CLI) is a command line utility that
+provides a user-friendly yet powerful way to manage DCOS installations.
 
 Dependencies
 ------------
@@ -60,7 +59,7 @@ Configure Environment and Run
 
     dcos help
 
-Running Tests:
+Running Tests
 --------------
 
 Setup
@@ -122,8 +121,8 @@ Other Useful Commands
     tox -e py27-integration /cli/test_config.py
 
 
-Using the CLI:
---------------
+Using the CLI
+-------------
 
 Detailed help and usage information is available through the `dcos help` command and
 for specific subcommands through `dcos <subcommand> --help`.
