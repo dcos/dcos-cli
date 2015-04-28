@@ -121,9 +121,20 @@ Other Useful Commands
 
     tox -e py27-integration /cli/test_config.py
 
+
+Using the CLI:
+--------------
+
+Detailed help and usage information is available through the `dcos help` command and
+for specific subcommands through `dcos <subcommand> --help`.
+
+Full documentation is available for the DCOS CLI on the `Mesosphere docs website`_.
+
+
 .. _packages: https://packaging.python.org/en/latest/installing.html#installing-requirements
 .. _git: http://git-scm.com
 .. _installer: https://www.python.org/downloads/
 .. _virtualenv: https://virtualenv.pypa.io/en/latest/
 .. _dcos-helloworld: https://github.com/mesosphere/dcos-helloworld
 .. _setup: https://github.com/mesosphere/dcos-helloworld#setup
+.. _Mesosphere docs website: http://docs-staging.mesosphere.com.s3-website-us-west-2.amazonaws.com/using/cli/
