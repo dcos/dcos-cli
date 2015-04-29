@@ -1,11 +1,8 @@
-from common import exec_command
+from common import assert_command
 
 
 def test_help():
-    returncode, stdout, stderr = exec_command(['dcos', 'help', '--help'])
-
-    assert returncode == 0
-    assert stdout == b"""Display command line usage information
+    stdout = b"""Display command line usage information
 
 Usage:
     dcos help --info
@@ -16,30 +13,22 @@ Options:
     --info     Show a short description of this subcommand
     --version  Show version
 """
-    assert stderr == b''
+    assert_command(['dcos', 'help', '--help'],
+                   stdout=stdout)
 
 
 def test_info():
-    returncode, stdout, stderr = exec_command(['dcos', 'help', '--info'])
-
-    assert returncode == 0
-    assert stdout == b'Display command line usage information\n'
-    assert stderr == b''
+    assert_command(['dcos', 'help', '--info'],
+                   stdout=b'Display command line usage information\n')
 
 
 def test_version():
-    returncode, stdout, stderr = exec_command(['dcos', 'help', '--version'])
-
-    assert returncode == 0
-    assert stdout == b'dcos-help version 0.1.0\n'
-    assert stderr == b''
+    assert_command(['dcos', 'help', '--version'],
+                   stdout=b'dcos-help version 0.1.0\n')
 
 
 def test_list():
-    returncode, stdout, stderr = exec_command(['dcos', 'help'])
-
-    assert returncode == 0
-    assert stdout == """\
+    stdout = """\
 Command line utility for the Mesosphere Datacenter Operating
 System (DCOS). The Mesosphere DCOS is a distributed operating
 system built around Apache Mesos. This utility provides tools
@@ -55,4 +44,6 @@ Available DCOS commands:
 
 Get detailed command description with 'dcos <command> --help'.
 """.encode('utf-8')
-    assert stderr == b''
+
+    assert_command(['dcos', 'help'],
+                   stdout=stdout)

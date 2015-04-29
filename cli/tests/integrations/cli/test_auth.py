@@ -8,7 +8,6 @@ from mock import Mock, patch
 
 
 def test_no_browser_auth():
-
     webbrowser.get = Mock(side_effect=webbrowser.Error())
     with patch('webbrowser.open') as op:
         _mock_dcos_run([util.which('dcos')], False)
