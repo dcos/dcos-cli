@@ -231,10 +231,16 @@ def _base_properties(conf=None):
     if not conf:
         conf = util.get_config()
 
-    cmd = 'dcos' + (' {}'.format(sys.argv[1]) if len(sys.argv) > 1 else '')
+    if len(sys.argv) > 1:
+        cmd = 'dcos ' + sys.argv[1]
+        full_cmd = 'dcos ' + ' '.join(sys.argv[1:])
+    else:
+        cmd = 'dcos'
+        full_cmd = 'dcos'
+
     return {
         'cmd': cmd,
-        'full_cmd': ' '.join(sys.argv),
+        'full_cmd': full_cmd,
         'dcoscli.version': dcoscli.version,
         'python_version': str(sys.version_info),
         'config': json.dumps(list(conf.property_items()))
