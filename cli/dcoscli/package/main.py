@@ -52,6 +52,8 @@ import pkg_resources
 from dcos.api import (cmds, config, constants, emitting, errors, marathon,
                       options, package, subcommand, util)
 
+logger = util.get_logger(__name__)
+
 emitter = emitting.FlatEmitter()
 
 
@@ -312,6 +314,7 @@ def _install(package_name, options_path, app_id, cli, app):
             emitter.publish(err)
             return 1
     except Exception as e:
+        logger.exception('Exception while generating options')
         emitter.publish(errors.DefaultError(e.message))
         return 1
 
