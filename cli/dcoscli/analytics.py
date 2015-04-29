@@ -6,7 +6,7 @@ import uuid
 import dcoscli
 import requests
 import rollbar
-from dcos.api import config, constants, util
+from dcos.api import util
 from dcoscli.constants import (ROLLBAR_SERVER_POST_KEY,
                                SEGMENT_IO_CLI_ERROR_EVENT,
                                SEGMENT_IO_CLI_EVENT, SEGMENT_IO_WRITE_KEY_DEV,
@@ -31,7 +31,7 @@ def wait_and_track(subproc):
     rollbar.init(ROLLBAR_SERVER_POST_KEY,
                  'prod' if _is_prod() else 'dev')
 
-    conf = _conf()
+    conf = util.get_config()
     report = conf.get('core.reporting', True)
     with ThreadPoolExecutor(max_workers=2) as pool:
         if report:
@@ -79,17 +79,6 @@ def _send_segment_event(event, properties):
 def _is_prod():
     """ True if this process is in production. """
     return os.environ.get('DCOS_PRODUCTION', 'true') != 'false'
-
-
-def _conf():
-    """
-    Get config file.
-
-    :rtype: Toml
-    """
-
-    return config.load_from_path(
-        os.environ[constants.DCOS_CONFIG_ENV])
 
 
 def _wait_and_capture(subproc):
@@ -202,7 +191,7 @@ def _base_properties(conf=None):
     """
 
     if not conf:
-        conf = _conf()
+        conf = util.get_config()
 
     cmd = 'dcos' + (' {}'.format(sys.argv[1]) if len(sys.argv) > 1 else '')
     return {

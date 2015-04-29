@@ -161,7 +161,7 @@ def _uninstall(package_name):
     :rtype: int
     """
 
-    subcommand.uninstall(package_name, util.dcos_path())
+    subcommand.uninstall(package_name)
 
     return 0
 

@@ -5,12 +5,14 @@ Usage:
     dcos package --info
     dcos package describe <package_name>
     dcos package info
-    dcos package install [--options=<file> --app-id=<app_id> --cli --app]
+    dcos package install [--cli | [--app --app-id=<app_id]]
+                         [--options=<file>]
                  <package_name>
     dcos package list-installed [--endpoints --app-id=<app-id> <package_name>]
     dcos package search [<query>]
     dcos package sources
-    dcos package uninstall [--all | --app-id=<app-id>] <package_name>
+    dcos package uninstall [--cli | [--app --app-id=<app-id> --all]]
+                 <package_name>
     dcos package update [--validate]
 
 Options:
@@ -44,13 +46,12 @@ Configuration:
 """
 
 import json
-import os
 
 import dcoscli
 import docopt
 import pkg_resources
-from dcos.api import (cmds, config, constants, emitting, errors, marathon,
-                      options, package, subcommand, util)
+from dcos.api import (cmds, emitting, errors, marathon, options, package,
+                      subcommand, util)
 
 emitter = emitting.FlatEmitter()
 
@@ -114,7 +115,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['package', 'uninstall'],
-            arg_keys=['<package_name>', '--all', '--app-id'],
+            arg_keys=['<package_name>', '--all', '--app-id', '--cli', '--app'],
             function=_uninstall),
 
         cmds.Command(
@@ -149,15 +150,6 @@ def _package(config_schema, info):
     return 0
 
 
-def _load_config():
-    """
-    :returns: Configuration object
-    :rtype: Toml
-    """
-    return config.load_from_path(
-        os.environ[constants.DCOS_CONFIG_ENV])
-
-
 def _info():
     """Print package cli information.
 
@@ -176,7 +168,7 @@ def _list_sources():
     :rtype: int
     """
 
-    config = _load_config()
+    config = util.get_config()
 
     sources, err = package.list_sources(config)
 
@@ -199,7 +191,7 @@ def _update(validate):
     :rtype: int
     """
 
-    config = _load_config()
+    config = util.get_config()
 
     errs = package.update_sources(config, validate)
 
@@ -220,7 +212,7 @@ def _describe(package_name):
     :rtype: int
     """
 
-    config = _load_config()
+    config = util.get_config()
 
     pkg, err = package.resolve_package(package_name, config)
     if err is not None:
@@ -280,7 +272,7 @@ def _install(package_name, options_path, app_id, cli, app):
         cli = True
         app = True
 
-    config = _load_config()
+    config = util.get_config()
 
     pkg, err = package.resolve_package(package_name, config)
     if err is not None:
@@ -378,7 +370,7 @@ def _list(endpoints, app_id, package_name):
     :rtype: int
     """
 
-    config = _load_config()
+    config = util.get_config()
 
     init_client = marathon.create_client(config)
 
@@ -414,7 +406,7 @@ def _search(query):
     if not query:
         query = ''
 
-    config = _load_config()
+    config = util.get_config()
 
     results, error = package.search(query, config)
 
@@ -427,7 +419,7 @@ def _search(query):
     return 0
 
 
-def _uninstall(package_name, remove_all, app_id):
+def _uninstall(package_name, remove_all, app_id, cli, app):
     """Uninstall the specified package.
 
     :param package_name: The package to uninstall
@@ -440,18 +432,9 @@ def _uninstall(package_name, remove_all, app_id):
     :rtype: int
     """
 
-    config = _load_config()
-
-    init_client = marathon.create_client(config)
-
-    uninstall_error = package.uninstall(
-        package_name,
-        remove_all,
-        app_id,
-        init_client)
-
-    if uninstall_error is not None:
-        emitter.publish(uninstall_error)
+    err = package.uninstall(package_name, remove_all, app_id, cli, app)
+    if err is not None:
+        emitter.publish(err)
         return 1
 
     return 0
