@@ -2,7 +2,7 @@ import os
 
 from dcos.api import constants
 
-from common import exec_command
+from common import assert_command, exec_command
 
 
 def test_default():
@@ -29,10 +29,7 @@ Get detailed command description with 'dcos <command> --help'.
 
 
 def test_help():
-    returncode, stdout, stderr = exec_command(['dcos', '--help'])
-
-    assert returncode == 0
-    assert stdout == b"""\
+    stdout = b"""\
 Command line utility for the Mesosphere Datacenter Operating
 System (DCOS)
 
@@ -62,15 +59,14 @@ Environment Variables:
     DCOS_CONFIG                 This environment variable points to the
                                 location of the DCOS configuration file.
 """
-    assert stderr == b''
+
+    assert_command(['dcos', '--help'],
+                   stdout=stdout)
 
 
 def test_version():
-    returncode, stdout, stderr = exec_command(['dcos', '--version'])
-
-    assert returncode == 0
-    assert stdout == b'dcos version 0.1.0\n'
-    assert stderr == b''
+    assert_command(['dcos', '--version'],
+                   stdout=b'dcos version 0.1.0\n')
 
 
 def test_missing_dcos_config():
@@ -78,12 +74,13 @@ def test_missing_dcos_config():
         constants.PATH_ENV: os.environ[constants.PATH_ENV],
     }
 
-    returncode, stdout, stderr = exec_command(['dcos'], env=env)
+    stdout = (b"Environment variable 'DCOS_CONFIG' must be set "
+              b"to the DCOS config file.\n")
 
-    assert returncode == 1
-    assert stdout == (b"Environment variable 'DCOS_CONFIG' must be set "
-                      b"to the DCOS config file.\n")
-    assert stderr == b''
+    assert_command(['dcos'],
+                   stdout=stdout,
+                   returncode=1,
+                   env=env)
 
 
 def test_dcos_config_not_a_file():
@@ -92,12 +89,13 @@ def test_dcos_config_not_a_file():
         'DCOS_CONFIG': 'missing/file',
     }
 
-    returncode, stdout, stderr = exec_command(['dcos'], env=env)
+    stdout = (b"Environment variable 'DCOS_CONFIG' maps to "
+              b"'missing/file' and it is not a file.\n")
 
-    assert returncode == 1
-    assert stdout == (b"Environment variable 'DCOS_CONFIG' maps to "
-                      b"'missing/file' and it is not a file.\n")
-    assert stderr == b''
+    assert_command(['dcos'],
+                   returncode=1,
+                   stdout=stdout,
+                   env=env)
 
 
 def test_log_level_flag():
@@ -117,11 +115,11 @@ def test_capital_log_level_flag():
 
 
 def test_invalid_log_level_flag():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', '--log-level=blah', 'config', '--info'])
+    stdout = (b"Log level set to an unknown value 'blah'. Valid "
+              b"values are ['debug', 'info', 'warning', 'error', "
+              b"'critical']\n")
 
-    assert returncode == 1
-    assert stdout == (b"Log level set to an unknown value 'blah'. Valid "
-                      b"values are ['debug', 'info', 'warning', 'error', "
-                      b"'critical']\n")
-    assert stderr == b''
+    assert_command(
+        ['dcos', '--log-level=blah', 'config', '--info'],
+        returncode=1,
+        stdout=stdout)

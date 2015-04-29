@@ -1,13 +1,10 @@
 import json
 
-from common import exec_command
+from common import assert_command, exec_command
 
 
 def test_help():
-    returncode, stdout, stderr = exec_command(['dcos', 'marathon', '--help'])
-
-    assert returncode == 0
-    assert stdout == b"""Deploy and manage applications on the DCOS
+    stdout = b"""Deploy and manage applications on the DCOS
 
 Usage:
     dcos marathon --config-schema
@@ -62,24 +59,18 @@ Positional arguments:
                                 value must be the '=' character. E.g. cpus=2.0
     <task-id>                   The task id
 """
-    assert stderr == b''
+    assert_command(['dcos', 'marathon', '--help'],
+                   stdout=stdout)
 
 
 def test_version():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', '--version'])
-
-    assert returncode == 0
-    assert stdout == b'dcos-marathon version 0.1.0\n'
-    assert stderr == b''
+    assert_command(['dcos', 'marathon', '--version'],
+                   stdout=b'dcos-marathon version 0.1.0\n')
 
 
 def test_info():
-    returncode, stdout, stderr = exec_command(['dcos', 'marathon', '--info'])
-
-    assert returncode == 0
-    assert stdout == b'Deploy and manage applications on the DCOS\n'
-    assert stderr == b''
+    assert_command(['dcos', 'marathon', '--info'],
+                   stdout=b'Deploy and manage applications on the DCOS\n')
 
 
 def test_empty_list():
@@ -93,13 +84,8 @@ def test_add_app():
 
 
 def test_optional_add_app():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'add',
-            'tests/data/marathon/zero_instance_sleep.json'])
-
-    assert returncode == 0
-    assert stdout == b''
-    assert stderr == b''
+    assert_command(['dcos', 'marathon', 'app', 'add',
+                    'tests/data/marathon/zero_instance_sleep.json'])
 
     _list_apps('zero-instance-app')
     _remove_app('zero-instance-app')
@@ -126,13 +112,11 @@ def test_add_existing_app():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
 
     with open('tests/data/marathon/zero_instance_sleep_v2.json') as fd:
-        returncode, stdout, stderr = exec_command(
-            ['dcos', 'marathon', 'app', 'add'],
-            stdin=fd)
-
-        assert returncode == 1
-        assert stdout == b"Application '/zero-instance-app' already exists\n"
-        assert stderr == b''
+        stdout = b"Application '/zero-instance-app' already exists\n"
+        assert_command(['dcos', 'marathon', 'app', 'add'],
+                       returncode=1,
+                       stdout=stdout,
+                       stdin=fd)
 
     _remove_app('zero-instance-app')
 
@@ -170,14 +154,11 @@ def test_show_missing_relative_app_version():
         'zero-instance-app',
         'tests/data/marathon/update_zero_instance_sleep.json')
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'show',
-            '--app-version=-2', 'zero-instance-app'])
-
-    assert returncode == 1
-    assert stdout == b''
-    assert (stderr ==
-            b"Application 'zero-instance-app' only has 2 version(s).\n")
+    stderr = b"Application 'zero-instance-app' only has 2 version(s).\n"
+    assert_command(['dcos', 'marathon', 'app', 'show',
+                    '--app-version=-2', 'zero-instance-app'],
+                   returncode=1,
+                   stderr=stderr)
 
     _remove_app('zero-instance-app')
 
@@ -206,15 +187,13 @@ def test_show_bad_app_version():
         'zero-instance-app',
         'tests/data/marathon/update_zero_instance_sleep.json')
 
-    returncode, stdout, stderr = exec_command(
+    stderr = (b'Error: Invalid format: "20:39:32.972Z" is malformed at '
+              b'":39:32.972Z"\n')
+    assert_command(
         ['dcos', 'marathon', 'app', 'show', '--app-version=20:39:32.972Z',
-         'zero-instance-app'])
-
-    assert returncode == 1
-    assert stdout == b''
-    assert (stderr ==
-            (b'Error: Invalid format: "20:39:32.972Z" is malformed at '
-             b'":39:32.972Z"\n'))
+         'zero-instance-app'],
+        returncode=1,
+        stderr=stderr)
 
     _remove_app('zero-instance-app')
 
@@ -225,24 +204,20 @@ def test_show_bad_relative_app_version():
         'zero-instance-app',
         'tests/data/marathon/update_zero_instance_sleep.json')
 
-    returncode, stdout, stderr = exec_command(
+    assert_command(
         ['dcos', 'marathon', 'app', 'show',
-            '--app-version=2', 'zero-instance-app'])
-
-    assert returncode == 1
-    assert stdout == b''
-    assert (stderr == b"Relative versions must be negative: 2\n")
+         '--app-version=2', 'zero-instance-app'],
+        returncode=1,
+        stderr=b"Relative versions must be negative: 2\n")
 
     _remove_app('zero-instance-app')
 
 
 def test_start_missing_app():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'start', 'missing-id'])
-
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr == b"Error: App '/missing-id' does not exist\n"
+    assert_command(
+        ['dcos', 'marathon', 'app', 'start', 'missing-id'],
+        returncode=1,
+        stderr=b"Error: App '/missing-id' does not exist\n")
 
 
 def test_start_app():
@@ -255,24 +230,18 @@ def test_start_already_started_app():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
     _start_app('zero-instance-app')
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'start', 'zero-instance-app'])
-
-    assert returncode == 1
-    assert (stdout ==
-            b"Application 'zero-instance-app' already started: 1 instances.\n")
-    assert stderr == b''
+    stdout = b"Application 'zero-instance-app' already started: 1 instances.\n"
+    assert_command(['dcos', 'marathon', 'app', 'start', 'zero-instance-app'],
+                   returncode=1,
+                   stdout=stdout)
 
     _remove_app('zero-instance-app')
 
 
 def test_stop_missing_app():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'stop', 'missing-id'])
-
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr == b"Error: App '/missing-id' does not exist\n"
+    assert_command(['dcos', 'marathon', 'app', 'stop', 'missing-id'],
+                   returncode=1,
+                   stderr=b"Error: App '/missing-id' does not exist\n")
 
 
 def test_stop_app():
@@ -294,24 +263,18 @@ def test_stop_app():
 def test_stop_already_stopped_app():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'stop', 'zero-instance-app'])
-
-    assert returncode == 1
-    assert (stdout ==
-            b"Application 'zero-instance-app' already stopped: 0 instances.\n")
-    assert stderr == b''
+    stdout = b"Application 'zero-instance-app' already stopped: 0 instances.\n"
+    assert_command(['dcos', 'marathon', 'app', 'stop', 'zero-instance-app'],
+                   returncode=1,
+                   stdout=stdout)
 
     _remove_app('zero-instance-app')
 
 
 def test_update_missing_app():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'update', 'missing-id'])
-
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr == b"Error: App '/missing-id' does not exist\n"
+    assert_command(['dcos', 'marathon', 'app', 'update', 'missing-id'],
+                   stderr=b"Error: App '/missing-id' does not exist\n",
+                   returncode=1)
 
 
 def test_update_missing_field():
@@ -372,25 +335,19 @@ def test_update_app_from_stdin():
 def test_restarting_stopped_app():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'restart', 'zero-instance-app'])
-
-    assert returncode == 1
-    assert stdout == (
-        b"Unable to perform rolling restart of application '"
-        b"/zero-instance-app' because it has no running tasks\n")
-    assert stderr == b''
+    stdout = (b"Unable to perform rolling restart of application '"
+              b"/zero-instance-app' because it has no running tasks\n")
+    assert_command(['dcos', 'marathon', 'app', 'restart', 'zero-instance-app'],
+                   returncode=1,
+                   stdout=stdout)
 
     _remove_app('zero-instance-app')
 
 
 def test_restarting_missing_app():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'restart', 'missing-id'])
-
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr == b"Error: App '/missing-id' does not exist\n"
+    assert_command(['dcos', 'marathon', 'app', 'restart', 'missing-id'],
+                   returncode=1,
+                   stderr=b"Error: App '/missing-id' does not exist\n")
 
 
 def test_restarting_app():
@@ -410,22 +367,17 @@ def test_restarting_app():
 
 
 def test_list_version_missing_app():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'version', 'list', 'missing-id'])
-
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr == b"Error: App '/missing-id' does not exist\n"
+    assert_command(
+        ['dcos', 'marathon', 'app', 'version', 'list', 'missing-id'],
+        returncode=1,
+        stderr=b"Error: App '/missing-id' does not exist\n")
 
 
 def test_list_version_negative_max_count():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'version', 'list',
-            'missing-id', '--max-count=-1'])
-
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr == b'Maximum count must be a positive number: -1\n'
+    assert_command(['dcos', 'marathon', 'app', 'version', 'list',
+                    'missing-id', '--max-count=-1'],
+                   returncode=1,
+                   stderr=b'Maximum count must be a positive number: -1\n')
 
 
 def test_list_version_app():
@@ -479,13 +431,10 @@ def test_list_deployment_app():
 
 
 def test_rollback_missing_deployment():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'deployment', 'rollback', 'missing-deployment'])
-
-    assert returncode == 1
-    assert stdout == b''
-    assert (stderr ==
-            b'Error: DeploymentPlan missing-deployment does not exist\n')
+    assert_command(
+        ['dcos', 'marathon', 'deployment', 'rollback', 'missing-deployment'],
+        returncode=1,
+        stderr=b'Error: DeploymentPlan missing-deployment does not exist\n')
 
 
 def test_rollback_deployment():
@@ -513,12 +462,7 @@ def test_stop_deployment():
     _start_app('zero-instance-app', 3)
     result = _list_deployments(1, 'zero-instance-app')
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'deployment', 'stop', result[0]['id']])
-
-    assert returncode == 0
-    assert stdout == b''
-    assert stderr == b''
+    assert_command(['dcos', 'marathon', 'deployment', 'stop', result[0]['id']])
 
     _list_deployments(0)
 
@@ -613,11 +557,8 @@ def test_bad_configuration():
     assert returncode == 0
     assert stderr == b''
 
-    returncode, stdout, stderr = exec_command(
+    assert_command(
         ['dcos', 'config', 'set', 'marathon.port', str(int(port) + 1)])
-    assert returncode == 0
-    assert stdout == b''
-    assert stderr == b''
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'list'])
@@ -654,12 +595,7 @@ def _list_apps(app_id=None):
 
 
 def _remove_app(app_id):
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'remove', app_id])
-
-    assert returncode == 0
-    assert stdout == b''
-    assert stderr == b''
+    assert_command(['dcos', 'marathon', 'app', 'remove', app_id])
 
     # Let's make sure that we don't return until the deployment has finished
     result = _list_deployments(None, app_id)
@@ -711,13 +647,8 @@ def _start_app(app_id, instances=None):
 
 def _update_app(app_id, file_path):
     with open(file_path) as fd:
-        returncode, stdout, stderr = exec_command(
-            ['dcos', 'marathon', 'app', 'update', app_id],
-            stdin=fd)
-
-        assert returncode == 0
-        assert stdout == b''
-        assert stderr == b''
+        assert_command(['dcos', 'marathon', 'app', 'update', app_id],
+                       stdin=fd)
 
 
 def _list_versions(app_id, expected_count, max_count=None):

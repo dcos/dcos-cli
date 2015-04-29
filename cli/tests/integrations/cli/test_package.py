@@ -8,10 +8,7 @@ from common import assert_command, exec_command
 
 
 def test_package():
-    returncode, stdout, stderr = exec_command(['dcos', 'package', '--help'])
-
-    assert returncode == 0
-    assert stdout == b"""Install and manage DCOS software packages
+    stdout = b"""Install and manage DCOS software packages
 
 Usage:
     dcos package --config-schema
@@ -55,35 +52,28 @@ Configuration:
       "git://github.com/mesosphere/universe.git"
     ]
 """
-    assert stderr == b''
+    assert_command(['dcos', 'package', '--help'],
+                   stdout=stdout)
 
 
 def test_info():
-    returncode, stdout, stderr = exec_command(['dcos', 'package', '--info'])
-
-    assert returncode == 0
-    assert stdout == b'Install and manage DCOS software packages\n'
-    assert stderr == b''
+    assert_command(['dcos', 'package', '--info'],
+                   stdout=b'Install and manage DCOS software packages\n')
 
 
 def test_version():
-    returncode, stdout, stderr = exec_command(['dcos', 'package', '--version'])
-
-    assert returncode == 0
-    assert stdout == b'dcos-package version 0.1.0\n'
-    assert stderr == b''
+    assert_command(['dcos', 'package', '--version'],
+                   stdout=b'dcos-package version 0.1.0\n')
 
 
 def test_sources_list():
-    returncode, stdout, stderr = exec_command(['dcos', 'package', 'sources'])
-
-    assert returncode == 0
-    assert stdout == b"""c3f1a0df1d2068e6b11d40224f5e500d3183a97e \
+    stdout = b"""c3f1a0df1d2068e6b11d40224f5e500d3183a97e \
 git://github.com/mesosphere/universe.git
 f4ba0923d14eb75c1c0afca61c2adf9b2b355bd5 \
 https://github.com/mesosphere/universe/archive/master.zip
 """
-    assert stderr == b''
+    assert_command(['dcos', 'package', 'sources'],
+                   stdout=stdout)
 
 
 def test_update_without_validation():
@@ -108,20 +98,13 @@ def test_update_with_validation():
 
 
 def test_describe_nonexistent():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'package', 'describe', 'xyzzy'])
-
-    assert returncode == 1
-    assert stdout == b'Package [xyzzy] not found\n'
-    assert stderr == b''
+    assert_command(['dcos', 'package', 'describe', 'xyzzy'],
+                   stdout=b'Package [xyzzy] not found\n',
+                   returncode=1)
 
 
 def test_describe():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'package', 'describe', 'mesos-dns'])
-
-    assert returncode == 0
-    assert stdout == b"""\
+    stdout = b"""\
 {
   "description": "DNS-based service discovery for Mesos.",
   "maintainer": "support@mesosphere.io",
@@ -139,7 +122,8 @@ tutorial-gce.html",
   "website": "http://mesosphere.github.io/mesos-dns"
 }
 """
-    assert stderr == b''
+    assert_command(['dcos', 'package', 'describe', 'mesos-dns'],
+                   stdout=stdout)
 
 
 def test_bad_install():
@@ -163,16 +147,11 @@ def test_install():
 
 
 def test_package_metadata():
-    returncode, stdout, stderr = exec_command(['dcos',
-                                               'package',
-                                               'install',
-                                               'helloworld'])
-
-    assert returncode == 0
-    assert stdout == b"""Installing package [helloworld] version [0.1.0]
+    stdout = b"""Installing package [helloworld] version [0.1.0]
 Installing CLI subcommand for package [helloworld]
 """
-    assert stderr == b''
+    assert_command(['dcos', 'package', 'install', 'helloworld'],
+                   stdout=stdout)
 
     # test marathon labels
     expected_metadata = b"""eyJkZXNjcmlwdGlvbiI6ICJFeGFtcGxlIERDT1MgYXBwbGljYX\
@@ -231,12 +210,7 @@ wLjEuMCJdfQ=="""
         assert six.b(f.read()) == b'0'
 
     # uninstall helloworld
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'package', 'uninstall', 'helloworld'])
-
-    assert returncode == 0
-    assert stdout == b''
-    assert stderr == b''
+    assert_command(['dcos', 'package', 'uninstall', 'helloworld'])
 
 
 def test_install_with_id():
@@ -254,14 +228,12 @@ with app id [dns-2]\n"""
 
 
 def test_install_missing_package():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'package', 'install', 'missing-package'])
-
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr == b"""Package [missing-package] not found
+    stderr = b"""Package [missing-package] not found
 You may need to run 'dcos package update' to update your repositories
 """
+    assert_command(['dcos', 'package', 'install', 'missing-package'],
+                   returncode=1,
+                   stderr=stderr)
 
 
 def test_uninstall_with_id():
@@ -281,26 +253,16 @@ def test_uninstall_missing():
 
 
 def test_uninstall_subcommand():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'package', 'install', 'helloworld'])
-
-    assert returncode == 0
-    assert stdout == b"""Installing package [helloworld] version [0.1.0]
+    stdout = b"""Installing package [helloworld] version [0.1.0]
 Installing CLI subcommand for package [helloworld]
 """
-    assert stderr == b''
+    assert_command(['dcos', 'package', 'install', 'helloworld'],
+                   stdout=stdout)
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'package', 'uninstall', 'helloworld'])
-    assert returncode == 0
-    assert stdout == b''
-    assert stderr == b''
+    assert_command(['dcos', 'package', 'uninstall', 'helloworld'])
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'subcommand', 'list'])
-    assert returncode == 0
-    assert stdout == b'[]\n'
-    assert stderr == b''
+    assert_command(['dcos', 'subcommand', 'list'],
+                   stdout=b'[]\n')
 
 
 def test_list_installed():

@@ -6,7 +6,7 @@ import six
 from dcos.api import constants
 
 import pytest
-from common import exec_command
+from common import assert_command, exec_command
 
 
 @pytest.fixture
@@ -19,10 +19,7 @@ def env():
 
 
 def test_help():
-    returncode, stdout, stderr = exec_command(['dcos', 'config', '--help'])
-
-    assert returncode == 0
-    assert stdout == b"""Get and set DCOS CLI configuration properties
+    stdout = b"""Get and set DCOS CLI configuration properties
 
 Usage:
     dcos config --info
@@ -44,32 +41,24 @@ Positional Arguments:
     <name>           The name of the property
     <value>          The value of the property
 """
-    assert stderr == b''
+    assert_command(['dcos', 'config', '--help'],
+                   stdout=stdout)
 
 
 def test_info():
-    returncode, stdout, stderr = exec_command(['dcos', 'config', '--info'])
-
-    assert returncode == 0
-    assert stdout == b'Get and set DCOS CLI configuration properties\n'
-    assert stderr == b''
+    stdout = b'Get and set DCOS CLI configuration properties\n'
+    assert_command(['dcos', 'config', '--info'],
+                   stdout=stdout)
 
 
 def test_version():
-    returncode, stdout, stderr = exec_command(['dcos', 'config', '--version'])
-
-    assert returncode == 0
-    assert stdout == b'dcos-config version 0.1.0\n'
-    assert stderr == b''
+    stdout = b'dcos-config version 0.1.0\n'
+    assert_command(['dcos', 'config', '--version'],
+                   stdout=stdout)
 
 
 def test_list_property(env):
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'config', 'show'],
-        env)
-
-    assert returncode == 0
-    assert stdout == b"""core.email=test@mail.com
+    stdout = b"""core.email=test@mail.com
 core.reporting=False
 marathon.host=localhost
 marathon.port=8080
@@ -78,7 +67,9 @@ package.sources=['git://github.com/mesosphere/universe.git', \
 'https://github.com/mesosphere/universe/archive/master.zip']
 subcommand.pip_find_links=../dist
 """
-    assert stderr == b''
+    assert_command(['dcos', 'config', 'show'],
+                   stdout=stdout,
+                   env=env)
 
 
 def test_get_existing_string_property(env):
@@ -94,18 +85,16 @@ def test_get_missing_property(env):
 
 
 def test_get_top_property(env):
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'config', 'show', 'marathon'],
-        env)
-
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr == (
+    stderr = (
         b"Property 'marathon' doesn't fully specify a value - "
         b"possible properties are:\n"
         b"marathon.host\n"
         b"marathon.port\n"
     )
+
+    assert_command(['dcos', 'config', 'show', 'marathon'],
+                   stderr=stderr,
+                   returncode=1)
 
 
 def test_set_existing_string_property(env):
@@ -191,27 +180,25 @@ def test_prepend_list(env):
 
 
 def test_append_non_list(env):
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'config', 'append', 'marathon.host', 'new_uri'],
-        env)
+    stderr = (b"Append/Prepend not supported on 'marathon.host' "
+              b"properties - use 'dcos config set marathon.host new_uri'\n")
 
-    assert returncode == 1
-    assert stdout == b''
-    assert (stderr ==
-            b"Append/Prepend not supported on 'marathon.host' "
-            b"properties - use 'dcos config set marathon.host new_uri'\n")
+    assert_command(
+        ['dcos', 'config', 'append', 'marathon.host', 'new_uri'],
+        returncode=1,
+        stderr=stderr,
+        env=env)
 
 
 def test_prepend_non_list(env):
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'config', 'prepend', 'marathon.host', 'new_uri'],
-        env)
+    stderr = (b"Append/Prepend not supported on 'marathon.host' "
+              b"properties - use 'dcos config set marathon.host new_uri'\n")
 
-    assert returncode == 1
-    assert stdout == b''
-    assert (stderr ==
-            b"Append/Prepend not supported on 'marathon.host' "
-            b"properties - use 'dcos config set marathon.host new_uri'\n")
+    assert_command(
+        ['dcos', 'config', 'prepend', 'marathon.host', 'new_uri'],
+        returncode=1,
+        stderr=stderr,
+        env=env)
 
 
 def test_unset_property(env):
@@ -221,28 +208,26 @@ def test_unset_property(env):
 
 
 def test_unset_missing_property(env):
-    returncode, stdout, stderr = exec_command(
+    assert_command(
         ['dcos', 'config', 'unset', 'missing.property'],
-        env)
-
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr == b"Property 'missing.property' doesn't exist\n"
+        returncode=1,
+        stderr=b"Property 'missing.property' doesn't exist\n",
+        env=env)
 
 
 def test_unset_top_property(env):
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'config', 'unset', 'marathon'],
-        env)
-
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr == (
+    stderr = (
         b"Property 'marathon' doesn't fully specify a value - "
         b"possible properties are:\n"
         b"marathon.host\n"
         b"marathon.port\n"
     )
+
+    assert_command(
+        ['dcos', 'config', 'unset', 'marathon'],
+        returncode=1,
+        stderr=stderr,
+        env=env)
 
 
 def test_unset_whole_list(env):
@@ -268,73 +253,64 @@ def test_unset_list_index(env):
 
 
 def test_unset_outbound_index(env):
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'config', 'unset', '--index=3', 'package.sources'],
-        env)
+    stderr = (
+        b'Index (3) is out of bounds - possible values are '
+        b'between 0 and 1\n'
+    )
 
-    assert returncode == 1
-    assert stdout == b''
-    assert (stderr ==
-            b'Index (3) is out of bounds - possible values are '
-            b'between 0 and 1\n')
+    assert_command(
+        ['dcos', 'config', 'unset', '--index=3', 'package.sources'],
+        returncode=1,
+        stderr=stderr,
+        env=env)
 
 
 def test_unset_bad_index(env):
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'config', 'unset', '--index=number', 'package.sources'],
-        env)
+    stderr = b'Error parsing string as int\n'
 
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr == b'Error parsing string as int\n'
+    assert_command(
+        ['dcos', 'config', 'unset', '--index=number', 'package.sources'],
+        returncode=1,
+        stderr=stderr,
+        env=env)
 
 
 def test_unset_index_from_string(env):
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'config', 'unset', '--index=0', 'marathon.host'],
-        env)
+    stderr = b'Unsetting based on an index is only supported for lists\n'
 
-    assert returncode == 1
-    assert stdout == b''
-    assert (stderr ==
-            b'Unsetting based on an index is only supported for lists\n')
+    assert_command(
+        ['dcos', 'config', 'unset', '--index=0', 'marathon.host'],
+        returncode=1,
+        stderr=stderr,
+        env=env)
 
 
 def test_validate(env):
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'config', 'validate'],
-        env)
-
-    assert returncode == 0
-    assert stdout == b''
-    assert stderr == b''
+    assert_command(['dcos', 'config', 'validate'],
+                   env=env)
 
 
 def test_validation_error(env):
     _unset_value('marathon.host', None, env)
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'config', 'validate'],
-        env)
-
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr == b"""Error: 'host' is a required property
+    stderr = b"""Error: 'host' is a required property
 Path: marathon
 Value: {"port": 8080}
 """
+    assert_command(['dcos', 'config', 'validate'],
+                   returncode=1,
+                   stderr=stderr,
+                   env=env)
 
     _set_value('marathon.host', 'localhost', env)
 
 
 def test_set_property_key(env):
-    returncode, stdout, stderr = exec_command(
+    assert_command(
         ['dcos', 'config', 'set', 'path.to.value', 'cool new value'],
-        env)
-
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr == b"'path' is not a dcos command.\n"
+        returncode=1,
+        stderr=b"'path' is not a dcos command.\n",
+        env=env)
 
 
 def test_set_missing_property(env):
@@ -350,33 +326,21 @@ def test_set_core_property(env):
 
 
 def _set_value(key, value, env):
-    returncode, stdout, stderr = exec_command(
+    assert_command(
         ['dcos', 'config', 'set', key, value],
-        env)
-
-    assert returncode == 0
-    assert stdout == b''
-    assert stderr == b''
+        env=env)
 
 
 def _append_value(key, value, env):
-    returncode, stdout, stderr = exec_command(
+    assert_command(
         ['dcos', 'config', 'append', key, value],
-        env)
-
-    assert returncode == 0
-    assert stdout == b''
-    assert stderr == b''
+        env=env)
 
 
 def _prepend_value(key, value, env):
-    returncode, stdout, stderr = exec_command(
+    assert_command(
         ['dcos', 'config', 'prepend', key, value],
-        env)
-
-    assert returncode == 0
-    assert stdout == b''
-    assert stderr == b''
+        env=env)
 
 
 def _get_value(key, value, env):
@@ -399,11 +363,7 @@ def _unset_value(key, index, env):
     if index is not None:
         cmd.append('--index={}'.format(index))
 
-    returncode, stdout, stderr = exec_command(cmd, env)
-
-    assert returncode == 0
-    assert stdout == b''
-    assert stderr == b''
+    assert_command(cmd, env=env)
 
 
 def _get_missing_value(key, env):
