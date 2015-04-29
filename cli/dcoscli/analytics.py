@@ -50,25 +50,63 @@ def wait_and_track(subproc):
     return exit_code
 
 
-def _send_segment_event(event, properties):
+def _segment_track(event, conf, properties):
     """
-    Send a segment event
+    Send a segment.io 'track' event
 
     :param event: name of event
     :type event: string
+    :param conf: dcos config file
+    :type conf: Toml
     :param properties: event properties
     :type properties: dict
     :rtype: None
     """
 
-    data = {'anonymousId': session_id,
-            'event': event,
+    data = {'event': event,
             'properties': properties}
+
+    if 'core.email' in conf:
+        data['userId'] = conf['core.email']
+    else:
+        data['anonymousId'] = session_id
+
+    _segment_request('track', data)
+
+
+def segment_identify(conf):
+    """
+    Send a segment.io 'identify' event
+
+    :param conf: dcos config file
+    :type conf: Toml
+    :rtype: None
+    """
+
+    if 'core.email' in conf:
+        data = {'userId': conf.get('core.email')}
+    else:
+        data = {'anonymousId': session_id}
+
+    _segment_request('identify', data)
+
+
+def _segment_request(path, data):
+    """
+    Send a segment.io HTTP request
+
+    :param path: URL path
+    :type path: str
+    :param data: json POST data
+    :type data: dict
+    :rtype: None
+    """
 
     key = SEGMENT_IO_WRITE_KEY_PROD if _is_prod() else \
         SEGMENT_IO_WRITE_KEY_DEV
+
     try:
-        requests.post(SEGMENT_URL,
+        requests.post('{}/{}'.format(SEGMENT_URL, path),
                       json=data,
                       auth=HTTPBasicAuth(key, ''),
                       timeout=1)
@@ -135,7 +173,7 @@ def _segment_track_cli(pool, conf):
     """
 
     props = _base_properties(conf)
-    pool.submit(_send_segment_event, SEGMENT_IO_CLI_EVENT, props)
+    pool.submit(_segment_track, SEGMENT_IO_CLI_EVENT, conf, props)
 
 
 def _segment_track_err(pool, conf, err, exit_code):
@@ -156,7 +194,7 @@ def _segment_track_err(pool, conf, err, exit_code):
     props = _base_properties(conf)
     props['err'] = err
     props['exit_code'] = exit_code
-    pool.submit(_send_segment_event, SEGMENT_IO_CLI_ERROR_EVENT, props)
+    pool.submit(_segment_track, SEGMENT_IO_CLI_ERROR_EVENT, conf, props)
 
 
 def _rollbar_track_err(conf, err, exit_code):
