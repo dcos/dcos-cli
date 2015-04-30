@@ -14,7 +14,7 @@ import git
 import portalocker
 import pystache
 import six
-from dcos.api import constants, emitting, errors, subcommand, util
+from dcos.api import constants, emitting, errors, marathon, subcommand, util
 
 from six.moves import urllib
 
@@ -138,7 +138,7 @@ def _base64_encode(dictionary):
     return base64.b64encode(str_bytes).decode('utf-8')
 
 
-def uninstall(package_name, remove_all, app_id, init_client):
+def uninstall(package_name, remove_all, app_id, cli, app):
     """Uninstalls a package.
 
     :param package_name: The package to uninstall
@@ -152,17 +152,32 @@ def uninstall(package_name, remove_all, app_id, init_client):
     :rtype: None or Error
     """
 
-    num_apps, err = uninstall_app(package_name,
-                                  remove_all,
-                                  app_id,
-                                  init_client)
-    if err:
-        return err
+    if cli is False and app is False:
+        cli = app = True
 
-    cmd_uninstalled = uninstall_subcommand(package_name)
+    uninstalled = False
+    if cli:
+        if subcommand.uninstall(package_name):
+            uninstalled = True
 
-    if num_apps == 0 and not cmd_uninstalled:
-        msg = "Package [{}]".format(package_name)
+    if app:
+        init_client = marathon.create_client()
+
+        num_apps, err = uninstall_app(package_name,
+                                      remove_all,
+                                      app_id,
+                                      init_client)
+
+        if err is not None:
+            return err
+
+        if num_apps > 0:
+            uninstalled = True
+
+    if uninstalled:
+        return None
+    else:
+        msg = 'Package [{}]'.format(package_name)
         if app_id is not None:
             msg += " with id [{}]".format(app_id)
         msg += " is not installed."
@@ -178,7 +193,7 @@ def uninstall_subcommand(distribution_name):
     :rtype: bool
     """
 
-    return subcommand.uninstall(distribution_name, util.dcos_path())
+    return subcommand.uninstall(distribution_name)
 
 
 def uninstall_app(app_name, remove_all, app_id, init_client):

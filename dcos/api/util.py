@@ -11,7 +11,7 @@ import tempfile
 import jsonschema
 import pystache
 import six
-from dcos.api import constants, errors
+from dcos.api import config, constants, errors
 
 
 @contextlib.contextmanager
@@ -88,6 +88,16 @@ def read_file(path):
     except IOError:
         return (None, errors.DefaultError(
             'Unable to open file [{}]'.format(path)))
+
+
+def get_config():
+    """
+    :returns: Configuration object
+    :rtype: Toml
+    """
+
+    return config.load_from_path(
+        os.environ[constants.DCOS_CONFIG_ENV])
 
 
 def which(program):

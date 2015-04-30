@@ -304,13 +304,11 @@ def package_dir(name):
                         name)
 
 
-def uninstall(package_name, dcos_path):
+def uninstall(package_name):
     """Uninstall the dcos cli subcommand
 
     :param package_name: the name of the package
     :type package_name: str
-    :param dcos_path: the path to the dcos cli directory
-    :type dcos_path: str
     :returns: True if the subcommand was uninstalled
     :rtype: bool
     """

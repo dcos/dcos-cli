@@ -11,7 +11,7 @@ except ImportError:
 logger = util.get_logger(__name__)
 
 
-def create_client(config):
+def create_client(config=None):
     """Creates a Marathon client with the supplied configuration.
 
     :param config: configuration dictionary
@@ -19,6 +19,9 @@ def create_client(config):
     :returns: Marathon client
     :rtype: dcos.api.marathon.Client
     """
+    if config is None:
+        config = util.get_config()
+
     return Client(config['marathon.host'], config['marathon.port'])
 
 
