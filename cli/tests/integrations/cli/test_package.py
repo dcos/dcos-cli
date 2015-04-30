@@ -258,8 +258,7 @@ def test_uninstall_subcommand():
     _install_helloworld()
     _uninstall_helloworld()
 
-    assert_command(['dcos', 'subcommand', 'list'],
-                   stdout=b'[]\n')
+    assert_command(['dcos', 'package', 'list-installed'], stdout=b'[]\n')
 
 
 def test_uninstall_cli():

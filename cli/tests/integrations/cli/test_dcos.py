@@ -21,7 +21,6 @@ Available DCOS commands:
 \thelp           \tDisplay command line usage information
 \tmarathon       \tDeploy and manage applications on the DCOS
 \tpackage        \tInstall and manage DCOS software packages
-\tsubcommand     \tInstall and manage DCOS CLI subcommands
 
 Get detailed command description with 'dcos <command> --help'.
 """.encode('utf-8')
