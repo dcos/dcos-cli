@@ -129,13 +129,17 @@ tutorial-gce.html",
 def test_bad_install():
     args = ['--options=tests/data/package/mesos-dns-config-bad.json']
     stderr = b"""\
-Error: 'mesos-dns/config-url' is a required property
-Value: {"mesos-dns/host": false}
+Error: missing required property 'mesos-dns/config-url'. \
+Add to JSON file and pass in /path/to/file with the --options argument.
 
 Error: False is not of type 'string'
 Path: mesos-dns/host
 Value: false
 """
+    assert_command(['dcos', 'package', 'install', 'mesos-dns', args[0]],
+                   returncode=1,
+                   stderr=stderr)
+
     _install_mesos_dns(args=args,
                        returncode=1,
                        stdout=b'',

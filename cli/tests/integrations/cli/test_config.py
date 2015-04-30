@@ -293,9 +293,9 @@ def test_validate(env):
 def test_validation_error(env):
     _unset_value('marathon.host', None, env)
 
-    stderr = b"""Error: 'host' is a required property
-Path: marathon
-Value: {"port": 8080}
+    stderr = b"""\
+Error: missing required property 'host'. \
+Add to JSON file and pass in /path/to/file with the --options argument.
 """
     assert_command(['dcos', 'config', 'validate'],
                    returncode=1,
