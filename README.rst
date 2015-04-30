@@ -84,7 +84,7 @@ configure your environment to point to the packaged `dcos-helloworld` account.
    wheel package: :code:`export DCOS_TEST_WHEEL=$(pwd)/dist/dcos_helloworld-0.1.0-py2.py3-none-any.whl`
 
 Running
-#######
+https://github.com/mesosphere/dcos-cli/blob/master/bin/publish_to_pypi.sh#######
 
 Tox will run unit and integration tests in both Python environments using a
 temporarily created virtualenv.
@@ -121,6 +121,21 @@ Other Useful Commands
     tox -e py27-integration /cli/test_config.py
 
 
+Releasing
+#########
+
+Releasing a new version of the DCOS CLI is only possible through an `automated TeamCity build`_ which is triggered automatically when a new tag is added.
+
+The tag is used as the version number and must adhere to the conventional `PEP-440 version scheme`_.
+
+Once all tests pass successfully, the automated build publishes two packages to PyPI using the `publish_to_pypi.sh script`_:
+
+#. dcos_
+
+#. dcoscli_
+
+These packages are now available to be installed by the DCOS CLI installation script in the `mesosphere/install-scripts`_ repository.
+
 Using the CLI
 -------------
 
@@ -137,3 +152,9 @@ Full documentation is available for the DCOS CLI on the `Mesosphere docs website
 .. _dcos-helloworld: https://github.com/mesosphere/dcos-helloworld
 .. _setup: https://github.com/mesosphere/dcos-helloworld#setup
 .. _Mesosphere docs website: http://docs-staging.mesosphere.com.s3-website-us-west-2.amazonaws.com/using/cli/
+.. _automated TeamCity build: https://teamcity.mesosphere.io/viewType.html?buildTypeId=ClosedSource_DcosCli_PushToPyPI
+.. _PEP-440 version scheme: https://www.python.org/dev/peps/pep-0440/
+.. _dcos: https://pypi.python.org/pypi/dcos
+.. _dcoscli: https://pypi.python.org/pypi/dcoscli
+.. _publish_to_pypi.sh script: https://github.com/mesosphere/dcos-cli/blob/master/bin/publish_to_pypi.sh
+.. _mesosphere/install-scripts: https://github.com/mesosphere/install-scripts

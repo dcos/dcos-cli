@@ -65,7 +65,7 @@ Positional arguments:
 
 def test_version():
     assert_command(['dcos', 'marathon', '--version'],
-                   stdout=b'dcos-marathon version 0.1.0\n')
+                   stdout=b'dcos-marathon version SNAPSHOT\n')
 
 
 def test_info():
