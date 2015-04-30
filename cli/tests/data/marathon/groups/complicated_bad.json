@@ -1,0 +1,30 @@
+{
+    "apps": [
+        {
+            "cmd": "sleep 1",
+            "id": "appingroups"
+        }
+    ],
+    "groups": [
+        {
+            "apps": [
+                {}
+            ],
+            "id": "appingroups"
+        },
+        {
+            "groups": [
+                {
+                    "apps": [
+                        {
+                            "cmd": "sleep 1",
+                            "id": "sleep1"
+                        }
+                    ]
+                }
+            ],
+            "id": "moregroups"
+        }
+    ],
+    "id": "test-group"
+}

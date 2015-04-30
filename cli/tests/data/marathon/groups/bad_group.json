@@ -1,0 +1,15 @@
+{
+    "groups": [
+        {
+            "fakeapp": [
+                {
+                    "cmds": "sleep 0",
+                    "id": "hi",
+                    "instances": 0
+                }
+            ],
+            "id": "notgood"
+        }
+    ],
+    "id": "bad-group"
+}

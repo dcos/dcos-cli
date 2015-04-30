@@ -93,7 +93,6 @@ class Client(object):
 
     def _create_url(self, path):
         """Creates the url from the provided path.
-
         :param path: url path
         :type path: str
         :returns: constructed url
@@ -142,11 +141,49 @@ class Client(object):
         else:
             return response.json()
 
+    def get_groups(self):
+        """Get a list of known groups.
+
+        :returns: list of known groups
+        :rtype: list of dict
+        """
+
+        url = self._create_url('v2/groups')
+
+        response = http.get(url, to_error=_to_error)
+
+        return response.json()['groups']
+
+    def get_group(self, group_id, version=None):
+        """Returns a representation of the requested group version. If
+        version is None the return the latest version.
+
+        :param group_id: the ID of the application
+        :type group_id: str
+        :param version: application version as a ISO8601 datetime
+        :type version: str
+        :returns: the requested Marathon application
+        :rtype: dict
+        """
+
+        group_id = self.normalize_app_id(group_id)
+        if version is None:
+            url = self._create_url('v2/groups{}'.format(group_id))
+        else:
+            url = self._create_url(
+                'v2/groups{}/versions/{}'.format(group_id, version))
+
+        response = http.get(url, to_error=_to_error)
+
+        return response.json()
+
     def get_app_versions(self, app_id, max_count=None):
         """Asks Marathon for all the versions of the Application up to a
         maximum count.
 
-        :param app_id: the ID of the application
+        :param app_id: the ID of the application or group
+        :type app_id: str
+        :param id_type: type of the id (apps or groups)
         :type app_id: str
         :param max_count: the maximum number of version to fetch
         :type max_count: int
@@ -299,6 +336,27 @@ class Client(object):
             params = {'force': 'true'}
 
         url = self._create_url('v2/apps{}'.format(app_id))
+
+        http.delete(url, params=params, to_error=_to_error)
+
+    def remove_group(self, group_id, force=None):
+        """Completely removes the requested application.
+
+        :param group_id: the ID of the application to remove
+        :type group_id: str
+        :param force: whether to override running deployments
+        :type force: bool
+        :rtype: None
+        """
+
+        group_id = self.normalize_app_id(group_id)
+
+        if not force:
+            params = None
+        else:
+            params = {'force': 'true'}
+
+        url = self._create_url('v2/groups{}'.format(group_id))
 
         http.delete(url, params=params, to_error=_to_error)
 
@@ -479,6 +537,26 @@ class Client(object):
         """
 
         return urllib.parse.quote('/' + app_id.strip('/'))
+
+    def create_group(self, group_resource):
+        """Add a new group.
+
+        :param group_resource: grouplication resource
+        :type group_resource: dict, bytes or file
+        :returns: the group description
+        :rtype: dict
+        """
+        url = self._create_url('v2/groups')
+
+        # The file type exists only in Python 2, preventing type(...) is file.
+        if hasattr(group_resource, 'read'):
+            group_json = json.load(group_resource)
+        else:
+            group_json = group_resource
+
+        response = http.post(url, json=group_json, to_error=_to_error)
+
+        return response.json()
 
 
 def _default_marathon_error(message=""):
