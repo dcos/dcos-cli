@@ -65,7 +65,7 @@ def test_info():
 
 def test_version():
     assert_command(['dcos', 'package', '--version'],
-                   stdout=b'dcos-package version 0.1.0\n')
+                   stdout=b'dcos-package version SNAPSHOT\n')
 
 
 def test_sources_list():
