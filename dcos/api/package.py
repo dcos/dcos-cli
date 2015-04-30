@@ -1,6 +1,7 @@
 import abc
 import base64
 import collections
+import copy
 import hashlib
 import json
 import os
@@ -499,20 +500,49 @@ def _search_rank(pkg, query):
 def _extract_default_values(config_schema):
     """
     :param config_schema: A json-schema describing configuration options.
-    :type config_schema: (dict, Error)
+    :type config_schema: dict
+    :returns: a dictionary with the default specified by the schema
+    :rtype: dict
     """
 
-    properties = config_schema.get('properties')
-    schema_type = config_schema.get('type')
+    defaults = {}
+    for key, value in config_schema['properties'].items():
+        if 'default' in value:
+            defaults[key] = value['default']
+        elif value.get('type', '') == 'object':
+            # Generate the default value from the embedded schema
+            defaults[key] = _extract_default_values(value)
 
-    if schema_type != 'object' or properties is None:
-        return ({}, None)
+    return defaults
 
-    defaults = [(p, properties[p]['default'])
-                for p in properties
-                if 'default' in properties[p]]
 
-    return (dict(defaults), None)
+def _merge_options(first, second):
+    """Merges the :code:`second` dictionary into the :code:`first` dictionary.
+    If both dictionaries have the same key and both values are dictionaries
+    then it recursively merges those two dictionaries.
+
+    :param first: first dictionary
+    :type first: dict
+    :param second: second dictionary
+    :type second: dict
+    :returns: merged dictionary
+    :rtype: dict
+    """
+
+    result = copy.deepcopy(first)
+    for key, second_value in second.items():
+        if key in first:
+            first_value = first[key]
+
+            if (isinstance(first_value, collections.Mapping) and
+               isinstance(second_value, collections.Mapping)):
+                result[key] = _merge_options(first_value, second_value)
+            else:
+                result[key] = second_value
+        else:
+            result[key] = second_value
+
+    return result
 
 
 def resolve_package(package_name, config):
@@ -1110,13 +1140,12 @@ class Package():
         if err is not None:
             return (None, err)
 
-        default_options, err = _extract_default_values(config_schema)
-        if err is not None:
-            return (None, err)
+        default_options = _extract_default_values(config_schema)
+        logger.info('Generated default options: %r', default_options)
 
         # Merge option overrides
-        options = dict(list(default_options.items()) +
-                       list(user_options.items()))
+        options = _merge_options(default_options, user_options)
+        logger.info('Merged options: %r', options)
 
         # Validate options with the config schema
         err = util.validate_json(options, config_schema)
