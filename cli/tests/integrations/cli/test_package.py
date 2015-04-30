@@ -18,7 +18,7 @@ Usage:
     dcos package install [--options=<file> --app-id=<app_id> --cli --app]
                  <package_name>
     dcos package list-installed [--endpoints --app-id=<app-id> <package_name>]
-    dcos package search <query>
+    dcos package search [<query>]
     dcos package sources
     dcos package uninstall [--all | --app-id=<app-id>] <package_name>
     dcos package update [--validate]
@@ -409,6 +409,20 @@ def test_search():
     assert returncode == 0
     assert b'"packages": []' in stdout
     assert b'"source": "git://github.com/mesosphere/universe.git"' in stdout
+    assert stderr == b''
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos',
+            'package',
+            'search'])
+
+    registries = json.loads(stdout.decode('utf-8'))
+    for registry in registries:
+        # assert the number of packages is gte the number at the time
+        # this test was written
+        assert len(registry['packages']) >= 9
+
+    assert returncode == 0
     assert stderr == b''
 
 
