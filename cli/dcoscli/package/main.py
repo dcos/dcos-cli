@@ -3,7 +3,7 @@
 Usage:
     dcos package --config-schema
     dcos package --info
-    dcos package describe <package_name>
+    dcos package describe [--app --options=<file> --cli] <package_name>
     dcos package info
     dcos package install [--cli | [--app --app-id=<app_id]]
                          [--options=<file>]
@@ -96,7 +96,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['package', 'describe'],
-            arg_keys=['<package_name>'],
+            arg_keys=['<package_name>', '--cli', '--app', '--options'],
             function=_describe),
 
         cmds.Command(
@@ -205,7 +205,7 @@ def _update(validate):
     return 0
 
 
-def _describe(package_name):
+def _describe(package_name, cli, app, options_path):
     """Describe the specified package.
 
     :param package_name: The package to describe
@@ -243,13 +243,52 @@ def _describe(package_name):
         emitter.publish(version_error)
         return 1
 
-    versions = [version_map[pkg_ver] for pkg_ver in version_map]
+    versions = [version_map[key] for key in version_map]
 
     del pkg_json['version']
     pkg_json['versions'] = versions
+
+    if cli or app:
+        user_options, err = _user_options(options_path)
+        if err is not None:
+            emitter.publish(err)
+            return 1
+
+        options, err = pkg.options(pkg_version, user_options)
+        if err is not None:
+            emitter.publish(err)
+            return 1
+
+        if cli:
+            command_json, err = pkg.command_json(pkg_version, options)
+            if err is not None:
+                emitter.publish(err)
+                return 1
+
+            pkg_json['command'] = command_json
+
+        if app:
+            marathon_json, err = pkg.marathon_json(pkg_version, options)
+            if err is not None:
+                emitter.publish(err)
+                return 1
+
+            pkg_json['app'] = marathon_json
+
     emitter.publish(pkg_json)
 
     return 0
+
+
+def _user_options(path):
+    if path is None:
+        return ({}, None)
+    else:
+        with open(path) as options_file:
+            user_options, err = util.load_json(options_file)
+            if err is not None:
+                return (None, err)
+            return (user_options, None)
 
 
 def _install(package_name, options_path, app_id, cli, app):
@@ -297,14 +336,10 @@ def _install(package_name, options_path, app_id, cli, app):
         emitter.publish(version_error)
         return 1
 
-    if options_path is None:
-        user_options = {}
-    else:
-        with open(options_path) as options_file:
-            user_options, err = util.load_json(options_file)
-            if err is not None:
-                emitter.publish(err)
-                return 1
+    user_options, err = _user_options(options_path)
+    if err is not None:
+        emitter.publish(err)
+        return 1
 
     try:
         options, err = pkg.options(pkg_version, user_options)
