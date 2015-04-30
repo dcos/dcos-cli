@@ -89,6 +89,9 @@ def print_handler(event):
         processed_json = _process_json(event, pager_command)
         _page(processed_json, pager_command)
 
+    elif isinstance(event, errors.DCOSException):
+        print(event, file=sys.stderr)
+
     else:
         logger.debug('Printing unknown type: %s, %r.', type(event), event)
         _page(event, pager_command)

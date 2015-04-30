@@ -1,7 +1,7 @@
 import json
 
 from dcos import http, util
-from dcos.errors import DefaultError, Error
+from dcos.errors import DCOSException, DefaultError, Error
 
 try:
     from urllib import quote
@@ -88,7 +88,7 @@ class Client(object):
         :param version: application version as a ISO8601 datetime
         :type version: str
         :returns: the requested Marathon application
-        :rtype: (dict, errors.Error)
+        :rtype: dict
         """
 
         app_id = self.normalize_app_id(app_id)
@@ -98,16 +98,13 @@ class Client(object):
             url = self._create_url(
                 'v2/apps{}/versions/{}'.format(app_id, version))
 
-        response, error = http.get(url, to_error=_to_error)
-
-        if error is not None:
-            return (None, error)
+        response = http.get(url, to_error=_to_error)
 
         # Looks like Marathon return different JSON for versions
         if version is None:
-            return (response.json()['app'], None)
+            return response.json()['app']
         else:
-            return (response.json(), None)
+            return response.json()
 
     def get_app_versions(self, app_id, max_count=None):
         """Asks Marathon for all the versions of the Application up to a
@@ -118,47 +115,37 @@ class Client(object):
         :param max_count: the maximum number of version to fetch
         :type max_count: int
         :returns: a list of all the version of the application
-        :rtype: (list of str, errors.Error)
+        :rtype: [str]
         """
 
         if max_count is not None and max_count <= 0:
-            return (
-                None,
-                DefaultError(
-                    'Maximum count must be a positive number: {}'.format(
-                        max_count))
+            raise DCOSException(
+                'Maximum count must be a positive number: {}'.format(max_count)
             )
 
         app_id = self.normalize_app_id(app_id)
 
         url = self._create_url('v2/apps{}/versions'.format(app_id))
 
-        response, error = http.get(url, to_error=_to_error)
-
-        if error is not None:
-            return (None, error)
+        response = http.get(url, to_error=_to_error)
 
         if max_count is None:
-            return (response.json()['versions'], None)
+            return response.json()['versions']
         else:
-            return (response.json()['versions'][:max_count], None)
+            return response.json()['versions'][:max_count]
 
     def get_apps(self):
         """Get a list of known applications.
 
         :returns: list of known applications
-        :rtype: (list of dict, errors.Error)
+        :rtype: [dict]
         """
 
         url = self._create_url('v2/apps')
 
-        response, error = http.get(url, to_error=_to_error)
+        response = http.get(url, to_error=_to_error)
 
-        if error is not None:
-            return (None, error)
-
-        apps = response.json()['apps']
-        return (apps, None)
+        return response.json()['apps']
 
     def add_app(self, app_resource):
         """Add a new application.
@@ -166,7 +153,7 @@ class Client(object):
         :param app_resource: application resource
         :type app_resource: dict, bytes or file
         :returns: the application description
-        :rtype: (dict, errors.Error)
+        :rtype: dict
         """
 
         url = self._create_url('v2/apps')
@@ -177,14 +164,11 @@ class Client(object):
         else:
             app_json = app_resource
 
-        response, error = http.post(url,
-                                    json=app_json,
-                                    to_error=_to_error)
+        response = http.post(url,
+                             json=app_json,
+                             to_error=_to_error)
 
-        if error is not None:
-            return (None, error)
-
-        return (response.json(), None)
+        return response.json()
 
     def update_app(self, app_id, payload, force=None):
         """Update an application.
@@ -196,7 +180,7 @@ class Client(object):
         :param force: whether to override running deployments
         :type force: bool
         :returns: the resulting deployment ID
-        :rtype: (str, errors.Error)
+        :rtype: str
         """
 
         app_id = self.normalize_app_id(app_id)
@@ -208,15 +192,12 @@ class Client(object):
 
         url = self._create_url('v2/apps{}'.format(app_id))
 
-        response, error = http.put(url,
-                                   params=params,
-                                   json=payload,
-                                   to_error=_to_error)
+        response = http.put(url,
+                            params=params,
+                            json=payload,
+                            to_error=_to_error)
 
-        if error is not None:
-            return (None, error)
-
-        return (response.json().get('deploymentId'), None)
+        return response.json().get('deploymentId')
 
     def scale_app(self, app_id, instances, force=None):
         """Scales an application to the requested number of instances.
@@ -228,7 +209,7 @@ class Client(object):
         :param force: whether to override running deployments
         :type force: bool
         :returns: the resulting deployment ID
-        :rtype: (bool, errors.Error)
+        :rtype: bool
         """
 
         app_id = self.normalize_app_id(app_id)
@@ -259,7 +240,7 @@ class Client(object):
         :param force: whether to override running deployments
         :type force: bool
         :returns: the resulting deployment ID
-        :rtype: (bool, errors.Error)
+        :rtype: bool
         """
 
         return self.scale_app(app_id, 0, force)
@@ -271,8 +252,7 @@ class Client(object):
         :type app_id: str
         :param force: whether to override running deployments
         :type force: bool
-        :returns: Error if it failed to remove the app; None otherwise
-        :rtype: errors.Error
+        :rtype: None
         """
 
         app_id = self.normalize_app_id(app_id)
@@ -284,14 +264,7 @@ class Client(object):
 
         url = self._create_url('v2/apps{}'.format(app_id))
 
-        response, error = http.delete(url,
-                                      params=params,
-                                      to_error=_to_error)
-
-        if error is not None:
-            return error
-
-        return None
+        http.delete(url, params=params, to_error=_to_error)
 
     def restart_app(self, app_id, force=None):
         """Performs a rolling restart of all of the tasks.
@@ -300,8 +273,8 @@ class Client(object):
         :type app_id: str
         :param force: whether to override running deployments
         :type force: bool
-        :returns: the deployment id and version; Error otherwise
-        :rtype: (dict, errors.Error)
+        :returns: the deployment id and version
+        :rtype: dict
         """
 
         app_id = self.normalize_app_id(app_id)
@@ -313,14 +286,11 @@ class Client(object):
 
         url = self._create_url('v2/apps{}/restart'.format(app_id))
 
-        response, error = http.post(url,
-                                    params=params,
-                                    to_error=_to_error)
+        response = http.post(url,
+                             params=params,
+                             to_error=_to_error)
 
-        if error is not None:
-            return (None, error)
-
-        return (response.json(), None)
+        return response.json()
 
     def get_deployment(self, deployment_id):
         """Returns a deployment.
@@ -328,23 +298,20 @@ class Client(object):
         :param deployment_id: the deployment id
         :type deployment_id: str
         :returns: a deployment
-        :rtype: (dict, Error)
+        :rtype: dict
         """
 
         url = self._create_url('v2/deployments')
 
-        response, error = http.get(url,
-                                   to_error=_to_error)
-
-        if error is not None:
-            return (None, error)
+        response = http.get(url,
+                            to_error=_to_error)
 
         deployment = next(
             (deployment for deployment in response.json()
              if deployment_id == deployment['id']),
             None)
 
-        return (deployment, None)
+        return deployment
 
     def get_deployments(self, app_id=None):
         """Returns a list of deployments, optionally limited to an app.
@@ -357,10 +324,7 @@ class Client(object):
 
         url = self._create_url('v2/deployments')
 
-        response, error = http.get(url, to_error=_to_error)
-
-        if error is not None:
-            return (None, error)
+        response = http.get(url, to_error=_to_error)
 
         if app_id is not None:
             app_id = self.normalize_app_id(app_id)
@@ -371,7 +335,7 @@ class Client(object):
         else:
             deployments = response.json()
 
-        return (deployments, None)
+        return deployments
 
     def _cancel_deployment(self, deployment_id, force):
         """Cancels an application deployment.
@@ -384,7 +348,7 @@ class Client(object):
                       deployment.
         :type force: bool
         :returns: cancelation deployment
-        :rtype: (dict, Error)
+        :rtype: dict
         """
 
         if not force:
@@ -394,17 +358,15 @@ class Client(object):
 
         url = self._create_url('v2/deployments/{}'.format(deployment_id))
 
-        response, error = http.delete(
+        response = http.delete(
             url,
             params=params,
             to_error=_to_error)
-        if error is not None:
-            return (None, error)
 
-        if not force:
-            return (response.json(), None)
+        if force:
+            return None
         else:
-            return (None, None)
+            return response.json()
 
     def rollback_deployment(self, deployment_id):
         """Rolls back an application deployment.
@@ -412,7 +374,7 @@ class Client(object):
         :param deployment_id: the deployment id
         :type deployment_id: str
         :returns: cancelation deployment
-        :rtype: (dict, Error)
+        :rtype: dict
         """
 
         return self._cancel_deployment(deployment_id, False)
@@ -422,12 +384,10 @@ class Client(object):
 
         :param deployment_id: the deployment id
         :type deployment_id: str
-        :returns: an error if unable to stop the deployment; None otherwise
-        :rtype: Error
+        :rtype: None
         """
 
-        _, err = self._cancel_deployment(deployment_id, True)
-        return err
+        self._cancel_deployment(deployment_id, True)
 
     def get_tasks(self, app_id):
         """Returns a list of tasks, optionally limited to an app.
@@ -435,14 +395,12 @@ class Client(object):
         :param app_id: the id of the application to restart
         :type app_id: str
         :returns: a list of tasks
-        :rtype: (list of dict, dcos.errors.Error)
+        :rtype: [dict]
         """
 
         url = self._create_url('v2/tasks')
 
-        response, error = http.get(url, to_error=_to_error)
-        if error is not None:
-            return (None, error)
+        response = http.get(url, to_error=_to_error)
 
         if app_id is not None:
             app_id = self.normalize_app_id(app_id)
@@ -453,7 +411,7 @@ class Client(object):
         else:
             tasks = response.json()['tasks']
 
-        return (tasks, None)
+        return tasks
 
     def get_task(self, task_id):
         """Returns a task
@@ -461,21 +419,19 @@ class Client(object):
         :param task_id: the id of the task
         :type task_id: str
         :returns: a tasks
-        :rtype: (dict, dcos.errors.Error)
+        :rtype: dict
         """
 
         url = self._create_url('v2/tasks')
 
-        response, error = http.get(url, to_error=_to_error)
-        if error is not None:
-            return (None, error)
+        response = http.get(url, to_error=_to_error)
 
         task = next(
             (task for task in response.json()['tasks']
              if task_id == task['id']),
             None)
 
-        return (task, None)
+        return task
 
     def normalize_app_id(self, app_id):
         """Normalizes the application id.

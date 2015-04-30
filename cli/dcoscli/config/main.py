@@ -31,18 +31,24 @@ import docopt
 import pkg_resources
 import six
 import toml
-from dcos import (cmds, config, constants, emitting, errors, http, jsonitem,
-                  options, subcommand, util)
+from dcos import (cmds, config, constants, emitting, http, jsonitem,
+                  subcommand, util)
+from dcos.errors import DCOSException
 from dcoscli.analytics import segment_identify
 
 emitter = emitting.FlatEmitter()
 
 
 def main():
-    err = util.configure_logger_from_environ()
-    if err is not None:
-        emitter.publish(err)
+    try:
+        return _main()
+    except DCOSException as e:
+        emitter.publish(e)
         return 1
+
+
+def _main():
+    util.configure_logger_from_environ()
 
     args = docopt.docopt(
         __doc__,
@@ -50,13 +56,7 @@ def main():
 
     http.silence_requests_warnings()
 
-    returncode, err = cmds.execute(_cmds(), args)
-    if err is not None:
-        emitter.publish(err)
-        emitter.publish(options.make_generic_usage_message(__doc__))
-        return 1
-
-    return returncode
+    return cmds.execute(_cmds(), args)
 
 
 def compare_validations(toml_config_pre, toml_config_post):
@@ -75,18 +75,14 @@ def compare_validations(toml_config_pre, toml_config_post):
                                      _generate_root_schema(toml_config_post))
     if len(errors_post) != 0:
         if len(errors_pre) == 0:
-            emitter.publish(util.list_to_err(errors_post))
-            return 1
+            raise DCOSException(util.list_to_err(errors_post))
 
         def _errs(errs):
             return set([e.split('\n')[0] for e in errs])
 
         diff_errors = _errs(errors_post) - _errs(errors_pre)
         if len(diff_errors) != 0:
-            emitter.publish(util.list_to_err(errors_post))
-            return 1
-
-    return 0
+            raise DCOSException(util.list_to_err(errors_post))
 
 
 def _cmds():
@@ -155,15 +151,9 @@ def _set(name, value):
 
     section, subkey = _split_key(name)
 
-    config_schema, err = _get_config_schema(section)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    config_schema = _get_config_schema(section)
 
-    python_value, err = jsonitem.parse_json_value(subkey, value, config_schema)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    python_value = jsonitem.parse_json_value(subkey, value, config_schema)
 
     toml_config_pre = copy.deepcopy(toml_config)
     if section not in toml_config_pre._dictionary:
@@ -176,8 +166,7 @@ def _set(name, value):
 
     _save_config_file(config_path, toml_config)
 
-    if compare_validations(toml_config_pre, toml_config) == 1:
-        return 1
+    compare_validations(toml_config_pre, toml_config)
 
     _save_config_file(config_path, toml_config)
     return 0
@@ -191,18 +180,15 @@ def _append(name, value):
 
     config_path, toml_config = _load_config()
 
-    python_value, err = _parse_array_item(name, value)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    python_value = _parse_array_item(name, value)
     toml_config_pre = copy.deepcopy(toml_config)
     section = name.split(".", 1)[0]
     if section not in toml_config_pre._dictionary:
         toml_config_pre._dictionary[section] = {}
+
     toml_config[name] = toml_config.get(name, []) + python_value
 
-    if compare_validations(toml_config_pre, toml_config) == 1:
-        return 1
+    compare_validations(toml_config_pre, toml_config)
 
     _save_config_file(config_path, toml_config)
     return 0
@@ -216,18 +202,14 @@ def _prepend(name, value):
 
     config_path, toml_config = _load_config()
 
-    python_value, err = _parse_array_item(name, value)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    python_value = _parse_array_item(name, value)
 
     toml_config_pre = copy.deepcopy(toml_config)
     section = name.split(".", 1)[0]
     if section not in toml_config_pre._dictionary:
         toml_config_pre._dictionary[section] = {}
     toml_config[name] = python_value + toml_config.get(name, [])
-    if compare_validations(toml_config_pre, toml_config) == 1:
-        return 1
+    compare_validations(toml_config_pre, toml_config)
 
     _save_config_file(config_path, toml_config)
     return 0
@@ -246,38 +228,26 @@ def _unset(name, index):
         toml_config_pre._dictionary[section] = {}
     value = toml_config.pop(name, None)
     if value is None:
-        emitter.publish(
-            errors.DefaultError(
-                "Property {!r} doesn't exist".format(name)))
-        return 1
+        raise DCOSException("Property {!r} doesn't exist".format(name))
     elif isinstance(value, collections.Mapping):
-        emitter.publish(_generate_choice_msg(name, value))
-        return 1
+        raise DCOSException(_generate_choice_msg(name, value))
     elif (isinstance(value, collections.Sequence) and
           not isinstance(value, six.string_types)):
         if index is not None:
-            index, err = util.parse_int(index)
-            if err is not None:
-                emitter.publish(err)
-                return 1
+            index = util.parse_int(index)
 
             if index < 0 or index >= len(value):
-                emitter.publish(
-                    errors.DefaultError(
-                        'Index ({}) is out of bounds - possible values are '
-                        'between {} and {}'.format(index, 0, len(value) - 1)))
-                return 1
+                raise DCOSException(
+                    'Index ({}) is out of bounds - possible values are '
+                    'between {} and {}'.format(index, 0, len(value) - 1))
 
             value.pop(index)
             toml_config[name] = value
     elif index is not None:
-        emitter.publish(
-            errors.DefaultError(
-                'Unsetting based on an index is only supported for lists'))
-        return 1
+        raise DCOSException(
+            'Unsetting based on an index is only supported for lists')
 
-    if compare_validations(toml_config_pre, toml_config) == 1:
-        return 1
+    compare_validations(toml_config_pre, toml_config)
 
     _save_config_file(config_path, toml_config)
     return 0
@@ -294,13 +264,9 @@ def _show(name):
     if name is not None:
         value = toml_config.get(name)
         if value is None:
-            emitter.publish(
-                errors.DefaultError(
-                    "Property {!r} doesn't exist".format(name)))
-            return 1
+            raise DCOSException("Property {!r} doesn't exist".format(name))
         elif isinstance(value, collections.Mapping):
-            emitter.publish(_generate_choice_msg(name, value))
-            return 1
+            raise DCOSException(_generate_choice_msg(name, value))
         else:
             emitter.publish(value)
     else:
@@ -345,11 +311,7 @@ def _generate_root_schema(toml_config):
 
     # Load the config schema from all the subsections into the root schema
     for section in toml_config.keys():
-        config_schema, err = _get_config_schema(section)
-        if err is not None:
-            emitter.publish(err)
-            return 1
-
+        config_schema = _get_config_schema(section)
         root_schema['properties'][section] = config_schema
 
     return root_schema
@@ -362,7 +324,7 @@ def _generate_choice_msg(name, value):
     :param value: dictionary for the value
     :type value: dcos.config.Toml
     :returns: an error message for top level properties
-    :rtype: dcos.errors.Error
+    :rtype: str
     """
 
     message = ("Property {!r} doesn't fully specify a value - "
@@ -370,7 +332,7 @@ def _generate_choice_msg(name, value):
     for key, _ in sorted(value.property_items()):
         message += '\n{}.{}'.format(name, key)
 
-    return errors.DefaultError(message)
+    return message
 
 
 def _load_config():
@@ -401,26 +363,20 @@ def _get_config_schema(command):
     :param command: the subcommand name
     :type command: str
     :returns: the subcommand's configuration schema
-    :rtype: (dict, dcos.errors.Error)
+    :rtype: dict
     """
 
     # core.* config variables are special.  They're valid, but don't
     # correspond to any particular subcommand, so we must handle them
     # separately.
     if command == "core":
-        return (json.loads(
+        return json.loads(
             pkg_resources.resource_string(
                 'dcoscli',
-                'data/config-schema/core.json').decode('utf-8')),
-                None)
+                'data/config-schema/core.json').decode('utf-8'))
 
-    executable, err = subcommand.command_executables(
-        command,
-        util.dcos_path())
-    if err is not None:
-        return (None, err)
-
-    return (subcommand.config_schema(executable), None)
+    executable = subcommand.command_executables(command, util.dcos_path())
+    return subcommand.config_schema(executable)
 
 
 def _split_key(name):
@@ -428,15 +384,13 @@ def _split_key(name):
     :param name: the full property path - e.g. marathon.host
     :type name: str
     :returns: the section and property name
-    :rtype: ((str, str), Error)
+    :rtype: (str, str)
     """
 
     terms = name.split('.', 1)
     if len(terms) != 2:
-        emitter.publish(
-            errors.DefaultError('Property name must have both a section and '
-                                'key: <section>.<key> - E.g. marathon.host'))
-        return 1
+        raise DCOSException('Property name must have both a section and '
+                            'key: <section>.<key> - E.g. marathon.host')
 
     return (terms[0], terms[1])
 
@@ -454,21 +408,14 @@ def _parse_array_item(name, value):
 
     section, subkey = _split_key(name)
 
-    config_schema, err = _get_config_schema(section)
-    if err is not None:
-        return (None, err)
+    config_schema = _get_config_schema(section)
 
-    parser, err = jsonitem.find_parser(subkey, config_schema)
-    if err is not None:
-        return (None, err)
+    parser = jsonitem.find_parser(subkey, config_schema)
 
     if parser.schema['type'] != 'array':
-        return (
-            None,
-            errors.DefaultError(
-                "Append/Prepend not supported on '{0}' properties - use 'dcos "
-                "config set {0} {1}'".format(name, value))
-        )
+        raise DCOSException(
+            "Append/Prepend not supported on '{0}' properties - use 'dcos "
+            "config set {0} {1}'".format(name, value))
 
     if ('items' in parser.schema and
        parser.schema['items']['type'] == 'string'):

@@ -13,28 +13,28 @@ import dcoscli
 import docopt
 from concurrent.futures import ThreadPoolExecutor
 from dcos import cmds, emitting, options, subcommand, util
+from dcos.errors import DCOSException
 
 emitter = emitting.FlatEmitter()
 logger = util.get_logger(__name__)
 
 
 def main():
-    err = util.configure_logger_from_environ()
-    if err is not None:
-        emitter.publish(err)
+    try:
+        return _main()
+    except DCOSException as e:
+        emitter.publish(e)
         return 1
+
+
+def _main():
+    util.configure_logger_from_environ()
 
     args = docopt.docopt(
         __doc__,
         version='dcos-help version {}'.format(dcoscli.version))
 
-    returncode, err = cmds.execute(_cmds(), args)
-    if err is not None:
-        emitter.publish(err)
-        emitter.publish(options.make_generic_usage_message(__doc__))
-        return 1
-
-    return returncode
+    return cmds.execute(_cmds(), args)
 
 
 def _cmds():

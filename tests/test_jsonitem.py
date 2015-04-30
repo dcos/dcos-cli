@@ -1,4 +1,5 @@
-from dcos import errors, jsonitem
+from dcos import jsonitem
+from dcos.errors import DCOSException
 
 import pytest
 
@@ -139,79 +140,66 @@ def schema():
 
 def test_parse_string():
     string = 'this is a string "'
-    assert jsonitem._parse_string(string) == (string, None)
+    assert jsonitem._parse_string(string) == string
 
 
 def test_parse_object():
-    assert (
-        jsonitem._parse_object('{"key": "value"}') ==
-        ({'key': 'value'}, None)
-    )
+    assert jsonitem._parse_object('{"key": "value"}') == {'key': 'value'}
 
 
 def test_parse_invalid_objects(bad_object):
-    value, error = jsonitem._parse_object(bad_object)
-    assert value is None
-    assert isinstance(error, errors.Error)
+    with pytest.raises(DCOSException):
+        jsonitem._parse_object(bad_object)
 
 
 def test_parse_number():
-    assert jsonitem._parse_number('45') == (45, None)
-    assert jsonitem._parse_number('45.0') == (45.0, None)
+    assert jsonitem._parse_number('45') == 45
+    assert jsonitem._parse_number('45.0') == 45.0
 
 
 def test_parse_invalid_numbers(bad_number):
-    value, error = jsonitem._parse_number(bad_number)
-    assert value is None
-    assert isinstance(error, errors.Error)
+    with pytest.raises(DCOSException):
+        jsonitem._parse_number(bad_number)
 
 
 def test_parse_integer():
-    assert jsonitem._parse_integer('45') == (45, None)
+    assert jsonitem._parse_integer('45') == 45
 
 
 def test_parse_invalid_integers(bad_integer):
-    value, error = jsonitem._parse_integer(bad_integer)
-    assert value is None
-    assert isinstance(error, errors.Error)
+    with pytest.raises(DCOSException):
+        jsonitem._parse_integer(bad_integer)
 
 
 def test_parse_boolean():
-    assert jsonitem._parse_boolean('true') == (True, None)
-    assert jsonitem._parse_boolean('false') == (False, None)
+    assert jsonitem._parse_boolean('true') is True
+    assert jsonitem._parse_boolean('false') is False
 
 
 def test_parse_invalid_booleans(bad_boolean):
-    value, error = jsonitem._parse_boolean(bad_boolean)
-    assert value is None
-    assert isinstance(error, errors.Error)
+    with pytest.raises(DCOSException):
+        jsonitem._parse_boolean(bad_boolean)
 
 
 def test_parse_array():
-    assert jsonitem._parse_array('[1,2,3]') == ([1, 2, 3], None)
+    assert jsonitem._parse_array('[1,2,3]') == [1, 2, 3]
 
 
 def test_parse_invalid_arrays(bad_array):
-    value, error = jsonitem._parse_array(bad_array)
-    assert value is None
-    assert isinstance(error, errors.Error)
+    with pytest.raises(DCOSException):
+        jsonitem._parse_array(bad_array)
 
 
 def test_find_parser(schema, jsonitem_tuple):
     key, string_value, value = jsonitem_tuple
-    value_type, err = jsonitem.find_parser(key, schema)
-
-    assert err is None
-    assert value_type(string_value) == (value, None)
+    assert jsonitem.find_parser(key, schema)(string_value) == value
 
 
 def test_parse_json_item(schema, parse_tuple):
     arg, result = parse_tuple
-    assert jsonitem.parse_json_item(arg, schema) == (result, None)
+    assert jsonitem.parse_json_item(arg, schema) == result
 
 
 def test_parse_bad_json_item(schema, bad_parse):
-    value, err = jsonitem.parse_json_item(bad_parse, schema)
-
-    assert value is None
-    assert isinstance(err, errors.Error)
+    with pytest.raises(DCOSException):
+        jsonitem.parse_json_item(bad_parse, schema)
