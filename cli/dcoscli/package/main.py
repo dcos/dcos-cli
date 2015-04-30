@@ -8,7 +8,7 @@ Usage:
     dcos package install [--options=<file> --app-id=<app_id> --cli --app]
                  <package_name>
     dcos package list-installed [--endpoints --app-id=<app-id> <package_name>]
-    dcos package search <query>
+    dcos package search [<query>]
     dcos package sources
     dcos package uninstall [--all | --app-id=<app-id>] <package_name>
     dcos package update [--validate]
@@ -178,11 +178,10 @@ def _list_sources():
 
     config = _load_config()
 
-    sources, errs = package.list_sources(config)
+    sources, err = package.list_sources(config)
 
-    if len(errs) > 0:
-        for err in errs:
-            emitter.publish(err)
+    if err is not None:
+        emitter.publish(err)
         return 1
 
     for source in sources:
@@ -223,7 +222,10 @@ def _describe(package_name):
 
     config = _load_config()
 
-    pkg = package.resolve_package(package_name, config)
+    pkg, err = package.resolve_package(package_name, config)
+    if err is not None:
+        emitter.publish(err)
+        return 1
 
     if pkg is None:
         emitter.publish("Package [{}] not found".format(package_name))
@@ -280,7 +282,11 @@ def _install(package_name, options_path, app_id, cli, app):
 
     config = _load_config()
 
-    pkg = package.resolve_package(package_name, config)
+    pkg, err = package.resolve_package(package_name, config)
+    if err is not None:
+        emitter.publish(err)
+        return 1
+
     if pkg is None:
         emitter.publish(
             errors.DefaultError(
@@ -405,6 +411,8 @@ def _search(query):
     :returns: Process status
     :rtype: int
     """
+    if not query:
+        query = ''
 
     config = _load_config()
 

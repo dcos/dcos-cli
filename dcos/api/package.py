@@ -165,7 +165,7 @@ def uninstall(package_name, remove_all, app_id, init_client):
         if app_id is not None:
             msg += " with id [{}]".format(app_id)
         msg += " is not installed."
-        return Error(msg)
+        return errors.DefaultError(msg)
 
 
 def uninstall_subcommand(distribution_name):
@@ -218,7 +218,7 @@ def uninstall_app(app_name, remove_all, app_id, init_client):
 
     if not remove_all and len(matching_apps) > 1:
         app_ids = [a.get('id') for a in matching_apps]
-        return (0, Error("""Multiple instances of app [{}] are installed. \
+        return (0, errors.DefaultError("""Multiple instances of app [{}] are installed. \
 Please specify the app id of the instance to uninstall or uninstall all. \
 The app ids of the installed package instances are: [{}].""".format(
             app_name, ', '.join(app_ids))))
@@ -450,7 +450,11 @@ def search(query, cfg):
         })
         return result
 
-    for registry in registries(cfg):
+    regs, err = registries(cfg)
+    if err is not None:
+        return (None, err)
+
+    for registry in regs:
         source_results = []
         index, error = registry.get_index()
         if error is not None:
@@ -520,15 +524,19 @@ def resolve_package(package_name, config):
     :param config: Configuration dictionary
     :type config: dcos.api.config.Toml
     :returns: The named package, if found
-    :rtype: Package or None
+    :rtype: (Package, Error)
     """
 
-    for registry in registries(config):
+    regs, err = registries(config)
+    if err is not None:
+        return (None, err)
+
+    for registry in regs:
         package, error = registry.get_package(package_name)
         if package is not None:
-            return package
+            return (package, None)
 
-    return None
+    return (None, None)
 
 
 def registries(config):
@@ -537,11 +545,15 @@ def registries(config):
     :param config: Configuration dictionary
     :type config: dcos.api.config.Toml
     :returns: The list of registries, in resolution order
-    :rtype: list of Registry
+    :rtype: ([Registry], Error)
     """
 
-    sources, errors = list_sources(config)
-    return [Registry(source, source.local_cache(config)) for source in sources]
+    sources, err = list_sources(config)
+    if err is not None:
+        return (None, err)
+
+    regs = [Registry(source, source.local_cache(config)) for source in sources]
+    return (regs, None)
 
 
 def list_sources(config):
@@ -550,19 +562,24 @@ def list_sources(config):
     :param config: Configuration dictionary
     :type config: dcos.api.config.Toml
     :returns: The list of sources, in resolution order
-    :rtype: (list of Source, list of Error)
+    :rtype: (list of Source, Error)
     """
 
     source_uris = config.get('package.sources')
 
     if source_uris is None:
-        config_error = Error('No configured value for [package.sources]')
-        return (None, [config_error])
+        config_error = errors.DefaultError(
+            'No configured value for [package.sources]')
+        return (None, config_error)
 
     results = [url_to_source(s) for s in config['package.sources']]
     sources = [source for (source, _) in results if source is not None]
-    errors = [error for (_, error) in results if error is not None]
-    return (sources, errors)
+
+    errs = [error.error() for (_, error) in results if error is not None]
+    if errs:
+        return (None, errors.DefaultError('\n'.join(errs)))
+
+    return (sources, None)
 
 
 def url_to_source(url):
@@ -650,10 +667,10 @@ def update_sources(config, validate=False):
     with lock_fd:
 
         # list sources
-        sources, list_errors = list_sources(config)
+        sources, err = list_sources(config)
 
-        if len(list_errors) > 0:
-            errors = errors + list_errors
+        if err is not None:
+            errors = errors + [err]
             return errors
 
         for source in sources:
