@@ -11,7 +11,7 @@ import tempfile
 import jsonschema
 import pystache
 import six
-from dcos.api import config, constants, errors
+from dcos import config, constants, errors
 
 
 @contextlib.contextmanager
@@ -141,7 +141,7 @@ def configure_logger_from_environ():
 
     :returns: An Error if we were unable to configure logging from the
               environment; None otherwise
-    :rtype: dcos.api.errors.DefaultError
+    :rtype: dcos.errors.DefaultError
     """
 
     return configure_logger(os.environ.get(constants.DCOS_LOG_LEVEL_ENV))
@@ -153,7 +153,7 @@ def configure_logger(log_level):
     :param log_level: Log level for configuring logging
     :type log_level: str
     :returns: An Error if we were unable to configure logging; None otherwise
-    :rtype: dcos.api.errors.DefaultError
+    :rtype: dcos.errors.DefaultError
     """
     if log_level is None:
         logging.disable(logging.CRITICAL)

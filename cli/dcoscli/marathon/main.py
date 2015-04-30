@@ -60,7 +60,7 @@ import time
 import dcoscli
 import docopt
 import pkg_resources
-from dcos.api import cmds, emitting, errors, jsonitem, marathon, options, util
+from dcos import cmds, emitting, errors, jsonitem, marathon, options, util
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -88,7 +88,7 @@ def main():
 def _cmds():
     """
     :returns: all the supported commands
-    :rtype: dcos.api.cmds.Command
+    :rtype: dcos.cmds.Command
     """
 
     return [
@@ -752,7 +752,7 @@ def _update_from_stdin(app_id, force):
 def _calculate_version(client, app_id, version):
     """
     :param client: Marathon client
-    :type client: dcos.api.marathon.Client
+    :type client: dcos.marathon.Client
     :param app_id: The ID of the application
     :type app_id: str
     :param version: Relative or absolute version or None

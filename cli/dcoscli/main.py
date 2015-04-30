@@ -37,7 +37,7 @@ from subprocess import PIPE, Popen
 
 import dcoscli
 import docopt
-from dcos.api import auth, constants, emitting, errors, http, subcommand, util
+from dcos import auth, constants, emitting, errors, http, subcommand, util
 from dcoscli import analytics
 
 emitter = emitting.FlatEmitter()

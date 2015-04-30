@@ -3,7 +3,7 @@ import os
 
 import dcoscli.constants as cli_constants
 import six
-from dcos.api import constants
+from dcos import constants
 
 import pytest
 from common import assert_command, exec_command

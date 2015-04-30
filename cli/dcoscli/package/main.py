@@ -50,8 +50,8 @@ import json
 import dcoscli
 import docopt
 import pkg_resources
-from dcos.api import (cmds, emitting, errors, marathon, options, package,
-                      subcommand, util)
+from dcos import (cmds, emitting, errors, marathon, options, package,
+                  subcommand, util)
 
 logger = util.get_logger(__name__)
 
@@ -80,7 +80,7 @@ def main():
 def _cmds():
     """
     :returns: All of the supported commands
-    :rtype: dcos.api.cmds.Command
+    :rtype: dcos.cmds.Command
     """
 
     return [

@@ -1,4 +1,4 @@
-from dcos.api import config
+from dcos import config
 
 import pytest
 

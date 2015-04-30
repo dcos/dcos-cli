@@ -14,7 +14,7 @@ import git
 import portalocker
 import pystache
 import six
-from dcos.api import constants, emitting, errors, marathon, subcommand, util
+from dcos import constants, emitting, errors, marathon, subcommand, util
 
 from six.moves import urllib
 
@@ -452,7 +452,7 @@ def search(query, cfg):
     :param query: The search term
     :type query: str
     :param cfg: Configuration dictionary
-    :type cfg: dcos.api.config.Toml
+    :type cfg: dcos.config.Toml
     :rtype: (list of IndexEntries, Error)
     """
 
@@ -567,7 +567,7 @@ def resolve_package(package_name, config):
     :param package_name: The name of the package to resolve
     :type package_name: str
     :param config: Configuration dictionary
-    :type config: dcos.api.config.Toml
+    :type config: dcos.config.Toml
     :returns: The named package, if found
     :rtype: (Package, Error)
     """
@@ -588,7 +588,7 @@ def registries(config):
     """Returns configured cached package registries.
 
     :param config: Configuration dictionary
-    :type config: dcos.api.config.Toml
+    :type config: dcos.config.Toml
     :returns: The list of registries, in resolution order
     :rtype: ([Registry], Error)
     """
@@ -605,7 +605,7 @@ def list_sources(config):
     """List configured package sources.
 
     :param config: Configuration dictionary
-    :type config: dcos.api.config.Toml
+    :type config: dcos.config.Toml
     :returns: The list of sources, in resolution order
     :rtype: (list of Source, Error)
     """
@@ -677,7 +677,7 @@ def update_sources(config, validate=False):
     """Overwrites the local package cache with the latest source data.
 
     :param config: Configuration dictionary
-    :type config: dcos.api.config.Toml
+    :type config: dcos.config.Toml
     :returns: Error, if any.
     :rtype: list of Error
     """
@@ -783,7 +783,7 @@ class Source:
         """Returns the file system path to this source's local cache.
 
         :param config: Configuration dictionary
-        :type config: dcos.api.config.Toml
+        :type config: dcos.config.Toml
         :returns: Path to this source's local cache on disk
         :rtype: str or None
         """
@@ -1145,7 +1145,7 @@ class Package():
         :param user_options: package parameters
         :type user_options: dict
         :returns: a dictionary with the user supplied options
-        :rtype: (dict, dcos.api.errors.Error)
+        :rtype: (dict, dcos.errors.Error)
         """
 
         if user_options is None:

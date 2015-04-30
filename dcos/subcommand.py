@@ -5,7 +5,7 @@ import os
 import shutil
 import subprocess
 
-from dcos.api import constants, errors, util
+from dcos import constants, errors, util
 
 logger = util.get_logger(__name__)
 
@@ -18,7 +18,7 @@ def command_executables(subcommand, dcos_path):
     :param dcos_path: path to the dcos cli directory
     :type dcos_path: str
     :returns: the dcos program path
-    :rtype: (str, dcos.api.errors.Error)
+    :rtype: (str, dcos.errors.Error)
     """
 
     executables = [
@@ -235,7 +235,7 @@ def _install_env(pkg, version, options):
     :param options: package parameters
     :type options: dict
     :returns: an error if the subcommand failed; None otherwise
-    :rtype: dcos.api.errors.Error
+    :rtype: dcos.errors.Error
     """
 
     pkg_dir = package_dir(pkg.name())
@@ -268,7 +268,7 @@ def install(pkg, version, options):
     :param options: package parameters
     :type options: dict
     :returns: an error if the subcommand failed; None otherwise
-    :rtype: dcos.api.errors.Error
+    :rtype: dcos.errors.Error
     """
 
     pkg_dir = package_dir(pkg.name())
@@ -338,7 +338,7 @@ def install_with_pip(
     :param requirements: the list of pip requirements
     :type requirements: list of str
     :returns: an Error if it failed to install the package; None otherwise
-    :rtype: dcos.api.errors.Error
+    :rtype: dcos.errors.Error
     """
 
     bin_directory = os.path.join(util.dcos_path(), BIN_DIRECTORY)
@@ -408,7 +408,7 @@ def _generic_error(package_name):
     :param package: package name
     :type: str
     :returns: generic error when installing package
-    :rtype: dcos.api.errors.Error
+    :rtype: dcos.errors.Error
     """
 
     return errors.DefaultError(

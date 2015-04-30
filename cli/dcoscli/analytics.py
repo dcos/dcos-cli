@@ -6,7 +6,7 @@ import uuid
 import dcoscli
 import requests
 import rollbar
-from dcos.api import util
+from dcos import util
 from dcoscli.constants import (ROLLBAR_SERVER_POST_KEY,
                                SEGMENT_IO_CLI_ERROR_EVENT,
                                SEGMENT_IO_CLI_EVENT, SEGMENT_IO_WRITE_KEY_DEV,

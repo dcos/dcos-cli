@@ -11,7 +11,7 @@ import sys
 import pager
 import pygments
 import six
-from dcos.api import constants, errors, util
+from dcos import constants, errors, util
 from pygments.formatters import Terminal256Formatter
 from pygments.lexers import JsonLexer
 
@@ -67,7 +67,7 @@ def print_handler(event):
     """Default handler for printing event to stdout.
 
     :param event: event to emit to stdout
-    :type event: str, dict, list, or dcos.api.errors.Error
+    :type event: str, dict, list, or dcos.errors.Error
     """
 
     pager_command = os.environ.get(constants.DCOS_PAGER_COMMAND_ENV)
@@ -98,7 +98,7 @@ def _process_json(event, pager_command):
     """Conditionally highlights the supplied JSON value.
 
     :param event: event to emit to stdout
-    :type event: str, dict, list, or dcos.api.errors.Error
+    :type event: str, dict, list, or dcos.errors.Error
     :returns: String representation of the supplied JSON value,
               possibly syntax-highlighted.
     :rtype: str

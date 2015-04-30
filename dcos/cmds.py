@@ -1,6 +1,6 @@
 import collections
 
-from dcos.api import errors
+from dcos import errors
 
 Command = collections.namedtuple(
     'Command',
