@@ -30,8 +30,9 @@ import docopt
 import pkg_resources
 import six
 import toml
-from dcos.api import (cmds, config, constants, emitting, errors, jsonitem,
-                      options, subcommand, util)
+from dcos.api import (cmds, config, constants, emitting, errors, http,
+                      jsonitem, options, subcommand, util)
+from dcoscli.analytics import segment_identify
 
 emitter = emitting.FlatEmitter()
 
@@ -45,6 +46,8 @@ def main():
     args = docopt.docopt(
         __doc__,
         version='dcos-config version {}'.format(dcoscli.version))
+
+    http.silence_requests_warnings()
 
     returncode, err = cmds.execute(_cmds(), args)
     if err is not None:
@@ -132,6 +135,11 @@ def _set(name, value):
         return 1
 
     toml_config[name] = python_value
+
+    if (name == 'core.reporting' and python_value is True) or \
+       (name == 'core.email'):
+        segment_identify(toml_config)
+
     _save_config_file(config_path, toml_config)
 
     return 0

@@ -4,6 +4,6 @@ SEGMENT_IO_WRITE_KEY_PROD = '51ybGTeFEFU1xo6u10XMDrr6kATFyRyh'
 SEGMENT_IO_WRITE_KEY_DEV = '39uhSEOoRHMw6cMR6st9tYXDbAL3JSaP'
 SEGMENT_IO_CLI_EVENT = 'dcos-cli'
 SEGMENT_IO_CLI_ERROR_EVENT = 'dcos-cli-error'
-SEGMENT_URL = 'https://api.segment.io/v1/track'
+SEGMENT_URL = 'https://api.segment.io/v1'
 
 DCOS_PRODUCTION_ENV = 'DCOS_PRODUCTION'

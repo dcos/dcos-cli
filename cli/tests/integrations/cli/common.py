@@ -60,3 +60,30 @@ def assert_command(cmd,
     assert returncode_ == returncode
     assert stdout_ == stdout
     assert stderr_ == stderr
+
+
+def mock_called_some_args(mock, *args, **kwargs):
+    """Convience method for some mock assertions.  Returns True if the
+    arguments to one of the calls of `mock` contains `args` and
+    `kwargs`.
+
+    :param mock: the mock to check
+    :type mock: mock.Mock
+    :returns: True if the arguments to one of the calls for `mock`
+    contains `args` and `kwargs`.
+    :rtype: bool
+    """
+
+    for call in mock.call_args_list:
+        call_args, call_kwargs = call
+
+        if any(arg not in call_args for arg in args):
+            continue
+
+        if any(k not in call_kwargs or call_kwargs[k] != v
+               for k, v in kwargs.items()):
+            continue
+
+        return True
+
+    return False
