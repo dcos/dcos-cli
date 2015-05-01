@@ -234,8 +234,8 @@ def validate_json(instance, schema):
     :type instance: dict
     :param schema: the schema to validate with
     :type schema: dict
-    :returns: an error if the validation failed; None otherwise
-    :rtype: Error
+    :returns: list of errors as strings
+    :rtype: list
     """
 
     # TODO: clean up this hack
@@ -272,13 +272,20 @@ def validate_json(instance, schema):
         message += 'Value: {}'.format(json.dumps(error.instance))
         return message
 
-    formatted_errors = [format(e) for e in validation_errors]
+    return [format(e) for e in validation_errors]
 
-    if len(formatted_errors) is 0:
-        return None
-    else:
-        errors_as_str = str.join('\n\n', formatted_errors)
-        return errors.DefaultError(errors_as_str)
+
+def list_to_err(errs):
+    """convert list of errors to Error
+
+    :param errors: list of string errors
+    :type errors: list of strings
+    :returns: error message
+    :rtype: Error
+    """
+
+    errs_as_str = str.join('\n\n', errs)
+    return errors.DefaultError(errs_as_str)
 
 
 def parse_int(string):
