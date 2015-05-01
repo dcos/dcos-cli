@@ -1,4 +1,4 @@
-from dcos.api import util
+from dcos import util
 
 
 def test_render_mustache_json():

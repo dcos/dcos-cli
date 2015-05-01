@@ -2,7 +2,7 @@ import json
 import os
 
 import six
-from dcos.api import subcommand
+from dcos import subcommand
 
 from common import assert_command, exec_command
 

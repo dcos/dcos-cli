@@ -4,7 +4,7 @@ import uuid
 
 import pkg_resources
 import toml
-from dcos.api import config, constants, emitting, errors, http, jsonitem, util
+from dcos import config, constants, emitting, errors, http, jsonitem, util
 from six import iteritems, moves
 
 from oauth2client import client
@@ -23,7 +23,7 @@ def _authorize():
     """Create OAuth flow and authorize user
 
     :return: Tuple of credentials dict end Error
-    :rtype: (dict, dcos.api.errors.Error)
+    :rtype: (dict, dcos.errors.Error)
     """
     try:
         flow = client.OAuth2WebServerFlow(

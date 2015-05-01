@@ -1,86 +1,112 @@
 API Documentation
 =================
 
-The :mod:`dcos.api.cmds` Module
----------------------------------
+The :mod:`dcos.auth` Module
+---------------------------
 
-.. automodule:: dcos.api.cmds
+.. automodule:: dcos.auth
     :members:
     :undoc-members:
     :show-inheritance:
     :inherited-members:
 
-The :mod:`dcos.api.config` Module
----------------------------------
+The :mod:`dcos.cmds` Module
+---------------------------
 
-.. automodule:: dcos.api.config
+.. automodule:: dcos.cmds
     :members:
     :undoc-members:
     :show-inheritance:
     :inherited-members:
 
-The :mod:`dcos.api.constants` Module
-------------------------------------
+The :mod:`dcos.config` Module
+-----------------------------
 
-.. automodule:: dcos.api.constants
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-The :mod:`dcos.api.emitting` Module
-------------------------------------
-
-.. automodule:: dcos.api.emitting
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-The :mod:`dcos.api.errors` Module
-------------------------------------
-
-.. automodule:: dcos.api.errors
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-The :mod:`dcos.api.jsonitem` Module
-------------------------------------
-
-.. automodule:: dcos.api.jsonitem
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-The :mod:`dcos.api.marathon` Module
-------------------------------------
-
-.. automodule:: dcos.api.marathon
+.. automodule:: dcos.config
     :members:
     :undoc-members:
     :show-inheritance:
     :inherited-members:
 
-The :mod:`dcos.api.options` Module
-------------------------------------
+The :mod:`dcos.constants` Module
+--------------------------------
 
-.. automodule:: dcos.api.options
+.. automodule:: dcos.constants
     :members:
     :undoc-members:
     :show-inheritance:
 
-The :mod:`dcos.api.package` Module
-------------------------------------
+The :mod:`dcos.emitting` Module
+-------------------------------
 
-.. automodule:: dcos.api.package
+.. automodule:: dcos.emitting
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+The :mod:`dcos.errors` Module
+-----------------------------
+
+.. automodule:: dcos.errors
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+The :mod:`dcos.http` Module
+-----------------------------
+
+.. automodule:: dcos.http
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+The :mod:`dcos.jsonitem` Module
+-------------------------------
+
+.. automodule:: dcos.jsonitem
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+The :mod:`dcos.marathon` Module
+-------------------------------
+
+.. automodule:: dcos.marathon
     :members:
     :undoc-members:
     :show-inheritance:
     :inherited-members:
 
-The :mod:`dcos.api.util` Module
-------------------------------------
+The :mod:`dcos.options` Module
+------------------------------
 
-.. automodule:: dcos.api.util
+.. automodule:: dcos.options
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+The :mod:`dcos.package` Module
+------------------------------
+
+.. automodule:: dcos.package
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+
+The :mod:`dcos.subcommand` Module
+------------------------------
+
+.. automodule:: dcos.subcommand
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :inherited-members:
+
+The :mod:`dcos.util` Module
+---------------------------
+
+.. automodule:: dcos.util
     :members:
     :undoc-members:
     :show-inheritance:

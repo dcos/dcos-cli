@@ -4,7 +4,7 @@ from functools import wraps
 import dcoscli.analytics
 import requests
 import rollbar
-from dcos.api import constants, util
+from dcos import constants, util
 from dcoscli.analytics import _base_properties
 from dcoscli.config.main import main as config_main
 from dcoscli.constants import (ROLLBAR_SERVER_POST_KEY,

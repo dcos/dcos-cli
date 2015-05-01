@@ -31,8 +31,8 @@ import docopt
 import pkg_resources
 import six
 import toml
-from dcos.api import (cmds, config, constants, emitting, errors, http,
-                      jsonitem, options, subcommand, util)
+from dcos import (cmds, config, constants, emitting, errors, http, jsonitem,
+                  options, subcommand, util)
 from dcoscli.analytics import segment_identify
 
 emitter = emitting.FlatEmitter()
@@ -92,7 +92,7 @@ def compare_validations(toml_config_pre, toml_config_post):
 def _cmds():
     """
     :returns: all the supported commands
-    :rtype: list of dcos.api.cmds.Command
+    :rtype: list of dcos.cmds.Command
     """
 
     return [
@@ -360,9 +360,9 @@ def _generate_choice_msg(name, value):
     :param name: name of the property
     :type name: str
     :param value: dictionary for the value
-    :type value: dcos.api.config.Toml
+    :type value: dcos.config.Toml
     :returns: an error message for top level properties
-    :rtype: dcos.api.errors.Error
+    :rtype: dcos.errors.Error
     """
 
     message = ("Property {!r} doesn't fully specify a value - "
@@ -401,7 +401,7 @@ def _get_config_schema(command):
     :param command: the subcommand name
     :type command: str
     :returns: the subcommand's configuration schema
-    :rtype: (dict, dcos.api.errors.Error)
+    :rtype: (dict, dcos.errors.Error)
     """
 
     # core.* config variables are special.  They're valid, but don't
@@ -448,7 +448,7 @@ def _parse_array_item(name, value):
     :param value: the value to parse
     :type value: str
     :returns: the parsed value as an array with one element
-    :rtype: (list of any, dcos.api.errors.Error) where any is string, int,
+    :rtype: (list of any, dcos.errors.Error) where any is string, int,
             float, bool, array or dict
     """
 

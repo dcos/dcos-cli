@@ -12,7 +12,7 @@ Options:
 import dcoscli
 import docopt
 import futures
-from dcos.api import cmds, emitting, options, subcommand, util
+from dcos import cmds, emitting, options, subcommand, util
 
 emitter = emitting.FlatEmitter()
 logger = util.get_logger(__name__)
@@ -40,7 +40,7 @@ def main():
 def _cmds():
     """
     :returns: All of the supported commands
-    :rtype: list of dcos.api.cmds.Command
+    :rtype: list of dcos.cmds.Command
     """
 
     return [

@@ -1,6 +1,6 @@
 import collections
 
-from dcos.api import package
+from dcos import package
 
 import pytest
 

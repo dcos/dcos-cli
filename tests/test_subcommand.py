@@ -1,4 +1,4 @@
-from dcos.api import subcommand
+from dcos import subcommand
 
 
 def test_noun():

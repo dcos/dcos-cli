@@ -1,6 +1,6 @@
 import os
 
-from dcos.api import constants
+from dcos import constants
 
 from common import assert_command, exec_command
 
