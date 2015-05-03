@@ -6,12 +6,12 @@ import uuid
 import dcoscli
 import requests
 import rollbar
+from concurrent.futures import ThreadPoolExecutor
 from dcos import util
 from dcoscli.constants import (ROLLBAR_SERVER_POST_KEY,
                                SEGMENT_IO_CLI_ERROR_EVENT,
                                SEGMENT_IO_CLI_EVENT, SEGMENT_IO_WRITE_KEY_DEV,
                                SEGMENT_IO_WRITE_KEY_PROD, SEGMENT_URL)
-from futures import ThreadPoolExecutor
 from requests.auth import HTTPBasicAuth
 
 logger = util.get_logger(__name__)
