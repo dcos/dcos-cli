@@ -184,6 +184,26 @@ marathon-user       --http_port $PORT0 ",
     "cpus": 1.0,
     "id": "marathon-user",
     "instances": 1,
+    "labels": {
+      "DCOS_PACKAGE_FRAMEWORK_NAME": "marathon-user",
+      "DCOS_PACKAGE_IS_FRAMEWORK": "true",
+      "DCOS_PACKAGE_METADATA": "eyJkZXNjcmlwdGlvbiI6ICJBIGNsdXN0ZXItd2lkZSBpbm\
+l0IGFuZCBjb250cm9sIHN5c3RlbSBmb3Igc2VydmljZXMgaW4gY2dyb3VwcyBvciBEb2NrZXIgY29u\
+dGFpbmVycy4iLCAiZnJhbWV3b3JrIjogdHJ1ZSwgImltYWdlcyI6IHsiaWNvbi1sYXJnZSI6ICJodH\
+RwczovL2Rvd25sb2Fkcy5tZXNvc3BoZXJlLmlvL21hcmF0aG9uL2Fzc2V0cy9pY29uLXNlcnZpY2Ut\
+bWFyYXRob24tbGFyZ2UucG5nIiwgImljb24tbWVkaXVtIjogImh0dHBzOi8vZG93bmxvYWRzLm1lc2\
+9zcGhlcmUuaW8vbWFyYXRob24vYXNzZXRzL2ljb24tc2VydmljZS1tYXJhdGhvbi1tZWRpdW0ucG5n\
+IiwgImljb24tc21hbGwiOiAiaHR0cHM6Ly9kb3dubG9hZHMubWVzb3NwaGVyZS5pby9tYXJhdGhvbi\
+9hc3NldHMvaWNvbi1zZXJ2aWNlLW1hcmF0aG9uLXNtYWxsLnBuZyJ9LCAibWFpbnRhaW5lciI6ICJz\
+dXBwb3J0QG1lc29zcGhlcmUuaW8iLCAibmFtZSI6ICJtYXJhdGhvbiIsICJzY20iOiAiaHR0cHM6Ly\
+9naXRodWIuY29tL21lc29zcGhlcmUvbWFyYXRob24uZ2l0IiwgInRhZ3MiOiBbIm1lc29zcGhlcmUi\
+LCAiZnJhbWV3b3JrIl0sICJ2ZXJzaW9uIjogIjAuOC4xIn0=",
+      "DCOS_PACKAGE_NAME": "marathon",
+      "DCOS_PACKAGE_REGISTRY_VERSION": "0.1.0-alpha",
+      "DCOS_PACKAGE_RELEASE": "0",
+      "DCOS_PACKAGE_SOURCE": "git://github.com/mesosphere/universe.git",
+      "DCOS_PACKAGE_VERSION": "0.8.1"
+    },
     "mem": 512.0,
     "ports": [
       0,
