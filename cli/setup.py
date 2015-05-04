@@ -63,13 +63,13 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
         'dcos',
-        'docopt',
-        'pkginfo',
-        'toml',
-        'virtualenv',
-        'rollbar',
-        'futures',
-        'oauth2client'
+        'docopt>=0.6, <1.0',
+        'pkginfo>=1.2, <2.0',
+        'toml>=0.9, <1.0',
+        'virtualenv>=12.1, <13.0',
+        'rollbar>=0.9, <1.0',
+        'futures>=3.0, <4.0',
+        'oauth2client>=1.4, <2.0'
     ],
 
     # If there are data files included in your packages that need to be
