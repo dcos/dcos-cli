@@ -14,6 +14,21 @@ import six
 from dcos import config, constants, errors
 
 
+def get_logger(name):
+    """Get a logger
+
+    :param name: The name of the logger. E.g. __name__
+    :type name: str
+    :returns: The logger for the specified name
+    :rtype: logging.Logger
+    """
+
+    return logging.getLogger(name)
+
+
+logger = get_logger(__name__)
+
+
 @contextlib.contextmanager
 def tempdir():
     """A context manager for temporary directories.
@@ -171,18 +186,6 @@ def configure_logger(log_level):
         msg.format(log_level, constants.VALID_LOG_LEVEL_VALUES))
 
 
-def get_logger(name):
-    """Get a logger
-
-    :param name: The name of the logger. E.g. __name__
-    :type name: str
-    :returns: The logger for the specified name
-    :rtype: logging.Logger
-    """
-
-    return logging.getLogger(name)
-
-
 def load_json(reader):
     """Deserialize a reader into a python object
 
@@ -326,6 +329,8 @@ def render_mustache_json(template, data):
         rendered = r.render(template, data)
     except Exception as e:
         return (None, errors.DefaultError(e.message))
+
+    logger.debug('Rendered mustache template: %s', rendered)
 
     return load_jsons(rendered)
 
