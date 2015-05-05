@@ -13,7 +13,7 @@ def test_package():
 Usage:
     dcos package --config-schema
     dcos package --info
-    dcos package describe <package_name>
+    dcos package describe [--app --options=<file> --cli] <package_name>
     dcos package info
     dcos package install [--cli | [--app --app-id=<app_id]]
                          [--options=<file>]
@@ -108,23 +108,114 @@ def test_describe_nonexistent():
 def test_describe():
     stdout = b"""\
 {
-  "description": "DNS-based service discovery for Mesos.",
+  "description": "A cluster-wide init and control system for services in \
+cgroups or Docker containers.",
+  "framework": true,
+  "images": {
+    "icon-large": "https://downloads.mesosphere.io/marathon/assets/\
+icon-service-marathon-large.png",
+    "icon-medium": "https://downloads.mesosphere.io/marathon/assets/\
+icon-service-marathon-medium.png",
+    "icon-small": "https://downloads.mesosphere.io/marathon/assets/\
+icon-service-marathon-small.png"
+  },
   "maintainer": "support@mesosphere.io",
-  "name": "mesos-dns",
-  "postInstallNotes": "Please refer to the tutorial instructions for further \
-setup requirements: http://mesosphere.github.io/mesos-dns/docs/\
-tutorial-gce.html",
-  "scm": "https://github.com/mesosphere/mesos-dns.git",
+  "name": "marathon",
+  "scm": "https://github.com/mesosphere/marathon.git",
   "tags": [
-    "mesosphere"
+    "mesosphere",
+    "framework"
   ],
   "versions": [
-    "alpha"
-  ],
-  "website": "http://mesosphere.github.io/mesos-dns"
+    "0.8.1"
+  ]
 }
 """
-    assert_command(['dcos', 'package', 'describe', 'mesos-dns'],
+    assert_command(['dcos', 'package', 'describe', 'marathon'],
+                   stdout=stdout)
+
+    stdout = b"""\
+{
+  "command": {
+    "pip": [
+      "http://downloads.mesosphere.io/dcos-cli/\
+dcos-0.1.0-py2.py3-none-any.whl",
+      "git+https://github.com/mesosphere/\
+dcos-helloworld.git#dcos-helloworld=0.1.0"
+    ]
+  },
+  "description": "Example DCOS application package",
+  "maintainer": "support@mesosphere.io",
+  "name": "helloworld",
+  "tags": [
+    "mesosphere",
+    "example",
+    "subcommand"
+  ],
+  "versions": [
+    "0.1.0"
+  ],
+  "website": "https://github.com/mesosphere/dcos-helloworld"
+}
+"""
+    assert_command(['dcos', 'package', 'describe', '--cli', 'helloworld'],
+                   stdout=stdout)
+
+    stdout = b"""\
+{
+  "app": {
+    "cmd": "LIBPROCESS_PORT=$PORT1 && ./bin/start --master zk://master\
+.mesos:2181/mesos   --checkpoint    --failover_timeout 604800   --framework_\
+name marathon-user   --ha         --zk zk://localhost:2181/mesos/\
+marathon-user       --http_port $PORT0 ",
+    "constraints": [
+      [
+        "hostname",
+        "UNIQUE"
+      ]
+    ],
+    "container": {
+      "docker": {
+        "image": "mesosphere/marathon:v0.8.1",
+        "network": "HOST"
+      },
+      "type": "DOCKER"
+    },
+    "cpus": 1.0,
+    "id": "marathon-user",
+    "instances": 1,
+    "mem": 512.0,
+    "ports": [
+      0,
+      0
+    ],
+    "uris": []
+  },
+  "description": "A cluster-wide init and control system for services \
+in cgroups or Docker containers.",
+  "framework": true,
+  "images": {
+    "icon-large": "https://downloads.mesosphere.io/marathon/assets/\
+icon-service-marathon-large.png",
+    "icon-medium": "https://downloads.mesosphere.io/marathon/assets/\
+icon-service-marathon-medium.png",
+    "icon-small": "https://downloads.mesosphere.io/marathon/assets/\
+icon-service-marathon-small.png"
+  },
+  "maintainer": "support@mesosphere.io",
+  "name": "marathon",
+  "scm": "https://github.com/mesosphere/marathon.git",
+  "tags": [
+    "mesosphere",
+    "framework"
+  ],
+  "versions": [
+    "0.8.1"
+  ]
+}
+"""
+    assert_command(['dcos', 'package', 'describe', '--app', '--options',
+                    'tests/data/package/marathon.json', 'marathon'],
                    stdout=stdout)
 
 
