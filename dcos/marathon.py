@@ -22,6 +22,10 @@ def create_client(config=None):
     if config is None:
         config = util.get_config()
 
+    if config.get('marathon.host') is None or \
+       config.get('marathon.port') is None:
+        raise DCOSException(DefaultMarathonError().error())
+
     return Client(config['marathon.host'], config['marathon.port'])
 
 
