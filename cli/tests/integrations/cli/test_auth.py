@@ -1,7 +1,7 @@
 import os
 import webbrowser
 
-from dcos.api import auth, constants, util
+from dcos import auth, constants, util
 from dcoscli.main import main
 
 from mock import Mock, patch
@@ -15,7 +15,7 @@ def test_no_browser_auth():
 
 
 def test_when_authenticated():
-    with patch('dcos.api.auth.force_auth'):
+    with patch('dcos.auth.force_auth'):
 
         _mock_dcos_run([util.which('dcos')], True)
         assert auth.force_auth.call_count == 0

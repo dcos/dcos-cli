@@ -1,4 +1,4 @@
-from dcos.api import cmds, errors
+from dcos import cmds, errors
 
 import pytest
 

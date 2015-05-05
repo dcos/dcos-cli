@@ -1,7 +1,7 @@
 import json
 
-from dcos.api import http, util
-from dcos.api.errors import DefaultError, Error
+from dcos import http, util
+from dcos.errors import DefaultError, Error
 
 try:
     from urllib import quote
@@ -11,14 +11,17 @@ except ImportError:
 logger = util.get_logger(__name__)
 
 
-def create_client(config):
+def create_client(config=None):
     """Creates a Marathon client with the supplied configuration.
 
     :param config: configuration dictionary
     :type config: config.Toml
     :returns: Marathon client
-    :rtype: dcos.api.marathon.Client
+    :rtype: dcos.marathon.Client
     """
+    if config is None:
+        config = util.get_config()
+
     return Client(config['marathon.host'], config['marathon.port'])
 
 
@@ -432,7 +435,7 @@ class Client(object):
         :param app_id: the id of the application to restart
         :type app_id: str
         :returns: a list of tasks
-        :rtype: (list of dict, dcos.api.errors.Error)
+        :rtype: (list of dict, dcos.errors.Error)
         """
 
         url = self._create_url('v2/tasks')
@@ -458,7 +461,7 @@ class Client(object):
         :param task_id: the id of the task
         :type task_id: str
         :returns: a tasks
-        :rtype: (dict, dcos.api.errors.Error)
+        :rtype: (dict, dcos.errors.Error)
         """
 
         url = self._create_url('v2/tasks')

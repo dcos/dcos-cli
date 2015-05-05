@@ -1,6 +1,6 @@
 import requests
-from dcos.api import util
-from dcos.api.errors import DefaultError, Error
+from dcos import util
+from dcos.errors import DefaultError, Error
 
 logger = util.get_logger(__name__)
 

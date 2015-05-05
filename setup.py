@@ -68,15 +68,15 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
-        'gitpython',
-        'jsonschema',
-        'pager',
-        'portalocker',
-        'pygments',
-        'pystache',
-        'requests',
-        'six',
-        'toml',
-        'futures',
+        'gitpython>=1.0, <2.0',
+        'jsonschema>=2.4, <3.0',
+        'pager>=3.3, <4.0',
+        'portalocker>=0.5, <1.0',
+        'pygments>=2.0, <3.0',
+        'pystache>=0.5, <1.0',
+        'requests>=2.6, <3.0',
+        'six>=1.9, <2.0',
+        'toml>=0.9, <1.0',
+        'futures>=3.0, <4.0',
     ],
 )

@@ -54,15 +54,13 @@ Positional arguments:
     <task-id>                   The task id
 """
 import json
-import os
 import sys
 import time
 
 import dcoscli
 import docopt
 import pkg_resources
-from dcos.api import (cmds, config, constants, emitting, errors, jsonitem,
-                      marathon, options, util)
+from dcos import cmds, emitting, errors, jsonitem, marathon, options, util
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -90,7 +88,7 @@ def main():
 def _cmds():
     """
     :returns: all the supported commands
-    :rtype: dcos.api.cmds.Command
+    :rtype: dcos.cmds.Command
     """
 
     return [
@@ -244,15 +242,13 @@ def _add(app_resource):
             'dcoscli',
             'data/marathon-schema.json').decode('utf-8'))
 
-    err = util.validate_json(application_resource, schema)
-    if err is not None:
-        emitter.publish(err)
+    errs = util.validate_json(application_resource, schema)
+    if len(errs) != 0:
+        emitter.publish(util.list_to_err(errs))
         return 1
 
     # Add application to marathon
-    client = marathon.create_client(
-        config.load_from_path(
-            os.environ[constants.DCOS_CONFIG_ENV]))
+    client = marathon.create_client()
 
     # Check that the application doesn't exist
     app_id = client.normalize_app_id(application_resource['id'])
@@ -275,9 +271,7 @@ def _list():
     :rtype: int
     """
 
-    client = marathon.create_client(
-        config.load_from_path(
-            os.environ[constants.DCOS_CONFIG_ENV]))
+    client = marathon.create_client()
 
     apps, err = client.get_apps()
     if err is not None:
@@ -299,9 +293,7 @@ def _remove(app_id, force):
     :rtype: int
     """
 
-    client = marathon.create_client(
-        config.load_from_path(
-            os.environ[constants.DCOS_CONFIG_ENV]))
+    client = marathon.create_client()
 
     err = client.remove_app(app_id, force)
     if err is not None:
@@ -322,9 +314,7 @@ def _show(app_id, version):
     :rtype: int
     """
 
-    client = marathon.create_client(
-        config.load_from_path(
-            os.environ[constants.DCOS_CONFIG_ENV]))
+    client = marathon.create_client()
 
     if version is not None:
         version, err = _calculate_version(client, app_id, version)
@@ -356,9 +346,7 @@ def _start(app_id, instances, force):
     """
 
     # Check that the application exists
-    client = marathon.create_client(
-        config.load_from_path(
-            os.environ[constants.DCOS_CONFIG_ENV]))
+    client = marathon.create_client()
 
     desc, err = client.get_app(app_id)
     if err is not None:
@@ -399,9 +387,9 @@ def _start(app_id, instances, force):
 
     app_json['instances'] = instances
 
-    err = util.validate_json(app_json, schema)
-    if err is not None:
-        emitter.publish(err)
+    errs = util.validate_json(app_json, schema)
+    if len(errs) != 0:
+        emitter.publish(util.list_to_err(errs))
         return 1
 
     deployment, err = client.update_app(app_id, app_json, force)
@@ -426,9 +414,7 @@ def _stop(app_id, force):
     """
 
     # Check that the application exists
-    client = marathon.create_client(
-        config.load_from_path(
-            os.environ[constants.DCOS_CONFIG_ENV]))
+    client = marathon.create_client()
 
     desc, err = client.get_app(app_id)
     if err is not None:
@@ -465,9 +451,7 @@ def _update(app_id, json_items, force):
     """
 
     # Check that the application exists
-    client = marathon.create_client(
-        config.load_from_path(
-            os.environ[constants.DCOS_CONFIG_ENV]))
+    client = marathon.create_client()
 
     _, err = client.get_app(app_id)
     if err is not None:
@@ -510,9 +494,9 @@ def _update(app_id, json_items, force):
         else:
             app_json[key] = value
 
-    err = util.validate_json(app_json, schema)
-    if err is not None:
-        emitter.publish(err)
+    errs = util.validate_json(app_json, schema)
+    if len(errs) != 0:
+        emitter.publish(util.list_to_err(errs))
         return 1
 
     deployment, err = client.update_app(app_id, app_json, force)
@@ -535,9 +519,7 @@ def _restart(app_id, force):
     :rtype: int
     """
 
-    client = marathon.create_client(
-        config.load_from_path(
-            os.environ[constants.DCOS_CONFIG_ENV]))
+    client = marathon.create_client()
 
     desc, err = client.get_app(app_id)
     if err is not None:
@@ -579,9 +561,7 @@ def _version_list(app_id, max_count):
             emitter.publish(err)
             return 1
 
-    client = marathon.create_client(
-        config.load_from_path(
-            os.environ[constants.DCOS_CONFIG_ENV]))
+    client = marathon.create_client()
 
     versions, err = client.get_app_versions(app_id, max_count)
     if err is not None:
@@ -601,9 +581,7 @@ def _deployment_list(app_id):
     :rtype: int
     """
 
-    client = marathon.create_client(
-        config.load_from_path(
-            os.environ[constants.DCOS_CONFIG_ENV]))
+    client = marathon.create_client()
 
     deployments, err = client.get_deployments(app_id)
     if err is not None:
@@ -623,9 +601,7 @@ def _deployment_stop(deployment_id):
     :rtype: int
     """
 
-    client = marathon.create_client(
-        config.load_from_path(
-            os.environ[constants.DCOS_CONFIG_ENV]))
+    client = marathon.create_client()
 
     err = client.stop_deployment(deployment_id)
     if err is not None:
@@ -643,9 +619,7 @@ def _deployment_rollback(deployment_id):
     :rtype: int
     """
 
-    client = marathon.create_client(
-        config.load_from_path(
-            os.environ[constants.DCOS_CONFIG_ENV]))
+    client = marathon.create_client()
 
     deployment, err = client.rollback_deployment(deployment_id)
     if err is not None:
@@ -683,9 +657,7 @@ def _deployment_watch(deployment_id, max_count, interval):
     else:
         interval = 1
 
-    client = marathon.create_client(
-        config.load_from_path(
-            os.environ[constants.DCOS_CONFIG_ENV]))
+    client = marathon.create_client()
 
     count = 0
     while max_count is None or count < max_count:
@@ -712,9 +684,7 @@ def _task_list(app_id):
     :rtype: int
     """
 
-    client = marathon.create_client(
-        config.load_from_path(
-            os.environ[constants.DCOS_CONFIG_ENV]))
+    client = marathon.create_client()
 
     tasks, err = client.get_tasks(app_id)
     if err is not None:
@@ -734,9 +704,7 @@ def _task_show(task_id):
     :rtype: int
     """
 
-    client = marathon.create_client(
-        config.load_from_path(
-            os.environ[constants.DCOS_CONFIG_ENV]))
+    client = marathon.create_client()
 
     task, err = client.get_task(task_id)
     if err is not None:
@@ -771,9 +739,7 @@ def _update_from_stdin(app_id, force):
         return 1
 
     # Add application to marathon
-    client = marathon.create_client(
-        config.load_from_path(
-            os.environ[constants.DCOS_CONFIG_ENV]))
+    client = marathon.create_client()
 
     _, err = client.update_app(app_id, application_resource, force)
     if err is not None:
@@ -786,7 +752,7 @@ def _update_from_stdin(app_id, force):
 def _calculate_version(client, app_id, version):
     """
     :param client: Marathon client
-    :type client: dcos.api.marathon.Client
+    :type client: dcos.marathon.Client
     :param app_id: The ID of the application
     :type app_id: str
     :param version: Relative or absolute version or None

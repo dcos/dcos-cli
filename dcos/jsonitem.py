@@ -1,7 +1,7 @@
 import collections
 import json
 
-from dcos.api import errors
+from dcos import errors
 
 
 def parse_json_item(json_item, schema):

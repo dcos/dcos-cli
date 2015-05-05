@@ -1,6 +1,7 @@
 import abc
 import base64
 import collections
+import copy
 import hashlib
 import json
 import os
@@ -13,7 +14,7 @@ import git
 import portalocker
 import pystache
 import six
-from dcos.api import constants, emitting, errors, subcommand, util
+from dcos import constants, emitting, errors, marathon, subcommand, util
 
 from six.moves import urllib
 
@@ -137,7 +138,7 @@ def _base64_encode(dictionary):
     return base64.b64encode(str_bytes).decode('utf-8')
 
 
-def uninstall(package_name, remove_all, app_id, init_client):
+def uninstall(package_name, remove_all, app_id, cli, app):
     """Uninstalls a package.
 
     :param package_name: The package to uninstall
@@ -151,17 +152,32 @@ def uninstall(package_name, remove_all, app_id, init_client):
     :rtype: None or Error
     """
 
-    num_apps, err = uninstall_app(package_name,
-                                  remove_all,
-                                  app_id,
-                                  init_client)
-    if err:
-        return err
+    if cli is False and app is False:
+        cli = app = True
 
-    cmd_uninstalled = uninstall_subcommand(package_name)
+    uninstalled = False
+    if cli:
+        if subcommand.uninstall(package_name):
+            uninstalled = True
 
-    if num_apps == 0 and not cmd_uninstalled:
-        msg = "Package [{}]".format(package_name)
+    if app:
+        init_client = marathon.create_client()
+
+        num_apps, err = uninstall_app(package_name,
+                                      remove_all,
+                                      app_id,
+                                      init_client)
+
+        if err is not None:
+            return err
+
+        if num_apps > 0:
+            uninstalled = True
+
+    if uninstalled:
+        return None
+    else:
+        msg = 'Package [{}]'.format(package_name)
         if app_id is not None:
             msg += " with id [{}]".format(app_id)
         msg += " is not installed."
@@ -177,7 +193,7 @@ def uninstall_subcommand(distribution_name):
     :rtype: bool
     """
 
-    return subcommand.uninstall(distribution_name, util.dcos_path())
+    return subcommand.uninstall(distribution_name)
 
 
 def uninstall_app(app_name, remove_all, app_id, init_client):
@@ -436,7 +452,7 @@ def search(query, cfg):
     :param query: The search term
     :type query: str
     :param cfg: Configuration dictionary
-    :type cfg: dcos.api.config.Toml
+    :type cfg: dcos.config.Toml
     :rtype: (list of IndexEntries, Error)
     """
 
@@ -499,20 +515,49 @@ def _search_rank(pkg, query):
 def _extract_default_values(config_schema):
     """
     :param config_schema: A json-schema describing configuration options.
-    :type config_schema: (dict, Error)
+    :type config_schema: dict
+    :returns: a dictionary with the default specified by the schema
+    :rtype: dict
     """
 
-    properties = config_schema.get('properties')
-    schema_type = config_schema.get('type')
+    defaults = {}
+    for key, value in config_schema['properties'].items():
+        if 'default' in value:
+            defaults[key] = value['default']
+        elif value.get('type', '') == 'object':
+            # Generate the default value from the embedded schema
+            defaults[key] = _extract_default_values(value)
 
-    if schema_type != 'object' or properties is None:
-        return ({}, None)
+    return defaults
 
-    defaults = [(p, properties[p]['default'])
-                for p in properties
-                if 'default' in properties[p]]
 
-    return (dict(defaults), None)
+def _merge_options(first, second):
+    """Merges the :code:`second` dictionary into the :code:`first` dictionary.
+    If both dictionaries have the same key and both values are dictionaries
+    then it recursively merges those two dictionaries.
+
+    :param first: first dictionary
+    :type first: dict
+    :param second: second dictionary
+    :type second: dict
+    :returns: merged dictionary
+    :rtype: dict
+    """
+
+    result = copy.deepcopy(first)
+    for key, second_value in second.items():
+        if key in first:
+            first_value = first[key]
+
+            if (isinstance(first_value, collections.Mapping) and
+               isinstance(second_value, collections.Mapping)):
+                result[key] = _merge_options(first_value, second_value)
+            else:
+                result[key] = second_value
+        else:
+            result[key] = second_value
+
+    return result
 
 
 def resolve_package(package_name, config):
@@ -522,7 +567,7 @@ def resolve_package(package_name, config):
     :param package_name: The name of the package to resolve
     :type package_name: str
     :param config: Configuration dictionary
-    :type config: dcos.api.config.Toml
+    :type config: dcos.config.Toml
     :returns: The named package, if found
     :rtype: (Package, Error)
     """
@@ -543,7 +588,7 @@ def registries(config):
     """Returns configured cached package registries.
 
     :param config: Configuration dictionary
-    :type config: dcos.api.config.Toml
+    :type config: dcos.config.Toml
     :returns: The list of registries, in resolution order
     :rtype: ([Registry], Error)
     """
@@ -560,7 +605,7 @@ def list_sources(config):
     """List configured package sources.
 
     :param config: Configuration dictionary
-    :type config: dcos.api.config.Toml
+    :type config: dcos.config.Toml
     :returns: The list of sources, in resolution order
     :rtype: (list of Source, Error)
     """
@@ -632,7 +677,7 @@ def update_sources(config, validate=False):
     """Overwrites the local package cache with the latest source data.
 
     :param config: Configuration dictionary
-    :type config: dcos.api.config.Toml
+    :type config: dcos.config.Toml
     :returns: Error, if any.
     :rtype: list of Error
     """
@@ -738,7 +783,7 @@ class Source:
         """Returns the file system path to this source's local cache.
 
         :param config: Configuration dictionary
-        :type config: dcos.api.config.Toml
+        :type config: dcos.config.Toml
         :returns: Path to this source's local cache on disk
         :rtype: str or None
         """
@@ -1100,7 +1145,7 @@ class Package():
         :param user_options: package parameters
         :type user_options: dict
         :returns: a dictionary with the user supplied options
-        :rtype: (dict, dcos.api.errors.Error)
+        :rtype: (dict, dcos.errors.Error)
         """
 
         if user_options is None:
@@ -1110,18 +1155,17 @@ class Package():
         if err is not None:
             return (None, err)
 
-        default_options, err = _extract_default_values(config_schema)
-        if err is not None:
-            return (None, err)
+        default_options = _extract_default_values(config_schema)
+        logger.info('Generated default options: %r', default_options)
 
         # Merge option overrides
-        options = dict(list(default_options.items()) +
-                       list(user_options.items()))
+        options = _merge_options(default_options, user_options)
+        logger.info('Merged options: %r', options)
 
         # Validate options with the config schema
-        err = util.validate_json(options, config_schema)
-        if err is not None:
-            return (None, err)
+        errs = util.validate_json(options, config_schema)
+        if len(errs) != 0:
+            return (None, util.list_to_err(errs))
 
         return (options, None)
 

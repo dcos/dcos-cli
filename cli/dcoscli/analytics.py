@@ -6,12 +6,12 @@ import uuid
 import dcoscli
 import requests
 import rollbar
-from dcos.api import config, constants, util
+from concurrent.futures import ThreadPoolExecutor
+from dcos import util
 from dcoscli.constants import (ROLLBAR_SERVER_POST_KEY,
                                SEGMENT_IO_CLI_ERROR_EVENT,
                                SEGMENT_IO_CLI_EVENT, SEGMENT_IO_WRITE_KEY_DEV,
                                SEGMENT_IO_WRITE_KEY_PROD, SEGMENT_URL)
-from futures import ThreadPoolExecutor
 from requests.auth import HTTPBasicAuth
 
 logger = util.get_logger(__name__)
@@ -31,7 +31,7 @@ def wait_and_track(subproc):
     rollbar.init(ROLLBAR_SERVER_POST_KEY,
                  'prod' if _is_prod() else 'dev')
 
-    conf = _conf()
+    conf = util.get_config()
     report = conf.get('core.reporting', True)
     with ThreadPoolExecutor(max_workers=2) as pool:
         if report:
@@ -50,25 +50,63 @@ def wait_and_track(subproc):
     return exit_code
 
 
-def _send_segment_event(event, properties):
+def _segment_track(event, conf, properties):
     """
-    Send a segment event
+    Send a segment.io 'track' event
 
     :param event: name of event
     :type event: string
+    :param conf: dcos config file
+    :type conf: Toml
     :param properties: event properties
     :type properties: dict
     :rtype: None
     """
 
-    data = {'anonymousId': session_id,
-            'event': event,
+    data = {'event': event,
             'properties': properties}
+
+    if 'core.email' in conf:
+        data['userId'] = conf['core.email']
+    else:
+        data['anonymousId'] = session_id
+
+    _segment_request('track', data)
+
+
+def segment_identify(conf):
+    """
+    Send a segment.io 'identify' event
+
+    :param conf: dcos config file
+    :type conf: Toml
+    :rtype: None
+    """
+
+    if 'core.email' in conf:
+        data = {'userId': conf.get('core.email')}
+    else:
+        data = {'anonymousId': session_id}
+
+    _segment_request('identify', data)
+
+
+def _segment_request(path, data):
+    """
+    Send a segment.io HTTP request
+
+    :param path: URL path
+    :type path: str
+    :param data: json POST data
+    :type data: dict
+    :rtype: None
+    """
 
     key = SEGMENT_IO_WRITE_KEY_PROD if _is_prod() else \
         SEGMENT_IO_WRITE_KEY_DEV
+
     try:
-        requests.post(SEGMENT_URL,
+        requests.post('{}/{}'.format(SEGMENT_URL, path),
                       json=data,
                       auth=HTTPBasicAuth(key, ''),
                       timeout=1)
@@ -79,17 +117,6 @@ def _send_segment_event(event, properties):
 def _is_prod():
     """ True if this process is in production. """
     return os.environ.get('DCOS_PRODUCTION', 'true') != 'false'
-
-
-def _conf():
-    """
-    Get config file.
-
-    :rtype: Toml
-    """
-
-    return config.load_from_path(
-        os.environ[constants.DCOS_CONFIG_ENV])
 
 
 def _wait_and_capture(subproc):
@@ -146,7 +173,7 @@ def _segment_track_cli(pool, conf):
     """
 
     props = _base_properties(conf)
-    pool.submit(_send_segment_event, SEGMENT_IO_CLI_EVENT, props)
+    pool.submit(_segment_track, SEGMENT_IO_CLI_EVENT, conf, props)
 
 
 def _segment_track_err(pool, conf, err, exit_code):
@@ -167,7 +194,7 @@ def _segment_track_err(pool, conf, err, exit_code):
     props = _base_properties(conf)
     props['err'] = err
     props['exit_code'] = exit_code
-    pool.submit(_send_segment_event, SEGMENT_IO_CLI_ERROR_EVENT, props)
+    pool.submit(_segment_track, SEGMENT_IO_CLI_ERROR_EVENT, conf, props)
 
 
 def _rollbar_track_err(conf, err, exit_code):
@@ -202,12 +229,18 @@ def _base_properties(conf=None):
     """
 
     if not conf:
-        conf = _conf()
+        conf = util.get_config()
 
-    cmd = 'dcos' + (' {}'.format(sys.argv[1]) if len(sys.argv) > 1 else '')
+    if len(sys.argv) > 1:
+        cmd = 'dcos ' + sys.argv[1]
+        full_cmd = 'dcos ' + ' '.join(sys.argv[1:])
+    else:
+        cmd = 'dcos'
+        full_cmd = 'dcos'
+
     return {
         'cmd': cmd,
-        'full_cmd': ' '.join(sys.argv),
+        'full_cmd': full_cmd,
         'dcoscli.version': dcoscli.version,
         'python_version': str(sys.version_info),
         'config': json.dumps(list(conf.property_items()))

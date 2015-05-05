@@ -1,4 +1,4 @@
-from dcos.api import errors, jsonitem
+from dcos import errors, jsonitem
 
 import pytest
 

@@ -2,7 +2,7 @@ import json
 import os
 
 import six
-from dcos.api import subcommand
+from dcos import subcommand
 
 from common import assert_command, exec_command
 
@@ -15,12 +15,14 @@ Usage:
     dcos package --info
     dcos package describe <package_name>
     dcos package info
-    dcos package install [--options=<file> --app-id=<app_id> --cli --app]
+    dcos package install [--cli | [--app --app-id=<app_id]]
+                         [--options=<file>]
                  <package_name>
     dcos package list-installed [--endpoints --app-id=<app-id> <package_name>]
     dcos package search [<query>]
     dcos package sources
-    dcos package uninstall [--all | --app-id=<app-id>] <package_name>
+    dcos package uninstall [--cli | [--app --app-id=<app-id> --all]]
+                 <package_name>
     dcos package update [--validate]
 
 Options:
@@ -129,13 +131,17 @@ tutorial-gce.html",
 def test_bad_install():
     args = ['--options=tests/data/package/mesos-dns-config-bad.json']
     stderr = b"""\
-Error: 'mesos-dns/config-url' is a required property
-Value: {"mesos-dns/host": false}
+Error: missing required property 'mesos-dns/config-url'. \
+Add to JSON file and pass in /path/to/file with the --options argument.
 
 Error: False is not of type 'string'
 Path: mesos-dns/host
 Value: false
 """
+    assert_command(['dcos', 'package', 'install', 'mesos-dns', args[0]],
+                   returncode=1,
+                   stderr=stderr)
+
     _install_mesos_dns(args=args,
                        returncode=1,
                        stdout=b'',
@@ -147,11 +153,7 @@ def test_install():
 
 
 def test_package_metadata():
-    stdout = b"""Installing package [helloworld] version [0.1.0]
-Installing CLI subcommand for package [helloworld]
-"""
-    assert_command(['dcos', 'package', 'install', 'helloworld'],
-                   stdout=stdout)
+    _install_helloworld()
 
     # test marathon labels
     expected_metadata = b"""eyJkZXNjcmlwdGlvbiI6ICJFeGFtcGxlIERDT1MgYXBwbGljYX\
@@ -210,7 +212,7 @@ wLjEuMCJdfQ=="""
         assert six.b(f.read()) == b'0'
 
     # uninstall helloworld
-    assert_command(['dcos', 'package', 'uninstall', 'helloworld'])
+    _uninstall_helloworld()
 
 
 def test_install_with_id():
@@ -253,16 +255,40 @@ def test_uninstall_missing():
 
 
 def test_uninstall_subcommand():
-    stdout = b"""Installing package [helloworld] version [0.1.0]
-Installing CLI subcommand for package [helloworld]
+    _install_helloworld()
+    _uninstall_helloworld()
+
+    assert_command(['dcos', 'package', 'list-installed'], stdout=b'[]\n')
+
+
+def test_uninstall_cli():
+    _install_helloworld()
+    _uninstall_helloworld(args=['--cli'])
+
+    stdout = b"""[
+  {
+    "app": {
+      "appId": "/helloworld"
+    },
+    "description": "Example DCOS application package",
+    "maintainer": "support@mesosphere.io",
+    "name": "helloworld",
+    "packageSource": "git://github.com/mesosphere/universe.git",
+    "releaseVersion": "0",
+    "tags": [
+      "mesosphere",
+      "example",
+      "subcommand"
+    ],
+    "version": "0.1.0",
+    "website": "https://github.com/mesosphere/dcos-helloworld"
+  }
+]
 """
-    assert_command(['dcos', 'package', 'install', 'helloworld'],
+    assert_command(['dcos', 'package', 'list-installed'],
                    stdout=stdout)
 
-    assert_command(['dcos', 'package', 'uninstall', 'helloworld'])
-
-    assert_command(['dcos', 'subcommand', 'list'],
-                   stdout=b'[]\n')
+    _uninstall_helloworld()
 
 
 def test_list_installed():
@@ -323,11 +349,7 @@ further setup requirements: http://mesosphere.github.io/mesos-dns/docs\
 
 
 def test_list_installed_cli():
-    stdout = b"""Installing package [helloworld] version [0.1.0]
-Installing CLI subcommand for package [helloworld]
-"""
-    assert_command(['dcos', 'package', 'install', 'helloworld'],
-                   stdout=stdout)
+    _install_helloworld()
 
     stdout = b"""\
 [
@@ -356,11 +378,10 @@ Installing CLI subcommand for package [helloworld]
     assert_command(['dcos', 'package', 'list-installed'],
                    stdout=stdout)
 
-    assert_command(['dcos', 'package', 'uninstall', 'helloworld'])
+    _uninstall_helloworld()
 
     stdout = b"Installing CLI subcommand for package [helloworld]\n"
-    assert_command(['dcos', 'package', 'install', 'helloworld', '--cli'],
-                   stdout=stdout)
+    _install_helloworld(args=['--cli'], stdout=stdout)
 
     stdout = b"""\
 [
@@ -386,7 +407,7 @@ Installing CLI subcommand for package [helloworld]
     assert_command(['dcos', 'package', 'list-installed'],
                    stdout=stdout)
 
-    assert_command(['dcos', 'package', 'uninstall', 'helloworld'])
+    _uninstall_helloworld()
 
 
 def test_search():
@@ -435,6 +456,19 @@ def get_app_labels(app_id):
 
     app_json = json.loads(stdout.decode('utf-8'))
     return app_json.get('labels')
+
+
+def _install_helloworld(
+        args=[],
+        stdout=b"""Installing package [helloworld] version [0.1.0]
+Installing CLI subcommand for package [helloworld]
+"""):
+    assert_command(['dcos', 'package', 'install', 'helloworld'] + args,
+                   stdout=stdout)
+
+
+def _uninstall_helloworld(args=[]):
+    assert_command(['dcos', 'package', 'uninstall', 'helloworld'] + args)
 
 
 def _uninstall_mesos_dns(args=[],

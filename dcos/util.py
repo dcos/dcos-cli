@@ -11,7 +11,22 @@ import tempfile
 import jsonschema
 import pystache
 import six
-from dcos.api import constants, errors
+from dcos import config, constants, errors
+
+
+def get_logger(name):
+    """Get a logger
+
+    :param name: The name of the logger. E.g. __name__
+    :type name: str
+    :returns: The logger for the specified name
+    :rtype: logging.Logger
+    """
+
+    return logging.getLogger(name)
+
+
+logger = get_logger(__name__)
 
 
 @contextlib.contextmanager
@@ -90,6 +105,16 @@ def read_file(path):
             'Unable to open file [{}]'.format(path)))
 
 
+def get_config():
+    """
+    :returns: Configuration object
+    :rtype: Toml
+    """
+
+    return config.load_from_path(
+        os.environ[constants.DCOS_CONFIG_ENV])
+
+
 def which(program):
     """Returns the path to the named executable program.
 
@@ -131,7 +156,7 @@ def configure_logger_from_environ():
 
     :returns: An Error if we were unable to configure logging from the
               environment; None otherwise
-    :rtype: dcos.api.errors.DefaultError
+    :rtype: dcos.errors.DefaultError
     """
 
     return configure_logger(os.environ.get(constants.DCOS_LOG_LEVEL_ENV))
@@ -143,7 +168,7 @@ def configure_logger(log_level):
     :param log_level: Log level for configuring logging
     :type log_level: str
     :returns: An Error if we were unable to configure logging; None otherwise
-    :rtype: dcos.api.errors.DefaultError
+    :rtype: dcos.errors.DefaultError
     """
     if log_level is None:
         logging.disable(logging.CRITICAL)
@@ -159,18 +184,6 @@ def configure_logger(log_level):
     msg = 'Log level set to an unknown value {!r}. Valid values are {!r}'
     return errors.DefaultError(
         msg.format(log_level, constants.VALID_LOG_LEVEL_VALUES))
-
-
-def get_logger(name):
-    """Get a logger
-
-    :param name: The name of the logger. E.g. __name__
-    :type name: str
-    :returns: The logger for the specified name
-    :rtype: logging.Logger
-    """
-
-    return logging.getLogger(name)
 
 
 def load_json(reader):
@@ -224,8 +237,8 @@ def validate_json(instance, schema):
     :type instance: dict
     :param schema: the schema to validate with
     :type schema: dict
-    :returns: an error if the validation failed; None otherwise
-    :rtype: Error
+    :returns: list of errors as strings
+    :rtype: list
     """
 
     # TODO: clean up this hack
@@ -249,19 +262,33 @@ def validate_json(instance, schema):
     validation_errors = sorted(validation_errors, key=sort_key)
 
     def format(error):
-        message = 'Error: {}\n'.format(hack_error_message_fix(error.message))
+        error_message = hack_error_message_fix(error.message)
+        match = re.search("(.+) is a required property", error_message)
+        if match:
+            return ('Error: missing required property ' +
+                    match.group(1) +
+                    '. Add to JSON file and pass in /path/to/file with the' +
+                    ' --options argument.')
+        message = 'Error: {}\n'.format(error_message)
         if len(error.absolute_path) > 0:
             message += 'Path: {}\n'.format('.'.join(error.absolute_path))
         message += 'Value: {}'.format(json.dumps(error.instance))
         return message
 
-    formatted_errors = [format(e) for e in validation_errors]
+    return [format(e) for e in validation_errors]
 
-    if len(formatted_errors) is 0:
-        return None
-    else:
-        errors_as_str = str.join('\n\n', formatted_errors)
-        return errors.DefaultError(errors_as_str)
+
+def list_to_err(errs):
+    """convert list of errors to Error
+
+    :param errors: list of string errors
+    :type errors: list of strings
+    :returns: error message
+    :rtype: Error
+    """
+
+    errs_as_str = str.join('\n\n', errs)
+    return errors.DefaultError(errs_as_str)
 
 
 def parse_int(string):
@@ -302,6 +329,8 @@ def render_mustache_json(template, data):
         rendered = r.render(template, data)
     except Exception as e:
         return (None, errors.DefaultError(e.message))
+
+    logger.debug('Rendered mustache template: %s', rendered)
 
     return load_jsons(rendered)
 

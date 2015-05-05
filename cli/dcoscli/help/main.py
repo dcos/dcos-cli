@@ -11,8 +11,8 @@ Options:
 """
 import dcoscli
 import docopt
-import futures
-from dcos.api import cmds, emitting, options, subcommand, util
+from concurrent.futures import ThreadPoolExecutor
+from dcos import cmds, emitting, options, subcommand, util
 
 emitter = emitting.FlatEmitter()
 logger = util.get_logger(__name__)
@@ -40,7 +40,7 @@ def main():
 def _cmds():
     """
     :returns: All of the supported commands
-    :rtype: list of dcos.api.cmds.Command
+    :rtype: list of dcos.cmds.Command
     """
 
     return [
@@ -60,7 +60,7 @@ def _help(show_info):
     logger.debug("DCOS Path: {!r}".format(directory))
 
     paths = subcommand.list_paths(directory)
-    with futures.ThreadPoolExecutor(max_workers=len(paths)) as executor:
+    with ThreadPoolExecutor(max_workers=len(paths)) as executor:
         results = executor.map(subcommand.documentation, paths)
         commands_message = options.make_command_summary_string(sorted(results))
 

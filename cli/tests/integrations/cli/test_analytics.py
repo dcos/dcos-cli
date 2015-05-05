@@ -4,17 +4,20 @@ from functools import wraps
 import dcoscli.analytics
 import requests
 import rollbar
-from dcos.api import constants, util
+from dcos import constants, util
 from dcoscli.analytics import _base_properties
+from dcoscli.config.main import main as config_main
 from dcoscli.constants import (ROLLBAR_SERVER_POST_KEY,
                                SEGMENT_IO_CLI_ERROR_EVENT,
                                SEGMENT_IO_CLI_EVENT, SEGMENT_IO_WRITE_KEY_DEV,
                                SEGMENT_IO_WRITE_KEY_PROD, SEGMENT_URL)
 from dcoscli.main import main
 
+from common import mock_called_some_args
 from mock import patch
 
 ANON_ID = 0
+USER_ID = 'test@mail.com'
 
 
 def _mock(fn):
@@ -38,7 +41,6 @@ def test_no_exc():
 
     '''
 
-    # args
     args = [util.which('dcos')]
     env = _env_reporting()
 
@@ -46,14 +48,13 @@ def test_no_exc():
         assert main() == 0
 
         # segment.io
-        args, kwargs = requests.post.call_args
-        assert args == (SEGMENT_URL,)
-
-        props = _base_properties()
-        assert kwargs['json'] == {'anonymousId': ANON_ID,
-                                  'event': SEGMENT_IO_CLI_EVENT,
-                                  'properties': props}
-        assert kwargs['timeout'] == 1
+        data = {'userId': USER_ID,
+                'event': SEGMENT_IO_CLI_EVENT,
+                'properties': _base_properties()}
+        assert mock_called_some_args(requests.post,
+                                     '{}/track'.format(SEGMENT_URL),
+                                     json=data,
+                                     timeout=1)
 
         # rollbar
         assert rollbar.report_message.call_count == 0
@@ -66,7 +67,6 @@ def test_exc():
 
     '''
 
-    # args
     args = [util.which('dcos')]
     env = _env_reporting()
 
@@ -77,15 +77,19 @@ def test_exc():
         assert main() == 1
 
         # segment.io
-        _, kwargs = requests.post.call_args_list[1]
-
         props = _base_properties()
         props['err'] = 'Traceback'
         props['exit_code'] = 1
-        assert kwargs['json'] == {'anonymousId': ANON_ID,
-                                  'event': SEGMENT_IO_CLI_ERROR_EVENT,
-                                  'properties': props}
+        data = {'userId': USER_ID,
+                'event': SEGMENT_IO_CLI_ERROR_EVENT,
+                'properties': props}
 
+        assert mock_called_some_args(requests.post,
+                                     '{}/track'.format(SEGMENT_URL),
+                                     json=data,
+                                     timeout=1)
+
+        # rollbar
         props = _base_properties()
         props['exit_code'] = 1
         rollbar.report_message.assert_called_with('Traceback', 'error',
@@ -148,6 +152,24 @@ def test_production_setting_false():
         assert kwargs['auth'].username == SEGMENT_IO_WRITE_KEY_DEV
 
         rollbar.init.assert_called_with(ROLLBAR_SERVER_POST_KEY, 'dev')
+
+
+@_mock
+def test_config_set():
+    '''Tests that a `dcos config set core.email <email>` makes a
+    segment.io identify call'''
+
+    args = [util.which('dcos'), 'config', 'set', 'core.email', 'test@mail.com']
+    env = _env_reporting()
+
+    with patch('sys.argv', args), patch.dict(os.environ, env):
+        assert config_main() == 0
+
+        # segment.io
+        assert mock_called_some_args(requests.post,
+                                     '{}/identify'.format(SEGMENT_URL),
+                                     json={'userId': 'test@mail.com'},
+                                     timeout=1)
 
 
 def _env_reporting():
