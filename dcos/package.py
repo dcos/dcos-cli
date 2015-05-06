@@ -32,6 +32,7 @@ PACKAGE_FRAMEWORK_KEY = 'DCOS_PACKAGE_IS_FRAMEWORK'
 PACKAGE_RELEASE_KEY = 'DCOS_PACKAGE_RELEASE'
 PACKAGE_COMMAND_KEY = 'DCOS_PACKAGE_COMMAND'
 PACKAGE_REGISTRY_VERSION_KEY = 'DCOS_PACKAGE_REGISTRY_VERSION'
+PACKAGE_FRAMEWORK_NAME_KEY = 'DCOS_PACKAGE_FRAMEWORK_NAME'
 
 
 def install_app(pkg, version, init_client, options, app_id):
@@ -52,15 +53,6 @@ def install_app(pkg, version, init_client, options, app_id):
 
     # Insert option parameters into the init template
     init_desc = pkg.marathon_json(version, options)
-
-    # Add package metadata
-    package_labels = _make_package_labels(pkg, version, options)
-
-    # Preserve existing labels
-    labels = init_desc.get('labels', {})
-
-    labels.update(package_labels)
-    init_desc['labels'] = labels
 
     if app_id is not None:
         logger.debug('Setting app ID to "%s" (was "%s")',
@@ -100,7 +92,7 @@ def _make_package_labels(pkg, version, options):
         PACKAGE_NAME_KEY: metadata['name'],
         PACKAGE_VERSION_KEY: metadata['version'],
         PACKAGE_SOURCE_KEY: pkg.registry.source.url,
-        PACKAGE_FRAMEWORK_KEY: str(is_framework),
+        PACKAGE_FRAMEWORK_KEY: json.dumps(is_framework),
         PACKAGE_REGISTRY_VERSION_KEY: package_registry_version,
         PACKAGE_RELEASE_KEY: str(version)
     }
@@ -109,7 +101,25 @@ def _make_package_labels(pkg, version, options):
         command = pkg.command_json(version, options)
         package_labels[PACKAGE_COMMAND_KEY] = _base64_encode(command)
 
+    # Run a heuristic that determines the hint for the framework name
+    framework_name = _find_framework_name(pkg.name(), options)
+    if framework_name:
+        package_labels[PACKAGE_FRAMEWORK_NAME_KEY] = framework_name
+
     return package_labels
+
+
+def _find_framework_name(package_name, options):
+    """
+    :param package_name: the name of the package
+    :type package_name: str
+    :param options: the options object
+    :type options: dict
+    :returns: the name of framework if found; None otherwise
+    :rtype: str
+    """
+
+    return options.get(package_name, {}).get('framework-name', None)
 
 
 def _base64_encode(dictionary):
@@ -1141,7 +1151,21 @@ class Package():
         :rtype: dict
         """
 
-        return self._render_template('marathon.json', version, options)
+        init_desc = self._render_template(
+            'marathon.json',
+            version,
+            options)
+
+        # Add package metadata
+        package_labels = _make_package_labels(self, version, options)
+
+        # Preserve existing labels
+        labels = init_desc.get('labels', {})
+
+        labels.update(package_labels)
+        init_desc['labels'] = labels
+
+        return init_desc
 
     def command_json(self, version, options):
         """Returns the JSON content of the comand.json template, after
