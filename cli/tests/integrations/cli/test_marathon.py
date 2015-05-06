@@ -112,10 +112,10 @@ def test_add_existing_app():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
 
     with open('tests/data/marathon/zero_instance_sleep_v2.json') as fd:
-        stdout = b"Application '/zero-instance-app' already exists\n"
+        stderr = b"Application '/zero-instance-app' already exists\n"
         assert_command(['dcos', 'marathon', 'app', 'add'],
                        returncode=1,
-                       stdout=stdout,
+                       stderr=stderr,
                        stdin=fd)
 
     _remove_app('zero-instance-app')
@@ -623,12 +623,12 @@ def _show_app(app_id, version=None):
 
     returncode, stdout, stderr = exec_command(cmd)
 
-    result = json.loads(stdout.decode('utf-8'))
-
     assert returncode == 0
+    assert stderr == b''
+
+    result = json.loads(stdout.decode('utf-8'))
     assert isinstance(result, dict)
     assert result['id'] == '/' + app_id
-    assert stderr == b''
 
     return result
 

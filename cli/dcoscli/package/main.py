@@ -44,14 +44,13 @@ Configuration:
       "git://github.com/mesosphere/universe.git"
     ]
 """
-
 import json
 
 import dcoscli
 import docopt
 import pkg_resources
-from dcos import (cmds, emitting, errors, marathon, options, package,
-                  subcommand, util)
+from dcos import cmds, emitting, marathon, options, package, subcommand, util
+from dcos.errors import DCOSException
 
 logger = util.get_logger(__name__)
 
@@ -59,22 +58,21 @@ emitter = emitting.FlatEmitter()
 
 
 def main():
-    err = util.configure_logger_from_environ()
-    if err is not None:
-        emitter.publish(err)
+    try:
+        return _main()
+    except DCOSException as e:
+        emitter.publish(e)
         return 1
+
+
+def _main():
+    util.configure_logger_from_environ()
 
     args = docopt.docopt(
         __doc__,
         version='dcos-package version {}'.format(dcoscli.version))
 
-    returncode, err = cmds.execute(_cmds(), args)
-    if err is not None:
-        emitter.publish(err)
-        emitter.publish(options.make_generic_usage_message(__doc__))
-        return 1
-
-    return returncode
+    return cmds.execute(_cmds(), args)
 
 
 def _cmds():
@@ -172,11 +170,7 @@ def _list_sources():
 
     config = util.get_config()
 
-    sources, err = package.list_sources(config)
-
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    sources = package.list_sources(config)
 
     for source in sources:
         emitter.publish("{} {}".format(source.hash(), source.url))
@@ -195,12 +189,7 @@ def _update(validate):
 
     config = util.get_config()
 
-    errs = package.update_sources(config, validate)
-
-    if len(errs) > 0:
-        for err in errs:
-            emitter.publish(err)
-        return 1
+    package.update_sources(config, validate)
 
     return 0
 
@@ -216,79 +205,39 @@ def _describe(package_name, cli, app, options_path):
 
     config = util.get_config()
 
-    pkg, err = package.resolve_package(package_name, config)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    pkg = package.resolve_package(package_name, config)
 
     if pkg is None:
-        emitter.publish("Package [{}] not found".format(package_name))
-        return 1
+        raise DCOSException("Package [{}] not found".format(package_name))
 
     # TODO(CD): Make package version to describe configurable
-    pkg_version, version_error = pkg.latest_version()
-    if version_error is not None:
-        emitter.publish(version_error)
-        return 1
-
-    pkg_json, pkg_error = pkg.package_json(pkg_version)
-
-    if pkg_error is not None:
-        emitter.publish(pkg_error)
-        return 1
-
-    version_map, version_error = pkg.software_versions()
-
-    if version_error is not None:
-        emitter.publish(version_error)
-        return 1
-
-    versions = [version_map[key] for key in version_map]
+    pkg_version = pkg.latest_version()
+    pkg_json = pkg.package_json(pkg_version)
+    version_map = pkg.software_versions()
+    versions = [version_map[pkg_ver] for pkg_ver in version_map]
 
     del pkg_json['version']
     pkg_json['versions'] = versions
 
     if cli or app:
-        user_options, err = _user_options(options_path)
-        if err is not None:
-            emitter.publish(err)
-            return 1
-
-        options, err = pkg.options(pkg_version, user_options)
-        if err is not None:
-            emitter.publish(err)
-            return 1
+        user_options = _user_options(options_path)
+        options = pkg.options(pkg_version, user_options)
 
         if cli:
-            command_json, err = pkg.command_json(pkg_version, options)
-            if err is not None:
-                emitter.publish(err)
-                return 1
-
-            pkg_json['command'] = command_json
-
+            pkg_json['command'] = pkg.command_json(pkg_version, options)
         if app:
-            marathon_json, err = pkg.marathon_json(pkg_version, options)
-            if err is not None:
-                emitter.publish(err)
-                return 1
-
-            pkg_json['app'] = marathon_json
+            pkg_json['app'] = pkg.marathon_json(pkg_version, options)
 
     emitter.publish(pkg_json)
-
     return 0
 
 
 def _user_options(path):
     if path is None:
-        return ({}, None)
+        return {}
     else:
         with open(path) as options_file:
-            user_options, err = util.load_json(options_file)
-            if err is not None:
-                return (None, err)
-            return (user_options, None)
+            return util.load_json(options_file)
 
 
 def _install(package_name, options_path, app_id, cli, app):
@@ -310,55 +259,27 @@ def _install(package_name, options_path, app_id, cli, app):
 
     if cli is False and app is False:
         # Install both if neither flag is specified
-        cli = True
-        app = True
+        cli = app = True
 
     config = util.get_config()
 
-    pkg, err = package.resolve_package(package_name, config)
-    if err is not None:
-        emitter.publish(err)
-        return 1
-
+    pkg = package.resolve_package(package_name, config)
     if pkg is None:
-        emitter.publish(
-            errors.DefaultError(
-                "Package [{}] not found".format(package_name)))
-        emitter.publish(
-            errors.DefaultError(
-                "You may need to run 'dcos package update' to update your "
-                "repositories"))
-        return 1
+        msg = "Package [{}] not found\n".format(package_name) + \
+              "You may need to run 'dcos package update' to update your " + \
+              "repositories"
+        raise DCOSException(msg)
 
     # TODO(CD): Make package version to install configurable
-    pkg_version, version_error = pkg.latest_version()
-    if version_error is not None:
-        emitter.publish(version_error)
-        return 1
+    pkg_version = pkg.latest_version()
 
-    user_options, err = _user_options(options_path)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    user_options = _user_options(options_path)
 
-    try:
-        options, err = pkg.options(pkg_version, user_options)
-        if err is not None:
-            emitter.publish(err)
-            return 1
-    except Exception as e:
-        logger.exception('Exception while generating options')
-        emitter.publish(errors.DefaultError(e))
-        return 1
+    options = pkg.options(pkg_version, user_options)
 
     if app:
         # Install in Marathon
-        version_map, version_error = pkg.software_versions()
-
-        if version_error is not None:
-            emitter.publish(version_error)
-            return 1
-
+        version_map = pkg.software_versions()
         sw_version = version_map.get(pkg_version, '?')
 
         message = 'Installing package [{}] version [{}]'.format(
@@ -370,26 +291,19 @@ def _install(package_name, options_path, app_id, cli, app):
 
         init_client = marathon.create_client(config)
 
-        install_error = package.install_app(
+        package.install_app(
             pkg,
             pkg_version,
             init_client,
             options,
             app_id)
 
-        if install_error is not None:
-            emitter.publish(install_error)
-            return 1
-
     if cli and pkg.is_command_defined(pkg_version):
         # Install subcommand
         emitter.publish('Installing CLI subcommand for package [{}]'.format(
             pkg.name()))
 
-        err = subcommand.install(pkg, pkg_version, options)
-        if err is not None:
-            emitter.publish(err)
-            return 1
+        subcommand.install(pkg, pkg_version, options)
 
     return 0
 
@@ -409,24 +323,16 @@ def _list(endpoints, app_id, package_name):
     """
 
     config = util.get_config()
-
     init_client = marathon.create_client(config)
+    installed = package.installed_packages(init_client, endpoints)
 
-    installed, error = package.installed_packages(init_client, endpoints)
-    if error is not None:
-        emitter.publish(error)
-        return 1
-
-    results = []
-    for pkg in installed:
-        if not ((package_name and pkg.name() != package_name) or
-                (app_id and pkg.app and pkg.app['appId'] != app_id)):
-            result, err = pkg.dict()
-            if err is not None:
-                emitter.publish(err)
-                return 1
-
-            results.append(result)
+    # only emit those packages that match the provided package_name or
+    # app_id
+    results = [
+        pkg.dict() for pkg in installed if not
+                ((package_name and pkg.name() != package_name) or
+                 (app_id and pkg.app and pkg.app['appId'] != app_id))
+    ]
 
     emitter.publish(results)
 
@@ -445,12 +351,7 @@ def _search(query):
         query = ''
 
     config = util.get_config()
-
-    results, error = package.search(query, config)
-
-    if error is not None:
-        emitter.publish(error)
-        return 1
+    results = package.search(query, config)
 
     emitter.publish([r.as_dict() for r in results])
 

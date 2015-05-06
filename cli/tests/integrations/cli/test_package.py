@@ -101,7 +101,7 @@ def test_update_with_validation():
 
 def test_describe_nonexistent():
     assert_command(['dcos', 'package', 'describe', 'xyzzy'],
-                   stdout=b'Package [xyzzy] not found\n',
+                   stderr=b'Package [xyzzy] not found\n',
                    returncode=1)
 
 

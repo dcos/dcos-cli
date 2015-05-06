@@ -1,6 +1,10 @@
 import abc
 
 
+class DCOSException(Exception):
+    pass
+
+
 class Error(object):
     """Abstract class for describing errors."""
 

@@ -5,7 +5,8 @@ import os
 import shutil
 import subprocess
 
-from dcos import constants, errors, util
+from dcos import constants, util
+from dcos.errors import DCOSException
 
 logger = util.get_logger(__name__)
 
@@ -18,7 +19,7 @@ def command_executables(subcommand, dcos_path):
     :param dcos_path: path to the dcos cli directory
     :type dcos_path: str
     :returns: the dcos program path
-    :rtype: (str, dcos.errors.Error)
+    :rtype: str
     """
 
     executables = [
@@ -29,13 +30,13 @@ def command_executables(subcommand, dcos_path):
 
     if len(executables) > 1:
         msg = 'Found more than one executable for command {!r}.'
-        return (None, errors.DefaultError(msg.format(subcommand)))
+        raise DCOSException(msg.format(subcommand))
 
     if len(executables) == 0:
         msg = "{!r} is not a dcos command."
-        return (None, errors.DefaultError(msg.format(subcommand)))
+        raise DCOSException(msg.format(subcommand))
 
-    return (executables[0], None)
+    return executables[0]
 
 
 def list_paths(dcos_path):
@@ -176,16 +177,14 @@ def _write_package_json(pkg, version):
     :type pkg: Package
     :param version: the package version to install
     :type version: str
-    :rtype: Error
+    :rtype: None
     """
 
     pkg_dir = package_dir(pkg.name())
 
     package_path = os.path.join(pkg_dir, 'package.json')
 
-    package_json, err = pkg.package_json(version)
-    if err is not None:
-        return err
+    package_json = pkg.package_json(version)
 
     with open(package_path, 'w') as package_file:
         json.dump(package_json, package_file)
@@ -234,28 +233,24 @@ def _install_env(pkg, version, options):
     :type version: str
     :param options: package parameters
     :type options: dict
-    :returns: an error if the subcommand failed; None otherwise
-    :rtype: dcos.errors.Error
+    :rtype: None
     """
 
     pkg_dir = package_dir(pkg.name())
 
-    install_operation, err = pkg.command_json(version, options)
-    if err is not None:
-        return err
+    install_operation = pkg.command_json(version, options)
 
     env_dir = os.path.join(pkg_dir,
                            constants.DCOS_SUBCOMMAND_VIRTUALENV_SUBDIR)
 
     if 'pip' in install_operation:
-        return install_with_pip(
+        install_with_pip(
             pkg.name(),
             env_dir,
             install_operation['pip'])
     else:
-        return errors.DefaultError(
-            "Installation methods '{}' not supported".format(
-                install_operation.keys()))
+        raise DCOSException("Installation methods '{}' not supported".format(
+            install_operation.keys()))
 
 
 def install(pkg, version, options):
@@ -267,22 +262,17 @@ def install(pkg, version, options):
     :type version: str
     :param options: package parameters
     :type options: dict
-    :returns: an error if the subcommand failed; None otherwise
-    :rtype: dcos.errors.Error
+    :rtype: None
     """
 
     pkg_dir = package_dir(pkg.name())
     util.ensure_dir(pkg_dir)
 
-    err = _write_package_json(pkg, version)
-    if err is not None:
-        return err
-
+    _write_package_json(pkg, version)
     _write_package_version(pkg, version)
-
     _write_package_source(pkg)
 
-    return _install_env(pkg, version, options)
+    _install_env(pkg, version, options)
 
 
 def _subcommand_dir():
@@ -337,8 +327,7 @@ def install_with_pip(
     :type env_directory: str
     :param requirements: the list of pip requirements
     :type requirements: list of str
-    :returns: an Error if it failed to install the package; None otherwise
-    :rtype: dcos.errors.Error
+    :rtype: None
     """
 
     bin_directory = os.path.join(util.dcos_path(), BIN_DIRECTORY)
@@ -349,7 +338,7 @@ def install_with_pip(
         cmd = [os.path.join(bin_directory, 'virtualenv'), env_directory]
 
         if _execute_command(cmd) != 0:
-            return _generic_error(package_name)
+            raise _generic_error(package_name)
 
     with util.temptext() as text_file:
         fd, requirement_path = text_file
@@ -371,7 +360,7 @@ def install_with_pip(
             if new_package_dir:
                 shutil.rmtree(env_directory)
 
-            return _generic_error(package_name)
+            raise _generic_error(package_name)
 
     return None
 
@@ -408,10 +397,10 @@ def _generic_error(package_name):
     :param package: package name
     :type: str
     :returns: generic error when installing package
-    :rtype: dcos.errors.Error
+    :rtype: DCOSException
     """
 
-    return errors.DefaultError(
+    return DCOSException(
         'Error installing {!r} package'.format(package_name))
 
 
@@ -428,7 +417,7 @@ class InstalledSubcommand(object):
     def _dir(self):
         """
         :returns: path to this subcommand's directory.
-        :rtype: (str, Error)
+        :rtype: str
         """
 
         return package_dir(self.name)
@@ -436,7 +425,7 @@ class InstalledSubcommand(object):
     def package_version(self):
         """
         :returns: this subcommand's version.
-        :rtype: (str, Error)
+        :rtype: str
         """
 
         version_path = os.path.join(self._dir(), 'version')
@@ -445,7 +434,7 @@ class InstalledSubcommand(object):
     def package_source(self):
         """
         :returns: this subcommand's source.
-        :rtype: (str, Error)
+        :rtype: str
         """
 
         source_path = os.path.join(self._dir(), 'source')
@@ -454,7 +443,7 @@ class InstalledSubcommand(object):
     def package_json(self):
         """
         :returns: contents of this subcommand's package.json file.
-        :rtype: (dict, Error)
+        :rtype: dict
         """
 
         package_json_path = os.path.join(self._dir(), 'package.json')

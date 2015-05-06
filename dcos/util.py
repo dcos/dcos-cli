@@ -11,7 +11,8 @@ import tempfile
 import jsonschema
 import pystache
 import six
-from dcos import config, constants, errors
+from dcos import config, constants
+from dcos.errors import DCOSException
 
 
 def get_logger(name):
@@ -90,19 +91,16 @@ def read_file(path):
     :param path: path to file
     :type path: str
     :returns: contents of file
-    :rtype: (str, Error)
+    :rtype: str
     """
     if not os.path.isfile(path):
-        return (None, errors.DefaultError(
-            'Path [{}] is not a file'.format(path)))
+        raise DCOSException('Path [{}] is not a file'.format(path))
 
     try:
         with open(path) as fd:
-            content = fd.read()
-            return (content, None)
+            return fd.read()
     except IOError:
-        return (None, errors.DefaultError(
-            'Unable to open file [{}]'.format(path)))
+        raise DCOSException('Unable to open file [{}]'.format(path))
 
 
 def get_config():
@@ -120,7 +118,7 @@ def which(program):
 
     :param program: The program to locate:
     :type program: str
-    :rtype: str or Error
+    :rtype: str
     """
 
     def is_exe(file_path):
@@ -154,9 +152,7 @@ def dcos_path():
 def configure_logger_from_environ():
     """Configure the program's logger using the environment variable
 
-    :returns: An Error if we were unable to configure logging from the
-              environment; None otherwise
-    :rtype: dcos.errors.DefaultError
+    :rtype: None
     """
 
     return configure_logger(os.environ.get(constants.DCOS_LOG_LEVEL_ENV))
@@ -167,8 +163,7 @@ def configure_logger(log_level):
 
     :param log_level: Log level for configuring logging
     :type log_level: str
-    :returns: An Error if we were unable to configure logging; None otherwise
-    :rtype: dcos.errors.DefaultError
+    :rtype: None
     """
     if log_level is None:
         logging.disable(logging.CRITICAL)
@@ -182,7 +177,7 @@ def configure_logger(log_level):
         return None
 
     msg = 'Log level set to an unknown value {!r}. Valid values are {!r}'
-    return errors.DefaultError(
+    raise DCOSException(
         msg.format(log_level, constants.VALID_LOG_LEVEL_VALUES))
 
 
@@ -192,21 +187,17 @@ def load_json(reader):
     :param reader: the json reader
     :type reader: a :code:`.read()`-supporting object
     :returns: the deserialized JSON object
-    :rtype: (any, Error) where any is one of dict, list, str, int, float or
-            bool
+    :rtype: dict | list | str | int | float | bool
     """
 
     try:
-        return (json.load(reader), None)
+        return json.load(reader)
     except Exception as error:
         logger = get_logger(__name__)
         logger.error(
             'Unhandled exception while loading JSON: %r',
             error)
-        return (
-            None,
-            errors.DefaultError('Error loading JSON: {}'.format(error))
-        )
+        raise DCOSException('Error loading JSON: {}'.format(error))
 
 
 def load_jsons(value):
@@ -215,19 +206,18 @@ def load_jsons(value):
     :param value: The JSON string
     :type value: str
     :returns: The deserialized JSON object
-    :rtype: (any, Error) where any is one of dict, list, str, int, float or
-            bool
+    :rtype: dict | list | str | int | float | bool
     """
 
     try:
-        return (json.loads(value), None)
+        return json.loads(value)
     except:
         error = sys.exc_info()[0]
         logger.error(
             'Unhandled exception while loading JSON: %r -- %r',
             value,
             error)
-        return (None, errors.DefaultError('Error loading JSON.'))
+        raise DCOSException('Error loading JSON.')
 
 
 def validate_json(instance, schema):
@@ -279,16 +269,15 @@ def validate_json(instance, schema):
 
 
 def list_to_err(errs):
-    """convert list of errors to Error
+    """convert list of error strings to a single string
 
     :param errors: list of string errors
     :type errors: list of strings
     :returns: error message
-    :rtype: Error
+    :rtype: str
     """
 
-    errs_as_str = str.join('\n\n', errs)
-    return errors.DefaultError(errs_as_str)
+    return str.join('\n\n', errs)
 
 
 def parse_int(string):
@@ -297,11 +286,11 @@ def parse_int(string):
     :param string: string to parse as an integer
     :type string: str
     :returns: the interger value of the string
-    :rtype: (int, Error)
+    :rtype: int
     """
 
     try:
-        return (int(string), None)
+        return int(string)
     except:
         error = sys.exc_info()[0]
         logger = get_logger(__name__)
@@ -309,7 +298,7 @@ def parse_int(string):
             'Unhandled exception while parsing string as int: %r -- %r',
             string,
             error)
-        return (None, errors.DefaultError('Error parsing string as int'))
+        raise DCOSException('Error parsing string as int')
 
 
 def render_mustache_json(template, data):
@@ -320,15 +309,14 @@ def render_mustache_json(template, data):
     :param data: the data to use as a rendering context
     :type data: dict
     :returns: the rendered template
-    :rtype: (any, Error) where any is one of dict, list, str, int, float or
-            bool
+    :rtype: dict | list | str | int | float | bool
     """
 
     try:
         r = CustomJsonRenderer()
         rendered = r.render(template, data)
     except Exception as e:
-        return (None, errors.DefaultError(e.message))
+        raise DCOSException(e)
 
     logger.debug('Rendered mustache template: %s', rendered)
 
@@ -341,6 +329,7 @@ def is_windows_platform():
      in other case
     :rtype: boolean
     """
+
     return platform.system() == "Windows"
 
 
