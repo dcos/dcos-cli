@@ -79,6 +79,19 @@ class Client(object):
             port=self._port,
             path=path)
 
+    def get_about(self):
+        """Returns info about Marathon instance
+
+        :returns Marathon information
+        :rtype: dict
+        """
+
+        url = self._create_url('v2/info')
+
+        response = http.get(url, to_error=_to_error)
+
+        return response.json()
+
     def get_app(self, app_id, version=None):
         """Returns a representation of the requested application version. If
         version is None the return the latest version.

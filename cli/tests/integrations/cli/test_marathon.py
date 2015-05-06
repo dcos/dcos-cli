@@ -9,6 +9,7 @@ def test_help():
 Usage:
     dcos marathon --config-schema
     dcos marathon --info
+    dcos marathon about
     dcos marathon app add [<app-resource>]
     dcos marathon app list
     dcos marathon app remove [--force] <app-id>
@@ -71,6 +72,16 @@ def test_version():
 def test_info():
     assert_command(['dcos', 'marathon', '--info'],
                    stdout=b'Deploy and manage applications on the DCOS\n')
+
+
+def test_about():
+    returncode, stdout, stderr = exec_command(['dcos', 'marathon', 'about'])
+
+    assert returncode == 0
+    assert stderr == b''
+
+    result = json.loads(stdout.decode('utf-8'))
+    assert result['name'] == "marathon"
 
 
 def test_empty_list():

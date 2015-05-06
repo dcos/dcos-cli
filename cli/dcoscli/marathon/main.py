@@ -3,6 +3,7 @@
 Usage:
     dcos marathon --config-schema
     dcos marathon --info
+    dcos marathon about
     dcos marathon app add [<app-resource>]
     dcos marathon app list
     dcos marathon app remove [--force] <app-id>
@@ -168,9 +169,14 @@ def _cmds():
             function=_restart),
 
         cmds.Command(
+            hierarchy=['marathon', 'about'],
+            arg_keys=[],
+            function=_about),
+
+        cmds.Command(
             hierarchy=['marathon'],
             arg_keys=['--config-schema', '--info'],
-            function=_marathon),
+            function=_marathon)
     ]
 
 
@@ -206,6 +212,18 @@ def _info():
     """
 
     emitter.publish(__doc__.split('\n')[0])
+    return 0
+
+
+def _about():
+    """
+    :returns: Process status
+    :rtype: int
+    """
+
+    client = marathon.create_client()
+
+    emitter.publish(client.get_about())
     return 0
 
 
