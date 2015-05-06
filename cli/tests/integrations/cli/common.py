@@ -56,7 +56,7 @@ def assert_command(cmd,
 
     returncode_, stdout_, stderr_ = exec_command(cmd, env, stdin)
 
-    #assert returncode_ == returncode
+    assert returncode_ == returncode
     assert stdout_ == stdout
     assert stderr_ == stderr
 
