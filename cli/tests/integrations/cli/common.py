@@ -23,7 +23,7 @@ def exec_command(cmd, env=None, stdin=None):
         stderr=subprocess.PIPE,
         env=env)
 
-    stdout, stderr = [_.replace('\r', '') for _ in process.communicate()]
+    stdout, stderr = [_.replace(b'\r', b'') for _ in process.communicate()]
     # We should always print the stdout and stderr
     print('STDOUT: {}'.format(stdout.decode('utf-8')))
     print('STDERR: {}'.format(stderr.decode('utf-8')))
