@@ -11,23 +11,20 @@ from common import assert_command, exec_command
 
 @pytest.fixture
 def env():
-    # return {
-    #     constants.PATH_ENV: os.environ[constants.PATH_ENV],
-    #     constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "dcos.toml"),
-    #     cli_constants.DCOS_PRODUCTION_ENV: 'false'
-    # }
-    new_env = os.environ.copy()
-    new_env[ constants.DCOS_CONFIG_ENV]=os.path.join("tests", "data", "dcos.toml")
-    new_env[cli_constants.DCOS_PRODUCTION_ENV] = 'false'
+    return os.environ.copy().update({
+        constants.PATH_ENV: os.environ[constants.PATH_ENV],
+        constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "dcos.toml"),
+        cli_constants.DCOS_PRODUCTION_ENV: 'false'
+    })
 
 
 @pytest.fixture
 def missing_env():
-    return {
+    return os.environ.copy().update({
         constants.PATH_ENV: os.environ[constants.PATH_ENV],
         constants.DCOS_CONFIG_ENV:
             os.path.join("tests", "data", "missing_params_dcos.toml")
-    }
+    })
 
 
 def test_help():
