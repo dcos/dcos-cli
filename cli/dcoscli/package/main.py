@@ -305,6 +305,10 @@ def _install(package_name, options_path, app_id, cli, app):
 
         subcommand.install(pkg, pkg_version, options)
 
+    post_install_notes = pkg.package_json(pkg_version).get('postInstallNotes')
+    if post_install_notes:
+        emitter.publish(post_install_notes)
+
     return 0
 
 
