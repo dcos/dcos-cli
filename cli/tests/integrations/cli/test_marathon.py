@@ -1,5 +1,9 @@
 import json
+import os
 
+from dcos import constants
+
+import pytest
 from common import assert_command, exec_command
 
 
@@ -82,6 +86,28 @@ def test_about():
 
     result = json.loads(stdout.decode('utf-8'))
     assert result['name'] == "marathon"
+
+
+@pytest.fixture
+def missing_env():
+    return {
+        constants.PATH_ENV: os.environ[constants.PATH_ENV],
+        constants.DCOS_CONFIG_ENV:
+            os.path.join("tests", "data", "missing_marathon_params.toml")
+    }
+
+
+def test_missing_config(missing_env):
+    expected_message = b"Error: Marathon likely misconfigured. " +  \
+                       b"Please check your marathon port and host settings."
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'marathon', 'app', 'list'],
+        env=missing_env)
+
+    assert returncode == 1
+    assert stdout == b''
+    assert stderr.startswith(expected_message)
 
 
 def test_empty_list():
