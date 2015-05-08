@@ -1,4 +1,5 @@
 import json
+from distutils.version import LooseVersion
 
 from dcos import http, util
 from dcos.errors import DCOSException, DefaultError, Error
@@ -68,6 +69,12 @@ class Client(object):
         self._url_pattern = "http://{host}:{port}/{path}"
         self._host = host
         self._port = port
+
+        version = LooseVersion(self.get_about()["version"])
+        if version < LooseVersion("0.8.0"):
+            msg = ("The configured Marathon with version {} is outdated. " +
+                   "Please use version 0.8.0 or later.").format(version)
+            raise DCOSException(msg)
 
     def _create_url(self, path):
         """Creates the url from the provided path.
