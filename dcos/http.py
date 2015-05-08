@@ -33,6 +33,7 @@ def _default_to_error(response):
 
 def request(method,
             url,
+            timeout=3.0,
             is_success=_default_is_success,
             to_error=_default_to_error,
             **kwargs):
@@ -69,7 +70,7 @@ def request(method,
             request.headers)
 
         with requests.Session() as session:
-            response = session.send(request.prepare(), timeout=3.0)
+            response = session.send(request.prepare(), timeout=timeout)
     except Exception as ex:
         raise DCOSException(to_error(DefaultError(str(ex))).error())
 

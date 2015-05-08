@@ -72,7 +72,9 @@ setup(
         'virtualenv>=12.1, <13.0',
         'rollbar>=0.9, <1.0',
         'futures>=3.0, <4.0',
-        'oauth2client>=1.4, <2.0'
+        'oauth2client>=1.4, <2.0',
+        'blessings>=1.6, <2.0',
+        'prettytable>=0.7, <1.0',
     ],
 
     # If there are data files included in your packages that need to be
@@ -95,6 +97,7 @@ setup(
             'dcos-config=dcoscli.config.main:main',
             'dcos-marathon=dcoscli.marathon.main:main',
             'dcos-package=dcoscli.package.main:main',
+            'dcos-tasks=dcoscli.tasks.main:main',
         ],
     },
 

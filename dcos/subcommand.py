@@ -356,7 +356,7 @@ def install_with_pip(
         ]
 
         if _execute_command(cmd) != 0:
-            # We should remove the diretory that we just created
+            # We should remove the directory that we just created
             if new_package_dir:
                 shutil.rmtree(env_directory)
 
