@@ -256,7 +256,8 @@ Value: false
     _install_mesos_dns(args=args,
                        returncode=1,
                        stdout=b'',
-                       stderr=stderr)
+                       stderr=stderr,
+                       postInstallNotes=b'')
 
 
 def test_install():
@@ -594,7 +595,10 @@ def _install_mesos_dns(
         args=['--options=tests/data/package/mesos-dns-config.json'],
         returncode=0,
         stdout=b'Installing package [mesos-dns] version [alpha]\n',
-        stderr=b''):
+        stderr=b'',
+        postInstallNotes=b'Please refer to the tutorial instructions for '
+                         b'further setup requirements: http://mesosphere.'
+                         b'github.io/mesos-dns/docs/tutorial-gce.html\n'):
 
     cmd = ['dcos', 'package', 'install', 'mesos-dns'] + args
-    assert_command(cmd, returncode, stdout, stderr)
+    assert_command(cmd, returncode, stdout + postInstallNotes, stderr)
