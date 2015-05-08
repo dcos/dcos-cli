@@ -1,3 +1,4 @@
+import os
 import subprocess
 
 
@@ -15,6 +16,8 @@ def exec_command(cmd, env=None, stdin=None):
     """
 
     print('CMD: {!r}'.format(cmd))
+    print('Env: {!r}'.format(env))
+    print('Test: {!r}'.format(os.environ))
 
     process = subprocess.Popen(
         cmd,

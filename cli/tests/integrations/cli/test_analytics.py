@@ -13,6 +13,7 @@ from dcoscli.constants import (ROLLBAR_SERVER_POST_KEY,
                                SEGMENT_IO_WRITE_KEY_PROD, SEGMENT_URL)
 from dcoscli.main import main
 
+import pytest
 from common import mock_called_some_args
 from mock import patch
 
@@ -34,6 +35,7 @@ def _mock(fn):
     return wrapper
 
 
+@pytest.skip('Test TC')
 @_mock
 def test_no_exc():
     '''Tests that a command which does not raise an exception does not
@@ -60,6 +62,7 @@ def test_no_exc():
         assert rollbar.report_message.call_count == 0
 
 
+@pytest.skip('Test TC')
 @_mock
 def test_exc():
     '''Tests that a command which does raise an exception does report an
@@ -96,6 +99,7 @@ def test_exc():
                                                   extra_data=props)
 
 
+@pytest.skip('Test TC')
 @_mock
 def test_config_reporting_false():
     '''Test that "core.reporting = false" blocks exception reporting.'''
@@ -114,6 +118,7 @@ def test_config_reporting_false():
         assert requests.post.call_count == 0
 
 
+@pytest.skip('Test TC')
 @_mock
 def test_production_setting_true():
     '''Test that env var DCOS_PRODUCTION as empty string sends exceptions
@@ -134,6 +139,7 @@ def test_production_setting_true():
         rollbar.init.assert_called_with(ROLLBAR_SERVER_POST_KEY, 'prod')
 
 
+@pytest.skip('Test TC')
 @_mock
 def test_production_setting_false():
     '''Test that env var DCOS_PRODUCTION=false sends exceptions to
@@ -154,6 +160,7 @@ def test_production_setting_false():
         rollbar.init.assert_called_with(ROLLBAR_SERVER_POST_KEY, 'dev')
 
 
+@pytest.skip('Test TC')
 @_mock
 def test_config_set():
     '''Tests that a `dcos config set core.email <email>` makes a
