@@ -58,13 +58,14 @@ def _main():
     if not _is_valid_configuration():
         return 1
 
-    if not auth.check_if_user_authenticated():
-        auth.force_auth()
-
     args = docopt.docopt(
         __doc__,
         version='dcos version {}'.format(dcoscli.version),
         options_first=True)
+
+    if args['<command>'] != 'config' and \
+       not auth.check_if_user_authenticated():
+        auth.force_auth()
 
     if not _config_log_level_environ(args['--log-level']):
         return 1

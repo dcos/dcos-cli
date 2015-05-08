@@ -15,8 +15,13 @@
     },
     "token": {
       "type": "string",
-      "title": "Your OAuth token",
-      "description": "Your OAuth token"
+      "title": "Your OAuth access token",
+      "description": "Your OAuth access token"
+    },
+    "refresh_token": {
+      "type": "string",
+      "title": "Your OAuth refresh token",
+      "description": "Your OAuth refresh token"
     }
   },
   "additionalProperties": false
