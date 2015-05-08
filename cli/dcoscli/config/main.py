@@ -37,6 +37,7 @@ from dcos.errors import DCOSException
 from dcoscli import analytics
 
 emitter = emitting.FlatEmitter()
+logger = util.get_logger(__name__)
 
 
 def main():
@@ -73,6 +74,11 @@ def compare_validations(toml_config_pre, toml_config_post):
                                     _generate_root_schema(toml_config_pre))
     errors_post = util.validate_json(toml_config_post._dictionary,
                                      _generate_root_schema(toml_config_post))
+
+    logger.info('Comparing changes in the configuration...')
+    logger.info('Errors before the config command: %r', errors_pre)
+    logger.info('Errors after the config command: %r', errors_post)
+
     if len(errors_post) != 0:
         if len(errors_pre) == 0:
             raise DCOSException(util.list_to_err(errors_post))
@@ -381,7 +387,7 @@ def _get_config_schema(command):
 
 def _split_key(name):
     """
-    :param name: the full property path - e.g. marathon.host
+    :param name: the full property path - e.g. marathon.uri
     :type name: str
     :returns: the section and property name
     :rtype: (str, str)
@@ -390,7 +396,7 @@ def _split_key(name):
     terms = name.split('.', 1)
     if len(terms) != 2:
         raise DCOSException('Property name must have both a section and '
-                            'key: <section>.<key> - E.g. marathon.host')
+                            'key: <section>.<key> - E.g. marathon.uri')
 
     return (terms[0], terms[1])
 

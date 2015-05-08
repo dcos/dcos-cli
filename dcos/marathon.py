@@ -4,10 +4,7 @@ from distutils.version import LooseVersion
 from dcos import http, util
 from dcos.errors import DCOSException, DefaultError, Error
 
-try:
-    from urllib import quote
-except ImportError:
-    from urllib.parse import quote
+from six.moves import urllib
 
 logger = util.get_logger(__name__)
 
@@ -20,14 +17,33 @@ def create_client(config=None):
     :returns: Marathon client
     :rtype: dcos.marathon.Client
     """
+
     if config is None:
         config = util.get_config()
 
-    if config.get('marathon.host') is None or \
-       config.get('marathon.port') is None:
-        raise DCOSException(DefaultMarathonError().error())
+    marathon_uri = _get_marathon_uri(config)
 
-    return Client(config['marathon.host'], config['marathon.port'])
+    logger.info('Creating marathon client with: %r', marathon_uri)
+    return Client(marathon_uri)
+
+
+def _get_marathon_uri(config):
+    """
+    :param config: configuration dictionary
+    :type config: config.Toml
+    :returns: marathon base uri
+    :rtype: str
+    """
+
+    marathon_uri = config.get('marathon.uri')
+    if marathon_uri is None:
+        marathon_uri = config.get('core.dcos_uri')
+        if marathon_uri is None:
+            raise DCOSException(_default_marathon_error())
+
+        marathon_uri = urllib.parse.urljoin(marathon_uri, 'marathon/')
+
+    return marathon_uri
 
 
 def _to_error(response):
@@ -39,7 +55,7 @@ def _to_error(response):
     """
 
     if isinstance(response, Error):
-        return DefaultMarathonError(response.error())
+        return DefaultError(_default_marathon_error(response.error()))
 
     message = response.json().get('message')
     if message is None:
@@ -48,10 +64,10 @@ def _to_error(response):
             logger.error(
                 'Marathon server did not return a message: %s',
                 response.json())
-            return DefaultMarathonError()
+            return DefaultError(_default_marathon_error())
 
         msg = '\n'.join(error['error'] for error in errs)
-        return DefaultMarathonError(msg)
+        return DefaultError(_default_marathon_error(msg))
 
     return DefaultError('Error: {}'.format(response.json()['message']))
 
@@ -59,21 +75,20 @@ def _to_error(response):
 class Client(object):
     """Class for talking to the Marathon server.
 
-    :param host: host for the Marathon server
-    :type host: str
-    :param port: port for the Marathon server
-    :type port: int
+    :param marathon_uri: the base URI for the Marathon server
+    :type marathon_uri: str
     """
 
-    def __init__(self, host, port):
-        self._url_pattern = "http://{host}:{port}/{path}"
-        self._host = host
-        self._port = port
+    def __init__(self, marathon_uri):
+        self._base_uri = marathon_uri
 
+        min_version = "0.8.1"
         version = LooseVersion(self.get_about()["version"])
-        if version < LooseVersion("0.8.0"):
-            msg = ("The configured Marathon with version {} is outdated. " +
-                   "Please use version 0.8.0 or later.").format(version)
+        if version < LooseVersion(min_version):
+            msg = ("The configured Marathon with version {0} is outdated. " +
+                   "Please use version {1} or later.").format(
+                       version,
+                       min_version)
             raise DCOSException(msg)
 
     def _create_url(self, path):
@@ -85,10 +100,7 @@ class Client(object):
         :rtype: str
         """
 
-        return self._url_pattern.format(
-            host=self._host,
-            port=self._port,
-            path=path)
+        return urllib.parse.urljoin(self._base_uri, path)
 
     def get_about(self):
         """Returns info about Marathon instance
@@ -466,17 +478,17 @@ class Client(object):
         :rtype: str
         """
 
-        return quote('/' + app_id.strip('/'))
+        return urllib.parse.quote('/' + app_id.strip('/'))
 
 
-class DefaultMarathonError(DefaultError):
-    """Construct a basic Error class for Marathon
-
-    :param message: String to use for additional messaging
+def _default_marathon_error(message=""):
+    """
+    :param message: additional message
     :type message: str
+    :returns: marathon specific error message
+    :rtype: str
     """
 
-    def __init__(self, message=""):
-        self._message = "Error: Marathon likely misconfigured. " +  \
-                        "Please check your marathon port and host settings. " + \
-                        message
+    return ("Marathon likely misconfigured. Please check your proxy or "
+            "Marathon URI settings. See dcos config --help. {}").format(
+                message)

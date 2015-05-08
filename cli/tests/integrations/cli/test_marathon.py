@@ -98,16 +98,12 @@ def missing_env():
 
 
 def test_missing_config(missing_env):
-    expected_message = b"Error: Marathon likely misconfigured. " +  \
-                       b"Please check your marathon port and host settings."
-
-    returncode, stdout, stderr = exec_command(
+    assert_command(
         ['dcos', 'marathon', 'app', 'list'],
+        returncode=1,
+        stderr=(b"Marathon likely misconfigured. Please check your proxy or "
+                b"Marathon URI settings. See dcos config --help. \n"),
         env=missing_env)
-
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr.startswith(expected_message)
 
 
 def test_empty_list():
@@ -588,29 +584,26 @@ def test_show_task():
 
 
 def test_bad_configuration():
-    returncode, port, stderr = exec_command(
-        ['dcos', 'config', 'show', 'marathon.port'])
-
-    assert returncode == 0
-    assert stderr == b''
+    show_returncode, show_stdout, stderr = exec_command(
+        ['dcos', 'config', 'show', 'marathon.uri'])
 
     assert_command(
-        ['dcos', 'config', 'set', 'marathon.port', str(int(port) + 1)])
+        ['dcos', 'config', 'set', 'marathon.uri', 'http://localhost:88888'])
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'list'])
 
-    expected_message = b"Error: Marathon likely misconfigured. " +  \
-                       b"Please check your marathon port and host settings. "
-
-    assert stderr.startswith(expected_message)
-
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'config', 'set', 'marathon.port', port])
-
-    assert returncode == 0
+    assert returncode == 1
     assert stdout == b''
-    assert stderr == b''
+    assert stderr.decode().startswith(
+        "Marathon likely misconfigured. Please check your proxy or "
+        "Marathon URI settings. See dcos config --help. ")
+
+    if show_returncode == 0:
+        url = show_stdout.decode('utf-8').strip()
+        assert_command(['dcos', 'config', 'set', 'marathon.uri', url])
+    else:
+        assert_command(['dcos', 'config', 'unset', 'marathon.uri'])
 
 
 def _list_apps(app_id=None):
