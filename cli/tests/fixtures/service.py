@@ -43,4 +43,4 @@ def framework_fixture():
         },
         "user": "root",
         "webui_url": "http://mesos:8080"
-    })
+    }, None)

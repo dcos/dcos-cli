@@ -2,7 +2,7 @@ import json
 from distutils.version import LooseVersion
 
 from dcos import http, util
-from dcos.errors import DCOSException, DefaultError, Error
+from dcos.errors import DCOSException
 
 from six.moves import urllib
 
@@ -21,38 +21,38 @@ def create_client(config=None):
     if config is None:
         config = util.get_config()
 
-    marathon_uri = _get_marathon_uri(config)
+    marathon_url = _get_marathon_url(config)
 
-    logger.info('Creating marathon client with: %r', marathon_uri)
-    return Client(marathon_uri)
+    logger.info('Creating marathon client with: %r', marathon_url)
+    return Client(marathon_url)
 
 
-def _get_marathon_uri(config):
+def _get_marathon_url(config):
     """
     :param config: configuration dictionary
     :type config: config.Toml
-    :returns: marathon base uri
+    :returns: marathon base url
     :rtype: str
     """
 
-    marathon_uri = config.get('marathon.url')
-    if marathon_uri is None:
+    marathon_url = config.get('marathon.url')
+    if marathon_url is None:
         dcos_url = util.get_config_vals(config, ['core.dcos_url'])[0]
-        marathon_uri = urllib.parse.urljoin(dcos_url, 'marathon/')
+        marathon_url = urllib.parse.urljoin(dcos_url, 'marathon/')
 
-    return marathon_uri
+    return marathon_url
 
 
-def _to_error(response):
+def _to_exception(response):
     """
-    :param response: HTTP response object or Error
-    :type response: requests.Response | Error
-    :returns: the error embedded in the response JSON
-    :rtype: Error
+    :param response: HTTP response object or Exception
+    :type response: requests.Response | Exception
+    :returns: An exception with the message from the response JSON
+    :rtype: Exception
     """
 
-    if isinstance(response, Error):
-        return DefaultError(_default_marathon_error(response.error()))
+    if isinstance(response, Exception):
+        return DCOSException(_default_marathon_error(str(response)))
 
     message = response.json().get('message')
     if message is None:
@@ -61,23 +61,23 @@ def _to_error(response):
             logger.error(
                 'Marathon server did not return a message: %s',
                 response.json())
-            return DefaultError(_default_marathon_error())
+            return DCOSException(_default_marathon_error())
 
         msg = '\n'.join(error['error'] for error in errs)
-        return DefaultError(_default_marathon_error(msg))
+        return DCOSException(_default_marathon_error(msg))
 
-    return DefaultError('Error: {}'.format(response.json()['message']))
+    return DCOSException('Error: {}'.format(response.json()['message']))
 
 
 class Client(object):
     """Class for talking to the Marathon server.
 
-    :param marathon_uri: the base URI for the Marathon server
-    :type marathon_uri: str
+    :param marathon_url: the base URL for the Marathon server
+    :type marathon_url: str
     """
 
-    def __init__(self, marathon_uri):
-        self._base_uri = marathon_uri
+    def __init__(self, marathon_url):
+        self._base_url = marathon_url
 
         min_version = "0.8.1"
         version = LooseVersion(self.get_about()["version"])
@@ -97,7 +97,7 @@ class Client(object):
         :rtype: str
         """
 
-        return urllib.parse.urljoin(self._base_uri, path)
+        return urllib.parse.urljoin(self._base_url, path)
 
     def get_version(self):
         """Get marathon version
@@ -116,7 +116,7 @@ class Client(object):
 
         url = self._create_url('v2/info')
 
-        response = http.get(url, to_error=_to_error)
+        response = http.get(url, to_exception=_to_exception)
 
         return response.json()
 
@@ -139,7 +139,7 @@ class Client(object):
             url = self._create_url(
                 'v2/apps{}/versions/{}'.format(app_id, version))
 
-        response = http.get(url, to_error=_to_error)
+        response = http.get(url, to_exception=_to_exception)
 
         # Looks like Marathon return different JSON for versions
         if version is None:
@@ -156,7 +156,7 @@ class Client(object):
 
         url = self._create_url('v2/groups')
 
-        response = http.get(url, to_error=_to_error)
+        response = http.get(url, to_exception=_to_exception)
 
         return response.json()['groups']
 
@@ -179,7 +179,7 @@ class Client(object):
             url = self._create_url(
                 'v2/groups{}/versions/{}'.format(group_id, version))
 
-        response = http.get(url, to_error=_to_error)
+        response = http.get(url, to_exception=_to_exception)
 
         return response.json()
 
@@ -206,7 +206,7 @@ class Client(object):
 
         url = self._create_url('v2/apps{}/versions'.format(app_id))
 
-        response = http.get(url, to_error=_to_error)
+        response = http.get(url, to_exception=_to_exception)
 
         if max_count is None:
             return response.json()['versions']
@@ -222,7 +222,7 @@ class Client(object):
 
         url = self._create_url('v2/apps')
 
-        response = http.get(url, to_error=_to_error)
+        response = http.get(url, to_exception=_to_exception)
 
         return response.json()['apps']
 
@@ -245,7 +245,7 @@ class Client(object):
 
         response = http.post(url,
                              json=app_json,
-                             to_error=_to_error)
+                             to_exception=_to_exception)
 
         return response.json()
 
@@ -276,7 +276,7 @@ class Client(object):
         response = http.put(url,
                             params=params,
                             json=payload,
-                            to_error=_to_error)
+                            to_exception=_to_exception)
 
         return response.json().get('deploymentId')
 
@@ -335,7 +335,7 @@ class Client(object):
         response, error = http.put(url,
                                    params=params,
                                    json={'instances': int(instances)},
-                                   to_error=_to_error)
+                                   to_exception=_to_exception)
 
         if error is not None:
             return (None, error)
@@ -375,7 +375,7 @@ class Client(object):
 
         url = self._create_url('v2/apps{}'.format(app_id))
 
-        http.delete(url, params=params, to_error=_to_error)
+        http.delete(url, params=params, to_exception=_to_exception)
 
     def remove_group(self, group_id, force=None):
         """Completely removes the requested application.
@@ -396,7 +396,7 @@ class Client(object):
 
         url = self._create_url('v2/groups{}'.format(group_id))
 
-        http.delete(url, params=params, to_error=_to_error)
+        http.delete(url, params=params, to_exception=_to_exception)
 
     def restart_app(self, app_id, force=None):
         """Performs a rolling restart of all of the tasks.
@@ -420,7 +420,7 @@ class Client(object):
 
         response = http.post(url,
                              params=params,
-                             to_error=_to_error)
+                             to_exception=_to_exception)
 
         return response.json()
 
@@ -436,7 +436,7 @@ class Client(object):
         url = self._create_url('v2/deployments')
 
         response = http.get(url,
-                            to_error=_to_error)
+                            to_exception=_to_exception)
 
         deployment = next(
             (deployment for deployment in response.json()
@@ -456,7 +456,7 @@ class Client(object):
 
         url = self._create_url('v2/deployments')
 
-        response = http.get(url, to_error=_to_error)
+        response = http.get(url, to_exception=_to_exception)
 
         if app_id is not None:
             app_id = self.normalize_app_id(app_id)
@@ -493,7 +493,7 @@ class Client(object):
         response = http.delete(
             url,
             params=params,
-            to_error=_to_error)
+            to_exception=_to_exception)
 
         if force:
             return None
@@ -532,7 +532,7 @@ class Client(object):
 
         url = self._create_url('v2/tasks')
 
-        response = http.get(url, to_error=_to_error)
+        response = http.get(url, to_exception=_to_exception)
 
         if app_id is not None:
             app_id = self.normalize_app_id(app_id)
@@ -556,7 +556,7 @@ class Client(object):
 
         url = self._create_url('v2/tasks')
 
-        response = http.get(url, to_error=_to_error)
+        response = http.get(url, to_exception=_to_exception)
 
         task = next(
             (task for task in response.json()['tasks']
@@ -609,7 +609,7 @@ class Client(object):
         else:
             group_json = group_resource
 
-        response = http.post(url, json=group_json, to_error=_to_error)
+        response = http.post(url, json=group_json, to_exception=_to_exception)
 
         return response.json()
 
@@ -623,5 +623,5 @@ def _default_marathon_error(message=""):
     """
 
     return ("Marathon likely misconfigured. Please check your proxy or "
-            "Marathon URI settings. See dcos config --help. {}").format(
+            "Marathon URL settings. See dcos config --help. {}").format(
                 message)

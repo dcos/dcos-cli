@@ -1,4 +1,4 @@
-"""Get the status of DCOS services
+"""Manage DCOS services
 
 Usage:
     dcos service --info
@@ -121,5 +121,5 @@ def _shutdown(service_id):
     :rtype: int
     """
 
-    mesos.get_master_client().shutdown_framework(service_id)
+    mesos.MesosClient().shutdown_framework(service_id)
     return 0

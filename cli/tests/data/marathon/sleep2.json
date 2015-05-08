@@ -1,0 +1,11 @@
+{
+    "id": "test-app2",
+    "cmd": "sleep 1000",
+    "cpus": 0.1,
+    "mem": 16,
+    "instances": 1,
+    "labels": {
+        "PACKAGE_ID": "test-app",
+        "PACKAGE_VERSION": "1.2.3"
+    }
+}

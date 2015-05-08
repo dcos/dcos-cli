@@ -107,7 +107,6 @@ def get_config():
     :rtype: Toml
     """
 
-    # avoid circular import
     from dcos import config
 
     return config.load_from_path(

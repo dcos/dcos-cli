@@ -40,8 +40,8 @@ Available DCOS commands:
 \thelp           \tDisplay command line usage information
 \tmarathon       \tDeploy and manage applications on the DCOS
 \tpackage        \tInstall and manage DCOS software packages
-\tservice        \tGet the status of DCOS services
-\ttask           \tGet the status of DCOS tasks
+\tservice        \tManage DCOS services
+\ttask           \tManage DCOS tasks
 
 Get detailed command description with 'dcos <command> --help'.
 """.encode('utf-8')
