@@ -85,10 +85,7 @@ def segment_identify(conf):
 
     if 'core.email' in conf:
         data = {'userId': conf.get('core.email')}
-    else:
-        data = {'anonymousId': session_id}
-
-    _segment_request('identify', data)
+        _segment_request('identify', data)
 
 
 def _segment_request(path, data):

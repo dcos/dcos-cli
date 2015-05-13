@@ -34,7 +34,7 @@ import toml
 from dcos import (cmds, config, constants, emitting, http, jsonitem,
                   subcommand, util)
 from dcos.errors import DCOSException
-from dcoscli.analytics import segment_identify
+from dcoscli import analytics
 
 emitter = emitting.FlatEmitter()
 
@@ -162,7 +162,7 @@ def _set(name, value):
 
     if (name == 'core.reporting' and python_value is True) or \
        (name == 'core.email'):
-        segment_identify(toml_config)
+        analytics.segment_identify(toml_config)
 
     _save_config_file(config_path, toml_config)
 
