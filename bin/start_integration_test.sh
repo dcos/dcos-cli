@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/bin/bash -x
+
+env | sort
 
 # List installed versions of external systems
 dpkg -l marathon mesos zookeeper | grep '^ii'
