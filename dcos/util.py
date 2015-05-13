@@ -147,8 +147,7 @@ def dcos_path():
     :rtype: str
     """
 
-    dcos_bin_dir = os.path.realpath(sys.argv[0])
-    return os.path.dirname(os.path.dirname(dcos_bin_dir))
+    return os.path.dirname(os.path.dirname(os.sys.executable))
 
 
 def configure_logger_from_environ():
