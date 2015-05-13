@@ -4,9 +4,11 @@ import webbrowser
 from dcos import auth, constants, util
 from dcoscli.main import main
 
+import pytest
 from mock import Mock, patch
 
 
+@pytest.skip('Test TC')
 def test_no_browser_auth():
     webbrowser.get = Mock(side_effect=webbrowser.Error())
     with patch('webbrowser.open') as op:
@@ -14,6 +16,7 @@ def test_no_browser_auth():
         assert op.call_count == 0
 
 
+@pytest.skip('Test TC')
 def test_when_authenticated():
     with patch('dcos.auth.force_auth'):
 
@@ -21,6 +24,7 @@ def test_when_authenticated():
         assert auth.force_auth.call_count == 0
 
 
+@pytest.skip('Test TC')
 def test_anonymous_login():
     with patch('six.moves.input',
                return_value=''), patch('uuid.uuid1',

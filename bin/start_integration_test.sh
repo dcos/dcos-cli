@@ -26,7 +26,14 @@ sleep 2
 cd /dcos-cli
 
 make clean env
+echo "env after creating env"
+env | sort
+
 source env/bin/activate
+
+echo "env after activate"
+env | sort
+
 make || exit $?
 deactivate
 
@@ -34,6 +41,13 @@ deactivate
 cd cli
 
 make clean env
+echo "env after creating env"
+env | sort
+
 source env/bin/activate
+
+echo "env after activate"
+env | sort
+
 make || exit $?
 deactivate

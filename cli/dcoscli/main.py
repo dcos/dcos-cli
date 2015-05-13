@@ -55,6 +55,8 @@ def main():
 def _main():
     signal.signal(signal.SIGINT, signal_handler)
 
+    print('CLI Env: {!r}'.format(os.environ))
+
     if not _is_valid_configuration():
         return 1
 
