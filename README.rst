@@ -3,6 +3,8 @@ DCOS Command Line Interface
 The DCOS Command Line Interface (CLI) is a command line utility that
 provides a user-friendly yet powerful way to manage DCOS installations.
 
+If you're a **user** of DCOS, please follow the `installation instructions`_. Otherwise, follow the instructions below to set up your development environment.
+
 Dependencies
 ------------
 
@@ -84,7 +86,7 @@ configure your environment to point to the packaged `dcos-helloworld` account.
    wheel package: :code:`export DCOS_TEST_WHEEL=$(pwd)/dist/dcos_helloworld-0.1.0-py2.py3-none-any.whl`
 
 Running
-https://github.com/mesosphere/dcos-cli/blob/master/bin/publish_to_pypi.sh#######
+#######
 
 Tox will run unit and integration tests in both Python environments using a
 temporarily created virtualenv.
@@ -151,7 +153,8 @@ Full documentation is available for the DCOS CLI on the `Mesosphere docs website
 .. _virtualenv: https://virtualenv.pypa.io/en/latest/
 .. _dcos-helloworld: https://github.com/mesosphere/dcos-helloworld
 .. _setup: https://github.com/mesosphere/dcos-helloworld#setup
-.. _Mesosphere docs website: http://docs-staging.mesosphere.com.s3-website-us-west-2.amazonaws.com/using/cli/
+.. _installation instructions: http://beta-docs.mesosphere.com/install/cli/
+.. _Mesosphere docs website: http://beta-docs.mesosphere.com/using/cli/
 .. _automated TeamCity build: https://teamcity.mesosphere.io/viewType.html?buildTypeId=ClosedSource_DcosCli_PushToPyPI
 .. _PEP-440 version scheme: https://www.python.org/dev/peps/pep-0440/
 .. _dcos: https://pypi.python.org/pypi/dcos
