@@ -138,8 +138,7 @@ icon-service-marathon-small.png"
 {
   "command": {
     "pip": [
-      "http://downloads.mesosphere.io/dcos-cli/\
-dcos-0.1.0-py2.py3-none-any.whl",
+      "dcos<1.0",
       "git+https://github.com/mesosphere/\
 dcos-helloworld.git#dcos-helloworld=0.1.0"
     ]
@@ -274,10 +273,9 @@ IjogImhlbGxvd29ybGQiLCAidGFncyI6IFsibWVzb3NwaGVyZSIsICJleGFtcGxlIiwgInN1YmNvbW\
 1hbmQiXSwgInZlcnNpb24iOiAiMC4xLjAiLCAid2Vic2l0ZSI6ICJodHRwczovL2dpdGh1Yi5jb20v\
 bWVzb3NwaGVyZS9kY29zLWhlbGxvd29ybGQifQ=="""
 
-    expected_command = b"""eyJwaXAiOiBbImh0dHA6Ly9kb3dubG9hZHMubWVzb3NwaGVyZS5\
-pby9kY29zLWNsaS9kY29zLTAuMS4wLXB5Mi5weTMtbm9uZS1hbnkud2hsIiwgImdpdCtodHRwczovL\
-2dpdGh1Yi5jb20vbWVzb3NwaGVyZS9kY29zLWhlbGxvd29ybGQuZ2l0I2Rjb3MtaGVsbG93b3JsZD0\
-wLjEuMCJdfQ=="""
+    expected_command = b"""eyJwaXAiOiBbImRjb3M8MS4wIiwgImdpdCtodHRwczovL2dpdGh\
+1Yi5jb20vbWVzb3NwaGVyZS9kY29zLWhlbGxvd29ybGQuZ2l0I2Rjb3MtaGVsbG93b3JsZD0wLjEuM\
+CJdfQ=="""
 
     expected_source = b'git://github.com/mesosphere/universe.git'
 
