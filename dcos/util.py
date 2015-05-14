@@ -136,7 +136,8 @@ def which(program):
             exe_file = os.path.join(path, program)
             if is_exe(exe_file):
                 return exe_file
-
+    if is_windows_platform() and not program.endswith('.exe'):
+        return which(program + '.exe')
     return None
 
 
@@ -357,5 +358,6 @@ class CustomJsonRenderer(pystache.Renderer):
         :rtype: str
         """
         return json.dumps(val)
+
 
 logger = get_logger(__name__)
