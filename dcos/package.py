@@ -744,7 +744,7 @@ def update_sources(config, validate=False):
                 target_dir = os.path.join(cache_dir, source.hash())
                 try:
                     if os.path.exists(target_dir):
-                        shutil.rmtree(target_dir, ignore_errors=False)
+                        shutil.rmtree(target_dir, onerror=onerror, ignore_errors=False)
                 except OSError:
                     err = Error(
                         'Could not remove directory [{}]'.format(target_dir))
@@ -964,12 +964,29 @@ PATH = {}""".format(os.environ[constants.PATH_ENV]))
                                 branch='master')
 
             # Remove .git directory to save space.
-            shutil.rmtree(os.path.join(target_dir, ".git"))
+            shutil.rmtree(os.path.join(target_dir, ".git"), onerror=onerror)
             return None
 
         except git.exc.GitCommandError:
             return Error("Unable to fetch packages from [{}]".format(self.url))
 
+def onerror(func, path, exc_info):
+    """
+    Error handler for ``shutil.rmtree``.
+
+    If the error is due to an access error (read only file)
+    it attempts to add write permission and then retries.
+
+    If the error is for another reason it re-raises the error.
+
+    Usage : ``shutil.rmtree(path, onerror=onerror)``
+    """
+    import stat
+    if not os.access(path, os.W_OK):
+        os.chmod(path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+        func(path)
+    else:
+        raise
 
 class Error(errors.Error):
     """Class for describing errors during packaging operations.
