@@ -128,9 +128,9 @@ def _wait_and_capture(subproc):
 
     err = ''
     while subproc.poll() is None:
-        err_buff = subproc.stderr.read().decode('utf-8')
-        sys.stderr.write(err_buff)
-        err += err_buff
+        line = subproc.stderr.readline().decode('utf-8')
+        err += line
+        sys.stderr.write(line)
 
     exit_code = subproc.poll()
 
