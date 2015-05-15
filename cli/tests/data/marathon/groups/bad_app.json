@@ -1,0 +1,15 @@
+{
+    "groups": [
+        {
+            "id": "notgood",
+            "apps": [
+                {
+                   "id": "hi",
+                   "cmd": "sleep 0",
+                   "badtype": 0
+                }
+            ]
+        }
+    ],
+    "id": "bad-group"
+}

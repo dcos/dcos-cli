@@ -278,7 +278,8 @@ def _format_validation_error(error):
     else:
         message = 'Error: {}\n'.format(error_message)
         if len(error.absolute_path) > 0:
-            message += 'Path: {}\n'.format('.'.join(error.absolute_path))
+            message += 'Path: {}\n'.format(
+                       '.'.join([str(path) for path in error.absolute_path]))
         message += 'Value: {}'.format(json.dumps(error.instance))
 
     return message
