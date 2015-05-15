@@ -3,6 +3,7 @@
 Usage:
     dcos marathon --config-schema
     dcos marathon --info
+    dcos marathon about
     dcos marathon app add [<app-resource>]
     dcos marathon app list
     dcos marathon app remove [--force] <app-id>
@@ -60,29 +61,29 @@ import time
 import dcoscli
 import docopt
 import pkg_resources
-from dcos import cmds, emitting, errors, jsonitem, marathon, options, util
+from dcos import cmds, emitting, jsonitem, marathon, options, util
+from dcos.errors import DCOSException
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
 
 
 def main():
-    err = util.configure_logger_from_environ()
-    if err is not None:
-        emitter.publish(err)
+    try:
+        return _main()
+    except DCOSException as e:
+        emitter.publish(e)
         return 1
+
+
+def _main():
+    util.configure_logger_from_environ()
 
     args = docopt.docopt(
         __doc__,
         version='dcos-marathon version {}'.format(dcoscli.version))
 
-    returncode, err = cmds.execute(_cmds(), args)
-    if err is not None:
-        emitter.publish(err)
-        emitter.publish(options.make_generic_usage_message(__doc__))
-        return 1
-
-    return returncode
+    return cmds.execute(_cmds(), args)
 
 
 def _cmds():
@@ -168,9 +169,14 @@ def _cmds():
             function=_restart),
 
         cmds.Command(
+            hierarchy=['marathon', 'about'],
+            arg_keys=[],
+            function=_about),
+
+        cmds.Command(
             hierarchy=['marathon'],
             arg_keys=['--config-schema', '--info'],
-            function=_marathon),
+            function=_marathon)
     ]
 
 
@@ -209,6 +215,18 @@ def _info():
     return 0
 
 
+def _about():
+    """
+    :returns: Process status
+    :rtype: int
+    """
+
+    client = marathon.create_client()
+
+    emitter.publish(client.get_about())
+    return 0
+
+
 def _add(app_resource):
     """
     :param app_resource: optional filename for the application resource
@@ -219,23 +237,18 @@ def _add(app_resource):
 
     if app_resource is not None:
         with open(app_resource) as fd:
-            application_resource, err = util.load_json(fd)
+            application_resource = util.load_json(fd)
     else:
         # Check that stdin is not tty
         if sys.stdin.isatty():
             # We don't support TTY right now. In the future we will start an
             # editor
-            emitter.publish(
+            raise DCOSException(
                 "We currently don't support reading from the TTY. Please "
                 "specify an application JSON.\n"
                 "Usage: dcos app add < app_resource.json")
-            return 1
 
-        application_resource, err = util.load_json(sys.stdin)
-
-    if err is not None:
-        emitter.publish(err)
-        return 1
+        application_resource = util.load_json(sys.stdin)
 
     schema = json.loads(
         pkg_resources.resource_string(
@@ -243,24 +256,23 @@ def _add(app_resource):
             'data/marathon-schema.json').decode('utf-8'))
 
     errs = util.validate_json(application_resource, schema)
-    if len(errs) != 0:
-        emitter.publish(util.list_to_err(errs))
-        return 1
+    if errs:
+        raise DCOSException(util.list_to_err(errs))
 
     # Add application to marathon
     client = marathon.create_client()
 
     # Check that the application doesn't exist
     app_id = client.normalize_app_id(application_resource['id'])
-    app, err = client.get_app(app_id)
-    if app is not None:
-        emitter.publish("Application '{}' already exists".format(app_id))
-        return 1
 
-    _, err = client.add_app(application_resource)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    try:
+        client.get_app(app_id)
+    except DCOSException as e:
+        logger.exception(e)
+    else:
+        raise DCOSException("Application '{}' already exists".format(app_id))
+
+    client.add_app(application_resource)
 
     return 0
 
@@ -272,14 +284,9 @@ def _list():
     """
 
     client = marathon.create_client()
-
-    apps, err = client.get_apps()
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    apps = client.get_apps()
 
     emitter.publish(apps)
-
     return 0
 
 
@@ -294,12 +301,7 @@ def _remove(app_id, force):
     """
 
     client = marathon.create_client()
-
-    err = client.remove_app(app_id, force)
-    if err is not None:
-        emitter.publish(err)
-        return 1
-
+    client.remove_app(app_id, force)
     return 0
 
 
@@ -317,18 +319,11 @@ def _show(app_id, version):
     client = marathon.create_client()
 
     if version is not None:
-        version, err = _calculate_version(client, app_id, version)
-        if err is not None:
-            emitter.publish(err)
-            return 1
+        version = _calculate_version(client, app_id, version)
 
-    app, err = client.get_app(app_id, version=version)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    app = client.get_app(app_id, version=version)
 
     emitter.publish(app)
-
     return 0
 
 
@@ -348,10 +343,7 @@ def _start(app_id, instances, force):
     # Check that the application exists
     client = marathon.create_client()
 
-    desc, err = client.get_app(app_id)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    desc = client.get_app(app_id)
 
     if desc['instances'] > 0:
         emitter.publish(
@@ -365,20 +357,14 @@ def _start(app_id, instances, force):
             'dcoscli',
             'data/marathon-schema.json').decode('utf-8'))
 
-    app_json = {}
-
     # Need to add the 'id' because it is required
-    app_json['id'] = app_id
+    app_json = {'id': app_id}
 
     # Set instances to 1 if not specified
     if instances is None:
         instances = 1
     else:
-        instances, err = util.parse_int(instances)
-        if err is not None:
-            emitter.publish(err)
-            return 1
-
+        instances = util.parse_int(instances)
         if instances <= 0:
             emitter.publish(
                 'The number of instances must be positive: {!r}.'.format(
@@ -388,14 +374,10 @@ def _start(app_id, instances, force):
     app_json['instances'] = instances
 
     errs = util.validate_json(app_json, schema)
-    if len(errs) != 0:
-        emitter.publish(util.list_to_err(errs))
-        return 1
+    if errs:
+        raise DCOSException(util.list_to_err(errs))
 
-    deployment, err = client.update_app(app_id, app_json, force)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    deployment = client.update_app(app_id, app_json, force)
 
     emitter.publish('Created deployment {}'.format(deployment))
 
@@ -416,10 +398,7 @@ def _stop(app_id, force):
     # Check that the application exists
     client = marathon.create_client()
 
-    desc, err = client.get_app(app_id)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    desc = client.get_app(app_id)
 
     if desc['instances'] <= 0:
         emitter.publish(
@@ -430,10 +409,7 @@ def _stop(app_id, force):
 
     app_json = {'instances': 0}
 
-    deployment, err = client.update_app(app_id, app_json, force)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    deployment = client.update_app(app_id, app_json, force)
 
     emitter.publish('Created deployment {}'.format(deployment))
 
@@ -450,13 +426,10 @@ def _update(app_id, json_items, force):
     :rtype: int
     """
 
-    # Check that the application exists
     client = marathon.create_client()
 
-    _, err = client.get_app(app_id)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    # Ensure that the application exists
+    client.get_app(app_id)
 
     if len(json_items) == 0:
         if sys.stdin.isatty():
@@ -475,18 +448,12 @@ def _update(app_id, json_items, force):
             'dcoscli',
             'data/marathon-schema.json').decode('utf-8'))
 
-    app_json = {}
-
     # Need to add the 'id' because it is required
-    app_json['id'] = app_id
+    app_json = {'id': app_id}
 
     for json_item in json_items:
-        key_value, err = jsonitem.parse_json_item(json_item, schema)
-        if err is not None:
-            emitter.publish(err)
-            return 1
+        key, value = jsonitem.parse_json_item(json_item, schema)
 
-        key, value = key_value
         if key in app_json:
             emitter.publish(
                 'Key {!r} was specified more than once'.format(key))
@@ -495,17 +462,12 @@ def _update(app_id, json_items, force):
             app_json[key] = value
 
     errs = util.validate_json(app_json, schema)
-    if len(errs) != 0:
-        emitter.publish(util.list_to_err(errs))
-        return 1
+    if errs:
+        raise DCOSException(util.list_to_err(errs))
 
-    deployment, err = client.update_app(app_id, app_json, force)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    deployment = client.update_app(app_id, app_json, force)
 
     emitter.publish('Created deployment {}'.format(deployment))
-
     return 0
 
 
@@ -521,10 +483,7 @@ def _restart(app_id, force):
 
     client = marathon.create_client()
 
-    desc, err = client.get_app(app_id)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    desc = client.get_app(app_id)
 
     if desc['instances'] <= 0:
         app_id = client.normalize_app_id(app_id)
@@ -535,13 +494,9 @@ def _restart(app_id, force):
                 desc['instances']))
         return 1
 
-    payload, err = client.restart_app(app_id, force)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    payload = client.restart_app(app_id, force)
 
     emitter.publish('Created deployment {}'.format(payload['deploymentId']))
-
     return 0
 
 
@@ -556,20 +511,13 @@ def _version_list(app_id, max_count):
     """
 
     if max_count is not None:
-        max_count, err = util.parse_int(max_count)
-        if err is not None:
-            emitter.publish(err)
-            return 1
+        max_count = util.parse_int(max_count)
 
     client = marathon.create_client()
 
-    versions, err = client.get_app_versions(app_id, max_count)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    versions = client.get_app_versions(app_id, max_count)
 
     emitter.publish(versions)
-
     return 0
 
 
@@ -583,13 +531,9 @@ def _deployment_list(app_id):
 
     client = marathon.create_client()
 
-    deployments, err = client.get_deployments(app_id)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    deployments = client.get_deployments(app_id)
 
     emitter.publish(deployments)
-
     return 0
 
 
@@ -602,11 +546,7 @@ def _deployment_stop(deployment_id):
     """
 
     client = marathon.create_client()
-
-    err = client.stop_deployment(deployment_id)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    client.stop_deployment(deployment_id)
 
     return 0
 
@@ -620,14 +560,9 @@ def _deployment_rollback(deployment_id):
     """
 
     client = marathon.create_client()
-
-    deployment, err = client.rollback_deployment(deployment_id)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    deployment = client.rollback_deployment(deployment_id)
 
     emitter.publish(deployment)
-
     return 0
 
 
@@ -644,27 +579,15 @@ def _deployment_watch(deployment_id, max_count, interval):
     """
 
     if max_count is not None:
-        max_count, err = util.parse_int(max_count)
-        if err is not None:
-            emitter.publish(err)
-            return 1
+        max_count = util.parse_int(max_count)
 
-    if interval is not None:
-        interval, err = util.parse_int(interval)
-        if err is not None:
-            emitter.publish(err)
-            return 1
-    else:
-        interval = 1
+    interval = 1 if interval is None else util.parse_int(interval)
 
     client = marathon.create_client()
 
     count = 0
     while max_count is None or count < max_count:
-        deployment, err = client.get_deployment(deployment_id)
-        if err is not None:
-            emitter.publish(err)
-            return 1
+        deployment = client.get_deployment(deployment_id)
 
         if deployment is None:
             return 0
@@ -685,14 +608,9 @@ def _task_list(app_id):
     """
 
     client = marathon.create_client()
-
-    tasks, err = client.get_tasks(app_id)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    tasks = client.get_tasks(app_id)
 
     emitter.publish(tasks)
-
     return 0
 
 
@@ -705,19 +623,12 @@ def _task_show(task_id):
     """
 
     client = marathon.create_client()
-
-    task, err = client.get_task(task_id)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    task = client.get_task(task_id)
 
     if task is None:
-        emitter.publish(
-            errors.DefaultError("Task '{}' does not exist".format(task_id)))
-        return 1
+        raise DCOSException("Task '{}' does not exist".format(task_id))
 
     emitter.publish(task)
-
     return 0
 
 
@@ -733,18 +644,12 @@ def _update_from_stdin(app_id, force):
 
     logger.info('Updating %r from JSON object from stdin', app_id)
 
-    application_resource, err = util.load_jsons(sys.stdin.read())
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    application_resource = util.load_jsons(sys.stdin.read())
 
     # Add application to marathon
     client = marathon.create_client()
 
-    _, err = client.update_app(app_id, application_resource, force)
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    client.update_app(app_id, application_resource, force)
 
     return 0
 
@@ -757,34 +662,28 @@ def _calculate_version(client, app_id, version):
     :type app_id: str
     :param version: Relative or absolute version or None
     :type version: str
-    :returns: The absolute version as an ISO8601 date-time; Error otherwise
-    :rtype: (str, Error)
+    :returns: The absolute version as an ISO8601 date-time
+    :rtype: str
     """
 
     # First let's try to parse it as a negative integer
-    value, err = util.parse_int(version)
-    if err is None and value < 0:
-        value = -1 * value
-        # We have a negative value let's ask Marathon for the last abs(value)
-        versions, err = client.get_app_versions(app_id, value + 1)
-        if err is not None:
-            return (None, err)
-
-        if len(versions) <= value:
-            # We don't have enough versions. Return an error.
-            msg = "Application {!r} only has {!r} version(s)."
-            return (
-                None,
-                errors.DefaultError(msg.format(app_id, len(versions), value))
-            )
-        else:
-            return (versions[value], None)
-    elif err is None:
-        return (
-            None,
-            errors.DefaultError(
-                'Relative versions must be negative: {}'.format(version))
-        )
+    try:
+        value = util.parse_int(version)
+    except DCOSException:
+        return version
     else:
-        # Let's assume that we have an absolute version
-        return (version, None)
+        if value < 0:
+            value = -1 * value
+            # We have a negative value let's ask Marathon for the last
+            # abs(value)
+            versions = client.get_app_versions(app_id, value + 1)
+
+            if len(versions) <= value:
+                # We don't have enough versions. Return an error.
+                msg = "Application {!r} only has {!r} version(s)."
+                raise DCOSException(msg.format(app_id, len(versions), value))
+            else:
+                return versions[value]
+        else:
+            raise DCOSException(
+                'Relative versions must be negative: {}'.format(version))

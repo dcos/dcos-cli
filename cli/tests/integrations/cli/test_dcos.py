@@ -65,7 +65,7 @@ Environment Variables:
 
 def test_version():
     assert_command(['dcos', '--version'],
-                   stdout=b'dcos version 0.1.0\n')
+                   stdout=b'dcos version SNAPSHOT\n')
 
 
 def test_missing_dcos_config():

@@ -38,26 +38,34 @@ from subprocess import PIPE, Popen
 import dcoscli
 import docopt
 from dcos import auth, constants, emitting, errors, http, subcommand, util
+from dcos.errors import DCOSException
 from dcoscli import analytics
 
 emitter = emitting.FlatEmitter()
 
 
 def main():
+    try:
+        return _main()
+    except DCOSException as e:
+        emitter.publish(e)
+        return 1
+
+
+def _main():
     signal.signal(signal.SIGINT, signal_handler)
 
     if not _is_valid_configuration():
         return 1
 
-    if not auth.check_if_user_authenticated():
-        auth_status = auth.force_auth()
-        if not auth_status:
-            return 1
-
     args = docopt.docopt(
         __doc__,
         version='dcos version {}'.format(dcoscli.version),
         options_first=True)
+
+    if args['<command>'] != 'config' and \
+       not auth.check_if_user_authenticated():
+        auth.force_auth()
 
     if not _config_log_level_environ(args['--log-level']):
         return 1
@@ -73,10 +81,7 @@ def main():
     if not command:
         command = "help"
 
-    executable, err = subcommand.command_executables(command, util.dcos_path())
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    executable = subcommand.command_executables(command, util.dcos_path())
 
     subproc = Popen([executable,  command] + args['<args>'],
                     stderr=PIPE)

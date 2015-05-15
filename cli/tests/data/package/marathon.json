@@ -1,0 +1,5 @@
+{
+    "marathon": {
+        "zk": "zk://localhost:2181/mesos"
+    }
+}

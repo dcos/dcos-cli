@@ -1,7 +1,7 @@
 import collections
 import json
 
-from dcos import errors
+from dcos.errors import DCOSException
 
 
 def parse_json_item(json_item, schema):
@@ -12,25 +12,17 @@ def parse_json_item(json_item, schema):
     :param schema: The JSON schema to use for parsing
     :type schema: dict
     :returns: A tuple for the parsed JSON item
-    :rtype: ((str, any), Error) where any is one of str, int, float, bool,
-            list or dict
+    :rtype: (str, any) where any is one of str, int, float, bool, list or dict
     """
 
     terms = json_item.split('=', 1)
     if len(terms) != 2:
-        return (
-            None,
-            errors.DefaultError(
-                '{!r} is not a valid json-item'.format(json_item))
-        )
+        raise DCOSException('{!r} is not a valid json-item'.format(json_item))
 
     # Check that it is a valid key in our jsonschema
     key = terms[0]
-    value, err = parse_json_value(key, terms[1], schema)
-    if err is not None:
-        return (None, err)
-
-    return ((key, value), None)
+    value = parse_json_value(key, terms[1], schema)
+    return (key, value)
 
 
 def parse_json_value(key, value, schema):
@@ -43,19 +35,11 @@ def parse_json_value(key, value, schema):
     :param schema: The JSON schema to use for parsing
     :type schema: dict
     :returns: parsed value
-    :rtype: (any, Error) where any is one of str, int, float, bool,
-            list or dict
+    :rtype: str | int | float | bool | list | dict
     """
 
-    value_type, err = find_parser(key, schema)
-    if err is not None:
-        return (None, err)
-
-    python_value, err = value_type(value)
-    if err is not None:
-        return (None, err)
-
-    return (python_value, None)
+    value_type = find_parser(key, schema)
+    return value_type(value)
 
 
 def find_parser(key, schema):
@@ -65,20 +49,17 @@ def find_parser(key, schema):
     :param schema: The JSON schema to use
     :type schema: dict
     :returns: A callable capable of parsing a string to its type
-    :rtype: (ValueTypeParser, Error)
+    :rtype: ValueTypeParser
     """
 
     key_schema = schema['properties'].get(key)
     if key_schema is None:
         keys = ', '.join(schema['properties'].keys())
-        return (
-            None,
-            errors.DefaultError(
-                'The property {!r} does not conform to the expected format. '
-                'Possible values are: {}'.format(key, keys))
-        )
+        raise DCOSException(
+            'The property {!r} does not conform to the expected format. '
+            'Possible values are: {}'.format(key, keys))
     else:
-        return (ValueTypeParser(key_schema), None)
+        return ValueTypeParser(key_schema)
 
 
 class ValueTypeParser(object):
@@ -96,8 +77,7 @@ class ValueTypeParser(object):
         :param value: String to try and parse
         :type value: str
         :returns: The parse value
-        :rtype: (any, Error) where any is one of str, int, float, bool, list
-                or dict
+        :rtype: str | int | float | bool | list | dict
         """
 
         value = _clean_value(value)
@@ -115,11 +95,7 @@ class ValueTypeParser(object):
         elif self.schema['type'] == 'array':
             return _parse_array(value)
         else:
-            return (
-                None,
-                errors.DefaultError(
-                    'Unknown type {!r}'.format(self._value_type))
-            )
+            raise DCOSException('Unknown type {!r}'.format(self._value_type))
 
 
 def _clean_value(value):
@@ -146,10 +122,7 @@ def _parse_string(value):
     :rtype: str
     """
 
-    if value == 'null':
-        return (None, None)
-    else:
-        return (value, None)
+    return None if value == 'null' else value
 
 
 def _parse_object(value):
@@ -163,16 +136,13 @@ def _parse_object(value):
     try:
         json_object = json.loads(value)
         if json_object is None or isinstance(json_object, collections.Mapping):
-            return (json_object, None)
+            return json_object
         else:
-            return (
-                None,
-                errors.DefaultError(
-                    'Unable to parse {!r} as a JSON object'.format(value))
-            )
+            raise DCOSException(
+                'Unable to parse {!r} as a JSON object'.format(value))
     except ValueError as error:
         msg = 'Unable to parse {!r} as a JSON object: {}'.format(value, error)
-        return (None, errors.DefaultError(msg))
+        raise DCOSException(msg)
 
 
 def _parse_number(value):
@@ -184,13 +154,10 @@ def _parse_number(value):
     """
 
     try:
-        if value == 'null':
-            return (None, None)
-        else:
-            return (float(value), None)
+        return None if value == 'null' else float(value)
     except ValueError as error:
         msg = 'Unable to parse {!r} as a float: {}'.format(value, error)
-        return (None, errors.DefaultError(msg))
+        raise DCOSException(msg)
 
 
 def _parse_integer(value):
@@ -202,13 +169,10 @@ def _parse_integer(value):
     """
 
     try:
-        if value == 'null':
-            return (None, None)
-        else:
-            return (int(value), None)
+        return None if value == 'null' else int(value)
     except ValueError as error:
         msg = 'Unable to parse {!r} as an int: {}'.format(value, error)
-        return (None, errors.DefaultError(msg))
+        raise DCOSException(msg)
 
 
 def _parse_boolean(value):
@@ -222,16 +186,13 @@ def _parse_boolean(value):
     try:
         boolean = json.loads(value)
         if boolean is None or isinstance(boolean, bool):
-            return (boolean, None)
+            return boolean
         else:
-            return (
-                None,
-                errors.DefaultError(
-                    'Unable to parse {!r} as a boolean'.format(value))
-            )
+            raise DCOSException(
+                'Unable to parse {!r} as a boolean'.format(value))
     except ValueError as error:
         msg = 'Unable to parse {!r} as a boolean: {}'.format(value, error)
-        return (None, errors.DefaultError(msg))
+        raise DCOSException(msg)
 
 
 def _parse_array(value):
@@ -245,13 +206,10 @@ def _parse_array(value):
     try:
         array = json.loads(value)
         if array is None or isinstance(array, collections.Sequence):
-            return (array, None)
+            return array
         else:
-            return (
-                None,
-                errors.DefaultError(
-                    'Unable to parse {!r} as an array'.format(value))
-            )
+            raise DCOSException(
+                'Unable to parse {!r} as an array'.format(value))
     except ValueError as error:
         msg = 'Unable to parse {!r} as an array: {}'.format(value, error)
-        return (None, errors.DefaultError(msg))
+        raise DCOSException(msg)

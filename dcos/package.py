@@ -15,6 +15,7 @@ import portalocker
 import pystache
 import six
 from dcos import constants, emitting, errors, marathon, subcommand, util
+from dcos.errors import DCOSException
 
 from six.moves import urllib
 
@@ -31,6 +32,7 @@ PACKAGE_FRAMEWORK_KEY = 'DCOS_PACKAGE_IS_FRAMEWORK'
 PACKAGE_RELEASE_KEY = 'DCOS_PACKAGE_RELEASE'
 PACKAGE_COMMAND_KEY = 'DCOS_PACKAGE_COMMAND'
 PACKAGE_REGISTRY_VERSION_KEY = 'DCOS_PACKAGE_REGISTRY_VERSION'
+PACKAGE_FRAMEWORK_NAME_KEY = 'DCOS_PACKAGE_FRAMEWORK_NAME'
 
 
 def install_app(pkg, version, init_client, options, app_id):
@@ -46,24 +48,11 @@ def install_app(pkg, version, init_client, options, app_id):
     :type options: dict
     :param app_id: app ID for installation of this package
     :type app_id: str
-    :rtype: Error
+    :rtype: None
     """
 
     # Insert option parameters into the init template
-    init_desc, err = pkg.marathon_json(version, options)
-    if err is not None:
-        return err
-
-    # Add package metadata
-    package_labels, err = _make_package_labels(pkg, version, options)
-    if err is not None:
-        return err
-
-    # Preserve existing labels
-    labels = init_desc.get('labels', {})
-
-    labels.update(package_labels)
-    init_desc['labels'] = labels
+    init_desc = pkg.marathon_json(version, options)
 
     if app_id is not None:
         logger.debug('Setting app ID to "%s" (was "%s")',
@@ -72,8 +61,7 @@ def install_app(pkg, version, init_client, options, app_id):
         init_desc['id'] = app_id
 
     # Send the descriptor to init
-    _, err = init_client.add_app(init_desc)
-    return err
+    init_client.add_app(init_desc)
 
 
 def _make_package_labels(pkg, version, options):
@@ -86,12 +74,10 @@ def _make_package_labels(pkg, version, options):
     :param options: package parameters
     :type options: dict
     :returns: Marathon app labels
-    :rtype: (dict, Error)
+    :rtype: dict
     """
 
-    metadata, meta_error = pkg.package_json(version)
-    if meta_error is not None:
-        return (None, meta_error)
+    metadata = pkg.package_json(version)
 
     encoded_metadata = _base64_encode(metadata)
 
@@ -99,29 +85,41 @@ def _make_package_labels(pkg, version, options):
     if not is_framework:
         is_framework = False
 
-    package_registry_version, version_error = pkg.registry.get_version()
-
-    if version_error is not None:
-        return (None, version_error)
+    package_registry_version = pkg.registry.get_version()
 
     package_labels = {
         PACKAGE_METADATA_KEY: encoded_metadata,
         PACKAGE_NAME_KEY: metadata['name'],
         PACKAGE_VERSION_KEY: metadata['version'],
         PACKAGE_SOURCE_KEY: pkg.registry.source.url,
-        PACKAGE_FRAMEWORK_KEY: str(is_framework),
+        PACKAGE_FRAMEWORK_KEY: json.dumps(is_framework),
         PACKAGE_REGISTRY_VERSION_KEY: package_registry_version,
         PACKAGE_RELEASE_KEY: str(version)
     }
 
     if pkg.is_command_defined(version):
-        command, cmd_error = pkg.command_json(version, options)
-        if cmd_error is not None:
-            return (None, cmd_error)
-
+        command = pkg.command_json(version, options)
         package_labels[PACKAGE_COMMAND_KEY] = _base64_encode(command)
 
-    return (package_labels, None)
+    # Run a heuristic that determines the hint for the framework name
+    framework_name = _find_framework_name(pkg.name(), options)
+    if framework_name:
+        package_labels[PACKAGE_FRAMEWORK_NAME_KEY] = framework_name
+
+    return package_labels
+
+
+def _find_framework_name(package_name, options):
+    """
+    :param package_name: the name of the package
+    :type package_name: str
+    :param options: the options object
+    :type options: dict
+    :returns: the name of framework if found; None otherwise
+    :rtype: str
+    """
+
+    return options.get(package_name, {}).get('framework-name', None)
 
 
 def _base64_encode(dictionary):
@@ -149,7 +147,7 @@ def uninstall(package_name, remove_all, app_id, cli, app):
     :type app_id: str
     :param init_client: The program to use to run the app
     :type init_client: object
-    :rtype: None or Error
+    :rtype: None
     """
 
     if cli is False and app is False:
@@ -163,13 +161,10 @@ def uninstall(package_name, remove_all, app_id, cli, app):
     if app:
         init_client = marathon.create_client()
 
-        num_apps, err = uninstall_app(package_name,
-                                      remove_all,
-                                      app_id,
-                                      init_client)
-
-        if err is not None:
-            return err
+        num_apps = uninstall_app(package_name,
+                                 remove_all,
+                                 app_id,
+                                 init_client)
 
         if num_apps > 0:
             uninstalled = True
@@ -181,7 +176,7 @@ def uninstall(package_name, remove_all, app_id, cli, app):
         if app_id is not None:
             msg += " with id [{}]".format(app_id)
         msg += " is not installed."
-        return errors.DefaultError(msg)
+        raise DCOSException(msg)
 
 
 def uninstall_subcommand(distribution_name):
@@ -207,14 +202,11 @@ def uninstall_app(app_name, remove_all, app_id, init_client):
     :type app_id: str
     :param init_client: The program to use to run the app
     :type init_client: object
-    :returns: (number of apps uninstalled, Error or None)
-    :rtype: (int, Error or None)
+    :returns: number of apps uninstalled
+    :rtype: int
     """
 
-    apps, appsError = init_client.get_apps()
-
-    if appsError is not None:
-        return (0, appsError)
+    apps = init_client.get_apps()
 
     def is_match(app):
         encoding = 'utf-8'  # We normalize encoding for byte-wise comparison
@@ -234,15 +226,15 @@ def uninstall_app(app_name, remove_all, app_id, init_client):
 
     if not remove_all and len(matching_apps) > 1:
         app_ids = [a.get('id') for a in matching_apps]
-        return (0, errors.DefaultError("""Multiple instances of app [{}] are installed. \
+        raise DCOSException("""Multiple instances of app [{}] are installed. \
 Please specify the app id of the instance to uninstall or uninstall all. \
 The app ids of the installed package instances are: [{}].""".format(
-            app_name, ', '.join(app_ids))))
+            app_name, ', '.join(app_ids)))
 
     for app in matching_apps:
         init_client.remove_app(app['id'], force=True)
 
-    return (len(matching_apps), None)
+    return len(matching_apps)
 
 
 class InstalledPackage(object):
@@ -276,7 +268,7 @@ class InstalledPackage(object):
         list-installed`.
 
         :returns: A dictionary representation of the package.
-        :rtype: (dict, None)
+        :rtype: dict
         """
         ret = {'name': self.name}
 
@@ -287,28 +279,16 @@ class InstalledPackage(object):
             ret['app'] = {'appId': self.app['appId']}
 
         if self.subcommand:
-            package_json, err = self.subcommand.package_json()
-            if err is not None:
-                return (None, err)
-
+            package_json = self.subcommand.package_json()
             ret.update(package_json)
 
-            package_source, err = self.subcommand.package_source()
-            if err is not None:
-                return (None, err)
-
-            ret['packageSource'] = package_source
-
-            package_version, err = self.subcommand.package_version()
-            if err is not None:
-                return (None, err)
-
-            ret['releaseVersion'] = package_version
+            ret['packageSource'] = self.subcommand.package_source()
+            ret['releaseVersion'] = self.subcommand.package_version()
         else:
             ret.update(self.app)
             ret.pop('appId')
 
-        return (ret, None)
+        return ret
 
 
 def installed_packages(init_client, endpoints):
@@ -330,16 +310,11 @@ def installed_packages(init_client, endpoints):
                       endpoints as port-host pairs
     :type endpoints: boolean
     :returns: A list of installed packages
-    :rtype: ([InstalledPackage], Error)
+    :rtype: [InstalledPackage]
     """
 
-    apps, error = installed_apps(init_client, endpoints)
-    if error is not None:
-        return (None, error)
-
-    subcommands, error = installed_subcommands()
-    if error is not None:
-        return (None, error)
+    apps = installed_apps(init_client, endpoints)
+    subcommands = installed_subcommands()
 
     dicts = collections.defaultdict(lambda: {'app': None, 'command': None})
 
@@ -348,14 +323,8 @@ def installed_packages(init_client, endpoints):
         dicts[key]['app'] = app
 
     for subcmd in subcommands:
-        package_version, err = subcmd.package_version()
-        if err is not None:
-            return (None, err)
-
-        package_source, err = subcmd.package_source()
-        if err is not None:
-            return (None, err)
-
+        package_version = subcmd.package_version()
+        package_source = subcmd.package_source()
         key = (subcmd.name, package_version, package_source)
         dicts[key]['command'] = subcmd
 
@@ -364,19 +333,18 @@ def installed_packages(init_client, endpoints):
     for key, pkg in dicts.items():
         pkgs.append(InstalledPackage(pkg['app'], pkg['command']))
 
-    return (pkgs, None)
+    return pkgs
 
 
 def installed_subcommands():
     """Returns all installed subcommands.
 
     :returns: all installed subcommands
-    :rtype: ([InstalledSubcommand], Error)
+    :rtype: [InstalledSubcommand]
     """
 
-    ret = [subcommand.InstalledSubcommand(name) for name in
-           subcommand.distributions(util.dcos_path())]
-    return (ret, None)
+    return [subcommand.InstalledSubcommand(name) for name in
+            subcommand.distributions(util.dcos_path())]
 
 
 def installed_apps(init_client, endpoints=False):
@@ -401,12 +369,10 @@ def installed_apps(init_client, endpoints=False):
                       endpoints as port-host pairs
     :type endpoints: boolean
     :returns: all installed apps
-    :rtype: (list of dict, Error)
+    :rtype: [dict]
     """
 
-    apps, error = init_client.get_apps()
-    if error is not None:
-        return (None, error)
+    apps = init_client.get_apps()
 
     encoded_apps = [(a['id'], a['labels'])
                     for a in apps
@@ -415,34 +381,31 @@ def installed_apps(init_client, endpoints=False):
     def decode_and_add_context(pair):
         app_id, labels = pair
         encoded = labels.get(PACKAGE_METADATA_KEY, {})
-        source = labels.get(PACKAGE_SOURCE_KEY)
-        release_version = labels.get(PACKAGE_RELEASE_KEY)
-
         decoded = base64.b64decode(six.b(encoded)).decode()
-        decoded_json, error = util.load_jsons(decoded)
-        if error is None:
-            decoded_json['appId'] = app_id
-            decoded_json['packageSource'] = source
-            decoded_json['releaseVersion'] = release_version
-        return (decoded_json, error)
 
-    decoded_apps = [decode_and_add_context(encoded)
-                    for encoded in encoded_apps]
+        decoded_json = util.load_jsons(decoded)
+        decoded_json['appId'] = app_id
+        decoded_json['packageSource'] = labels.get(PACKAGE_SOURCE_KEY)
+        decoded_json['releaseVersion'] = labels.get(PACKAGE_RELEASE_KEY)
+        return decoded_json
 
-    # Filter elements that failed to parse correctly as JSON,
-    # or do not match the supplied predicate
-    valid_apps = [pair[0] for pair in decoded_apps if pair[1] is None]
+    # Filter elements that failed to parse correctly as JSON
+    valid_apps = []
+    for encoded in encoded_apps:
+        try:
+            decoded = decode_and_add_context(encoded)
+        except Exception as e:
+            logger.exception(e)
+
+        valid_apps.append(decoded)
 
     if endpoints:
         for app in valid_apps:
-            tasks, err = init_client.get_tasks(app["appId"])
-            if err is not None:
-                return (None, err)
-
+            tasks = init_client.get_tasks(app["appId"])
             app['endpoints'] = [{"host": t["host"], "ports": t["ports"]}
                                 for t in tasks]
 
-    return (valid_apps, None)
+    return valid_apps
 
 
 def search(query, cfg):
@@ -453,7 +416,7 @@ def search(query, cfg):
     :type query: str
     :param cfg: Configuration dictionary
     :type cfg: dcos.config.Toml
-    :rtype: (list of IndexEntries, Error)
+    :rtype: [IndexEntries]
     """
 
     threshold = 0.5  # Minimum rank required to appear in results
@@ -466,15 +429,9 @@ def search(query, cfg):
         })
         return result
 
-    regs, err = registries(cfg)
-    if err is not None:
-        return (None, err)
-
-    for registry in regs:
+    for registry in registries(cfg):
         source_results = []
-        index, error = registry.get_index()
-        if error is not None:
-            return (None, error)
+        index = registry.get_index()
 
         for pkg in index['packages']:
             rank = _search_rank(pkg, query)
@@ -484,7 +441,7 @@ def search(query, cfg):
         entries = IndexEntries(registry.source, source_results)
         results.append(entries)
 
-    return (results, None)
+    return results
 
 
 def _search_rank(pkg, query):
@@ -569,19 +526,15 @@ def resolve_package(package_name, config):
     :param config: Configuration dictionary
     :type config: dcos.config.Toml
     :returns: The named package, if found
-    :rtype: (Package, Error)
+    :rtype: Package
     """
 
-    regs, err = registries(config)
-    if err is not None:
-        return (None, err)
+    for registry in registries(config):
+        package = registry.get_package(package_name)
+        if package:
+            return package
 
-    for registry in regs:
-        package, error = registry.get_package(package_name)
-        if package is not None:
-            return (package, None)
-
-    return (None, None)
+    return None
 
 
 def registries(config):
@@ -590,15 +543,11 @@ def registries(config):
     :param config: Configuration dictionary
     :type config: dcos.config.Toml
     :returns: The list of registries, in resolution order
-    :rtype: ([Registry], Error)
+    :rtype: [Registry]
     """
 
-    sources, err = list_sources(config)
-    if err is not None:
-        return (None, err)
-
-    regs = [Registry(source, source.local_cache(config)) for source in sources]
-    return (regs, None)
+    sources = list_sources(config)
+    return [Registry(source, source.local_cache(config)) for source in sources]
 
 
 def list_sources(config):
@@ -607,24 +556,21 @@ def list_sources(config):
     :param config: Configuration dictionary
     :type config: dcos.config.Toml
     :returns: The list of sources, in resolution order
-    :rtype: (list of Source, Error)
+    :rtype: [Source]
     """
 
     source_uris = config.get('package.sources')
 
     if source_uris is None:
-        config_error = errors.DefaultError(
-            'No configured value for [package.sources]')
-        return (None, config_error)
+        raise DCOSException('No configured value for [package.sources]')
 
-    results = [url_to_source(s) for s in config['package.sources']]
-    sources = [source for (source, _) in results if source is not None]
+    sources = [url_to_source(s) for s in source_uris]
 
-    errs = [error.error() for (_, error) in results if error is not None]
+    errs = [source for source in sources if isinstance(source, Error)]
     if errs:
-        return (None, errors.DefaultError('\n'.join(errs)))
+        raise DCOSException('\n'.join(err.error() for err in errs))
 
-    return (sources, None)
+    return sources
 
 
 def url_to_source(url):
@@ -633,33 +579,29 @@ def url_to_source(url):
     :param url: Location of the package source
     :type url: str
     :returns: A Source backed by the supplied URL
-    :rtype: (Source, Error)
+    :rtype: Source | Error
     """
 
     parse_result = urllib.parse.urlparse(url)
     scheme = parse_result.scheme
 
     if scheme == 'file':
-        return (FileSource(url), None)
-
+        return FileSource(url)
     elif scheme == 'http' or scheme == 'https':
-        return (HttpSource(url), None)
-
+        return HttpSource(url)
     elif scheme == 'git':
-        return (GitSource(url), None)
-
+        return GitSource(url)
     else:
-        err = Error("Source URL uses unsupported protocol [{}]".format(url))
-        return (None, err)
+        return Error("Source URL uses unsupported protocol [{}]".format(url))
 
 
-def acquire_file_lock(lock_file_path):
+def _acquire_file_lock(lock_file_path):
     """Acquires an exclusive lock on the supplied file.
 
     :param lock_file_path: Path to the lock file
     :type lock_file_path: str
     :returns: Lock file descriptor
-    :rtype: (file_descriptor, Error)
+    :rtype: File
     """
 
     lock_fd = open(lock_file_path, 'w')
@@ -667,10 +609,10 @@ def acquire_file_lock(lock_file_path):
 
     try:
         portalocker.lock(lock_fd, acquire_mode)
-        return (lock_fd, None)
+        return lock_fd
     except portalocker.LockException:
         lock_fd.close()
-        return (None, Error("Unable to acquire the package cache lock"))
+        raise DCOSException('Unable to acquire the package cache lock')
 
 
 def update_sources(config, validate=False):
@@ -678,8 +620,7 @@ def update_sources(config, validate=False):
 
     :param config: Configuration dictionary
     :type config: dcos.config.Toml
-    :returns: Error, if any.
-    :rtype: list of Error
+    :rtype: None
     """
 
     errors = []
@@ -688,35 +629,23 @@ def update_sources(config, validate=False):
     cache_dir = config.get('package.cache')
 
     if cache_dir is None:
-        config_error = Error("No configured value for [package.cache]")
-        errors.append(config_error)
-        return errors
+        raise DCOSException('No configured value for [package.cache]')
 
     # ensure the cache directory exists
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
 
     if not os.path.isdir(cache_dir):
-        err = Error('Cache directory does not exist! [{}]'.format(cache_dir))
-        errors.append(err)
-        return errors
+        raise DCOSException(
+            'Cache directory does not exist! [{}]'.format(cache_dir))
 
     # obtain an exclusive file lock on $CACHE/.lock
     lock_path = os.path.join(cache_dir, '.lock')
-    lock_fd, lock_error = acquire_file_lock(lock_path)
 
-    if lock_error is not None:
-        errors.append(lock_error)
-        return errors
-
-    with lock_fd:
+    with _acquire_file_lock(lock_path):
 
         # list sources
-        sources, err = list_sources(config)
-
-        if err is not None:
-            errors = errors + [err]
-            return errors
+        sources = list_sources(config)
 
         for source in sources:
 
@@ -728,10 +657,11 @@ def update_sources(config, validate=False):
                 stage_dir = os.path.join(tmp_dir, source.hash())
 
                 # copy to the staging directory
-                copy_err = source.copy_to_cache(stage_dir)
-                if copy_err is not None:
-                    errors.append(copy_err)
-                    continue  # keep updating the other sources
+                try:
+                    source.copy_to_cache(stage_dir)
+                except DCOSException as e:
+                    errors.append(e.message)
+                    continue
 
                 # validate content
                 if validate:
@@ -754,7 +684,8 @@ def update_sources(config, validate=False):
                 # move the staging directory to $CACHE/source.hash()
                 shutil.move(stage_dir, target_dir)
 
-    return errors
+    if errors:
+        raise DCOSException(util.list_to_err(errors))
 
 
 class Source:
@@ -799,8 +730,7 @@ class Source:
 
         :param target_dir: Path to the destination directory.
         :type target_dir: str
-        :returns: The error, if one occurred
-        :rtype: Error
+        :rtype: None
         """
 
         raise NotImplementedError
@@ -834,8 +764,7 @@ class FileSource(Source):
 
         :param target_dir: Path to the destination directory.
         :type target_dir: str
-        :returns: The error, if one occurred
-        :rtype: Error
+        :rtype: None
         """
 
         # copy the source to the target_directory
@@ -845,7 +774,8 @@ class FileSource(Source):
             shutil.copytree(source_dir, target_dir)
             return None
         except OSError:
-            return Error('Unable to fetch packages from [{}]'.format(self.url))
+            raise DCOSException(
+                'Unable to fetch packages from [{}]'.format(self.url))
 
 
 class HttpSource(Source):
@@ -873,7 +803,7 @@ class HttpSource(Source):
         :param target_dir: Path to the destination directory.
         :type target_dir: str
         :returns: The error, if one occurred
-        :rtype: Error
+        :rtype: None
         """
 
         try:
@@ -916,7 +846,8 @@ class HttpSource(Source):
                 return None
 
         except Exception:
-            return Error('Unable to fetch packages from [{}]'.format(self.url))
+            raise DCOSException(
+                'Unable to fetch packages from [{}]'.format(self.url))
 
 
 class GitSource(Source):
@@ -944,7 +875,7 @@ class GitSource(Source):
         :param target_dir: Path to the destination directory.
         :type target_dir: str
         :returns: The error, if one occurred
-        :rtype: Error
+        :rtype: None
         """
 
         try:
@@ -953,7 +884,7 @@ class GitSource(Source):
             # Ensure git is installed properly.
             git_program = util.which('git')
             if git_program is None:
-                return Error("""Could not locate the git program.  Make sure \
+                raise DCOSException("""Could not locate the git program.  Make sure \
 it is installed and on the system search path.
 PATH = {}""".format(os.environ[constants.PATH_ENV]))
 
@@ -968,7 +899,8 @@ PATH = {}""".format(os.environ[constants.PATH_ENV]))
             return None
 
         except git.exc.GitCommandError:
-            return Error("Unable to fetch packages from [{}]".format(self.url))
+            raise DCOSException(
+                'Unable to fetch packages from [{}]'.format(self.url))
 
 def onerror(func, path, exc_info):
     """
@@ -1025,19 +957,18 @@ class Registry():
         """Validates a package registry.
 
         :returns: Validation errors
-        :rtype: list of Error
+        :rtype: [Error]
         """
 
         # TODO(CD): implement these checks in pure Python?
         scripts_dir = os.path.join(self._base_path, 'scripts')
         validate_script = os.path.join(scripts_dir, '1-validate-packages.sh')
-        errors = []
         result = subprocess.call(validate_script)
         if result is not 0:
-            errors.append(
-                Error('Source tree is not valid [{}]'.format(self._base_path)))
-
-        return errors
+            return [Error(
+                'Source tree is not valid [{}]'.format(self._base_path))]
+        else:
+            return []
 
     @property
     def source(self):
@@ -1051,7 +982,7 @@ class Registry():
     def get_version(self):
         """Returns the version of this registry.
 
-        :rtype: (str, Error)
+        :rtype: str
         """
 
         # The package version is found in $BASE/repo/meta/version.json
@@ -1062,21 +993,21 @@ class Registry():
             'version.json')
 
         if not os.path.isfile(index_path):
-            return (None, Error('Path [{}] is not a file'.format(index_path)))
+            raise DCOSException('Path [{}] is not a file'.format(index_path))
 
         try:
             with open(index_path) as fd:
                 version_json = json.load(fd)
-                return (version_json.get('version'), None)
+                return version_json.get('version')
         except IOError:
-            return (None, Error('Unable to open file [{}]'.format(index_path)))
+            raise DCOSException('Unable to open file [{}]'.format(index_path))
         except ValueError:
-            return (None, Error('Unable to parse [{}]'.format(index_path)))
+            raise DCOSException('Unable to parse [{}]'.format(index_path))
 
     def get_index(self):
-        """Returns the index of packages in this registry.
+        """Retuprns the index of packages in this registry.
 
-        :rtype: (object, Error)
+        :rtype: dict
         """
 
         # The package index is found in $BASE/repo/meta/index.json
@@ -1087,15 +1018,15 @@ class Registry():
             'index.json')
 
         if not os.path.isfile(index_path):
-            return (None, Error('Path [{}] is not a file'.format(index_path)))
+            raise DCOSException('Path [{}] is not a file'.format(index_path))
 
         try:
             with open(index_path) as fd:
-                return (json.load(fd), None)
+                return json.load(fd)
         except IOError:
-            return (None, Error('Unable to open file [{}]'.format(index_path)))
+            raise DCOSException('Unable to open file [{}]'.format(index_path))
         except ValueError:
-            return (None, Error('Unable to parse [{}]'.format(index_path)))
+            raise DCOSException('Unable to parse [{}]'.format(index_path))
 
     def get_package(self, package_name):
         """Returns the named package, if it exists.
@@ -1103,11 +1034,11 @@ class Registry():
         :param package_name: The name of the package to fetch
         :type package_name: str
         :returns: The requested package
-        :rtype: (Package, Error)
+        :rtype: Package
         """
 
         if len(package_name) is 0:
-            (None, Error('Package name must not be empty.'))
+            raise DCOSException('Package name must not be empty.')
 
         # Packages are found in $BASE/repo/package/<first_character>/<pkg_name>
         first_character = package_name[0].title()
@@ -1120,14 +1051,13 @@ class Registry():
             package_name)
 
         if not os.path.isdir(package_path):
-            return (None, Error("Package [{}] not found".format(package_name)))
+            return None
 
         try:
-            return (Package(self, package_path), None)
-
+            return Package(self, package_path)
         except:
-            error = Error('Could not read package [{}]'.format(package_name))
-            return (None, error)
+            raise DCOSException(
+                'Could not read package [{}]'.format(package_name))
 
 
 class Package():
@@ -1162,29 +1092,32 @@ class Package():
         :param user_options: package parameters
         :type user_options: dict
         :returns: a dictionary with the user supplied options
-        :rtype: (dict, dcos.errors.Error)
+        :rtype: dict
         """
 
         if user_options is None:
             user_options = {}
 
-        config_schema, err = self.config_json(version)
-        if err is not None:
-            return (None, err)
-
+        config_schema = self.config_json(version)
         default_options = _extract_default_values(config_schema)
+
         logger.info('Generated default options: %r', default_options)
 
         # Merge option overrides
         options = _merge_options(default_options, user_options)
+
         logger.info('Merged options: %r', options)
 
         # Validate options with the config schema
         errs = util.validate_json(options, config_schema)
         if len(errs) != 0:
-            return (None, util.list_to_err(errs))
+            raise DCOSException(
+                "{}\n\n{}".format(
+                    util.list_to_err(errs),
+                    'Please create a JSON file with the appropriate options, '
+                    'and pass the /path/to/file as an --options argument.'))
 
-        return (options, None)
+        return options
 
     @property
     def registry(self):
@@ -1212,7 +1145,7 @@ class Package():
         """Returns the JSON content of the config.json file.
 
         :returns: Package config schema
-        :rtype: (dict, Error)
+        :rtype: dict
         """
 
         return self._json(os.path.join(version, 'config.json'))
@@ -1223,7 +1156,7 @@ class Package():
         :param version: the package version
         :type version: str
         :returns: Package data
-        :rtype: (dict, Error)
+        :rtype: dict
         """
 
         return self._json(os.path.join(version, 'package.json'))
@@ -1236,10 +1169,24 @@ class Package():
         :type version: str
         :param options: the template options to use in rendering
         :type options: dict
-        :rtype: (dict, Error)
+        :rtype: dict
         """
 
-        return self._render_template('marathon.json', version, options)
+        init_desc = self._render_template(
+            'marathon.json',
+            version,
+            options)
+
+        # Add package metadata
+        package_labels = _make_package_labels(self, version, options)
+
+        # Preserve existing labels
+        labels = init_desc.get('labels', {})
+
+        labels.update(package_labels)
+        init_desc['labels'] = labels
+
+        return init_desc
 
     def command_json(self, version, options):
         """Returns the JSON content of the comand.json template, after
@@ -1250,15 +1197,12 @@ class Package():
         :param options: the template options to use in rendering
         :type options: dict
         :returns: Package data
-        :rtype: (dict, Error)
+        :rtype: dict
         """
 
-        template, err = self._data(os.path.join(version, 'command.json'))
-        if err is not None:
-            return (None, err)
-
+        template = self._data(os.path.join(version, 'command.json'))
         rendered = pystache.render(template, options)
-        return (json.loads(rendered), None)
+        return json.loads(rendered)
 
     def _render_template(self, name, version, options):
         """Render a template.
@@ -1269,18 +1213,11 @@ class Package():
         :type version: str
         :param options: the template options to use in rendering
         :type options: dict
-        :rtype: (dict, Error)
+        :rtype: dict
         """
 
-        template, err = self._data(os.path.join(version, name))
-        if err is not None:
-            return (None, err)
-
-        json, err = util.render_mustache_json(template, options)
-        if err is not None:
-            return (None, err)
-
-        return (json, None)
+        template = self._data(os.path.join(version, name))
+        return util.render_mustache_json(template, options)
 
     def _json(self, path):
         """Returns the json content of the supplied file, relative to the
@@ -1288,13 +1225,10 @@ class Package():
 
         :param path: The relative path to the file to read
         :type path: str
-        :rtype: (dict, Error)
+        :rtype: dict
         """
 
-        data, error = self._data(path)
-        if error is not None:
-            return (None, error)
-
+        data = self._data(path)
         return util.load_jsons(data)
 
     def _data(self, path):
@@ -1303,7 +1237,7 @@ class Package():
         :param path: The relative path to the file to read
         :type path: str
         :returns: File content of the supplied path
-        :rtype: (str, Error)
+        :rtype: str
         """
 
         full_path = os.path.join(self.path, path)
@@ -1316,7 +1250,7 @@ class Package():
         the software described by the package.
 
         :returns: Available versions of this package
-        :rtype: list of str
+        :rtype: [str]
         """
 
         vs = [f for f in os.listdir(self.path) if not f.startswith('.')]
@@ -1328,32 +1262,30 @@ class Package():
         software described by the package.
 
         :returns: Map from package versions to versions of the softwre.
-        :rtype: (dict, Error)
+        :rtype: dict
         """
 
         software_package_map = collections.OrderedDict()
         for v in self.package_versions():
-            pkg_json, error = self.package_json(v)
-            if error is not None:
-                return (None, error)
+            pkg_json = self.package_json(v)
             software_package_map[v] = pkg_json['version']
-        return (software_package_map, None)
+        return software_package_map
 
     def latest_version(self):
         """Returns the latest package version.
 
         :returns: The latest version of this package
-        :rtype: (str, Error)
+        :rtype: str
         """
 
         pkg_versions = self.package_versions()
 
         if len(pkg_versions) is 0:
-            return (None, Error(
-                'No versions found for package [{}]'.format(self.name())))
+            raise DCOSException(
+                'No versions found for package [{}]'.format(self.name()))
 
         pkg_versions.sort()
-        return (pkg_versions[-1], None)
+        return pkg_versions[-1]
 
     def __repr__(self):
 

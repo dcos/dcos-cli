@@ -1,5 +1,9 @@
 import json
+import os
 
+from dcos import constants
+
+import pytest
 from common import assert_command, exec_command
 
 
@@ -9,6 +13,7 @@ def test_help():
 Usage:
     dcos marathon --config-schema
     dcos marathon --info
+    dcos marathon about
     dcos marathon app add [<app-resource>]
     dcos marathon app list
     dcos marathon app remove [--force] <app-id>
@@ -65,12 +70,40 @@ Positional arguments:
 
 def test_version():
     assert_command(['dcos', 'marathon', '--version'],
-                   stdout=b'dcos-marathon version 0.1.0\n')
+                   stdout=b'dcos-marathon version SNAPSHOT\n')
 
 
 def test_info():
     assert_command(['dcos', 'marathon', '--info'],
                    stdout=b'Deploy and manage applications on the DCOS\n')
+
+
+def test_about():
+    returncode, stdout, stderr = exec_command(['dcos', 'marathon', 'about'])
+
+    assert returncode == 0
+    assert stderr == b''
+
+    result = json.loads(stdout.decode('utf-8'))
+    assert result['name'] == "marathon"
+
+
+@pytest.fixture
+def missing_env():
+    return {
+        constants.PATH_ENV: os.environ[constants.PATH_ENV],
+        constants.DCOS_CONFIG_ENV:
+            os.path.join("tests", "data", "missing_marathon_params.toml")
+    }
+
+
+def test_missing_config(missing_env):
+    assert_command(
+        ['dcos', 'marathon', 'app', 'list'],
+        returncode=1,
+        stderr=(b"Marathon likely misconfigured. Please check your proxy or "
+                b"Marathon URI settings. See dcos config --help. \n"),
+        env=missing_env)
 
 
 def test_empty_list():
@@ -112,10 +145,10 @@ def test_add_existing_app():
     _add_app('tests/data/marathon/zero_instance_sleep.json')
 
     with open('tests/data/marathon/zero_instance_sleep_v2.json') as fd:
-        stdout = b"Application '/zero-instance-app' already exists\n"
+        stderr = b"Application '/zero-instance-app' already exists\n"
         assert_command(['dcos', 'marathon', 'app', 'add'],
                        returncode=1,
-                       stdout=stdout,
+                       stderr=stderr,
                        stdin=fd)
 
     _remove_app('zero-instance-app')
@@ -551,29 +584,26 @@ def test_show_task():
 
 
 def test_bad_configuration():
-    returncode, port, stderr = exec_command(
-        ['dcos', 'config', 'show', 'marathon.port'])
-
-    assert returncode == 0
-    assert stderr == b''
+    show_returncode, show_stdout, stderr = exec_command(
+        ['dcos', 'config', 'show', 'marathon.uri'])
 
     assert_command(
-        ['dcos', 'config', 'set', 'marathon.port', str(int(port) + 1)])
+        ['dcos', 'config', 'set', 'marathon.uri', 'http://localhost:88888'])
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'list'])
 
-    expected_message = b"Error: Marathon likely misconfigured. " +  \
-                       b"Please check your marathon port and host settings. "
-
-    assert stderr.startswith(expected_message)
-
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'config', 'set', 'marathon.port', port])
-
-    assert returncode == 0
+    assert returncode == 1
     assert stdout == b''
-    assert stderr == b''
+    assert stderr.decode().startswith(
+        "Marathon likely misconfigured. Please check your proxy or "
+        "Marathon URI settings. See dcos config --help. ")
+
+    if show_returncode == 0:
+        url = show_stdout.decode('utf-8').strip()
+        assert_command(['dcos', 'config', 'set', 'marathon.uri', url])
+    else:
+        assert_command(['dcos', 'config', 'unset', 'marathon.uri'])
 
 
 def _list_apps(app_id=None):
@@ -623,12 +653,12 @@ def _show_app(app_id, version=None):
 
     returncode, stdout, stderr = exec_command(cmd)
 
-    result = json.loads(stdout.decode('utf-8'))
-
     assert returncode == 0
+    assert stderr == b''
+
+    result = json.loads(stdout.decode('utf-8'))
     assert isinstance(result, dict)
     assert result['id'] == '/' + app_id
-    assert stderr == b''
 
     return result
 

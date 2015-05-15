@@ -1,4 +1,4 @@
-from dcos import cmds, errors
+from dcos import cmds
 
 import pytest
 
@@ -23,7 +23,7 @@ def test_single_cmd(args):
             function=function),
     ]
 
-    assert cmds.execute(commands, args) == (1, None)
+    assert cmds.execute(commands, args) == 1
 
 
 def test_multiple_cmd(args):
@@ -38,7 +38,7 @@ def test_multiple_cmd(args):
             function=function),
     ]
 
-    assert cmds.execute(commands, args) == (1, None)
+    assert cmds.execute(commands, args) == 1
 
 
 def test_no_matching_cmd(args):
@@ -49,10 +49,8 @@ def test_no_matching_cmd(args):
             function=pytest.fail),
     ]
 
-    returncode, err = cmds.execute(commands, args)
-
-    assert returncode is None
-    assert isinstance(err, errors.Error)
+    with pytest.raises(Exception):
+        cmds.execute(commands, args)
 
 
 def test_similar_cmds(args):
@@ -67,7 +65,7 @@ def test_similar_cmds(args):
             function=pytest.fail),
     ]
 
-    assert cmds.execute(commands, args) == (1, None)
+    assert cmds.execute(commands, args) == 1
 
 
 def test_missing_cmd(args):

@@ -1,6 +1,6 @@
 import collections
 
-from dcos import errors
+from dcos.errors import DCOSException
 
 Command = collections.namedtuple(
     'Command',
@@ -28,7 +28,7 @@ def execute(cmds, args):
     :param args: command line arguments
     :type args: dict
     :returns: the process status
-    :rtype: (int, dcos.errors.Error)
+    :rtype: int
     """
 
     for hierarchy, arg_keys, function in cmds:
@@ -40,10 +40,6 @@ def execute(cmds, args):
 
         if match:
             params = [args[name] for name in arg_keys]
-            return (function(*params), None)
+            return function(*params)
 
-    return (
-        None,
-        errors.DefaultError(
-            'Could not find a command with the passed arguments')
-    )
+    raise DCOSException('Could not find a command with the passed arguments')

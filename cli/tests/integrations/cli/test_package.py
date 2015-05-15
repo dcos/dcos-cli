@@ -13,7 +13,7 @@ def test_package():
 Usage:
     dcos package --config-schema
     dcos package --info
-    dcos package describe <package_name>
+    dcos package describe [--app --options=<file> --cli] <package_name>
     dcos package info
     dcos package install [--cli | [--app --app-id=<app_id]]
                          [--options=<file>]
@@ -65,7 +65,7 @@ def test_info():
 
 def test_version():
     assert_command(['dcos', 'package', '--version'],
-                   stdout=b'dcos-package version 0.1.0\n')
+                   stdout=b'dcos-package version SNAPSHOT\n')
 
 
 def test_sources_list():
@@ -101,42 +101,153 @@ def test_update_with_validation():
 
 def test_describe_nonexistent():
     assert_command(['dcos', 'package', 'describe', 'xyzzy'],
-                   stdout=b'Package [xyzzy] not found\n',
+                   stderr=b'Package [xyzzy] not found\n',
                    returncode=1)
 
 
 def test_describe():
     stdout = b"""\
 {
-  "description": "DNS-based service discovery for Mesos.",
+  "description": "A cluster-wide init and control system for services in \
+cgroups or Docker containers.",
+  "framework": true,
+  "images": {
+    "icon-large": "https://downloads.mesosphere.io/marathon/assets/\
+icon-service-marathon-large.png",
+    "icon-medium": "https://downloads.mesosphere.io/marathon/assets/\
+icon-service-marathon-medium.png",
+    "icon-small": "https://downloads.mesosphere.io/marathon/assets/\
+icon-service-marathon-small.png"
+  },
   "maintainer": "support@mesosphere.io",
-  "name": "mesos-dns",
-  "postInstallNotes": "Please refer to the tutorial instructions for further \
-setup requirements: http://mesosphere.github.io/mesos-dns/docs/\
-tutorial-gce.html",
-  "scm": "https://github.com/mesosphere/mesos-dns.git",
+  "name": "marathon",
+  "scm": "https://github.com/mesosphere/marathon.git",
   "tags": [
-    "mesosphere"
+    "mesosphere",
+    "framework"
   ],
   "versions": [
-    "alpha"
-  ],
-  "website": "http://mesosphere.github.io/mesos-dns"
+    "0.8.1"
+  ]
 }
 """
-    assert_command(['dcos', 'package', 'describe', 'mesos-dns'],
+    assert_command(['dcos', 'package', 'describe', 'marathon'],
+                   stdout=stdout)
+
+    stdout = b"""\
+{
+  "command": {
+    "pip": [
+      "dcos<1.0",
+      "git+https://github.com/mesosphere/\
+dcos-helloworld.git#dcos-helloworld=0.1.0"
+    ]
+  },
+  "description": "Example DCOS application package",
+  "maintainer": "support@mesosphere.io",
+  "name": "helloworld",
+  "tags": [
+    "mesosphere",
+    "example",
+    "subcommand"
+  ],
+  "versions": [
+    "0.1.0"
+  ],
+  "website": "https://github.com/mesosphere/dcos-helloworld"
+}
+"""
+    assert_command(['dcos', 'package', 'describe', '--cli', 'helloworld'],
+                   stdout=stdout)
+
+    stdout = b"""\
+{
+  "app": {
+    "cmd": "LIBPROCESS_PORT=$PORT1 && ./bin/start --master zk://master\
+.mesos:2181/mesos   --checkpoint    --failover_timeout 604800   --framework_\
+name marathon-user   --ha         --zk zk://localhost:2181/mesos/\
+marathon-user       --http_port $PORT0 ",
+    "constraints": [
+      [
+        "hostname",
+        "UNIQUE"
+      ]
+    ],
+    "container": {
+      "docker": {
+        "image": "mesosphere/marathon:v0.8.1",
+        "network": "HOST"
+      },
+      "type": "DOCKER"
+    },
+    "cpus": 1.0,
+    "id": "marathon-user",
+    "instances": 1,
+    "labels": {
+      "DCOS_PACKAGE_FRAMEWORK_NAME": "marathon-user",
+      "DCOS_PACKAGE_IS_FRAMEWORK": "true",
+      "DCOS_PACKAGE_METADATA": "eyJkZXNjcmlwdGlvbiI6ICJBIGNsdXN0ZXItd2lkZSBpbm\
+l0IGFuZCBjb250cm9sIHN5c3RlbSBmb3Igc2VydmljZXMgaW4gY2dyb3VwcyBvciBEb2NrZXIgY29u\
+dGFpbmVycy4iLCAiZnJhbWV3b3JrIjogdHJ1ZSwgImltYWdlcyI6IHsiaWNvbi1sYXJnZSI6ICJodH\
+RwczovL2Rvd25sb2Fkcy5tZXNvc3BoZXJlLmlvL21hcmF0aG9uL2Fzc2V0cy9pY29uLXNlcnZpY2Ut\
+bWFyYXRob24tbGFyZ2UucG5nIiwgImljb24tbWVkaXVtIjogImh0dHBzOi8vZG93bmxvYWRzLm1lc2\
+9zcGhlcmUuaW8vbWFyYXRob24vYXNzZXRzL2ljb24tc2VydmljZS1tYXJhdGhvbi1tZWRpdW0ucG5n\
+IiwgImljb24tc21hbGwiOiAiaHR0cHM6Ly9kb3dubG9hZHMubWVzb3NwaGVyZS5pby9tYXJhdGhvbi\
+9hc3NldHMvaWNvbi1zZXJ2aWNlLW1hcmF0aG9uLXNtYWxsLnBuZyJ9LCAibWFpbnRhaW5lciI6ICJz\
+dXBwb3J0QG1lc29zcGhlcmUuaW8iLCAibmFtZSI6ICJtYXJhdGhvbiIsICJzY20iOiAiaHR0cHM6Ly\
+9naXRodWIuY29tL21lc29zcGhlcmUvbWFyYXRob24uZ2l0IiwgInRhZ3MiOiBbIm1lc29zcGhlcmUi\
+LCAiZnJhbWV3b3JrIl0sICJ2ZXJzaW9uIjogIjAuOC4xIn0=",
+      "DCOS_PACKAGE_NAME": "marathon",
+      "DCOS_PACKAGE_REGISTRY_VERSION": "0.1.0-alpha",
+      "DCOS_PACKAGE_RELEASE": "0",
+      "DCOS_PACKAGE_SOURCE": "git://github.com/mesosphere/universe.git",
+      "DCOS_PACKAGE_VERSION": "0.8.1"
+    },
+    "mem": 512.0,
+    "ports": [
+      0,
+      0
+    ],
+    "uris": []
+  },
+  "description": "A cluster-wide init and control system for services \
+in cgroups or Docker containers.",
+  "framework": true,
+  "images": {
+    "icon-large": "https://downloads.mesosphere.io/marathon/assets/\
+icon-service-marathon-large.png",
+    "icon-medium": "https://downloads.mesosphere.io/marathon/assets/\
+icon-service-marathon-medium.png",
+    "icon-small": "https://downloads.mesosphere.io/marathon/assets/\
+icon-service-marathon-small.png"
+  },
+  "maintainer": "support@mesosphere.io",
+  "name": "marathon",
+  "scm": "https://github.com/mesosphere/marathon.git",
+  "tags": [
+    "mesosphere",
+    "framework"
+  ],
+  "versions": [
+    "0.8.1"
+  ]
+}
+"""
+    assert_command(['dcos', 'package', 'describe', '--app', '--options',
+                    'tests/data/package/marathon.json', 'marathon'],
                    stdout=stdout)
 
 
 def test_bad_install():
     args = ['--options=tests/data/package/mesos-dns-config-bad.json']
-    stderr = b"""\
-Error: missing required property 'mesos-dns/config-url'. \
-Add to JSON file and pass in /path/to/file with the --options argument.
+    stderr = b"""Error: missing required property 'mesos-dns/config-url'.
 
 Error: False is not of type 'string'
 Path: mesos-dns/host
 Value: false
+
+Please create a JSON file with the appropriate options, and pass the \
+/path/to/file as an --options argument.
 """
     assert_command(['dcos', 'package', 'install', 'mesos-dns', args[0]],
                    returncode=1,
@@ -145,7 +256,8 @@ Value: false
     _install_mesos_dns(args=args,
                        returncode=1,
                        stdout=b'',
-                       stderr=stderr)
+                       stderr=stderr,
+                       postInstallNotes=b'')
 
 
 def test_install():
@@ -162,10 +274,9 @@ IjogImhlbGxvd29ybGQiLCAidGFncyI6IFsibWVzb3NwaGVyZSIsICJleGFtcGxlIiwgInN1YmNvbW\
 1hbmQiXSwgInZlcnNpb24iOiAiMC4xLjAiLCAid2Vic2l0ZSI6ICJodHRwczovL2dpdGh1Yi5jb20v\
 bWVzb3NwaGVyZS9kY29zLWhlbGxvd29ybGQifQ=="""
 
-    expected_command = b"""eyJwaXAiOiBbImh0dHA6Ly9kb3dubG9hZHMubWVzb3NwaGVyZS5\
-pby9kY29zLWNsaS9kY29zLTAuMS4wLXB5Mi5weTMtbm9uZS1hbnkud2hsIiwgImdpdCtodHRwczovL\
-2dpdGh1Yi5jb20vbWVzb3NwaGVyZS9kY29zLWhlbGxvd29ybGQuZ2l0I2Rjb3MtaGVsbG93b3JsZD0\
-wLjEuMCJdfQ=="""
+    expected_command = b"""eyJwaXAiOiBbImRjb3M8MS4wIiwgImdpdCtodHRwczovL2dpdGh\
+1Yi5jb20vbWVzb3NwaGVyZS9kY29zLWhlbGxvd29ybGQuZ2l0I2Rjb3MtaGVsbG93b3JsZD0wLjEuM\
+CJdfQ=="""
 
     expected_source = b'git://github.com/mesosphere/universe.git'
 
@@ -483,7 +594,10 @@ def _install_mesos_dns(
         args=['--options=tests/data/package/mesos-dns-config.json'],
         returncode=0,
         stdout=b'Installing package [mesos-dns] version [alpha]\n',
-        stderr=b''):
+        stderr=b'',
+        postInstallNotes=b'Please refer to the tutorial instructions for '
+                         b'further setup requirements: http://mesosphere.'
+                         b'github.io/mesos-dns/docs/tutorial-gce.html\n'):
 
     cmd = ['dcos', 'package', 'install', 'mesos-dns'] + args
-    assert_command(cmd, returncode, stdout, stderr)
+    assert_command(cmd, returncode, stdout + postInstallNotes, stderr)

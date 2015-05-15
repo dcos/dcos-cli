@@ -65,7 +65,7 @@ def test_info():
 
 
 def test_version():
-    stdout = b'dcos-config version 0.1.0\n'
+    stdout = b'dcos-config version SNAPSHOT\n'
     assert_command(['dcos', 'config', '--version'],
                    stdout=stdout)
 
@@ -73,8 +73,7 @@ def test_version():
 def test_list_property(env):
     stdout = b"""core.email=test@mail.com
 core.reporting=False
-marathon.host=localhost
-marathon.port=8080
+marathon.uri=http://localhost:8080
 package.cache=tmp/cache
 package.sources=['git://github.com/mesosphere/universe.git', \
 'https://github.com/mesosphere/universe/archive/master.zip']
@@ -85,11 +84,11 @@ package.sources=['git://github.com/mesosphere/universe.git', \
 
 
 def test_get_existing_string_property(env):
-    _get_value('marathon.host', 'localhost', env)
+    _get_value('marathon.uri', 'http://localhost:8080', env)
 
 
-def test_get_existing_integral_property(env):
-    _get_value('marathon.port', 8080, env)
+def test_get_existing_boolean_property(env):
+    _get_value('core.reporting', False, env)
 
 
 def test_get_missing_property(env):
@@ -98,27 +97,27 @@ def test_get_missing_property(env):
 
 def test_get_top_property(env):
     stderr = (
-        b"Property 'marathon' doesn't fully specify a value - "
+        b"Property 'package' doesn't fully specify a value - "
         b"possible properties are:\n"
-        b"marathon.host\n"
-        b"marathon.port\n"
+        b"package.cache\n"
+        b"package.sources\n"
     )
 
-    assert_command(['dcos', 'config', 'show', 'marathon'],
+    assert_command(['dcos', 'config', 'show', 'package'],
                    stderr=stderr,
                    returncode=1)
 
 
 def test_set_existing_string_property(env):
-    _set_value('marathon.host', 'newhost', env)
-    _get_value('marathon.host', 'newhost', env)
-    _set_value('marathon.host', 'localhost', env)
+    _set_value('marathon.uri', 'http://newhost:8081', env)
+    _get_value('marathon.uri', 'http://newhost:8081', env)
+    _set_value('marathon.uri', 'http://localhost:8080', env)
 
 
-def test_set_existing_integral_property(env):
-    _set_value('marathon.port', '8181', env)
-    _get_value('marathon.port', 8181, env)
-    _set_value('marathon.port', '8080', env)
+def test_set_existing_boolean_property(env):
+    _set_value('core.reporting', 'true', env)
+    _get_value('core.reporting', True, env)
+    _set_value('core.reporting', 'true', env)
 
 
 def test_append_empty_list(env):
@@ -192,22 +191,22 @@ def test_prepend_list(env):
 
 
 def test_append_non_list(env):
-    stderr = (b"Append/Prepend not supported on 'marathon.host' "
-              b"properties - use 'dcos config set marathon.host new_uri'\n")
+    stderr = (b"Append/Prepend not supported on 'marathon.uri' "
+              b"properties - use 'dcos config set marathon.uri new_uri'\n")
 
     assert_command(
-        ['dcos', 'config', 'append', 'marathon.host', 'new_uri'],
+        ['dcos', 'config', 'append', 'marathon.uri', 'new_uri'],
         returncode=1,
         stderr=stderr,
         env=env)
 
 
 def test_prepend_non_list(env):
-    stderr = (b"Append/Prepend not supported on 'marathon.host' "
-              b"properties - use 'dcos config set marathon.host new_uri'\n")
+    stderr = (b"Append/Prepend not supported on 'marathon.uri' "
+              b"properties - use 'dcos config set marathon.uri new_uri'\n")
 
     assert_command(
-        ['dcos', 'config', 'prepend', 'marathon.host', 'new_uri'],
+        ['dcos', 'config', 'prepend', 'marathon.uri', 'new_uri'],
         returncode=1,
         stderr=stderr,
         env=env)
@@ -237,14 +236,14 @@ def test_set_whole_list(env):
 
 def test_unset_top_property(env):
     stderr = (
-        b"Property 'marathon' doesn't fully specify a value - "
+        b"Property 'package' doesn't fully specify a value - "
         b"possible properties are:\n"
-        b"marathon.host\n"
-        b"marathon.port\n"
+        b"package.cache\n"
+        b"package.sources\n"
     )
 
     assert_command(
-        ['dcos', 'config', 'unset', 'marathon'],
+        ['dcos', 'config', 'unset', 'package'],
         returncode=1,
         stderr=stderr,
         env=env)
@@ -289,7 +288,7 @@ def test_unset_index_from_string(env):
     stderr = b'Unsetting based on an index is only supported for lists\n'
 
     assert_command(
-        ['dcos', 'config', 'unset', '--index=0', 'marathon.host'],
+        ['dcos', 'config', 'unset', '--index=0', 'marathon.uri'],
         returncode=1,
         stderr=stderr,
         env=env)
@@ -301,16 +300,17 @@ def test_validate(env):
 
 
 def test_validation_error(env):
-    stderr = b"""Error: missing required property 'host'. \
-Add to JSON file and pass in /path/to/file with the --options argument.
-"""
+    stderr = b"Error: missing required property 'sources'.\n"
 
-    assert_command(['dcos', 'config', 'unset', 'marathon.host'],
+    assert_command(['dcos', 'config', 'unset', 'package.sources'],
                    returncode=1,
                    stderr=stderr,
                    env=env)
-
-    _set_value('marathon.host', 'localhost', env)
+    _get_value(
+        'package.sources',
+        ["git://github.com/mesosphere/universe.git",
+         "https://github.com/mesosphere/universe/archive/master.zip"],
+        env)
 
 
 def test_set_property_key(env):
@@ -322,10 +322,9 @@ def test_set_property_key(env):
 
 
 def test_set_missing_property(missing_env):
-    _set_value('marathon.host', 'localhost', missing_env)
-    _get_value('marathon.host', 'localhost', missing_env)
-    _set_value('marathon.port', '8080', missing_env)
-    _get_value('marathon.port', '8080', missing_env)
+    _set_value('marathon.uri', 'http://localhost:8080', missing_env)
+    _get_value('marathon.uri', 'http://localhost:8080', missing_env)
+    _unset_value('marathon.uri', None, missing_env)
 
 
 def test_set_core_property(env):

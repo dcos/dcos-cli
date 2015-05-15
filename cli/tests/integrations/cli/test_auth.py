@@ -27,7 +27,7 @@ def test_anonymous_login():
                                        return_value='anonymous@email'):
 
         assert _mock_dcos_run([util.which('dcos'),
-                               'config', 'show'], False) == 0
+                               'help'], False) == 0
         assert _mock_dcos_run([util.which('dcos'), 'config',
                                'show', 'core.email'], False) == 0
         assert _mock_dcos_run([util.which('dcos'), 'config',

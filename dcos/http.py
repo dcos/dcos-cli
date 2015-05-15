@@ -1,6 +1,6 @@
 import requests
 from dcos import util
-from dcos.errors import DefaultError, Error
+from dcos.errors import DCOSException, DefaultError, Error
 
 logger = util.get_logger(__name__)
 
@@ -49,7 +49,7 @@ def request(method,
     :param kwargs: Additional arguments to requests.request
         (see http://docs.python-requests.org/en/latest/api/#requests.request)
     :type kwargs: dict
-    :rtype: (Response, Error)
+    :rtype: Response
     """
 
     try:
@@ -70,18 +70,17 @@ def request(method,
 
         with requests.Session() as session:
             response = session.send(request.prepare(), timeout=3.0)
-
-        logger.info('Received HTTP response [%r]: %r',
-                    response.status_code,
-                    response.text)
-
-        if is_success(response.status_code):
-            return (response, None)
-        else:
-            return (None, to_error(response))
-
     except Exception as ex:
-        return (None, to_error(DefaultError(str(ex))))
+        raise DCOSException(to_error(DefaultError(str(ex))).error())
+
+    logger.info('Received HTTP response [%r]: %r',
+                response.status_code,
+                response.text)
+
+    if is_success(response.status_code):
+        return response
+    else:
+        raise DCOSException(to_error(response).error())
 
 
 def head(url, to_error=_default_to_error, **kwargs):
@@ -92,7 +91,7 @@ def head(url, to_error=_default_to_error, **kwargs):
     :param kwargs: Additional arguments to requests.request
                    (see py:func:`request`)
     :type kwargs: dict
-    :rtype: (Response, Error)
+    :rtype: Response
     """
 
     return request('head', url, **kwargs)
@@ -106,7 +105,7 @@ def get(url, to_error=_default_to_error, **kwargs):
     :param kwargs: Additional arguments to requests.request
                    (see py:func:`request`)
     :type kwargs: dict
-    :rtype: (Response, Error)
+    :rtype: Response
     """
 
     return request('get', url, to_error=to_error, **kwargs)
@@ -124,7 +123,7 @@ def post(url, to_error=_default_to_error, data=None, json=None, **kwargs):
     :param kwargs: Additional arguments to requests.request
                    (see py:func:`request`)
     :type kwargs: dict
-    :rtype: (Response, Error)
+    :rtype: Response
     """
 
     return request('post',
@@ -141,7 +140,7 @@ def put(url, to_error=_default_to_error, data=None, **kwargs):
     :param kwargs: Additional arguments to requests.request
                    (see py:func:`request`)
     :type kwargs: dict
-    :rtype: (Response, Error)
+    :rtype: Response
     """
 
     return request('put', url, to_error=to_error, data=data, **kwargs)
@@ -157,7 +156,7 @@ def patch(url, to_error=_default_to_error, data=None, **kwargs):
     :param kwargs: Additional arguments to requests.request
                    (see py:func:`request`)
     :type kwargs: dict
-    :rtype: (Response, Error)
+    :rtype: Response
     """
 
     return request('patch', url, to_error=to_error, data=data, **kwargs)
@@ -171,7 +170,7 @@ def delete(url, to_error=_default_to_error, **kwargs):
     :param kwargs: Additional arguments to requests.request
                    (see py:func:`request`)
     :type kwargs: dict
-    :rtype: (Response, Error)
+    :rtype: Response
     """
 
     return request('delete', url, to_error=to_error, **kwargs)

@@ -5,6 +5,7 @@ import uuid
 import pkg_resources
 import toml
 from dcos import config, constants, emitting, errors, http, jsonitem, util
+from dcos.errors import DCOSException
 from six import iteritems, moves
 
 from oauth2client import client
@@ -22,8 +23,8 @@ emitter = emitting.FlatEmitter()
 def _authorize():
     """Create OAuth flow and authorize user
 
-    :return: Tuple of credentials dict end Error
-    :rtype: (dict, dcos.errors.Error)
+    :return: credentials dict
+    :rtype: dict
     """
     try:
         flow = client.OAuth2WebServerFlow(
@@ -35,12 +36,10 @@ def _authorize():
             redirect_uri=client.OOB_CALLBACK_URN,
             response_type='code'
         )
-        res = _run(flow)
-        return res, None
+        return _run(flow)
     except:
-        err = errors.DefaultError('There was a problem with '
-                                  'web authentication.')
-        return None, err
+        raise DCOSException('There was a problem with '
+                            'web authentication.')
 
 
 def make_oauth_request(code, flow):
@@ -109,24 +108,15 @@ def force_auth():
     :rtype: boolean
     """
 
-    credentials, error = _authorize()
-    if error is not None:
-        emitter.publish(error)
-        return False
-    else:
-        error = _save_auth_keys(credentials)
-        if error is not None:
-            emitter.publish(error)
-            return False
-        return True
+    credentials = _authorize()
+    _save_auth_keys(credentials)
 
 
 def _save_auth_keys(key_dict):
     """
     :param key_dict: auth parameters dict
     :type key_dict: dict
-    :returns: Error value
-    :rtype: Error
+    :rtype: None
     """
 
     config_path = os.environ[constants.DCOS_CONFIG_ENV]
@@ -138,9 +128,7 @@ def _save_auth_keys(key_dict):
             'dcoscli',
             'data/config-schema/core.json').decode('utf-8'))
     for k, v in iteritems(key_dict):
-        python_value, err = jsonitem.parse_json_value(k, v, config_schema)
-        if err is not None:
-            return err
+        python_value = jsonitem.parse_json_value(k, v, config_schema)
         name = '{}.{}'.format(section, k)
         toml_config[name] = python_value
 
