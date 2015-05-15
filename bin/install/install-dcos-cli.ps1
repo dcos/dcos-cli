@@ -12,6 +12,17 @@ if (-Not(Get-Command python -errorAction SilentlyContinue))
   exit 1
 }
 
+$PYTHON_VERSION = (python --version) 2>&1
+
+if ($PYTHON_VERSION -match "[0-9]+.[0-9]+") {
+    $PYTHON_VERSION = $matches[0]
+
+    if (-Not (($PYTHON_VERSION -eq "2.7") -Or ($PYTHON_VERSION -eq "3.4"))) {
+        echo "Python must be version 2.7 or 3.4. Aborting."
+        exit 1
+    }
+}
+
 if (-Not(Get-Command pip -errorAction SilentlyContinue))
 {
   echo "The program 'pip' could not be found. Make sure that 'pip' is installed and that its directory (eg 'C:\Python27\Scripts') is included in the PATH system variable."
@@ -39,8 +50,6 @@ if (-Not(Get-Command git -errorAction SilentlyContinue))
   exit 1
 }
 
-
-
 echo "Installing DCOS CLI from PyPI..."
 echo ""
 
@@ -54,7 +63,12 @@ if (-Not( Test-Path $installation_path)) {
 
 & virtualenv $installation_path
 & $installation_path\Scripts\activate
-& $installation_path\Scripts\easy_install  "http://downloads.sourceforge.net/project/pywin32/pywin32/Build%20219/pywin32-219.win32-py2.7.exe?r=&ts=1429187018&use_mirror=heanet" 2>&1 | out-null
+
+if ([environment]::Is64BitOperatingSystem) {
+  & $installation_path\Scripts\easy_install  "http://downloads.sourceforge.net/project/pywin32/pywin32/Build%20219/pywin32-219.win-amd64-py$PYTHON_VERSION.exe" 2>&1 | out-null
+} else {
+  & $installation_path\Scripts\easy_install  "http://downloads.sourceforge.net/project/pywin32/pywin32/Build%20219/pywin32-219.win32-py$PYTHON_VERSION.exe" 2>&1 | out-null
+}
 
 if ($env:DCOS_CLI_VERSION) {
   & $installation_path\Scripts\pip install --quiet "dcoscli==$env:DCOS_CLI_VERSION"
