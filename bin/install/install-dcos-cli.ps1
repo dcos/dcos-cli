@@ -3,9 +3,7 @@ param([Parameter(Mandatory=$true,ValueFromPipeline=$true)]
   $installation_path,
   [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
   [string]
-  $marathon_host,
-  [int]
-  $marathon_port=8080
+  $dcos_uri
   )
 
 if (-Not(Get-Command python -errorAction SilentlyContinue))
@@ -78,8 +76,7 @@ if (-Not(Test-Path $DCOS_CONFIG)) {
 $env:DCOS_CONFIG = $DCOS_CONFIG
 
 dcos config set core.reporting true
-dcos config set marathon.host $marathon_host
-dcos config set marathon.port $marathon_port
+dcos config set core.dcos_uri $dcos_uri
 dcos config set package.cache $env:temp\dcos\package-cache
 dcos config set package.sources '[\"https://github.com/mesosphere/universe/archive/master.zip\"]'
 

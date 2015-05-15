@@ -2,26 +2,31 @@
   "$schema": "http://json-schema.org/schema#",
   "type": "object",
   "properties": {
+    "email": {
+      "type": "string",
+      "title": "Your email address",
+      "description": "Your email address"
+    },
+    "dcos_uri": {
+      "type": "string",
+      "title": "DCOS URI",
+      "description": "The URI to the location of the DCOS"
+    },
+    "refresh_token": {
+      "type": "string",
+      "title": "Your OAuth refresh token",
+      "description": "Your OAuth refresh token"
+    },
     "reporting": {
       "type": "boolean",
       "title": "Usage Reporting",
       "description": "Whether to report usage events to Mesosphere",
       "default": true
     },
-    "email": {
-      "type": "string",
-      "title": "Your email address",
-      "description": "Your email address"
-    },
     "token": {
       "type": "string",
       "title": "Your OAuth access token",
       "description": "Your OAuth access token"
-    },
-    "refresh_token": {
-      "type": "string",
-      "title": "Your OAuth refresh token",
-      "description": "Your OAuth refresh token"
     }
   },
   "additionalProperties": false

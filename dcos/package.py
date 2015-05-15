@@ -1094,7 +1094,11 @@ class Package():
         # Validate options with the config schema
         errs = util.validate_json(options, config_schema)
         if len(errs) != 0:
-            raise DCOSException(util.list_to_err(errs))
+            raise DCOSException(
+                "{}\n\n{}".format(
+                    util.list_to_err(errs),
+                    'Please create a JSON file with the appropriate options, '
+                    'and pass the /path/to/file as an --options argument.'))
 
         return options
 

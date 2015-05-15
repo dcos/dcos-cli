@@ -4,7 +4,7 @@ set -o errexit -o pipefail
 
 usage()
 { # Show usage information.
-  echo "$(basename "$(test -L "$0" && readlink "$0" || echo "$0")") <installation_path> <marathon_host> [<marathon_port>]"
+  echo "$(basename "$(test -L "$0" && readlink "$0" || echo "$0")") <installation-path> <dcos-uri>"
 }
 
 if [ "$#" -lt 2 ]; then
@@ -15,8 +15,7 @@ fi
 ARGS=( "$@" );
 
 VIRTUAL_ENV_PATH=$(python -c "import os; print(os.path.realpath('"${ARGS[0]}"'))")
-MARATHON_HOST=${ARGS[1]}
-MARATHON_PORT=${ARGS[2]:-8080}
+DCOS_URI=${ARGS[1]}
 
 command -v virtualenv >/dev/null 2>&1 || { echo "Cannot find virtualenv. Aborting."; exit 1; }
 
@@ -46,8 +45,7 @@ fi
 ENV_SETUP="$VIRTUAL_ENV_PATH/bin/env-setup"
 source "$ENV_SETUP"
 dcos config set core.reporting true
-dcos config set marathon.host $MARATHON_HOST
-dcos config set marathon.port $MARATHON_PORT
+dcos config set core.dcos_uri $DCOS_URI
 dcos config set package.cache ~/.dcos/cache
 dcos config set package.sources '["https://github.com/mesosphere/universe/archive/master.zip"]'
 dcos package update

@@ -231,41 +231,57 @@ def validate_json(instance, schema):
     :rtype: list
     """
 
-    # TODO: clean up this hack
-    #
-    # The error string from jsonschema already contains improperly formatted
-    # JSON values, so we have to resort to removing the unicode prefix using
-    # a regular expression.
-    def hack_error_message_fix(message):
-        # This regular expression matches the character 'u' followed by the
-        # single-quote character, all optionally preceded by a left square
-        # bracket, parenthesis, curly brace, or whitespace character.
-        return re.compile("([\[\(\{\s])u'").sub(
-            "\g<1>'",
-            re.compile("^u'").sub("'", message))
-
     def sort_key(ve):
-        return six.u(hack_error_message_fix(ve.message))
+        return six.u(_hack_error_message_fix(ve.message))
 
     validator = jsonschema.Draft4Validator(schema)
     validation_errors = list(validator.iter_errors(instance))
     validation_errors = sorted(validation_errors, key=sort_key)
 
-    def format(error):
-        error_message = hack_error_message_fix(error.message)
-        match = re.search("(.+) is a required property", error_message)
-        if match:
-            return ('Error: missing required property ' +
-                    match.group(1) +
-                    '. Add to JSON file and pass in /path/to/file with the' +
-                    ' --options argument.')
+    return [_format_validation_error(e) for e in validation_errors]
+
+
+# TODO(jsancio): clean up this hack
+# The error string from jsonschema already contains improperly formatted
+# JSON values, so we have to resort to removing the unicode prefix using
+# a regular expression.
+def _hack_error_message_fix(message):
+    """
+    :param message: message to fix by removing u'...'
+    :type message: str
+    :returns: the cleaned up message
+    :rtype: str
+    """
+
+    # This regular expression matches the character 'u' followed by the
+    # single-quote character, all optionally preceded by a left square
+    # bracket, parenthesis, curly brace, or whitespace character.
+    return re.compile("([\[\(\{\s])u'").sub(
+        "\g<1>'",
+        re.compile("^u'").sub("'", message))
+
+
+def _format_validation_error(error):
+    """
+    :param error: validation error to format
+    :type error: jsonchema.exceptions.ValidationError
+    :returns: string representation of the validation error
+    :rtype: str
+    """
+
+    error_message = _hack_error_message_fix(error.message)
+
+    match = re.search("(.+) is a required property", error_message)
+    if match:
+        message = 'Error: missing required property {}.'.format(
+            match.group(1))
+    else:
         message = 'Error: {}\n'.format(error_message)
         if len(error.absolute_path) > 0:
             message += 'Path: {}\n'.format('.'.join(error.absolute_path))
         message += 'Value: {}'.format(json.dumps(error.instance))
-        return message
 
-    return [format(e) for e in validation_errors]
+    return message
 
 
 def list_to_err(errs):
