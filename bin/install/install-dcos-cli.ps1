@@ -64,7 +64,9 @@ if (-Not( Test-Path $installation_path)) {
 & virtualenv $installation_path
 & $installation_path\Scripts\activate
 
-if ([environment]::Is64BitOperatingSystem) {
+[int]$PYTHON_ARCHITECTURE=(python -c 'import struct;print( 8 * struct.calcsize(\"P\"))')
+
+if ($PYTHON_ARCHITECTURE -eq 64) {
   & $installation_path\Scripts\easy_install  "http://downloads.sourceforge.net/project/pywin32/pywin32/Build%20219/pywin32-219.win-amd64-py$PYTHON_VERSION.exe" 2>&1 | out-null
 } else {
   & $installation_path\Scripts\easy_install  "http://downloads.sourceforge.net/project/pywin32/pywin32/Build%20219/pywin32-219.win32-py$PYTHON_VERSION.exe" 2>&1 | out-null
