@@ -109,6 +109,17 @@ def watch_deployment(deployment_id, count):
 
 
 def list_deployments(expected_count=None, app_id=None):
+    """Get all active deployments.
+
+    :param expected_count: assert that number of active deployments
+    equals `expected_count`
+    :type expected_count: int
+    :param app_id: only get deployments for this app
+    :type app_id: str
+    :returns: active deployments
+    :rtype: [dict]
+    """
+
     cmd = ['dcos', 'marathon', 'deployment', 'list']
     if app_id is not None:
         cmd.append(app_id)
