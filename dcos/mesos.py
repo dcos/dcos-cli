@@ -170,6 +170,14 @@ class MesosMaster(object):
         return [Framework(f) for f in self._framework_dicts(active_only)]
 
     def _framework_dicts(self, active_only=False):
+        """Returns a list of all frameworks as their raw dictionaries
+
+        :param active_only: only include active frameworks
+        :type active_only: bool
+        :returns: a list of frameworks
+        :rtype: [dict]
+        """
+
         keys = ['frameworks']
         if not active_only:
             keys.append('completed_frameworks')
