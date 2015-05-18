@@ -109,6 +109,19 @@ def watch_deployment(deployment_id, count):
     assert stderr == b''
 
 
+def watch_all_deployments(count=60):
+    """ Wait for all deployments to complete.
+
+    :param count: max number of seconds to wait
+    :type count: int
+    :rtype: None
+    """
+
+    deps = list_deployments()
+    for dep in deps:
+        watch_deployment(dep['id'], count)
+
+
 def list_deployments(expected_count=None, app_id=None):
     """Get all active deployments.
 

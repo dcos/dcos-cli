@@ -316,20 +316,23 @@ def create_schema(obj):
     :rtype: dict
     """
 
-    if isinstance(obj, six.string_types):
-        return {'type': 'string'}
+    if isinstance(obj, bool):
+        return {'type': 'boolean'}
+
+    elif isinstance(obj, float):
+        return {'type': 'number'}
 
     elif isinstance(obj, six.integer_types):
         return {'type': 'integer'}
 
-    elif isinstance(obj, float):
-        return {'type': 'number'}
+    elif isinstance(obj, six.string_types):
+        return {'type': 'string'}
 
     elif isinstance(obj, collections.Mapping):
         schema = {'type': 'object',
                   'properties': {},
                   'additionalProperties': False,
-                  'required': obj.keys()}
+                  'required': list(obj.keys())}
 
         for key, val in obj.items():
             schema['properties'][key] = create_schema(val)

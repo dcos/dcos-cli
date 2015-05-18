@@ -8,8 +8,7 @@ from dcoscli.task.main import _task_table
 
 import mock
 import pytest
-from common import (assert_command, exec_command, list_deployments,
-                    watch_deployment)
+from common import assert_command, exec_command, watch_all_deployments
 
 SLEEP1 = 'tests/data/marathon/apps/sleep.json'
 SLEEP2 = 'tests/data/marathon/apps/sleep2.json'
@@ -53,7 +52,7 @@ Usage:
 Options:
     -h, --help    Show this screen
     --info        Show a short description of this subcommand
-    --json        Print json-formatted task data
+    --json        Print json-formatted tasks
     --completed   Show completed tasks as well
     --version     Show version
 
@@ -143,13 +142,7 @@ def _install_sleep_task(app_path=SLEEP1, app_name='test-app'):
     # install helloworld app
     args = ['dcos', 'marathon', 'app', 'add', app_path]
     assert_command(args)
-    _wait_for_deployment()
-
-
-def _wait_for_deployment():
-    deps = list_deployments()
-    if deps:
-        watch_deployment(deps[0]['id'], 60)
+    watch_all_deployments()
 
 
 def _uninstall_helloworld(args=[]):
