@@ -120,8 +120,8 @@ class MesosMaster(object):
     def tasks(self, fltr="", active_only=False):
         """Returns tasks running under the master
 
-        :param fltr: May be a substring or regex.  Only return tasks
-                     whose 'id' matches `fltr`.
+        :param fltr: May be a substring or unix glob pattern.  Only
+                     return tasks whose 'id' matches `fltr`.
         :type fltr: str
         :param active_only: only include active tasks
         :type active_only: bool
@@ -139,7 +139,7 @@ class MesosMaster(object):
             tasks += \
                 [Task(task, self)
                  for task in _merge(framework, *keys)
-                 if fltr in task['id'] or fnmatch.fnmatch(task['id'], fltr)]
+                 if fltr in task['id'] or fnmatch.fnmatchcase(task['id'], fltr)]
 
         return tasks
 
