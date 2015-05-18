@@ -35,9 +35,9 @@ def _get_marathon_uri(config):
     :rtype: str
     """
 
-    marathon_uri = config.get('marathon.uri')
+    marathon_uri = config.get('marathon.url')
     if marathon_uri is None:
-        marathon_uri = config.get('core.dcos_uri')
+        marathon_uri = config.get('core.dcos_url')
         if marathon_uri is None:
             raise DCOSException(_default_marathon_error())
 
