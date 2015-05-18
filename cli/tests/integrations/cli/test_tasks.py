@@ -90,7 +90,7 @@ def test_tasks(task):
     _uninstall_sleep()
 
 
-def test_task_inactive():
+def test_tasks_inactive():
     _install_sleep_task()
     _uninstall_sleep()
     _install_sleep_task()
@@ -108,6 +108,10 @@ def test_task_inactive():
     assert len(json.loads(stdout.decode('utf-8'))) == 1
 
     _uninstall_sleep()
+
+def test_tasks_none():
+    assert_command(['dcos', 'tasks', '--json'],
+                   stdout=b'[]\n')
 
 
 def test_filter(task):
