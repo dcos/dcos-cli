@@ -109,6 +109,7 @@ def test_tasks_inactive():
 
     _uninstall_sleep()
 
+
 def test_tasks_none():
     assert_command(['dcos', 'tasks', '--json'],
                    stdout=b'[]\n')
