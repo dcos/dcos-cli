@@ -138,7 +138,8 @@ class MesosMaster(object):
             tasks += \
                 [Task(task, self)
                  for task in _merge(framework, *keys)
-                 if fltr in task['id'] or fnmatch.fnmatchcase(task['id'], fltr)]
+                 if fltr in task['id'] or
+                 fnmatch.fnmatchcase(task['id'], fltr)]
 
         return tasks
 
