@@ -27,6 +27,12 @@
       "type": "string",
       "title": "Your OAuth access token",
       "description": "Your OAuth access token"
+    },
+    "mesos_master_url": {
+        "type": "string",
+        "title": "Mesos Master URL",
+        "description":
+        "Mesos Master URL.  Must be of the format: \"http://host:port\""
     }
   },
   "additionalProperties": false

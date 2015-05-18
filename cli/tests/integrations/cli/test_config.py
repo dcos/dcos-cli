@@ -68,6 +68,7 @@ def test_version():
 
 def test_list_property(env):
     stdout = b"""core.email=test@mail.com
+core.mesos_master_url=http://localhost:5050
 core.reporting=False
 marathon.uri=http://localhost:8080
 package.cache=tmp/cache

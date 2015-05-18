@@ -1,4 +1,6 @@
+import collections
 import contextlib
+import functools
 import json
 import logging
 import os
@@ -7,6 +9,7 @@ import re
 import shutil
 import sys
 import tempfile
+import time
 
 import jsonschema
 import pystache
@@ -25,9 +28,6 @@ def get_logger(name):
     """
 
     return logging.getLogger(name)
-
-
-logger = get_logger(__name__)
 
 
 @contextlib.contextmanager
@@ -113,6 +113,29 @@ def get_config():
         os.environ[constants.DCOS_CONFIG_ENV])
 
 
+def get_config_vals(config, keys):
+    """Gets config values for each of the keys.  Raises a DCOSException if
+    any of the keys don't exist.
+
+    :param config: config
+    :type config: Toml
+    :param keys: keys in the config dict
+    :type keys: [str]
+    :returns: values for each of the keys
+    :rtype: [object]
+    """
+
+    missing = [key for key in keys if key not in config]
+    if missing:
+        msg = '\n'.join(
+            'Missing required config parameter: "{0}".'.format(key) +
+            '  Please run `dcos config set {0} <value>`.'.format(key)
+            for key in keys)
+        raise DCOSException(msg)
+
+    return [config[key] for key in keys]
+
+
 def which(program):
     """Returns the path to the named executable program.
 
@@ -193,7 +216,6 @@ def load_json(reader):
     try:
         return json.load(reader)
     except Exception as error:
-        logger = get_logger(__name__)
         logger.error(
             'Unhandled exception while loading JSON: %r',
             error)
@@ -285,6 +307,47 @@ def _format_validation_error(error):
     return message
 
 
+def create_schema(obj):
+    """ Creates a basic json schema derived from `obj`.
+
+    :param obj: object for which to derive a schema
+    :type obj: str | int | float | dict | list
+    :returns: json schema
+    :rtype: dict
+    """
+
+    if isinstance(obj, six.string_types):
+        return {'type': 'string'}
+
+    elif isinstance(obj, six.integer_types):
+        return {'type': 'integer'}
+
+    elif isinstance(obj, float):
+        return {'type': 'number'}
+
+    elif isinstance(obj, collections.Mapping):
+        schema = {'type': 'object',
+                  'properties': {},
+                  'additionalProperties': False,
+                  'required': obj.keys()}
+
+        for key, val in obj.items():
+            schema['properties'][key] = create_schema(val)
+
+        return schema
+
+    elif isinstance(obj, collections.Sequence):
+        schema = {'type': 'array'}
+        if obj:
+            schema['items'] = create_schema(obj[0])
+        return schema
+
+    else:
+        raise ValueError(
+            'Cannot create schema with object {} of unrecognized type'
+            .format(str(obj)))
+
+
 def list_to_err(errs):
     """convert list of error strings to a single string
 
@@ -310,7 +373,6 @@ def parse_int(string):
         return int(string)
     except:
         error = sys.exc_info()[0]
-        logger = get_logger(__name__)
         logger.error(
             'Unhandled exception while parsing string as int: %r -- %r',
             string,
@@ -363,6 +425,52 @@ class CustomJsonRenderer(pystache.Renderer):
         :returns: a string containing a JSON representation of the value
         :rtype: str
         """
+
         return json.dumps(val)
+
+
+def duration(fn):
+    """ Decorator to log the duration of a function.
+
+    :param fn: function to measure
+    :type fn: function
+    :returns: wrapper function
+    :rtype: function
+    """
+
+    @functools.wraps(fn)
+    def timer(*args, **kwargs):
+        start = time.time()
+        try:
+            return fn(*args, **kwargs)
+        finally:
+            logger.debug("duration: {0}.{1}: {2:2.2f}s".format(
+                fn.__module__,
+                fn.__name__,
+                time.time() - start))
+
+    return timer
+
+
+def humanize_bytes(b):
+    """ Return a human representation of a number of bytes.
+
+    :param b: number of bytes
+    :type b: number
+    :returns: human representation of a number of bytes
+    :rtype: str
+    """
+
+    abbrevs = (
+        (1 << 30, 'GB'),
+        (1 << 20, 'MB'),
+        (1 << 10, 'kB'),
+        (1, 'B')
+    )
+    for factor, suffix in abbrevs:
+        if b >= factor:
+            break
+
+    return "{0:.2f} {1}".format(b/float(factor), suffix)
 
 logger = get_logger(__name__)
