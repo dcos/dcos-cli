@@ -2,13 +2,13 @@
 
 Usage:
     dcos tasks --info
-    dcos tasks [--inactive --json <task>]
+    dcos tasks [--completed --json <task>]
 
 Options:
     -h, --help    Show this screen
     --info        Show a short description of this subcommand
     --json        Print json-formatted task data
-    --inactive    Show inactive tasks as well
+    --completed   Show completed tasks as well
     --version     Show version
 
 Positional Arguments:
@@ -63,7 +63,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['tasks'],
-            arg_keys=['<task>', '--inactive', '--json'],
+            arg_keys=['<task>', '--completed', '--json'],
             function=_tasks),
     ]
 
@@ -113,13 +113,13 @@ def _task_table(tasks):
     return tb
 
 
-def _tasks(fltr, inactive, is_json):
+def _tasks(fltr, completed, is_json):
     """ List mesos tasks
 
     :param fltr: task id filter
     :type fltr: str
-    :param inactive: If True, include inactive tasks
-    :type inactive: bool
+    :param completed: If True, include compelted tasks
+    :type completed: bool
     :param is_json: If true, output json.
         Otherwise, output a human readable table.
     :type is_json: bool
@@ -130,7 +130,7 @@ def _tasks(fltr, inactive, is_json):
         fltr = ""
 
     master = mesos.get_master()
-    tasks = sorted(master.tasks(active_only=(not inactive), fltr=fltr),
+    tasks = sorted(master.tasks(active_only=(not completed), fltr=fltr),
                    key=lambda task: task['name'])
 
     if is_json:

@@ -48,13 +48,13 @@ def test_help():
 
 Usage:
     dcos tasks --info
-    dcos tasks [--inactive --json <task>]
+    dcos tasks [--completed --json <task>]
 
 Options:
     -h, --help    Show this screen
     --info        Show a short description of this subcommand
     --json        Print json-formatted task data
-    --inactive    Show inactive tasks as well
+    --completed   Show completed tasks as well
     --version     Show version
 
 Positional Arguments:
@@ -90,13 +90,13 @@ def test_tasks(task):
     _uninstall_sleep()
 
 
-def test_tasks_inactive():
+def test_tasks_completed():
     _install_sleep_task()
     _uninstall_sleep()
     _install_sleep_task()
 
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'tasks', '--inactive', '--json'])
+        ['dcos', 'tasks', '--completed', '--json'])
     assert returncode == 0
     assert stderr == b''
     assert len(json.loads(stdout.decode('utf-8'))) > 1

@@ -123,7 +123,7 @@ class MesosMaster(object):
         :param fltr: May be a substring or unix glob pattern.  Only
                      return tasks whose 'id' matches `fltr`.
         :type fltr: str
-        :param active_only: only include active tasks
+        :param active_only: don't include completed tasks
         :type active_only: bool
         :returns: a list of tasks
         :rtype: [Task]
