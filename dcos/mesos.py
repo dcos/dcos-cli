@@ -38,9 +38,8 @@ class MesosMaster(object):
     :type url: str
     """
 
-    def __init__(self, url, state=None):
+    def __init__(self, url):
         self._url = url
-        self._state = None
 
     def state(self):
         """Returns master's /master/state.json.  Fetches and saves it if we
