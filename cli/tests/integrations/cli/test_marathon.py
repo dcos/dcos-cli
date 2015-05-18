@@ -5,6 +5,7 @@ from dcos import constants
 
 import pytest
 from common import assert_command, exec_command
+from marathon_common import list_deployments, watch_deployment
 
 
 def test_help():
@@ -30,27 +31,42 @@ Usage:
          [--interval=<interval>] <deployment-id>
     dcos marathon task list [<app-id>]
     dcos marathon task show <task-id>
+    dcos marathon group add [<group-resource>]
+    dcos marathon group list
+    dcos marathon group show [--group-version=<group-version>] <group-id>
+    dcos marathon group remove [--force] <group-id>
 
 Options:
-    -h, --help                   Show this screen
-    --info                       Show a short description of this subcommand
-    --version                    Show version
-    --force                      This flag disable checks in Marathon during
-                                 update operations
-    --app-version=<app-version>  This flag specifies the application version to
-                                 use for the command. The application version
-                                 (<app-version>) can be specified as an
-                                 absolute value or as relative value. Absolute
-                                 version values must be in ISO8601 date format.
-                                 Relative values must be specified as a
-                                 negative integer and they represent the
-                                 version from the currently deployed
-                                 application definition
-    --config-schema              Show the configuration schema for the Marathon
-                                 subcommand
-    --max-count=<max-count>      Maximum number of entries to try to fetch and
-                                 return
-    --interval=<interval>        Number of seconds to wait between actions
+    -h, --help                       Show this screen
+    --info                           Show a short description of this
+                                     subcommand
+    --version                        Show version
+    --force                          This flag disable checks in Marathon
+                                     during update operations
+    --app-version=<app-version>      This flag specifies the application
+                                     version to use for the command. The
+                                     application version (<app-version>) can be
+                                     specified as an absolute value or as
+                                     relative value. Absolute version values
+                                     must be in ISO8601 date format. Relative
+                                     values must be specified as a negative
+                                     integer and they represent the version
+                                     from the currently deployed application
+                                     definition
+    --group-version=<group-version>  This flag specifies the group version to
+                                     use for the command. The group version
+                                     (<group-version>) can be specified as an
+                                     absolute value or as relative value.
+                                     Absolute version values must be in ISO8601
+                                     date format. Relative values must be
+                                     specified as a negative integer and they
+                                     represent the version from the currently
+                                     deployed group definition
+    --config-schema                  Show the configuration schema for the
+                                     Marathon subcommand
+    --max-count=<max-count>          Maximum number of entries to try to fetch
+                                     and return
+    --interval=<interval>            Number of seconds to wait between actions
 
 Positional arguments:
     <app-id>                    The application id
@@ -58,6 +74,10 @@ Positional arguments:
                                 description see (https://mesosphere.github.io/
                                 marathon/docs/rest-api.html#post-/v2/apps)
     <deployment-id>             The deployment id
+    <group-id>                  The group id
+    <group-resource>            The group resource; for a detailed description
+                                see (https://mesosphere.github.io/marathon/docs
+                                /rest-api.html#post-/v2/groups)
     <instances>                 The number of instances to start
     <properties>                Optional key-value pairs to be included in the
                                 command. The separator between the key and
@@ -111,27 +131,27 @@ def test_empty_list():
 
 
 def test_add_app():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _list_apps('zero-instance-app')
     _remove_app('zero-instance-app')
 
 
 def test_optional_add_app():
     assert_command(['dcos', 'marathon', 'app', 'add',
-                    'tests/data/marathon/zero_instance_sleep.json'])
+                    'tests/data/marathon/apps/zero_instance_sleep.json'])
 
     _list_apps('zero-instance-app')
     _remove_app('zero-instance-app')
 
 
 def test_remove_app():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _remove_app('zero-instance-app')
     _list_apps()
 
 
 def test_add_bad_json_app():
-    with open('tests/data/marathon/bad.json') as fd:
+    with open('tests/data/marathon/apps/bad.json') as fd:
         returncode, stdout, stderr = exec_command(
             ['dcos', 'marathon', 'app', 'add'],
             stdin=fd)
@@ -142,9 +162,9 @@ def test_add_bad_json_app():
 
 
 def test_add_existing_app():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
 
-    with open('tests/data/marathon/zero_instance_sleep_v2.json') as fd:
+    with open('tests/data/marathon/apps/zero_instance_sleep_v2.json') as fd:
         stderr = b"Application '/zero-instance-app' already exists\n"
         assert_command(['dcos', 'marathon', 'app', 'add'],
                        returncode=1,
@@ -155,16 +175,16 @@ def test_add_existing_app():
 
 
 def test_show_app():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _show_app('zero-instance-app')
     _remove_app('zero-instance-app')
 
 
 def test_show_absolute_app_version():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _update_app(
         'zero-instance-app',
-        'tests/data/marathon/update_zero_instance_sleep.json')
+        'tests/data/marathon/apps/update_zero_instance_sleep.json')
 
     result = _show_app('zero-instance-app')
     _show_app('zero-instance-app', result['version'])
@@ -173,19 +193,19 @@ def test_show_absolute_app_version():
 
 
 def test_show_relative_app_version():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _update_app(
         'zero-instance-app',
-        'tests/data/marathon/update_zero_instance_sleep.json')
+        'tests/data/marathon/apps/update_zero_instance_sleep.json')
     _show_app('zero-instance-app', "-1")
     _remove_app('zero-instance-app')
 
 
 def test_show_missing_relative_app_version():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _update_app(
         'zero-instance-app',
-        'tests/data/marathon/update_zero_instance_sleep.json')
+        'tests/data/marathon/apps/update_zero_instance_sleep.json')
 
     stderr = b"Application 'zero-instance-app' only has 2 version(s).\n"
     assert_command(['dcos', 'marathon', 'app', 'show',
@@ -197,10 +217,10 @@ def test_show_missing_relative_app_version():
 
 
 def test_show_missing_absolute_app_version():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _update_app(
         'zero-instance-app',
-        'tests/data/marathon/update_zero_instance_sleep.json')
+        'tests/data/marathon/apps/update_zero_instance_sleep.json')
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'show',
@@ -215,10 +235,10 @@ def test_show_missing_absolute_app_version():
 
 
 def test_show_bad_app_version():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _update_app(
         'zero-instance-app',
-        'tests/data/marathon/update_zero_instance_sleep.json')
+        'tests/data/marathon/apps/update_zero_instance_sleep.json')
 
     stderr = (b'Error: Invalid format: "20:39:32.972Z" is malformed at '
               b'":39:32.972Z"\n')
@@ -232,10 +252,10 @@ def test_show_bad_app_version():
 
 
 def test_show_bad_relative_app_version():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _update_app(
         'zero-instance-app',
-        'tests/data/marathon/update_zero_instance_sleep.json')
+        'tests/data/marathon/apps/update_zero_instance_sleep.json')
 
     assert_command(
         ['dcos', 'marathon', 'app', 'show',
@@ -254,13 +274,13 @@ def test_start_missing_app():
 
 
 def test_start_app():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _start_app('zero-instance-app')
     _remove_app('zero-instance-app')
 
 
 def test_start_already_started_app():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _start_app('zero-instance-app')
 
     stdout = b"Application 'zero-instance-app' already started: 1 instances.\n"
@@ -278,10 +298,10 @@ def test_stop_missing_app():
 
 
 def test_stop_app():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _start_app('zero-instance-app', 3)
-    result = _list_deployments(1, 'zero-instance-app')
-    _watch_deployment(result[0]['id'], 60)
+    result = list_deployments(1, 'zero-instance-app')
+    watch_deployment(result[0]['id'], 60)
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'stop', 'zero-instance-app'])
@@ -294,7 +314,7 @@ def test_stop_app():
 
 
 def test_stop_already_stopped_app():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
 
     stdout = b"Application 'zero-instance-app' already stopped: 0 instances.\n"
     assert_command(['dcos', 'marathon', 'app', 'stop', 'zero-instance-app'],
@@ -311,7 +331,7 @@ def test_update_missing_app():
 
 
 def test_update_missing_field():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'update',
@@ -327,7 +347,7 @@ def test_update_missing_field():
 
 
 def test_update_bad_type():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'update',
@@ -343,7 +363,7 @@ def test_update_bad_type():
 
 
 def test_update_app():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'update', 'zero-instance-app',
@@ -357,16 +377,16 @@ def test_update_app():
 
 
 def test_update_app_from_stdin():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _update_app(
         'zero-instance-app',
-        'tests/data/marathon/update_zero_instance_sleep.json')
+        'tests/data/marathon/apps/update_zero_instance_sleep.json')
 
     _remove_app('zero-instance-app')
 
 
 def test_restarting_stopped_app():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
 
     stdout = (b"Unable to perform rolling restart of application '"
               b"/zero-instance-app' because it has no running tasks\n")
@@ -384,10 +404,10 @@ def test_restarting_missing_app():
 
 
 def test_restarting_app():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _start_app('zero-instance-app', 3)
-    result = _list_deployments(1, 'zero-instance-app')
-    _watch_deployment(result[0]['id'], 60)
+    result = list_deployments(1, 'zero-instance-app')
+    watch_deployment(result[0]['id'], 60)
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'restart', 'zero-instance-app'])
@@ -414,22 +434,22 @@ def test_list_version_negative_max_count():
 
 
 def test_list_version_app():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _list_versions('zero-instance-app', 1)
 
     _update_app(
         'zero-instance-app',
-        'tests/data/marathon/update_zero_instance_sleep.json')
+        'tests/data/marathon/apps/update_zero_instance_sleep.json')
     _list_versions('zero-instance-app', 2)
 
     _remove_app('zero-instance-app')
 
 
 def test_list_version_max_count():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _update_app(
         'zero-instance-app',
-        'tests/data/marathon/update_zero_instance_sleep.json')
+        'tests/data/marathon/apps/update_zero_instance_sleep.json')
 
     _list_versions('zero-instance-app', 1, 1)
     _list_versions('zero-instance-app', 2, 2)
@@ -439,27 +459,27 @@ def test_list_version_max_count():
 
 
 def test_list_empty_deployment():
-    _list_deployments(0)
+    list_deployments(0)
 
 
 def test_list_deployment():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _start_app('zero-instance-app', 3)
-    _list_deployments(1)
+    list_deployments(1)
     _remove_app('zero-instance-app')
 
 
 def test_list_deployment_missing_app():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _start_app('zero-instance-app')
-    _list_deployments(0, 'missing-id')
+    list_deployments(0, 'missing-id')
     _remove_app('zero-instance-app')
 
 
 def test_list_deployment_app():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _start_app('zero-instance-app', 3)
-    _list_deployments(1, 'zero-instance-app')
+    list_deployments(1, 'zero-instance-app')
     _remove_app('zero-instance-app')
 
 
@@ -471,9 +491,9 @@ def test_rollback_missing_deployment():
 
 
 def test_rollback_deployment():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _start_app('zero-instance-app', 3)
-    result = _list_deployments(1, 'zero-instance-app')
+    result = list_deployments(1, 'zero-instance-app')
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'deployment', 'rollback', result[0]['id']])
@@ -485,33 +505,33 @@ def test_rollback_deployment():
     assert 'version' in result
     assert stderr == b''
 
-    _list_deployments(0)
+    list_deployments(0)
 
     _remove_app('zero-instance-app')
 
 
 def test_stop_deployment():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _start_app('zero-instance-app', 3)
-    result = _list_deployments(1, 'zero-instance-app')
+    result = list_deployments(1, 'zero-instance-app')
 
     assert_command(['dcos', 'marathon', 'deployment', 'stop', result[0]['id']])
 
-    _list_deployments(0)
+    list_deployments(0)
 
     _remove_app('zero-instance-app')
 
 
 def test_watching_missing_deployment():
-    _watch_deployment('missing-deployment', 1)
+    watch_deployment('missing-deployment', 1)
 
 
 def test_watching_deployment():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _start_app('zero-instance-app', 3)
-    result = _list_deployments(1, 'zero-instance-app')
-    _watch_deployment(result[0]['id'], 60)
-    _list_deployments(0, 'zero-instance-app')
+    result = list_deployments(1, 'zero-instance-app')
+    watch_deployment(result[0]['id'], 60)
+    list_deployments(0, 'zero-instance-app')
     _remove_app('zero-instance-app')
 
 
@@ -520,34 +540,34 @@ def test_list_empty_task():
 
 
 def test_list_empty_task_not_running_app():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _list_tasks(0)
     _remove_app('zero-instance-app')
 
 
 def test_list_tasks():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _start_app('zero-instance-app', 3)
-    result = _list_deployments(1, 'zero-instance-app')
-    _watch_deployment(result[0]['id'], 60)
+    result = list_deployments(1, 'zero-instance-app')
+    watch_deployment(result[0]['id'], 60)
     _list_tasks(3)
     _remove_app('zero-instance-app')
 
 
 def test_list_app_tasks():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _start_app('zero-instance-app', 3)
-    result = _list_deployments(1, 'zero-instance-app')
-    _watch_deployment(result[0]['id'], 60)
+    result = list_deployments(1, 'zero-instance-app')
+    watch_deployment(result[0]['id'], 60)
     _list_tasks(3, 'zero-instance-app')
     _remove_app('zero-instance-app')
 
 
 def test_list_missing_app_tasks():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _start_app('zero-instance-app', 3)
-    result = _list_deployments(1, 'zero-instance-app')
-    _watch_deployment(result[0]['id'], 60)
+    result = list_deployments(1, 'zero-instance-app')
+    watch_deployment(result[0]['id'], 60)
     _list_tasks(0, 'missing-id')
     _remove_app('zero-instance-app')
 
@@ -565,10 +585,10 @@ def test_show_missing_task():
 
 
 def test_show_task():
-    _add_app('tests/data/marathon/zero_instance_sleep.json')
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _start_app('zero-instance-app', 3)
-    result = _list_deployments(1, 'zero-instance-app')
-    _watch_deployment(result[0]['id'], 60)
+    result = list_deployments(1, 'zero-instance-app')
+    watch_deployment(result[0]['id'], 60)
     result = _list_tasks(3, 'zero-instance-app')
 
     returncode, stdout, stderr = exec_command(
@@ -628,9 +648,9 @@ def _remove_app(app_id):
     assert_command(['dcos', 'marathon', 'app', 'remove', app_id])
 
     # Let's make sure that we don't return until the deployment has finished
-    result = _list_deployments(None, app_id)
+    result = list_deployments(None, app_id)
     if len(result) != 0:
-        _watch_deployment(result[0]['id'], 60)
+        watch_deployment(result[0]['id'], 60)
 
 
 def _add_app(file_path):
@@ -693,32 +713,6 @@ def _list_versions(app_id, expected_count, max_count=None):
     assert returncode == 0
     assert isinstance(result, list)
     assert len(result) == expected_count
-    assert stderr == b''
-
-
-def _list_deployments(expected_count, app_id=None):
-    cmd = ['dcos', 'marathon', 'deployment', 'list']
-    if app_id is not None:
-        cmd.append(app_id)
-
-    returncode, stdout, stderr = exec_command(cmd)
-
-    result = json.loads(stdout.decode('utf-8'))
-
-    assert returncode == 0
-    if expected_count is not None:
-        assert len(result) == expected_count
-    assert stderr == b''
-
-    return result
-
-
-def _watch_deployment(deployment_id, count):
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'deployment', 'watch',
-            '--max-count={}'.format(count), deployment_id])
-
-    assert returncode == 0
     assert stderr == b''
 
 

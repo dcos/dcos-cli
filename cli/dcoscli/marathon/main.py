@@ -20,27 +20,42 @@ Usage:
          [--interval=<interval>] <deployment-id>
     dcos marathon task list [<app-id>]
     dcos marathon task show <task-id>
+    dcos marathon group add [<group-resource>]
+    dcos marathon group list
+    dcos marathon group show [--group-version=<group-version>] <group-id>
+    dcos marathon group remove [--force] <group-id>
 
 Options:
-    -h, --help                   Show this screen
-    --info                       Show a short description of this subcommand
-    --version                    Show version
-    --force                      This flag disable checks in Marathon during
-                                 update operations
-    --app-version=<app-version>  This flag specifies the application version to
-                                 use for the command. The application version
-                                 (<app-version>) can be specified as an
-                                 absolute value or as relative value. Absolute
-                                 version values must be in ISO8601 date format.
-                                 Relative values must be specified as a
-                                 negative integer and they represent the
-                                 version from the currently deployed
-                                 application definition
-    --config-schema              Show the configuration schema for the Marathon
-                                 subcommand
-    --max-count=<max-count>      Maximum number of entries to try to fetch and
-                                 return
-    --interval=<interval>        Number of seconds to wait between actions
+    -h, --help                       Show this screen
+    --info                           Show a short description of this
+                                     subcommand
+    --version                        Show version
+    --force                          This flag disable checks in Marathon
+                                     during update operations
+    --app-version=<app-version>      This flag specifies the application
+                                     version to use for the command. The
+                                     application version (<app-version>) can be
+                                     specified as an absolute value or as
+                                     relative value. Absolute version values
+                                     must be in ISO8601 date format. Relative
+                                     values must be specified as a negative
+                                     integer and they represent the version
+                                     from the currently deployed application
+                                     definition
+    --group-version=<group-version>  This flag specifies the group version to
+                                     use for the command. The group version
+                                     (<group-version>) can be specified as an
+                                     absolute value or as relative value.
+                                     Absolute version values must be in ISO8601
+                                     date format. Relative values must be
+                                     specified as a negative integer and they
+                                     represent the version from the currently
+                                     deployed group definition
+    --config-schema                  Show the configuration schema for the
+                                     Marathon subcommand
+    --max-count=<max-count>          Maximum number of entries to try to fetch
+                                     and return
+    --interval=<interval>            Number of seconds to wait between actions
 
 Positional arguments:
     <app-id>                    The application id
@@ -48,6 +63,10 @@ Positional arguments:
                                 description see (https://mesosphere.github.io/
                                 marathon/docs/rest-api.html#post-/v2/apps)
     <deployment-id>             The deployment id
+    <group-id>                  The group id
+    <group-resource>            The group resource; for a detailed description
+                                see (https://mesosphere.github.io/marathon/docs
+                                /rest-api.html#post-/v2/groups)
     <instances>                 The number of instances to start
     <properties>                Optional key-value pairs to be included in the
                                 command. The separator between the key and
@@ -169,6 +188,26 @@ def _cmds():
             function=_restart),
 
         cmds.Command(
+            hierarchy=['marathon', 'group', 'add'],
+            arg_keys=['<group-resource>'],
+            function=_group_add),
+
+        cmds.Command(
+            hierarchy=['marathon', 'group', 'list'],
+            arg_keys=[],
+            function=_group_list),
+
+        cmds.Command(
+            hierarchy=['marathon', 'group', 'show'],
+            arg_keys=['<group-id>', '--group-version'],
+            function=_group_show),
+
+        cmds.Command(
+            hierarchy=['marathon', 'group', 'remove'],
+            arg_keys=['<group-id>', '--force'],
+            function=_group_remove),
+
+        cmds.Command(
             hierarchy=['marathon', 'about'],
             arg_keys=[],
             function=_about),
@@ -191,10 +230,7 @@ def _marathon(config_schema, info):
     """
 
     if config_schema:
-        schema = json.loads(
-            pkg_resources.resource_string(
-                'dcoscli',
-                'data/config-schema/marathon.json').decode('utf-8'))
+        schema = _cli_config_schema()
         emitter.publish(schema)
     elif info:
         _info()
@@ -227,6 +263,29 @@ def _about():
     return 0
 
 
+def _get_resource(resource):
+    """
+    :param resource: optional filename for the application or group resource
+    :type resource: str
+    :returns: resource
+    :rtype: dict
+    """
+    if resource is not None:
+        with open(resource) as fd:
+            return util.load_json(fd)
+
+    # Check that stdin is not tty
+    if sys.stdin.isatty():
+        # We don't support TTY right now. In the future we will start an
+        # editor
+        raise DCOSException(
+            "We currently don't support reading from the TTY. Please "
+            "specify an application JSON.\n"
+            "Usage: dcos app add < app_resource.json")
+
+    return util.load_json(sys.stdin)
+
+
 def _add(app_resource):
     """
     :param app_resource: optional filename for the application resource
@@ -234,26 +293,8 @@ def _add(app_resource):
     :returns: Process status
     :rtype: int
     """
-
-    if app_resource is not None:
-        with open(app_resource) as fd:
-            application_resource = util.load_json(fd)
-    else:
-        # Check that stdin is not tty
-        if sys.stdin.isatty():
-            # We don't support TTY right now. In the future we will start an
-            # editor
-            raise DCOSException(
-                "We currently don't support reading from the TTY. Please "
-                "specify an application JSON.\n"
-                "Usage: dcos app add < app_resource.json")
-
-        application_resource = util.load_json(sys.stdin)
-
-    schema = json.loads(
-        pkg_resources.resource_string(
-            'dcoscli',
-            'data/marathon-schema.json').decode('utf-8'))
+    application_resource = _get_resource(app_resource)
+    schema = _app_schema()
 
     errs = util.validate_json(application_resource, schema)
     if errs:
@@ -290,6 +331,51 @@ def _list():
     return 0
 
 
+def _group_list():
+    """
+    :returns: process status
+    :rtype: int
+    """
+
+    client = marathon.create_client()
+    groups = client.get_groups()
+
+    emitter.publish(groups)
+    return 0
+
+
+def _group_add(group_resource):
+    """
+    :param group_resource: optional filename for the group resource
+    :type group_resource: str
+    :returns: Process status
+    :rtype: int
+    """
+
+    group_resource = _get_resource(group_resource)
+    schema = _data_schema()
+
+    errs = util.validate_json(group_resource, schema)
+    if errs:
+        raise DCOSException(util.list_to_err(errs))
+
+    client = marathon.create_client()
+
+    # Check that the group doesn't exist
+    group_id = client.normalize_app_id(group_resource['id'])
+
+    try:
+        client.get_group(group_id)
+    except DCOSException as e:
+        logger.exception(e)
+    else:
+        raise DCOSException("Group '{}' already exists".format(group_id))
+
+    client.create_group(group_resource)
+
+    return 0
+
+
 def _remove(app_id, force):
     """
     :param app_id: ID of the app to remove
@@ -302,6 +388,21 @@ def _remove(app_id, force):
 
     client = marathon.create_client()
     client.remove_app(app_id, force)
+    return 0
+
+
+def _group_remove(group_id, force):
+    """
+    :param group_id: ID of the app to remove
+    :type group_id: str
+    :param force: Whether to override running deployments.
+    :type force: bool
+    :returns: Process status
+    :rtype: int
+    """
+
+    client = marathon.create_client()
+    client.remove_group(group_id, force)
     return 0
 
 
@@ -322,6 +423,25 @@ def _show(app_id, version):
         version = _calculate_version(client, app_id, version)
 
     app = client.get_app(app_id, version=version)
+
+    emitter.publish(app)
+    return 0
+
+
+def _group_show(group_id, version=None):
+    """Show details of a Marathon application.
+
+    :param group_id: The id for the application
+    :type group_id: str
+    :param version: The version, either absolute (date-time) or relative
+    :type version: str
+    :returns: Process status
+    :rtype: int
+    """
+
+    client = marathon.create_client()
+
+    app = client.get_group(group_id, version=version)
 
     emitter.publish(app)
     return 0
@@ -352,10 +472,7 @@ def _start(app_id, instances, force):
                 desc['instances']))
         return 1
 
-    schema = json.loads(
-        pkg_resources.resource_string(
-            'dcoscli',
-            'data/marathon-schema.json').decode('utf-8'))
+    schema = _app_schema()
 
     # Need to add the 'id' because it is required
     app_json = {'id': app_id}
@@ -443,10 +560,7 @@ def _update(app_id, json_items, force):
         else:
             return _update_from_stdin(app_id, force)
 
-    schema = json.loads(
-        pkg_resources.resource_string(
-            'dcoscli',
-            'data/marathon-schema.json').decode('utf-8'))
+    schema = _app_schema()
 
     # Need to add the 'id' because it is required
     app_json = {'id': app_id}
@@ -684,6 +798,37 @@ def _calculate_version(client, app_id, version):
                 raise DCOSException(msg.format(app_id, len(versions), value))
             else:
                 return versions[value]
+
         else:
             raise DCOSException(
                 'Relative versions must be negative: {}'.format(version))
+
+
+def _cli_config_schema():
+    """
+    :returns: schema for marathon cli config
+    :rtype: dict
+    """
+    return json.loads(
+        pkg_resources.resource_string(
+            'dcoscli',
+            'data/config-schema/marathon.json').decode('utf-8'))
+
+
+def _data_schema():
+    """
+    :returns: schema for marathon data
+    :rtype: dict
+    """
+    return json.loads(
+        pkg_resources.resource_string(
+            'dcoscli',
+            'data/marathon-group-schema.json').decode('utf-8'))
+
+
+def _app_schema():
+    """
+    :returns: schema for apps
+    :rtype: dict
+    """
+    return _data_schema()['definitions']['app']
