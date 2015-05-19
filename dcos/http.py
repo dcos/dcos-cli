@@ -31,6 +31,7 @@ def _default_to_error(response):
     return DefaultError('{}: {}'.format(response.status_code, response.text))
 
 
+@util.duration
 def request(method,
             url,
             timeout=3.0,

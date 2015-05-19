@@ -1,5 +1,3 @@
-import collections
-import json
 import time
 
 import dcos.util as util
@@ -8,7 +6,14 @@ from dcos.util import create_schema
 from dcoscli.service.main import _service_table
 
 import pytest
-from common import assert_command, exec_command, watch_all_deployments
+from common import (assert_command, delete_zk_nodes, exec_command,
+                    get_services, service_shutdown, watch_all_deployments)
+
+
+@pytest.fixture(scope="module")
+def zk_znode(request):
+    request.addfinalizer(delete_zk_nodes)
+    return request
 
 
 @pytest.fixture
@@ -60,6 +65,7 @@ def test_help():
 Usage:
     dcos service --info
     dcos service [--inactive --json]
+    dcos service shutdown <service-id>
 
 Options:
     -h, --help    Show this screen
@@ -73,6 +79,9 @@ Options:
                   master, but haven't yet reached their failover timeout.
 
     --version     Show version
+
+Positional Arguments:
+    <service-id>  The ID for the DCOS Service
 """
     assert_command(['dcos', 'service', '--help'], stdout=stdout)
 
@@ -85,7 +94,7 @@ def test_info():
 def test_service(service):
     returncode, stdout, stderr = exec_command(['dcos', 'service', '--json'])
 
-    services = _get_services(1)
+    services = get_services(1)
 
     schema = _get_schema(service)
     for srv in services:
@@ -103,19 +112,20 @@ def _get_schema(service):
     return schema
 
 
-def test_service_inactive():
+def test_service_inactive(zk_znode):
     # install cassandra
-    stdout = b"""Installing package [cassandra] version \
-[0.1.0-SNAPSHOT-447-master-3ad1bbf8f7]
-The Apache Cassandra DCOS Service implementation is alpha and there may \
-be bugs, incomplete features, incorrect documentation or other discrepancies.
-In order for Cassandra to start successfully, all resources must be \
-available in the cluster, including ports, CPU shares, RAM and disk.
+    stdout = b"""The Apache Cassandra DCOS Service implementation is alpha \
+and there may be bugs, incomplete features, incorrect documentation or other \
+discrepancies.
+The default configuration requires 3 nodes each with 0.3 CPU shares, 1184MB \
+of memory and 272MB of disk.
+Installing package [cassandra] version [0.1.0-SNAPSHOT-447-master-3ad1bbf8f7]
+Thank you for installing the Apache Cassandra DCOS Service.
 
 \tDocumentation: http://mesosphere.github.io/cassandra-mesos/
 \tIssues: https://github.com/mesosphere/cassandra-mesos/issues
 """
-    assert_command(['dcos', 'package', 'install', 'cassandra'],
+    assert_command(['dcos', 'package', 'install', 'cassandra', '--yes'],
                    stdout=stdout)
 
     # wait for it to deploy
@@ -125,11 +135,10 @@ available in the cluster, including ports, CPU shares, RAM and disk.
     time.sleep(5)
 
     # assert marathon and cassandra are listed
-    _get_services(2)
+    get_services(2)
 
-    # uninstall cassandra.  For now, need to explicitly remove the
-    # group that is left by cassandra.  See MARATHON-144
-    assert_command(['dcos', 'package', 'uninstall', 'cassandra'])
+    # uninstall cassandra using marathon. For now, need to explicitly remove
+    # the group that is left by cassandra.  See MARATHON-144
     assert_command(['dcos', 'marathon', 'group', 'remove', '/cassandra'])
 
     watch_all_deployments(300)
@@ -139,10 +148,18 @@ available in the cluster, including ports, CPU shares, RAM and disk.
     time.sleep(5)
 
     # assert only marathon is active
-    _get_services(1)
+    get_services(1)
     # assert marathon and cassandra are listed with --inactive
-    services = _get_services(None, ['--inactive'])
+    services = get_services(None, ['--inactive'])
     assert len(services) >= 2
+
+    # shutdown the cassandra framework
+    for framework in get_services(args=['--inactive']):
+        if framework['name'] == 'cassandra.dcos':
+            service_shutdown(framework['id'])
+
+    # assert marathon is only listed with --inactive
+    get_services(1, ['--inactive'])
 
 
 # not an integration test
@@ -155,29 +172,3 @@ def test_task_table(service):
  marathon  mesos.vm   True     0    0.2   32   0    \
 20150502-231327-16842879-5050-3889-0000 """
     assert str(table) == stdout
-
-
-def _get_services(expected_count=None, args=[]):
-    """Get services
-
-    :param expected_count: assert exactly this number of services are
-        running
-    :type expected_count: int
-    :param args: cli arguments
-    :type args: [str]
-    :returns: services
-    :rtype: [dict]
-    """
-
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'service', '--json'] + args)
-
-    assert returncode == 0
-    assert stderr == b''
-
-    services = json.loads(stdout.decode('utf-8'))
-    assert isinstance(services, collections.Sequence)
-    if expected_count is not None:
-        assert len(services) == expected_count
-
-    return services

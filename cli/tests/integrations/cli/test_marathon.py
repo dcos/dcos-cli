@@ -68,7 +68,7 @@ Options:
                                      and return
     --interval=<interval>            Number of seconds to wait between actions
 
-Positional arguments:
+Positional Arguments:
     <app-id>                    The application id
     <app-resource>              The application resource; for a detailed
                                 description see (https://mesosphere.github.io/

@@ -4,7 +4,15 @@ import os
 import six
 from dcos import subcommand
 
-from common import assert_command, exec_command
+import pytest
+from common import (assert_command, delete_zk_nodes, exec_command,
+                    get_services, service_shutdown, watch_all_deployments)
+
+
+@pytest.fixture(scope="module")
+def zk_znode(request):
+    request.addfinalizer(delete_zk_nodes)
+    return request
 
 
 def test_package():
@@ -120,8 +128,23 @@ icon-service-marathon-medium.png",
     "icon-small": "https://downloads.mesosphere.io/marathon/assets/\
 icon-service-marathon-small.png"
   },
+  "licenses": [
+    {
+      "name": "Apache License Version 2.0",
+      "url": "https://github.com/mesosphere/marathon/blob/master/LICENSE"
+    }
+  ],
   "maintainer": "support@mesosphere.io",
   "name": "marathon",
+  "postInstallNotes": "Marathon DCOS Service has been successfully \
+installed!\\n\\n\\tDocumentation: https://\
+mesosphere.github.io/marathon\\n\\tIssues: https:/github.com/mesosphere/\
+marathon/issues\\n",
+  "postUninstallNotes": "The Marathon DCOS Service has been uninstalled and \
+will no longer run.\\nPlease follow the instructions at http://beta-docs.\
+mesosphere.com/services/marathon/#uninstall to clean up any persisted state",
+  "preInstallNotes": "We recommend a minimum of one node with at least 2 \
+CPU's and 1GB of RAM available for the Marathon Service.",
   "scm": "https://github.com/mesosphere/marathon.git",
   "tags": [
     "mesosphere",
@@ -183,7 +206,10 @@ marathon-user       --http_port $PORT0 ",
       },
       "type": "DOCKER"
     },
-    "cpus": 1.0,
+    "cpus": 2.0,
+    "env": {
+      "JVM_OPTS": "-Xms256m -Xmx768m"
+    },
     "id": "marathon-user",
     "instances": 1,
     "labels": {
@@ -196,17 +222,29 @@ RwczovL2Rvd25sb2Fkcy5tZXNvc3BoZXJlLmlvL21hcmF0aG9uL2Fzc2V0cy9pY29uLXNlcnZpY2Ut\
 bWFyYXRob24tbGFyZ2UucG5nIiwgImljb24tbWVkaXVtIjogImh0dHBzOi8vZG93bmxvYWRzLm1lc2\
 9zcGhlcmUuaW8vbWFyYXRob24vYXNzZXRzL2ljb24tc2VydmljZS1tYXJhdGhvbi1tZWRpdW0ucG5n\
 IiwgImljb24tc21hbGwiOiAiaHR0cHM6Ly9kb3dubG9hZHMubWVzb3NwaGVyZS5pby9tYXJhdGhvbi\
-9hc3NldHMvaWNvbi1zZXJ2aWNlLW1hcmF0aG9uLXNtYWxsLnBuZyJ9LCAibWFpbnRhaW5lciI6ICJz\
-dXBwb3J0QG1lc29zcGhlcmUuaW8iLCAibmFtZSI6ICJtYXJhdGhvbiIsICJzY20iOiAiaHR0cHM6Ly\
-9naXRodWIuY29tL21lc29zcGhlcmUvbWFyYXRob24uZ2l0IiwgInRhZ3MiOiBbIm1lc29zcGhlcmUi\
-LCAiZnJhbWV3b3JrIl0sICJ2ZXJzaW9uIjogIjAuOC4xIn0=",
+9hc3NldHMvaWNvbi1zZXJ2aWNlLW1hcmF0aG9uLXNtYWxsLnBuZyJ9LCAibGljZW5zZXMiOiBbeyJu\
+YW1lIjogIkFwYWNoZSBMaWNlbnNlIFZlcnNpb24gMi4wIiwgInVybCI6ICJodHRwczovL2dpdGh1Yi\
+5jb20vbWVzb3NwaGVyZS9tYXJhdGhvbi9ibG9iL21hc3Rlci9MSUNFTlNFIn1dLCAibWFpbnRhaW5l\
+ciI6ICJzdXBwb3J0QG1lc29zcGhlcmUuaW8iLCAibmFtZSI6ICJtYXJhdGhvbiIsICJwb3N0SW5zdG\
+FsbE5vdGVzIjogIk1hcmF0aG9uIERDT1MgU2VydmljZSBoYXMgYmVlbiBzdWNjZXNzZnVsbHkgaW5z\
+dGFsbGVkIVxuXG5cdERvY3VtZW50YXRpb246IGh0dHBzOi8vbWVzb3NwaGVyZS5naXRodWIuaW8vbW\
+FyYXRob25cblx0SXNzdWVzOiBodHRwczovZ2l0aHViLmNvbS9tZXNvc3BoZXJlL21hcmF0aG9uL2lz\
+c3Vlc1xuIiwgInBvc3RVbmluc3RhbGxOb3RlcyI6ICJUaGUgTWFyYXRob24gRENPUyBTZXJ2aWNlIG\
+hhcyBiZWVuIHVuaW5zdGFsbGVkIGFuZCB3aWxsIG5vIGxvbmdlciBydW4uXG5QbGVhc2UgZm9sbG93\
+IHRoZSBpbnN0cnVjdGlvbnMgYXQgaHR0cDovL2JldGEtZG9jcy5tZXNvc3BoZXJlLmNvbS9zZXJ2aW\
+Nlcy9tYXJhdGhvbi8jdW5pbnN0YWxsIHRvIGNsZWFuIHVwIGFueSBwZXJzaXN0ZWQgc3RhdGUiLCAi\
+cHJlSW5zdGFsbE5vdGVzIjogIldlIHJlY29tbWVuZCBhIG1pbmltdW0gb2Ygb25lIG5vZGUgd2l0aC\
+BhdCBsZWFzdCAyIENQVSdzIGFuZCAxR0Igb2YgUkFNIGF2YWlsYWJsZSBmb3IgdGhlIE1hcmF0aG9u\
+IFNlcnZpY2UuIiwgInNjbSI6ICJodHRwczovL2dpdGh1Yi5jb20vbWVzb3NwaGVyZS9tYXJhdGhvbi\
+5naXQiLCAidGFncyI6IFsibWVzb3NwaGVyZSIsICJmcmFtZXdvcmsiXSwgInZlcnNpb24iOiAiMC44\
+LjEifQ==",
       "DCOS_PACKAGE_NAME": "marathon",
       "DCOS_PACKAGE_REGISTRY_VERSION": "0.1.0-alpha",
       "DCOS_PACKAGE_RELEASE": "0",
       "DCOS_PACKAGE_SOURCE": "git://github.com/mesosphere/universe.git",
       "DCOS_PACKAGE_VERSION": "0.8.1"
     },
-    "mem": 512.0,
+    "mem": 1024.0,
     "ports": [
       0,
       0
@@ -224,8 +262,23 @@ icon-service-marathon-medium.png",
     "icon-small": "https://downloads.mesosphere.io/marathon/assets/\
 icon-service-marathon-small.png"
   },
+  "licenses": [
+    {
+      "name": "Apache License Version 2.0",
+      "url": "https://github.com/mesosphere/marathon/blob/master/LICENSE"
+    }
+  ],
   "maintainer": "support@mesosphere.io",
   "name": "marathon",
+  "postInstallNotes": "Marathon DCOS Service has been successfully \
+installed!\\n\\n\\tDocumentation: https://\
+mesosphere.github.io/marathon\\n\\tIssues: https:/github.com/mesosphere/\
+marathon/issues\\n",
+  "postUninstallNotes": "The Marathon DCOS Service has been uninstalled and \
+will no longer run.\\nPlease follow the instructions at http://beta-docs.\
+mesosphere.com/services/marathon/#uninstall to clean up any persisted state",
+  "preInstallNotes": "We recommend a minimum of one node with at least 2 \
+CPU's and 1GB of RAM available for the Marathon Service.",
   "scm": "https://github.com/mesosphere/marathon.git",
   "tags": [
     "mesosphere",
@@ -258,17 +311,22 @@ Please create a JSON file with the appropriate options, and pass the \
                      postInstallNotes=b'')
 
 
-def test_install():
+def test_install(zk_znode):
     _install_chronos()
+    watch_all_deployments()
     _uninstall_chronos()
+    get_services(expected_count=1, args=['--inactive'])
 
 
 def test_install_missing_options_file():
     """Test that a missing options file results in the expected stderr
     message."""
     assert_command(
-        ['dcos', 'package', 'install', 'chronos', '--options=asdf.json'],
+        ['dcos', 'package', 'install', 'chronos', '--yes',
+         '--options=asdf.json'],
         returncode=1,
+        stdout=b'We recommend a minimum of one node with at least 1 CPU and '
+               b'2GB of RAM available for the Chronos Service.\n',
         stderr=b"No such file: asdf.json\n")
 
 
@@ -300,7 +358,7 @@ CJdfQ=="""
         'DCOS_PACKAGE_RELEASE': b'0',
     }
 
-    app_labels = get_app_labels('helloworld')
+    app_labels = _get_app_labels('helloworld')
 
     for label, value in expected_labels.items():
         assert value == six.b(app_labels.get(label))
@@ -338,15 +396,15 @@ CJdfQ=="""
     _uninstall_helloworld()
 
 
-def test_install_with_id():
+def test_install_with_id(zk_znode):
     args = ['--app-id=chronos-1', '--yes']
-    stdout = (b"""Installing package [chronos] version [2.3.4] with app """
-              b"""id [chronos-1]\n""")
+    stdout = (b'Installing package [chronos] version [2.3.4] with app id '
+              b'[chronos-1]\n')
     _install_chronos(args=args, stdout=stdout)
 
     args = ['--app-id=chronos-2', '--yes']
-    stdout = (b"""Installing package [chronos] version [2.3.4] with app """
-              b"""id [chronos-2]\n""")
+    stdout = (b'Installing package [chronos] version [2.3.4] with app id '
+              b'[chronos-2]\n')
     _install_chronos(args=args, stdout=stdout)
 
 
@@ -359,19 +417,20 @@ You may need to run 'dcos package update' to update your repositories
                    stderr=stderr)
 
 
-def test_uninstall_with_id():
+def test_uninstall_with_id(zk_znode):
     _uninstall_chronos(args=['--app-id=chronos-1'])
 
 
-def test_uninstall_all():
+def test_uninstall_all(zk_znode):
     _uninstall_chronos(args=['--all'])
+    get_services(expected_count=1, args=['--inactive'])
 
 
 def test_uninstall_missing():
-    stderr = b'Package [chronos] is not installed.\n'
+    stderr = 'Package [chronos] is not installed.\n'
     _uninstall_chronos(returncode=1, stderr=stderr)
 
-    stderr = b'Package [chronos] with id [chronos-1] is not installed.\n'
+    stderr = 'Package [chronos] with id [chronos-1] is not installed.\n'
     _uninstall_chronos(
         args=['--app-id=chronos-1'],
         returncode=1,
@@ -417,7 +476,7 @@ def test_uninstall_cli():
     _uninstall_helloworld()
 
 
-def test_list_installed():
+def test_list_installed(zk_znode):
     assert_command(['dcos', 'package', 'list-installed'],
                    stdout=b'[]\n')
 
@@ -446,14 +505,23 @@ service-chronos-medium.png",
       "icon-small": "https://downloads.mesosphere.io/chronos/assets/icon-\
 service-chronos-small.png"
     },
+    "licenses": [
+      {
+        "name": "Apache License Version 2.0",
+        "url": "https://github.com/mesos/chronos/blob/master/LICENSE"
+      }
+    ],
     "maintainer": "support@mesosphere.io",
     "name": "chronos",
     "packageSource": "git://github.com/mesosphere/universe.git",
     "postInstallNotes": "Chronos DCOS Service has been successfully installed!\
-\\nWe recommend a minimum of one node with at least 1 CPU and 2GB of RAM \
-available for the Chronos Service.\\n\\n\\tDocumentation: \
-http://mesos.github.io/chronos\\n\\tIssues: https://github.com/mesos/\
-chronos/issues",
+\\n\\n\\tDocumentation: http://mesos.github.io/chronos\\n\\tIssues: https://\
+github.com/mesos/chronos/issues",
+    "postUninstallNotes": "The Chronos DCOS Service has been uninstalled and \
+will no longer run.\\nPlease follow the instructions at http://beta-docs.\
+mesosphere.com/services/chronos/#uninstall to clean up any persisted state",
+    "preInstallNotes": "We recommend a minimum of one node with at least 1 \
+CPU and 2GB of RAM available for the Chronos Service.",
     "releaseVersion": "0",
     "scm": "https://github.com/mesos/chronos.git",
     "tags": [
@@ -570,6 +638,30 @@ def test_list_installed_cli():
     _uninstall_helloworld()
 
 
+def test_uninstall_multiple_frameworknames(zk_znode):
+    _install_chronos(
+        args=['--yes', '--options=tests/data/package/chronos-1.json'])
+    _install_chronos(
+        args=['--yes', '--options=tests/data/package/chronos-2.json'])
+
+    watch_all_deployments()
+
+    _uninstall_chronos(
+        args=['--app-id=chronos-user-1'],
+        returncode=1,
+        stderr='Unable to shutdown the framework for [chronos-user] because '
+               'there are multiple frameworks with the same name: ')
+    _uninstall_chronos(
+        args=['--app-id=chronos-user-2'],
+        returncode=1,
+        stderr='Unable to shutdown the framework for [chronos-user] because '
+               'there are multiple frameworks with the same name: ')
+
+    for framework in get_services(args=['--inactive']):
+        if framework['name'] == 'chronos-user':
+            service_shutdown(framework['id'])
+
+
 def test_search():
     returncode, stdout, stderr = exec_command(
         ['dcos',
@@ -607,7 +699,7 @@ def test_search():
     assert stderr == b''
 
 
-def get_app_labels(app_id):
+def _get_app_labels(app_id):
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'show', app_id])
 
@@ -635,9 +727,13 @@ def _uninstall_helloworld(args=[]):
     assert_command(['dcos', 'package', 'uninstall', 'helloworld'] + args)
 
 
-def _uninstall_chronos(args=[], returncode=0, stdout=b'', stderr=b''):
-    cmd = ['dcos', 'package', 'uninstall', 'chronos'] + args
-    assert_command(cmd, returncode, stdout, stderr)
+def _uninstall_chronos(args=[], returncode=0, stdout=b'', stderr=''):
+    result_returncode, result_stdout, result_stderr = exec_command(
+        ['dcos', 'package', 'uninstall', 'chronos'] + args)
+
+    assert result_returncode == returncode
+    assert result_stdout == stdout
+    assert result_stderr.decode('utf-8').startswith(stderr)
 
 
 def _install_chronos(
@@ -645,10 +741,11 @@ def _install_chronos(
         returncode=0,
         stdout=b'Installing package [chronos] version [2.3.4]\n',
         stderr=b'',
+        preInstallNotes=b'We recommend a minimum of one node with at least 1 '
+                        b'CPU and 2GB of RAM available for the Chronos '
+                        b'Service.\n',
         postInstallNotes=b'Chronos DCOS Service has been successfully '
-                         b'installed!\nWe recommend a minimum of one node '
-                         b'with at least 1 CPU and 2GB of RAM available for '
-                         b'''the Chronos Service.
+                         b'''installed!
 
 \tDocumentation: http://mesos.github.io/chronos
 \tIssues: https://github.com/mesos/chronos/issues\n''',
@@ -658,6 +755,6 @@ def _install_chronos(
     assert_command(
         cmd,
         returncode,
-        stdout + postInstallNotes,
+        preInstallNotes + stdout + postInstallNotes,
         stderr,
         stdin=stdin)

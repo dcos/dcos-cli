@@ -1,8 +1,7 @@
 import fnmatch
 import itertools
 
-import dcos.http
-from dcos import util
+from dcos import http, util
 from dcos.errors import DCOSException
 
 from six.moves import urllib
@@ -11,23 +10,43 @@ logger = util.get_logger(__name__)
 
 
 def get_master(config=None):
-    """Create a MesosMaster object using the url stored in the
-    'core.master' property of the user's config.
+    """Create a Master object using the URLs stored in the user's
+    configuration.
 
     :param config: config
     :type config: Toml
-    :returns: MesosMaster object
-    :rtype: MesosMaster
-
+    :returns: master state object
+    :rtype: Master
     """
+
+    return Master(get_master_client(config).get_state())
+
+
+def get_master_client(config=None):
+    """Create a Mesos master client using the URLs stored in the user's
+    configuration.
+
+    :param config: config
+    :type config: Toml
+    :returns: mesos master client
+    :rtype: MasterClient
+    """
+
     if config is None:
         config = util.get_config()
 
-    mesos_url = get_mesos_url(config)
-    return MesosMaster(mesos_url)
+    mesos_url = _get_mesos_url(config)
+    return MasterClient(mesos_url)
 
 
-def get_mesos_url(config):
+def _get_mesos_url(config):
+    """
+    :param config: configuration
+    :type config: Toml
+    :returns: url for the Mesos master
+    :rtype: str
+    """
+
     mesos_master_url = config.get('core.mesos_master_url')
     if mesos_master_url is None:
         dcos_url = util.get_config_vals(config, ['core.dcos_url'])[0]
@@ -36,30 +55,65 @@ def get_mesos_url(config):
         return mesos_master_url
 
 
-MESOS_TIMEOUT = 3
+class MasterClient:
+    """Client for communicating with the Mesos master
 
-
-class MesosMaster(object):
-    """Mesos Master Model
-
-    :param url: master url (e.g. "http://localhost:5050")
+    :param url: URL for the Mesos master
     :type url: str
     """
 
     def __init__(self, url):
-        self._url = url
-        self._state = None
+        self._base_url = url
+
+    def _create_url(self, path):
+        """Creates the url from the provided path.
+
+        :param path: url path
+        :type path: str
+        :returns: constructed url
+        :rtype: str
+        """
+
+        return urllib.parse.urljoin(self._base_url, path)
+
+    def get_state(self):
+        """Get the Mesos master state json object
+
+        :returns: Mesos' master state json object
+        :rtype: dict
+        """
+
+        return http.get(self._create_url('master/state.json')).json()
+
+    def shutdown_framework(self, framework_id):
+        """Shuts down a Mesos framework
+
+        :returns: None
+        """
+
+        logger.info('Shutting down framework {}'.format(framework_id))
+
+        data = 'frameworkId={}'.format(framework_id)
+        http.post(self._create_url('master/shutdown'), data=data)
+
+
+class Master(object):
+    """Mesos Master Model
+
+    :param state: Mesos master state json
+    :type state: dict
+    """
+
+    def __init__(self, state):
+        self._state = state
 
     def state(self):
-        """Returns master's /master/state.json.  Fetches and saves it if we
-        haven't already.
+        """Returns master's master/state.json.
 
         :returns: state.json
         :rtype: dict
         """
 
-        if not self._state:
-            self._state = self.fetch('master/state.json').json()
         return self._state
 
     def slave(self, fltr):
@@ -70,7 +124,7 @@ class MesosMaster(object):
         :param fltr: filter string
         :type fltr: str
         :returns: the slave that has `fltr` in its id
-        :rtype: MesosSlave
+        :rtype: Slave
         """
 
         slaves = self.slaves(fltr)
@@ -93,10 +147,10 @@ class MesosMaster(object):
         :param fltr: filter string
         :type fltr: str
         :returns: Those slaves that have `fltr` in their 'id'
-        :rtype: [MesosSlave]
+        :rtype: [Slave]
         """
 
-        return [MesosSlave(slave)
+        return [Slave(slave)
                 for slave in self.state()['slaves']
                 if fltr in slave['id']]
 
@@ -198,25 +252,8 @@ class MesosMaster(object):
             if inactive or framework['active']:
                 yield framework
 
-    @util.duration
-    def fetch(self, path, **kwargs):
-        """GET the resource located at `path`
 
-        :param path: the URL path
-        :type path: str
-        :param **kwargs: requests.get kwargs
-        :type **kwargs: dict
-        :returns: the response object
-        :rtype: Response
-        """
-
-        url = urllib.parse.urljoin(self._url, path)
-        return dcos.http.get(url,
-                             timeout=MESOS_TIMEOUT,
-                             **kwargs)
-
-
-class MesosSlave(object):
+class Slave(object):
     """Mesos Slave Model
 
     :param slave: dictionary representing the slave.
@@ -256,7 +293,7 @@ class Task(object):
     :param task: task properties
     :type task: dict
     :param master: mesos master
-    :type master: MesosMaster
+    :type master: Master
     """
 
     def __init__(self, task, master):

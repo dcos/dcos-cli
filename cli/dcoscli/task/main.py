@@ -120,8 +120,8 @@ def _task(fltr, completed, is_json):
     :type fltr: str
     :param completed: If True, include completed tasks
     :type completed: bool
-    :param is_json: If true, output json.
-        Otherwise, output a human readable table.
+    :param is_json: If True, output json. Otherwise, output a human readable
+                    table.
     :type is_json: bool
     :returns: process return code
     """
@@ -129,8 +129,7 @@ def _task(fltr, completed, is_json):
     if fltr is None:
         fltr = ""
 
-    master = mesos.get_master()
-    tasks = sorted(master.tasks(completed=completed, fltr=fltr),
+    tasks = sorted(mesos.get_master().tasks(completed=completed, fltr=fltr),
                    key=lambda task: task['name'])
 
     if is_json:

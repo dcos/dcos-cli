@@ -1,5 +1,11 @@
+import collections
 import json
+import os
 import subprocess
+
+import requests
+
+from six.moves import urllib
 
 
 def exec_command(cmd, env=None, stdin=None):
@@ -148,3 +154,58 @@ def list_deployments(expected_count=None, app_id=None):
     assert stderr == b''
 
     return result
+
+
+def get_services(expected_count=None, args=[]):
+    """Get services
+
+    :param expected_count: assert exactly this number of services are
+        running
+    :type expected_count: int | None
+    :param args: cli arguments
+    :type args: [str]
+    :returns: services
+    :rtype: [dict]
+    """
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'service', '--json'] + args)
+
+    assert returncode == 0
+    assert stderr == b''
+
+    services = json.loads(stdout.decode('utf-8'))
+    assert isinstance(services, collections.Sequence)
+    if expected_count is not None:
+        assert len(services) == expected_count
+
+    return services
+
+
+def service_shutdown(service_id):
+    """Shuts down a service using the command line program
+
+    :param service_id: the id of the service
+    :type: service_id: str
+    :rtype: None
+    """
+
+    assert_command(['dcos', 'service', 'shutdown', service_id])
+
+
+def delete_zk_nodes():
+    """Delete Zookeeper nodes that were created during the tests
+
+    :rtype: None
+    """
+
+    base_url = os.environ.get('EXHIBITOR_URL')
+    if base_url:
+        base_path = 'exhibitor/v1/explorer/znode/{}'
+
+        for znode in ['universe', 'cassandra-mesos', 'chronos']:
+            znode_url = urllib.parse.urljoin(
+                base_url,
+                base_path.format(znode))
+
+            requests.delete(znode_url)
