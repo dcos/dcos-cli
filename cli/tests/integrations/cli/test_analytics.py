@@ -1,5 +1,6 @@
 import os
 from functools import wraps
+import pytest
 
 import dcoscli.analytics
 import requests
@@ -61,6 +62,7 @@ def test_no_exc():
 
 
 @_mock
+@pytest.mark.first
 def test_exc():
     '''Tests that a command which does raise an exception does report an
     exception.
