@@ -7,10 +7,10 @@
       "title": "Your email address",
       "description": "Your email address"
     },
-    "dcos_uri": {
+    "dcos_url": {
       "type": "string",
-      "title": "DCOS URI",
-      "description": "The URI to the location of the DCOS"
+      "title": "DCOS URL",
+      "description": "The URL to the location of the DCOS"
     },
     "refresh_token": {
       "type": "string",

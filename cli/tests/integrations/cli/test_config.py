@@ -70,7 +70,7 @@ def test_list_property(env):
     stdout = b"""core.email=test@mail.com
 core.mesos_master_url=http://localhost:5050
 core.reporting=False
-marathon.uri=http://localhost:8080
+marathon.url=http://localhost:8080
 package.cache=tmp/cache
 package.sources=['git://github.com/mesosphere/universe.git', \
 'https://github.com/mesosphere/universe/archive/master.zip']
@@ -81,7 +81,7 @@ package.sources=['git://github.com/mesosphere/universe.git', \
 
 
 def test_get_existing_string_property(env):
-    _get_value('marathon.uri', 'http://localhost:8080', env)
+    _get_value('marathon.url', 'http://localhost:8080', env)
 
 
 def test_get_existing_boolean_property(env):
@@ -106,9 +106,9 @@ def test_get_top_property(env):
 
 
 def test_set_existing_string_property(env):
-    _set_value('marathon.uri', 'http://newhost:8081', env)
-    _get_value('marathon.uri', 'http://newhost:8081', env)
-    _set_value('marathon.uri', 'http://localhost:8080', env)
+    _set_value('marathon.url', 'http://newhost:8081', env)
+    _get_value('marathon.url', 'http://newhost:8081', env)
+    _set_value('marathon.url', 'http://localhost:8080', env)
 
 
 def test_set_existing_boolean_property(env):
@@ -188,22 +188,22 @@ def test_prepend_list(env):
 
 
 def test_append_non_list(env):
-    stderr = (b"Append/Prepend not supported on 'marathon.uri' "
-              b"properties - use 'dcos config set marathon.uri new_uri'\n")
+    stderr = (b"Append/Prepend not supported on 'marathon.url' "
+              b"properties - use 'dcos config set marathon.url new_uri'\n")
 
     assert_command(
-        ['dcos', 'config', 'append', 'marathon.uri', 'new_uri'],
+        ['dcos', 'config', 'append', 'marathon.url', 'new_uri'],
         returncode=1,
         stderr=stderr,
         env=env)
 
 
 def test_prepend_non_list(env):
-    stderr = (b"Append/Prepend not supported on 'marathon.uri' "
-              b"properties - use 'dcos config set marathon.uri new_uri'\n")
+    stderr = (b"Append/Prepend not supported on 'marathon.url' "
+              b"properties - use 'dcos config set marathon.url new_uri'\n")
 
     assert_command(
-        ['dcos', 'config', 'prepend', 'marathon.uri', 'new_uri'],
+        ['dcos', 'config', 'prepend', 'marathon.url', 'new_uri'],
         returncode=1,
         stderr=stderr,
         env=env)
@@ -285,7 +285,7 @@ def test_unset_index_from_string(env):
     stderr = b'Unsetting based on an index is only supported for lists\n'
 
     assert_command(
-        ['dcos', 'config', 'unset', '--index=0', 'marathon.uri'],
+        ['dcos', 'config', 'unset', '--index=0', 'marathon.url'],
         returncode=1,
         stderr=stderr,
         env=env)
@@ -319,9 +319,9 @@ def test_set_property_key(env):
 
 
 def test_set_missing_property(missing_env):
-    _set_value('marathon.uri', 'http://localhost:8080', missing_env)
-    _get_value('marathon.uri', 'http://localhost:8080', missing_env)
-    _unset_value('marathon.uri', None, missing_env)
+    _set_value('marathon.url', 'http://localhost:8080', missing_env)
+    _get_value('marathon.url', 'http://localhost:8080', missing_env)
+    _unset_value('marathon.url', None, missing_env)
 
 
 def test_set_core_property(env):
