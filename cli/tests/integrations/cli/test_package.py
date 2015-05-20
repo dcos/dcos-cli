@@ -15,7 +15,7 @@ Usage:
     dcos package --info
     dcos package describe [--app --options=<file> --cli] <package_name>
     dcos package info
-    dcos package install [--cli | [--app --app-id=<app_id]]
+    dcos package install [--cli | [--app --app-id=<app_id>]]
                          [--options=<file>]
                  <package_name>
     dcos package list-installed [--endpoints --app-id=<app-id> <package_name>]
