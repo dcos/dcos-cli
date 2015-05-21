@@ -23,9 +23,17 @@ def get_master(config=None):
     if config is None:
         config = util.get_config()
 
-    mesos_master_url = util.get_config_vals(
-        config, ['core.mesos_master_url'])[0]
-    return MesosMaster(mesos_master_url)
+    mesos_url = get_mesos_url(config)
+    return MesosMaster(mesos_url)
+
+
+def get_mesos_url(config):
+    mesos_master_url = config.get('core.mesos_master_url')
+    if mesos_master_url is None:
+        dcos_url = util.get_config_vals(config, ['core.dcos_url'])[0]
+        return urllib.parse.urljoin(dcos_url, 'mesos/')
+    else:
+        return mesos_master_url
 
 
 MESOS_TIMEOUT = 3
@@ -51,7 +59,7 @@ class MesosMaster(object):
         """
 
         if not self._state:
-            self._state = self.fetch('/master/state.json').json()
+            self._state = self.fetch('master/state.json').json()
         return self._state
 
     def slave(self, fltr):

@@ -329,12 +329,12 @@ CJdfQ=="""
 
 def test_install_with_id():
     args = ['--app-id=chronos-1']
-    stdout = (b"""Installing package [chronos] version [2.3.3] with app """
+    stdout = (b"""Installing package [chronos] version [2.3.4] with app """
               b"""id [chronos-1]\n""")
     _install_chronos(args=args, stdout=stdout)
 
     args = ['--app-id=chronos-2']
-    stdout = (b"""Installing package [chronos] version [2.3.3] with app """
+    stdout = (b"""Installing package [chronos] version [2.3.4] with app """
               b"""id [chronos-2]\n""")
     _install_chronos(args=args, stdout=stdout)
 
@@ -448,7 +448,7 @@ mesos/chronos\\n\\tIssues: https:/github.com/mesos/chronos/issues",
       "mesosphere",
       "framework"
     ],
-    "version": "2.3.3"
+    "version": "2.3.4"
   }
 ]
 """
@@ -611,7 +611,7 @@ def _uninstall_chronos(args=[], returncode=0, stdout=b'', stderr=b''):
 def _install_chronos(
         args=[],
         returncode=0,
-        stdout=b'Installing package [chronos] version [2.3.3]\n',
+        stdout=b'Installing package [chronos] version [2.3.4]\n',
         stderr=b'',
         postInstallNotes=b'Chronos DCOS Service has been successfully '
                          b'installed!\nWe recommend a minimum of one node '
