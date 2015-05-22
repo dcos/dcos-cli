@@ -51,7 +51,7 @@ Configure Environment and Run
 #. Configure Marathon, changing the values below as appropriate for your local
    installation::
 
-    dcos config set marathon.uri http://localhost:8080
+    dcos config set marathon.url http://localhost:8080
     dcos config append package.sources https://github.com/mesosphere/universe/archive/master.zip
     dcos config set package.cache /tmp/dcos
     dcos package update

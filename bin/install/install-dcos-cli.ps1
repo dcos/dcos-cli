@@ -3,7 +3,7 @@ param([Parameter(Mandatory=$true,ValueFromPipeline=$true)]
   $installation_path,
   [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
   [string]
-  $dcos_uri
+  $dcos_url
   )
 
 if (-Not(Get-Command python -errorAction SilentlyContinue))
@@ -64,7 +64,9 @@ if (-Not( Test-Path $installation_path)) {
 & virtualenv $installation_path
 & $installation_path\Scripts\activate
 
-if ([environment]::Is64BitOperatingSystem) {
+[int]$PYTHON_ARCHITECTURE=(python -c 'import struct;print( 8 * struct.calcsize(\"P\"))')
+
+if ($PYTHON_ARCHITECTURE -eq 64) {
   & $installation_path\Scripts\easy_install  "http://downloads.sourceforge.net/project/pywin32/pywin32/Build%20219/pywin32-219.win-amd64-py$PYTHON_VERSION.exe" 2>&1 | out-null
 } else {
   & $installation_path\Scripts\easy_install  "http://downloads.sourceforge.net/project/pywin32/pywin32/Build%20219/pywin32-219.win32-py$PYTHON_VERSION.exe" 2>&1 | out-null
@@ -90,7 +92,7 @@ if (-Not(Test-Path $DCOS_CONFIG)) {
 $env:DCOS_CONFIG = $DCOS_CONFIG
 
 dcos config set core.reporting true
-dcos config set core.dcos_uri $dcos_uri
+dcos config set core.dcos_url $dcos_url
 dcos config set package.cache $env:temp\dcos\package-cache
 dcos config set package.sources '[\"https://github.com/mesosphere/universe/archive/master.zip\"]'
 

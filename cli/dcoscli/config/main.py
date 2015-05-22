@@ -387,7 +387,7 @@ def _get_config_schema(command):
 
 def _split_key(name):
     """
-    :param name: the full property path - e.g. marathon.uri
+    :param name: the full property path - e.g. marathon.url
     :type name: str
     :returns: the section and property name
     :rtype: (str, str)
@@ -396,7 +396,7 @@ def _split_key(name):
     terms = name.split('.', 1)
     if len(terms) != 2:
         raise DCOSException('Property name must have both a section and '
-                            'key: <section>.<key> - E.g. marathon.uri')
+                            'key: <section>.<key> - E.g. marathon.url')
 
     return (terms[0], terms[1])
 

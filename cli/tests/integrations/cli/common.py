@@ -1,3 +1,4 @@
+import json
 import subprocess
 
 
@@ -86,3 +87,49 @@ def mock_called_some_args(mock, *args, **kwargs):
         return True
 
     return False
+
+
+def watch_deployment(deployment_id, count):
+    """ Wait for a deployment to complete.
+
+    :param deployment_id: deployment id
+    :type deployment_id: str
+    :param count: max number of seconds to wait
+    :type count: int
+    :rtype: None
+    """
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'marathon', 'deployment', 'watch',
+            '--max-count={}'.format(count), deployment_id])
+
+    assert returncode == 0
+    assert stderr == b''
+
+
+def list_deployments(expected_count=None, app_id=None):
+    """Get all active deployments.
+
+    :param expected_count: assert that number of active deployments
+    equals `expected_count`
+    :type expected_count: int
+    :param app_id: only get deployments for this app
+    :type app_id: str
+    :returns: active deployments
+    :rtype: [dict]
+    """
+
+    cmd = ['dcos', 'marathon', 'deployment', 'list']
+    if app_id is not None:
+        cmd.append(app_id)
+
+    returncode, stdout, stderr = exec_command(cmd)
+
+    result = json.loads(stdout.decode('utf-8'))
+
+    assert returncode == 0
+    if expected_count is not None:
+        assert len(result) == expected_count
+    assert stderr == b''
+
+    return result

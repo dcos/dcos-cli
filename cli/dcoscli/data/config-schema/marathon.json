@@ -2,10 +2,10 @@
   "$schema": "http://json-schema.org/schema#",
   "type": "object",
   "properties": {
-    "uri": {
+    "url": {
       "type": "string",
-      "title": "Marathon base URI",
-      "description": "Base URI for talking to Marathon. It overwrites the value specified in core.dcos_uri",
+      "title": "Marathon base URL",
+      "description": "Base URL for talking to Marathon. It overwrites the value specified in core.dcos_url",
       "default": "http://localhost:8080"
     }
   },

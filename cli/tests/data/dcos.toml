@@ -1,8 +1,9 @@
 [core]
+mesos_master_url = "http://localhost:5050"
 reporting = false
 email = "test@mail.com"
 [marathon]
-uri = "http://localhost:8080"
+url = "http://localhost:8080"
 [package]
 sources = [ "git://github.com/mesosphere/universe.git", "https://github.com/mesosphere/universe/archive/master.zip",]
 cache = "tmp/cache"

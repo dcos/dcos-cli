@@ -15,7 +15,7 @@ Usage:
     dcos package --info
     dcos package describe [--app --options=<file> --cli] <package_name>
     dcos package info
-    dcos package install [--cli | [--app --app-id=<app_id]]
+    dcos package install [--cli | [--app --app-id=<app_id>]]
                          [--options=<file>]
                  <package_name>
     dcos package list-installed [--endpoints --app-id=<app-id> <package_name>]
@@ -146,6 +146,8 @@ dcos-helloworld.git#dcos-helloworld=0.1.0"
   "description": "Example DCOS application package",
   "maintainer": "support@mesosphere.io",
   "name": "helloworld",
+  "postInstallNotes": "A sample post-installation message",
+  "preInstallNotes": "A sample pre-installation message",
   "tags": [
     "mesosphere",
     "example",
@@ -239,29 +241,24 @@ icon-service-marathon-small.png"
 
 
 def test_bad_install():
-    args = ['--options=tests/data/package/mesos-dns-config-bad.json']
-    stderr = b"""Error: missing required property 'mesos-dns/config-url'.
-
-Error: False is not of type 'string'
-Path: mesos-dns/host
+    args = ['--options=tests/data/package/chronos-bad.json']
+    stderr = b"""Error: False is not of type 'string'
+Path: chronos.zk-hosts
 Value: false
 
 Please create a JSON file with the appropriate options, and pass the \
 /path/to/file as an --options argument.
 """
-    assert_command(['dcos', 'package', 'install', 'mesos-dns', args[0]],
-                   returncode=1,
-                   stderr=stderr)
 
-    _install_mesos_dns(args=args,
-                       returncode=1,
-                       stdout=b'',
-                       stderr=stderr,
-                       postInstallNotes=b'')
+    _install_chronos(args=args,
+                     returncode=1,
+                     stdout=b'',
+                     stderr=stderr,
+                     postInstallNotes=b'')
 
 
 def test_install():
-    _install_mesos_dns()
+    _install_chronos()
 
 
 def test_package_metadata():
@@ -270,9 +267,11 @@ def test_package_metadata():
     # test marathon labels
     expected_metadata = b"""eyJkZXNjcmlwdGlvbiI6ICJFeGFtcGxlIERDT1MgYXBwbGljYX\
 Rpb24gcGFja2FnZSIsICJtYWludGFpbmVyIjogInN1cHBvcnRAbWVzb3NwaGVyZS5pbyIsICJuYW1l\
-IjogImhlbGxvd29ybGQiLCAidGFncyI6IFsibWVzb3NwaGVyZSIsICJleGFtcGxlIiwgInN1YmNvbW\
-1hbmQiXSwgInZlcnNpb24iOiAiMC4xLjAiLCAid2Vic2l0ZSI6ICJodHRwczovL2dpdGh1Yi5jb20v\
-bWVzb3NwaGVyZS9kY29zLWhlbGxvd29ybGQifQ=="""
+IjogImhlbGxvd29ybGQiLCAicG9zdEluc3RhbGxOb3RlcyI6ICJBIHNhbXBsZSBwb3N0LWluc3RhbG\
+xhdGlvbiBtZXNzYWdlIiwgInByZUluc3RhbGxOb3RlcyI6ICJBIHNhbXBsZSBwcmUtaW5zdGFsbGF0\
+aW9uIG1lc3NhZ2UiLCAidGFncyI6IFsibWVzb3NwaGVyZSIsICJleGFtcGxlIiwgInN1YmNvbW1hbm\
+QiXSwgInZlcnNpb24iOiAiMC4xLjAiLCAid2Vic2l0ZSI6ICJodHRwczovL2dpdGh1Yi5jb20vbWVz\
+b3NwaGVyZS9kY29zLWhlbGxvd29ybGQifQ=="""
 
     expected_command = b"""eyJwaXAiOiBbImRjb3M8MS4wIiwgImdpdCtodHRwczovL2dpdGh\
 1Yi5jb20vbWVzb3NwaGVyZS9kY29zLWhlbGxvd29ybGQuZ2l0I2Rjb3MtaGVsbG93b3JsZD0wLjEuM\
@@ -297,12 +296,14 @@ CJdfQ=="""
 
     # test local package.json
     package = {
-        "website": "https://github.com/mesosphere/dcos-helloworld",
+        "description": "Example DCOS application package",
         "maintainer": "support@mesosphere.io",
         "name": "helloworld",
+        "postInstallNotes": "A sample post-installation message",
+        "preInstallNotes": "A sample pre-installation message",
         "tags": ["mesosphere", "example", "subcommand"],
         "version": "0.1.0",
-        "description": "Example DCOS application package"
+        "website": "https://github.com/mesosphere/dcos-helloworld",
     }
 
     package_dir = subcommand.package_dir('helloworld')
@@ -327,17 +328,15 @@ CJdfQ=="""
 
 
 def test_install_with_id():
-    args = ['--options=tests/data/package/mesos-dns-config.json',
-            '--app-id=dns-1']
-    stdout = b"""Installing package [mesos-dns] version [alpha] \
-with app id [dns-1]\n"""
-    _install_mesos_dns(args=args, stdout=stdout)
+    args = ['--app-id=chronos-1']
+    stdout = (b"""Installing package [chronos] version [2.3.4] with app """
+              b"""id [chronos-1]\n""")
+    _install_chronos(args=args, stdout=stdout)
 
-    args = ['--options=tests/data/package/mesos-dns-config.json',
-            '--app-id=dns-2']
-    stdout = b"""Installing package [mesos-dns] version [alpha] \
-with app id [dns-2]\n"""
-    _install_mesos_dns(args=args, stdout=stdout)
+    args = ['--app-id=chronos-2']
+    stdout = (b"""Installing package [chronos] version [2.3.4] with app """
+              b"""id [chronos-2]\n""")
+    _install_chronos(args=args, stdout=stdout)
 
 
 def test_install_missing_package():
@@ -350,19 +349,22 @@ You may need to run 'dcos package update' to update your repositories
 
 
 def test_uninstall_with_id():
-    _uninstall_mesos_dns(args=['--app-id=dns-1'])
+    _uninstall_chronos(args=['--app-id=chronos-1'])
 
 
 def test_uninstall_all():
-    _uninstall_mesos_dns(args=['--all'])
+    _uninstall_chronos(args=['--all'])
 
 
 def test_uninstall_missing():
-    stderr = b'Package [mesos-dns] is not installed.\n'
-    _uninstall_mesos_dns(returncode=1, stderr=stderr)
+    stderr = b'Package [chronos] is not installed.\n'
+    _uninstall_chronos(returncode=1, stderr=stderr)
 
-    stderr = b'Package [mesos-dns] with id [dns-1] is not installed.\n'
-    _uninstall_mesos_dns(args=['--app-id=dns-1'], returncode=1, stderr=stderr)
+    stderr = b'Package [chronos] with id [chronos-1] is not installed.\n'
+    _uninstall_chronos(
+        args=['--app-id=chronos-1'],
+        returncode=1,
+        stderr=stderr)
 
 
 def test_uninstall_subcommand():
@@ -385,6 +387,8 @@ def test_uninstall_cli():
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
     "packageSource": "git://github.com/mesosphere/universe.git",
+    "postInstallNotes": "A sample post-installation message",
+    "preInstallNotes": "A sample pre-installation message",
     "releaseVersion": "0",
     "tags": [
       "mesosphere",
@@ -412,39 +416,50 @@ def test_list_installed():
     assert_command(['dcos', 'package', 'list-installed', '--app-id=/xyzzy'],
                    stdout=b'[]\n')
 
-    _install_mesos_dns()
+    _install_chronos()
 
     expected_output = b"""\
 [
   {
     "app": {
-      "appId": "/mesos-dns"
+      "appId": "/chronos"
     },
-    "description": "DNS-based service discovery for Mesos.",
+    "description": "A fault tolerant job scheduler for Mesos which handles \
+dependencies and ISO8601 based schedules.",
+    "framework": true,
+    "images": {
+      "icon-large": "https://downloads.mesosphere.io/chronos/assets/icon-\
+service-chronos-large.png",
+      "icon-medium": "https://downloads.mesosphere.io/chronos/assets/icon-\
+service-chronos-medium.png",
+      "icon-small": "https://downloads.mesosphere.io/chronos/assets/icon-\
+service-chronos-small.png"
+    },
     "maintainer": "support@mesosphere.io",
-    "name": "mesos-dns",
+    "name": "chronos",
     "packageSource": "git://github.com/mesosphere/universe.git",
-    "postInstallNotes": "Please refer to the tutorial instructions for \
-further setup requirements: http://mesosphere.github.io/mesos-dns/docs\
-/tutorial-gce.html",
+    "postInstallNotes": "Chronos DCOS Service has been successfully installed!\
+\\nWe recommend a minimum of one node with at least 1 CPU and 2GB of RAM \
+available for the Chronos Service.\\n\\n\\tDocumentation: https://github.com/\
+mesos/chronos\\n\\tIssues: https:/github.com/mesos/chronos/issues",
     "releaseVersion": "0",
-    "scm": "https://github.com/mesosphere/mesos-dns.git",
+    "scm": "https://github.com/mesos/chronos.git",
     "tags": [
-      "mesosphere"
+      "mesosphere",
+      "framework"
     ],
-    "version": "alpha",
-    "website": "http://mesosphere.github.io/mesos-dns"
+    "version": "2.3.4"
   }
 ]
 """
     assert_command(['dcos', 'package', 'list-installed'],
                    stdout=expected_output)
 
-    assert_command(['dcos', 'package', 'list-installed', 'mesos-dns'],
+    assert_command(['dcos', 'package', 'list-installed', 'chronos'],
                    stdout=expected_output)
 
     assert_command(
-        ['dcos', 'package', 'list-installed', '--app-id=/mesos-dns'],
+        ['dcos', 'package', 'list-installed', '--app-id=/chronos'],
         stdout=expected_output)
 
     assert_command(
@@ -456,7 +471,7 @@ further setup requirements: http://mesosphere.github.io/mesos-dns/docs\
          '--app-id=/ceci-nest-pas-une-package'],
         stdout=b'[]\n')
 
-    _uninstall_mesos_dns()
+    _uninstall_chronos()
 
 
 def test_list_installed_cli():
@@ -475,6 +490,8 @@ def test_list_installed_cli():
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
     "packageSource": "git://github.com/mesosphere/universe.git",
+    "postInstallNotes": "A sample post-installation message",
+    "preInstallNotes": "A sample pre-installation message",
     "releaseVersion": "0",
     "tags": [
       "mesosphere",
@@ -491,7 +508,8 @@ def test_list_installed_cli():
 
     _uninstall_helloworld()
 
-    stdout = b"Installing CLI subcommand for package [helloworld]\n"
+    stdout = (b"Installing CLI subcommand for package [helloworld]\n"
+              b"A sample post-installation message\n")
     _install_helloworld(args=['--cli'], stdout=stdout)
 
     stdout = b"""\
@@ -504,6 +522,8 @@ def test_list_installed_cli():
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
     "packageSource": "git://github.com/mesosphere/universe.git",
+    "postInstallNotes": "A sample post-installation message",
+    "preInstallNotes": "A sample pre-installation message",
     "releaseVersion": "0",
     "tags": [
       "mesosphere",
@@ -573,6 +593,7 @@ def _install_helloworld(
         args=[],
         stdout=b"""Installing package [helloworld] version [0.1.0]
 Installing CLI subcommand for package [helloworld]
+A sample post-installation message
 """):
     assert_command(['dcos', 'package', 'install', 'helloworld'] + args,
                    stdout=stdout)
@@ -582,22 +603,23 @@ def _uninstall_helloworld(args=[]):
     assert_command(['dcos', 'package', 'uninstall', 'helloworld'] + args)
 
 
-def _uninstall_mesos_dns(args=[],
-                         returncode=0,
-                         stdout=b'',
-                         stderr=b''):
-    cmd = ['dcos', 'package', 'uninstall', 'mesos-dns'] + args
+def _uninstall_chronos(args=[], returncode=0, stdout=b'', stderr=b''):
+    cmd = ['dcos', 'package', 'uninstall', 'chronos'] + args
     assert_command(cmd, returncode, stdout, stderr)
 
 
-def _install_mesos_dns(
-        args=['--options=tests/data/package/mesos-dns-config.json'],
+def _install_chronos(
+        args=[],
         returncode=0,
-        stdout=b'Installing package [mesos-dns] version [alpha]\n',
+        stdout=b'Installing package [chronos] version [2.3.4]\n',
         stderr=b'',
-        postInstallNotes=b'Please refer to the tutorial instructions for '
-                         b'further setup requirements: http://mesosphere.'
-                         b'github.io/mesos-dns/docs/tutorial-gce.html\n'):
+        postInstallNotes=b'Chronos DCOS Service has been successfully '
+                         b'installed!\nWe recommend a minimum of one node '
+                         b'with at least 1 CPU and 2GB of RAM available for '
+                         b'''the Chronos Service.
 
-    cmd = ['dcos', 'package', 'install', 'mesos-dns'] + args
+\tDocumentation: https://github.com/mesos/chronos
+\tIssues: https:/github.com/mesos/chronos/issues\n'''):
+
+    cmd = ['dcos', 'package', 'install', 'chronos'] + args
     assert_command(cmd, returncode, stdout + postInstallNotes, stderr)
