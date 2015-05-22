@@ -33,12 +33,13 @@ def exec_command(cmd, env=None, stdin=None):
     return (process.returncode, stdout, stderr)
 
 
-def assert_command(cmd,
-                   returncode=0,
-                   stdout=b'',
-                   stderr=b'',
-                   env=None,
-                   stdin=None):
+def assert_command(
+        cmd,
+        returncode=0,
+        stdout=b'',
+        stderr=b'',
+        env=None,
+        stdin=None):
     """Execute CLI command and assert expected behavior.
 
     :param cmd: Program and arguments

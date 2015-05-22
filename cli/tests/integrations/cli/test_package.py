@@ -16,8 +16,7 @@ Usage:
     dcos package describe [--app --options=<file> --cli] <package_name>
     dcos package info
     dcos package install [--cli | [--app --app-id=<app_id>]]
-                         [--options=<file>]
-                 <package_name>
+                         [--options=<file> --yes] <package_name>
     dcos package list-installed [--endpoints --app-id=<app-id> <package_name>]
     dcos package search [<query>]
     dcos package sources
@@ -29,6 +28,8 @@ Options:
     -h, --help         Show this screen
     --info             Show a short description of this subcommand
     --version          Show version
+    --yes              Assume "yes" is the answer to all prompts and run
+                       non-interactively
     --all              Apply the operation to all matching packages
     --app              Apply the operation only to the package's application
     --app-id=<app-id>  The application id
@@ -241,7 +242,7 @@ icon-service-marathon-small.png"
 
 
 def test_bad_install():
-    args = ['--options=tests/data/package/chronos-bad.json']
+    args = ['--options=tests/data/package/chronos-bad.json', '--yes']
     stderr = b"""Error: False is not of type 'string'
 Path: chronos.zk-hosts
 Value: false
@@ -328,12 +329,12 @@ CJdfQ=="""
 
 
 def test_install_with_id():
-    args = ['--app-id=chronos-1']
+    args = ['--app-id=chronos-1', '--yes']
     stdout = (b"""Installing package [chronos] version [2.3.4] with app """
               b"""id [chronos-1]\n""")
     _install_chronos(args=args, stdout=stdout)
 
-    args = ['--app-id=chronos-2']
+    args = ['--app-id=chronos-2', '--yes']
     stdout = (b"""Installing package [chronos] version [2.3.4] with app """
               b"""id [chronos-2]\n""")
     _install_chronos(args=args, stdout=stdout)
@@ -440,8 +441,9 @@ service-chronos-small.png"
     "packageSource": "git://github.com/mesosphere/universe.git",
     "postInstallNotes": "Chronos DCOS Service has been successfully installed!\
 \\nWe recommend a minimum of one node with at least 1 CPU and 2GB of RAM \
-available for the Chronos Service.\\n\\n\\tDocumentation: https://github.com/\
-mesos/chronos\\n\\tIssues: https:/github.com/mesos/chronos/issues",
+available for the Chronos Service.\\n\\n\\tDocumentation: \
+http://mesos.github.io/chronos\\n\\tIssues: https://github.com/mesos/\
+chronos/issues",
     "releaseVersion": "0",
     "scm": "https://github.com/mesos/chronos.git",
     "tags": [
@@ -472,6 +474,22 @@ mesos/chronos\\n\\tIssues: https:/github.com/mesos/chronos/issues",
         stdout=b'[]\n')
 
     _uninstall_chronos()
+
+
+def test_install_yes():
+    with open('tests/data/package/assume_yes.txt') as yes_file:
+        _install_helloworld(stdin=yes_file)
+        _uninstall_helloworld()
+
+
+def test_install_no():
+    with open('tests/data/package/assume_no.txt') as no_file:
+        _install_helloworld(
+            args=[],
+            stdin=no_file,
+            stdout=b'A sample pre-installation message\n'
+                   b'Continue installing? [yes/no]\n'
+                   b'Exiting installation.\n')
 
 
 def test_list_installed_cli():
@@ -508,9 +526,10 @@ def test_list_installed_cli():
 
     _uninstall_helloworld()
 
-    stdout = (b"Installing CLI subcommand for package [helloworld]\n"
+    stdout = (b"A sample pre-installation message\n"
+              b"Installing CLI subcommand for package [helloworld]\n"
               b"A sample post-installation message\n")
-    _install_helloworld(args=['--cli'], stdout=stdout)
+    _install_helloworld(args=['--cli', '--yes'], stdout=stdout)
 
     stdout = b"""\
 [
@@ -572,7 +591,7 @@ def test_search():
     for registry in registries:
         # assert the number of packages is gte the number at the time
         # this test was written
-        assert len(registry['packages']) >= 8
+        assert len(registry['packages']) >= 7
 
     assert returncode == 0
     assert stderr == b''
@@ -590,13 +609,16 @@ def get_app_labels(app_id):
 
 
 def _install_helloworld(
-        args=[],
-        stdout=b"""Installing package [helloworld] version [0.1.0]
-Installing CLI subcommand for package [helloworld]
-A sample post-installation message
-"""):
-    assert_command(['dcos', 'package', 'install', 'helloworld'] + args,
-                   stdout=stdout)
+        args=['--yes'],
+        stdout=b'A sample pre-installation message\n'
+               b'Installing package [helloworld] version [0.1.0]\n'
+               b'Installing CLI subcommand for package [helloworld]\n'
+               b'A sample post-installation message\n',
+        stdin=None):
+    assert_command(
+        ['dcos', 'package', 'install', 'helloworld'] + args,
+        stdout=stdout,
+        stdin=stdin)
 
 
 def _uninstall_helloworld(args=[]):
@@ -609,7 +631,7 @@ def _uninstall_chronos(args=[], returncode=0, stdout=b'', stderr=b''):
 
 
 def _install_chronos(
-        args=[],
+        args=['--yes'],
         returncode=0,
         stdout=b'Installing package [chronos] version [2.3.4]\n',
         stderr=b'',
@@ -618,8 +640,14 @@ def _install_chronos(
                          b'with at least 1 CPU and 2GB of RAM available for '
                          b'''the Chronos Service.
 
-\tDocumentation: https://github.com/mesos/chronos
-\tIssues: https:/github.com/mesos/chronos/issues\n'''):
+\tDocumentation: http://mesos.github.io/chronos
+\tIssues: https://github.com/mesos/chronos/issues\n''',
+        stdin=None):
 
     cmd = ['dcos', 'package', 'install', 'chronos'] + args
-    assert_command(cmd, returncode, stdout + postInstallNotes, stderr)
+    assert_command(
+        cmd,
+        returncode,
+        stdout + postInstallNotes,
+        stderr,
+        stdin=stdin)
