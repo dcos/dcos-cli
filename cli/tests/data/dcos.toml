@@ -1,9 +1,7 @@
 [core]
-mesos_master_url = "http://localhost:5050"
-reporting = false
+dcos_url = "http://localhost:5080"
 email = "test@mail.com"
-[marathon]
-url = "http://localhost:8080"
+reporting = false
 [package]
-sources = [ "git://github.com/mesosphere/universe.git", "https://github.com/mesosphere/universe/archive/master.zip",]
 cache = "tmp/cache"
+sources = [ "git://github.com/mesosphere/universe.git", "https://github.com/mesosphere/universe/archive/master.zip",]
