@@ -962,8 +962,12 @@ class Registry():
 
         # TODO(CD): implement these checks in pure Python?
         scripts_dir = os.path.join(self._base_path, 'scripts')
-        validate_script = os.path.join(scripts_dir, '1-validate-packages.sh')
-        result = subprocess.call(validate_script)
+        suffix = 'ps1' if util.is_windows_platform() else 'sh'
+        validate_script = os.path.join(scripts_dir, '1-validate-packages.' + suffix)
+        cmd = [validate_script]
+        if validate_script.endswith('.ps1'):
+            cmd = ['powershell', '-ExecutionPolicy', 'ByPass', '-File', validate_script]
+        result = subprocess.call(cmd)
         if result is not 0:
             return [Error(
                 'Source tree is not valid [{}]'.format(self._base_path))]
