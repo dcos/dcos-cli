@@ -572,7 +572,7 @@ def test_search():
     for registry in registries:
         # assert the number of packages is gte the number at the time
         # this test was written
-        assert len(registry['packages']) >= 9
+        assert len(registry['packages']) >= 8
 
     assert returncode == 0
     assert stderr == b''

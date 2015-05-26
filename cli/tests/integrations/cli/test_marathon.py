@@ -604,9 +604,6 @@ def test_show_task():
 
 
 def test_bad_configuration():
-    show_returncode, show_stdout, stderr = exec_command(
-        ['dcos', 'config', 'show', 'marathon.url'])
-
     assert_command(
         ['dcos', 'config', 'set', 'marathon.url', 'http://localhost:88888'])
 
@@ -619,11 +616,7 @@ def test_bad_configuration():
         "Marathon likely misconfigured. Please check your proxy or "
         "Marathon URI settings. See dcos config --help. ")
 
-    if show_returncode == 0:
-        url = show_stdout.decode('utf-8').strip()
-        assert_command(['dcos', 'config', 'set', 'marathon.url', url])
-    else:
-        assert_command(['dcos', 'config', 'unset', 'marathon.url'])
+    assert_command(['dcos', 'config', 'unset', 'marathon.url'])
 
 
 def _list_apps(app_id=None):
