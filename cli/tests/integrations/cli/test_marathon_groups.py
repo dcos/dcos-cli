@@ -94,18 +94,10 @@ def test_add_bad_complicated_group():
             ['dcos', 'marathon', 'group', 'add'],
             stdin=fd)
 
-        # id for group in test-group/more-groups
-        err = "Property missing which is mandatory"
-        # missing id in apps in appingroups
-        err2 = "identifier / is not child of /test-group/appingroups"
-        # missing cmd in appingroups
-        err3 = "AppDefinition must either contain one of 'cmd' or 'args', " + \
-               "and/or a 'container'"
+        err = "Error: missing required property 'id'"
         assert returncode == 1
         assert stdout == b''
         assert err in stderr.decode('utf-8')
-        assert err2 in stderr.decode('utf-8')
-        assert err3 in stderr.decode('utf-8')
 
 
 def _list_groups(group_id=None):
