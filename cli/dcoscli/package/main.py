@@ -233,11 +233,21 @@ def _describe(package_name, cli, app, options_path):
 
 
 def _user_options(path):
+    """ Read the options at the given file path.
+
+    :param path: file path
+    :type path: str
+    :returns: options
+    :rtype: dict
+    """
     if path is None:
         return {}
     else:
-        with open(path) as options_file:
-            return util.load_json(options_file)
+        try:
+            with open(path) as options_file:
+                return util.load_json(options_file)
+        except IOError:
+            raise DCOSException('No such file: {}'.format(path))
 
 
 def _install(package_name, options_path, app_id, cli, app):

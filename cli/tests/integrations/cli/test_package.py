@@ -261,6 +261,15 @@ def test_install():
     _install_chronos()
 
 
+def test_install_missing_options_file():
+    """Test that a missing options file results in the expected stderr
+    message."""
+    assert_command(
+        ['dcos', 'package', 'install', 'chronos', '--options=asdf.json'],
+        returncode=1,
+        stderr=b"No such file: asdf.json\n")
+
+
 def test_package_metadata():
     _install_helloworld()
 
