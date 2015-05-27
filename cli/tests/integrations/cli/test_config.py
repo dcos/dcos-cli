@@ -67,7 +67,7 @@ def test_version():
 
 
 def test_list_property(env):
-    stdout = b"""core.dcos_url=http://localhost:5080
+    stdout = b"""core.dcos_url=http://172.17.8.101
 core.email=test@mail.com
 core.reporting=False
 package.cache=tmp/cache
@@ -80,7 +80,7 @@ package.sources=['git://github.com/mesosphere/universe.git', \
 
 
 def test_get_existing_string_property(env):
-    _get_value('core.dcos_url', 'http://localhost:5080', env)
+    _get_value('core.dcos_url', 'http://172.17.8.101', env)
 
 
 def test_get_existing_boolean_property(env):
@@ -105,9 +105,9 @@ def test_get_top_property(env):
 
 
 def test_set_existing_string_property(env):
-    _set_value('core.dcos_url', 'http://localhost:5081', env)
-    _get_value('core.dcos_url', 'http://localhost:5081', env)
-    _set_value('core.dcos_url', 'http://localhost:5080', env)
+    _set_value('core.dcos_url', 'http://172.17.8.101:5081', env)
+    _get_value('core.dcos_url', 'http://172.17.8.101:5081', env)
+    _set_value('core.dcos_url', 'http://172.17.8.101', env)
 
 
 def test_set_existing_boolean_property(env):

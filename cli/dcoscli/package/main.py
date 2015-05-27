@@ -6,8 +6,7 @@ Usage:
     dcos package describe [--app --options=<file> --cli] <package_name>
     dcos package info
     dcos package install [--cli | [--app --app-id=<app_id>]]
-                         [--options=<file>]
-                 <package_name>
+                         [--options=<file> --yes] <package_name>
     dcos package list-installed [--endpoints --app-id=<app-id> <package_name>]
     dcos package search [<query>]
     dcos package sources
@@ -19,6 +18,8 @@ Options:
     -h, --help         Show this screen
     --info             Show a short description of this subcommand
     --version          Show version
+    --yes              Assume "yes" is the answer to all prompts and run
+                       non-interactively
     --all              Apply the operation to all matching packages
     --app              Apply the operation only to the package's application
     --app-id=<app-id>  The application id
@@ -51,6 +52,8 @@ import docopt
 import pkg_resources
 from dcos import cmds, emitting, marathon, options, package, subcommand, util
 from dcos.errors import DCOSException
+
+from six.moves import input as user_input
 
 logger = util.get_logger(__name__)
 
@@ -100,7 +103,7 @@ def _cmds():
         cmds.Command(
             hierarchy=['package', 'install'],
             arg_keys=['<package_name>', '--options', '--app-id', '--cli',
-                      '--app'],
+                      '--app', '--yes'],
             function=_install),
 
         cmds.Command(
@@ -240,7 +243,32 @@ def _user_options(path):
             return util.load_json(options_file)
 
 
-def _install(package_name, options_path, app_id, cli, app):
+def _confirm(prompt, yes):
+    """
+    :param prompt: message to display to the terminal
+    :type prompt: str
+    :param yes: whether to assume that the user responded with yes
+    :type yes: bool
+    :returns: True if the user responded with yes; False otherwise
+    :rtype: bool
+    """
+
+    if yes:
+        return True
+    else:
+        while True:
+            emitter.publish('{} [yes/no]'.format(prompt))
+            response = user_input().lower()
+            if response == 'yes' or response == 'y':
+                return True
+            elif response == 'no' or response == 'n':
+                return False
+            else:
+                emitter.publish(
+                    "'{}' is not a valid response.".format(response))
+
+
+def _install(package_name, options_path, app_id, cli, app, yes):
     """Install the specified package.
 
     :param package_name: the package to install
@@ -253,6 +281,8 @@ def _install(package_name, options_path, app_id, cli, app):
     :type cli: bool
     :param app: indicate if the application should be installed
     :type app: bool
+    :param yes: automatically assume yes to all prompts
+    :type yes: bool
     :returns: process status
     :rtype: int
     """
@@ -272,6 +302,13 @@ def _install(package_name, options_path, app_id, cli, app):
 
     # TODO(CD): Make package version to install configurable
     pkg_version = pkg.latest_version()
+
+    pre_install_notes = pkg.package_json(pkg_version).get('preInstallNotes')
+    if pre_install_notes:
+        emitter.publish(pre_install_notes)
+        if not _confirm('Continue installing?', yes):
+            emitter.publish('Exiting installation.')
+            return 0
 
     user_options = _user_options(options_path)
 

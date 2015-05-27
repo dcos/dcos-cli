@@ -1,7 +1,7 @@
 [core]
-dcos_url = "http://localhost:5080"
+dcos_url = "http://172.17.8.101"
 email = "test@mail.com"
 reporting = false
 [package]
-cache = "tmp/cache"
 sources = [ "git://github.com/mesosphere/universe.git", "https://github.com/mesosphere/universe/archive/master.zip",]
+cache = "tmp/cache"
