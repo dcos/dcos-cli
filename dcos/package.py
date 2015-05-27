@@ -97,7 +97,7 @@ def _make_package_labels(pkg, version, options):
         PACKAGE_RELEASE_KEY: str(version)
     }
 
-    if pkg.is_command_defined(version):
+    if pkg.has_command_definition(version):
         command = pkg.command_json(version, options)
         package_labels[PACKAGE_COMMAND_KEY] = _base64_encode(command)
 
@@ -1111,7 +1111,21 @@ class Package():
 
         return self._registry
 
-    def is_command_defined(self, version):
+    def has_definition(self, version, filename):
+        """Returns true if the package defines filename; false otherwise.
+
+        :param version: package version
+        :type version: str
+        :returns: whether filename is defined
+        :rtype: bool
+        """
+
+        return os.path.isfile(
+            os.path.join(
+                self.path,
+                os.path.join(version, filename)))
+
+    def has_command_definition(self, version):
         """Returns true if the package defines a command; false otherwise.
 
         :param version: package version
@@ -1119,10 +1133,17 @@ class Package():
         :rtype: bool
         """
 
-        return os.path.isfile(
-            os.path.join(
-                self.path,
-                os.path.join(version, 'command.json')))
+        return self.has_definition(version, 'command.json')
+
+    def has_marathon_definition(self, version):
+        """Returns true if the package defines a Marathon json. false otherwise.
+
+        :param version: package version
+        :type version: str
+        :rtype: bool
+        """
+
+        return self.has_definition(version, 'marathon.json')
 
     def config_json(self, version):
         """Returns the JSON content of the config.json file.
