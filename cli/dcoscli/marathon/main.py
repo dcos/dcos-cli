@@ -5,7 +5,7 @@ Usage:
     dcos marathon --info
     dcos marathon about
     dcos marathon app add [<app-resource>]
-    dcos marathon app list
+    dcos marathon app list [--json]
     dcos marathon app remove [--force] <app-id>
     dcos marathon app restart [--force] <app-id>
     dcos marathon app show [--app-version=<app-version>] <app-id>
@@ -76,6 +76,7 @@ Positional Arguments:
 import json
 import sys
 import time
+from collections import OrderedDict
 
 import dcoscli
 import docopt
@@ -154,7 +155,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['marathon', 'app', 'list'],
-            arg_keys=[],
+            arg_keys=['--json'],
             function=_list),
 
         cmds.Command(
@@ -318,8 +319,41 @@ def _add(app_resource):
     return 0
 
 
-def _list():
+def _app_table(apps):
+    def get_cmd(app):
+        if app["cmd"] is not None:
+            return app["cmd"]
+        else:
+            return app["args"]
+
+    def get_container(app):
+        if app["container"] is not None:
+            return app["container"]["type"]
+        else:
+            return "null"
+
+    fields = OrderedDict([
+        ("id", lambda a: a["id"]),
+        ("mem", lambda a: a["mem"]),
+        ("cpus", lambda a: a["cpus"]),
+        ("deployments", lambda a: len(a["deployments"])),
+        ("instances", lambda a: "{}/{}".format(a["tasksRunning"],
+                                               a["instances"])),
+        ("container", get_container),
+        ("cmd", get_cmd)
+    ])
+
+    tb = util.table(fields, apps)
+    tb.align["CMD"] = "l"
+    tb.align["ID"] = "l"
+
+    return tb
+
+
+def _list(json_):
     """
+    :param json_: output json if True
+    :type json_: bool
     :returns: process status
     :rtype: int
     """
@@ -327,7 +361,13 @@ def _list():
     client = marathon.create_client()
     apps = client.get_apps()
 
-    emitter.publish(apps)
+    if json_:
+        emitter.publish(apps)
+    else:
+        table = _app_table(apps)
+        output = str(table)
+        if output:
+            emitter.publish(output)
     return 0
 
 

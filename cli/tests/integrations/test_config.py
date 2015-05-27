@@ -6,7 +6,8 @@ import six
 from dcos import constants
 
 import pytest
-from common import assert_command, exec_command
+
+from .common import assert_command, exec_command
 
 
 @pytest.fixture

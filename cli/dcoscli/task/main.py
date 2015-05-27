@@ -20,10 +20,8 @@ Positional Arguments:
 
 from collections import OrderedDict
 
-import blessings
 import dcoscli
 import docopt
-import prettytable
 from dcos import cmds, emitting, mesos, util
 from dcos.errors import DCOSException
 
@@ -87,28 +85,16 @@ def _task_table(tasks):
     :rtype: TaskTable
     """
 
-    term = blessings.Terminal()
-
-    table_generator = OrderedDict([
+    fields = OrderedDict([
         ("name", lambda t: t["name"]),
         ("user", lambda t: t.user()),
         ("state", lambda t: t["state"].split("_")[-1][0]),
         ("id", lambda t: t["id"]),
     ])
 
-    tb = prettytable.PrettyTable(
-        [k.upper() for k in table_generator.keys()],
-        border=False,
-        max_table_width=term.width,
-        hrules=prettytable.NONE,
-        vrules=prettytable.NONE,
-        left_padding_width=0,
-        right_padding_width=1
-    )
-
-    for task in tasks:
-        row = [fn(task) for fn in table_generator.values()]
-        tb.add_row(row)
+    tb = util.table(fields, tasks)
+    tb.align["NAME"] = "l"
+    tb.align["ID"] = "l"
 
     return tb
 
