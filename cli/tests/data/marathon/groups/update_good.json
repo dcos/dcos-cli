@@ -1,0 +1,8 @@
+{
+    "apps": [
+        {
+            "cmd": "sleep 0",
+            "id": "updated"
+        }
+    ]
+}

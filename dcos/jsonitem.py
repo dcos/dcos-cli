@@ -22,7 +22,7 @@ def parse_json_item(json_item, schema):
     # Check that it is a valid key in our jsonschema
     key = terms[0]
     value = parse_json_value(key, terms[1], schema)
-    return (key, value)
+    return (json.dumps(key), value)
 
 
 def parse_json_value(key, value, schema):
@@ -80,7 +80,7 @@ class ValueTypeParser(object):
         :rtype: str | int | float | bool | list | dict
         """
 
-        value = _clean_value(value)
+        value = clean_value(value)
 
         if self.schema['type'] == 'string':
             return _parse_string(value)
@@ -98,7 +98,7 @@ class ValueTypeParser(object):
             raise DCOSException('Unknown type {!r}'.format(self._value_type))
 
 
-def _clean_value(value):
+def clean_value(value):
     """
     :param value: String to try and clean
     :type value: str

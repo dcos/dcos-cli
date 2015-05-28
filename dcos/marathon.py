@@ -183,7 +183,7 @@ class Client(object):
 
         :param app_id: the ID of the application or group
         :type app_id: str
-        :param id_type: type of the id (apps or groups)
+        :param id_type: type of the id ("apps" or "groups")
         :type app_id: str
         :param max_count: the maximum number of version to fetch
         :type max_count: int
@@ -243,6 +243,37 @@ class Client(object):
 
         return response.json()
 
+    def _update(self, resource_id, payload, force=None, url_endpoint="apps"):
+        """Update an application or group.
+
+        :param resource_id: the app or group id
+        :type resource_id: str
+        :param payload: the json payload
+        :type payload: dict
+        :param force: whether to override running deployments
+        :type force: bool
+        :param url_endpoint: resource type to update ("apps" or "groups")
+        :type url_endpoint: str
+        :returns: the resulting deployment ID
+        :rtype: str
+        """
+
+        resource_id = self.normalize_app_id(resource_id)
+
+        if not force:
+            params = None
+        else:
+            params = {'force': 'true'}
+
+        url = self._create_url('v2/{}{}'.format(url_endpoint, resource_id))
+
+        response = http.put(url,
+                            params=params,
+                            json=payload,
+                            to_error=_to_error)
+
+        return response.json().get('deploymentId')
+
     def update_app(self, app_id, payload, force=None):
         """Update an application.
 
@@ -256,21 +287,22 @@ class Client(object):
         :rtype: str
         """
 
-        app_id = self.normalize_app_id(app_id)
+        return self._update(app_id, payload, force)
 
-        if not force:
-            params = None
-        else:
-            params = {'force': 'true'}
+    def update_group(self, group_id, payload, force=None):
+        """Update a group.
 
-        url = self._create_url('v2/apps{}'.format(app_id))
+        :param group_id: the group id
+        :type group_id: str
+        :param payload: the json payload
+        :type payload: dict
+        :param force: whether to override running deployments
+        :type force: bool
+        :returns: the resulting deployment ID
+        :rtype: str
+        """
 
-        response = http.put(url,
-                            params=params,
-                            json=payload,
-                            to_error=_to_error)
-
-        return response.json().get('deploymentId')
+        return self._update(group_id, payload, force, "groups")
 
     def scale_app(self, app_id, instances, force=None):
         """Scales an application to the requested number of instances.

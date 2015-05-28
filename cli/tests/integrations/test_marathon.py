@@ -6,7 +6,8 @@ from dcos import constants
 import pytest
 
 from .common import (assert_command, assert_lines, exec_command,
-                     list_deployments, watch_all_deployments, watch_deployment)
+                     list_deployments, show_app, watch_all_deployments,
+                     watch_deployment)
 
 
 def test_help():
@@ -36,6 +37,7 @@ Usage:
     dcos marathon group list [--json]
     dcos marathon group show [--group-version=<group-version>] <group-id>
     dcos marathon group remove [--force] <group-id>
+    dcos marathon group update [--force] <group-id> [<properties>...]
 
 Options:
     -h, --help                       Show this screen
@@ -82,23 +84,27 @@ Options:
 Positional Arguments:
     <app-id>                    The application id
 
-    <app-resource>              The application resource; for a detailed
-                                description see (https://mesosphere.github.io/
-                                marathon/docs/rest-api.html#post-/v2/apps)
+    <app-resource>              Path to a file containing the app's JSON
+                                definition. If omitted, the definition is read
+                                from stdin. For a detailed description see
+                                (https://mesosphere.github.io/
+                                marathon/docs/rest-api.html#post-/v2/apps).
 
     <deployment-id>             The deployment id
 
     <group-id>                  The group id
 
-    <group-resource>            The group resource; for a detailed description
-                                see (https://mesosphere.github.io/marathon/docs
-                                /rest-api.html#post-/v2/groups)
+    <group-resource>            Path to a file containing the group's JSON
+                                definition. If omitted, the definition is read
+                                from stdin. For a detailed description see
+                                (https://mesosphere.github.io/
+                                marathon/docs/rest-api.html#post-/v2/groups).
 
     <instances>                 The number of instances to start
 
-    <properties>                Optional key-value pairs to be included in the
-                                command. The separator between the key and
-                                value must be the '=' character. E.g. cpus=2.0
+    <properties>                Must be of the format <key>=<value>. E.g.
+                                cpus=2.0. If omitted, properties are read from
+                                stdin.
 
     <task-id>                   The task id
 """
@@ -154,7 +160,7 @@ def test_add_app():
     _remove_app('zero-instance-app')
 
 
-def test_optional_add_app():
+def test_add_app_with_filename():
     assert_command(['dcos', 'marathon', 'app', 'add',
                     'tests/data/marathon/apps/zero_instance_sleep.json'])
 
@@ -194,7 +200,7 @@ def test_add_existing_app():
 
 def test_show_app():
     _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
-    _show_app('zero-instance-app')
+    show_app('zero-instance-app')
     _remove_app('zero-instance-app')
 
 
@@ -204,8 +210,8 @@ def test_show_absolute_app_version():
         'zero-instance-app',
         'tests/data/marathon/apps/update_zero_instance_sleep.json')
 
-    result = _show_app('zero-instance-app')
-    _show_app('zero-instance-app', result['version'])
+    result = show_app('zero-instance-app')
+    show_app('zero-instance-app', result['version'])
 
     _remove_app('zero-instance-app')
 
@@ -215,7 +221,7 @@ def test_show_relative_app_version():
     _update_app(
         'zero-instance-app',
         'tests/data/marathon/apps/update_zero_instance_sleep.json')
-    _show_app('zero-instance-app', "-1")
+    show_app('zero-instance-app', "-1")
     _remove_app('zero-instance-app')
 
 
@@ -694,25 +700,6 @@ def _add_app(file_path):
         assert stderr == b''
 
 
-def _show_app(app_id, version=None):
-    if version is None:
-        cmd = ['dcos', 'marathon', 'app', 'show', app_id]
-    else:
-        cmd = ['dcos', 'marathon', 'app', 'show',
-               '--app-version={}'.format(version), app_id]
-
-    returncode, stdout, stderr = exec_command(cmd)
-
-    assert returncode == 0
-    assert stderr == b''
-
-    result = json.loads(stdout.decode('utf-8'))
-    assert isinstance(result, dict)
-    assert result['id'] == '/' + app_id
-
-    return result
-
-
 def _start_app(app_id, instances=None):
     cmd = ['dcos', 'marathon', 'app', 'start', app_id]
     if instances is not None:
@@ -727,8 +714,13 @@ def _start_app(app_id, instances=None):
 
 def _update_app(app_id, file_path):
     with open(file_path) as fd:
-        assert_command(['dcos', 'marathon', 'app', 'update', app_id],
-                       stdin=fd)
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'app', 'update', app_id],
+            stdin=fd)
+
+        assert returncode == 0
+        assert stdout.decode().startswith('Created deployment ')
+        assert stderr == b''
 
 
 def _list_versions(app_id, expected_count, max_count=None):
