@@ -22,9 +22,8 @@ def test_when_authenticated():
 
 
 def test_anonymous_login():
-    with patch('six.moves.input',
-               return_value=''), patch('uuid.uuid1',
-                                       return_value='anonymous@email'):
+    with patch('sys.stdin.readline', return_value='\n'), \
+            patch('uuid.uuid1', return_value='anonymous@email'):
 
         assert _mock_dcos_run([util.which('dcos'),
                                'help'], False) == 0
@@ -35,17 +34,24 @@ def test_anonymous_login():
 
 
 def _mock_dcos_run(args, authenticated=True):
-    env = _config_with_credentials() if authenticated else \
-        _config_without_credentials()
+    if authenticated:
+        env = _config_with_credentials()
+    else:
+        env = _config_without_credentials()
+
     with patch('sys.argv', args), patch.dict(os.environ, env):
         return main()
 
 
 def _config_with_credentials():
-    return {constants.DCOS_CONFIG_ENV: os.path.join(
-        'tests', 'data', 'auth', 'dcos_with_credentials.toml')}
+    return {
+        constants.DCOS_CONFIG_ENV: os.path.join(
+            'tests', 'data', 'auth', 'dcos_with_credentials.toml')
+    }
 
 
 def _config_without_credentials():
-    return {constants.DCOS_CONFIG_ENV: os.path.join(
-        'tests', 'data', 'auth', 'dcos_without_credentials.toml')}
+    return {
+        constants.DCOS_CONFIG_ENV: os.path.join(
+            'tests', 'data', 'auth', 'dcos_without_credentials.toml')
+    }

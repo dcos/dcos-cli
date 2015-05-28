@@ -1,12 +1,13 @@
 import json
 import os
+import sys
 import uuid
 
 import pkg_resources
 import toml
 from dcos import config, constants, emitting, errors, http, jsonitem, util
 from dcos.errors import DCOSException
-from six import iteritems, moves
+from six import iteritems
 
 from oauth2client import client
 
@@ -69,29 +70,31 @@ def _run(flow):
     :rtype: dict
     """
 
-    auth_url = flow.step1_get_authorize_url()
-    message = """Thank you for installing the Mesosphere DCOS CLI.
-Please log in with your Mesosphere Account by pasting
-the following URL into your browser to continue."""
-    emitter.publish(errors.DefaultError(
-        '{message}\n\n    {url}\n\n'.format(message=message,
-                                            url=auth_url,)))
+    emitter.publish(
+        errors.DefaultError(
+            '\n\n\n{}\n\n    {}\n\n'.format(
+                'Go to the following link in your browser:',
+                flow.step1_get_authorize_url())))
 
-    code = moves.input('Please enter Mesosphere verification code: ').strip()
+    sys.stderr.write('Enter verification code: ')
+    code = sys.stdin.readline().strip()
     if not code:
-        email = moves.input('Skipping authentication.'
-                            ' Please enter email address:').strip()
+        sys.stderr.write('Skipping authentication.\nEnter email address: ')
+
+        email = sys.stdin.readline().strip()
         if not email:
-            emitter.publish(errors.DefaultError('Skipping email input,'
-                                                ' using anonymous id:'))
+            emitter.publish(
+                errors.DefaultError(
+                    'Skipping email input.'))
             email = str(uuid.uuid1())
+
         return {CORE_EMAIL_KEY: email}
 
     return make_oauth_request(code, flow)
 
 
 def check_if_user_authenticated():
-    """ check if user is authenticated already
+    """Check if user is authenticated already
 
     :returns user auth status
     :rtype: boolean
@@ -102,7 +105,7 @@ def check_if_user_authenticated():
 
 
 def force_auth():
-    """ Make user authentication process
+    """Make user authentication process
 
     :returns authentication process status
     :rtype: boolean
