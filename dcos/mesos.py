@@ -125,25 +125,25 @@ class MesosMaster(object):
             return tasks[0]
 
     # TODO (thomas): need to filter on task state as well as id
-    def tasks(self, fltr="", active_only=False):
+    def tasks(self, fltr="", completed=False):
         """Returns tasks running under the master
 
         :param fltr: May be a substring or unix glob pattern.  Only
                      return tasks whose 'id' matches `fltr`.
         :type fltr: str
-        :param active_only: don't include completed tasks
-        :type active_only: bool
+        :param completed: also include completed tasks
+        :type completed: bool
         :returns: a list of tasks
         :rtype: [Task]
 
         """
 
         keys = ['tasks']
-        if not active_only:
+        if completed:
             keys = ['completed_tasks']
 
         tasks = []
-        for framework in self._framework_dicts(active_only):
+        for framework in self._framework_dicts(completed, completed):
             tasks += \
                 [Task(task, self)
                  for task in _merge(framework, *keys)
@@ -161,35 +161,42 @@ class MesosMaster(object):
         :rtype: Framework
         """
 
-        for f in self._framework_dicts(active_only=False):
+        for f in self._framework_dicts(inactive=True):
             if f['id'] == framework_id:
                 return Framework(f)
         raise DCOSException('No Framework with id [{}]'.format(framework_id))
 
-    def frameworks(self, active_only=False):
+    def frameworks(self, inactive=False, completed=False):
         """Returns a list of all frameworks
 
-        :param active_only: only include active frameworks
-        :type active_only: bool
+        :param inactive: also include inactive frameworks
+        :type inactive: bool
+        :param completed: also include completed frameworks
+        :type completed: bool
         :returns: a list of frameworks
         :rtype: [Framework]
         """
 
-        return [Framework(f) for f in self._framework_dicts(active_only)]
+        return [Framework(f)
+                for f in self._framework_dicts(inactive, completed)]
 
-    def _framework_dicts(self, active_only=False):
+    def _framework_dicts(self, inactive=False, completed=False):
         """Returns a list of all frameworks as their raw dictionaries
 
-        :param active_only: only include active frameworks
-        :type active_only: bool
+        :param inactive: also include inactive frameworks
+        :type inactive: bool
+        :param completed: also include completed frameworks
+        :type completed: bool
         :returns: a list of frameworks
         :rtype: [dict]
         """
 
         keys = ['frameworks']
-        if not active_only:
+        if completed:
             keys.append('completed_frameworks')
-        return _merge(self.state(), *keys)
+        for framework in _merge(self.state(), *keys):
+            if inactive or framework['active']:
+                yield framework
 
     @util.duration
     def fetch(self, path, **kwargs):
@@ -233,6 +240,9 @@ class Framework(object):
 
     def __init__(self, framework):
         self._framework = framework
+
+    def dict(self):
+        return self._framework
 
     def __getitem__(self, name):
         return self._framework[name]

@@ -1,20 +1,21 @@
-"""Get the status of DCOS tasks
+"""Get the status of DCOS services
 
 Usage:
-    dcos task --info
-    dcos task [--completed --json <task>]
+    dcos service --info
+    dcos service [--inactive --json]
 
 Options:
     -h, --help    Show this screen
+
     --info        Show a short description of this subcommand
-    --json        Print json-formatted tasks
-    --completed   Show completed tasks as well
+
+    --json        Print json-formatted services
+
+    --inactive    Show inactive services in addition to active ones.
+                  Inactive services are those that have been disconnected from
+                  master, but haven't yet reached their failover timeout.
+
     --version     Show version
-
-Positional Arguments:
-
-    <task>        Only match tasks whose ID matches <task>.  <task> may be
-                  a substring of the ID, or a unix glob pattern.
 """
 
 
@@ -44,7 +45,7 @@ def _main():
 
     args = docopt.docopt(
         __doc__,
-        version="dcos-task version {}".format(dcoscli.version))
+        version="dcos-service version {}".format(dcoscli.version))
 
     return cmds.execute(_cmds(), args)
 
@@ -57,19 +58,19 @@ def _cmds():
 
     return [
         cmds.Command(
-            hierarchy=['task', '--info'],
+            hierarchy=['service', '--info'],
             arg_keys=[],
             function=_info),
 
         cmds.Command(
-            hierarchy=['task'],
-            arg_keys=['<task>', '--completed', '--json'],
-            function=_task),
+            hierarchy=['service'],
+            arg_keys=['--inactive', '--json'],
+            function=_service),
     ]
 
 
 def _info():
-    """Print task cli information.
+    """Print services cli information.
 
     :returns: process return code
     :rtype: int
@@ -79,21 +80,25 @@ def _info():
     return 0
 
 
-def _task_table(tasks):
-    """Returns a PrettyTable representation of the provided tasks.
+def _service_table(services):
+    """Returns a PrettyTable representation of the provided services.
 
-    :param tasks: tasks to render
-    :type tasks: [Task]
+    :param services: services to render
+    :type services: [Framework]
     :rtype: TaskTable
     """
 
     term = blessings.Terminal()
 
     table_generator = OrderedDict([
-        ("name", lambda t: t["name"]),
-        ("user", lambda t: t.user()),
-        ("state", lambda t: t["state"].split("_")[-1][0]),
-        ("id", lambda t: t["id"]),
+        ("name", lambda s: s['name']),
+        ("host", lambda s: s['hostname']),
+        ("active", lambda s: s['active']),
+        ("tasks", lambda s: len(s['tasks'])),
+        ("cpu", lambda s: s['resources']['cpus']),
+        ("mem", lambda s: s['resources']['mem']),
+        ("disk", lambda s: s['resources']['disk']),
+        ("ID", lambda s: s['id']),
     ])
 
     tb = prettytable.PrettyTable(
@@ -106,37 +111,36 @@ def _task_table(tasks):
         right_padding_width=1
     )
 
-    for task in tasks:
-        row = [fn(task) for fn in table_generator.values()]
+    for service in services:
+        row = [fn(service) for fn in table_generator.values()]
         tb.add_row(row)
 
     return tb
 
 
-def _task(fltr, completed, is_json):
-    """ List DCOS tasks
+# TODO (mgummelt): support listing completed services as well.
+# blocked on framework shutdown.
+def _service(inactive, is_json):
+    """List dcos services
 
-    :param fltr: task id filter
-    :type fltr: str
-    :param completed: If True, include completed tasks
+    :param inactive: If True, include completed tasks
     :type completed: bool
     :param is_json: If true, output json.
         Otherwise, output a human readable table.
     :type is_json: bool
     :returns: process return code
+    :rtype: int
     """
 
-    if fltr is None:
-        fltr = ""
-
     master = mesos.get_master()
-    tasks = sorted(master.tasks(completed=completed, fltr=fltr),
-                   key=lambda task: task['name'])
+    services = master.frameworks(inactive=inactive)
 
     if is_json:
-        emitter.publish([task.dict() for task in tasks])
+        emitter.publish([service.dict() for service in services])
     else:
-        table = _task_table(tasks)
+        table = _service_table(services)
         output = str(table)
         if output:
             emitter.publish(output)
+
+    return 0

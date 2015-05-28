@@ -260,6 +260,7 @@ Please create a JSON file with the appropriate options, and pass the \
 
 def test_install():
     _install_chronos()
+    _uninstall_chronos()
 
 
 def test_install_missing_options_file():
@@ -600,7 +601,7 @@ def test_search():
     for registry in registries:
         # assert the number of packages is gte the number at the time
         # this test was written
-        assert len(registry['packages']) >= 7
+        assert len(registry['packages']) >= 5
 
     assert returncode == 0
     assert stderr == b''
