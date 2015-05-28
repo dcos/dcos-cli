@@ -1,8 +1,8 @@
-"""Get the status of mesos tasks
+"""Get the status of DCOS tasks
 
 Usage:
-    dcos tasks --info
-    dcos tasks [--completed --json <task>]
+    dcos task --info
+    dcos task [--completed --json <task>]
 
 Options:
     -h, --help    Show this screen
@@ -44,7 +44,7 @@ def _main():
 
     args = docopt.docopt(
         __doc__,
-        version="dcos-tasks version {}".format(dcoscli.version))
+        version="dcos-task version {}".format(dcoscli.version))
 
     return cmds.execute(_cmds(), args)
 
@@ -57,19 +57,19 @@ def _cmds():
 
     return [
         cmds.Command(
-            hierarchy=['tasks', '--info'],
+            hierarchy=['task', '--info'],
             arg_keys=[],
             function=_info),
 
         cmds.Command(
-            hierarchy=['tasks'],
+            hierarchy=['task'],
             arg_keys=['<task>', '--completed', '--json'],
-            function=_tasks),
+            function=_task),
     ]
 
 
 def _info():
-    """Print tasks cli information.
+    """Print task cli information.
 
     :returns: process return code
     :rtype: int
@@ -113,12 +113,12 @@ def _task_table(tasks):
     return tb
 
 
-def _tasks(fltr, completed, is_json):
-    """ List mesos tasks
+def _task(fltr, completed, is_json):
+    """ List DCOS tasks
 
     :param fltr: task id filter
     :type fltr: str
-    :param completed: If True, include compelted tasks
+    :param completed: If True, include completed tasks
     :type completed: bool
     :param is_json: If true, output json.
         Otherwise, output a human readable table.

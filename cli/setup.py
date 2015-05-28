@@ -97,7 +97,7 @@ setup(
             'dcos-config=dcoscli.config.main:main',
             'dcos-marathon=dcoscli.marathon.main:main',
             'dcos-package=dcoscli.package.main:main',
-            'dcos-tasks=dcoscli.tasks.main:main',
+            'dcos-task=dcoscli.task.main:main',
         ],
     },
 
