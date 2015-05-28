@@ -4,7 +4,7 @@ import json
 import dcos.util as util
 from dcos.mesos import Task
 from dcos.util import create_schema
-from dcoscli.tasks.main import _task_table
+from dcoscli.task.main import _task_table
 
 import mock
 import pytest
@@ -44,11 +44,11 @@ def task():
 
 
 def test_help():
-    stdout = b"""Get the status of mesos tasks
+    stdout = b"""Get the status of DCOS tasks
 
 Usage:
-    dcos tasks --info
-    dcos tasks [--completed --json <task>]
+    dcos task --info
+    dcos task [--completed --json <task>]
 
 Options:
     -h, --help    Show this screen
@@ -62,19 +62,19 @@ Positional Arguments:
     <task>        Only match tasks whose ID matches <task>.  <task> may be
                   a substring of the ID, or a unix glob pattern.
 """
-    assert_command(['dcos', 'tasks', '--help'], stdout=stdout)
+    assert_command(['dcos', 'task', '--help'], stdout=stdout)
 
 
 def test_info():
-    stdout = b"Get the status of mesos tasks\n"
-    assert_command(['dcos', 'tasks', '--info'], stdout=stdout)
+    stdout = b"Get the status of DCOS tasks\n"
+    assert_command(['dcos', 'task', '--info'], stdout=stdout)
 
 
-def test_tasks(task):
+def test_task(task):
     _install_sleep_task()
 
-    # test `dcos tasks` output
-    returncode, stdout, stderr = exec_command(['dcos', 'tasks', '--json'])
+    # test `dcos task` output
+    returncode, stdout, stderr = exec_command(['dcos', 'task', '--json'])
 
     assert returncode == 0
     assert stderr == b''
@@ -90,19 +90,19 @@ def test_tasks(task):
     _uninstall_sleep()
 
 
-def test_tasks_completed():
+def test_task_completed():
     _install_sleep_task()
     _uninstall_sleep()
     _install_sleep_task()
 
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'tasks', '--completed', '--json'])
+        ['dcos', 'task', '--completed', '--json'])
     assert returncode == 0
     assert stderr == b''
     assert len(json.loads(stdout.decode('utf-8'))) > 1
 
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'tasks', '--json'])
+        ['dcos', 'task', '--json'])
     assert returncode == 0
     assert stderr == b''
     assert len(json.loads(stdout.decode('utf-8'))) == 1
@@ -110,8 +110,8 @@ def test_tasks_completed():
     _uninstall_sleep()
 
 
-def test_tasks_none():
-    assert_command(['dcos', 'tasks', '--json'],
+def test_task_none():
+    assert_command(['dcos', 'task', '--json'],
                    stdout=b'[]\n')
 
 
@@ -120,7 +120,7 @@ def test_filter(task):
     _install_sleep_task(SLEEP2, 'test-app2')
 
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'tasks', 'test-app2', '--json'])
+        ['dcos', 'task', 'test-app2', '--json'])
 
     assert returncode == 0
     assert stderr == b''
