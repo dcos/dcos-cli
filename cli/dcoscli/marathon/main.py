@@ -472,8 +472,6 @@ def _start(app_id, instances, force):
                 desc['instances']))
         return 1
 
-    schema = _app_schema()
-
     # Need to add the 'id' because it is required
     app_json = {'id': app_id}
 
@@ -489,10 +487,6 @@ def _start(app_id, instances, force):
             return 1
 
     app_json['instances'] = instances
-
-    errs = util.validate_json(app_json, schema)
-    if errs:
-        raise DCOSException(util.list_to_err(errs))
 
     deployment = client.update_app(app_id, app_json, force)
 
@@ -574,10 +568,6 @@ def _update(app_id, json_items, force):
             return 1
         else:
             app_json[key] = value
-
-    errs = util.validate_json(app_json, schema)
-    if errs:
-        raise DCOSException(util.list_to_err(errs))
 
     deployment = client.update_app(app_id, app_json, force)
 

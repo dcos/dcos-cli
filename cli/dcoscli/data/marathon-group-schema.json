@@ -4,7 +4,33 @@
     "definitions": {
         "app": {
             "additionalProperties": false,
+            "definitions": {
+                "pathType": {
+                    "pattern": "^(\\/?((\\.{2})|([a-z0-9\\-]*))($|\\/))*$",
+                    "type": "string"
+                }
+            },
+            "not": {
+                "allOf": [
+                    {
+                        "required": [
+                            "cmd"
+                        ]
+                    },
+                    {
+                        "required": [
+                            "args"
+                        ]
+                    }
+                ]
+            },
             "properties": {
+                "acceptedResourceRoles": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
                 "args": {
                     "items": {
                         "type": "string"
@@ -20,6 +46,7 @@
                     "type": "integer"
                 },
                 "cmd": {
+                    "minLength": 1,
                     "type": "string"
                 },
                 "constraints": {},
@@ -29,11 +56,26 @@
                         "docker": {
                             "additionalProperties": false,
                             "properties": {
+                                "forcePullImage": {
+                                    "type": "boolean"
+                                },
                                 "image": {
                                     "type": "string"
                                 },
                                 "network": {
                                     "type": "string"
+                                },
+                                "parameters": {
+                                    "items": {
+                                        "additionalProperties": false,
+                                        "properties": {},
+                                        "required": [
+                                            "key",
+                                            "value"
+                                        ],
+                                        "type": "object"
+                                    },
+                                    "type": "array"
                                 },
                                 "portMappings": {
                                     "items": {
@@ -61,6 +103,9 @@
                                         "type": "object"
                                     },
                                     "type": "array"
+                                },
+                                "privileged": {
+                                    "type": "boolean"
                                 }
                             },
                             "required": [
@@ -98,8 +143,7 @@
                 },
                 "dependencies": {
                     "items": {
-                        "pattern": "^/?(([a-z0-9]|[a-z0-9][a-z0-9\\-]*[a-z0-9])\\.)*([a-z0-9]|[a-z0-9][a-z0-9\\-]*[a-z0-9])$",
-                        "type": "string"
+                        "$ref": "#/definitions/pathType"
                     },
                     "type": "array"
                 },
@@ -116,6 +160,7 @@
                     "type": "object"
                 },
                 "executor": {
+                    "pattern": "^(|\\/\\/cmd|\\/?[^\\/]+(\\/[^\\/]+)*)$",
                     "type": "string"
                 },
                 "healthChecks": {
@@ -128,6 +173,9 @@
                             "gracePeriodSeconds": {
                                 "minimum": 0,
                                 "type": "integer"
+                            },
+                            "ignoreHttp1xx": {
+                                "type": "boolean"
                             },
                             "intervalSeconds": {
                                 "minimum": 0,
@@ -157,7 +205,7 @@
                     "type": "array"
                 },
                 "id": {
-                    "pattern": "^/?(([a-z0-9]|[a-z0-9][a-z0-9\\-]*[a-z0-9])\\.)*([a-z0-9]|[a-z0-9][a-z0-9\\-]*[a-z0-9])$",
+                    "pattern": "^(\\/?((\\.{2})|([a-z0-9][a-z0-9\\-]*[a-z0-9]+)|([a-z0-9]*))($|\\/))*$",
                     "type": "string"
                 },
                 "instances": {
@@ -169,6 +217,10 @@
                         "type": "string"
                     },
                     "type": "object"
+                },
+                "maxLaunchDelaySeconds": {
+                    "minimum": 0,
+                    "type": "integer"
                 },
                 "mem": {
                     "minimum": 0,
@@ -185,9 +237,6 @@
                 "requirePorts": {
                     "type": "boolean"
                 },
-                "required": [
-                    "id"
-                ],
                 "storeUrls": {
                     "items": {
                         "type": "string"
@@ -197,6 +246,11 @@
                 "upgradeStrategy": {
                     "additionalProperties": false,
                     "properties": {
+                        "maximumOverCapacity": {
+                            "maximum": 1.0,
+                            "minimum": 0.0,
+                            "type": "number"
+                        },
                         "minimumHealthCapacity": {
                             "maximum": 1.0,
                             "minimum": 0.0,
@@ -213,8 +267,16 @@
                 },
                 "user": {
                     "type": "string"
+                },
+                "version": {
+                    "format": "date-time",
+                    "type": "string"
                 }
-            }
+            },
+            "required": [
+                "id"
+            ],
+            "type": "object"
         }
     },
     "properties": {
