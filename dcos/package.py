@@ -674,7 +674,8 @@ def update_sources(config, validate=False):
                 target_dir = os.path.join(cache_dir, source.hash())
                 try:
                     if os.path.exists(target_dir):
-                        shutil.rmtree(target_dir, onerror=onerror, ignore_errors=False)
+                        shutil.rmtree(target_dir,
+                                      onerror=onerror, ignore_errors=False)
                 except OSError:
                     err = Error(
                         'Could not remove directory [{}]'.format(target_dir))
@@ -902,6 +903,7 @@ PATH = {}""".format(os.environ[constants.PATH_ENV]))
             raise DCOSException(
                 'Unable to fetch packages from [{}]'.format(self.url))
 
+
 def onerror(func, path, exc_info):
     """
     Error handler for ``shutil.rmtree``.
@@ -919,6 +921,7 @@ def onerror(func, path, exc_info):
         func(path)
     else:
         raise
+
 
 class Error(errors.Error):
     """Class for describing errors during packaging operations.
@@ -963,10 +966,12 @@ class Registry():
         # TODO(CD): implement these checks in pure Python?
         scripts_dir = os.path.join(self._base_path, 'scripts')
         suffix = 'ps1' if util.is_windows_platform() else 'sh'
-        validate_script = os.path.join(scripts_dir, '1-validate-packages.' + suffix)
+        validate_script = os.path.join(scripts_dir,
+                                       '1-validate-packages.' + suffix)
         cmd = [validate_script]
         if validate_script.endswith('.ps1'):
-            cmd = ['powershell', '-ExecutionPolicy', 'ByPass', '-File', validate_script]
+            cmd = ['powershell', '-ExecutionPolicy',
+                   'ByPass', '-File', validate_script]
         result = subprocess.call(cmd)
         if result is not 0:
             return [Error(
