@@ -7,7 +7,7 @@ Usage:
     dcos package info
     dcos package install [--cli | [--app --app-id=<app_id>]]
                          [--options=<file> --yes] <package_name>
-    dcos package list-installed [--endpoints --app-id=<app-id> <package_name>]
+    dcos package list [--endpoints --app-id=<app-id> <package_name>]
     dcos package search [<query>]
     dcos package sources
     dcos package uninstall [--cli | [--app --app-id=<app-id> --all]]
@@ -46,14 +46,13 @@ Configuration:
     ]
 """
 import json
+import sys
 
 import dcoscli
 import docopt
 import pkg_resources
 from dcos import cmds, emitting, marathon, options, package, subcommand, util
 from dcos.errors import DCOSException
-
-from six.moves import input as user_input
 
 logger = util.get_logger(__name__)
 
@@ -107,7 +106,7 @@ def _cmds():
             function=_install),
 
         cmds.Command(
-            hierarchy=['package', 'list-installed'],
+            hierarchy=['package', 'list'],
             arg_keys=['--endpoints', '--app-id', '<package_name>'],
             function=_list),
 
@@ -267,8 +266,8 @@ def _confirm(prompt, yes):
         return True
     else:
         while True:
-            emitter.publish('{} [yes/no]'.format(prompt))
-            response = user_input().lower()
+            sys.stdout.write('{} [yes/no] '.format(prompt))
+            response = sys.stdin.readline().strip().lower()
             if response == 'yes' or response == 'y':
                 return True
             elif response == 'no' or response == 'n':
@@ -365,11 +364,11 @@ def _list(endpoints, app_id, package_name):
     :param endpoints: Whether to include a list of
         endpoints as port-host pairs
     :type endpoints: boolean
-    :param package_name: The package to show
-    :type package_name: str
     :param app_id: App ID of app to show
     :type app_id: str
-    :returns: Process status
+    :param package_name: The package to show
+    :type package_name: str
+    :returns: process return code
     :rtype: int
     """
 
@@ -377,17 +376,52 @@ def _list(endpoints, app_id, package_name):
     init_client = marathon.create_client(config)
     installed = package.installed_packages(init_client, endpoints)
 
-    # only emit those packages that match the provided package_name or
-    # app_id
-    results = [
-        pkg.dict() for pkg in installed if not
-                ((package_name and pkg.name() != package_name) or
-                 (app_id and pkg.app and pkg.app['appId'] != app_id))
-    ]
+    # only emit those packages that match the provided package_name and app_id
+    results = []
+    for pkg in installed:
+        pkg_info = pkg.dict()
+        if (_matches_package_name(package_name, pkg_info) and
+                _matches_app_id(app_id, pkg_info)):
+            if app_id:
+                # if the user is asking a specific id then only show that id
+                pkg_info['apps'] = [
+                    app for app in pkg_info['apps']
+                    if app['appId'] == app_id
+                ]
+
+            results.append(pkg_info)
 
     emitter.publish(results)
 
     return 0
+
+
+def _matches_package_name(name, pkg_info):
+    """
+    :param name: the name of the package
+    :type name: str
+    :param pkg_info: the package description
+    :type pkg_info: dict
+    :returns: True if the name is not defined or the package matches that name;
+              False otherwise
+    :rtype: bool
+    """
+
+    return name is None or pkg_info['name'] == name
+
+
+def _matches_app_id(app_id, pkg_info):
+    """
+    :param app_id: the application id
+    :type app_id: str
+    :param pkg_info: the package description
+    :type pkg_info: dict
+    :returns: True if the app id is not defined or the package matches that app
+              id; False otherwize
+    :rtype: bool
+    """
+
+    return app_id is None or {'appId': app_id} in pkg_info.get('apps')
 
 
 def _search(query):

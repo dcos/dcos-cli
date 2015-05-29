@@ -275,16 +275,16 @@ class InstalledPackage(object):
     """Represents an intalled DCOS package.  One of `app` and
     `subcommand` must be supplied.
 
-    :param app: A dictionary representing a marathon app.  Of the
+    :param apps: A dictionary representing a marathon app. Of the
                 format returned by `installed_apps()`
-    :type app: dict
+    :type apps: [dict]
     :param subcommand: Installed subcommand
     :type subcommand: subcommand.InstalledSubcommand
     """
 
-    def __init__(self, app=None, subcommand=None):
-        assert app or subcommand
-        self.app = app
+    def __init__(self, apps=[], subcommand=None):
+        assert apps or subcommand
+        self.apps = apps
         self.subcommand = subcommand
 
     def name(self):
@@ -295,22 +295,22 @@ class InstalledPackage(object):
         if self.subcommand:
             return self.subcommand.name
         else:
-            return self.app['name']
+            return self.apps[0]['name']
 
     def dict(self):
         """ A dictionary representation of the package.  Used by `dcos package
-        list-installed`.
+        list`.
 
         :returns: A dictionary representation of the package.
         :rtype: dict
         """
-        ret = {'name': self.name}
+        ret = {}
 
         if self.subcommand:
             ret['command'] = {'name': self.subcommand.name}
 
-        if self.app:
-            ret['app'] = {'appId': self.app['appId']}
+        if self.apps:
+            ret['apps'] = [{'appId': app['appId']} for app in self.apps]
 
         if self.subcommand:
             package_json = self.subcommand.package_json()
@@ -319,7 +319,7 @@ class InstalledPackage(object):
             ret['packageSource'] = self.subcommand.package_source()
             ret['releaseVersion'] = self.subcommand.package_version()
         else:
-            ret.update(self.app)
+            ret.update(self.apps[0])
             ret.pop('appId')
 
         return ret
@@ -329,9 +329,9 @@ def installed_packages(init_client, endpoints):
     """Returns all installed packages in the format:
 
     [{
-       'app': {
-         'id': <id>
-       },
+       'apps': [{
+         'appId': <id>
+       }],
        'command': {
          'name': <name>
        }
@@ -350,11 +350,11 @@ def installed_packages(init_client, endpoints):
     apps = installed_apps(init_client, endpoints)
     subcommands = installed_subcommands()
 
-    dicts = collections.defaultdict(lambda: {'app': None, 'command': None})
+    dicts = collections.defaultdict(lambda: {'apps': [], 'command': None})
 
     for app in apps:
         key = (app['name'], app['releaseVersion'], app['packageSource'])
-        dicts[key]['app'] = app
+        dicts[key]['apps'].append(app)
 
     for subcmd in subcommands:
         package_version = subcmd.package_version()
@@ -362,12 +362,9 @@ def installed_packages(init_client, endpoints):
         key = (subcmd.name, package_version, package_source)
         dicts[key]['command'] = subcmd
 
-    pkgs = []
-
-    for key, pkg in dicts.items():
-        pkgs.append(InstalledPackage(pkg['app'], pkg['command']))
-
-    return pkgs
+    return [
+        InstalledPackage(pkg['apps'], pkg['command']) for pkg in dicts.values()
+    ]
 
 
 def installed_subcommands():
