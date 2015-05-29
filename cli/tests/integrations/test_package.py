@@ -44,7 +44,8 @@ def _chronos_description(app_ids):
          ],
          "maintainer": "support@mesosphere.io",
          "name": "chronos",
-         "packageSource": "git://github.com/mesosphere/universe.git",
+         "packageSource": "https://github.com/mesosphere/universe/archive/\
+version-1.x.zip",
          "postInstallNotes": "Chronos DCOS Service has been successfully "
                              "installed!\n\n\tDocumentation: http://mesos."
                              "github.io/chronos\n\tIssues: https://github.com/"
@@ -135,10 +136,8 @@ def test_version():
 
 
 def test_sources_list():
-    stdout = b"""c3f1a0df1d2068e6b11d40224f5e500d3183a97e \
-git://github.com/mesosphere/universe.git
-f4ba0923d14eb75c1c0afca61c2adf9b2b355bd5 \
-https://github.com/mesosphere/universe/archive/master.zip
+    stdout = b"""a1a3267044fd65760dbfcdbe221c81e04e512657 \
+https://github.com/mesosphere/universe/archive/version-1.x.zip
 """
     assert_command(['dcos', 'package', 'sources'],
                    stdout=stdout)
@@ -296,9 +295,10 @@ IFNlcnZpY2UuIiwgInNjbSI6ICJodHRwczovL2dpdGh1Yi5jb20vbWVzb3NwaGVyZS9tYXJhdGhvbi\
 5naXQiLCAidGFncyI6IFsibWVzb3NwaGVyZSIsICJmcmFtZXdvcmsiXSwgInZlcnNpb24iOiAiMC44\
 LjEifQ==",
       "DCOS_PACKAGE_NAME": "marathon",
-      "DCOS_PACKAGE_REGISTRY_VERSION": "0.1.0-alpha",
+      "DCOS_PACKAGE_REGISTRY_VERSION": "1.0.0-rc1",
       "DCOS_PACKAGE_RELEASE": "0",
-      "DCOS_PACKAGE_SOURCE": "git://github.com/mesosphere/universe.git",
+      "DCOS_PACKAGE_SOURCE": "https://github.com/mesosphere/universe/archive/\
+version-1.x.zip",
       "DCOS_PACKAGE_VERSION": "0.8.1"
     },
     "mem": 1024.0,
@@ -403,12 +403,13 @@ b3NwaGVyZS9kY29zLWhlbGxvd29ybGQifQ=="""
 1Yi5jb20vbWVzb3NwaGVyZS9kY29zLWhlbGxvd29ybGQuZ2l0I2Rjb3MtaGVsbG93b3JsZD0wLjEuM\
 CJdfQ=="""
 
-    expected_source = b'git://github.com/mesosphere/universe.git'
+    expected_source = b'https://github.com/mesosphere/universe/archive/\
+version-1.x.zip'
 
     expected_labels = {
         'DCOS_PACKAGE_METADATA': expected_metadata,
         'DCOS_PACKAGE_COMMAND': expected_command,
-        'DCOS_PACKAGE_REGISTRY_VERSION': b'0.1.0-alpha',
+        'DCOS_PACKAGE_REGISTRY_VERSION': b'1.0.0-rc1',
         'DCOS_PACKAGE_NAME': b'helloworld',
         'DCOS_PACKAGE_VERSION': b'0.1.0',
         'DCOS_PACKAGE_SOURCE': expected_source,
@@ -515,7 +516,8 @@ def test_uninstall_cli():
     "description": "Example DCOS application package",
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
-    "packageSource": "git://github.com/mesosphere/universe.git",
+    "packageSource": "https://github.com/mesosphere/universe/archive/\
+version-1.x.zip",
     "postInstallNotes": "A sample post-installation message",
     "preInstallNotes": "A sample pre-installation message",
     "releaseVersion": "0",
@@ -610,7 +612,8 @@ def test_list_installed_cli():
     "description": "Example DCOS application package",
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
-    "packageSource": "git://github.com/mesosphere/universe.git",
+    "packageSource": "https://github.com/mesosphere/universe/archive/\
+version-1.x.zip",
     "postInstallNotes": "A sample post-installation message",
     "preInstallNotes": "A sample pre-installation message",
     "releaseVersion": "0",
@@ -643,7 +646,8 @@ def test_list_installed_cli():
     "description": "Example DCOS application package",
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
-    "packageSource": "git://github.com/mesosphere/universe.git",
+    "packageSource": "https://github.com/mesosphere/universe/archive/\
+version-1.x.zip",
     "postInstallNotes": "A sample post-installation message",
     "preInstallNotes": "A sample pre-installation message",
     "releaseVersion": "0",
@@ -723,7 +727,8 @@ def test_search():
 
     assert returncode == 0
     assert b'"packages": []' in stdout
-    assert b'"source": "git://github.com/mesosphere/universe.git"' in stdout
+    assert b'"source": "https://github.com/mesosphere/universe/archive/\
+version-1.x.zip"' in stdout
     assert stderr == b''
 
     returncode, stdout, stderr = exec_command(

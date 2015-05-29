@@ -72,8 +72,8 @@ def test_list_property(env):
 core.email=test@mail.com
 core.reporting=False
 package.cache=tmp/cache
-package.sources=['git://github.com/mesosphere/universe.git', \
-'https://github.com/mesosphere/universe/archive/master.zip']
+package.sources=['https://github.com/mesosphere/universe/archive/\
+version-1.x.zip']
 """
     assert_command(['dcos', 'config', 'show'],
                    stdout=stdout,
@@ -121,20 +121,11 @@ def test_append_empty_list(env):
     _set_value('package.sources', '[]', env)
     _append_value(
         'package.sources',
-        'git://github.com/mesosphere/universe.git',
+        'https://github.com/mesosphere/universe/archive/version-1.x.zip',
         env)
     _get_value(
         'package.sources',
-        ['git://github.com/mesosphere/universe.git'],
-        env)
-    _append_value(
-        'package.sources',
-        'https://github.com/mesosphere/universe/archive/master.zip',
-        env)
-    _get_value(
-        'package.sources',
-        ['git://github.com/mesosphere/universe.git',
-         'https://github.com/mesosphere/universe/archive/master.zip'],
+        ['https://github.com/mesosphere/universe/archive/version-1.x.zip'],
         env)
 
 
@@ -142,20 +133,11 @@ def test_prepend_empty_list(env):
     _set_value('package.sources', '[]', env)
     _prepend_value(
         'package.sources',
-        'https://github.com/mesosphere/universe/archive/master.zip',
+        'https://github.com/mesosphere/universe/archive/version-1.x.zip',
         env)
     _get_value(
         'package.sources',
-        ['https://github.com/mesosphere/universe/archive/master.zip'],
-        env)
-    _prepend_value(
-        'package.sources',
-        'git://github.com/mesosphere/universe.git',
-        env)
-    _get_value(
-        'package.sources',
-        ['git://github.com/mesosphere/universe.git',
-         'https://github.com/mesosphere/universe/archive/master.zip'],
+        ['https://github.com/mesosphere/universe/archive/version-1.x.zip'],
         env)
 
 
@@ -166,11 +148,10 @@ def test_append_list(env):
         env)
     _get_value(
         'package.sources',
-        ['git://github.com/mesosphere/universe.git',
-         'https://github.com/mesosphere/universe/archive/master.zip',
+        ['https://github.com/mesosphere/universe/archive/version-1.x.zip',
          'new_uri'],
         env)
-    _unset_value('package.sources', '2', env)
+    _unset_value('package.sources', '1', env)
 
 
 def test_prepend_list(env):
@@ -181,8 +162,7 @@ def test_prepend_list(env):
     _get_value(
         'package.sources',
         ['new_uri',
-         'git://github.com/mesosphere/universe.git',
-         'https://github.com/mesosphere/universe/archive/master.zip'],
+         'https://github.com/mesosphere/universe/archive/version-1.x.zip'],
         env)
     _unset_value('package.sources', '0', env)
 
@@ -226,8 +206,7 @@ def test_unset_missing_property(env):
 def test_set_whole_list(env):
     _set_value(
         'package.sources',
-        '["git://github.com/mesosphere/universe.git", '
-        '"https://github.com/mesosphere/universe/archive/master.zip"]',
+        '["https://github.com/mesosphere/universe/archive/version-1.x.zip"]',
         env)
 
 
@@ -250,18 +229,18 @@ def test_unset_list_index(env):
     _unset_value('package.sources', '0', env)
     _get_value(
         'package.sources',
-        ['https://github.com/mesosphere/universe/archive/master.zip'],
+        [],
         env)
     _prepend_value(
         'package.sources',
-        'git://github.com/mesosphere/universe.git',
+        'https://github.com/mesosphere/universe/archive/version-1.x.zip',
         env)
 
 
 def test_unset_outbound_index(env):
     stderr = (
         b'Index (3) is out of bounds - possible values are '
-        b'between 0 and 1\n'
+        b'between 0 and 0\n'
     )
 
     assert_command(
@@ -305,8 +284,7 @@ def test_validation_error(env):
                    env=env)
     _get_value(
         'package.sources',
-        ["git://github.com/mesosphere/universe.git",
-         "https://github.com/mesosphere/universe/archive/master.zip"],
+        ["https://github.com/mesosphere/universe/archive/version-1.x.zip"],
         env)
 
 
