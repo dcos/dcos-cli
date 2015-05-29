@@ -81,7 +81,6 @@ Usage:
     dcos package --config-schema
     dcos package --info
     dcos package describe [--app --options=<file> --cli] <package_name>
-    dcos package info
     dcos package install [--cli | [--app --app-id=<app_id>]]
                          [--options=<file> --yes] <package_name>
     dcos package list [--json --endpoints --app-id=<app-id> <package_name>]
