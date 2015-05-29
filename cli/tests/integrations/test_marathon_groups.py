@@ -1,7 +1,7 @@
 import json
 
-from .common import (assert_command, exec_command, list_deployments,
-                     watch_deployment)
+from .common import (assert_command, assert_lines, exec_command,
+                     list_deployments, watch_all_deployments, watch_deployment)
 
 
 def test_add_group():
@@ -10,6 +10,13 @@ def test_add_group():
     result = list_deployments(None, 'test-group/sleep/goodnight')
     if len(result) != 0:
         watch_deployment(result[0]['id'], 60)
+    _remove_group('test-group')
+
+
+def test_group_list_table():
+    _add_group('tests/data/marathon/groups/good.json')
+    watch_all_deployments()
+    assert_lines(['dcos', 'marathon', 'group', 'list'], 3)
     _remove_group('test-group')
 
 
@@ -102,7 +109,7 @@ def test_add_bad_complicated_group():
 
 def _list_groups(group_id=None):
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'group', 'list'])
+        ['dcos', 'marathon', 'group', 'list', '--json'])
 
     result = json.loads(stdout.decode('utf-8'))
 

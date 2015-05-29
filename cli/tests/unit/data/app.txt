@@ -1,2 +1,2 @@
- ID         MEM   CPUS  DEPLOYMENTS  INSTANCES  CONTAINER  CMD        
- /test-app  16.0  0.1        0          1/1        null    sleep 1000 
+ ID         MEM   CPUS  DEPLOYMENTS  TASKS  CONTAINER  CMD        
+ /test-app  16.0  0.1        0        1/1     mesos    sleep 1000 

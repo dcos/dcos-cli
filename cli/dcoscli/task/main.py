@@ -17,13 +17,11 @@ Positional Arguments:
                   a substring of the ID, or a unix glob pattern.
 """
 
-
-from collections import OrderedDict
-
 import dcoscli
 import docopt
 from dcos import cmds, emitting, mesos, util
 from dcos.errors import DCOSException
+from dcoscli import tables
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -77,39 +75,18 @@ def _info():
     return 0
 
 
-def _task_table(tasks):
-    """Returns a PrettyTable representation of the provided tasks.
-
-    :param tasks: tasks to render
-    :type tasks: [Task]
-    :rtype: TaskTable
-    """
-
-    fields = OrderedDict([
-        ("name", lambda t: t["name"]),
-        ("user", lambda t: t.user()),
-        ("state", lambda t: t["state"].split("_")[-1][0]),
-        ("id", lambda t: t["id"]),
-    ])
-
-    tb = util.table(fields, tasks)
-    tb.align["NAME"] = "l"
-    tb.align["ID"] = "l"
-
-    return tb
-
-
-def _task(fltr, completed, is_json):
-    """ List DCOS tasks
+def _task(fltr, completed, json_):
+    """List DCOS tasks
 
     :param fltr: task id filter
     :type fltr: str
     :param completed: If True, include completed tasks
     :type completed: bool
-    :param is_json: If True, output json. Otherwise, output a human readable
-                    table.
-    :type is_json: bool
+    :param json_: If True, output json.  Otherwise, output a human
+                  readable table.
+    :type json_: bool
     :returns: process return code
+
     """
 
     if fltr is None:
@@ -118,10 +95,12 @@ def _task(fltr, completed, is_json):
     tasks = sorted(mesos.get_master().tasks(completed=completed, fltr=fltr),
                    key=lambda task: task['name'])
 
-    if is_json:
+    if json_:
         emitter.publish([task.dict() for task in tasks])
     else:
-        table = _task_table(tasks)
+        table = tables.task_table(tasks)
         output = str(table)
         if output:
             emitter.publish(output)
+
+    return 0

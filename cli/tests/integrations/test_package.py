@@ -1,3 +1,4 @@
+import contextlib
 import json
 import os
 
@@ -6,8 +7,9 @@ from dcos import subcommand
 
 import pytest
 
-from .common import (assert_command, delete_zk_nodes, exec_command,
-                     get_services, service_shutdown, watch_all_deployments)
+from .common import (assert_command, assert_lines, delete_zk_nodes,
+                     exec_command, get_services, service_shutdown,
+                     watch_all_deployments)
 
 
 @pytest.fixture(scope="module")
@@ -82,8 +84,8 @@ Usage:
     dcos package info
     dcos package install [--cli | [--app --app-id=<app_id>]]
                          [--options=<file> --yes] <package_name>
-    dcos package list [--endpoints --app-id=<app-id> <package_name>]
-    dcos package search [<query>]
+    dcos package list [--json --endpoints --app-id=<app-id> <package_name>]
+    dcos package search [--json <query>]
     dcos package sources
     dcos package uninstall [--cli | [--app --app-id=<app-id> --all]]
                  <package_name>
@@ -497,8 +499,7 @@ def test_uninstall_missing():
 def test_uninstall_subcommand():
     _install_helloworld()
     _uninstall_helloworld()
-
-    assert_command(['dcos', 'package', 'list'], stdout=b'[]\n')
+    _list()
 
 
 def test_uninstall_cli():
@@ -528,46 +529,32 @@ version-1.x.zip",
   }
 ]
 """
-    assert_command(['dcos', 'package', 'list'],
-                   stdout=stdout)
-
+    _list(stdout=stdout)
     _uninstall_helloworld()
 
 
-def test_list_installed(zk_znode):
-    assert_command(['dcos', 'package', 'list'],
-                   stdout=b'[]\n')
-
-    assert_command(['dcos', 'package', 'list', 'xyzzy'],
-                   stdout=b'[]\n')
-
-    assert_command(['dcos', 'package', 'list', '--app-id=/xyzzy'],
-                   stdout=b'[]\n')
+def test_list(zk_znode):
+    _list()
+    _list(args=['xyzzy', '--json'])
+    _list(args=['--app-id=/xyzzy', '--json'])
 
     _install_chronos()
-
     expected_output = _chronos_description(['/chronos'])
 
-    assert_command(['dcos', 'package', 'list'],
-                   stdout=expected_output)
-
-    assert_command(['dcos', 'package', 'list', 'chronos'],
-                   stdout=expected_output)
-
-    assert_command(
-        ['dcos', 'package', 'list', '--app-id=/chronos'],
-        stdout=expected_output)
-
-    assert_command(
-        ['dcos', 'package', 'list', 'ceci-nest-pas-une-package'],
-        stdout=b'[]\n')
-
-    assert_command(
-        ['dcos', 'package', 'list',
-         '--app-id=/ceci-nest-pas-une-package'],
-        stdout=b'[]\n')
+    _list(stdout=expected_output)
+    _list(args=['--json', 'chronos'],
+          stdout=expected_output)
+    _list(args=['--json', '--app-id=/chronos'],
+          stdout=expected_output)
+    _list(args=['--json', 'ceci-nest-pas-une-package'])
+    _list(args=['--json', '--app-id=/ceci-nest-pas-une-package'])
 
     _uninstall_chronos()
+
+
+def test_list_table():
+    with _helloworld():
+        assert_lines(['dcos', 'package', 'list'], 2)
 
 
 def test_install_yes():
@@ -592,7 +579,7 @@ def test_install_no():
                    b'Continue installing? [yes/no] Exiting installation.\n')
 
 
-def test_list_installed_cli():
+def test_list_cli():
     _install_helloworld()
 
     stdout = b"""\
@@ -622,9 +609,7 @@ version-1.x.zip",
   }
 ]
 """
-    assert_command(['dcos', 'package', 'list'],
-                   stdout=stdout)
-
+    _list(stdout=stdout)
     _uninstall_helloworld()
 
     stdout = (b"A sample pre-installation message\n"
@@ -656,9 +641,7 @@ version-1.x.zip",
   }
 ]
 """
-    assert_command(['dcos', 'package', 'list'],
-                   stdout=stdout)
-
+    _list(stdout=stdout)
     _uninstall_helloworld()
 
 
@@ -673,20 +656,12 @@ def test_uninstall_multiple_frameworknames(zk_znode):
     expected_output = _chronos_description(
         ['/chronos-user-1', '/chronos-user-2'])
 
-    assert_command(['dcos', 'package', 'list'],
-                   stdout=expected_output)
-
-    assert_command(['dcos', 'package', 'list', 'chronos'],
-                   stdout=expected_output)
-
-    assert_command(
-        ['dcos', 'package', 'list', '--app-id=/chronos-user-1'],
-        stdout=_chronos_description(['/chronos-user-1']))
-
-    assert_command(
-        ['dcos', 'package', 'list', '--app-id=/chronos-user-2'],
-        stdout=_chronos_description(['/chronos-user-2']))
-
+    _list(stdout=expected_output)
+    _list(args=['--json', 'chronos'], stdout=expected_output)
+    _list(args=['--json', '--app-id=/chronos-user-1'],
+          stdout=_chronos_description(['/chronos-user-1']))
+    _list(args=['--json', '--app-id=/chronos-user-2'],
+          stdout=_chronos_description(['/chronos-user-2']))
     _uninstall_chronos(
         args=['--app-id=chronos-user-1'],
         returncode=1,
@@ -705,20 +680,14 @@ def test_uninstall_multiple_frameworknames(zk_znode):
 
 def test_search():
     returncode, stdout, stderr = exec_command(
-        ['dcos',
-            'package',
-            'search',
-            'framework'])
+        ['dcos', 'package', 'search', 'framework', '--json'])
 
     assert returncode == 0
     assert b'chronos' in stdout
     assert stderr == b''
 
     returncode, stdout, stderr = exec_command(
-        ['dcos',
-            'package',
-            'search',
-            'xyzzy'])
+        ['dcos', 'package', 'search', 'xyzzy', '--json'])
 
     assert returncode == 0
     assert b'"packages": []' in stdout
@@ -727,9 +696,7 @@ version-1.x.zip"' in stdout
     assert stderr == b''
 
     returncode, stdout, stderr = exec_command(
-        ['dcos',
-            'package',
-            'search'])
+        ['dcos', 'package', 'search', '--json'])
 
     registries = json.loads(stdout.decode('utf-8'))
     for registry in registries:
@@ -738,6 +705,16 @@ version-1.x.zip"' in stdout
         assert len(registry['packages']) >= 5
 
     assert returncode == 0
+    assert stderr == b''
+
+
+def test_search_table():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'search'])
+
+    assert returncode == 0
+    assert b'chronos' in stdout
+    assert len(stdout.decode('utf-8').split('\n')) > 5
     assert stderr == b''
 
 
@@ -800,3 +777,40 @@ def _install_chronos(
         preInstallNotes + stdout + postInstallNotes,
         stderr,
         stdin=stdin)
+
+
+def _list(args=['--json'],
+          stdout=b'[]\n'):
+    assert_command(['dcos', 'package', 'list'] + args,
+                   stdout=stdout)
+
+
+def _helloworld():
+    stdout = b'''A sample pre-installation message
+Installing package [helloworld] version [0.1.0]
+Installing CLI subcommand for package [helloworld]
+A sample post-installation message
+'''
+    return _package('helloworld',
+                    stdout=stdout)
+
+
+@contextlib.contextmanager
+def _package(name,
+             stdout=b''):
+    """Context manager that deploys an app on entrance, and removes it on
+    exit.
+
+    :param path: path to app's json definition:
+    :type path: str
+    :param app_id: app id
+    :type app_id: str
+    :rtype: None
+    """
+
+    assert_command(['dcos', 'package', 'install', name, '--yes'],
+                   stdout=stdout)
+    try:
+        yield
+    finally:
+        assert_command(['dcos', 'package', 'uninstall', name])

@@ -4,6 +4,11 @@ import mock
 
 
 def task_fixture():
+    """ Task fixture
+
+    :rtype: Task
+    """
+
     task = Task({
         "executor_id": "",
         "framework_id": "20150502-231327-16842879-5050-3889-0000",
