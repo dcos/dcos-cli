@@ -386,7 +386,7 @@ def _list(endpoints, app_id, package_name):
                 # if the user is asking a specific id then only show that id
                 pkg_info['apps'] = [
                     app for app in pkg_info['apps']
-                    if app['appId'] == app_id
+                    if app == app_id
                 ]
 
             results.append(pkg_info)
@@ -421,7 +421,7 @@ def _matches_app_id(app_id, pkg_info):
     :rtype: bool
     """
 
-    return app_id is None or {'appId': app_id} in pkg_info.get('apps')
+    return app_id is None or app_id in pkg_info.get('apps')
 
 
 def _search(query):

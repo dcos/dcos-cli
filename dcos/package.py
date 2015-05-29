@@ -311,7 +311,7 @@ class InstalledPackage(object):
             ret['command'] = {'name': self.subcommand.name}
 
         if self.apps:
-            ret['apps'] = [{'appId': app['appId']} for app in self.apps]
+            ret['apps'] = [app['appId'] for app in self.apps]
 
         if self.subcommand:
             package_json = self.subcommand.package_json()
@@ -330,9 +330,7 @@ def installed_packages(init_client, endpoints):
     """Returns all installed packages in the format:
 
     [{
-       'apps': [{
-         'appId': <id>
-       }],
+       'apps': [<id>],
        'command': {
          'name': <name>
        }

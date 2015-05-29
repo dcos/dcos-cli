@@ -25,7 +25,8 @@ def _chronos_description(app_ids):
     """
 
     result = [
-        {"description": "A fault tolerant job scheduler for Mesos which "
+        {"apps": app_ids,
+         "description": "A fault tolerant job scheduler for Mesos which "
                         "handles dependencies and ISO8601 based schedules.",
          "framework": True,
          "images": {
@@ -66,8 +67,6 @@ version-1.x.zip",
          ],
          "version": "2.3.4"
          }]
-
-    result[0]['apps'] = [{'appId': app_id} for app_id in app_ids]
 
     return (json.dumps(result, sort_keys=True, indent=2).replace(' \n', '\n') +
             '\n').encode('utf-8')
@@ -509,9 +508,7 @@ def test_uninstall_cli():
     stdout = b"""[
   {
     "apps": [
-      {
-        "appId": "/helloworld"
-      }
+      "/helloworld"
     ],
     "description": "Example DCOS application package",
     "maintainer": "support@mesosphere.io",
@@ -602,9 +599,7 @@ def test_list_installed_cli():
 [
   {
     "apps": [
-      {
-        "appId": "/helloworld"
-      }
+      "/helloworld"
     ],
     "command": {
       "name": "helloworld"
