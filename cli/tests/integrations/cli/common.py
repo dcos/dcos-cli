@@ -199,13 +199,12 @@ def delete_zk_nodes():
     :rtype: None
     """
 
-    base_url = os.environ.get('EXHIBITOR_URL')
-    if base_url:
-        base_path = 'exhibitor/v1/explorer/znode/{}'
+    base_url = os.environ['EXHIBITOR_URL']
+    base_path = 'exhibitor/v1/explorer/znode/{}'
 
-        for znode in ['universe', 'cassandra-mesos', 'chronos']:
-            znode_url = urllib.parse.urljoin(
-                base_url,
-                base_path.format(znode))
+    for znode in ['universe', 'cassandra-mesos', 'chronos']:
+        znode_url = urllib.parse.urljoin(
+            base_url,
+            base_path.format(znode))
 
-            requests.delete(znode_url)
+        requests.delete(znode_url)
