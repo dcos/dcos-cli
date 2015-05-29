@@ -50,7 +50,7 @@ dcos config set package.cache ~/.dcos/cache
 dcos config set package.sources '["https://github.com/mesosphere/universe/archive/version-1.x.zip"]'
 dcos package update
 
-echo "Finished installing and configuring DCOS CLI."
-echo "Run the line below to set up the DCOS environment for the current shell:"
-echo "source $ENV_SETUP"
-echo "Once this is done, run 'dcos help' to get started."
+echo 'Finished installing and configuring DCOS CLI.'
+echo ''
+echo 'Run this command to set up your environment and to get started:'
+echo "source $ENV_SETUP && dcos help"
