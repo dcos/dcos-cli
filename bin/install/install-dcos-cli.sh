@@ -40,6 +40,9 @@ if [[ -d "${HOME}/.dcos" ]]; then
     echo "We have detected a previous install of DCOS CLI."
     echo "Backing up your configuration directory ${HOME}/.dcos to ${HOME}/.dcos.bak"
     echo "Feel free to remove it, if you are no longer using the previous version"
+    if [[ -d ${HOME}/.dcos.bak ]]; then
+        rm -rf ${HOME}/.dcos.bak
+    fi
     mv ${HOME}/.dcos ${HOME}/.dcos.bak
 fi
 
