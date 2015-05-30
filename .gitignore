@@ -13,3 +13,7 @@ pydoc/_build/
 
 Vagrantfile
 .vagrant
+
+# PyCharm config
+.idea
+

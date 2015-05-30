@@ -28,6 +28,15 @@ if [ $MAJOR -lt 12 ];
 	exit 1;
 fi
 
+# Checking for the existence of a previous install
+# and moving it out of the way
+if [[ -d "${HOME}/.dcos" ]]; then
+    echo "We have detected a previous install of DCOS CLI."
+    echo "Backing up your configuration directory ${HOME}/.dcos to ${HOME}/.dcos.bak"
+    echo "Feel free to remove it, if you are no longer using the previous version"
+    mv ${HOME}/.dcos ${HOME}/.dcos.bak
+fi
+
 echo "Installing DCOS CLI from PyPI...";
 echo "";
 
