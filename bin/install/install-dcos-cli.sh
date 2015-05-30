@@ -12,6 +12,12 @@ if [ "$#" -lt 2 ]; then
   exit 1;
 fi
 
+if [[ -e "./bin/dcos" ]]; then
+    echo "It appears this install is being executed on top of an already installed DCOS-CLI."
+    echo "Please remove any prior installs before attempting to re-install."
+    exit 1
+fi
+
 ARGS=( "$@" );
 
 VIRTUAL_ENV_PATH=$(python -c "import os; print(os.path.realpath('"${ARGS[0]}"'))")
