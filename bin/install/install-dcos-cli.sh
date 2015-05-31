@@ -41,7 +41,10 @@ if [[ -d "${HOME}/.dcos" ]]; then
     echo "Backing up your configuration directory ${HOME}/.dcos to ${HOME}/.dcos.bak"
     echo "Feel free to remove it, if you are no longer using the previous version"
     if [[ -d ${HOME}/.dcos.bak ]]; then
-        rm -rf ${HOME}/.dcos.bak
+        echo "There is already a pre-existing ${HOME}/.dcos.bak directory:"
+        echo "either please rename or remove that directory, and retry the install"
+        echo "Aborting now."
+        exit 1
     fi
     mv ${HOME}/.dcos ${HOME}/.dcos.bak
 fi
