@@ -10,6 +10,8 @@ import shutil
 import sys
 import tempfile
 import time
+import subprocess
+import struct
 
 import jsonschema
 import pystache
@@ -472,5 +474,97 @@ def humanize_bytes(b):
             break
 
     return "{0:.2f} {1}".format(b/float(factor), suffix)
+
+
+def get_terminal_size():
+    """Return terminal width and height works on linux,os x,windows, cygwin(windows)
+
+    :returns: width and height terminal
+    :rtype: (width, height)
+    """
+
+    tuple_xy = None
+    if is_windows_platform():
+        tuple_xy = _get_terminal_size_windows()
+        if tuple_xy is None:
+            tuple_xy = _get_terminal_size_tput()
+    current_os = platform.system()
+    if current_os in ['Linux', 'Darwin'] or current_os.startswith('CYGWIN'):
+        tuple_xy = _get_terminal_size_linux()
+    if tuple_xy is None:
+        tuple_xy = (80, 25)      # default value
+    return tuple_xy
+
+
+def _get_terminal_size_tput():
+    """Return terminal width and height for windows
+
+    :returns: width and height terminal
+    :rtype: (width, height)
+    """
+
+    try:
+        cols = int(subprocess.check_call(shlex.split('tput cols')))
+        rows = int(subprocess.check_call(shlex.split('tput lines')))
+        return (cols, rows)
+    except:
+        pass
+
+def _get_terminal_size_windows():
+    """Return terminal width and height for windows
+
+    :returns: width and height terminal
+    :rtype: (width, height)
+    """
+
+    try:
+        from ctypes import windll, create_string_buffer
+        # stdin handle is -10
+        # stdout handle is -11
+        # stderr handle is -12
+        h = windll.kernel32.GetStdHandle(-12)
+        csbi = create_string_buffer(22)
+        res = windll.kernel32.GetConsoleScreenBufferInfo(h, csbi)
+        if res:
+            (bufx, bufy, curx, cury, wattr,
+             left, top, right, bottom,
+             maxx, maxy) = struct.unpack("hhhhHhhhhhh", csbi.raw)
+            sizex = right - left + 1
+            sizey = bottom - top + 1
+            return sizex, sizey
+    except:
+        pass
+
+
+def _get_terminal_size_linux():
+    """Return terminal width and height for linux
+
+    :returns: width and height terminal
+    :rtype: (width, height)
+    """
+
+    def ioctl_GWINSZ(fd):
+        try:
+            import fcntl
+            import termios
+            cr = struct.unpack('hh',
+                               fcntl.ioctl(fd, termios.TIOCGWINSZ, '1234'))
+            return cr
+        except:
+            pass
+    cr = ioctl_GWINSZ(0) or ioctl_GWINSZ(1) or ioctl_GWINSZ(2)
+    if not cr:
+        try:
+            fd = os.open(os.ctermid(), os.O_RDONLY)
+            cr = ioctl_GWINSZ(fd)
+            os.close(fd)
+        except:
+            pass
+    if not cr:
+        try:
+            cr = (os.environ['LINES'], os.environ['COLUMNS'])
+        except:
+            return None
+    return int(cr[1]), int(cr[0])
 
 logger = get_logger(__name__)

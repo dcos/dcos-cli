@@ -73,7 +73,6 @@ setup(
         'rollbar>=0.9, <1.0',
         'futures>=3.0, <4.0',
         'oauth2client>=1.4, <2.0',
-        'blessings>=1.6, <2.0',
         'prettytable>=0.7, <1.0',
     ],
 
