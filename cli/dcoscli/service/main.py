@@ -3,6 +3,7 @@
 Usage:
     dcos service --info
     dcos service [--inactive --json]
+    dcos service shutdown <service-id>
 
 Options:
     -h, --help    Show this screen
@@ -16,6 +17,9 @@ Options:
                   master, but haven't yet reached their failover timeout.
 
     --version     Show version
+
+Positional Arguments:
+    <service-id>  The ID for the DCOS Service
 """
 
 
@@ -57,6 +61,11 @@ def _cmds():
     """
 
     return [
+        cmds.Command(
+            hierarchy=['service', 'shutdown'],
+            arg_keys=['<service-id>'],
+            function=_shutdown),
+
         cmds.Command(
             hierarchy=['service', '--info'],
             arg_keys=[],
@@ -132,8 +141,7 @@ def _service(inactive, is_json):
     :rtype: int
     """
 
-    master = mesos.get_master()
-    services = master.frameworks(inactive=inactive)
+    services = mesos.get_master().frameworks(inactive=inactive)
 
     if is_json:
         emitter.publish([service.dict() for service in services])
@@ -143,4 +151,17 @@ def _service(inactive, is_json):
         if output:
             emitter.publish(output)
 
+    return 0
+
+
+def _shutdown(service_id):
+    """Shuts down a service
+
+    :param service_id: the id for the service
+    :type service_id: str
+    :returns: process return code
+    :rtype: int
+    """
+
+    mesos.get_master_client().shutdown_framework(service_id)
     return 0

@@ -72,18 +72,6 @@ environments.
 If you're using OS X, be sure to use the officially distributed Python 3.4
 installer_ since the Homebrew version is missing a necessary library.
 
-To support subcommand integration tests, you'll need to clone, package and
-configure your environment to point to the packaged `dcos-helloworld` account.
-
-#. Check out the dcos-helloworld_ project
-
-#. :code:`cd dcos-helloworld`
-
-#. :code:`make packages`
-
-#. Set the :code:`DCOS_TEST_WHEEL` environment variable to the path of the created
-   wheel package: :code:`export DCOS_TEST_WHEEL=$(pwd)/dist/dcos_helloworld-0.1.0-py2.py3-none-any.whl`
-
 Running
 #######
 
@@ -96,6 +84,11 @@ happy to use the default test configuration which assumes there is a Marathon
 instance running on localhost, set :code:`DCOS_CONFIG` as follows::
 
     export DCOS_CONFIG=$(pwd)/tests/data/dcos.toml
+
+If you are testing against the DCOS Image you can configure the URL to the
+Exhibitor::
+
+    export EXHIBITOR=http://<hostname>:8181/
 
 There are two ways to run tests, you can either use the virtualenv created by
 :code:`make env` above::

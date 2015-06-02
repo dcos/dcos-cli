@@ -1,0 +1,7 @@
+{
+  "chronos": {
+    "id": "chronos-user-1",
+    "framework-name": "chronos-user",
+    "zk-path": "/universe/chronos-user-1"
+  }
+}

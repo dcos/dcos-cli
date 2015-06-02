@@ -14,7 +14,7 @@ import git
 import portalocker
 import pystache
 import six
-from dcos import constants, emitting, errors, marathon, subcommand, util
+from dcos import constants, emitting, errors, marathon, mesos, subcommand, util
 from dcos.errors import DCOSException
 
 from six.moves import urllib
@@ -159,12 +159,12 @@ def uninstall(package_name, remove_all, app_id, cli, app):
             uninstalled = True
 
     if app:
-        init_client = marathon.create_client()
-
-        num_apps = uninstall_app(package_name,
-                                 remove_all,
-                                 app_id,
-                                 init_client)
+        num_apps = uninstall_app(
+            package_name,
+            remove_all,
+            app_id,
+            marathon.create_client(),
+            mesos.get_master_client())
 
         if num_apps > 0:
             uninstalled = True
@@ -191,7 +191,7 @@ def uninstall_subcommand(distribution_name):
     return subcommand.uninstall(distribution_name)
 
 
-def uninstall_app(app_name, remove_all, app_id, init_client):
+def uninstall_app(app_name, remove_all, app_id, init_client, master_client):
     """Uninstalls an app.
 
     :param app_name: The app to uninstall
@@ -202,6 +202,8 @@ def uninstall_app(app_name, remove_all, app_id, init_client):
     :type app_id: str
     :param init_client: The program to use to run the app
     :type init_client: object
+    :param master_client: the mesos master client
+    :type master_client: dcos.mesos.MasterClient
     :returns: number of apps uninstalled
     :rtype: int
     """
@@ -226,13 +228,45 @@ def uninstall_app(app_name, remove_all, app_id, init_client):
 
     if not remove_all and len(matching_apps) > 1:
         app_ids = [a.get('id') for a in matching_apps]
-        raise DCOSException("""Multiple instances of app [{}] are installed. \
-Please specify the app id of the instance to uninstall or uninstall all. \
-The app ids of the installed package instances are: [{}].""".format(
-            app_name, ', '.join(app_ids)))
+        raise DCOSException(
+            ("Multiple instances of app [{}] are installed. Please specify "
+             "the app id of the instance to uninstall or uninstall all. The "
+             "app ids of the installed package instances are: [{}].").format(
+                 app_name,
+                 ', '.join(app_ids)))
 
     for app in matching_apps:
+        # First, remove the app from Marathon
         init_client.remove_app(app['id'], force=True)
+
+        # Second, shutdown the framework with Mesos
+        framework_name = app.get('labels', {}).get(PACKAGE_FRAMEWORK_NAME_KEY)
+        if framework_name is not None:
+            logger.info(
+                'Trying to shutdown framework {}'.format(framework_name))
+            frameworks = mesos.Master(master_client.get_state()).frameworks(
+                inactive=True)
+
+            # Look up all the framework names
+            framework_ids = [
+                framework['id']
+                for framework in frameworks
+                if framework['name'] == framework_name
+            ]
+
+            logger.info(
+                'Found the following frameworks: {}'.format(framework_ids))
+
+            if len(framework_ids) == 1:
+                master_client.shutdown_framework(framework_ids[0])
+            elif len(framework_ids) > 1:
+                raise DCOSException(
+                    "Unable to shutdown the framework for [{}] because there "
+                    "are multiple frameworks with the same name: [{}]. "
+                    "Manually shut them down using 'dcos service "
+                    "shutdown'.".format(
+                        framework_name,
+                        ', '.join(framework_ids)))
 
     return len(matching_apps)
 
