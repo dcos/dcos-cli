@@ -12,6 +12,12 @@ if [ "$#" -lt 2 ]; then
   exit 1;
 fi
 
+if [[ -e "./bin/dcos" ]]; then
+    echo "It appears this install is being executed on top of an already installed DCOS-CLI."
+    echo "Please remove any prior installs before attempting to re-install."
+    exit 1
+fi
+
 ARGS=( "$@" );
 
 VIRTUAL_ENV_PATH=$(python -c "import os; print(os.path.realpath('"${ARGS[0]}"'))")
@@ -26,6 +32,21 @@ eval MAJOR=`echo $VIRTUALENV_VERSION | sed -e $VERSION_REGEX`
 if [ $MAJOR -lt 12 ];
 	then echo "Virtualenv version must be 12 or greater. Aborting.";
 	exit 1;
+fi
+
+# Checking for the existence of a previous install
+# and moving it out of the way
+if [[ -d "${HOME}/.dcos" ]]; then
+    echo "We have detected a previous install of DCOS CLI."
+    echo "Backing up your configuration directory ${HOME}/.dcos to ${HOME}/.dcos.bak"
+    echo "Feel free to remove it, if you are no longer using the previous version"
+    if [[ -d ${HOME}/.dcos.bak ]]; then
+        echo "There is already a pre-existing ${HOME}/.dcos.bak directory:"
+        echo "either please rename or remove that directory, and retry the install"
+        echo "Aborting now."
+        exit 1
+    fi
+    mv ${HOME}/.dcos ${HOME}/.dcos.bak
 fi
 
 echo "Installing DCOS CLI from PyPI...";
