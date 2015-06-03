@@ -94,6 +94,6 @@ $env:DCOS_CONFIG = $DCOS_CONFIG
 dcos config set core.reporting true
 dcos config set core.dcos_url $dcos_url
 dcos config set package.cache $env:temp\dcos\package-cache
-dcos config set package.sources '[\"https://github.com/mesosphere/universe/archive/master.zip\"]'
+dcos config set package.sources '[\"https://github.com/mesosphere/universe/archive/version-1.x.zip\"]'
 
 dcos package update
