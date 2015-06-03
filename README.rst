@@ -88,7 +88,7 @@ instance running on localhost, set :code:`DCOS_CONFIG` as follows::
 If you are testing against the DCOS Image you can configure the URL to the
 Exhibitor::
 
-    export EXHIBITOR=http://<hostname>:8181/
+    export EXHIBITOR_URL=http://<hostname>:8181/
 
 There are two ways to run tests, you can either use the virtualenv created by
 :code:`make env` above::
