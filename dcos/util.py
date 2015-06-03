@@ -12,6 +12,7 @@ import tempfile
 import time
 
 import jsonschema
+import prettytable
 import pystache
 import six
 from dcos import config, constants
@@ -475,5 +476,36 @@ def humanize_bytes(b):
             break
 
     return "{0:.2f} {1}".format(b/float(factor), suffix)
+
+
+def table(fields, objs):
+    """Returns a PrettyTable.  `fields` represents the header schema of
+    the table.  `objs` represents the objects to be rendered into
+    rows.
+
+    :param fields: An OrderedDict, where each element represents a
+                   column.  The key is the column header, and the
+                   value is the function that transforms an element of
+                   `objs` into a value for that column.
+    :type fields: OrderdDict(str, function)
+    :param objs: objects to render into rows
+    :type objs: [object]
+    """
+
+    tb = prettytable.PrettyTable(
+        [k.upper() for k in fields.keys()],
+        border=False,
+        hrules=prettytable.NONE,
+        vrules=prettytable.NONE,
+        left_padding_width=0,
+        right_padding_width=1
+    )
+
+    for obj in objs:
+        row = [fn(obj) for fn in fields.values()]
+        tb.add_row(row)
+
+    return tb
+
 
 logger = get_logger(__name__)

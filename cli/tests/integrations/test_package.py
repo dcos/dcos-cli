@@ -5,8 +5,9 @@ import six
 from dcos import subcommand
 
 import pytest
-from common import (assert_command, delete_zk_nodes, exec_command,
-                    get_services, service_shutdown, watch_all_deployments)
+
+from .common import (assert_command, delete_zk_nodes, exec_command,
+                     get_services, service_shutdown, watch_all_deployments)
 
 
 @pytest.fixture(scope="module")

@@ -2,44 +2,13 @@ import collections
 import json
 
 import dcos.util as util
-from dcos.mesos import Task
 from dcos.util import create_schema
-from dcoscli.task.main import _task_table
 
-import mock
-import pytest
-from common import assert_command, exec_command, watch_all_deployments
+from ..fixtures.task import task_fixture
+from .common import assert_command, exec_command, watch_all_deployments
 
 SLEEP1 = 'tests/data/marathon/apps/sleep.json'
 SLEEP2 = 'tests/data/marathon/apps/sleep2.json'
-
-
-@pytest.fixture
-def task():
-    task = Task({
-        "executor_id": "",
-        "framework_id": "20150502-231327-16842879-5050-3889-0000",
-        "id": "test-app.d44dd7f2-f9b7-11e4-bb43-56847afe9799",
-        "labels": [],
-        "name": "test-app",
-        "resources": {
-            "cpus": 0.1,
-            "disk": 0,
-            "mem": 16,
-            "ports": "[31651-31651]"
-        },
-        "slave_id": "20150513-185808-177048842-5050-1220-S0",
-        "state": "TASK_RUNNING",
-        "statuses": [
-            {
-                "state": "TASK_RUNNING",
-                "timestamp": 1431552866.52692
-            }
-        ]
-    }, None)
-
-    task.user = mock.Mock(return_value='root')
-    return task
 
 
 def test_help():
@@ -69,7 +38,7 @@ def test_info():
     assert_command(['dcos', 'task', '--info'], stdout=stdout)
 
 
-def test_task(task):
+def test_task():
     _install_sleep_task()
 
     # test `dcos task` output
@@ -82,7 +51,7 @@ def test_task(task):
     assert isinstance(tasks, collections.Sequence)
     assert len(tasks) == 1
 
-    schema = create_schema(task.dict())
+    schema = create_schema(task_fixture().dict())
     for task in tasks:
         assert not util.validate_json(task, schema)
 
@@ -114,7 +83,7 @@ def test_task_none():
                    stdout=b'[]\n')
 
 
-def test_filter(task):
+def test_filter():
     _install_sleep_task()
     _install_sleep_task(SLEEP2, 'test-app2')
 
@@ -127,15 +96,6 @@ def test_filter(task):
 
     _uninstall_sleep()
     _uninstall_sleep('test-app2')
-
-
-# not an integration test
-def test_task_table(task):
-    table = _task_table([task])
-    stdout = b"""\
-   NAME    USER  STATE                        ID                      \n\
- test-app  root    R    test-app.d44dd7f2-f9b7-11e4-bb43-56847afe9799 """
-    assert str(table).encode('utf-8') == stdout
 
 
 def _install_sleep_task(app_path=SLEEP1, app_name='test-app'):

@@ -13,8 +13,9 @@ from dcoscli.constants import (ROLLBAR_SERVER_POST_KEY,
                                SEGMENT_IO_WRITE_KEY_PROD, SEGMENT_URL)
 from dcoscli.main import main
 
-from common import mock_called_some_args
 from mock import patch
+
+from .common import mock_called_some_args
 
 ANON_ID = 0
 USER_ID = 'test@mail.com'

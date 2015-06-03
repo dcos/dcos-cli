@@ -1,4 +1,4 @@
-from common import assert_command
+from .common import assert_command
 
 
 def test_help():

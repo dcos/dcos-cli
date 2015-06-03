@@ -1,7 +1,7 @@
 import json
 
-from common import (assert_command, exec_command, list_deployments,
-                    watch_deployment)
+from .common import (assert_command, exec_command, list_deployments,
+                     watch_deployment)
 
 
 def test_add_group():

@@ -4,8 +4,9 @@ import os
 from dcos import constants
 
 import pytest
-from common import (assert_command, exec_command, list_deployments,
-                    watch_deployment)
+
+from .common import (assert_command, exec_command, list_deployments,
+                     watch_deployment)
 
 
 def test_help():
@@ -16,7 +17,7 @@ Usage:
     dcos marathon --info
     dcos marathon about
     dcos marathon app add [<app-resource>]
-    dcos marathon app list
+    dcos marathon app list [--json]
     dcos marathon app remove [--force] <app-id>
     dcos marathon app restart [--force] <app-id>
     dcos marathon app show [--app-version=<app-version>] <app-id>
@@ -621,7 +622,7 @@ def test_bad_configuration():
 
 def _list_apps(app_id=None):
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'list'])
+        ['dcos', 'marathon', 'app', 'list', '--json'])
 
     result = json.loads(stdout.decode('utf-8'))
 

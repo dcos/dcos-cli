@@ -2,7 +2,7 @@ import os
 
 from dcos import constants
 
-from common import assert_command, exec_command
+from .common import assert_command, exec_command
 
 
 def test_default():
