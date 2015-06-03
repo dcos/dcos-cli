@@ -537,6 +537,7 @@ def test_uninstall_multiple_apps():
               b'Installing package [helloworld] version [0.1.0] ' +
               b'with app id [/helloworld-1]\n'
               b'Installing CLI subcommand for package [helloworld]\n'
+              b'New command available: dcos helloworld\n'
               b'A sample post-installation message\n')
 
     _install_helloworld(['--yes', '--app-id=/helloworld-1'],
@@ -546,6 +547,7 @@ def test_uninstall_multiple_apps():
               b'Installing package [helloworld] version [0.1.0] ' +
               b'with app id [/helloworld-2]\n'
               b'Installing CLI subcommand for package [helloworld]\n'
+              b'New command available: dcos helloworld\n'
               b'A sample post-installation message\n')
 
     _install_helloworld(['--yes', '--app-id=/helloworld-2'],
@@ -594,6 +596,7 @@ def test_install_yes():
                    b'Continue installing? [yes/no] '
                    b'Installing package [helloworld] version [0.1.0]\n'
                    b'Installing CLI subcommand for package [helloworld]\n'
+                   b'New command available: dcos helloworld\n'
                    b'A sample post-installation message\n')
         _uninstall_helloworld()
 
@@ -642,6 +645,7 @@ version-1.x.zip",
 
     stdout = (b"A sample pre-installation message\n"
               b"Installing CLI subcommand for package [helloworld]\n"
+              b'New command available: dcos helloworld\n'
               b"A sample post-installation message\n")
     _install_helloworld(args=['--cli', '--yes'], stdout=stdout)
 
@@ -762,6 +766,7 @@ def _install_helloworld(
         stdout=b'A sample pre-installation message\n'
                b'Installing package [helloworld] version [0.1.0]\n'
                b'Installing CLI subcommand for package [helloworld]\n'
+               b'New command available: dcos helloworld\n'
                b'A sample post-installation message\n',
         returncode=0,
         stdin=None):
@@ -826,6 +831,7 @@ def _helloworld():
     stdout = b'''A sample pre-installation message
 Installing package [helloworld] version [0.1.0]
 Installing CLI subcommand for package [helloworld]
+New command available: dcos helloworld
 A sample post-installation message
 '''
     return _package('helloworld',

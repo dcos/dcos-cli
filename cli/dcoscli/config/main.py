@@ -379,7 +379,7 @@ def _get_config_schema(command):
                 'dcoscli',
                 'data/config-schema/core.json').decode('utf-8'))
 
-    executable = subcommand.command_executables(command, util.dcos_path())
+    executable = subcommand.command_executables(command)
     return subcommand.config_schema(executable)
 
 

@@ -59,7 +59,7 @@ def _help(show_info):
     directory = util.dcos_path()
     logger.debug("DCOS Path: {!r}".format(directory))
 
-    paths = subcommand.list_paths(directory)
+    paths = subcommand.list_paths()
     with ThreadPoolExecutor(max_workers=len(paths)) as executor:
         results = executor.map(subcommand.documentation, paths)
         commands_message = options.make_command_summary_string(sorted(results))
