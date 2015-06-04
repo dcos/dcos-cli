@@ -1147,6 +1147,8 @@ class Package():
 
         :param version: package version
         :type version: str
+        :param filename: file in package definition
+        :type filename: str
         :returns: whether filename is defined
         :rtype: bool
         """
