@@ -13,25 +13,31 @@ Usage:
     dcos marathon app stop [--force] <app-id>
     dcos marathon app update [--force] <app-id> [<properties>...]
     dcos marathon app version list [--max-count=<max-count>] <app-id>
-    dcos marathon deployment list [<app-id>]
+    dcos marathon deployment list [--json <app-id>]
     dcos marathon deployment rollback <deployment-id>
     dcos marathon deployment stop <deployment-id>
     dcos marathon deployment watch [--max-count=<max-count>]
          [--interval=<interval>] <deployment-id>
-    dcos marathon task list [<app-id>]
+    dcos marathon task list [--json <app-id>]
     dcos marathon task show <task-id>
     dcos marathon group add [<group-resource>]
-    dcos marathon group list
+    dcos marathon group list [--json]
     dcos marathon group show [--group-version=<group-version>] <group-id>
     dcos marathon group remove [--force] <group-id>
 
 Options:
     -h, --help                       Show this screen
+
     --info                           Show a short description of this
                                      subcommand
+
+     --json                          Print json-formatted tasks
+
     --version                        Show version
+
     --force                          This flag disable checks in Marathon
                                      during update operations
+
     --app-version=<app-version>      This flag specifies the application
                                      version to use for the command. The
                                      application version (<app-version>) can be
@@ -42,6 +48,7 @@ Options:
                                      integer and they represent the version
                                      from the currently deployed application
                                      definition
+
     --group-version=<group-version>  This flag specifies the group version to
                                      use for the command. The group version
                                      (<group-version>) can be specified as an
@@ -51,38 +58,48 @@ Options:
                                      specified as a negative integer and they
                                      represent the version from the currently
                                      deployed group definition
+
     --config-schema                  Show the configuration schema for the
                                      Marathon subcommand
+
     --max-count=<max-count>          Maximum number of entries to try to fetch
                                      and return
+
     --interval=<interval>            Number of seconds to wait between actions
 
 Positional Arguments:
     <app-id>                    The application id
+
     <app-resource>              The application resource; for a detailed
                                 description see (https://mesosphere.github.io/
                                 marathon/docs/rest-api.html#post-/v2/apps)
+
     <deployment-id>             The deployment id
+
     <group-id>                  The group id
+
     <group-resource>            The group resource; for a detailed description
                                 see (https://mesosphere.github.io/marathon/docs
                                 /rest-api.html#post-/v2/groups)
+
     <instances>                 The number of instances to start
+
     <properties>                Optional key-value pairs to be included in the
                                 command. The separator between the key and
                                 value must be the '=' character. E.g. cpus=2.0
+
     <task-id>                   The task id
 """
 import json
 import sys
 import time
-from collections import OrderedDict
 
 import dcoscli
 import docopt
 import pkg_resources
 from dcos import cmds, emitting, jsonitem, marathon, options, util
 from dcos.errors import DCOSException
+from dcoscli import tables
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -120,7 +137,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['marathon', 'deployment', 'list'],
-            arg_keys=['<app-id>'],
+            arg_keys=['<app-id>', '--json'],
             function=_deployment_list),
 
         cmds.Command(
@@ -140,7 +157,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['marathon', 'task', 'list'],
-            arg_keys=['<app-id>'],
+            arg_keys=['<app-id>', '--json'],
             function=_task_list),
 
         cmds.Command(
@@ -195,7 +212,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['marathon', 'group', 'list'],
-            arg_keys=[],
+            arg_keys=['--json'],
             function=_group_list),
 
         cmds.Command(
@@ -319,37 +336,6 @@ def _add(app_resource):
     return 0
 
 
-def _app_table(apps):
-    def get_cmd(app):
-        if app["cmd"] is not None:
-            return app["cmd"]
-        else:
-            return app["args"]
-
-    def get_container(app):
-        if app["container"] is not None:
-            return app["container"]["type"]
-        else:
-            return "null"
-
-    fields = OrderedDict([
-        ("id", lambda a: a["id"]),
-        ("mem", lambda a: a["mem"]),
-        ("cpus", lambda a: a["cpus"]),
-        ("deployments", lambda a: len(a["deployments"])),
-        ("instances", lambda a: "{}/{}".format(a["tasksRunning"],
-                                               a["instances"])),
-        ("container", get_container),
-        ("cmd", get_cmd)
-    ])
-
-    tb = util.table(fields, apps)
-    tb.align["CMD"] = "l"
-    tb.align["ID"] = "l"
-
-    return tb
-
-
 def _list(json_):
     """
     :param json_: output json if True
@@ -361,18 +347,14 @@ def _list(json_):
     client = marathon.create_client()
     apps = client.get_apps()
 
-    if json_:
-        emitter.publish(apps)
-    else:
-        table = _app_table(apps)
-        output = str(table)
-        if output:
-            emitter.publish(output)
+    emitting.publish_table(emitter, apps, tables.app_table, json_)
     return 0
 
 
-def _group_list():
+def _group_list(json_):
     """
+    :param json_: output json if True
+    :type json_: bool
     :returns: process status
     :rtype: int
     """
@@ -380,7 +362,7 @@ def _group_list():
     client = marathon.create_client()
     groups = client.get_groups()
 
-    emitter.publish(groups)
+    emitting.publish_table(emitter, groups, tables.group_table, json_)
     return 0
 
 
@@ -665,10 +647,12 @@ def _version_list(app_id, max_count):
     return 0
 
 
-def _deployment_list(app_id):
+def _deployment_list(app_id, json_):
     """
     :param app_id: the application id
     :type app_id: str
+    :param json_: output json if True
+    :type json_: bool
     :returns: process status
     :rtype: int
     """
@@ -677,7 +661,10 @@ def _deployment_list(app_id):
 
     deployments = client.get_deployments(app_id)
 
-    emitter.publish(deployments)
+    emitting.publish_table(emitter,
+                           deployments,
+                           tables.deployment_table,
+                           json_)
     return 0
 
 
@@ -743,10 +730,12 @@ def _deployment_watch(deployment_id, max_count, interval):
     return 0
 
 
-def _task_list(app_id):
+def _task_list(app_id, json_):
     """
     :param app_id: the id of the application
     :type app_id: str
+    :param json_: output json if True
+    :type json_: bool
     :returns: process status
     :rtype: int
     """
@@ -754,7 +743,7 @@ def _task_list(app_id):
     client = marathon.create_client()
     tasks = client.get_tasks(app_id)
 
-    emitter.publish(tasks)
+    emitting.publish_table(emitter, tasks, tables.app_task_table, json_)
     return 0
 
 

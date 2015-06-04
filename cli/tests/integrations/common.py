@@ -12,9 +12,9 @@ def exec_command(cmd, env=None, stdin=None):
     """Execute CLI command
 
     :param cmd: Program and arguments
-    :type cmd: list of str
+    :type cmd: [str]
     :param env: Environment variables
-    :type env: dict of str to str
+    :type env: dict
     :param stdin: File to use for stdin
     :type stdin: file
     :returns: A tuple with the returncode, stdout and stderr
@@ -115,7 +115,7 @@ def watch_deployment(deployment_id, count):
     assert stderr == b''
 
 
-def watch_all_deployments(count=60):
+def watch_all_deployments(count=300):
     """ Wait for all deployments to complete.
 
     :param count: max number of seconds to wait
@@ -140,7 +140,7 @@ def list_deployments(expected_count=None, app_id=None):
     :rtype: [dict]
     """
 
-    cmd = ['dcos', 'marathon', 'deployment', 'list']
+    cmd = ['dcos', 'marathon', 'deployment', 'list', '--json']
     if app_id is not None:
         cmd.append(app_id)
 
@@ -208,3 +208,19 @@ def delete_zk_nodes():
             base_path.format(znode))
 
         requests.delete(znode_url)
+
+
+def assert_lines(cmd, num_lines):
+    """ Assert stdout contains the expected number of lines
+
+    :param cmd: program and arguments
+    :type cmd: [str]
+    :param num_lines: expected number of lines for stdout
+    :type num_lines: int
+    :rtype: None
+    """
+    returncode, stdout, stderr = exec_command(cmd)
+
+    assert returncode == 0
+    assert stderr == b''
+    assert len(stdout.decode('utf-8').split('\n')) - 1 == num_lines

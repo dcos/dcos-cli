@@ -1,63 +1,20 @@
 import time
 
 import dcos.util as util
-from dcos.mesos import Framework
 from dcos.util import create_schema
-from dcoscli.service.main import _service_table
 
 import pytest
 
-from .common import (assert_command, delete_zk_nodes, exec_command,
-                     get_services, service_shutdown, watch_all_deployments)
+from ..fixtures.service import framework_fixture
+from .common import (assert_command, assert_lines, delete_zk_nodes,
+                     exec_command, get_services, service_shutdown,
+                     watch_all_deployments)
 
 
 @pytest.fixture(scope="module")
 def zk_znode(request):
     request.addfinalizer(delete_zk_nodes)
     return request
-
-
-@pytest.fixture
-def service():
-    service = Framework({
-        "active": True,
-        "checkpoint": True,
-        "completed_tasks": [],
-        "failover_timeout": 604800,
-        "hostname": "mesos.vm",
-        "id": "20150502-231327-16842879-5050-3889-0000",
-        "name": "marathon",
-        "offered_resources": {
-            "cpus": 0.0,
-            "disk": 0.0,
-            "mem": 0.0,
-            "ports": "[1379-1379, 10000-10000]"
-        },
-        "offers": [],
-        "pid":
-        "scheduler-a58cd5ba-f566-42e0-a283-b5f39cb66e88@172.17.8.101:55130",
-        "registered_time": 1431543498.31955,
-        "reregistered_time": 1431543498.31959,
-        "resources": {
-            "cpus": 0.2,
-            "disk": 0,
-            "mem": 32,
-            "ports": "[1379-1379, 10000-10000]"
-        },
-        "role": "*",
-        "tasks": [],
-        "unregistered_time": 0,
-        "used_resources": {
-            "cpus": 0.2,
-            "disk": 0,
-            "mem": 32,
-            "ports": "[1379-1379, 10000-10000]"
-        },
-        "user": "root",
-        "webui_url": "http://mesos:8080"
-    })
-
-    return service
 
 
 def test_help():
@@ -92,14 +49,18 @@ def test_info():
     assert_command(['dcos', 'service', '--info'], stdout=stdout)
 
 
-def test_service(service):
+def test_service():
     returncode, stdout, stderr = exec_command(['dcos', 'service', '--json'])
 
     services = get_services(1)
 
-    schema = _get_schema(service)
+    schema = _get_schema(framework_fixture())
     for srv in services:
         assert not util.validate_json(srv, schema)
+
+
+def test_service_table():
+    assert_lines(['dcos', 'service'], 2)
 
 
 def _get_schema(service):
@@ -161,15 +122,3 @@ Thank you for installing the Apache Cassandra DCOS Service.
 
     # assert marathon is only listed with --inactive
     get_services(1, ['--inactive'])
-
-
-# not an integration test
-def test_task_table(service):
-    table = _service_table([service])
-
-    stdout = """\
-   NAME      HOST    ACTIVE  TASKS  CPU  MEM  DISK                     ID\
-                   \n\
- marathon  mesos.vm   True     0    0.2   32   0    \
-20150502-231327-16842879-5050-3889-0000 """
-    assert str(table) == stdout

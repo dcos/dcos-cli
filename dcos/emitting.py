@@ -97,6 +97,30 @@ def print_handler(event):
         _page(event, pager_command)
 
 
+def publish_table(emitter, objs, table_fn, json_):
+    """Publishes a json representation of `objs` if `json_` is True,
+    otherwise, publishes a table representation.
+
+    :param emitter: emitter to use for publishing
+    :type emitter: Emitter
+    :param objs: objects to print
+    :type objs: [object]
+    :param table_fn: function used to generate a PrettyTable from `objs`
+    :type table_fn: objs -> PrettyTable
+    :param json_: whether or not to publish a json representation
+    :type json_: bool
+    :rtype: None
+    """
+
+    if json_:
+        emitter.publish(objs)
+    else:
+        table = table_fn(objs)
+        output = str(table)
+        if output:
+            emitter.publish(output)
+
+
 def _process_json(event, pager_command):
     """Conditionally highlights the supplied JSON value.
 

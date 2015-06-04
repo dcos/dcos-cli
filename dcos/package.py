@@ -1372,7 +1372,7 @@ class IndexEntries():
     :param source: The source of these index entries
     :type source: Source
     :param packages: The index entries
-    :type packages: list of dict
+    :type packages: [dict]
     """
 
     def __init__(self, source, packages):

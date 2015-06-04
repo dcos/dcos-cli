@@ -5,8 +5,8 @@ from dcos import constants
 
 import pytest
 
-from .common import (assert_command, exec_command, list_deployments,
-                     watch_deployment)
+from .common import (assert_command, assert_lines, exec_command,
+                     list_deployments, watch_all_deployments, watch_deployment)
 
 
 def test_help():
@@ -25,25 +25,31 @@ Usage:
     dcos marathon app stop [--force] <app-id>
     dcos marathon app update [--force] <app-id> [<properties>...]
     dcos marathon app version list [--max-count=<max-count>] <app-id>
-    dcos marathon deployment list [<app-id>]
+    dcos marathon deployment list [--json <app-id>]
     dcos marathon deployment rollback <deployment-id>
     dcos marathon deployment stop <deployment-id>
     dcos marathon deployment watch [--max-count=<max-count>]
          [--interval=<interval>] <deployment-id>
-    dcos marathon task list [<app-id>]
+    dcos marathon task list [--json <app-id>]
     dcos marathon task show <task-id>
     dcos marathon group add [<group-resource>]
-    dcos marathon group list
+    dcos marathon group list [--json]
     dcos marathon group show [--group-version=<group-version>] <group-id>
     dcos marathon group remove [--force] <group-id>
 
 Options:
     -h, --help                       Show this screen
+
     --info                           Show a short description of this
                                      subcommand
+
+     --json                          Print json-formatted tasks
+
     --version                        Show version
+
     --force                          This flag disable checks in Marathon
                                      during update operations
+
     --app-version=<app-version>      This flag specifies the application
                                      version to use for the command. The
                                      application version (<app-version>) can be
@@ -54,6 +60,7 @@ Options:
                                      integer and they represent the version
                                      from the currently deployed application
                                      definition
+
     --group-version=<group-version>  This flag specifies the group version to
                                      use for the command. The group version
                                      (<group-version>) can be specified as an
@@ -63,26 +70,36 @@ Options:
                                      specified as a negative integer and they
                                      represent the version from the currently
                                      deployed group definition
+
     --config-schema                  Show the configuration schema for the
                                      Marathon subcommand
+
     --max-count=<max-count>          Maximum number of entries to try to fetch
                                      and return
+
     --interval=<interval>            Number of seconds to wait between actions
 
 Positional Arguments:
     <app-id>                    The application id
+
     <app-resource>              The application resource; for a detailed
                                 description see (https://mesosphere.github.io/
                                 marathon/docs/rest-api.html#post-/v2/apps)
+
     <deployment-id>             The deployment id
+
     <group-id>                  The group id
+
     <group-resource>            The group resource; for a detailed description
                                 see (https://mesosphere.github.io/marathon/docs
                                 /rest-api.html#post-/v2/groups)
+
     <instances>                 The number of instances to start
+
     <properties>                Optional key-value pairs to be included in the
                                 command. The separator between the key and
                                 value must be the '=' character. E.g. cpus=2.0
+
     <task-id>                   The task id
 """
     assert_command(['dcos', 'marathon', '--help'],
@@ -470,6 +487,17 @@ def test_list_deployment():
     _remove_app('zero-instance-app')
 
 
+def test_list_deployment_table():
+    """Simple sanity check for listing deployments with a table output.
+    The more specific testing is done in unit tests.
+
+    """
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
+    _start_app('zero-instance-app', 3)
+    assert_lines(['dcos', 'marathon', 'deployment', 'list'], 2)
+    _remove_app('zero-instance-app')
+
+
 def test_list_deployment_missing_app():
     _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
     _start_app('zero-instance-app')
@@ -552,6 +580,14 @@ def test_list_tasks():
     result = list_deployments(1, 'zero-instance-app')
     watch_deployment(result[0]['id'], 60)
     _list_tasks(3)
+    _remove_app('zero-instance-app')
+
+
+def test_list_tasks_table():
+    _add_app('tests/data/marathon/apps/zero_instance_sleep.json')
+    _start_app('zero-instance-app', 3)
+    watch_all_deployments()
+    assert_lines(['dcos', 'marathon', 'task', 'list'], 4)
     _remove_app('zero-instance-app')
 
 
@@ -711,7 +747,7 @@ def _list_versions(app_id, expected_count, max_count=None):
 
 
 def _list_tasks(expected_count, app_id=None):
-    cmd = ['dcos', 'marathon', 'task', 'list']
+    cmd = ['dcos', 'marathon', 'task', 'list', '--json']
     if app_id is not None:
         cmd.append(app_id)
 

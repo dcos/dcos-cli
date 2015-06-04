@@ -5,7 +5,8 @@ import dcos.util as util
 from dcos.util import create_schema
 
 from ..fixtures.task import task_fixture
-from .common import assert_command, exec_command, watch_all_deployments
+from .common import (assert_command, assert_lines, exec_command,
+                     watch_all_deployments)
 
 SLEEP1 = 'tests/data/marathon/apps/sleep.json'
 SLEEP2 = 'tests/data/marathon/apps/sleep2.json'
@@ -55,6 +56,12 @@ def test_task():
     for task in tasks:
         assert not util.validate_json(task, schema)
 
+    _uninstall_sleep()
+
+
+def test_task_table():
+    _install_sleep_task()
+    assert_lines(['dcos', 'task'], 2)
     _uninstall_sleep()
 
 

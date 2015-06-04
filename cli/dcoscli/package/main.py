@@ -7,8 +7,8 @@ Usage:
     dcos package info
     dcos package install [--cli | [--app --app-id=<app_id>]]
                          [--options=<file> --yes] <package_name>
-    dcos package list [--endpoints --app-id=<app-id> <package_name>]
-    dcos package search [<query>]
+    dcos package list [--json --endpoints --app-id=<app-id> <package_name>]
+    dcos package search [--json <query>]
     dcos package sources
     dcos package uninstall [--cli | [--app --app-id=<app-id> --all]]
                  <package_name>
@@ -53,6 +53,7 @@ import docopt
 import pkg_resources
 from dcos import cmds, emitting, marathon, options, package, subcommand, util
 from dcos.errors import DCOSException
+from dcoscli import tables
 
 logger = util.get_logger(__name__)
 
@@ -107,12 +108,12 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['package', 'list'],
-            arg_keys=['--endpoints', '--app-id', '<package_name>'],
+            arg_keys=['--json', '--endpoints', '--app-id', '<package_name>'],
             function=_list),
 
         cmds.Command(
             hierarchy=['package', 'search'],
-            arg_keys=['<query>'],
+            arg_keys=['--json', '<query>'],
             function=_search),
 
         cmds.Command(
@@ -358,9 +359,11 @@ def _install(package_name, options_path, app_id, cli, app, yes):
     return 0
 
 
-def _list(endpoints, app_id, package_name):
-    """Show installed apps
+def _list(json_, endpoints, app_id, package_name):
+    """List installed apps
 
+    :param json_: output json if True
+    :type json_: bool
     :param endpoints: Whether to include a list of
         endpoints as port-host pairs
     :type endpoints: boolean
@@ -391,8 +394,7 @@ def _list(endpoints, app_id, package_name):
 
             results.append(pkg_info)
 
-    emitter.publish(results)
-
+    emitting.publish_table(emitter, results, tables.package_table, json_)
     return 0
 
 
@@ -424,9 +426,11 @@ def _matches_app_id(app_id, pkg_info):
     return app_id is None or app_id in pkg_info.get('apps')
 
 
-def _search(query):
+def _search(json_, query):
     """Search for matching packages.
 
+    :param json_: output json if True
+    :type json_: bool
     :param query: The search term
     :type query: str
     :returns: Process status
@@ -436,10 +440,13 @@ def _search(query):
         query = ''
 
     config = util.get_config()
-    results = package.search(query, config)
+    results = [index_entry.as_dict()
+               for index_entry in package.search(query, config)]
 
-    emitter.publish([r.as_dict() for r in results])
-
+    emitting.publish_table(emitter,
+                           results,
+                           tables.package_search_table,
+                           json_)
     return 0
 
 
