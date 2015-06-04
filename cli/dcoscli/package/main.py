@@ -323,7 +323,7 @@ def _install(package_name, options_path, app_id, cli, app, yes):
 
     options = pkg.options(pkg_version, user_options)
 
-    if app:
+    if app and pkg.has_marathon_definition(pkg_version):
         # Install in Marathon
         version_map = pkg.software_versions()
         sw_version = version_map.get(pkg_version, '?')
@@ -344,7 +344,7 @@ def _install(package_name, options_path, app_id, cli, app, yes):
             options,
             app_id)
 
-    if cli and pkg.is_command_defined(pkg_version):
+    if cli and pkg.has_command_definition(pkg_version):
         # Install subcommand
         emitter.publish('Installing CLI subcommand for package [{}]'.format(
             pkg.name()))
