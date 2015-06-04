@@ -276,15 +276,21 @@ def test_validate(env):
 
 
 def test_validation_error(env):
-    stderr = b"Error: missing required property 'sources'.\n"
+    source = ["https://github.com/mesosphere/universe/archive/version-1.x.zip"]
+    assert_command(['dcos', 'config', 'unset', 'package.sources'], env=env)
 
-    assert_command(['dcos', 'config', 'unset', 'package.sources'],
+    stdout = b"Error: missing required property 'sources'.\n"
+    assert_command(['dcos', 'config', 'validate'],
                    returncode=1,
-                   stderr=stderr,
+                   stdout=stdout,
+                   env=env)
+
+    assert_command(['dcos', 'config', 'set', 'package.sources',
+                   json.dumps(source)],
                    env=env)
     _get_value(
         'package.sources',
-        ["https://github.com/mesosphere/universe/archive/version-1.x.zip"],
+        source,
         env)
 
 

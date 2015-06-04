@@ -60,7 +60,7 @@ def _main():
     return cmds.execute(_cmds(), args)
 
 
-def compare_validations(toml_config_pre, toml_config_post):
+def _check_config(toml_config_pre, toml_config_post):
     """
     :param toml_config_pre: dictionary for the value before change
     :type toml_config_pre: dcos.api.config.Toml
@@ -172,7 +172,7 @@ def _set(name, value):
 
     _save_config_file(config_path, toml_config)
 
-    compare_validations(toml_config_pre, toml_config)
+    _check_config(toml_config_pre, toml_config)
 
     _save_config_file(config_path, toml_config)
     return 0
@@ -194,7 +194,7 @@ def _append(name, value):
 
     toml_config[name] = toml_config.get(name, []) + python_value
 
-    compare_validations(toml_config_pre, toml_config)
+    _check_config(toml_config_pre, toml_config)
 
     _save_config_file(config_path, toml_config)
     return 0
@@ -215,7 +215,7 @@ def _prepend(name, value):
     if section not in toml_config_pre._dictionary:
         toml_config_pre._dictionary[section] = {}
     toml_config[name] = python_value + toml_config.get(name, [])
-    compare_validations(toml_config_pre, toml_config)
+    _check_config(toml_config_pre, toml_config)
 
     _save_config_file(config_path, toml_config)
     return 0
@@ -252,8 +252,6 @@ def _unset(name, index):
     elif index is not None:
         raise DCOSException(
             'Unsetting based on an index is only supported for lists')
-
-    compare_validations(toml_config_pre, toml_config)
 
     _save_config_file(config_path, toml_config)
     return 0
