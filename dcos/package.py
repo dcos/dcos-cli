@@ -9,6 +9,7 @@ import shutil
 import stat
 import subprocess
 import zipfile
+from distutils.version import LooseVersion
 
 import git
 import portalocker
@@ -694,6 +695,12 @@ def update_sources(config, validate=False):
                     errors.append(e.message)
                     continue
 
+                # check the version
+                # TODO(jsancio): move this to the validation when it is forced
+                Registry(source, stage_dir).check_version(
+                    LooseVersion('1.0'),
+                    LooseVersion('2.0'))
+
                 # validate content
                 if validate:
                     validation_errors = Registry(source, stage_dir).validate()
@@ -992,6 +999,27 @@ class Registry():
         """
 
         return self._source
+
+    def check_version(self, min_version, max_version):
+        """Checks that the version is [min_version, max_version)
+
+        :param min_version: the min version inclusive
+        :type min_version: LooseVersion
+        :param max_version: the max version exclusive
+        :type max_version: LooseVersion
+        :returns: None
+        """
+
+        version = LooseVersion(self.get_version())
+        if not (version >= min_version and version < max_version):
+            raise DCOSException((
+                'Unable to update source [{}] because version {} is '
+                'not supported. Supported versions are between {} and '
+                '{}. Please update your DCOS CLI.').format(
+                    self._source.url,
+                    version,
+                    min_version,
+                    max_version))
 
     def get_version(self):
         """Returns the version of this registry.
