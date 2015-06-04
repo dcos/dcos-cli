@@ -136,7 +136,7 @@ def _save_auth_keys(key_dict):
         toml_config[name] = python_value
 
     serial = toml.dumps(toml_config._dictionary)
-    with open(config_path, 'w') as config_file:
+    with util.open_file(config_path, 'w') as config_file:
         config_file.write(serial)
 
     return None

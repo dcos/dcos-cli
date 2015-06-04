@@ -186,7 +186,7 @@ def _write_package_json(pkg, version):
 
     package_json = pkg.package_json(version)
 
-    with open(package_path, 'w') as package_file:
+    with util.open_file(package_path, 'w') as package_file:
         json.dump(package_json, package_file)
 
 
@@ -204,7 +204,7 @@ def _write_package_version(pkg, version):
 
     version_path = os.path.join(pkg_dir, 'version')
 
-    with open(version_path, 'w') as version_file:
+    with util.open_file(version_path, 'w') as version_file:
         version_file.write(version)
 
 
@@ -220,7 +220,7 @@ def _write_package_source(pkg):
 
     source_path = os.path.join(pkg_dir, 'source')
 
-    with open(source_path, 'w') as source_file:
+    with util.open_file(source_path, 'w') as source_file:
         source_file.write(pkg.registry.source.url)
 
 
@@ -447,5 +447,5 @@ class InstalledSubcommand(object):
         """
 
         package_json_path = os.path.join(self._dir(), 'package.json')
-        with open(package_json_path) as package_json_file:
+        with util.open_file(package_json_path) as package_json_file:
             return util.load_json(package_json_file)

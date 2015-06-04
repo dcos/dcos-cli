@@ -360,7 +360,7 @@ def _save_config_file(config_path, toml_config):
     """
 
     serial = toml.dumps(toml_config._dictionary)
-    with open(config_path, 'w') as config_file:
+    with util.open_file(config_path, 'w') as config_file:
         config_file.write(serial)
 
 

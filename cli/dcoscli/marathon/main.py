@@ -289,8 +289,8 @@ def _get_resource(resource):
     :rtype: dict
     """
     if resource is not None:
-        with open(resource) as fd:
-            return util.load_json(fd)
+        with util.open_file(resource) as resource_file:
+            return util.load_json(resource_file)
 
     # Check that stdin is not tty
     if sys.stdin.isatty():

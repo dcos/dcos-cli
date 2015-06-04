@@ -1,6 +1,7 @@
 import collections
 
 import toml
+from dcos import util
 
 
 def mutable_load_from_path(path):
@@ -12,7 +13,7 @@ def mutable_load_from_path(path):
     :rtype: MutableToml
     """
 
-    with open(path) as config_file:
+    with util.open_file(path) as config_file:
         return MutableToml(toml.loads(config_file.read()))
 
 
@@ -25,7 +26,7 @@ def load_from_path(path):
     :rtype: Toml
     """
 
-    with open(path) as config_file:
+    with util.open_file(path) as config_file:
         return Toml(toml.loads(config_file.read()))
 
 

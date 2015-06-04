@@ -15,7 +15,7 @@ import jsonschema
 import prettytable
 import pystache
 import six
-from dcos import config, constants
+from dcos import constants
 from dcos.errors import DCOSException
 
 
@@ -97,11 +97,8 @@ def read_file(path):
     if not os.path.isfile(path):
         raise DCOSException('Path [{}] is not a file'.format(path))
 
-    try:
-        with open(path) as fd:
-            return fd.read()
-    except IOError:
-        raise DCOSException('Unable to open file [{}]'.format(path))
+    with open_file(path) as file_:
+        return file_.read()
 
 
 def get_config():
@@ -109,6 +106,9 @@ def get_config():
     :returns: Configuration object
     :rtype: Toml
     """
+
+    # avoid circular import
+    from dcos import config
 
     return config.load_from_path(
         os.environ[constants.DCOS_CONFIG_ENV])
@@ -507,6 +507,44 @@ def table(fields, objs, sortby=None):
         tb.add_row(row)
 
     return tb
+
+
+@contextlib.contextmanager
+def open_file(path,  *args):
+    """Context manager that opens a file, and raises a DCOSException if
+    it fails.
+
+    :param path: file path
+    :type path: str
+    :param *args: other arguments to pass to `open`
+    :type *args: [str]
+    :returns: a context manager
+    :rtype: context manager
+    """
+
+    try:
+        file_ = open(path, *args)
+        yield file_
+    except IOError as e:
+        raise io_exception(path, e.errno)
+
+    file_.close()
+
+
+def io_exception(path, errno):
+    """Returns a DCOSException for when there is an error opening the
+    file at `path`
+
+    :param path: file path
+    :type path: str
+    :param errno: IO error number
+    :type errno: int
+    :returns: DCOSException
+    :rtype: DCOSException
+    """
+
+    return DCOSException('Error opening file [{}]: {}'.format(
+        path, os.strerror(errno)))
 
 
 logger = get_logger(__name__)

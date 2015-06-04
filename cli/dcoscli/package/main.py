@@ -246,11 +246,8 @@ def _user_options(path):
     if path is None:
         return {}
     else:
-        try:
-            with open(path) as options_file:
-                return util.load_json(options_file)
-        except IOError:
-            raise DCOSException('No such file: {}'.format(path))
+        with util.open_file(path) as options_file:
+            return util.load_json(options_file)
 
 
 def _confirm(prompt, yes):
