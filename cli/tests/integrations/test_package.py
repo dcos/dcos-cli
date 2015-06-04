@@ -533,6 +533,35 @@ version-1.x.zip",
     _uninstall_helloworld()
 
 
+def test_uninstall_multiple_apps():
+    stdout = (b'A sample pre-installation message\n'
+              b'Installing package [helloworld] version [0.1.0] ' +
+              b'with app id [/helloworld-1]\n'
+              b'Installing CLI subcommand for package [helloworld]\n'
+              b'A sample post-installation message\n')
+
+    _install_helloworld(['--yes', '--app-id=/helloworld-1'],
+                        stdout=stdout)
+
+    stdout = (b'A sample pre-installation message\n'
+              b'Installing package [helloworld] version [0.1.0] ' +
+              b'with app id [/helloworld-2]\n'
+              b'Installing CLI subcommand for package [helloworld]\n'
+              b'A sample post-installation message\n')
+
+    _install_helloworld(['--yes', '--app-id=/helloworld-2'],
+                        stdout=stdout)
+
+    stderr = (b"Multiple apps named [helloworld] are installed: " +
+              b"[/helloworld-1, /helloworld-2].\n" +
+              b"Please use --app-id to specify the ID of the app " +
+              b"to uninstall, or use --all to uninstall all apps.\n")
+    _uninstall_helloworld(stderr=stderr,
+                          returncode=1)
+
+    assert_command(['dcos', 'package', 'uninstall', 'helloworld', '--all'])
+
+
 def test_list(zk_znode):
     _list()
     _list(args=['xyzzy', '--json'])
@@ -735,15 +764,24 @@ def _install_helloworld(
                b'Installing package [helloworld] version [0.1.0]\n'
                b'Installing CLI subcommand for package [helloworld]\n'
                b'A sample post-installation message\n',
+        returncode=0,
         stdin=None):
     assert_command(
         ['dcos', 'package', 'install', 'helloworld'] + args,
         stdout=stdout,
+        returncode=returncode,
         stdin=stdin)
 
 
-def _uninstall_helloworld(args=[]):
-    assert_command(['dcos', 'package', 'uninstall', 'helloworld'] + args)
+def _uninstall_helloworld(
+        args=[],
+        stdout=b'',
+        stderr=b'',
+        returncode=0):
+    assert_command(['dcos', 'package', 'uninstall', 'helloworld'] + args,
+                   stdout=stdout,
+                   stderr=stderr,
+                   returncode=returncode)
 
 
 def _uninstall_chronos(args=[], returncode=0, stdout=b'', stderr=''):
