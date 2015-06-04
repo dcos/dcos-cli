@@ -120,7 +120,7 @@ and there may be bugs, incomplete features, incorrect documentation or other \
 discrepancies.
 The default configuration requires 3 nodes each with 0.3 CPU shares, 1184MB \
 of memory and 272MB of disk.
-Installing package [cassandra] version [0.1.0-SNAPSHOT-447-master-3ad1bbf8f7]
+Installing package [cassandra] version [0.1.0-1]
 Thank you for installing the Apache Cassandra DCOS Service.
 
 \tDocumentation: http://mesosphere.github.io/cassandra-mesos/

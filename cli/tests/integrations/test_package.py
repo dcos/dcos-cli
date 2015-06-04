@@ -16,6 +16,62 @@ def zk_znode(request):
     return request
 
 
+def _chronos_description(app_ids):
+    """
+    :param app_ids: a list of application id
+    :type app_ids: [str]
+    :returns: a binary string representing the chronos description
+    :rtype: str
+    """
+
+    result = [
+        {"description": "A fault tolerant job scheduler for Mesos which "
+                        "handles dependencies and ISO8601 based schedules.",
+         "framework": True,
+         "images": {
+             "icon-large": "https://downloads.mesosphere.io/chronos/assets/"
+                           "icon-service-chronos-large.png",
+             "icon-medium": "https://downloads.mesosphere.io/chronos/assets/"
+                            "icon-service-chronos-medium.png",
+             "icon-small": "https://downloads.mesosphere.io/chronos/assets/"
+                           "icon-service-chronos-small.png"
+         },
+         "licenses": [
+             {
+                 "name": "Apache License Version 2.0",
+                 "url": "https://github.com/mesos/chronos/blob/master/LICENSE"
+             }
+         ],
+         "maintainer": "support@mesosphere.io",
+         "name": "chronos",
+         "packageSource": "git://github.com/mesosphere/universe.git",
+         "postInstallNotes": "Chronos DCOS Service has been successfully "
+                             "installed!\n\n\tDocumentation: http://mesos."
+                             "github.io/chronos\n\tIssues: https://github.com/"
+                             "mesos/chronos/issues",
+         "postUninstallNotes": "The Chronos DCOS Service has been uninstalled "
+                               "and will no longer run.\nPlease follow the "
+                               "instructions at http://beta-docs.mesosphere."
+                               "com/services/chronos/#uninstall to clean up "
+                               "any persisted state",
+         "preInstallNotes": "We recommend a minimum of one node with at least "
+                            "1 CPU and 2GB of RAM available for the Chronos "
+                            "Service.",
+         "releaseVersion": "0",
+         "scm": "https://github.com/mesos/chronos.git",
+         "tags": [
+             "mesosphere",
+             "framework"
+         ],
+         "version": "2.3.4"
+         }]
+
+    result[0]['apps'] = [{'appId': app_id} for app_id in app_ids]
+
+    return (json.dumps(result, sort_keys=True, indent=2).replace(' \n', '\n') +
+            '\n').encode('utf-8')
+
+
 def test_package():
     stdout = b"""Install and manage DCOS software packages
 
@@ -26,7 +82,7 @@ Usage:
     dcos package info
     dcos package install [--cli | [--app --app-id=<app_id>]]
                          [--options=<file> --yes] <package_name>
-    dcos package list-installed [--endpoints --app-id=<app-id> <package_name>]
+    dcos package list [--endpoints --app-id=<app-id> <package_name>]
     dcos package search [<query>]
     dcos package sources
     dcos package uninstall [--cli | [--app --app-id=<app-id> --all]]
@@ -442,7 +498,7 @@ def test_uninstall_subcommand():
     _install_helloworld()
     _uninstall_helloworld()
 
-    assert_command(['dcos', 'package', 'list-installed'], stdout=b'[]\n')
+    assert_command(['dcos', 'package', 'list'], stdout=b'[]\n')
 
 
 def test_uninstall_cli():
@@ -451,9 +507,11 @@ def test_uninstall_cli():
 
     stdout = b"""[
   {
-    "app": {
-      "appId": "/helloworld"
-    },
+    "apps": [
+      {
+        "appId": "/helloworld"
+      }
+    ],
     "description": "Example DCOS application package",
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
@@ -471,84 +529,42 @@ def test_uninstall_cli():
   }
 ]
 """
-    assert_command(['dcos', 'package', 'list-installed'],
+    assert_command(['dcos', 'package', 'list'],
                    stdout=stdout)
 
     _uninstall_helloworld()
 
 
 def test_list_installed(zk_znode):
-    assert_command(['dcos', 'package', 'list-installed'],
+    assert_command(['dcos', 'package', 'list'],
                    stdout=b'[]\n')
 
-    assert_command(['dcos', 'package', 'list-installed', 'xyzzy'],
+    assert_command(['dcos', 'package', 'list', 'xyzzy'],
                    stdout=b'[]\n')
 
-    assert_command(['dcos', 'package', 'list-installed', '--app-id=/xyzzy'],
+    assert_command(['dcos', 'package', 'list', '--app-id=/xyzzy'],
                    stdout=b'[]\n')
 
     _install_chronos()
 
-    expected_output = b"""\
-[
-  {
-    "app": {
-      "appId": "/chronos"
-    },
-    "description": "A fault tolerant job scheduler for Mesos which handles \
-dependencies and ISO8601 based schedules.",
-    "framework": true,
-    "images": {
-      "icon-large": "https://downloads.mesosphere.io/chronos/assets/icon-\
-service-chronos-large.png",
-      "icon-medium": "https://downloads.mesosphere.io/chronos/assets/icon-\
-service-chronos-medium.png",
-      "icon-small": "https://downloads.mesosphere.io/chronos/assets/icon-\
-service-chronos-small.png"
-    },
-    "licenses": [
-      {
-        "name": "Apache License Version 2.0",
-        "url": "https://github.com/mesos/chronos/blob/master/LICENSE"
-      }
-    ],
-    "maintainer": "support@mesosphere.io",
-    "name": "chronos",
-    "packageSource": "git://github.com/mesosphere/universe.git",
-    "postInstallNotes": "Chronos DCOS Service has been successfully installed!\
-\\n\\n\\tDocumentation: http://mesos.github.io/chronos\\n\\tIssues: https://\
-github.com/mesos/chronos/issues",
-    "postUninstallNotes": "The Chronos DCOS Service has been uninstalled and \
-will no longer run.\\nPlease follow the instructions at http://beta-docs.\
-mesosphere.com/services/chronos/#uninstall to clean up any persisted state",
-    "preInstallNotes": "We recommend a minimum of one node with at least 1 \
-CPU and 2GB of RAM available for the Chronos Service.",
-    "releaseVersion": "0",
-    "scm": "https://github.com/mesos/chronos.git",
-    "tags": [
-      "mesosphere",
-      "framework"
-    ],
-    "version": "2.3.4"
-  }
-]
-"""
-    assert_command(['dcos', 'package', 'list-installed'],
+    expected_output = _chronos_description(['/chronos'])
+
+    assert_command(['dcos', 'package', 'list'],
                    stdout=expected_output)
 
-    assert_command(['dcos', 'package', 'list-installed', 'chronos'],
+    assert_command(['dcos', 'package', 'list', 'chronos'],
                    stdout=expected_output)
 
     assert_command(
-        ['dcos', 'package', 'list-installed', '--app-id=/chronos'],
+        ['dcos', 'package', 'list', '--app-id=/chronos'],
         stdout=expected_output)
 
     assert_command(
-        ['dcos', 'package', 'list-installed', 'ceci-nest-pas-une-package'],
+        ['dcos', 'package', 'list', 'ceci-nest-pas-une-package'],
         stdout=b'[]\n')
 
     assert_command(
-        ['dcos', 'package', 'list-installed',
+        ['dcos', 'package', 'list',
          '--app-id=/ceci-nest-pas-une-package'],
         stdout=b'[]\n')
 
@@ -557,7 +573,14 @@ CPU and 2GB of RAM available for the Chronos Service.",
 
 def test_install_yes():
     with open('tests/data/package/assume_yes.txt') as yes_file:
-        _install_helloworld(stdin=yes_file)
+        _install_helloworld(
+            args=[],
+            stdin=yes_file,
+            stdout=b'A sample pre-installation message\n'
+                   b'Continue installing? [yes/no] '
+                   b'Installing package [helloworld] version [0.1.0]\n'
+                   b'Installing CLI subcommand for package [helloworld]\n'
+                   b'A sample post-installation message\n')
         _uninstall_helloworld()
 
 
@@ -567,8 +590,7 @@ def test_install_no():
             args=[],
             stdin=no_file,
             stdout=b'A sample pre-installation message\n'
-                   b'Continue installing? [yes/no]\n'
-                   b'Exiting installation.\n')
+                   b'Continue installing? [yes/no] Exiting installation.\n')
 
 
 def test_list_installed_cli():
@@ -577,9 +599,11 @@ def test_list_installed_cli():
     stdout = b"""\
 [
   {
-    "app": {
-      "appId": "/helloworld"
-    },
+    "apps": [
+      {
+        "appId": "/helloworld"
+      }
+    ],
     "command": {
       "name": "helloworld"
     },
@@ -600,7 +624,7 @@ def test_list_installed_cli():
   }
 ]
 """
-    assert_command(['dcos', 'package', 'list-installed'],
+    assert_command(['dcos', 'package', 'list'],
                    stdout=stdout)
 
     _uninstall_helloworld()
@@ -633,7 +657,7 @@ def test_list_installed_cli():
   }
 ]
 """
-    assert_command(['dcos', 'package', 'list-installed'],
+    assert_command(['dcos', 'package', 'list'],
                    stdout=stdout)
 
     _uninstall_helloworld()
@@ -646,6 +670,23 @@ def test_uninstall_multiple_frameworknames(zk_znode):
         args=['--yes', '--options=tests/data/package/chronos-2.json'])
 
     watch_all_deployments()
+
+    expected_output = _chronos_description(
+        ['/chronos-user-1', '/chronos-user-2'])
+
+    assert_command(['dcos', 'package', 'list'],
+                   stdout=expected_output)
+
+    assert_command(['dcos', 'package', 'list', 'chronos'],
+                   stdout=expected_output)
+
+    assert_command(
+        ['dcos', 'package', 'list', '--app-id=/chronos-user-1'],
+        stdout=_chronos_description(['/chronos-user-1']))
+
+    assert_command(
+        ['dcos', 'package', 'list', '--app-id=/chronos-user-2'],
+        stdout=_chronos_description(['/chronos-user-2']))
 
     _uninstall_chronos(
         args=['--app-id=chronos-user-1'],
