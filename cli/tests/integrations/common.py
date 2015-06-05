@@ -33,10 +33,17 @@ def exec_command(cmd, env=None, stdin=None):
     stdout, stderr = process.communicate()
 
     # We should always print the stdout and stderr
-    print('STDOUT: {}'.format(stdout.decode('utf-8')))
-    print('STDERR: {}'.format(stderr.decode('utf-8')))
+    print('STDOUT: {}'.format(_truncate(stdout.decode('utf-8'))))
+    print('STDERR: {}'.format(_truncate(stderr.decode('utf-8'))))
 
     return (process.returncode, stdout, stderr)
+
+
+def _truncate(s, length=8000):
+    if len(s) > length:
+        return s[:length-3] + '...'
+    else:
+        return s
 
 
 def assert_command(
