@@ -66,7 +66,10 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
         'gitpython>=1.0, <2.0',
-        'jsonschema>=2.4, <3.0',
+
+        # pin the exact version, because jsonschema 2.5 broke py3
+        'jsonschema==2.4',
+
         'pager>=3.3, <4.0',
         'portalocker>=0.5, <1.0',
         'pygments>=2.0, <3.0',
