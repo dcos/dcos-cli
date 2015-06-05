@@ -1,72 +1,45 @@
+import contextlib
 import json
 
-from .common import (assert_command, assert_lines, exec_command,
-                     list_deployments, watch_all_deployments, watch_deployment)
+from .common import (assert_command, assert_lines, exec_command, show_app,
+                     watch_all_deployments)
+
+GOOD_GROUP = 'tests/data/marathon/groups/good.json'
 
 
-def test_add_group():
-    _add_group('tests/data/marathon/groups/good.json')
-    _list_groups('test-group/sleep/goodnight')
-    result = list_deployments(None, 'test-group/sleep/goodnight')
-    if len(result) != 0:
-        watch_deployment(result[0]['id'], 60)
+def test_deploy_group():
+    _deploy_group(GOOD_GROUP)
     _remove_group('test-group')
 
 
 def test_group_list_table():
-    _add_group('tests/data/marathon/groups/good.json')
-    watch_all_deployments()
-    assert_lines(['dcos', 'marathon', 'group', 'list'], 3)
-    _remove_group('test-group')
+    with _group(GOOD_GROUP, 'test-group'):
+        assert_lines(['dcos', 'marathon', 'group', 'list'], 3)
 
 
 def test_validate_complicated_group_and_app():
-    _add_group('tests/data/marathon/groups/complicated.json')
-    result = list_deployments(None, 'test-group/moregroups/moregroups/sleep1')
-    if len(result) != 0:
-        watch_deployment(result[0]['id'], 60)
+    _deploy_group('tests/data/marathon/groups/complicated.json')
     _remove_group('test-group')
 
 
-def test_optional_add_group():
-    assert_command(['dcos', 'marathon', 'group', 'add',
-                    'tests/data/marathon/groups/good.json'])
-
-    _list_groups('test-group/sleep/goodnight')
-    result = list_deployments(None, 'test-group/sleep/goodnight')
-    if len(result) != 0:
-        watch_deployment(result[0]['id'], 60)
+def test_optional_deploy_group():
+    _deploy_group(GOOD_GROUP, False)
     _remove_group('test-group')
 
 
 def test_add_existing_group():
-    _add_group('tests/data/marathon/groups/good.json')
-
-    result = list_deployments(None, 'test-group/sleep/goodnight')
-    if len(result) != 0:
-        watch_deployment(result[0]['id'], 60)
-
-    with open('tests/data/marathon/groups/good.json') as fd:
-        stderr = b"Group '/test-group' already exists\n"
-        assert_command(['dcos', 'marathon', 'group', 'add'],
-                       returncode=1,
-                       stderr=stderr,
-                       stdin=fd)
-
-    result = list_deployments(None, 'test-group/sleep/goodnight')
-    if len(result) != 0:
-        watch_deployment(result[0]['id'], 60)
-    _remove_group('test-group')
+    with _group(GOOD_GROUP, 'test-group'):
+        with open(GOOD_GROUP) as fd:
+            stderr = b"Group '/test-group' already exists\n"
+            assert_command(['dcos', 'marathon', 'group', 'add'],
+                           returncode=1,
+                           stderr=stderr,
+                           stdin=fd)
 
 
 def test_show_group():
-    _add_group('tests/data/marathon/groups/good.json')
-    _list_groups('test-group/sleep/goodnight')
-    result = list_deployments(None, 'test-group/sleep/goodnight')
-    if len(result) != 0:
-        watch_deployment(result[0]['id'], 60)
-    _show_group('test-group')
-    _remove_group('test-group')
+    with _group(GOOD_GROUP, 'test-group'):
+        _show_group('test-group')
 
 
 def test_add_bad_app():
@@ -107,45 +80,65 @@ def test_add_bad_complicated_group():
         assert err in stderr.decode('utf-8')
 
 
-def _list_groups(group_id=None):
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'group', 'list', '--json'])
+def test_update_group():
+    with _group(GOOD_GROUP, 'test-group'):
+        newapp = json.dumps([{"id": "appadded", "cmd": "sleep 0"}])
+        appjson = "apps={}".format(newapp)
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'group', 'update', 'test-group/sleep',
+                appjson])
 
-    result = json.loads(stdout.decode('utf-8'))
+        assert returncode == 0
+        assert stdout.decode().startswith('Created deployment ')
+        assert stderr == b''
 
-    if group_id is None:
-        assert len(result) == 0
-    else:
-        groups = None
-        for g in group_id.split("/")[:-1]:
-            if groups is None:
-                result = result[0]
-                groups = "/{}".format(g)
-            else:
-                result = result['groups'][0]
-                groups += g
-            assert result['id'] == groups
-            groups += "/"
-        assert result['apps'][0]['id'] == "/" + group_id
+        watch_all_deployments()
+        show_app('test-group/sleep/appadded')
 
-    assert returncode == 0
-    assert stderr == b''
 
-    return result
+def test_update_group_from_stdin():
+    with _group(GOOD_GROUP, 'test-group'):
+        _update_group(
+            'test-group',
+            'tests/data/marathon/groups/update_good.json')
+        show_app('test-group/updated')
+
+
+def test_update_missing_group():
+    assert_command(['dcos', 'marathon', 'group', 'update', 'missing-id'],
+                   stderr=b"Error: Group '/missing-id' does not exist\n",
+                   returncode=1)
+
+
+def test_update_missing_field():
+    with _group(GOOD_GROUP, 'test-group'):
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'group', 'update',
+                'test-group/sleep', 'missing="a string"'])
+
+        assert returncode == 1
+        assert stdout == b''
+        assert stderr.decode('utf-8').startswith(
+            "The property 'missing' does not conform to the expected format. "
+            "Possible values are: ")
 
 
 def _remove_group(group_id):
     assert_command(['dcos', 'marathon', 'group', 'remove', group_id])
 
     # Let's make sure that we don't return until the deployment has finished
-    result = list_deployments(None, group_id)
-    if len(result) != 0:
-        watch_deployment(result[0]['id'], 60)
+    watch_all_deployments()
 
 
-def _add_group(file_path):
-    with open(file_path) as fd:
-        assert_command(['dcos', 'marathon', 'group', 'add'], stdin=fd)
+def _deploy_group(file_path, stdin=True):
+    if stdin:
+        with open(file_path) as fd:
+            assert_command(['dcos', 'marathon', 'group', 'add'], stdin=fd)
+    else:
+        assert_command(['dcos', 'marathon', 'group', 'add', file_path])
+
+    # Let's make sure that we don't return until the deployment has finished
+    watch_all_deployments()
 
 
 def _show_group(group_id, version=None):
@@ -165,3 +158,36 @@ def _show_group(group_id, version=None):
     assert stderr == b''
 
     return result
+
+
+def _update_group(group_id, file_path):
+    with open(file_path) as fd:
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'group', 'update', group_id],
+            stdin=fd)
+
+        assert returncode == 0
+        assert stdout.decode().startswith('Created deployment ')
+        assert stderr == b''
+
+    # Let's make sure that we don't return until the deployment has finished
+    watch_all_deployments()
+
+
+@contextlib.contextmanager
+def _group(path, group_id):
+    """Context manager that deploys a group on entrance, and removes it on
+    exit.
+
+    :param path: path to group's json definition
+    :type path: str
+    :param group_id: group id
+    :type group_id: str
+    :rtype: None
+    """
+
+    _deploy_group(path)
+    try:
+        yield
+    finally:
+        _remove_group(group_id)

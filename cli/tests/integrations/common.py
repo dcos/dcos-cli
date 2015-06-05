@@ -171,15 +171,41 @@ def get_services(expected_count=None, args=[]):
     returncode, stdout, stderr = exec_command(
         ['dcos', 'service', '--json'] + args)
 
-    assert returncode == 0
-    assert stderr == b''
-
     services = json.loads(stdout.decode('utf-8'))
     assert isinstance(services, collections.Sequence)
     if expected_count is not None:
         assert len(services) == expected_count
 
     return services
+
+
+def show_app(app_id, version=None):
+    """Show details of a Marathon application.
+
+    :param app_id: The id for the application
+    :type app_id: str
+    :param version: The version, either absolute (date-time) or relative
+    :type version: str
+    :returns: The requested Marathon application
+    :rtype: dict
+    """
+
+    if version is None:
+        cmd = ['dcos', 'marathon', 'app', 'show', app_id]
+    else:
+        cmd = ['dcos', 'marathon', 'app', 'show',
+               '--app-version={}'.format(version), app_id]
+
+    returncode, stdout, stderr = exec_command(cmd)
+
+    assert returncode == 0
+    assert stderr == b''
+
+    result = json.loads(stdout.decode('utf-8'))
+    assert isinstance(result, dict)
+    assert result['id'] == '/' + app_id
+
+    return result
 
 
 def service_shutdown(service_id):

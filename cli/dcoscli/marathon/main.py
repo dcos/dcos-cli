@@ -24,6 +24,7 @@ Usage:
     dcos marathon group list [--json]
     dcos marathon group show [--group-version=<group-version>] <group-id>
     dcos marathon group remove [--force] <group-id>
+    dcos marathon group update [--force] <group-id> [<properties>...]
 
 Options:
     -h, --help                       Show this screen
@@ -70,23 +71,27 @@ Options:
 Positional Arguments:
     <app-id>                    The application id
 
-    <app-resource>              The application resource; for a detailed
-                                description see (https://mesosphere.github.io/
-                                marathon/docs/rest-api.html#post-/v2/apps)
+    <app-resource>              Path to a file containing the app's JSON
+                                definition. If omitted, the definition is read
+                                from stdin. For a detailed description see
+                                (https://mesosphere.github.io/
+                                marathon/docs/rest-api.html#post-/v2/apps).
 
     <deployment-id>             The deployment id
 
     <group-id>                  The group id
 
-    <group-resource>            The group resource; for a detailed description
-                                see (https://mesosphere.github.io/marathon/docs
-                                /rest-api.html#post-/v2/groups)
+    <group-resource>            Path to a file containing the group's JSON
+                                definition. If omitted, the definition is read
+                                from stdin. For a detailed description see
+                                (https://mesosphere.github.io/
+                                marathon/docs/rest-api.html#post-/v2/groups).
 
     <instances>                 The number of instances to start
 
-    <properties>                Optional key-value pairs to be included in the
-                                command. The separator between the key and
-                                value must be the '=' character. E.g. cpus=2.0
+    <properties>                Must be of the format <key>=<value>. E.g.
+                                cpus=2.0. If omitted, properties are read from
+                                stdin.
 
     <task-id>                   The task id
 """
@@ -226,6 +231,11 @@ def _cmds():
             function=_group_remove),
 
         cmds.Command(
+            hierarchy=['marathon', 'group', 'update'],
+            arg_keys=['<group-id>', '<properties>', '--force'],
+            function=_group_update),
+
+        cmds.Command(
             hierarchy=['marathon', 'about'],
             arg_keys=[],
             function=_about),
@@ -243,7 +253,7 @@ def _marathon(config_schema, info):
     :type config_schema: boolean
     :param info: Whether to output a description of this subcommand
     :type info: boolean
-    :returns: Process status
+    :returns: process return code
     :rtype: int
     """
 
@@ -261,7 +271,7 @@ def _marathon(config_schema, info):
 
 def _info():
     """
-    :returns: Process status
+    :returns: process return code
     :rtype: int
     """
 
@@ -271,7 +281,7 @@ def _info():
 
 def _about():
     """
-    :returns: Process status
+    :returns: process return code
     :rtype: int
     """
 
@@ -308,7 +318,7 @@ def _add(app_resource):
     """
     :param app_resource: optional filename for the application resource
     :type app_resource: str
-    :returns: Process status
+    :returns: process return code
     :rtype: int
     """
     application_resource = _get_resource(app_resource)
@@ -340,7 +350,7 @@ def _list(json_):
     """
     :param json_: output json if True
     :type json_: bool
-    :returns: process status
+    :returns: process return code
     :rtype: int
     """
 
@@ -355,8 +365,8 @@ def _group_list(json_):
     """
     :param json_: output json if True
     :type json_: bool
-    :returns: process status
     :rtype: int
+    :returns: process return code
     """
 
     client = marathon.create_client()
@@ -370,7 +380,7 @@ def _group_add(group_resource):
     """
     :param group_resource: optional filename for the group resource
     :type group_resource: str
-    :returns: Process status
+    :returns: process return code
     :rtype: int
     """
 
@@ -404,7 +414,7 @@ def _remove(app_id, force):
     :type app_id: str
     :param force: Whether to override running deployments.
     :type force: bool
-    :returns: Process status
+    :returns: process return code
     :rtype: int
     """
 
@@ -419,7 +429,7 @@ def _group_remove(group_id, force):
     :type group_id: str
     :param force: Whether to override running deployments.
     :type force: bool
-    :returns: Process status
+    :returns: process return code
     :rtype: int
     """
 
@@ -435,7 +445,7 @@ def _show(app_id, version):
     :type app_id: str
     :param version: The version, either absolute (date-time) or relative
     :type version: str
-    :returns: Process status
+    :returns: process return code
     :rtype: int
     """
 
@@ -457,7 +467,7 @@ def _group_show(group_id, version=None):
     :type group_id: str
     :param version: The version, either absolute (date-time) or relative
     :type version: str
-    :returns: Process status
+    :returns: process return code
     :rtype: int
     """
 
@@ -466,6 +476,30 @@ def _group_show(group_id, version=None):
     app = client.get_group(group_id, version=version)
 
     emitter.publish(app)
+    return 0
+
+
+def _group_update(group_id, properties, force):
+    """
+    :param group_id: the id of the group
+    :type group_id: str
+    :param properties: json items used to update group
+    :type properties: [str]
+    :param force: whether to override running deployments
+    :type force: bool
+    :returns: process return code
+    :rtype: int
+    """
+
+    client = marathon.create_client()
+
+    # Ensure that the group exists
+    client.get_group(group_id)
+
+    group_resource = _parse_properties(properties, _data_schema())
+    deployment = client.update_group(group_id, group_resource, force)
+
+    emitter.publish('Created deployment {}'.format(deployment))
     return 0
 
 
@@ -478,7 +512,7 @@ def _start(app_id, instances, force):
     :type instances: str
     :param force: whether to override running deployments
     :type force: bool
-    :returns: Process status
+    :returns: process return code
     :rtype: int
     """
 
@@ -524,7 +558,7 @@ def _stop(app_id, force):
     :type app_id: str
     :param force: whether to override running deployments
     :type force: bool
-    :returns: process status
+    :returns: process return code
     :rtype: int
     """
 
@@ -547,15 +581,15 @@ def _stop(app_id, force):
     emitter.publish('Created deployment {}'.format(deployment))
 
 
-def _update(app_id, json_items, force):
+def _update(app_id, properties, force):
     """
     :param app_id: the id of the application
     :type app_id: str
-    :param json_items: json update items
-    :type json_items: list of str
+    :param properties: json items used to update resource
+    :type properties: [str]
     :param force: whether to override running deployments
     :type force: bool
-    :returns: process status
+    :returns: process return code
     :rtype: int
     """
 
@@ -564,37 +598,46 @@ def _update(app_id, json_items, force):
     # Ensure that the application exists
     client.get_app(app_id)
 
-    if len(json_items) == 0:
-        if sys.stdin.isatty():
-            # We don't support TTY right now. In the future we will start an
-            # editor
-            emitter.publish(
-                "We currently don't support reading from the TTY. Please "
-                "specify an application JSON.\n"
-                "E.g. dcos app update < app_update.json")
-            return 1
-        else:
-            return _update_from_stdin(app_id, force)
-
-    schema = _app_schema()
-
-    # Need to add the 'id' because it is required
-    app_json = {'id': app_id}
-
-    for json_item in json_items:
-        key, value = jsonitem.parse_json_item(json_item, schema)
-
-        if key in app_json:
-            emitter.publish(
-                'Key {!r} was specified more than once'.format(key))
-            return 1
-        else:
-            app_json[key] = value
-
-    deployment = client.update_app(app_id, app_json, force)
+    app_resource = _parse_properties(properties, _app_schema())
+    deployment = client.update_app(app_id, app_resource, force)
 
     emitter.publish('Created deployment {}'.format(deployment))
     return 0
+
+
+def _parse_properties(properties, schema):
+    """
+    :param properties: JSON items in the form key=value
+    :type properties: [str]
+    :param schema: The JSON schema used to verify properties
+    :type schema: dict
+    :returns: resource JSON
+    :rtype: dict
+    """
+
+    if len(properties) == 0:
+        if sys.stdin.isatty():
+            # We don't support TTY right now. In the future we will start an
+            # editor
+            raise DCOSException(
+                "We currently don't support reading from the TTY. Please "
+                "specify an application JSON.\n"
+                "E.g. dcos marathon app update < app_update.json")
+        else:
+            return util.load_jsons(sys.stdin.read())
+
+    resource_json = {}
+    for prop in properties:
+        key, value = jsonitem.parse_json_item(prop, schema)
+
+        key = jsonitem.clean_value(key)
+        if key in resource_json:
+            raise DCOSException(
+                'Key {!r} was specified more than once'.format(key))
+
+        resource_json[key] = value
+
+    return resource_json
 
 
 def _restart(app_id, force):
@@ -603,7 +646,7 @@ def _restart(app_id, force):
     :type app_id: str
     :param force: whether to override running deployments
     :type force: bool
-    :returns: process status
+    :returns: process return code
     :rtype: int
     """
 
@@ -632,7 +675,7 @@ def _version_list(app_id, max_count):
     :type app_id: str
     :param max_count: the maximum number of version to fetch and return
     :type max_count: str
-    :returns: process status
+    :returns: process return code
     :rtype: int
     """
 
@@ -653,7 +696,7 @@ def _deployment_list(app_id, json_):
     :type app_id: str
     :param json_: output json if True
     :type json_: bool
-    :returns: process status
+    :returns: process return code
     :rtype: int
     """
 
@@ -672,7 +715,7 @@ def _deployment_stop(deployment_id):
     """
     :param deployment_id: the application id
     :type deployment_di: str
-    :returns: process status
+    :returns: process return code
     :rtype: int
     """
 
@@ -686,7 +729,7 @@ def _deployment_rollback(deployment_id):
     """
     :param deployment_id: the application id
     :type deployment_di: str
-    :returns: process status
+    :returns: process return code
     :rtype: int
     """
 
@@ -705,7 +748,7 @@ def _deployment_watch(deployment_id, max_count, interval):
     :type max_count: str
     :param interval: wait interval in seconds between polling calls
     :type interval: str
-    :returns: process status
+    :returns: process return code
     :rtype: int
     """
 
@@ -736,7 +779,7 @@ def _task_list(app_id, json_):
     :type app_id: str
     :param json_: output json if True
     :type json_: bool
-    :returns: process status
+    :returns: process return code
     :rtype: int
     """
 
@@ -751,7 +794,7 @@ def _task_show(task_id):
     """
     :param task_id: the task id
     :type task_id: str
-    :returns: process status
+    :returns: process return code
     :rtype: int
     """
 
@@ -762,28 +805,6 @@ def _task_show(task_id):
         raise DCOSException("Task '{}' does not exist".format(task_id))
 
     emitter.publish(task)
-    return 0
-
-
-def _update_from_stdin(app_id, force):
-    """
-    :param app_id: the id of the application
-    :type app_id: str
-    :param force: whether to override running deployments
-    :type force: bool
-    :returns: process status
-    :rtype: int
-    """
-
-    logger.info('Updating %r from JSON object from stdin', app_id)
-
-    application_resource = util.load_jsons(sys.stdin.read())
-
-    # Add application to marathon
-    client = marathon.create_client()
-
-    client.update_app(app_id, application_resource, force)
-
     return 0
 
 

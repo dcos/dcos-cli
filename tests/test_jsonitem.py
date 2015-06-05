@@ -81,21 +81,21 @@ def jsonitem_tuple(request):
 @pytest.fixture(params=range(13))
 def parse_tuple(request):
     return [
-        ('string=null', ('string', None)),
+        ('string=null', ('"string"', None)),
         ('string="this is a string with ="',
-         ('string', 'this is a string with =')),
+         ('"string"', 'this is a string with =')),
         ("string='this is a string with ='",
-         ('string', 'this is a string with =')),
-        ('object=null', ('object', None)),
-        ("""object='{"key":"value"}'""", ('object', {'key': 'value'})),
-        ('number=null', ('number', None)),
-        ('number=4.2', ('number', 4.2)),
-        ('integer=null', ('integer', None)),
-        ('integer=42', ('integer', 42)),
-        ('boolean=null', ('boolean', None)),
-        ('boolean=true', ('boolean', True)),
-        ('array=null', ('array', None)),
-        ("array='[1,2,3]'", ('array', [1, 2, 3])),
+         ('"string"', 'this is a string with =')),
+        ('object=null', ('"object"', None)),
+        ("""object='{"key":"value"}'""", ('"object"', {'key': 'value'})),
+        ('number=null', ('"number"', None)),
+        ('number=4.2', ('"number"', 4.2)),
+        ('integer=null', ('"integer"', None)),
+        ('integer=42', ('"integer"', 42)),
+        ('boolean=null', ('"boolean"', None)),
+        ('boolean=true', ('"boolean"', True)),
+        ('array=null', ('"array"', None)),
+        ("array='[1,2,3]'", ('"array"', [1, 2, 3])),
     ][request.param]
 
 
