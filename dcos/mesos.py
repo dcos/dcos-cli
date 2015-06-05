@@ -305,16 +305,26 @@ class Task(object):
         :returns: dictionary representation of this Task
         :rtype: dict
         """
+
         return self._task
 
     def framework(self):
         """Returns the task's framework
 
-        :returns" task's framework
+        :returns: task's framework
         :rtype: Framework
         """
 
         return self._master.framework(self["framework_id"])
+
+    def slave(self):
+        """Returns the task's slave
+
+        :returns: task's slave
+        :rtype: Slave
+        """
+
+        return self._master.slave(self["slave_id"])
 
     def user(self):
         """Task owner

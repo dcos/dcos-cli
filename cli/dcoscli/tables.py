@@ -14,6 +14,7 @@ def task_table(tasks):
 
     fields = OrderedDict([
         ("NAME", lambda t: t["name"]),
+        ("HOST", lambda t: t.slave()["hostname"]),
         ("USER", lambda t: t.user()),
         ("STATE", lambda t: t["state"].split("_")[-1][0]),
         ("ID", lambda t: t["id"]),
@@ -21,6 +22,7 @@ def task_table(tasks):
 
     tb = util.table(fields, tasks, sortby="NAME")
     tb.align["NAME"] = "l"
+    tb.align["HOST"] = "l"
     tb.align["ID"] = "l"
 
     return tb
