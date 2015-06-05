@@ -225,9 +225,9 @@ def package_table(packages):
 
     fields = OrderedDict([
         ('NAME', lambda p: p['name']),
-        ('APP', lambda p: p['app']['appId'] if 'app' in p else 'null'),
+        ('APP', lambda p: '\n'.join(p['apps']) if p.get('apps') else '---'),
         ('COMMAND',
-         lambda p: p['command']['name'] if 'command' in p else 'null'),
+         lambda p: p['command']['name'] if 'command' in p else '---'),
         ('DESCRIPTION', lambda p: p['description'])
     ])
 
