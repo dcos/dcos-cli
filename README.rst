@@ -145,8 +145,8 @@ Full documentation is available for the DCOS CLI on the `Mesosphere docs website
 .. _virtualenv: https://virtualenv.pypa.io/en/latest/
 .. _dcos-helloworld: https://github.com/mesosphere/dcos-helloworld
 .. _setup: https://github.com/mesosphere/dcos-helloworld#setup
-.. _installation instructions: http://beta-docs.mesosphere.com/install/cli/
-.. _Mesosphere docs website: http://beta-docs.mesosphere.com/using/cli/
+.. _installation instructions: http://docs.mesosphere.com/install/cli/
+.. _Mesosphere docs website: http://docs.mesosphere.com/using/cli/
 .. _automated TeamCity build: https://teamcity.mesosphere.io/viewType.html?buildTypeId=ClosedSource_DcosCli_PushToPyPI
 .. _PEP-440 version scheme: https://www.python.org/dev/peps/pep-0440/
 .. _dcos: https://pypi.python.org/pypi/dcos
