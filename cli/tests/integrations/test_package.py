@@ -384,7 +384,7 @@ def test_install_missing_options_file():
         returncode=1,
         stdout=b'We recommend a minimum of one node with at least 1 CPU and '
                b'2GB of RAM available for the Chronos Service.\n',
-        stderr=b"No such file: asdf.json\n")
+        stderr=b"Error opening file [asdf.json]: No such file or directory\n")
 
 
 def test_package_metadata():

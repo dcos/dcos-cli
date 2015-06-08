@@ -630,18 +630,22 @@ def _acquire_file_lock(lock_file_path):
 
     :param lock_file_path: Path to the lock file
     :type lock_file_path: str
-    :returns: Lock file descriptor
+    :returns: Lock file
     :rtype: File
     """
 
-    lock_fd = open(lock_file_path, 'w')
+    try:
+        lock_file = open(lock_file_path, 'w')
+    except IOError as e:
+        raise util.io_exception(lock_file_path, e.errno)
+
     acquire_mode = portalocker.LOCK_EX | portalocker.LOCK_NB
 
     try:
-        portalocker.lock(lock_fd, acquire_mode)
-        return lock_fd
+        portalocker.lock(lock_file, acquire_mode)
+        return lock_file
     except portalocker.LockException:
-        lock_fd.close()
+        lock_file.close()
         raise DCOSException('Unable to acquire the package cache lock')
 
 
@@ -1036,11 +1040,9 @@ class Registry():
             raise DCOSException('Path [{}] is not a file'.format(index_path))
 
         try:
-            with open(index_path) as fd:
+            with util.open_file(index_path) as fd:
                 version_json = json.load(fd)
                 return version_json.get('version')
-        except IOError:
-            raise DCOSException('Unable to open file [{}]'.format(index_path))
         except ValueError:
             raise DCOSException('Unable to parse [{}]'.format(index_path))
 
@@ -1061,10 +1063,8 @@ class Registry():
             raise DCOSException('Path [{}] is not a file'.format(index_path))
 
         try:
-            with open(index_path) as fd:
+            with util.open_file(index_path) as fd:
                 return json.load(fd)
-        except IOError:
-            raise DCOSException('Unable to open file [{}]'.format(index_path))
         except ValueError:
             raise DCOSException('Unable to parse [{}]'.format(index_path))
 
