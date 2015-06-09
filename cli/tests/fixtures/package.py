@@ -8,9 +8,9 @@ def package_fixture():
     """
 
     return {
-        "app": {
-            "appId": "/helloworld"
-        },
+        "apps": [
+            "/helloworld"
+        ],
         "command": {
             "name": "helloworld"
         },
