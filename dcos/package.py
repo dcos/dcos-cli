@@ -230,9 +230,9 @@ def uninstall_app(app_name, remove_all, app_id, init_client, master_client):
     if not remove_all and len(matching_apps) > 1:
         app_ids = [a.get('id') for a in matching_apps]
         raise DCOSException(
-            ("Multiple instances of app [{}] are installed. Please specify "
-             "the app id of the instance to uninstall or uninstall all. The "
-             "app ids of the installed package instances are: [{}].").format(
+            ("Multiple apps named [{}] are installed: [{}].\n" +
+             "Please use --app-id to specify the ID of the app to uninstall," +
+             " or use --all to uninstall all apps.").format(
                  app_name,
                  ', '.join(app_ids)))
 
