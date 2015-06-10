@@ -3,7 +3,29 @@ DCOS Command Line Interface
 The DCOS Command Line Interface (CLI) is a command line utility that
 provides a user-friendly yet powerful way to manage DCOS installations.
 
-If you're a **user** of DCOS, please follow the `installation instructions`_. Otherwise, follow the instructions below to set up your development environment.
+Installation and Usage
+----------------------
+
+If you're a **user** of DCOS, please follow the `installation instructions`_.
+Otherwise, follow the instructions below to set up your development environment.
+
+Detailed help and usage information is available through the :code:`dcos help`
+command and for specific subcommands through :code:`dcos <subcommand> --help`.
+
+Addition documentation for the CLI and for the DCOS in general is available
+in the `Mesosphere docs`_.
+
+Using the CLI without DCOS
+--------------------------
+
+You may optionally configure the DCOS CLI to work with open source Mesos and 
+Marathon_ by setting the following properties::
+    dcos config set core.mesos_master_url http://<mesos-master-host>:5050
+    dcos config set marathon.url http://<marathon-host>:8080
+
+Note that the DCOS CLI has tight integration with DCOS and certain
+functionality may not work as expected or at all when using it directly with
+Mesos and Marathon.
 
 Dependencies
 ------------
@@ -130,26 +152,19 @@ Once all tests pass successfully, the automated build publishes two packages to 
 
 These packages are now available to be installed by the DCOS CLI installation script in the `mesosphere/install-scripts`_ repository.
 
-Using the CLI
--------------
 
-Detailed help and usage information is available through the :code:`dcos help` command and
-for specific subcommands through :code:`dcos <subcommand> --help`.
-
-Full documentation is available for the DCOS CLI on the `Mesosphere docs website`_.
-
-
-.. _packages: https://packaging.python.org/en/latest/installing.html#installing-requirements
-.. _git: http://git-scm.com
-.. _installer: https://www.python.org/downloads/
-.. _virtualenv: https://virtualenv.pypa.io/en/latest/
-.. _dcos-helloworld: https://github.com/mesosphere/dcos-helloworld
-.. _setup: https://github.com/mesosphere/dcos-helloworld#setup
-.. _installation instructions: http://docs.mesosphere.com/install/cli/
-.. _Mesosphere docs website: http://docs.mesosphere.com/using/cli/
 .. _automated TeamCity build: https://teamcity.mesosphere.io/viewType.html?buildTypeId=ClosedSource_DcosCli_PushToPyPI
-.. _PEP-440 version scheme: https://www.python.org/dev/peps/pep-0440/
 .. _dcos: https://pypi.python.org/pypi/dcos
 .. _dcoscli: https://pypi.python.org/pypi/dcoscli
-.. _publish_to_pypi.sh script: https://github.com/mesosphere/dcos-cli/blob/master/bin/publish_to_pypi.sh
+.. _dcos-helloworld: https://github.com/mesosphere/dcos-helloworld
+.. _git: http://git-scm.com
+.. _installation instructions: http://docs.mesosphere.com/install/cli/.. _installer: https://www.python.org/downloads/
+.. _installer: https://www.python.org/downloads/
+.. _Marathon: https://mesosphere.github.io/marathon/
+.. _Mesosphere docs: http://docs.mesosphere.com
 .. _mesosphere/install-scripts: https://github.com/mesosphere/install-scripts
+.. _packages: https://packaging.python.org/en/latest/installing.html#installing-requirements
+.. _PEP-440 version scheme: https://www.python.org/dev/peps/pep-0440/
+.. _publish_to_pypi.sh script: https://github.com/mesosphere/dcos-cli/blob/master/bin/publish_to_pypi.sh
+.. _setup: https://github.com/mesosphere/dcos-helloworld#setup
+.. _virtualenv: https://virtualenv.pypa.io/en/latest/
