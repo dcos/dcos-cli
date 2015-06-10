@@ -55,7 +55,7 @@ version-1.x.zip",
                              "mesos/chronos/issues",
          "postUninstallNotes": "The Chronos DCOS Service has been uninstalled "
                                "and will no longer run.\nPlease follow the "
-                               "instructions at http://beta-docs.mesosphere."
+                               "instructions at http://docs.mesosphere."
                                "com/services/chronos/#uninstall to clean up "
                                "any persisted state",
          "preInstallNotes": "We recommend a minimum of one node with at least "
@@ -197,7 +197,7 @@ installed!\\n\\n\\tDocumentation: https://\
 mesosphere.github.io/marathon\\n\\tIssues: https:/github.com/mesosphere/\
 marathon/issues\\n",
   "postUninstallNotes": "The Marathon DCOS Service has been uninstalled and \
-will no longer run.\\nPlease follow the instructions at http://beta-docs.\
+will no longer run.\\nPlease follow the instructions at http://docs.\
 mesosphere.com/services/marathon/#uninstall to clean up any persisted state",
   "preInstallNotes": "We recommend a minimum of one node with at least 2 \
 CPU's and 1GB of RAM available for the Marathon Service.",
@@ -287,13 +287,13 @@ dGFsbGVkIVxuXG5cdERvY3VtZW50YXRpb246IGh0dHBzOi8vbWVzb3NwaGVyZS5naXRodWIuaW8vbW\
 FyYXRob25cblx0SXNzdWVzOiBodHRwczovZ2l0aHViLmNvbS9tZXNvc3BoZXJlL21hcmF0aG9uL2lz\
 c3Vlc1xuIiwgInBvc3RVbmluc3RhbGxOb3RlcyI6ICJUaGUgTWFyYXRob24gRENPUyBTZXJ2aWNlIG\
 hhcyBiZWVuIHVuaW5zdGFsbGVkIGFuZCB3aWxsIG5vIGxvbmdlciBydW4uXG5QbGVhc2UgZm9sbG93\
-IHRoZSBpbnN0cnVjdGlvbnMgYXQgaHR0cDovL2JldGEtZG9jcy5tZXNvc3BoZXJlLmNvbS9zZXJ2aW\
-Nlcy9tYXJhdGhvbi8jdW5pbnN0YWxsIHRvIGNsZWFuIHVwIGFueSBwZXJzaXN0ZWQgc3RhdGUiLCAi\
-cHJlSW5zdGFsbE5vdGVzIjogIldlIHJlY29tbWVuZCBhIG1pbmltdW0gb2Ygb25lIG5vZGUgd2l0aC\
-BhdCBsZWFzdCAyIENQVSdzIGFuZCAxR0Igb2YgUkFNIGF2YWlsYWJsZSBmb3IgdGhlIE1hcmF0aG9u\
-IFNlcnZpY2UuIiwgInNjbSI6ICJodHRwczovL2dpdGh1Yi5jb20vbWVzb3NwaGVyZS9tYXJhdGhvbi\
-5naXQiLCAidGFncyI6IFsibWVzb3NwaGVyZSIsICJmcmFtZXdvcmsiXSwgInZlcnNpb24iOiAiMC44\
-LjEifQ==",
+IHRoZSBpbnN0cnVjdGlvbnMgYXQgaHR0cDovL2RvY3MubWVzb3NwaGVyZS5jb20vc2VydmljZXMvbW\
+FyYXRob24vI3VuaW5zdGFsbCB0byBjbGVhbiB1cCBhbnkgcGVyc2lzdGVkIHN0YXRlIiwgInByZUlu\
+c3RhbGxOb3RlcyI6ICJXZSByZWNvbW1lbmQgYSBtaW5pbXVtIG9mIG9uZSBub2RlIHdpdGggYXQgbG\
+Vhc3QgMiBDUFUncyBhbmQgMUdCIG9mIFJBTSBhdmFpbGFibGUgZm9yIHRoZSBNYXJhdGhvbiBTZXJ2\
+aWNlLiIsICJzY20iOiAiaHR0cHM6Ly9naXRodWIuY29tL21lc29zcGhlcmUvbWFyYXRob24uZ2l0Ii\
+wgInRhZ3MiOiBbIm1lc29zcGhlcmUiLCAiZnJhbWV3b3JrIl0sICJ2ZXJzaW9uIjogIjAuOC4xIn0=\
+",
       "DCOS_PACKAGE_NAME": "marathon",
       "DCOS_PACKAGE_REGISTRY_VERSION": "1.0.0-rc1",
       "DCOS_PACKAGE_RELEASE": "0",
@@ -332,7 +332,7 @@ installed!\\n\\n\\tDocumentation: https://\
 mesosphere.github.io/marathon\\n\\tIssues: https:/github.com/mesosphere/\
 marathon/issues\\n",
   "postUninstallNotes": "The Marathon DCOS Service has been uninstalled and \
-will no longer run.\\nPlease follow the instructions at http://beta-docs.\
+will no longer run.\\nPlease follow the instructions at http://docs.\
 mesosphere.com/services/marathon/#uninstall to clean up any persisted state",
   "preInstallNotes": "We recommend a minimum of one node with at least 2 \
 CPU's and 1GB of RAM available for the Marathon Service.",
