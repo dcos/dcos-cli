@@ -12,7 +12,7 @@ Otherwise, follow the instructions below to set up your development environment.
 Detailed help and usage information is available through the :code:`dcos help`
 command and for specific subcommands through :code:`dcos <subcommand> --help`.
 
-Addition documentation for the CLI and for the DCOS in general is available
+Additional documentation for the CLI and for the DCOS in general is available
 in the `Mesosphere docs`_.
 
 Using the CLI without DCOS
