@@ -244,7 +244,7 @@ def _install_env(pkg, version, options):
                            constants.DCOS_SUBCOMMAND_VIRTUALENV_SUBDIR)
 
     if 'pip' in install_operation:
-        install_with_pip(
+        _install_with_pip(
             pkg.name(),
             env_dir,
             install_operation['pip'])
@@ -314,8 +314,7 @@ def uninstall(package_name):
 BIN_DIRECTORY = 'Scripts' if util.is_windows_platform() else 'bin'
 
 
-# TODO (mgummelt): should be made private after "dcos subcommand" is removed
-def install_with_pip(
+def _install_with_pip(
         package_name,
         env_directory,
         requirements):
@@ -337,7 +336,7 @@ def install_with_pip(
     if not os.path.exists(pip_path):
         cmd = [os.path.join(bin_directory, 'virtualenv'), env_directory]
 
-        if _execute_command(cmd) != 0:
+        if _execute_install(cmd) != 0:
             raise _generic_error(package_name)
 
     with util.temptext() as text_file:
@@ -355,7 +354,7 @@ def install_with_pip(
             requirement_path,
         ]
 
-        if _execute_command(cmd) != 0:
+        if _execute_install(cmd) != 0:
             # We should remove the directory that we just created
             if new_package_dir:
                 shutil.rmtree(env_directory)
@@ -365,9 +364,9 @@ def install_with_pip(
     return None
 
 
-def _execute_command(command):
+def _execute_install(command):
     """
-    :param command: the command to execute
+    :param command: the install command to execute
     :type command: list of str
     :returns: the process return code
     :rtype: int
@@ -401,7 +400,9 @@ def _generic_error(package_name):
     """
 
     return DCOSException(
-        'Error installing {!r} package'.format(package_name))
+        ('Error installing {!r} package.\n'
+         'Run with `dcos --log-level=ERROR` to see the full output.').format(
+            package_name))
 
 
 class InstalledSubcommand(object):
