@@ -1,6 +1,6 @@
 [core]
-email = "test@mail.com"
 reporting = false
+email = "test@mail.com"
 [package]
-sources = [ "git://github.com/mesosphere/universe.git", "https://github.com/mesosphere/universe/archive/master.zip",]
 cache = "true"
+sources = [ "git://github.com/mesosphere/universe.git", "https://github.com/mesosphere/universe/archive/master.zip",]

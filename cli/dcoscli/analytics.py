@@ -4,6 +4,7 @@ import sys
 import uuid
 
 import dcoscli
+import docopt
 import requests
 import rollbar
 from concurrent.futures import ThreadPoolExecutor
@@ -216,6 +217,22 @@ def _rollbar_track_err(conf, err, exit_code):
         logger.exception(e)
 
 
+def _command():
+    """ Return the subcommand used in this dcos process.
+
+    :returns: subcommand used in this dcos process
+    :rtype: str
+    """
+
+    # avoid circular import
+    import dcoscli.main
+
+    args = docopt.docopt(dcoscli.main.__doc__,
+                         help=False,
+                         options_first=True)
+    return args['<command>']
+
+
 def _base_properties(conf=None):
     """
     These properties are sent with every analytics event.
@@ -229,7 +246,7 @@ def _base_properties(conf=None):
         conf = util.get_config()
 
     if len(sys.argv) > 1:
-        cmd = 'dcos ' + sys.argv[1]
+        cmd = 'dcos ' + _command()
         full_cmd = 'dcos ' + ' '.join(sys.argv[1:])
     else:
         cmd = 'dcos'
