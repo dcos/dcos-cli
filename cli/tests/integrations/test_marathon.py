@@ -145,8 +145,8 @@ def test_missing_config(missing_env):
     assert_command(
         ['dcos', 'marathon', 'app', 'list'],
         returncode=1,
-        stderr=(b"Marathon likely misconfigured. Please check your proxy or "
-                b"Marathon URI settings. See dcos config --help. \n"),
+        stderr=(b'Missing required config parameter: "core.dcos_url".  '
+                b'Please run `dcos config set core.dcos_url <value>`.\n'),
         env=missing_env)
 
 

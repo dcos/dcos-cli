@@ -37,11 +37,8 @@ def _get_marathon_uri(config):
 
     marathon_uri = config.get('marathon.url')
     if marathon_uri is None:
-        marathon_uri = config.get('core.dcos_url')
-        if marathon_uri is None:
-            raise DCOSException(_default_marathon_error())
-
-        marathon_uri = urllib.parse.urljoin(marathon_uri, 'marathon/')
+        dcos_url = util.get_config_vals(config, ['core.dcos_url'])[0]
+        marathon_uri = urllib.parse.urljoin(dcos_url, 'marathon/')
 
     return marathon_uri
 
@@ -49,7 +46,7 @@ def _get_marathon_uri(config):
 def _to_error(response):
     """
     :param response: HTTP response object or Error
-    :type response: requests.Response or Error
+    :type response: requests.Response | Error
     :returns: the error embedded in the response JSON
     :rtype: Error
     """

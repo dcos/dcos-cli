@@ -589,10 +589,7 @@ def list_sources(config):
     :rtype: [Source]
     """
 
-    source_uris = config.get('package.sources')
-
-    if source_uris is None:
-        raise DCOSException('No configured value for [package.sources]')
+    source_uris = util.get_config_vals(config, ['package.sources'])[0]
 
     sources = [url_to_source(s) for s in source_uris]
 
@@ -660,10 +657,7 @@ def update_sources(config, validate=False):
     errors = []
 
     # ensure the cache directory is properly configured
-    cache_dir = config.get('package.cache')
-
-    if cache_dir is None:
-        raise DCOSException('No configured value for [package.cache]')
+    cache_dir = util.get_config_vals(config, ['package.cache'])[0]
 
     # ensure the cache directory exists
     if not os.path.exists(cache_dir):
@@ -759,10 +753,7 @@ class Source:
         :rtype: str or None
         """
 
-        cache_dir = config.get('package.cache')
-        if cache_dir is None:
-            return None
-
+        cache_dir = util.get_config_vals(config, ['package.cache'])[0]
         return os.path.join(cache_dir, self.hash())
 
     def copy_to_cache(self, target_dir):
