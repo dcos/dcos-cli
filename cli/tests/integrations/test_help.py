@@ -41,6 +41,7 @@ Available DCOS commands:
 \tmarathon       \tDeploy and manage applications on the DCOS
 \tpackage        \tInstall and manage DCOS software packages
 \tservice        \tGet the status of DCOS services
+\tstatus         \tGet the status of the DCOS cluster
 \ttask           \tGet the status of DCOS tasks
 
 Get detailed command description with 'dcos <command> --help'.

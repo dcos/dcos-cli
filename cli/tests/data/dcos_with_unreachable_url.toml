@@ -1,0 +1,7 @@
+[package]
+cache = "tmp/cache"
+sources = [ "https://github.com/mesosphere/universe/archive/version-1.x.zip",]
+[core]
+reporting = false
+dcos_url = "http://127.0.0.1:1000/dummy_dcos"
+email = "test@mail.com"

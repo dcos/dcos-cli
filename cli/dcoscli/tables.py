@@ -276,3 +276,23 @@ def package_search_table(search_results):
     tb.align['DESCRIPTION'] = 'l'
 
     return tb
+
+
+def cluster_table(components):
+    """Returns a PrettyTable representation of the provided DCOS cluster
+
+    :param components: components to render
+    :type components: [dict]
+    :rtype: PrettyTable
+
+    """
+
+    fields = OrderedDict([
+        ('COMPONENT NAME', lambda p: p['Name']),
+        ('STATUS', lambda p: p['Status'])
+    ])
+
+    tb = util.table(fields, components, sortby="COMPONENT NAME")
+    tb.align['COMPONENT NAME'] = 'l'
+    tb.align['STATUS'] = 'l'
+    return tb
