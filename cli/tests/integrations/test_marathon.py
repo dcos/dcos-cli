@@ -134,11 +134,13 @@ def test_about():
 
 @pytest.fixture
 def missing_env():
-    return {
+    env = os.environ.copy()
+    env.update({
         constants.PATH_ENV: os.environ[constants.PATH_ENV],
         constants.DCOS_CONFIG_ENV:
             os.path.join("tests", "data", "missing_marathon_params.toml")
-    }
+    })
+    return env
 
 
 def test_missing_config(missing_env):

@@ -36,6 +36,64 @@ def _mock(fn):
 
 
 @_mock
+def test_production_setting_true():
+    '''Test that env var DCOS_PRODUCTION as empty string sends exceptions
+    to the 'prod' environment.
+
+    '''
+
+    args = [util.which('dcos')]
+    env = _env_reporting()
+    env['DCOS_PRODUCTION'] = ''
+
+    with patch('sys.argv', args), patch.dict(os.environ, env):
+        assert main() == 0
+
+        _, kwargs = requests.post.call_args_list[0]
+        assert kwargs['auth'].username == SEGMENT_IO_WRITE_KEY_PROD
+
+        rollbar.init.assert_called_with(ROLLBAR_SERVER_POST_KEY, 'prod')
+
+
+@_mock
+def test_production_setting_false():
+    '''Test that env var DCOS_PRODUCTION=false sends exceptions to
+    the 'dev' environment.
+
+    '''
+
+    args = [util.which('dcos')]
+    env = _env_reporting()
+    env['DCOS_PRODUCTION'] = 'false'
+
+    with patch('sys.argv', args), patch.dict(os.environ, env):
+        assert main() == 0
+
+        _, kwargs = requests.post.call_args_list[0]
+        assert kwargs['auth'].username == SEGMENT_IO_WRITE_KEY_DEV
+
+        rollbar.init.assert_called_with(ROLLBAR_SERVER_POST_KEY, 'dev')
+
+
+@_mock
+def test_config_set():
+    '''Tests that a `dcos config set core.email <email>` makes a
+    segment.io identify call'''
+
+    args = [util.which('dcos'), 'config', 'set', 'core.email', 'test@mail.com']
+    env = _env_reporting()
+
+    with patch('sys.argv', args), patch.dict(os.environ, env):
+        assert config_main() == 0
+
+        # segment.io
+        assert mock_called_some_args(requests.post,
+                                     '{}/identify'.format(SEGMENT_URL),
+                                     json={'userId': 'test@mail.com'},
+                                     timeout=1)
+
+
+@_mock
 def test_no_exc():
     '''Tests that a command which does not raise an exception does not
     report an exception.
@@ -113,64 +171,6 @@ def test_config_reporting_false():
 
         assert rollbar.report_message.call_count == 0
         assert requests.post.call_count == 0
-
-
-@_mock
-def test_production_setting_true():
-    '''Test that env var DCOS_PRODUCTION as empty string sends exceptions
-    to the 'prod' environment.
-
-    '''
-
-    args = [util.which('dcos')]
-    env = _env_reporting()
-    env['DCOS_PRODUCTION'] = ''
-
-    with patch('sys.argv', args), patch.dict(os.environ, env):
-        assert main() == 0
-
-        _, kwargs = requests.post.call_args_list[0]
-        assert kwargs['auth'].username == SEGMENT_IO_WRITE_KEY_PROD
-
-        rollbar.init.assert_called_with(ROLLBAR_SERVER_POST_KEY, 'prod')
-
-
-@_mock
-def test_production_setting_false():
-    '''Test that env var DCOS_PRODUCTION=false sends exceptions to
-    the 'dev' environment.
-
-    '''
-
-    args = [util.which('dcos')]
-    env = _env_reporting()
-    env['DCOS_PRODUCTION'] = 'false'
-
-    with patch('sys.argv', args), patch.dict(os.environ, env):
-        assert main() == 0
-
-        _, kwargs = requests.post.call_args_list[0]
-        assert kwargs['auth'].username == SEGMENT_IO_WRITE_KEY_DEV
-
-        rollbar.init.assert_called_with(ROLLBAR_SERVER_POST_KEY, 'dev')
-
-
-@_mock
-def test_config_set():
-    '''Tests that a `dcos config set core.email <email>` makes a
-    segment.io identify call'''
-
-    args = [util.which('dcos'), 'config', 'set', 'core.email', 'test@mail.com']
-    env = _env_reporting()
-
-    with patch('sys.argv', args), patch.dict(os.environ, env):
-        assert config_main() == 0
-
-        # segment.io
-        assert mock_called_some_args(requests.post,
-                                     '{}/identify'.format(SEGMENT_URL),
-                                     json={'userId': 'test@mail.com'},
-                                     timeout=1)
 
 
 def _env_reporting():

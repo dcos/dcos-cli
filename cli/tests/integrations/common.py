@@ -30,7 +30,9 @@ def exec_command(cmd, env=None, stdin=None):
         stderr=subprocess.PIPE,
         env=env)
 
-    stdout, stderr = process.communicate()
+    # This is needed to get rid of '\r' from Windows's lines endings.
+    stdout, stderr = [std_stream.replace(b'\r', b'')
+                      for std_stream in process.communicate()]
 
     # We should always print the stdout and stderr
     print('STDOUT: {}'.format(stdout.decode('utf-8')))
