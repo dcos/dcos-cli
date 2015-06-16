@@ -4,6 +4,7 @@
   "cpus": 0.1,
   "mem": 16,
   "instances": 0,
+  "dependencies": [],
   "labels": {
     "PACKAGE_ID": "zero-instance-app",
     "PACKAGE_VERSION": "1.2.3"
