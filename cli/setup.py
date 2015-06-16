@@ -69,7 +69,7 @@ setup(
         'docopt>=0.6, <1.0',
         'pkginfo>=1.2, <2.0',
         'toml>=0.9, <1.0',
-        'virtualenv>=12.1, <13.0',
+        'virtualenv>=13.0, <14.0',
         'rollbar>=0.9, <1.0',
         'futures>=3.0, <4.0',
         'oauth2client>=1.4, <2.0',
