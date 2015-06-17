@@ -158,7 +158,8 @@ These packages are now available to be installed by the DCOS CLI installation sc
 .. _dcoscli: https://pypi.python.org/pypi/dcoscli
 .. _dcos-helloworld: https://github.com/mesosphere/dcos-helloworld
 .. _git: http://git-scm.com
-.. _installation instructions: http://docs.mesosphere.com/install/cli/.. _installer: https://www.python.org/downloads/
+.. _installation instructions: http://docs.mesosphere.com/install/cli/
+.. _installer: https://www.python.org/downloads/
 .. _installer: https://www.python.org/downloads/
 .. _Marathon: https://mesosphere.github.io/marathon/
 .. _Mesosphere docs: http://docs.mesosphere.com
