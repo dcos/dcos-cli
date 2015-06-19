@@ -4,12 +4,6 @@
     "definitions": {
         "app": {
             "additionalProperties": false,
-            "definitions": {
-                "pathType": {
-                    "pattern": "^(\\/?((\\.{2})|([a-z0-9\\-]*))($|\\/))*$",
-                    "type": "string"
-                }
-            },
             "not": {
                 "allOf": [
                     {
@@ -143,7 +137,8 @@
                 },
                 "dependencies": {
                     "items": {
-                        "$ref": "#/definitions/pathType"
+                        "pattern": "^(\\/?((\\.{2})|([a-z0-9\\-]*))($|\\/))*$",
+                        "type": "string"
                     },
                     "type": "array"
                 },
