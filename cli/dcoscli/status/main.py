@@ -196,8 +196,11 @@ def _check_exhibitor_status():
 
 def _make_request(check_function, *args):
     """Execute request to DCOS components
+
     :param: check_function: function used to make component check call
     :type: check_function: args -> None
+    :param: args: function arguments
+    :type: args: list
     :returns: tuple, which contain status and exit code
     :rtype (str, int)
     """
