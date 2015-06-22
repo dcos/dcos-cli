@@ -97,6 +97,7 @@ setup(
             'dcos-package=dcoscli.package.main:main',
             'dcos-task=dcoscli.task.main:main',
             'dcos-service=dcoscli.service.main:main',
+            'dcos-status=dcoscli.status.main:main'
         ],
     },
 
