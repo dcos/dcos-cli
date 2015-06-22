@@ -322,14 +322,17 @@ def _add(app_resource):
     :rtype: int
     """
     application_resource = _get_resource(app_resource)
-    schema = _app_schema()
+
+    # Add application to marathon
+    client = marathon.create_client()
+
+    schema = client.get_app_schema()
+    if schema is None:
+        schema = _app_schema()
 
     errs = util.validate_json(application_resource, schema)
     if errs:
         raise DCOSException(util.list_to_err(errs))
-
-    # Add application to marathon
-    client = marathon.create_client()
 
     # Check that the application doesn't exist
     app_id = client.normalize_app_id(application_resource['id'])
