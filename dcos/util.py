@@ -158,7 +158,8 @@ def which(program):
             exe_file = os.path.join(path, program)
             if is_exe(exe_file):
                 return exe_file
-
+    if is_windows_platform() and not program.endswith('.exe'):
+        return which(program + '.exe')
     return None
 
 
@@ -169,8 +170,7 @@ def dcos_path():
     :rtype: str
     """
 
-    dcos_bin_dir = os.path.realpath(sys.argv[0])
-    return os.path.dirname(os.path.dirname(dcos_bin_dir))
+    return os.path.dirname(os.path.dirname(os.sys.executable))
 
 
 def configure_logger_from_environ():

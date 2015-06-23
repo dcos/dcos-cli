@@ -708,7 +708,9 @@ def update_sources(config, validate=False):
                 target_dir = os.path.join(cache_dir, source.hash())
                 try:
                     if os.path.exists(target_dir):
-                        shutil.rmtree(target_dir, ignore_errors=False)
+                        shutil.rmtree(target_dir,
+                                      onerror=_rmtree_on_error,
+                                      ignore_errors=False)
                 except OSError:
                     err = Error(
                         'Could not remove directory [{}]'.format(target_dir))
@@ -926,12 +928,37 @@ PATH = {}""".format(os.environ[constants.PATH_ENV]))
                                 branch='master')
 
             # Remove .git directory to save space.
-            shutil.rmtree(os.path.join(target_dir, ".git"))
+            shutil.rmtree(os.path.join(target_dir, ".git"),
+                          onerror=_rmtree_on_error)
             return None
 
         except git.exc.GitCommandError:
             raise DCOSException(
                 'Unable to fetch packages from [{}]'.format(self.url))
+
+
+def _rmtree_on_error(func, path, exc_info):
+    """Error handler for ``shutil.rmtree``.
+    If the error is due to an access error (read only file)
+    it attempts to add write permission and then retries.
+    If the error is for another reason it re-raises the error.
+
+    Usage : ``shutil.rmtree(path, onerror=onerror)``.
+
+    :param func: Function which raised the exception.
+    :type func: function
+    :param path: The path name passed to ``shutil.rmtree`` function.
+    :type path: str
+    :param exc_info: Information about the last raised exception.
+    :type exc_info: tuple
+    :rtype: None
+    """
+    import stat
+    if not os.access(path, os.W_OK):
+        os.chmod(path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+        func(path)
+    else:
+        raise
 
 
 class Error(errors.Error):
@@ -976,8 +1003,16 @@ class Registry():
 
         # TODO(CD): implement these checks in pure Python?
         scripts_dir = os.path.join(self._base_path, 'scripts')
-        validate_script = os.path.join(scripts_dir, '1-validate-packages.sh')
-        result = subprocess.call(validate_script)
+        if util.is_windows_platform():
+            validate_script = os.path.join(scripts_dir,
+                                           '1-validate-packages.ps1')
+            cmd = ['powershell', '-ExecutionPolicy',
+                   'ByPass', '-File', validate_script]
+            result = subprocess.call(cmd)
+        else:
+            validate_script = os.path.join(scripts_dir,
+                                           '1-validate-packages.sh')
+            result = subprocess.call(validate_script)
         if result is not 0:
             return [Error(
                 'Source tree is not valid [{}]'.format(self._base_path))]

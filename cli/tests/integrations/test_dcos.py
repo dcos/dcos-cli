@@ -71,9 +71,11 @@ def test_version():
 
 
 def test_missing_dcos_config():
-    env = {
+    env = os.environ.copy()
+    del env['DCOS_CONFIG']
+    env.update({
         constants.PATH_ENV: os.environ[constants.PATH_ENV],
-    }
+    })
 
     stdout = (b"Environment variable 'DCOS_CONFIG' must be set "
               b"to the DCOS config file.\n")
@@ -85,10 +87,11 @@ def test_missing_dcos_config():
 
 
 def test_dcos_config_not_a_file():
-    env = {
+    env = os.environ.copy()
+    env.update({
         constants.PATH_ENV: os.environ[constants.PATH_ENV],
         'DCOS_CONFIG': 'missing/file',
-    }
+    })
 
     stdout = (b"Environment variable 'DCOS_CONFIG' maps to "
               b"'missing/file' and it is not a file.\n")
