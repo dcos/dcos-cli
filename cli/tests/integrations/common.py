@@ -1,4 +1,5 @@
 import collections
+import contextlib
 import json
 import os
 import subprocess
@@ -259,3 +260,44 @@ def assert_lines(cmd, num_lines):
     assert returncode == 0
     assert stderr == b''
     assert len(stdout.decode('utf-8').split('\n')) - 1 == num_lines
+
+
+def _deploy_app(file_path, stdin=True):
+    if stdin:
+        with open(file_path) as fd:
+            returncode, stdout, stderr = exec_command(
+                ['dcos', 'marathon', 'app', 'add'], stdin=fd)
+        assert returncode == 0
+        assert stdout == b''
+        assert stderr == b''
+    else:
+        assert_command(['dcos', 'marathon', 'app', 'add', file_path])
+
+    # Let's make sure that we don't return until the deployment has finished
+    watch_all_deployments()
+
+
+def _remove_app(app_id):
+    assert_command(['dcos', 'marathon', 'app', 'remove', app_id])
+
+    # Let's make sure that we don't return until the deployment has finished
+    watch_all_deployments()
+
+
+@contextlib.contextmanager
+def app(path, app_id, stdin=True):
+    """Context manager that deploys an app on entrance, and removes it on
+    exit.
+
+    :param path: path to app's json definition
+    :type path: str
+    :param app_id: app id
+    :type app_id: str
+    :rtype: None
+    """
+
+    _deploy_app(path, stdin)
+    try:
+        yield
+    finally:
+        _remove_app(app_id)
