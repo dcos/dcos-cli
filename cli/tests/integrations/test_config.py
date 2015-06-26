@@ -275,8 +275,9 @@ def test_unset_index_from_string(env):
 
 
 def test_validate(env):
+    stdout = b'Congratulations, your configuration is valid!\n'
     assert_command(['dcos', 'config', 'validate'],
-                   env=env)
+                   env=env, stdout=stdout)
 
 
 def test_validation_error(env):
