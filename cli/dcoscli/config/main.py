@@ -295,6 +295,7 @@ def _validate():
         emitter.publish(util.list_to_err(errs))
         return 1
 
+    emitter.publish("Congratulations, your configuration is valid!")
     return 0
 
 
