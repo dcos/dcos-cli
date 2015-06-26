@@ -93,6 +93,7 @@ def test_exc():
         # rollbar
         props = _base_properties()
         props['exit_code'] = 1
+        props['stderr'] = 'Traceback'
         rollbar.report_message.assert_called_with('Traceback', 'error',
                                                   extra_data=props)
 
