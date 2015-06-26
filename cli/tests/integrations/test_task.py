@@ -5,8 +5,7 @@ import dcos.util as util
 from dcos.util import create_schema
 
 from ..fixtures.task import task_fixture
-from .common import (assert_command, assert_lines, exec_command,
-                     watch_all_deployments)
+from .common import app, assert_command, assert_lines, exec_command
 
 SLEEP1 = 'tests/data/marathon/apps/sleep.json'
 SLEEP2 = 'tests/data/marathon/apps/sleep2.json'
@@ -40,49 +39,42 @@ def test_info():
 
 
 def test_task():
-    _install_sleep_task()
+    with app(SLEEP1, 'test-app'):
+        # test `dcos task` output
+        returncode, stdout, stderr = exec_command(['dcos', 'task', '--json'])
 
-    # test `dcos task` output
-    returncode, stdout, stderr = exec_command(['dcos', 'task', '--json'])
+        assert returncode == 0
+        assert stderr == b''
 
-    assert returncode == 0
-    assert stderr == b''
+        tasks = json.loads(stdout.decode('utf-8'))
+        assert isinstance(tasks, collections.Sequence)
+        assert len(tasks) == 1
 
-    tasks = json.loads(stdout.decode('utf-8'))
-    assert isinstance(tasks, collections.Sequence)
-    assert len(tasks) == 1
-
-    schema = create_schema(task_fixture().dict())
-    for task in tasks:
-        assert not util.validate_json(task, schema)
-
-    _uninstall_sleep()
+        schema = create_schema(task_fixture().dict())
+        for task in tasks:
+            assert not util.validate_json(task, schema)
 
 
 def test_task_table():
-    _install_sleep_task()
-    assert_lines(['dcos', 'task'], 2)
-    _uninstall_sleep()
+    with app(SLEEP1, 'test-app'):
+        assert_lines(['dcos', 'task'], 2)
 
 
 def test_task_completed():
-    _install_sleep_task()
-    _uninstall_sleep()
-    _install_sleep_task()
+    with app(SLEEP1, 'test-app'):
+        pass
+    with app(SLEEP1, 'test-app'):
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'task', '--completed', '--json'])
+        assert returncode == 0
+        assert stderr == b''
+        assert len(json.loads(stdout.decode('utf-8'))) > 1
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'task', '--completed', '--json'])
-    assert returncode == 0
-    assert stderr == b''
-    assert len(json.loads(stdout.decode('utf-8'))) > 1
-
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'task', '--json'])
-    assert returncode == 0
-    assert stderr == b''
-    assert len(json.loads(stdout.decode('utf-8'))) == 1
-
-    _uninstall_sleep()
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'task', '--json'])
+        assert returncode == 0
+        assert stderr == b''
+        assert len(json.loads(stdout.decode('utf-8'))) == 1
 
 
 def test_task_none():
@@ -91,30 +83,15 @@ def test_task_none():
 
 
 def test_filter():
-    _install_sleep_task()
-    _install_sleep_task(SLEEP2, 'test-app2')
+    with app(SLEEP1, 'test-app'):
+        with app(SLEEP2, 'test-app2'):
+            returncode, stdout, stderr = exec_command(
+                ['dcos', 'task', 'test-app2', '--json'])
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'task', 'test-app2', '--json'])
-
-    assert returncode == 0
-    assert stderr == b''
-    assert len(json.loads(stdout.decode('utf-8'))) == 1
-
-    _uninstall_sleep()
-    _uninstall_sleep('test-app2')
-
-
-def _install_sleep_task(app_path=SLEEP1, app_name='test-app'):
-    # install helloworld app
-    args = ['dcos', 'marathon', 'app', 'add', app_path]
-    assert_command(args)
-    watch_all_deployments()
+            assert returncode == 0
+            assert stderr == b''
+            assert len(json.loads(stdout.decode('utf-8'))) == 1
 
 
 def _uninstall_helloworld(args=[]):
     assert_command(['dcos', 'package', 'uninstall', 'helloworld'] + args)
-
-
-def _uninstall_sleep(app_id='test-app'):
-    assert_command(['dcos', 'marathon', 'app', 'remove', app_id])
