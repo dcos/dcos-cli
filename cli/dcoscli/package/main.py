@@ -45,6 +45,7 @@ Configuration:
     ]
 """
 import json
+import os
 import sys
 
 import dcoscli
@@ -347,6 +348,16 @@ def _install(package_name, options_path, app_id, cli, app, yes):
             pkg.name()))
 
         subcommand.install(pkg, pkg_version, options)
+
+        subcommand_paths = subcommand.get_package_commands(package_name)
+        new_commands = [os.path.basename(p).replace('-', ' ', 1)
+                        for p in subcommand_paths]
+
+        if new_commands:
+            commands = ', '.join(new_commands)
+            plural = "s" if len(new_commands) > 1 else ""
+            emitter.publish("New command{} available: {}".format(plural,
+                                                                 commands))
 
     post_install_notes = pkg.package_json(pkg_version).get('postInstallNotes')
     if post_install_notes:

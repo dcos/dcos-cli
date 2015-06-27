@@ -11,20 +11,18 @@ from dcos.errors import DCOSException
 logger = util.get_logger(__name__)
 
 
-def command_executables(subcommand, dcos_path):
+def command_executables(subcommand):
     """List the real path to executable dcos program for specified subcommand.
 
     :param subcommand: name of subcommand. E.g. marathon
     :type subcommand: str
-    :param dcos_path: path to the dcos cli directory
-    :type dcos_path: str
     :returns: the dcos program path
     :rtype: str
     """
 
     executables = [
         command_path
-        for command_path in list_paths(dcos_path)
+        for command_path in list_paths()
         if noun(command_path) == subcommand
     ]
 
@@ -39,15 +37,38 @@ def command_executables(subcommand, dcos_path):
     return executables[0]
 
 
-def list_paths(dcos_path):
+def get_package_commands(package_name):
+    """List the real path(s) to executables for a specific dcos subcommand
+
+    :param package_name: package name
+    :type package_name: str
+    :returns: list of all the dcos program paths in package
+    :rtype: [str]
+    """
+    bin_dir = os.path.join(package_dir(package_name),
+                           constants.DCOS_SUBCOMMAND_VIRTUALENV_SUBDIR,
+                           BIN_DIRECTORY)
+
+    executables = []
+    for filename in os.listdir(bin_dir):
+        path = os.path.join(bin_dir, filename)
+
+        if (filename.startswith(constants.DCOS_COMMAND_PREFIX) and
+                _is_executable(path)):
+
+            executables.append(path)
+
+    return executables
+
+
+def list_paths():
     """List the real path to executable dcos subcommand programs.
 
-    :param dcos_path: path to the dcos cli directory
-    :type dcos_path: str
     :returns: list of all the dcos program paths
-    :rtype: list of str
+    :rtype: [str]
     """
 
+    dcos_path = util.dcos_path()
     # Let's get all the default subcommands
     binpath = os.path.join(dcos_path, BIN_DIRECTORY)
     commands = [
@@ -58,18 +79,8 @@ def list_paths(dcos_path):
     ]
 
     subcommands = []
-    for package in distributions(dcos_path):
-        bin_dir = os.path.join(package_dir(package),
-                               constants.DCOS_SUBCOMMAND_VIRTUALENV_SUBDIR,
-                               BIN_DIRECTORY)
-
-        for filename in os.listdir(bin_dir):
-            path = os.path.join(bin_dir, filename)
-
-            if (filename.startswith(constants.DCOS_COMMAND_PREFIX) and
-                    _is_executable(path)):
-
-                subcommands.append(path)
+    for package in distributions():
+        subcommands += get_package_commands(package)
 
     return commands + subcommands
 
@@ -86,11 +97,9 @@ def _is_executable(path):
         not util.is_windows_platform() or path.endswith('.exe'))
 
 
-def distributions(dcos_path):
+def distributions():
     """List all of the installed subcommand packages
 
-    :param dcos_path: path to the dcos cli directory
-    :type dcos_path: str
     :returns: a list of packages
     :rtype: list of str
     """

@@ -374,7 +374,7 @@ def installed_subcommands():
     """
 
     return [subcommand.InstalledSubcommand(name) for name in
-            subcommand.distributions(util.dcos_path())]
+            subcommand.distributions()]
 
 
 def installed_apps(init_client, endpoints=False):

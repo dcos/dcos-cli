@@ -81,7 +81,7 @@ def _main():
     if not command:
         command = "help"
 
-    executable = subcommand.command_executables(command, util.dcos_path())
+    executable = subcommand.command_executables(command)
 
     subproc = Popen([executable,  command] + args['<args>'],
                     stderr=PIPE)
