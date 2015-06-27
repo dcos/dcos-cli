@@ -761,6 +761,12 @@ def _deployment_list(app_id, json_):
 
     deployments = client.get_deployments(app_id)
 
+    if not deployments and not json_:
+        msg = "There are no deployments"
+        if app_id:
+            msg += " for '{}'".format(app_id)
+        raise DCOSException(msg)
+
     emitting.publish_table(emitter,
                            deployments,
                            tables.deployment_table,
