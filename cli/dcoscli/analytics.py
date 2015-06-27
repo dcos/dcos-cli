@@ -211,8 +211,15 @@ def _rollbar_track_err(conf, err, exit_code):
     props = _base_properties(conf)
     props['exit_code'] = exit_code
 
+    lines = err.split('\n')
+    if len(lines) >= 2:
+        title = lines[-2]
+    else:
+        title = err
+    props['stderr'] = err
+
     try:
-        rollbar.report_message(err, 'error', extra_data=props)
+        rollbar.report_message(title, 'error', extra_data=props)
     except Exception as e:
         logger.exception(e)
 
