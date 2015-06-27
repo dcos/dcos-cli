@@ -360,7 +360,15 @@ def _list(json_):
     client = marathon.create_client()
     apps = client.get_apps()
 
-    emitting.publish_table(emitter, apps, tables.app_table, json_)
+    if json_:
+        emitter.publish(apps)
+    else:
+        deployments = client.get_deployments()
+        table = tables.app_table(apps, deployments)
+        output = str(table)
+        if output:
+            emitter.publish(output)
+
     return 0
 
 

@@ -14,9 +14,11 @@ def test_task_table():
 
 
 def test_app_table():
-    _test_table(tables.app_table,
-                app_fixture,
-                'tests/unit/data/app.txt')
+    apps = [app_fixture()]
+    deployments = []
+    table = tables.app_table(apps, deployments)
+    with open('tests/unit/data/app.txt') as f:
+        assert str(table) == f.read()
 
 
 def test_deployment_table():
