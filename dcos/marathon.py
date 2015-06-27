@@ -54,6 +54,11 @@ def _to_exception(response):
     if isinstance(response, Exception):
         return DCOSException(_default_marathon_error(str(response)))
 
+    if response.status_code == 400:
+        return DCOSException(
+            'Error while fetching [{0}]: HTTP {1}: {2}'.format(
+                response.request.url, response.status_code, response.reason))
+
     message = response.json().get('message')
     if message is None:
         errs = response.json().get('errors')
