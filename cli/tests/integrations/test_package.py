@@ -207,7 +207,8 @@ CPU's and 1GB of RAM available for the Marathon Service.",
     "framework"
   ],
   "versions": [
-    "0.8.1"
+    "0.8.1",
+    "0.9.0-RC3"
   ]
 }
 """
