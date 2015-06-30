@@ -4,6 +4,7 @@ import os
 import subprocess
 
 import requests
+import six
 
 from six.moves import urllib
 
@@ -254,8 +255,22 @@ def assert_lines(cmd, num_lines):
     :type num_lines: int
     :rtype: None
     """
+
     returncode, stdout, stderr = exec_command(cmd)
 
     assert returncode == 0
     assert stderr == b''
     assert len(stdout.decode('utf-8').split('\n')) - 1 == num_lines
+
+
+def file_bytes(path):
+    """ Read all bytes from a file
+
+    :param path: path to file
+    :type path: str
+    :rtype: bytes
+    :returns: bytes from the file
+    """
+
+    with open(path) as f:
+        return six.b(f.read())
