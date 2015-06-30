@@ -8,7 +8,7 @@ from dcos import subcommand
 import pytest
 
 from .common import (assert_command, assert_lines, delete_zk_nodes,
-                     exec_command, get_services, service_shutdown,
+                     exec_command, file_bytes, get_services, service_shutdown,
                      watch_all_deployments)
 
 
@@ -171,181 +171,18 @@ def test_describe_nonexistent():
 
 
 def test_describe():
-    stdout = b"""\
-{
-  "description": "A cluster-wide init and control system for services in \
-cgroups or Docker containers.",
-  "framework": true,
-  "images": {
-    "icon-large": "https://downloads.mesosphere.io/marathon/assets/\
-icon-service-marathon-large.png",
-    "icon-medium": "https://downloads.mesosphere.io/marathon/assets/\
-icon-service-marathon-medium.png",
-    "icon-small": "https://downloads.mesosphere.io/marathon/assets/\
-icon-service-marathon-small.png"
-  },
-  "licenses": [
-    {
-      "name": "Apache License Version 2.0",
-      "url": "https://github.com/mesosphere/marathon/blob/master/LICENSE"
-    }
-  ],
-  "maintainer": "support@mesosphere.io",
-  "name": "marathon",
-  "postInstallNotes": "Marathon DCOS Service has been successfully \
-installed!\\n\\n\\tDocumentation: https://\
-mesosphere.github.io/marathon\\n\\tIssues: https:/github.com/mesosphere/\
-marathon/issues\\n",
-  "postUninstallNotes": "The Marathon DCOS Service has been uninstalled and \
-will no longer run.\\nPlease follow the instructions at http://docs.\
-mesosphere.com/services/marathon/#uninstall to clean up any persisted state",
-  "preInstallNotes": "We recommend a minimum of one node with at least 2 \
-CPU's and 1GB of RAM available for the Marathon Service.",
-  "scm": "https://github.com/mesosphere/marathon.git",
-  "tags": [
-    "mesosphere",
-    "framework"
-  ],
-  "versions": [
-    "0.8.1"
-  ]
-}
-"""
+    stdout = file_bytes(
+        'tests/data/package/json/test_describe_marathon.json')
     assert_command(['dcos', 'package', 'describe', 'marathon'],
                    stdout=stdout)
 
-    stdout = b"""\
-{
-  "command": {
-    "pip": [
-      "dcos<1.0",
-      "git+https://github.com/mesosphere/\
-dcos-helloworld.git#dcos-helloworld=0.1.0"
-    ]
-  },
-  "description": "Example DCOS application package",
-  "maintainer": "support@mesosphere.io",
-  "name": "helloworld",
-  "postInstallNotes": "A sample post-installation message",
-  "preInstallNotes": "A sample pre-installation message",
-  "tags": [
-    "mesosphere",
-    "example",
-    "subcommand"
-  ],
-  "versions": [
-    "0.1.0"
-  ],
-  "website": "https://github.com/mesosphere/dcos-helloworld"
-}
-"""
+    stdout = file_bytes(
+        'tests/data/package/json/test_describe_cli_helloworld.json')
     assert_command(['dcos', 'package', 'describe', '--cli', 'helloworld'],
                    stdout=stdout)
 
-    stdout = b"""\
-{
-  "app": {
-    "cmd": "LIBPROCESS_PORT=$PORT1 && ./bin/start --master zk://master\
-.mesos:2181/mesos   --checkpoint    --failover_timeout 604800   --framework_\
-name marathon-user   --ha         --zk zk://localhost:2181/mesos/\
-marathon-user       --http_port $PORT0 ",
-    "constraints": [
-      [
-        "hostname",
-        "UNIQUE"
-      ]
-    ],
-    "container": {
-      "docker": {
-        "image": "mesosphere/marathon:v0.8.1",
-        "network": "HOST"
-      },
-      "type": "DOCKER"
-    },
-    "cpus": 2.0,
-    "env": {
-      "JVM_OPTS": "-Xms256m -Xmx768m"
-    },
-    "id": "marathon-user",
-    "instances": 1,
-    "labels": {
-      "DCOS_PACKAGE_FRAMEWORK_NAME": "marathon-user",
-      "DCOS_PACKAGE_IS_FRAMEWORK": "true",
-      "DCOS_PACKAGE_METADATA": "eyJkZXNjcmlwdGlvbiI6ICJBIGNsdXN0ZXItd2lkZSBpbm\
-l0IGFuZCBjb250cm9sIHN5c3RlbSBmb3Igc2VydmljZXMgaW4gY2dyb3VwcyBvciBEb2NrZXIgY29u\
-dGFpbmVycy4iLCAiZnJhbWV3b3JrIjogdHJ1ZSwgImltYWdlcyI6IHsiaWNvbi1sYXJnZSI6ICJodH\
-RwczovL2Rvd25sb2Fkcy5tZXNvc3BoZXJlLmlvL21hcmF0aG9uL2Fzc2V0cy9pY29uLXNlcnZpY2Ut\
-bWFyYXRob24tbGFyZ2UucG5nIiwgImljb24tbWVkaXVtIjogImh0dHBzOi8vZG93bmxvYWRzLm1lc2\
-9zcGhlcmUuaW8vbWFyYXRob24vYXNzZXRzL2ljb24tc2VydmljZS1tYXJhdGhvbi1tZWRpdW0ucG5n\
-IiwgImljb24tc21hbGwiOiAiaHR0cHM6Ly9kb3dubG9hZHMubWVzb3NwaGVyZS5pby9tYXJhdGhvbi\
-9hc3NldHMvaWNvbi1zZXJ2aWNlLW1hcmF0aG9uLXNtYWxsLnBuZyJ9LCAibGljZW5zZXMiOiBbeyJu\
-YW1lIjogIkFwYWNoZSBMaWNlbnNlIFZlcnNpb24gMi4wIiwgInVybCI6ICJodHRwczovL2dpdGh1Yi\
-5jb20vbWVzb3NwaGVyZS9tYXJhdGhvbi9ibG9iL21hc3Rlci9MSUNFTlNFIn1dLCAibWFpbnRhaW5l\
-ciI6ICJzdXBwb3J0QG1lc29zcGhlcmUuaW8iLCAibmFtZSI6ICJtYXJhdGhvbiIsICJwb3N0SW5zdG\
-FsbE5vdGVzIjogIk1hcmF0aG9uIERDT1MgU2VydmljZSBoYXMgYmVlbiBzdWNjZXNzZnVsbHkgaW5z\
-dGFsbGVkIVxuXG5cdERvY3VtZW50YXRpb246IGh0dHBzOi8vbWVzb3NwaGVyZS5naXRodWIuaW8vbW\
-FyYXRob25cblx0SXNzdWVzOiBodHRwczovZ2l0aHViLmNvbS9tZXNvc3BoZXJlL21hcmF0aG9uL2lz\
-c3Vlc1xuIiwgInBvc3RVbmluc3RhbGxOb3RlcyI6ICJUaGUgTWFyYXRob24gRENPUyBTZXJ2aWNlIG\
-hhcyBiZWVuIHVuaW5zdGFsbGVkIGFuZCB3aWxsIG5vIGxvbmdlciBydW4uXG5QbGVhc2UgZm9sbG93\
-IHRoZSBpbnN0cnVjdGlvbnMgYXQgaHR0cDovL2RvY3MubWVzb3NwaGVyZS5jb20vc2VydmljZXMvbW\
-FyYXRob24vI3VuaW5zdGFsbCB0byBjbGVhbiB1cCBhbnkgcGVyc2lzdGVkIHN0YXRlIiwgInByZUlu\
-c3RhbGxOb3RlcyI6ICJXZSByZWNvbW1lbmQgYSBtaW5pbXVtIG9mIG9uZSBub2RlIHdpdGggYXQgbG\
-Vhc3QgMiBDUFUncyBhbmQgMUdCIG9mIFJBTSBhdmFpbGFibGUgZm9yIHRoZSBNYXJhdGhvbiBTZXJ2\
-aWNlLiIsICJzY20iOiAiaHR0cHM6Ly9naXRodWIuY29tL21lc29zcGhlcmUvbWFyYXRob24uZ2l0Ii\
-wgInRhZ3MiOiBbIm1lc29zcGhlcmUiLCAiZnJhbWV3b3JrIl0sICJ2ZXJzaW9uIjogIjAuOC4xIn0=\
-",
-      "DCOS_PACKAGE_NAME": "marathon",
-      "DCOS_PACKAGE_REGISTRY_VERSION": "1.0.0-rc1",
-      "DCOS_PACKAGE_RELEASE": "0",
-      "DCOS_PACKAGE_SOURCE": "https://github.com/mesosphere/universe/archive/\
-version-1.x.zip",
-      "DCOS_PACKAGE_VERSION": "0.8.1"
-    },
-    "mem": 1024.0,
-    "ports": [
-      0,
-      0
-    ],
-    "uris": []
-  },
-  "description": "A cluster-wide init and control system for services \
-in cgroups or Docker containers.",
-  "framework": true,
-  "images": {
-    "icon-large": "https://downloads.mesosphere.io/marathon/assets/\
-icon-service-marathon-large.png",
-    "icon-medium": "https://downloads.mesosphere.io/marathon/assets/\
-icon-service-marathon-medium.png",
-    "icon-small": "https://downloads.mesosphere.io/marathon/assets/\
-icon-service-marathon-small.png"
-  },
-  "licenses": [
-    {
-      "name": "Apache License Version 2.0",
-      "url": "https://github.com/mesosphere/marathon/blob/master/LICENSE"
-    }
-  ],
-  "maintainer": "support@mesosphere.io",
-  "name": "marathon",
-  "postInstallNotes": "Marathon DCOS Service has been successfully \
-installed!\\n\\n\\tDocumentation: https://\
-mesosphere.github.io/marathon\\n\\tIssues: https:/github.com/mesosphere/\
-marathon/issues\\n",
-  "postUninstallNotes": "The Marathon DCOS Service has been uninstalled and \
-will no longer run.\\nPlease follow the instructions at http://docs.\
-mesosphere.com/services/marathon/#uninstall to clean up any persisted state",
-  "preInstallNotes": "We recommend a minimum of one node with at least 2 \
-CPU's and 1GB of RAM available for the Marathon Service.",
-  "scm": "https://github.com/mesosphere/marathon.git",
-  "tags": [
-    "mesosphere",
-    "framework"
-  ],
-  "versions": [
-    "0.8.1"
-  ]
-}
-"""
+    stdout = file_bytes(
+        'tests/data/package/json/test_describe_app_marathon.json')
     assert_command(['dcos', 'package', 'describe', '--app', '--options',
                     'tests/data/package/marathon.json', 'marathon'],
                    stdout=stdout)
