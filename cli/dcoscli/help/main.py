@@ -1,8 +1,8 @@
 """Display command line usage information
 
 Usage:
-    dcos help
     dcos help --info
+    dcos help
     dcos help <command>
 
 Options:
