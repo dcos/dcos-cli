@@ -20,6 +20,7 @@ Available DCOS commands:
 \tconfig         \tGet and set DCOS CLI configuration properties
 \thelp           \tDisplay command line usage information
 \tmarathon       \tDeploy and manage applications on the DCOS
+\tnode           \tManage DCOS nodes
 \tpackage        \tInstall and manage DCOS software packages
 \tservice        \tManage DCOS services
 \ttask           \tManage DCOS tasks

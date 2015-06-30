@@ -7,8 +7,7 @@ import pytest
 
 from ..fixtures.service import framework_fixture
 from .common import (assert_command, assert_lines, delete_zk_nodes,
-                     exec_command, get_services, service_shutdown,
-                     watch_all_deployments)
+                     get_services, service_shutdown, watch_all_deployments)
 
 
 @pytest.fixture(scope="module")
@@ -50,8 +49,6 @@ def test_info():
 
 
 def test_service():
-    returncode, stdout, stderr = exec_command(['dcos', 'service', '--json'])
-
     services = get_services(1)
 
     schema = _get_schema(framework_fixture())
@@ -61,17 +58,6 @@ def test_service():
 
 def test_service_table():
     assert_lines(['dcos', 'service'], 2)
-
-
-def _get_schema(service):
-    schema = create_schema(service.dict())
-    schema['required'].remove('reregistered_time')
-    schema['required'].remove('pid')
-    schema['properties']['offered_resources']['required'].remove('ports')
-    schema['properties']['resources']['required'].remove('ports')
-    schema['properties']['used_resources']['required'].remove('ports')
-
-    return schema
 
 
 def test_service_inactive(zk_znode):
@@ -122,3 +108,14 @@ Thank you for installing the Apache Cassandra DCOS Service.
 
     # assert marathon is only listed with --inactive
     get_services(1, ['--inactive'])
+
+
+def _get_schema(service):
+    schema = create_schema(service.dict())
+    schema['required'].remove('reregistered_time')
+    schema['required'].remove('pid')
+    schema['properties']['offered_resources']['required'].remove('ports')
+    schema['properties']['resources']['required'].remove('ports')
+    schema['properties']['used_resources']['required'].remove('ports')
+
+    return schema

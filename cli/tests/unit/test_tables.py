@@ -2,6 +2,7 @@ from dcoscli import tables
 
 from ..fixtures.marathon import (app_fixture, app_task_fixture,
                                  deployment_fixture, group_fixture)
+from ..fixtures.node import slave_fixture
 from ..fixtures.package import package_fixture, search_result_fixture
 from ..fixtures.service import framework_fixture
 from ..fixtures.task import task_fixture
@@ -53,6 +54,12 @@ def test_package_search_table():
     _test_table(tables.package_search_table,
                 search_result_fixture,
                 'tests/unit/data/package_search.txt')
+
+
+def test_node_table():
+    _test_table(tables.slave_table,
+                slave_fixture,
+                'tests/unit/data/node.txt')
 
 
 def _test_table(table_fn, fixture_fn, path):

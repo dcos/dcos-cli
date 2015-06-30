@@ -90,6 +90,16 @@ class MesosClient:
         url = self.slave_url(slave_id, 'state.json')
         return http.get(url).json()
 
+    def get_state_summary(self):
+        """Get the Mesos master state summary json object
+
+        :returns: Mesos' master state summary json object
+        :rtype: dict
+        """
+
+        url = self.master_url('master/state-summary')
+        return http.get(url).json()
+
     def shutdown_framework(self, framework_id):
         """Shuts down a Mesos framework
 
@@ -694,6 +704,20 @@ class MesosFile(object):
         """
 
         return "{0}:{1}".format(self._task['id'], self._path)
+
+
+def parse_pid(pid):
+    """ Parse the mesos pid string,
+
+    :param pid: pid of the form "id@ip:port"
+    :type pid: str
+    :returns: parsed pid
+    :rtype: (str, str, str)
+    """
+
+    id_, second = pid.split('@')
+    ip, port = second.split(':')
+    return id_, ip, port
 
 
 def _merge(d, keys):

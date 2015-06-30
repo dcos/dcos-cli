@@ -1,7 +1,7 @@
 import copy
 from collections import OrderedDict
 
-from dcos import util
+from dcos import mesos, util
 
 
 def task_table(tasks):
@@ -275,4 +275,22 @@ def package_search_table(search_results):
     tb.align['SOURCE'] = 'l'
     tb.align['DESCRIPTION'] = 'l'
 
+    return tb
+
+
+def slave_table(slaves):
+    """Returns a PrettyTable representation of the provided DCOS slaves
+
+    :param slaves: slaves to render.  dicts from /mesos/state-summary
+    :type slaves: [dict]
+    :rtype: PrettyTable
+    """
+
+    fields = OrderedDict([
+        ('HOSTNAME', lambda s: s['hostname']),
+        ('IP', lambda s: mesos.parse_pid(s['pid'])[1]),
+        ('ID', lambda s: s['id'])
+    ])
+
+    tb = util.table(fields, slaves, sortby="HOSTNAME")
     return tb
