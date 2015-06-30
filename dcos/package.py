@@ -165,7 +165,7 @@ def uninstall(package_name, remove_all, app_id, cli, app):
             remove_all,
             app_id,
             marathon.create_client(),
-            mesos.get_master_client())
+            mesos.MesosClient())
 
         if num_apps > 0:
             uninstalled = True
@@ -192,7 +192,7 @@ def uninstall_subcommand(distribution_name):
     return subcommand.uninstall(distribution_name)
 
 
-def uninstall_app(app_name, remove_all, app_id, init_client, master_client):
+def uninstall_app(app_name, remove_all, app_id, init_client, mesos_client):
     """Uninstalls an app.
 
     :param app_name: The app to uninstall
@@ -203,8 +203,8 @@ def uninstall_app(app_name, remove_all, app_id, init_client, master_client):
     :type app_id: str
     :param init_client: The program to use to run the app
     :type init_client: object
-    :param master_client: the mesos master client
-    :type master_client: dcos.mesos.MasterClient
+    :param mesos_client: the mesos client
+    :type mesos_client: dcos.mesos.MesosClient
     :returns: number of apps uninstalled
     :rtype: int
     """
@@ -245,8 +245,8 @@ def uninstall_app(app_name, remove_all, app_id, init_client, master_client):
         if framework_name is not None:
             logger.info(
                 'Trying to shutdown framework {}'.format(framework_name))
-            frameworks = mesos.Master(master_client.get_state()).frameworks(
-                inactive=True)
+            frameworks = mesos.Master(mesos_client.get_master_state()) \
+                              .frameworks(inactive=True)
 
             # Look up all the framework names
             framework_ids = [
@@ -259,7 +259,7 @@ def uninstall_app(app_name, remove_all, app_id, init_client, master_client):
                 'Found the following frameworks: {}'.format(framework_ids))
 
             if len(framework_ids) == 1:
-                master_client.shutdown_framework(framework_ids[0])
+                mesos_client.shutdown_framework(framework_ids[0])
             elif len(framework_ids) > 1:
                 raise DCOSException(
                     "Unable to shutdown the framework for [{}] because there "

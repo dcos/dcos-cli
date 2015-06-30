@@ -18,7 +18,7 @@ def zk_znode(request):
 
 
 def test_help():
-    stdout = b"""Get the status of DCOS services
+    stdout = b"""Manage DCOS services
 
 Usage:
     dcos service --info
@@ -45,7 +45,7 @@ Positional Arguments:
 
 
 def test_info():
-    stdout = b"Get the status of DCOS services\n"
+    stdout = b"Manage DCOS services\n"
     assert_command(['dcos', 'service', '--info'], stdout=stdout)
 
 
