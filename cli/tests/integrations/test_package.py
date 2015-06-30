@@ -207,7 +207,8 @@ CPU's and 1GB of RAM available for the Marathon Service.",
     "framework"
   ],
   "versions": [
-    "0.8.1"
+    "0.8.1",
+    "0.9.0-RC3"
   ]
 }
 """
@@ -257,7 +258,7 @@ marathon-user       --http_port $PORT0 ",
     ],
     "container": {
       "docker": {
-        "image": "mesosphere/marathon:v0.8.1",
+        "image": "mesosphere/marathon:v0.9.0-RC3",
         "network": "HOST"
       },
       "type": "DOCKER"
@@ -292,14 +293,15 @@ FyYXRob24vI3VuaW5zdGFsbCB0byBjbGVhbiB1cCBhbnkgcGVyc2lzdGVkIHN0YXRlIiwgInByZUlu\
 c3RhbGxOb3RlcyI6ICJXZSByZWNvbW1lbmQgYSBtaW5pbXVtIG9mIG9uZSBub2RlIHdpdGggYXQgbG\
 Vhc3QgMiBDUFUncyBhbmQgMUdCIG9mIFJBTSBhdmFpbGFibGUgZm9yIHRoZSBNYXJhdGhvbiBTZXJ2\
 aWNlLiIsICJzY20iOiAiaHR0cHM6Ly9naXRodWIuY29tL21lc29zcGhlcmUvbWFyYXRob24uZ2l0Ii\
-wgInRhZ3MiOiBbIm1lc29zcGhlcmUiLCAiZnJhbWV3b3JrIl0sICJ2ZXJzaW9uIjogIjAuOC4xIn0=\
+wgInRhZ3MiOiBbIm1lc29zcGhlcmUiLCAiZnJhbWV3b3JrIl0sICJ2ZXJzaW9uIjogIjAuOS4wLVJD\
+MyJ9\
 ",
       "DCOS_PACKAGE_NAME": "marathon",
       "DCOS_PACKAGE_REGISTRY_VERSION": "1.0.0-rc1",
-      "DCOS_PACKAGE_RELEASE": "0",
+      "DCOS_PACKAGE_RELEASE": "1",
       "DCOS_PACKAGE_SOURCE": "https://github.com/mesosphere/universe/archive/\
 version-1.x.zip",
-      "DCOS_PACKAGE_VERSION": "0.8.1"
+      "DCOS_PACKAGE_VERSION": "0.9.0-RC3"
     },
     "mem": 1024.0,
     "ports": [
@@ -342,7 +344,8 @@ CPU's and 1GB of RAM available for the Marathon Service.",
     "framework"
   ],
   "versions": [
-    "0.8.1"
+    "0.8.1",
+    "0.9.0-RC3"
   ]
 }
 """
