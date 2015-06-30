@@ -85,7 +85,7 @@ Options:
 Positional Arguments:
     <app-id>                    The application id
 
-    <app-resource>              Path to a file containing the app's JSON
+    <app-resource>              Path to a file or URL containing the app's JSON
                                 definition. If omitted, the definition is read
                                 from stdin. For a detailed description see
                                 (https://mesosphere.github.io/
@@ -95,9 +95,9 @@ Positional Arguments:
 
     <group-id>                  The group id
 
-    <group-resource>            Path to a file containing the group's JSON
-                                definition. If omitted, the definition is read
-                                from stdin. For a detailed description see
+    <group-resource>            Path to a file or URL containing the group's
+                                JSON definition. If omitted, the definition is
+                                read from stdin. For a detailed description see
                                 (https://mesosphere.github.io/
                                 marathon/docs/rest-api.html#post-/v2/groups).
 
@@ -165,6 +165,24 @@ def test_add_app():
 def test_add_app_with_filename():
     with _zero_instance_app():
         _list_apps('zero-instance-app')
+
+
+def test_add_app_with_url():
+    app_def = ('https://raw.githubusercontent.com/mesosphere/dcos-cli/'
+               'master/cli/tests/data/marathon/apps/zero_instance_sleep.json')
+    with app(app_def, 'zero-instance-app'):
+        _list_apps('zero-instance-app')
+
+
+def test_add_app_with_bad_url():
+    bad_url = 'http://fake.mesosphere.com'
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'marathon', 'app', 'add', bad_url])
+
+    assert returncode == 1
+    assert stdout == b''
+    msg = 'Error reading from url: {}\n'.format(bad_url)
+    assert stderr.decode('utf-8') == msg
 
 
 def test_remove_app():
