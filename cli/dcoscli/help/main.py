@@ -1,8 +1,9 @@
 """Display command line usage information
 
 Usage:
-    dcos help --info
     dcos help
+    dcos help --info
+    dcos help <command>
 
 Options:
     --help     Show this screen
@@ -45,33 +46,67 @@ def _cmds():
 
     return [
         cmds.Command(
+            hierarchy=['help', '--info'],
+            arg_keys=[],
+            function=_info),
+
+        cmds.Command(
             hierarchy=['help'],
-            arg_keys=['--info'],
+            arg_keys=['<command>'],
             function=_help),
     ]
 
 
-def _help(show_info):
-    if show_info:
-        emitter.publish(__doc__.split('\n')[0])
+def _info():
+    """
+    :returns: process return code
+    :rtype: int
+    """
+
+    emitter.publish(__doc__.split('\n')[0])
+    return 0
+
+
+def _help(command):
+    """
+    :returns: process return code
+    :rtype: int
+    """
+
+    if command is not None:
+        _help_command(command)
+    else:
+        directory = util.dcos_path()
+        logger.debug("DCOS Path: {!r}".format(directory))
+
+        paths = subcommand.list_paths()
+        with ThreadPoolExecutor(max_workers=len(paths)) as executor:
+            results = executor.map(subcommand.documentation, paths)
+            commands_message = options.make_command_summary_string(sorted(results))
+
+        emitter.publish(
+            "Command line utility for the Mesosphere Datacenter Operating\n"
+            "System (DCOS). The Mesosphere DCOS is a distributed operating\n"
+            "system built around Apache Mesos. This utility provides tools\n"
+            "for easy management of a DCOS installation.\n")
+        emitter.publish("Available DCOS commands:")
+        emitter.publish(commands_message)
+        emitter.publish(
+            "\nGet detailed command description with 'dcos <command> --help'.")
+
         return 0
 
-    directory = util.dcos_path()
-    logger.debug("DCOS Path: {!r}".format(directory))
 
-    paths = subcommand.list_paths()
-    with ThreadPoolExecutor(max_workers=len(paths)) as executor:
-        results = executor.map(subcommand.documentation, paths)
-        commands_message = options.make_command_summary_string(sorted(results))
+def _help_command(command):
+    """
+    :returns: process return code
+    :rtype: int
+    """
 
-    emitter.publish(
-        "Command line utility for the Mesosphere Datacenter Operating\n"
-        "System (DCOS). The Mesosphere DCOS is a distributed operating\n"
-        "system built around Apache Mesos. This utility provides tools\n"
-        "for easy management of a DCOS installation.\n")
-    emitter.publish("Available DCOS commands:")
-    emitter.publish(commands_message)
-    emitter.publish(
-        "\nGet detailed command description with 'dcos <command> --help'.")
-
+    try:
+        module = "dcoscli.{}.main".format(command)
+        emitter.publish(__import__(module, fromlist=['']).__doc__)
+    except ImportError as error:
+        emitter.publish("No such command {}".format(command))
+        return 1
     return 0
