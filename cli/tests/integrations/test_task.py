@@ -155,12 +155,15 @@ def test_log_missing_file():
 def test_log_lines():
     """ Test --lines """
     with app(SLEEP1, 'test-app', True):
-        returncode, stdout, stderr = exec_command(
-            ['dcos', 'task', 'log', 'test-app', '--lines=2'])
+        assert_lines(['dcos', 'task', 'log', 'test-app', '--lines=2'], 2)
 
-        assert returncode == 0
-        assert stderr == b''
-        assert len(stdout.decode('utf-8').split('\n')) == 3
+
+def test_log_lines_invalid():
+    """ Test invalid --lines value """
+    assert_command(['dcos', 'task', 'log', 'test-app', '--lines=bogus'],
+                   stdout=b'',
+                   stderr=b'Error parsing string as int\n',
+                   returncode=1)
 
 
 def test_log_follow():

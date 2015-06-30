@@ -9,6 +9,7 @@ Options:
     --info     Show a short description of this subcommand
     --version  Show version
 """
+
 import dcoscli
 import docopt
 from concurrent.futures import ThreadPoolExecutor

@@ -56,7 +56,6 @@ from dcos.errors import DCOSException
 from dcoscli import tables
 
 logger = util.get_logger(__name__)
-
 emitter = emitting.FlatEmitter()
 
 

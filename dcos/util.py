@@ -11,6 +11,7 @@ import sys
 import tempfile
 import time
 
+import concurrent.futures
 import jsonschema
 import prettytable
 import pystache
@@ -544,6 +545,28 @@ def io_exception(path, errno):
 
     return DCOSException('Error opening file [{}]: {}'.format(
         path, os.strerror(errno)))
+
+
+STREAM_CONCURRENCY = 20
+
+
+def stream(fn, objs):
+    """Apply `fn` to `objs` in parallel, yielding the (Future, obj) for
+    each as it completes.
+
+    :param fn: function
+    :type fn: function
+    :param objs: objs
+    :type objs: objs
+    :returns: iterator over (Future, typeof(obj))
+    :rtype: iterator over (Future, typeof(obj))
+
+    """
+
+    with concurrent.futures.ThreadPoolExecutor(STREAM_CONCURRENCY) as pool:
+        jobs = {pool.submit(fn, obj): obj for obj in objs}
+        for job in concurrent.futures.as_completed(jobs):
+            yield job, jobs[job]
 
 
 logger = get_logger(__name__)
