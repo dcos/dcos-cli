@@ -91,7 +91,7 @@ def _service(inactive, is_json):
     """List dcos services
 
     :param inactive: If True, include completed tasks
-    :type completed: bool
+    :type inactive: bool
     :param is_json: If true, output json.
         Otherwise, output a human readable table.
     :type is_json: bool
