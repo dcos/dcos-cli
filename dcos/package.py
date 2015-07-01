@@ -15,7 +15,8 @@ import git
 import portalocker
 import pystache
 import six
-from dcos import constants, emitting, errors, marathon, mesos, subcommand, util
+from dcos import (constants, emitting, errors, http, marathon, mesos,
+                  subcommand, util)
 from dcos.errors import DCOSException
 
 from six.moves import urllib
@@ -845,9 +846,14 @@ class HttpSource(Source):
             with util.tempdir() as tmp_dir:
 
                 tmp_file = os.path.join(tmp_dir, 'packages.zip')
-
                 # Download the zip file.
-                urllib.request.urlretrieve(self.url, tmp_file)
+                req = http.get(self.url)
+                if req.status_code == 200:
+                    with open(tmp_file, 'wb') as f:
+                        for chunk in req.iter_content(1024):
+                            f.write(chunk)
+                else:
+                    raise Exception
 
                 # Unzip the downloaded file.
                 packages_zip = zipfile.ZipFile(tmp_file, 'r')

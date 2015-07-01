@@ -5,10 +5,9 @@ import uuid
 
 import dcoscli
 import docopt
-import requests
 import rollbar
 from concurrent.futures import ThreadPoolExecutor
-from dcos import util
+from dcos import http, util
 from dcoscli.constants import (ROLLBAR_SERVER_POST_KEY,
                                SEGMENT_IO_CLI_ERROR_EVENT,
                                SEGMENT_IO_CLI_EVENT, SEGMENT_IO_WRITE_KEY_DEV,
@@ -104,10 +103,10 @@ def _segment_request(path, data):
         SEGMENT_IO_WRITE_KEY_DEV
 
     try:
-        requests.post('{}/{}'.format(SEGMENT_URL, path),
-                      json=data,
-                      auth=HTTPBasicAuth(key, ''),
-                      timeout=1)
+        http.post('{}/{}'.format(SEGMENT_URL, path),
+                  json=data,
+                  auth=HTTPBasicAuth(key, ''),
+                  timeout=1)
     except Exception as e:
         logger.exception(e)
 
