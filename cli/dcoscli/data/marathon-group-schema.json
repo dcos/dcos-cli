@@ -293,6 +293,9 @@
         "id": {
             "$ref": "#/definitions/app/properties/id"
         },
+        "version": {
+             "$ref": "#/definitions/app/properties/version"
+        },
         "required": [
             "id"
         ]

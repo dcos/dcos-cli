@@ -497,9 +497,12 @@ def _group_update(group_id, properties, force):
     client = marathon.create_client()
 
     # Ensure that the group exists
-    client.get_group(group_id)
+    current_group = client.get_group(group_id)
 
-    group_resource = _parse_properties(properties, _data_schema())
+    schema = _data_schema()
+    group_resource = _parse_properties(properties, schema)
+    _validate_update(current_group, group_resource, schema)
+
     deployment = client.update_group(group_id, group_resource, force)
 
     emitter.publish('Created deployment {}'.format(deployment))
@@ -599,13 +602,56 @@ def _update(app_id, properties, force):
     client = marathon.create_client()
 
     # Ensure that the application exists
-    client.get_app(app_id)
+    current_app = client.get_app(app_id)
 
-    app_resource = _parse_properties(properties, _app_schema())
+    schema = _app_schema()
+    app_resource = _parse_properties(properties, schema)
+    _validate_update(current_app, app_resource, schema)
+
     deployment = client.update_app(app_id, app_resource, force)
 
     emitter.publish('Created deployment {}'.format(deployment))
     return 0
+
+
+def _validate_update(current_resource, properties, schema):
+    """
+    Validate resource ("app" or "group") update
+
+    :param current_resource: Marathon app definition
+    :type current_resource: dict
+    :param properties: resource JSON
+    :type properties: dict
+    :param schema: JSON schema used to verify properties
+    :type schema: dict
+    :rtype: None
+    """
+    updated_resource = _clean_up_resource_definition(current_resource.copy())
+    updated_resource.update(properties)
+
+    errs = util.validate_json(updated_resource, schema)
+    if errs:
+        raise DCOSException(util.list_to_err(errs))
+
+
+def _clean_up_resource_definition(properties):
+    """
+    Remove task properties and nulls from resource definition
+
+    :param properties: resource JSON
+    :type properties: dict
+    :returns: resource JSON
+    :rtype: dict
+    """
+    clean_properties = {}
+    for k, v in properties.items():
+        if v:
+            if k in ["apps", "groups"]:
+                clean_properties[k] = [_clean_up_resource_definition(v[0])]
+            elif not k.startswith("task"):
+                clean_properties[k] = v
+
+    return clean_properties
 
 
 def _parse_properties(properties, schema):
