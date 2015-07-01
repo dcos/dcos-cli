@@ -82,7 +82,8 @@ def _help(command):
         paths = subcommand.list_paths()
         with ThreadPoolExecutor(max_workers=len(paths)) as executor:
             results = executor.map(subcommand.documentation, paths)
-            commands_message = options.make_command_summary_string(sorted(results))
+            commands_message = options.\
+                make_command_summary_string(sorted(results))
 
         emitter.publish(
             "Command line utility for the Mesosphere Datacenter Operating\n"
@@ -92,7 +93,8 @@ def _help(command):
         emitter.publish("Available DCOS commands:")
         emitter.publish(commands_message)
         emitter.publish(
-            "\nGet detailed command description with 'dcos <command> --help'.")
+            "\nGet detailed command description with"
+            " 'dcos <command> --help'.")
 
         return 0
 
