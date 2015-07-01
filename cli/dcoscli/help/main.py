@@ -108,7 +108,7 @@ def _help_command(command):
     try:
         module = "dcoscli.{}.main".format(command)
         emitter.publish(__import__(module, fromlist=['']).__doc__)
-    except ImportError as error:
+    except ImportError:
         emitter.publish("No such command {}".format(command))
         return 1
     return 0
