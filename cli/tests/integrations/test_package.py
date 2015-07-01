@@ -399,6 +399,8 @@ def test_uninstall_multiple_apps():
 
     assert_command(['dcos', 'package', 'uninstall', 'helloworld', '--all'])
 
+    watch_all_deployments()
+
 
 def test_list(zk_znode):
     _list()
