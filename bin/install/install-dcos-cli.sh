@@ -14,26 +14,51 @@ fi
 
 ARGS=( "$@" );
 
+VENV="virtualenv"
 VIRTUAL_ENV_PATH=$(python -c "import os; print(os.path.realpath('"${ARGS[0]}"'))")
 DCOS_URL=${ARGS[1]}
 
-command -v virtualenv >/dev/null 2>&1 || { echo "Cannot find virtualenv. Aborting."; exit 1; }
+IS_VENV=$(which ${VENV})
+if [[ -z "${IS_VENV}" ]]; then
+    echo "Cannot find virtualenv. Aborting."
+    exit 1
+fi
 
-VIRTUALENV_VERSION=$(virtualenv --version)
+VIRTUALENV_VERSION=$(${VENV} --version)
 VERSION_REGEX="s#[^0-9]*\([0-9]*\)[.]\([0-9]*\)[.]\([0-9]*\)\([0-9A-Za-z-]*\)#\1#"
 
 eval MAJOR=`echo $VIRTUALENV_VERSION | sed -e $VERSION_REGEX`
-if [ $MAJOR -lt 12 ];
-	then echo "Virtualenv version must be 12 or greater. Aborting.";
-	exit 1;
+if [[ ${MAJOR} -lt 12 ]]; then
+    # TODO(marco): some unexplained behavior in bash makes this script abort
+    # just after the call the $(which ... ) below; placing these error messages here, so that the
+    # outcome is less baffling for the user; they should actually go into the `if`
+    echo "Virtualenv version must be 12 or greater."
+    echo "You can upgrade by running: sudo pip install --upgrade virtualenv"
+    echo "Trying to find virtualenv-3.4 in your system..."
+
+    # On some (most?) Linux distro, venv for 2.7 is an ancient 1.11.6
+    # Let's try and see if we can find virtualenv-3.4 and use that one instead
+    # TODO(marco): this line causes the script to mysteriously abort if virtualenv-3.4 is
+    # missing; works just fine if it's there.
+    VENV=$(which virtualenv-3.4)
+    if [[ ! -x ${VENV} ]]; then
+        echo "We could not find a suitable version of virtualenv, aborting."
+        exit 1
+    fi
+    echo "Using virtualenv: ${VENV}"
+fi
+
+# Let's first setup a virtualenv: we are assuming that the path is absolute
+echo "Creating a virtual environment in ${VIRTUAL_ENV_PATH}"
+mkdir -p "$VIRTUAL_ENV_PATH"
+${VENV} "$VIRTUAL_ENV_PATH"
+if [[ $? != 0 ]]; then
+    echo "Could not create a virtualenv, aborting."
+    exit 1
 fi
 
 echo "Installing DCOS CLI from PyPI...";
 echo "";
-
-# Let's first setup a virtualenv: we are assuming that the path is absolute
-mkdir -p "$VIRTUAL_ENV_PATH"
-virtualenv "$VIRTUAL_ENV_PATH"
 
 # Install the DCOS CLI package, using version if set
 if [ -z "$DCOS_CLI_VERSION" ]; then
