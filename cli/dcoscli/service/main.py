@@ -121,5 +121,5 @@ def _shutdown(service_id):
     :rtype: int
     """
 
-    mesos.MesosClient().shutdown_framework(service_id)
+    mesos.DCOSClient().shutdown_framework(service_id)
     return 0

@@ -23,11 +23,11 @@ def get_master():
     :rtype: Master
     """
 
-    return Master(MesosClient().get_master_state())
+    return Master(DCOSClient().get_master_state())
 
 
-class MesosClient(object):
-    """Client for communicating with the Mesos master"""
+class DCOSClient(object):
+    """Client for communicating with DCOS"""
 
     def __init__(self):
         config = util.get_config()
@@ -40,8 +40,21 @@ class MesosClient(object):
         else:
             self._mesos_master_url = mesos_master_url
 
+    def get_dcos_url(self, path):
+        """ Create a DCOS URL
+
+        :param path: the path suffix of the URL
+        :type path: str
+        :returns: DCOS URL
+        :rtype: str
+        """
+        if self._dcos_url:
+            return urllib.parse.urljoin(self._dcos_url, path)
+        else:
+            raise util.missing_config_exception('core.dcos_url')
+
     def master_url(self, path):
-        """ Create a URL that hits the master
+        """ Create a master URL
 
         :param path: the path suffix of the desired URL
         :type path: str
@@ -55,7 +68,7 @@ class MesosClient(object):
 
     # TODO (mgummelt): this doesn't work with self._mesos_master_url
     def slave_url(self, slave_id, path):
-        """ Create a URL that hits the slave
+        """ Create a slave URL
 
         :param slave_id: slave ID
         :type slave_id: str
@@ -180,11 +193,20 @@ class MesosClient(object):
         url = self.master_url('master/shutdown')
         http.post(url, data=data)
 
+    def metadata(self):
+        """ Get /metadata
+
+        :returns: /metadata content
+        :rtype: dict
+        """
+        url = self.get_dcos_url('metadata')
+        return http.get(url).json()
+
 
 class Master(object):
     """Mesos Master Model
 
-    :param state: Mesos master state json
+    :param state: Mesos master's state.json
     :type state: dict
     """
 
@@ -417,7 +439,7 @@ class Slave(object):
         """
 
         if not self._state:
-            self._state = MesosClient().get_slave_state(self['id'])
+            self._state = DCOSClient().get_slave_state(self['id'])
         return self._state
 
     def _framework_dicts(self):
@@ -611,7 +633,7 @@ class MesosFile(object):
     :param slave: slave where the file lives
     :type slave: Slave | None
     :param mesos_client: client to use for network requests
-    :type mesos_client: MesosClient | None
+    :type mesos_client: DCOSClient | None
 
     """
 
@@ -630,7 +652,7 @@ class MesosFile(object):
 
         self._task = task
         self._path = path
-        self._mesos_client = mesos_client or MesosClient()
+        self._mesos_client = mesos_client or DCOSClient()
         self._cursor = 0
 
     def size(self):
