@@ -15,6 +15,18 @@ command and for specific subcommands through :code:`dcos <subcommand> --help`.
 Additional documentation for the CLI and for the DCOS in general is available
 in the `Mesosphere docs`_.
 
+Parsing CLI Output
+------------------
+
+The CLI outputs either whitespace delimited tables which can be processed by
+all of your favourite Unix/Linux tools like sed, awk and grep, or text formatted
+as JSON when using the :code:`--json` flag.
+
+If using JSON, you can combine it with the powerful jq_ utility.
+The example below installs every package available in the DCOS repository::
+
+    dcos package search --json | jq '.[0].packages[].name' | xargs -L 1 dcos package install --yes
+
 Using the CLI without DCOS
 --------------------------
 
@@ -157,6 +169,7 @@ These packages are now available to be installed by the DCOS CLI installation sc
 .. _dcos: https://pypi.python.org/pypi/dcos
 .. _dcoscli: https://pypi.python.org/pypi/dcoscli
 .. _dcos-helloworld: https://github.com/mesosphere/dcos-helloworld
+.. _jq: http://stedolan.github.io/jq/
 .. _git: http://git-scm.com
 .. _installation instructions: http://docs.mesosphere.com/install/cli/
 .. _installer: https://www.python.org/downloads/
