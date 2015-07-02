@@ -70,11 +70,11 @@ Configure Environment and Run
 
     source bin/env-setup-dev
 
-#. Configure Marathon, changing the values below as appropriate for your local
-   installation::
+#. Configure the CLI, changing the values below as appropriate for your local
+   installation of DCOS::
 
-    dcos config set marathon.url http://localhost:8080
-    dcos config append package.sources https://github.com/mesosphere/universe/archive/master.zip
+    dcos config set core.dcos_url http://dcos-ea-1234.us-west-2.elb.amazonaws.com
+    dcos config append package.sources https://github.com/mesosphere/universe/archive/version-1.x.zip
     dcos config set package.cache /tmp/dcos
     dcos package update
 
