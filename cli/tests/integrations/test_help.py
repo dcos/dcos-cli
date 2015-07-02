@@ -7,6 +7,7 @@ def test_help():
 Usage:
     dcos help --info
     dcos help
+    dcos help <command>
 
 Options:
     --help     Show this screen
