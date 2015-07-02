@@ -15,6 +15,10 @@ fi
 ARGS=( "$@" );
 
 VIRTUAL_ENV_PATH=$(python -c "import os; print(os.path.realpath('"${ARGS[0]}"'))")
+if [[ $VIRTUAL_ENV_PATH =~ \  ]];
+	then echo "Installation cancelled - spaces are not allowed in the DCOS-CLI installation path. Please install the DCOS-CLI in a path that does not contain spaces.";
+    exit 1;
+fi
 DCOS_URL=${ARGS[1]}
 
 command -v virtualenv >/dev/null 2>&1 || { echo "Cannot find virtualenv. Aborting."; exit 1; }
