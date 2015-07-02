@@ -3,6 +3,15 @@ from collections import OrderedDict
 
 from dcos import mesos, util
 
+EMPTY_ENTRY = '---'
+
+DEPLOYMENT_DISPLAY = {'ResolveArtifacts': 'artifacts',
+                      'ScaleApplication': 'scale',
+                      'StartApplication': 'start',
+                      'StopApplication': 'stop',
+                      'RestartApplication': 'restart',
+                      'KillAllOldTasksOf': 'kill-tasks'}
+
 
 def task_table(tasks):
     """Returns a PrettyTable representation of the provided mesos tasks.
@@ -28,13 +37,17 @@ def task_table(tasks):
     return tb
 
 
-def app_table(apps):
+def app_table(apps, deployments):
     """Returns a PrettyTable representation of the provided apps.
 
     :param tasks: apps to render
     :type tasks: [dict]
     :rtype: PrettyTable
     """
+
+    deployment_map = {}
+    for deployment in deployments:
+        deployment_map[deployment['id']] = deployment
 
     def get_cmd(app):
         if app["cmd"] is not None:
@@ -48,13 +61,40 @@ def app_table(apps):
         else:
             return "mesos"
 
+    def get_health(app):
+        if app["healthChecks"]:
+            return "{}/{}".format(app["tasksHealthy"],
+                                  app["tasksRunning"])
+        else:
+            return EMPTY_ENTRY
+
+    def get_deployment(app):
+        deployment_ids = {deployment['id']
+                          for deployment in app['deployments']}
+
+        actions = []
+        for deployment_id in deployment_ids:
+            deployment = deployment_map.get(deployment_id)
+            if deployment:
+                for action in deployment['currentActions']:
+                    if action['app'] == app['id']:
+                        actions.append(DEPLOYMENT_DISPLAY[action['action']])
+
+        if len(actions) == 0:
+            return EMPTY_ENTRY
+        elif len(actions) == 1:
+            return actions[0]
+        else:
+            return "({})".format(", ".join(actions))
+
     fields = OrderedDict([
         ("ID", lambda a: a["id"]),
         ("MEM", lambda a: a["mem"]),
         ("CPUS", lambda a: a["cpus"]),
-        ("DEPLOYMENTS", lambda a: len(a["deployments"])),
         ("TASKS", lambda a: "{}/{}".format(a["tasksRunning"],
                                            a["instances"])),
+        ("HEALTH", get_health),
+        ("DEPLOYMENT", get_deployment),
         ("CONTAINER", get_container),
         ("CMD", get_cmd)
     ])
@@ -101,12 +141,6 @@ def deployment_table(deployments):
     """
 
     def get_action(deployment):
-        action_map = {'ResolveArtifacts': 'artifacts',
-                      'ScaleApplication': 'scale',
-                      'StartApplication': 'start',
-                      'StopApplication': 'stop',
-                      'RestartApplication': 'restart',
-                      'KillAllOldTasksOf': 'kill-tasks'}
 
         multiple_apps = len({action['app']
                              for action in deployment['currentActions']}) > 1
@@ -114,7 +148,7 @@ def deployment_table(deployments):
         ret = []
         for action in deployment['currentActions']:
             try:
-                action_display = action_map[action['action']]
+                action_display = DEPLOYMENT_DISPLAY[action['action']]
             except KeyError:
                 raise ValueError(
                     'Unknown Marathon action: {}'.format(action['action']))
@@ -227,9 +261,10 @@ def package_table(packages):
 
     fields = OrderedDict([
         ('NAME', lambda p: p['name']),
-        ('APP', lambda p: '\n'.join(p['apps']) if p.get('apps') else '---'),
+        ('APP',
+         lambda p: '\n'.join(p['apps']) if p.get('apps') else EMPTY_ENTRY),
         ('COMMAND',
-         lambda p: p['command']['name'] if 'command' in p else '---'),
+         lambda p: p['command']['name'] if 'command' in p else EMPTY_ENTRY),
         ('DESCRIPTION', lambda p: p['description'])
     ])
 
