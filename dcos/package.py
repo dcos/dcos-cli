@@ -657,7 +657,8 @@ def update_sources(config, validate=False):
     errors = []
 
     # ensure the cache directory is properly configured
-    cache_dir = util.get_config_vals(config, ['package.cache'])[0]
+    cache_dir = os.path.expanduser(
+        util.get_config_vals(config, ['package.cache'])[0])
 
     # ensure the cache directory exists
     if not os.path.exists(cache_dir):
@@ -755,7 +756,8 @@ class Source:
         :rtype: str or None
         """
 
-        cache_dir = util.get_config_vals(config, ['package.cache'])[0]
+        cache_dir = os.path.expanduser(
+            util.get_config_vals(config, ['package.cache'])[0])
         return os.path.join(cache_dir, self.hash())
 
     def copy_to_cache(self, target_dir):
