@@ -30,6 +30,7 @@ import docopt
 from dcos import cmds, emitting, errors, mesos, util
 from dcos.errors import DCOSException, DefaultError
 from dcoscli import log, tables
+from dcoscli.main import decorate_docopt_usage
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -43,6 +44,7 @@ def main():
         return 1
 
 
+@decorate_docopt_usage
 def _main():
     util.configure_process_from_environ()
 

@@ -32,6 +32,7 @@ import six
 from dcos import cmds, config, emitting, http, jsonitem, subcommand, util
 from dcos.errors import DCOSException
 from dcoscli import analytics
+from dcoscli.main import decorate_docopt_usage
 
 emitter = emitting.FlatEmitter()
 logger = util.get_logger(__name__)
@@ -45,6 +46,7 @@ def main():
         return 1
 
 
+@decorate_docopt_usage
 def _main():
     util.configure_process_from_environ()
 
