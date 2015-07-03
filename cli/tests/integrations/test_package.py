@@ -703,3 +703,43 @@ def _package(name,
         yield
     finally:
         assert_command(['dcos', 'package', 'uninstall', name])
+
+
+def test_search_ends_with_wildcard():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'search', 'c*', '--json'])
+
+    assert returncode == 0
+    assert b'chronos' in stdout
+    assert b'cassandra' in stdout
+    assert stderr == b''
+
+    registries = json.loads(stdout.decode('utf-8'))
+    for registry in registries:
+        assert len(registry['packages']) == 2
+
+
+def test_search_start_with_wildcard():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'search', '*nos', '--json'])
+
+    assert returncode == 0
+    assert b'chronos' in stdout
+    assert stderr == b''
+
+    registries = json.loads(stdout.decode('utf-8'))
+    for registry in registries:
+        assert len(registry['packages']) == 1
+
+
+def test_search_middle_with_wildcard():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'search', 'c*s', '--json'])
+
+    assert returncode == 0
+    assert b'chronos' in stdout
+    assert stderr == b''
+
+    registries = json.loads(stdout.decode('utf-8'))
+    for registry in registries:
+        assert len(registry['packages']) == 1

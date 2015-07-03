@@ -5,6 +5,7 @@ import copy
 import hashlib
 import json
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -483,13 +484,25 @@ def _search_rank(pkg, query):
     :type query: str
     :rtype: float
     """
+    result = 0.0
+
+    wildcard_symbol = '*'
+    regex_pattern = '.*'
 
     q = query.lower()
+    if wildcard_symbol in q:
+        q = q.replace(wildcard_symbol, regex_pattern)
+        if q.endswith(wildcard_symbol):
+            q = '^{}'.format(q)
+        else:
+            q = '{}$'.format(q)
 
-    result = 0.0
+        if re.match(q, pkg['name'].lower()):
+            result += 2.0
+        return result
+
     if q in pkg['name'].lower():
         result += 2.0
-
     for tag in pkg['tags']:
         if q in tag.lower():
             result += 1.0
