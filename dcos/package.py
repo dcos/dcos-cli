@@ -1437,3 +1437,18 @@ class IndexEntries():
         """
 
         return {'source': self.source.url, 'packages': self.packages}
+
+
+def get_apps_for_framework(framework_name, client):
+    """ Return all apps running the given framework.
+
+    :param framework_name: framework name
+    :type framework_name: str
+    :param client: marathon client
+    :type client: marathon.Client
+    :rtype: [dict]
+    """
+
+    return [app for app in client.get_apps()
+            if app.get('labels', {}).get(
+                PACKAGE_FRAMEWORK_NAME_KEY) == framework_name]

@@ -1,0 +1,7 @@
+{
+    "marathon": {
+        "zk": "zk://master.mesos:2181/universe2",
+        "mem": 512,
+        "cpus": 1
+    }
+}

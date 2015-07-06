@@ -12,18 +12,19 @@ logger = util.get_logger(__name__)
 MESOS_TIMEOUT = 5
 
 
-def get_master():
+def get_master(dcos_client=None):
     """Create a Master object using the url stored in the
     'core.mesos_master_url' property if it exists.  Otherwise, we use
     the `core.dcos_url` property
 
-    :param config: user config
-    :type config: Toml
+    :param dcos_client: DCOSClient
+    :type dcos_client: DCOSClient | None
     :returns: master state object
     :rtype: Master
     """
 
-    return Master(DCOSClient().get_master_state())
+    dcos_client = dcos_client or DCOSClient()
+    return Master(dcos_client.get_master_state())
 
 
 class DCOSClient(object):
@@ -481,7 +482,7 @@ class Slave(object):
         :rtype: [dict]
         """
 
-        return _merge(self._state, ['frameworks', 'completed_frameworks'])
+        return _merge(self.state(), ['frameworks', 'completed_frameworks'])
 
     def executor_dicts(self):
         """Returns the executor dictionaries from the state.json
@@ -664,12 +665,12 @@ class MesosFile(object):
     :type task: Task | None
     :param slave: slave where the file lives
     :type slave: Slave | None
-    :param mesos_client: client to use for network requests
-    :type mesos_client: DCOSClient | None
+    :param dcos_client: client to use for network requests
+    :type dcos_client: DCOSClient | None
 
     """
 
-    def __init__(self, path, task=None, slave=None, mesos_client=None):
+    def __init__(self, path, task=None, slave=None, dcos_client=None):
         if task and slave:
             raise ValueError(
                 "You cannot provide both `task` and `slave` " +
@@ -684,7 +685,7 @@ class MesosFile(object):
 
         self._task = task
         self._path = path
-        self._mesos_client = mesos_client or DCOSClient()
+        self._dcos_client = dcos_client or DCOSClient()
         self._cursor = 0
 
     def size(self):
@@ -817,10 +818,10 @@ class MesosFile(object):
         """
 
         if self._slave:
-            return self._mesos_client.slave_file_read(self._slave['id'],
-                                                      **params)
+            return self._dcos_client.slave_file_read(self._slave['id'],
+                                                     **params)
         else:
-            return self._mesos_client.master_file_read(**params)
+            return self._dcos_client.master_file_read(**params)
 
     def __str__(self):
         """String representation of the file: <task_id:file_path>

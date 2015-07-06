@@ -645,6 +645,18 @@ class Client(object):
 
         return response.json()
 
+    def get_leader(self):
+        """ Get the leading marathon instance.
+
+        :returns: string of the form <ip>:<port>
+        :rtype: str
+        """
+
+        url = self._create_url('v2/leader')
+        response = http.get(url)
+
+        return response.json()['leader']
+
 
 def _default_marathon_error(message=""):
     """

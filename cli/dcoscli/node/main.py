@@ -18,7 +18,7 @@ Options:
     --master                Access the leading master
     --slave=<slave-id>      Access the slave with the provided ID
     --option SSHOPT=VAL     SSH option (see `man ssh_config`)
-    --config-file=<path>    Path to ssh config file
+    --config-file=<path>    Path to SSH config file
     --user=<user>           SSH user [default: core]
     --version               Show version
 """
@@ -186,12 +186,7 @@ def _ssh(master, slave, option, config_file, user):
 
     """
 
-    ssh_options = ' '.join('-o {}'.format(opt) for opt in option)
-
-    if config_file:
-        ssh_config = '-F {}'.format(config_file)
-    else:
-        ssh_config = ''
+    ssh_options = util.get_ssh_options(config_file, option)
 
     if master:
         host = mesos.MesosDNSClient().hosts('leader.mesos.')[0]['ip']
@@ -205,9 +200,8 @@ def _ssh(master, slave, option, config_file, user):
         else:
             raise DCOSException('No slave found with ID [{}]'.format(slave))
 
-    cmd = "ssh -t {0} {1} {2}@{3}".format(
+    cmd = "ssh -t {0} {1}@{2}".format(
         ssh_options,
-        ssh_config,
         user,
         host)
 
