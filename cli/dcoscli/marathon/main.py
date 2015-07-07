@@ -656,7 +656,7 @@ def _clean_up_resource_definition(properties):
         if v:
             if k in ["apps", "groups"]:
                 clean_properties[k] = [_clean_up_resource_definition(v[0])]
-            elif not k.startswith("task"):
+            elif not k.startswith("task") and k != "lastTaskFailure":
                 clean_properties[k] = v
 
     return clean_properties
