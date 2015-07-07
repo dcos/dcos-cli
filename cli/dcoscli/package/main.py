@@ -1,49 +1,3 @@
-"""Install and manage DCOS software packages
-
-Usage:
-    dcos package --config-schema
-    dcos package --info
-    dcos package describe [--app --options=<file> --cli] <package_name>
-    dcos package install [--cli | [--app --app-id=<app_id>]]
-                         [--options=<file> --yes] <package_name>
-    dcos package list [--json --endpoints --app-id=<app-id> <package_name>]
-    dcos package search [--json <query>]
-    dcos package sources
-    dcos package uninstall [--cli | [--app --app-id=<app-id> --all]]
-                 <package_name>
-    dcos package update [--validate]
-
-Options:
-    -h, --help         Show this screen
-    --info             Show a short description of this subcommand
-    --version          Show version
-    --yes              Assume "yes" is the answer to all prompts and run
-                       non-interactively
-    --all              Apply the operation to all matching packages
-    --app              Apply the operation only to the package's application
-    --app-id=<app-id>  The application id
-    --cli              Apply the operation only to the package's CLI
-    --options=<file>   Path to a JSON file containing package installation
-                       options
-    --validate         Validate package content when updating sources
-
-Configuration:
-    [package]
-    # Path to the local package cache.
-    cache_dir = "/var/dcos/cache"
-
-    # List of package sources, in search order.
-    #
-    # Three protocols are supported:
-    #   - Local file
-    #   - HTTPS
-    #   - Git
-    sources = [
-      "file:///Users/me/test-registry",
-      "https://my.org/registry",
-      "git://github.com/mesosphere/universe.git"
-    ]
-"""
 import json
 import os
 import sys
@@ -68,11 +22,17 @@ def main():
         return 1
 
 
+def _doc():
+    return pkg_resources.resource_string(
+        'dcoscli',
+        'data/help/package.txt').decode('utf-8')
+
+
 def _main():
     util.configure_logger_from_environ()
 
     args = docopt.docopt(
-        __doc__,
+        _doc(),
         version='dcos-package version {}'.format(dcoscli.version))
     http.silence_requests_warnings()
 
@@ -103,8 +63,8 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['package', 'install'],
-            arg_keys=['<package_name>', '--options', '--app-id', '--cli',
-                      '--app', '--yes'],
+            arg_keys=['<package_name>', '--package-version', '--options',
+                      '--app-id', '--cli', '--app', '--yes'],
             function=_install),
 
         cmds.Command(
@@ -148,7 +108,7 @@ def _package(config_schema, info):
     elif info:
         _info()
     else:
-        emitter.publish(options.make_generic_usage_message(__doc__))
+        emitter.publish(options.make_generic_usage_message(_doc()))
         return 1
 
     return 0
@@ -161,7 +121,7 @@ def _info():
     :rtype: int
     """
 
-    emitter.publish(__doc__.split('\n')[0])
+    emitter.publish(_doc().split('\n')[0])
     return 0
 
 
@@ -215,22 +175,22 @@ def _describe(package_name, cli, app, options_path):
         raise DCOSException("Package [{}] not found".format(package_name))
 
     # TODO(CD): Make package version to describe configurable
-    pkg_version = pkg.latest_version()
-    pkg_json = pkg.package_json(pkg_version)
-    version_map = pkg.software_versions()
-    versions = [version_map[pkg_ver] for pkg_ver in version_map]
+    pkg_revision = pkg.latest_package_revision()
+    pkg_json = pkg.package_json(pkg_revision)
+    revision_map = pkg.package_revisions_map()
+    pkg_versions = list(revision_map.values())
 
     del pkg_json['version']
-    pkg_json['versions'] = versions
+    pkg_json['versions'] = pkg_versions
 
     if cli or app:
         user_options = _user_options(options_path)
-        options = pkg.options(pkg_version, user_options)
+        options = pkg.options(pkg_revision, user_options)
 
         if cli:
-            pkg_json['command'] = pkg.command_json(pkg_version, options)
+            pkg_json['command'] = pkg.command_json(pkg_revision, options)
         if app:
-            pkg_json['app'] = pkg.marathon_json(pkg_version, options)
+            pkg_json['app'] = pkg.marathon_json(pkg_revision, options)
 
     emitter.publish(pkg_json)
     return 0
@@ -277,11 +237,14 @@ def _confirm(prompt, yes):
                     "'{}' is not a valid response.".format(response))
 
 
-def _install(package_name, options_path, app_id, cli, app, yes):
+def _install(package_name, package_version, options_path, app_id, cli, app,
+             yes):
     """Install the specified package.
 
     :param package_name: the package to install
     :type package_name: str
+    :param package_version: package version to install
+    :type package_version: str
     :param options_path: path to file containing option values
     :type options_path: str
     :param app_id: app ID for installation of this package
@@ -309,10 +272,15 @@ def _install(package_name, options_path, app_id, cli, app, yes):
               "repositories"
         raise DCOSException(msg)
 
-    # TODO(CD): Make package version to install configurable
-    pkg_version = pkg.latest_version()
+    pkg_revision = pkg.latest_package_revision(package_version)
+    if pkg_revision is None:
+        msg = "Package [{}] not available".format(package_name)
+        if package_version is not None:
+            msg += " with version {}".format(package_version)
+        raise DCOSException(msg)
 
-    pre_install_notes = pkg.package_json(pkg_version).get('preInstallNotes')
+    pkg_json = pkg.package_json(pkg_revision)
+    pre_install_notes = pkg_json.get('preInstallNotes')
     if pre_install_notes:
         emitter.publish(pre_install_notes)
         if not _confirm('Continue installing?', yes):
@@ -321,35 +289,36 @@ def _install(package_name, options_path, app_id, cli, app, yes):
 
     user_options = _user_options(options_path)
 
-    options = pkg.options(pkg_version, user_options)
+    options = pkg.options(pkg_revision, user_options)
 
-    if app and pkg.has_marathon_definition(pkg_version):
+    revision_map = pkg.package_revisions_map()
+    package_version = revision_map.get(pkg_revision)
+
+    if app and pkg.has_marathon_definition(pkg_revision):
         # Install in Marathon
-        version_map = pkg.software_versions()
-        sw_version = version_map.get(pkg_version, '?')
-
-        message = 'Installing package [{}] version [{}]'.format(
-            pkg.name(), sw_version)
+        msg = 'Installing Marathon app for package [{}] version [{}]'.format(
+            pkg.name(), package_version)
         if app_id is not None:
-            message += ' with app id [{}]'.format(app_id)
+            msg += ' with app id [{}]'.format(app_id)
 
-        emitter.publish(message)
+        emitter.publish(msg)
 
         init_client = marathon.create_client(config)
 
         package.install_app(
             pkg,
-            pkg_version,
+            pkg_revision,
             init_client,
             options,
             app_id)
 
-    if cli and pkg.has_command_definition(pkg_version):
+    if cli and pkg.has_command_definition(pkg_revision):
         # Install subcommand
-        emitter.publish('Installing CLI subcommand for package [{}]'.format(
-            pkg.name()))
+        msg = 'Installing CLI subcommand for package [{}] version [{}]'.format(
+            pkg.name(), package_version)
+        emitter.publish(msg)
 
-        subcommand.install(pkg, pkg_version, options)
+        subcommand.install(pkg, pkg_revision, options)
 
         subcommand_paths = subcommand.get_package_commands(package_name)
         new_commands = [os.path.basename(p).replace('-', ' ', 1)
@@ -361,7 +330,7 @@ def _install(package_name, options_path, app_id, cli, app, yes):
             emitter.publish("New command{} available: {}".format(plural,
                                                                  commands))
 
-    post_install_notes = pkg.package_json(pkg_version).get('postInstallNotes')
+    post_install_notes = pkg_json.get('postInstallNotes')
     if post_install_notes:
         emitter.publish(post_install_notes)
 

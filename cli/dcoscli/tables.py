@@ -265,6 +265,7 @@ def package_table(packages):
 
     fields = OrderedDict([
         ('NAME', lambda p: p['name']),
+        ('VERSION', lambda p: p['version']),
         ('APP',
          lambda p: '\n'.join(p['apps']) if p.get('apps') else EMPTY_ENTRY),
         ('COMMAND',
@@ -274,6 +275,7 @@ def package_table(packages):
 
     tb = util.table(fields, packages, sortby="NAME")
     tb.align['NAME'] = 'l'
+    tb.align['VERSION'] = 'l'
     tb.align['APP'] = 'l'
     tb.align['COMMAND'] = 'l'
     tb.align['DESCRIPTION'] = 'l'
