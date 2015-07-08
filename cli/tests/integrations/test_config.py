@@ -72,7 +72,7 @@ def test_version():
 
 
 def test_list_property(env):
-    stdout = b"""core.dcos_url=http://172.17.8.101
+    stdout = b"""core.dcos_url=http://change.dcos.url
 core.email=test@mail.com
 core.reporting=False
 package.cache=tmp/cache
@@ -85,7 +85,7 @@ version-1.x.zip']
 
 
 def test_get_existing_string_property(env):
-    _get_value('core.dcos_url', 'http://172.17.8.101', env)
+    _get_value('core.dcos_url', 'http://change.dcos.url', env)
 
 
 def test_get_existing_boolean_property(env):
@@ -110,9 +110,9 @@ def test_get_top_property(env):
 
 
 def test_set_existing_string_property(env):
-    _set_value('core.dcos_url', 'http://172.17.8.101:5081', env)
-    _get_value('core.dcos_url', 'http://172.17.8.101:5081', env)
-    _set_value('core.dcos_url', 'http://172.17.8.101', env)
+    _set_value('core.dcos_url', 'http://change.dcos.url:5081', env)
+    _get_value('core.dcos_url', 'http://change.dcos.url:5081', env)
+    _set_value('core.dcos_url', 'http://change.dcos.url', env)
 
 
 def test_set_existing_boolean_property(env):
@@ -321,7 +321,7 @@ def test_set_core_property(env):
 
 def test_url_validation(env):
     key = 'core.dcos_url'
-    default_value = 'http://172.17.8.101'
+    default_value = 'http://change.dcos.url'
 
     _set_value(key, 'http://localhost', env)
     _set_value(key, 'https://localhost', env)
