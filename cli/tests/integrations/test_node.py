@@ -13,13 +13,14 @@ def test_help():
 
 Usage:
     dcos node --info
-    dcos node [--json]
+    dcos node [--json --colors]
     dcos node log [--follow --lines=N --master --slave=<slave-id>]
 
 Options:
     -h, --help            Show this screen
     --info                Show a short description of this subcommand
     --json                Print json-formatted nodes
+    --colors              Json syntax highlighting
     --follow              Output data as the file grows
     --lines=N             Output the last N lines [default: 10]
     --master              Output the leading master's Mesos log

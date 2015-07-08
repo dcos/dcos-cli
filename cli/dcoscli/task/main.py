@@ -2,7 +2,7 @@
 
 Usage:
     dcos task --info
-    dcos task [--completed --json <task>]
+    dcos task [--completed --json <task> --colors]
     dcos task log [--completed --follow --lines=N] <task> [<file>]
 
 Options:
@@ -11,6 +11,7 @@ Options:
     --completed   Include completed tasks as well
     --follow      Output data as the file grows
     --json        Print json-formatted tasks
+    --colors      Json syntax highlighting
     --lines=N     Output the last N lines [default: 10]
     --version     Show version
 
@@ -70,7 +71,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['task'],
-            arg_keys=['<task>', '--completed', '--json'],
+            arg_keys=['<task>', '--completed', '--json', '--colors'],
             function=_task),
     ]
 
@@ -86,7 +87,7 @@ def _info():
     return 0
 
 
-def _task(fltr, completed, json_):
+def _task(fltr, completed, json_, colors):
     """List DCOS tasks
 
     :param fltr: task id filter
@@ -96,8 +97,12 @@ def _task(fltr, completed, json_):
     :param json_: If True, output json.  Otherwise, output a human
                   readable table.
     :type json_: bool
+    :param colors: Json syntax highlighting if True
+    :type colors: bool
     :returns: process return code
     """
+
+    util.check_if_colors_allowed(json_, colors)
 
     if fltr is None:
         fltr = ""
@@ -106,7 +111,7 @@ def _task(fltr, completed, json_):
                    key=lambda task: task['name'])
 
     if json_:
-        emitter.publish([task.dict() for task in tasks])
+        emitter.publish([task.dict() for task in tasks], colors)
     else:
         table = tables.task_table(tasks)
         output = str(table)

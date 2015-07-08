@@ -28,7 +28,7 @@ class Emitter(object):
     """Abstract class for emitting events."""
 
     @abc.abstractmethod
-    def publish(self, event):
+    def publish(self, event, color_flag):
         """Publishes an event.
 
         :param event: event to publish
@@ -53,17 +53,17 @@ class FlatEmitter(Emitter):
         else:
             self._handler = handler
 
-    def publish(self, event):
+    def publish(self, event, colors=False):
         """Publishes an event.
 
         :param event: event to publish
         :type event: any
         """
 
-        self._handler(event)
+        self._handler(event, colors)
 
 
-def print_handler(event):
+def print_handler(event, colors):
     """Default handler for printing event to stdout.
 
     :param event: event to emit to stdout
@@ -86,7 +86,7 @@ def print_handler(event):
           isinstance(event, collections.Sequence) or isinstance(event, bool) or
           isinstance(event, six.integer_types) or isinstance(event, float)):
         # These are all valid JSON types let's treat them different
-        processed_json = _process_json(event, pager_command)
+        processed_json = _process_json(event, pager_command, colors)
         _page(processed_json, pager_command)
 
     elif isinstance(event, errors.DCOSException):
@@ -97,7 +97,7 @@ def print_handler(event):
         _page(event, pager_command)
 
 
-def publish_table(emitter, objs, table_fn, json_):
+def publish_table(emitter, objs, table_fn, json_, colors=False):
     """Publishes a json representation of `objs` if `json_` is True,
     otherwise, publishes a table representation.
 
@@ -113,7 +113,7 @@ def publish_table(emitter, objs, table_fn, json_):
     """
 
     if json_:
-        emitter.publish(objs)
+        emitter.publish(objs, colors)
     else:
         table = table_fn(objs)
         output = str(table)
@@ -121,7 +121,7 @@ def publish_table(emitter, objs, table_fn, json_):
             emitter.publish(output)
 
 
-def _process_json(event, pager_command):
+def _process_json(event, pager_command, colors):
     """Conditionally highlights the supplied JSON value.
 
     :param event: event to emit to stdout
@@ -136,10 +136,8 @@ def _process_json(event, pager_command):
     # Strip trailing whitespace
     json_output = re.sub(r'\s+$', '', json_output, 0, re.M)
 
-    force_colors = False  # TODO(CD): Introduce a --colors flag
-
     if not sys.stdout.isatty():
-        if force_colors:
+        if colors:
             return _highlight_json(json_output)
         else:
             return json_output
@@ -148,7 +146,7 @@ def _process_json(event, pager_command):
 
     pager_is_set = pager_command is not None
 
-    should_highlight = force_colors or supports_colors and not pager_is_set
+    should_highlight = colors and supports_colors and not pager_is_set
 
     if should_highlight:
         json_output = _highlight_json(json_output)

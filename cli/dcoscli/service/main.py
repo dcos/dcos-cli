@@ -2,7 +2,7 @@
 
 Usage:
     dcos service --info
-    dcos service [--inactive --json]
+    dcos service [--inactive --json --colors]
     dcos service shutdown <service-id>
 
 Options:
@@ -11,6 +11,8 @@ Options:
     --info        Show a short description of this subcommand
 
     --json        Print json-formatted services
+
+    --colors      Json syntax highlighting
 
     --inactive    Show inactive services in addition to active ones.
                   Inactive services are those that have been disconnected from
@@ -69,7 +71,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['service'],
-            arg_keys=['--inactive', '--json'],
+            arg_keys=['--inactive', '--json', '--colors'],
             function=_service),
     ]
 
@@ -87,7 +89,7 @@ def _info():
 
 # TODO (mgummelt): support listing completed services as well.
 # blocked on framework shutdown.
-def _service(inactive, is_json):
+def _service(inactive, is_json, colors):
     """List dcos services
 
     :param inactive: If True, include completed tasks
@@ -95,14 +97,18 @@ def _service(inactive, is_json):
     :param is_json: If true, output json.
         Otherwise, output a human readable table.
     :type is_json: bool
+    :param colors: Json syntax highlighting if True
+    :type colors: bool
     :returns: process return code
     :rtype: int
     """
 
+    util.check_if_colors_allowed(is_json, colors)
+
     services = mesos.get_master().frameworks(inactive=inactive)
 
     if is_json:
-        emitter.publish([service.dict() for service in services])
+        emitter.publish([service.dict() for service in services], colors)
     else:
         table = tables.service_table(services)
         output = str(table)

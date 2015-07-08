@@ -7,7 +7,8 @@ Usage:
     dcos package install [--cli | [--app --app-id=<app_id>]]
                          [--options=<file> --yes] <package_name>
     dcos package list [--json --endpoints --app-id=<app-id> <package_name>]
-    dcos package search [--json <query>]
+                      [--colors]
+    dcos package search [--json <query> --colors]
     dcos package sources
     dcos package uninstall [--cli | [--app --app-id=<app-id> --all]]
                  <package_name>
@@ -109,12 +110,13 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['package', 'list'],
-            arg_keys=['--json', '--endpoints', '--app-id', '<package_name>'],
+            arg_keys=['--json', '--endpoints', '--app-id', '<package_name>',
+                      '--colors'],
             function=_list),
 
         cmds.Command(
             hierarchy=['package', 'search'],
-            arg_keys=['--json', '<query>'],
+            arg_keys=['--json', '<query>', '--colors'],
             function=_search),
 
         cmds.Command(
@@ -367,7 +369,7 @@ def _install(package_name, options_path, app_id, cli, app, yes):
     return 0
 
 
-def _list(json_, endpoints, app_id, package_name):
+def _list(json_, endpoints, app_id, package_name, colors):
     """List installed apps
 
     :param json_: output json if True
@@ -379,9 +381,12 @@ def _list(json_, endpoints, app_id, package_name):
     :type app_id: str
     :param package_name: The package to show
     :type package_name: str
+    :param colors: Json syntax highlighting if True
+    :type colors: bool
     :returns: process return code
     :rtype: int
     """
+    util.check_if_colors_allowed(json_, colors)
 
     config = util.get_config()
     init_client = marathon.create_client(config)
@@ -403,7 +408,8 @@ def _list(json_, endpoints, app_id, package_name):
             results.append(pkg_info)
 
     if results or json_:
-        emitting.publish_table(emitter, results, tables.package_table, json_)
+        emitting.publish_table(emitter, results, tables.package_table, json_,
+                               colors)
     else:
         msg = ("There are currently no installed packages. "
                "Please use `dcos package install` to install a package.")
@@ -439,16 +445,21 @@ def _matches_app_id(app_id, pkg_info):
     return app_id is None or app_id in pkg_info.get('apps')
 
 
-def _search(json_, query):
+def _search(json_, query, colors):
     """Search for matching packages.
 
     :param json_: output json if True
     :type json_: bool
     :param query: The search term
     :type query: str
+    :param colors: Json syntax highlighting if True
+    :type colors: bool
     :returns: Process status
     :rtype: int
     """
+
+    util.check_if_colors_allowed(json_, colors)
+
     if not query:
         query = ''
 
@@ -459,7 +470,8 @@ def _search(json_, query):
     emitting.publish_table(emitter,
                            results,
                            tables.package_search_table,
-                           json_)
+                           json_,
+                           colors)
     return 0
 
 

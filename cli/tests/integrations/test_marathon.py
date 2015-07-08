@@ -19,7 +19,7 @@ Usage:
     dcos marathon --info
     dcos marathon about
     dcos marathon app add [<app-resource>]
-    dcos marathon app list [--json]
+    dcos marathon app list [--json --colors]
     dcos marathon app remove [--force] <app-id>
     dcos marathon app restart [--force] <app-id>
     dcos marathon app show [--app-version=<app-version>] <app-id>
@@ -27,15 +27,15 @@ Usage:
     dcos marathon app stop [--force] <app-id>
     dcos marathon app update [--force] <app-id> [<properties>...]
     dcos marathon app version list [--max-count=<max-count>] <app-id>
-    dcos marathon deployment list [--json <app-id>]
+    dcos marathon deployment list [--json <app-id> --colors]
     dcos marathon deployment rollback <deployment-id>
     dcos marathon deployment stop <deployment-id>
     dcos marathon deployment watch [--max-count=<max-count>]
          [--interval=<interval>] <deployment-id>
-    dcos marathon task list [--json <app-id>]
+    dcos marathon task list [--json <app-id> --colors]
     dcos marathon task show <task-id>
     dcos marathon group add [<group-resource>]
-    dcos marathon group list [--json]
+    dcos marathon group list [--json --colors]
     dcos marathon group show [--group-version=<group-version>] <group-id>
     dcos marathon group remove [--force] <group-id>
     dcos marathon group update [--force] <group-id> [<properties>...]
@@ -47,6 +47,8 @@ Options:
                                      subcommand
 
      --json                          Print json-formatted tasks
+
+     --colors                        Json syntax highlighting
 
     --version                        Show version
 
