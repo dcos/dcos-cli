@@ -148,12 +148,12 @@ def test_prepend_empty_list(env):
 def test_append_list(env):
     _append_value(
         'package.sources',
-        'new_uri',
+        'https://github.com/mesosphere/universe/archive/version-2.x.zip',
         env)
     _get_value(
         'package.sources',
         ['https://github.com/mesosphere/universe/archive/version-1.x.zip',
-         'new_uri'],
+         'https://github.com/mesosphere/universe/archive/version-2.x.zip'],
         env)
     _unset_value('package.sources', '1', env)
 
@@ -161,11 +161,11 @@ def test_append_list(env):
 def test_prepend_list(env):
     _prepend_value(
         'package.sources',
-        'new_uri',
+        'https://github.com/mesosphere/universe/archive/version-2.x.zip',
         env)
     _get_value(
         'package.sources',
-        ['new_uri',
+        ['https://github.com/mesosphere/universe/archive/version-2.x.zip',
          'https://github.com/mesosphere/universe/archive/version-1.x.zip'],
         env)
     _unset_value('package.sources', '0', env)
@@ -317,6 +317,111 @@ def test_set_core_property(env):
     _set_value('core.reporting', 'true', env)
     _get_value('core.reporting', True, env)
     _set_value('core.reporting', 'false', env)
+
+
+def test_url_validation(env):
+    key = 'core.dcos_url'
+    default_value = 'http://172.17.8.101'
+
+    _set_value(key, 'http://localhost', env)
+    _set_value(key, 'https://localhost', env)
+    _set_value(key, 'http://dcos-1234', env)
+    _set_value(key, 'http://dcos-1234.mydomain.com', env)
+
+    _set_value(key, 'http://localhost:5050', env)
+    _set_value(key, 'https://localhost:5050', env)
+    _set_value(key, 'http://mesos-1234:5050', env)
+    _set_value(key, 'http://mesos-1234.mydomain.com:5050', env)
+
+    _set_value(key, 'http://localhost:8080', env)
+    _set_value(key, 'https://localhost:8080', env)
+    _set_value(key, 'http://marathon-1234:8080', env)
+    _set_value(key, 'http://marathon-1234.mydomain.com:5050', env)
+
+    _set_value(key, default_value, env)
+
+
+def test_append_url_validation(env):
+    default_value = ('["https://github.com/mesosphere/universe/archive/'
+                     'version-1.x.zip"]')
+
+    _set_value('package.sources', '[]', env)
+    _append_value(
+        'package.sources',
+        'https://github.com/mesosphere/universe/archive/version-1.x.zip',
+        env)
+    _append_value(
+        'package.sources',
+        'git@github.com:mesosphere/test.git',
+        env)
+    _append_value(
+        'package.sources',
+        'https://github.com/mesosphere/test.git',
+        env)
+    _append_value(
+        'package.sources',
+        'file://some-domain.com/path/to/file.extension',
+        env)
+    _append_value(
+        'package.sources',
+        'file:///path/to/file.extension',
+        env)
+    _set_value('package.sources', default_value, env)
+
+
+def test_prepend_url_validation(env):
+    default_value = ('["https://github.com/mesosphere/universe/archive/'
+                     'version-1.x.zip"]')
+
+    _set_value('package.sources', '[]', env)
+    _prepend_value(
+        'package.sources',
+        'https://github.com/mesosphere/universe/archive/version-1.x.zip',
+        env)
+    _prepend_value(
+        'package.sources',
+        'git@github.com:mesosphere/test.git',
+        env)
+    _prepend_value(
+        'package.sources',
+        'https://github.com/mesosphere/test.git',
+        env)
+    _prepend_value(
+        'package.sources',
+        'file://some-domain.com/path/to/file.extension',
+        env)
+    _prepend_value(
+        'package.sources',
+        'file:///path/to/file.extension',
+        env)
+    _set_value('package.sources', default_value, env)
+
+
+def test_fail_url_validation(env):
+    _fail_url_validation('set', 'core.dcos_url', 'http://bad_domain/', env)
+
+
+def test_bad_port_fail_url_validation(env):
+    _fail_url_validation('set', 'core.dcos_url',
+                         'http://localhost:bad_port/', env)
+
+
+def test_append_fail_url_validation(env):
+    _fail_url_validation('append', 'package.sources', 'bad_url', env)
+
+
+def test_prepend_fail_url_validation(env):
+    _fail_url_validation('prepend', 'package.sources', 'bad_url', env)
+
+
+def _fail_url_validation(command, key, value, env):
+    returncode_, stdout_, stderr_ = exec_command(
+        ['dcos', 'config', command, key, value], env=env)
+
+    assert returncode_ == 1
+    assert stdout_ == b''
+    assert stderr_.startswith(str(
+        'Error: {!r} does not match'.format(value)).encode('utf-8'))
 
 
 def _set_value(key, value, env):

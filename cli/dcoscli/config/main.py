@@ -170,8 +170,6 @@ def _set(name, value):
        (name == 'core.email'):
         analytics.segment_identify(toml_config)
 
-    _save_config_file(config_path, toml_config)
-
     _check_config(toml_config_pre, toml_config)
 
     _save_config_file(config_path, toml_config)
