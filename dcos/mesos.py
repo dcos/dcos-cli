@@ -26,7 +26,7 @@ def get_master():
     return Master(MesosClient().get_master_state())
 
 
-class MesosClient:
+class MesosClient(object):
     """Client for communicating with the Mesos master"""
 
     def __init__(self):
@@ -100,6 +100,72 @@ class MesosClient:
         url = self.master_url('master/state-summary')
         return http.get(url).json()
 
+    def slave_file_read(self, slave_id, path, offset, length):
+        """ See the master_file_read() docs
+
+        :param path: absolute path to read
+        :type path: str
+        :param offset: start byte location, or -1.  -1 means read no data, and
+                       is used to fetch the size of the file in the response's
+                       'offset' parameter.
+        :type offset: int
+        :param length: number of bytes to read, or -1.  -1 means read the whole
+                       file
+        :type length: int
+        :returns: files/read.json response
+        :rtype: dict
+        """
+
+        url = self.slave_url(slave_id, 'files/read.json')
+        params = {'path': path,
+                  'length': length,
+                  'offset': offset}
+        return http.get(url, params=params).json()
+
+    def master_file_read(self, path, length, offset):
+        """This endpoint isn't well documented anywhere, so here is the spec
+        derived from the mesos source code:
+
+        request format:
+        {
+            path: absolute path to read
+            offset: start byte location, or -1.  -1 means read no data, and
+                    is used to fetch the size of the file in the response's
+                    'offset' parameter.
+            length: number of bytes to read, or -1.  -1 means read the whole
+                    file.
+        }
+
+        response format:
+        {
+            data: file data.  Empty if a request.offset=-1.  Could be
+                  smaller than request.length if EOF was reached, or if (I
+                  believe) request.length is larger than the length
+                  supported by the server (16 pages I believe).
+
+            offset: the offset value from the request, or the size of the
+                    file if the request offset was -1 or >= the file size.
+        }
+
+        :param path: absolute path to read
+        :type path: str
+        :param offset: start byte location, or -1.  -1 means read no data, and
+                       is used to fetch the size of the file in the response's
+                       'offset' parameter.
+        :type offset: int
+        :param length: number of bytes to read, or -1.  -1 means read the whole
+                       file
+        :type length: int
+        :returns: files/read.json response
+        :rtype: dict
+        """
+
+        url = self.master_url('files/read.json')
+        params = {'path': path,
+                  'length': length,
+                  'offset': offset}
+        return http.get(url, params=params).json()
+
     def shutdown_framework(self, framework_id):
         """Shuts down a Mesos framework
 
@@ -164,7 +230,7 @@ class Master(object):
         slaves = self.slaves(fltr)
 
         if len(slaves) == 0:
-            raise DCOSException('Slave {} no longer exists'.format(fltr))
+            raise DCOSException('No slave found with ID "{}".'.format(fltr))
 
         elif len(slaves) > 1:
             matches = ['\t{0}'.format(slave.id) for slave in slaves]
@@ -530,40 +596,41 @@ class Task(object):
 
 
 class MesosFile(object):
-    """File-like object that is backed by a remote slave file.  Uses the
-    files/read.json endpoint.  This endpoint isn't well documented
-    anywhere, so here is the spec derived from the mesos source code:
+    """File-like object that is backed by a remote slave or master file.
+    Uses the files/read.json endpoint.
 
-    request format:
-    {
-       path: absolute path to read
-       offset: start byte location, or -1.  -1 means read no data, and
-               is used to fetch the size of the file in the response's
-               'offset' parameter.
-       length: number of bytes to read, or -1.  -1 means read the whole file.
-    }
+    If `task` is provided, the file host is `task.slave()`.  If
+    `slave` is provided, the file host is `slave`.  It is invalid to
+    provide both.  If neither is provided, the file host is the
+    leading master.
 
-    response format:
-    {
-      data: file data.  Empty if a request.offset=-1.  Could be
-            smaller than request.length if EOF was reached, or if (I
-            believe) request.length is larger than the length
-            supported by the server (16 pages I believe).
-
-      offset: the offset value from the request, or the size of the
-              file if the request offset was -1 or >= the file size.
-    }
-
-    :param task: file's task
-    :type task: Task
-    :param path: file's path, relative to the sandbox
+    :param path: file's path, relative to the sandbox if `task` is given
     :type path: str
+    :param task: file's task
+    :type task: Task | None
+    :param slave: slave where the file lives
+    :type slave: Slave | None
+    :param mesos_client: client to use for network requests
+    :type mesos_client: MesosClient | None
+
     """
 
-    def __init__(self, task, path, mesos_client):
+    def __init__(self, path, task=None, slave=None, mesos_client=None):
+        if task and slave:
+            raise ValueError(
+                "You cannot provide both `task` and `slave` " +
+                "arguments.  `slave` is understood to be `task.slave()`")
+
+        if slave:
+            self._slave = slave
+        elif task:
+            self._slave = task.slave()
+        else:
+            self._slave = None
+
         self._task = task
         self._path = path
-        self._mesos_client = mesos_client
+        self._mesos_client = mesos_client or MesosClient()
         self._cursor = 0
 
     def size(self):
@@ -635,11 +702,14 @@ class MesosFile(object):
         :rtype: str
         """
 
-        directory = self._task.directory()
-        if directory[-1] == '/':
-            return directory + self._path
+        if self._task:
+            directory = self._task.directory()
+            if directory[-1] == '/':
+                return directory + self._path
+            else:
+                return directory + '/' + self._path
         else:
-            return directory + '/' + self._path
+            return self._path
 
     def _params(self, length, offset=None):
         """GET parameters to send to files/read.json.  See the MesosFile
@@ -692,9 +762,11 @@ class MesosFile(object):
         :rtype: dict
         """
 
-        read_url = self._mesos_client.slave_url(self._task.slave()['id'],
-                                                'files/read.json')
-        return http.get(read_url, params=params).json()
+        if self._slave:
+            return self._mesos_client.slave_file_read(self._slave['id'],
+                                                      **params)
+        else:
+            return self._mesos_client.master_file_read(**params)
 
     def __str__(self):
         """String representation of the file: <task_id:file_path>
@@ -703,7 +775,12 @@ class MesosFile(object):
         :rtype: str
         """
 
-        return "{0}:{1}".format(self._task['id'], self._path)
+        if self._task:
+            return "task:{0}:{1}".format(self._task['id'], self._path)
+        elif self._slave:
+            return "slave:{0}:{1}".format(self._slave['id'], self._path)
+        else:
+            return "master:{0}".format(self._path)
 
 
 def parse_pid(pid):
