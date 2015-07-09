@@ -570,3 +570,18 @@ def stream(fn, objs):
 
 
 logger = get_logger(__name__)
+
+
+def get_proxy_dict_from_env():
+    """ Returns dict with proxy parameters
+
+    :returns: Dict with proxy parameters
+    :rtype: dict
+    """
+
+    proxies = dict()
+
+    for name, value in os.environ.items():
+        if value and (name == 'http_proxy' or name == 'https_proxy'):
+            proxies[name] = value
+    return proxies

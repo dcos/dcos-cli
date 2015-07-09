@@ -51,7 +51,8 @@ import sys
 import dcoscli
 import docopt
 import pkg_resources
-from dcos import cmds, emitting, marathon, options, package, subcommand, util
+from dcos import (cmds, emitting, http, marathon, options, package, subcommand,
+                  util)
 from dcos.errors import DCOSException
 from dcoscli import tables
 
@@ -73,6 +74,7 @@ def _main():
     args = docopt.docopt(
         __doc__,
         version='dcos-package version {}'.format(dcoscli.version))
+    http.silence_requests_warnings()
 
     return cmds.execute(_cmds(), args)
 

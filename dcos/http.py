@@ -83,7 +83,8 @@ def request(method,
             request.headers)
 
         with requests.Session() as session:
-            response = session.send(request.prepare(), timeout=timeout)
+            response = session.send(request.prepare(), timeout=timeout,
+                                    proxies=util.get_proxy_dict_from_env())
     except Exception as ex:
         raise to_exception(ex)
 

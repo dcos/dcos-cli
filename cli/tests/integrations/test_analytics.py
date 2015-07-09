@@ -2,9 +2,8 @@ import os
 from functools import wraps
 
 import dcoscli.analytics
-import requests
 import rollbar
-from dcos import constants, util
+from dcos import constants, http, util
 from dcoscli.analytics import _base_properties
 from dcoscli.config.main import main as config_main
 from dcoscli.constants import (ROLLBAR_SERVER_POST_KEY,
@@ -26,7 +25,7 @@ def _mock(fn):
     def wrapper(*args, **kwargs):
         with patch('rollbar.init'), \
                 patch('rollbar.report_message'), \
-                patch('requests.post'), \
+                patch('dcos.http.post'), \
                 patch('dcoscli.analytics.session_id'):
 
             dcoscli.analytics.session_id = ANON_ID
@@ -49,7 +48,7 @@ def test_production_setting_true():
     with patch('sys.argv', args), patch.dict(os.environ, env):
         assert main() == 0
 
-        _, kwargs = requests.post.call_args_list[0]
+        _, kwargs = http.post.call_args_list[0]
         assert kwargs['auth'].username == SEGMENT_IO_WRITE_KEY_PROD
 
         rollbar.init.assert_called_with(ROLLBAR_SERVER_POST_KEY, 'prod')
@@ -69,7 +68,7 @@ def test_production_setting_false():
     with patch('sys.argv', args), patch.dict(os.environ, env):
         assert main() == 0
 
-        _, kwargs = requests.post.call_args_list[0]
+        _, kwargs = http.post.call_args_list[0]
         assert kwargs['auth'].username == SEGMENT_IO_WRITE_KEY_DEV
 
         rollbar.init.assert_called_with(ROLLBAR_SERVER_POST_KEY, 'dev')
@@ -87,7 +86,7 @@ def test_config_set():
         assert config_main() == 0
 
         # segment.io
-        assert mock_called_some_args(requests.post,
+        assert mock_called_some_args(http.post,
                                      '{}/identify'.format(SEGMENT_URL),
                                      json={'userId': 'test@mail.com'},
                                      timeout=1)
@@ -110,7 +109,7 @@ def test_no_exc():
         data = {'userId': USER_ID,
                 'event': SEGMENT_IO_CLI_EVENT,
                 'properties': _base_properties()}
-        assert mock_called_some_args(requests.post,
+        assert mock_called_some_args(http.post,
                                      '{}/track'.format(SEGMENT_URL),
                                      json=data,
                                      timeout=1)
@@ -143,7 +142,7 @@ def test_exc():
                 'event': SEGMENT_IO_CLI_ERROR_EVENT,
                 'properties': props}
 
-        assert mock_called_some_args(requests.post,
+        assert mock_called_some_args(http.post,
                                      '{}/track'.format(SEGMENT_URL),
                                      json=data,
                                      timeout=1)
@@ -171,7 +170,7 @@ def test_config_reporting_false():
         assert main() == 1
 
         assert rollbar.report_message.call_count == 0
-        assert requests.post.call_count == 0
+        assert http.post.call_count == 0
 
 
 def _env_reporting():
