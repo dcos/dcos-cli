@@ -71,7 +71,7 @@ Options:
 Positional Arguments:
     <app-id>                    The application id
 
-    <app-resource>              Path to a file containing the app's JSON
+    <app-resource>              Path to a file or URL containing the app's JSON
                                 definition. If omitted, the definition is read
                                 from stdin. For a detailed description see
                                 (https://mesosphere.github.io/
@@ -81,9 +81,9 @@ Positional Arguments:
 
     <group-id>                  The group id
 
-    <group-resource>            Path to a file containing the group's JSON
-                                definition. If omitted, the definition is read
-                                from stdin. For a detailed description see
+    <group-resource>            Path to a file or URL containing the group's
+                                JSON definition. If omitted, the definition is
+                                read from stdin. For a detailed description see
                                 (https://mesosphere.github.io/
                                 marathon/docs/rest-api.html#post-/v2/groups).
 
@@ -299,8 +299,12 @@ def _get_resource(resource):
     :rtype: dict
     """
     if resource is not None:
-        with util.open_file(resource) as resource_file:
-            return util.load_json(resource_file)
+        if resource.startswith('http'):
+            with util.open_url(resource) as resource_file:
+                return util.load_jsons(resource_file.read().decode('utf-8'))
+        else:
+            with util.open_file(resource) as resource_file:
+                return util.load_json(resource_file)
 
     # Check that stdin is not tty
     if sys.stdin.isatty():

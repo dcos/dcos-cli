@@ -18,6 +18,8 @@ import six
 from dcos import constants
 from dcos.errors import DCOSException
 
+from six.moves.urllib.request import urlopen
+
 
 def get_logger(name):
     """Get a logger
@@ -526,6 +528,28 @@ def open_file(path,  *args):
         yield file_
     except IOError as e:
         raise io_exception(path, e.errno)
+
+    file_.close()
+
+
+@contextlib.contextmanager
+def open_url(url,  *args):
+    """Context manager that reads from a url, and raises a DCOSException if
+    it fails.
+
+    :param url: url
+    :type url: str
+    :param *args: other arguments to pass to `urlopen`
+    :type *args: [str]
+    :returns: a context manager
+    :rtype: context manager
+    """
+
+    try:
+        file_ = urlopen(url, *args)
+        yield file_
+    except IOError:
+        raise DCOSException('Error reading from url: {}'.format(url))
 
     file_.close()
 
