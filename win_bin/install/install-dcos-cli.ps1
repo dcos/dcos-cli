@@ -78,8 +78,6 @@ if ($env:DCOS_CLI_VERSION) {
   & $installation_path\Scripts\pip install --quiet "dcoscli"
 }
 
-
-[Environment]::SetEnvironmentVariable("Path", "$installation_path\Scripts\;", "User")
 $env:Path="$env:Path;$installation_path\Scripts\"
 
 $DCOS_CONFIG="$env:USERPROFILE\.dcos\dcos.toml"
