@@ -71,9 +71,10 @@ Options:
 Positional Arguments:
     <app-id>                    The application id
 
-    <app-resource>              Path to a file containing the app's JSON
-                                definition. If omitted, the definition is read
-                                from stdin. For a detailed description see
+    <app-resource>              Path to a file or HTTP(S) URL containing
+                                the app's JSON definition. If omitted,
+                                the definition is read from stdin. For a
+                                detailed description see
                                 (https://mesosphere.github.io/
                                 marathon/docs/rest-api.html#post-/v2/apps).
 
@@ -81,9 +82,10 @@ Positional Arguments:
 
     <group-id>                  The group id
 
-    <group-resource>            Path to a file containing the group's JSON
-                                definition. If omitted, the definition is read
-                                from stdin. For a detailed description see
+    <group-resource>            Path to a file or HTTP(S) URL containing
+                                the group's JSON definition. If omitted,
+                                the definition is read from stdin. For a
+                                detailed description see
                                 (https://mesosphere.github.io/
                                 marathon/docs/rest-api.html#post-/v2/groups).
 
@@ -96,13 +98,14 @@ Positional Arguments:
     <task-id>                   The task id
 """
 import json
+import os
 import sys
 import time
 
 import dcoscli
 import docopt
 import pkg_resources
-from dcos import cmds, emitting, jsonitem, marathon, options, util
+from dcos import cmds, emitting, http, jsonitem, marathon, options, util
 from dcos.errors import DCOSException
 from dcoscli import tables
 
@@ -293,14 +296,31 @@ def _about():
 
 def _get_resource(resource):
     """
-    :param resource: optional filename for the application or group resource
+    :param resource: optional filename or http(s) url
+    for the application or group resource
     :type resource: str
     :returns: resource
     :rtype: dict
     """
     if resource is not None:
-        with util.open_file(resource) as resource_file:
-            return util.load_json(resource_file)
+        if os.path.isfile(resource):
+            with util.open_file(resource) as resource_file:
+                return util.load_json(resource_file)
+        else:
+            try:
+                http.silence_requests_warnings()
+                req = http.get(resource)
+                if req.status_code == 200:
+                    data = b''
+                    for chunk in req.iter_content(1024):
+                        data += chunk
+                    return util.load_jsons(data.decode('utf-8'))
+                else:
+                    raise Exception
+            except Exception:
+                raise DCOSException(
+                    "Can't read from resource: {0}.\n"
+                    "Please check that it exists.".format(resource))
 
     # Check that stdin is not tty
     if sys.stdin.isatty():
