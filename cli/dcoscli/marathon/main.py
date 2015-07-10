@@ -656,7 +656,7 @@ def _clean_up_resource_definition(properties):
         if v:
             if k in ["apps", "groups"]:
                 clean_properties[k] = [_clean_up_resource_definition(v[0])]
-            # Remove fields that marathon adds. These aren’t in the json-schema
+            # Remove fields that marathon adds. These aren't in the json-schema
             # because a user should not specify them. When we do a `get` to see
             # the current schema, we may see these fields, but leaving them
             # will cause us to unnecessarily fail the schema validation.
