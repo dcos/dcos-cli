@@ -103,10 +103,12 @@ def _segment_request(path, data):
         SEGMENT_IO_WRITE_KEY_DEV
 
     try:
+        # Set both the connect timeout and the request timeout to 1s,
+        # to prevent rollbar from hanging the CLI commands
         http.post('{}/{}'.format(SEGMENT_URL, path),
                   json=data,
                   auth=HTTPBasicAuth(key, ''),
-                  timeout=1)
+                  timeout=(1, 1))
     except Exception as e:
         logger.exception(e)
 

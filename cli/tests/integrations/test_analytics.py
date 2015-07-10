@@ -89,7 +89,7 @@ def test_config_set():
         assert mock_called_some_args(http.post,
                                      '{}/identify'.format(SEGMENT_URL),
                                      json={'userId': 'test@mail.com'},
-                                     timeout=1)
+                                     timeout=(1, 1))
 
 
 @_mock
@@ -112,7 +112,7 @@ def test_no_exc():
         assert mock_called_some_args(http.post,
                                      '{}/track'.format(SEGMENT_URL),
                                      json=data,
-                                     timeout=1)
+                                     timeout=(1, 1))
 
         # rollbar
         assert rollbar.report_message.call_count == 0
@@ -145,7 +145,7 @@ def test_exc():
         assert mock_called_some_args(http.post,
                                      '{}/track'.format(SEGMENT_URL),
                                      json=data,
-                                     timeout=1)
+                                     timeout=(1, 1))
 
         # rollbar
         props = _base_properties()
