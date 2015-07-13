@@ -1,10 +1,12 @@
 import contextlib
 import json
 import os
+import threading
 
 from dcos import constants
 
 import pytest
+from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 from .common import (app, assert_command, assert_lines, exec_command,
                      list_deployments, show_app, watch_all_deployments,
@@ -85,9 +87,10 @@ Options:
 Positional Arguments:
     <app-id>                    The application id
 
-    <app-resource>              Path to a file containing the app's JSON
-                                definition. If omitted, the definition is read
-                                from stdin. For a detailed description see
+    <app-resource>              Path to a file or HTTP(S) URL containing
+                                the app's JSON definition. If omitted,
+                                the definition is read from stdin. For a
+                                detailed description see
                                 (https://mesosphere.github.io/
                                 marathon/docs/rest-api.html#post-/v2/apps).
 
@@ -95,9 +98,10 @@ Positional Arguments:
 
     <group-id>                  The group id
 
-    <group-resource>            Path to a file containing the group's JSON
-                                definition. If omitted, the definition is read
-                                from stdin. For a detailed description see
+    <group-resource>            Path to a file or HTTP(S) URL containing
+                                the group's JSON definition. If omitted,
+                                the definition is read from stdin. For a
+                                detailed description see
                                 (https://mesosphere.github.io/
                                 marathon/docs/rest-api.html#post-/v2/groups).
 
@@ -160,6 +164,19 @@ def test_empty_list():
 def test_add_app():
     with _zero_instance_app():
         _list_apps('zero-instance-app')
+
+
+def test_add_app_through_http():
+    with _zero_instance_app_through_http():
+        _list_apps('zero-instance-app')
+
+
+def test_add_app_bad_resource():
+    stderr = (b'Can\'t read from resource: bad_resource.\n'
+              b'Please check that it exists.\n')
+    assert_command(['dcos', 'marathon', 'app', 'add', 'bad_resource'],
+                   returncode=1,
+                   stderr=stderr)
 
 
 def test_add_app_with_filename():
@@ -697,3 +714,29 @@ def _zero_instance_app():
     with app('tests/data/marathon/apps/zero_instance_sleep.json',
              'zero-instance-app'):
         yield
+
+
+@contextlib.contextmanager
+def _zero_instance_app_through_http():
+    class JSONRequestHandler (BaseHTTPRequestHandler):
+
+        def do_GET(self):
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            self.wfile.write(open(
+                'tests/data/marathon/apps/zero_instance_sleep.json',
+                'rb').read())
+
+    host = 'localhost'
+    port = 12345
+    server = HTTPServer((host, port), JSONRequestHandler)
+    thread = threading.Thread(target=server.serve_forever)
+    thread.setDaemon(True)
+    thread.start()
+
+    with app('http://{}:{}'.format(host, port), 'zero-instance-app'):
+        try:
+            yield
+        finally:
+            server.shutdown()
