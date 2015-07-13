@@ -21,7 +21,7 @@ def test_help():
 
 Usage:
     dcos service --info
-    dcos service [--inactive --json]
+    dcos service [--inactive --json --colors]
     dcos service shutdown <service-id>
 
 Options:
@@ -30,6 +30,8 @@ Options:
     --info        Show a short description of this subcommand
 
     --json        Print json-formatted services
+
+    --colors      Json syntax highlighting
 
     --inactive    Show inactive services in addition to active ones.
                   Inactive services are those that have been disconnected from

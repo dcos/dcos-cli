@@ -5,7 +5,7 @@ Usage:
     dcos marathon --info
     dcos marathon about
     dcos marathon app add [<app-resource>]
-    dcos marathon app list [--json]
+    dcos marathon app list [--json --colors]
     dcos marathon app remove [--force] <app-id>
     dcos marathon app restart [--force] <app-id>
     dcos marathon app show [--app-version=<app-version>] <app-id>
@@ -14,15 +14,15 @@ Usage:
     dcos marathon app update [--force] <app-id> [<properties>...]
     dcos marathon app scale [--force] <app-id> <instances>
     dcos marathon app version list [--max-count=<max-count>] <app-id>
-    dcos marathon deployment list [--json <app-id>]
+    dcos marathon deployment list [--json <app-id> --colors]
     dcos marathon deployment rollback <deployment-id>
     dcos marathon deployment stop <deployment-id>
     dcos marathon deployment watch [--max-count=<max-count>]
          [--interval=<interval>] <deployment-id>
-    dcos marathon task list [--json <app-id>]
+    dcos marathon task list [--json <app-id> --colors]
     dcos marathon task show <task-id>
     dcos marathon group add [<group-resource>]
-    dcos marathon group list [--json]
+    dcos marathon group list [--json --colors]
     dcos marathon group show [--group-version=<group-version>] <group-id>
     dcos marathon group remove [--force] <group-id>
     dcos marathon group update [--force] <group-id> [<properties>...]
@@ -35,6 +35,8 @@ Options:
                                      subcommand
 
      --json                          Print json-formatted tasks
+
+     --colors                        Json syntax highlighting
 
     --version                        Show version
 
@@ -149,7 +151,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['marathon', 'deployment', 'list'],
-            arg_keys=['<app-id>', '--json'],
+            arg_keys=['<app-id>', '--json', '--colors'],
             function=_deployment_list),
 
         cmds.Command(
@@ -169,7 +171,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['marathon', 'task', 'list'],
-            arg_keys=['<app-id>', '--json'],
+            arg_keys=['<app-id>', '--json', '--colors'],
             function=_task_list),
 
         cmds.Command(
@@ -184,7 +186,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['marathon', 'app', 'list'],
-            arg_keys=['--json'],
+            arg_keys=['--json', '--colors'],
             function=_list),
 
         cmds.Command(
@@ -229,7 +231,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['marathon', 'group', 'list'],
-            arg_keys=['--json'],
+            arg_keys=['--json', '--colors'],
             function=_group_list),
 
         cmds.Command(
@@ -383,19 +385,23 @@ def _add(app_resource):
     return 0
 
 
-def _list(json_):
+def _list(json_, colors):
     """
     :param json_: output json if True
     :type json_: bool
+    :param colors: Json syntax highlighting if True
+    :type colors: bool
     :returns: process return code
     :rtype: int
     """
+
+    util.check_if_colors_allowed(json_, colors)
 
     client = marathon.create_client()
     apps = client.get_apps()
 
     if json_:
-        emitter.publish(apps)
+        emitter.publish(apps, colors)
     else:
         deployments = client.get_deployments()
         table = tables.app_table(apps, deployments)
@@ -406,18 +412,22 @@ def _list(json_):
     return 0
 
 
-def _group_list(json_):
+def _group_list(json_, colors):
     """
     :param json_: output json if True
     :type json_: bool
+    :param colors: Json syntax highlighting if True
+    :type colors: bool
     :rtype: int
     :returns: process return code
     """
 
+    util.check_if_colors_allowed(json_, colors)
+
     client = marathon.create_client()
     groups = client.get_groups()
 
-    emitting.publish_table(emitter, groups, tables.group_table, json_)
+    emitting.publish_table(emitter, groups, tables.group_table, json_, colors)
     return 0
 
 
@@ -823,15 +833,19 @@ def _version_list(app_id, max_count):
     return 0
 
 
-def _deployment_list(app_id, json_):
+def _deployment_list(app_id, json_, colors):
     """
     :param app_id: the application id
     :type app_id: str
     :param json_: output json if True
     :type json_: bool
+    :param colors: Json syntax highlighting if True
+    :type colors: bool
     :returns: process return code
     :rtype: int
     """
+
+    util.check_if_colors_allowed(json_, colors)
 
     client = marathon.create_client()
 
@@ -846,7 +860,7 @@ def _deployment_list(app_id, json_):
     emitting.publish_table(emitter,
                            deployments,
                            tables.deployment_table,
-                           json_)
+                           json_, colors)
     return 0
 
 
@@ -912,7 +926,7 @@ def _deployment_watch(deployment_id, max_count, interval):
     return 0
 
 
-def _task_list(app_id, json_):
+def _task_list(app_id, json_, colors):
     """
     :param app_id: the id of the application
     :type app_id: str
@@ -922,10 +936,13 @@ def _task_list(app_id, json_):
     :rtype: int
     """
 
+    util.check_if_colors_allowed(json_, colors)
+
     client = marathon.create_client()
     tasks = client.get_tasks(app_id)
 
-    emitting.publish_table(emitter, tasks, tables.app_task_table, json_)
+    emitting.publish_table(emitter, tasks, tables.app_task_table, json_,
+                           colors)
     return 0
 
 

@@ -2,13 +2,14 @@
 
 Usage:
     dcos node --info
-    dcos node [--json]
+    dcos node [--json --colors]
     dcos node log [--follow --lines=N --master --slave=<slave-id>]
 
 Options:
     -h, --help            Show this screen
     --info                Show a short description of this subcommand
     --json                Print json-formatted nodes
+    --colors              Json syntax highlighting
     --follow              Output data as the file grows
     --lines=N             Output the last N lines [default: 10]
     --master              Output the leading master's Mesos log
@@ -63,7 +64,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['node'],
-            arg_keys=['--json'],
+            arg_keys=['--json', '--colors'],
             function=_list),
     ]
 
@@ -79,20 +80,23 @@ def _info():
     return 0
 
 
-def _list(json_):
+def _list(json_, colors):
     """List dcos nodes
 
     :param json_: If true, output json.
         Otherwise, output a human readable table.
     :type json_: bool
     :returns: process return code
+    :param colors: Json syntax highlighting if True
+    :type colors: bool
     :rtype: int
     """
+    util.check_if_colors_allowed(json_, colors)
 
     client = mesos.MesosClient()
     slaves = client.get_state_summary()['slaves']
     if json_:
-        emitter.publish(slaves)
+        emitter.publish(slaves, colors)
     else:
         table = tables.slave_table(slaves)
         output = str(table)

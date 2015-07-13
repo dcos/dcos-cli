@@ -84,7 +84,8 @@ Usage:
     dcos package install [--cli | [--app --app-id=<app_id>]]
                          [--options=<file> --yes] <package_name>
     dcos package list [--json --endpoints --app-id=<app-id> <package_name>]
-    dcos package search [--json <query>]
+                      [--colors]
+    dcos package search [--json <query> --colors]
     dcos package sources
     dcos package uninstall [--cli | [--app --app-id=<app-id> --all]]
                  <package_name>

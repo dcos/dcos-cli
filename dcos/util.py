@@ -585,3 +585,17 @@ def get_proxy_dict_from_env():
         if value and (name == 'http_proxy' or name == 'https_proxy'):
             proxies[name] = value
     return proxies
+
+
+def check_if_colors_allowed(json_, colors):
+    """ Check if colors option is allowed
+
+    :param json_: json option
+    :type json_: boolean
+    :param colors: colors option
+    :type colors: boolean
+    """
+
+    if not json_ and colors:
+        msg = "Option \"--colors\" is allowed only with \"--json\" option"
+        raise DCOSException(msg)

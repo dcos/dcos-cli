@@ -30,7 +30,7 @@ def test_help():
 
 Usage:
     dcos task --info
-    dcos task [--completed --json <task>]
+    dcos task [--completed --json <task> --colors]
     dcos task log [--completed --follow --lines=N] <task> [<file>]
 
 Options:
@@ -39,6 +39,7 @@ Options:
     --completed   Include completed tasks as well
     --follow      Output data as the file grows
     --json        Print json-formatted tasks
+    --colors      Json syntax highlighting
     --lines=N     Output the last N lines [default: 10]
     --version     Show version
 
