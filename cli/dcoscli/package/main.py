@@ -450,10 +450,13 @@ def _search(json_, query):
     results = [index_entry.as_dict()
                for index_entry in package.search(query, config)]
 
-    emitting.publish_table(emitter,
-                           results,
-                           tables.package_search_table,
-                           json_)
+    if any(result['packages'] for result in results) or json_:
+        emitting.publish_table(emitter,
+                               results,
+                               tables.package_search_table,
+                               json_)
+    else:
+        raise DCOSException('No packages found.')
     return 0
 
 
