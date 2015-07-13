@@ -252,10 +252,10 @@ def test_log_completed():
 
 def test_log_master_unavailable():
     """ Test master's state.json being unavailable """
-    client = mesos.MesosClient()
+    client = mesos.DCOSClient()
     client.get_master_state = _mock_exception()
 
-    with patch('dcos.mesos.MesosClient', return_value=client):
+    with patch('dcos.mesos.DCOSClient', return_value=client):
         args = ['task', 'log', '_']
         assert_mock(main, args, returncode=1, stderr=(b"exception\n"))
 
@@ -263,10 +263,10 @@ def test_log_master_unavailable():
 def test_log_slave_unavailable():
     """ Test slave's state.json being unavailable """
     with app(SLEEP1, 'test-app', True):
-        client = mesos.MesosClient()
+        client = mesos.DCOSClient()
         client.get_slave_state = _mock_exception()
 
-        with patch('dcos.mesos.MesosClient', return_value=client):
+        with patch('dcos.mesos.DCOSClient', return_value=client):
             args = ['task', 'log', 'test-app']
             stderr = (b"""Error accessing slave: exception\n"""
                       b"""No matching tasks. Exiting.\n""")

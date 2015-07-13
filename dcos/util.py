@@ -108,6 +108,7 @@ def get_config():
     :rtype: Toml
     """
 
+    # avoid circular import
     from dcos import config
 
     return config.load_from_path(
@@ -128,13 +129,25 @@ def get_config_vals(config, keys):
 
     missing = [key for key in keys if key not in config]
     if missing:
-        msg = '\n'.join(
-            'Missing required config parameter: "{0}".'.format(key) +
-            '  Please run `dcos config set {0} <value>`.'.format(key)
-            for key in keys)
-        raise DCOSException(msg)
+        raise missing_config_exception(keys)
 
     return [config[key] for key in keys]
+
+
+def missing_config_exception(keys):
+    """ DCOSException for a missing config value
+
+    :param keys: keys in the config dict
+    :type keys: [str]
+    :returns: DCOSException
+    :rtype: DCOSException
+    """
+
+    msg = '\n'.join(
+        'Missing required config parameter: "{0}".'.format(key) +
+        '  Please run `dcos config set {0} <value>`.'.format(key)
+        for key in keys)
+    return DCOSException(msg)
 
 
 def which(program):

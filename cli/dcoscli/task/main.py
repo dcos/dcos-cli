@@ -170,7 +170,7 @@ def _mesos_files(completed, fltr, path):
     """
 
     # get tasks
-    client = mesos.MesosClient()
+    client = mesos.DCOSClient()
     master = mesos.Master(client.get_master_state())
     tasks = master.tasks(completed=completed, fltr=fltr)
 
