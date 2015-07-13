@@ -1,4 +1,5 @@
 import collections
+import fcntl
 import json
 import os
 import re
@@ -11,7 +12,6 @@ from dcos.errors import DCOSException
 from dcos.util import create_schema
 from dcoscli.task.main import _mesos_files, main
 
-import fcntl
 from mock import MagicMock, patch
 
 from ..fixtures.task import task_fixture
