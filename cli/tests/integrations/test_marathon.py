@@ -26,6 +26,7 @@ Usage:
     dcos marathon app start [--force] <app-id> [<instances>]
     dcos marathon app stop [--force] <app-id>
     dcos marathon app update [--force] <app-id> [<properties>...]
+    dcos marathon app scale [--force] <app-id> <instances>
     dcos marathon app version list [--max-count=<max-count>] <app-id>
     dcos marathon deployment list [--json <app-id>]
     dcos marathon deployment rollback <deployment-id>
@@ -39,6 +40,7 @@ Usage:
     dcos marathon group show [--group-version=<group-version>] <group-id>
     dcos marathon group remove [--force] <group-id>
     dcos marathon group update [--force] <group-id> [<properties>...]
+    dcos marathon group scale [--force] <group-id> <scale-factor>
 
 Options:
     -h, --help                       Show this screen
@@ -108,6 +110,8 @@ Positional Arguments:
                                 stdin.
 
     <task-id>                   The task id
+
+    <scale-factor>              The value of scale-factor for a group
 """
     assert_command(['dcos', 'marathon', '--help'],
                    stdout=stdout)

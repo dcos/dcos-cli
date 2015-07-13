@@ -12,6 +12,7 @@ Usage:
     dcos marathon app start [--force] <app-id> [<instances>]
     dcos marathon app stop [--force] <app-id>
     dcos marathon app update [--force] <app-id> [<properties>...]
+    dcos marathon app scale [--force] <app-id> <instances>
     dcos marathon app version list [--max-count=<max-count>] <app-id>
     dcos marathon deployment list [--json <app-id>]
     dcos marathon deployment rollback <deployment-id>
@@ -25,6 +26,7 @@ Usage:
     dcos marathon group show [--group-version=<group-version>] <group-id>
     dcos marathon group remove [--force] <group-id>
     dcos marathon group update [--force] <group-id> [<properties>...]
+    dcos marathon group scale [--force] <group-id> <scale-factor>
 
 Options:
     -h, --help                       Show this screen
@@ -94,6 +96,8 @@ Positional Arguments:
                                 stdin.
 
     <task-id>                   The task id
+
+    <scale-factor>              The value of scale-factor for a group
 """
 import json
 import sys
@@ -206,6 +210,11 @@ def _cmds():
             function=_update),
 
         cmds.Command(
+            hierarchy=['marathon', 'app', 'scale'],
+            arg_keys=['<app-id>', '<instances>', '--force'],
+            function=_scale),
+
+        cmds.Command(
             hierarchy=['marathon', 'app', 'restart'],
             arg_keys=['<app-id>', '--force'],
             function=_restart),
@@ -234,6 +243,11 @@ def _cmds():
             hierarchy=['marathon', 'group', 'update'],
             arg_keys=['<group-id>', '<properties>', '--force'],
             function=_group_update),
+
+        cmds.Command(
+            hierarchy=['marathon', 'group', 'scale'],
+            arg_keys=['<group-id>', '<scale-factor>', '--force'],
+            function=_group_scale),
 
         cmds.Command(
             hierarchy=['marathon', 'about'],
@@ -618,6 +632,44 @@ def _update(app_id, properties, force):
 
     deployment = client.update_app(app_id, app_resource, force)
 
+    emitter.publish('Created deployment {}'.format(deployment))
+    return 0
+
+
+def _scale(app_id, instances, force):
+    """
+    :param app_id: the id of the application
+    :type app_id: str
+    :param instances: amount of new instances
+    :type force: int
+    :param force: whether to override running deployments
+    :type force: bool
+    :returns: process return code
+    :rtype: int
+    """
+
+    client = marathon.create_client()
+
+    deployment = client.scale_app(app_id, instances, force)
+    emitter.publish('Created deployment {}'.format(deployment))
+    return 0
+
+
+def _group_scale(group_id, scale_factor, force):
+    """
+    :param group_id: the id of the group
+    :type group_id: str
+    :param scale_factor: scale factor for group instances
+    :type properties: float
+    :param force: whether to override running deployments
+    :type force: bool
+    :returns: process return code
+    :rtype: int
+    """
+
+    client = marathon.create_client()
+
+    deployment = client.scale_group(group_id, scale_factor, force)
     emitter.publish('Created deployment {}'.format(deployment))
     return 0
 
