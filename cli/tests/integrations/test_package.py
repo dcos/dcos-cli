@@ -567,6 +567,13 @@ version-1.x.zip"' in stdout
     assert stderr == b''
 
     returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'search', 'xyzzy'])
+
+    assert returncode == 1
+    assert b'' == stdout
+    assert stderr == b'No packages found.\n'
+
+    returncode, stdout, stderr = exec_command(
         ['dcos', 'package', 'search', '--json'])
 
     registries = json.loads(stdout.decode('utf-8'))
