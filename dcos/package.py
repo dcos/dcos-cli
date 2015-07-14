@@ -509,10 +509,13 @@ def _extract_default_values(config_schema):
     """
 
     defaults = {}
+    if not config_schema.get('properties'):
+        raise DCOSException("Error with config schema. " +
+                            "Please make sure it's a valid jsonschema.")
     for key, value in config_schema['properties'].items():
-        if 'default' in value:
+        if isinstance(value, dict) and 'default' in value:
             defaults[key] = value['default']
-        elif value.get('type', '') == 'object':
+        elif isinstance(value, dict) and value.get('type', '') == 'object':
             # Generate the default value from the embedded schema
             defaults[key] = _extract_default_values(value)
 
