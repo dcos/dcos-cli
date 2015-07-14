@@ -904,7 +904,14 @@ def _deployment_watch(deployment_id, max_count, interval):
 
         if deployment is None:
             return 0
-
+        if util.is_windows_platform():
+            os.system('cls')
+        else:
+            if 'TERM' in os.environ:
+                os.system('clear')
+        emitter.publish('Deployment update time: '
+                        '{} \n'.format(time.strftime("%Y-%m-%d %H:%M:%S",
+                                                     time.gmtime())))
         emitter.publish(deployment)
         time.sleep(interval)
         count += 1
