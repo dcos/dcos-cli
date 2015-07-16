@@ -1,16 +1,12 @@
 import json
-import os
-import pty
 import re
-import subprocess
-import time
 
 import dcos.util as util
 from dcos import mesos
 from dcos.util import create_schema
 
 from ..fixtures.node import slave_fixture
-from .common import assert_command, assert_lines, exec_command
+from .common import assert_command, assert_lines, exec_command, ssh_output
 
 
 def test_help():
@@ -34,7 +30,7 @@ Options:
     --master                Access the leading master
     --slave=<slave-id>      Access the slave with the provided ID
     --option SSHOPT=VAL     SSH option (see `man ssh_config`)
-    --config-file=<path>    Path to ssh config file
+    --config-file=<path>    Path to SSH config file
     --user=<user>           SSH user [default: core]
     --version               Show version
 """
@@ -142,34 +138,16 @@ def test_node_ssh_user():
     stdout, stderr = _node_ssh_output(
         ['--master', '--user=bogus', '--option', 'PasswordAuthentication=no'])
     assert stdout == b''
-    assert stderr.startswith(b'Permission denied')
+    assert b'Permission denied' in stderr
 
 
 def _node_ssh_output(args):
-    # ssh must run with stdin attached to a tty
-    master, slave = pty.openpty()
     cmd = ('dcos node ssh --option ' +
            'IdentityFile=/host-home/.vagrant.d/insecure_private_key ' +
            '--option StrictHostKeyChecking=no ' +
            '{}').format(' '.join(args))
 
-    proc = subprocess.Popen(cmd,
-                            stdin=slave,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            preexec_fn=os.setsid,
-                            close_fds=True,
-                            shell=True)
-    os.close(slave)
-
-    # wait for the ssh connection
-    time.sleep(8)
-
-    # kill the whole process group
-    os.killpg(os.getpgid(proc.pid), 15)
-
-    os.close(master)
-    return proc.communicate()
+    return ssh_output(cmd)
 
 
 def _node_ssh(args):

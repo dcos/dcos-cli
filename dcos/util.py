@@ -583,9 +583,6 @@ def stream(fn, objs):
             yield job, jobs[job]
 
 
-logger = get_logger(__name__)
-
-
 def get_proxy_dict_from_env():
     """ Returns dict with proxy parameters
 
@@ -599,3 +596,25 @@ def get_proxy_dict_from_env():
         if value and (name == 'http_proxy' or name == 'https_proxy'):
             proxies[name] = value
     return proxies
+
+
+def get_ssh_options(config_file, options):
+    """Returns the SSH arguments for the given parameters.  Used by
+    commands that wrap SSH.
+
+    :param config_file: SSH config file.
+    :type config_file: str | None
+    :param options: SSH options
+    :type options: [str]
+    :rtype: str
+    """
+
+    ssh_options = ' '.join('-o {}'.format(opt) for opt in options)
+
+    if config_file:
+        ssh_options += ' -F {}'.format(config_file)
+
+    return ssh_options
+
+
+logger = get_logger(__name__)

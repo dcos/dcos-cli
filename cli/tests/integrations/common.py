@@ -2,8 +2,10 @@ import collections
 import contextlib
 import json
 import os
+import pty
 import subprocess
 import sys
+import time
 
 import requests
 import six
@@ -219,6 +221,41 @@ def remove_app(app_id):
     assert_command(['dcos', 'marathon', 'app', 'remove', app_id])
 
 
+def package_install(package, deploy=False, args=[]):
+    """ Calls `dcos package install`
+
+    :param package: name of the package to install
+    :type package: str
+    :param deploy: whether or not to wait for the deploy
+    :type deploy: bool
+    :param args: extra CLI args
+    :type args: [str]
+    :rtype: None
+    """
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'install', '--yes', package] + args)
+
+    assert returncode == 0
+    assert stderr == b''
+
+    if deploy:
+        watch_all_deployments()
+
+
+def package_uninstall(package, args=[]):
+    """ Calls `dcos package uninstall`
+
+    :param package: name of the package to uninstall
+    :type package: str
+    :param args: extra CLI args
+    :type args: [str]
+    :rtype: None
+    """
+
+    assert_command(['dcos', 'package', 'uninstall', package] + args)
+
+
 def get_services(expected_count=None, args=[]):
     """Get services
 
@@ -380,6 +417,25 @@ def app(path, app_id, deploy=False):
 
 
 @contextlib.contextmanager
+def package(package_name, deploy=False, args=[]):
+    """Context manager that deploys an app on entrance, and removes it on
+    exit.
+
+    :param package_name: package name
+    :type package_name: str
+    :param deploy: If True, block on the deploy
+    :type deploy: bool
+    :rtype: None
+    """
+
+    package_install(package_name, deploy, args)
+    try:
+        yield
+    finally:
+        package_uninstall(package_name)
+
+
+@contextlib.contextmanager
 def mock_args(args):
     """ Context manager that mocks sys.args and captures stdout/stderr
 
@@ -394,3 +450,37 @@ def mock_args(args):
             yield sys.stdout, sys.stderr
         finally:
             sys.stdout, sys.stderr = stdout, stderr
+
+
+def ssh_output(cmd):
+    """ Runs an SSH command and returns the stdout/stderr.
+
+    :param cmd: command to run
+    :type cmd: str
+    :rtype: (str, str)
+    """
+
+    # ssh must run with stdin attached to a tty
+    master, slave = pty.openpty()
+    proc = subprocess.Popen(cmd,
+                            stdin=slave,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            preexec_fn=os.setsid,
+                            close_fds=True,
+                            shell=True)
+    os.close(slave)
+
+    # wait for the ssh connection
+    time.sleep(8)
+
+    # kill the whole process group
+    os.killpg(os.getpgid(proc.pid), 15)
+
+    os.close(master)
+    stdout, stderr = proc.communicate()
+
+    print('STDOUT: {}'.format(stdout.decode('utf-8')))
+    print('STDERR: {}'.format(stderr.decode('utf-8')))
+
+    return stdout, stderr

@@ -116,7 +116,7 @@ def _task(fltr, completed, json_):
     return 0
 
 
-def _log(follow, completed, lines, task, path):
+def _log(follow, completed, lines, task, file_):
     """ Tail a file in the task's sandbox.
 
     :param follow: same as unix tail's -f
@@ -127,8 +127,8 @@ def _log(follow, completed, lines, task, path):
     :type lines: int
     :param task: task pattern to match
     :type task: str
-    :param path: file path to read
-    :type path: str
+    :param file_: file path to read
+    :type file_: str
     :returns: process return code
     :rtype: int
     """
@@ -138,12 +138,12 @@ def _log(follow, completed, lines, task, path):
     else:
         fltr = task
 
-    if path is None:
-        path = 'stdout'
+    if file_ is None:
+        file_ = 'stdout'
 
     lines = util.parse_int(lines)
 
-    mesos_files = _mesos_files(completed, fltr, path)
+    mesos_files = _mesos_files(completed, fltr, file_)
     if not mesos_files:
         raise DCOSException('No matching tasks. Exiting.')
     log.log_files(mesos_files, follow, lines)
@@ -151,7 +151,7 @@ def _log(follow, completed, lines, task, path):
     return 0
 
 
-def _mesos_files(completed, fltr, path):
+def _mesos_files(completed, fltr, file_):
     """Return MesosFile objects for the specified files.  Only include
     files that satisfy all of the following:
 
@@ -162,8 +162,8 @@ def _mesos_files(completed, fltr, path):
     :type completed: bool
     :param fltr: task pattern to match
     :type fltr: str
-    :param path: file path to read
-    :type path: str
+    :param file_: file path to read
+    :type file_: str
     :returns: MesosFile objects
     :rtype: [MesosFile]
 
@@ -184,7 +184,7 @@ def _mesos_files(completed, fltr, path):
                        if task.slave() in slaves and task.executor()]
 
     # create files.
-    return [mesos.MesosFile(path, task=task, mesos_client=client)
+    return [mesos.MesosFile(file_, task=task, dcos_client=client)
             for task in available_tasks]
 
 
