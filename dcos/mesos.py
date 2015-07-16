@@ -36,7 +36,7 @@ class DCOSClient(object):
 
         mesos_master_url = config.get('core.mesos_master_url')
         if mesos_master_url is None:
-            self._dcos_url = util.get_config_vals(config, ['core.dcos_url'])[0]
+            self._dcos_url = util.get_config_vals(['core.dcos_url'], config)[0]
         else:
             self._mesos_master_url = mesos_master_url
 
@@ -201,6 +201,38 @@ class DCOSClient(object):
         """
         url = self.get_dcos_url('metadata')
         return http.get(url).json()
+
+
+class MesosDNSClient(object):
+    """ Mesos-DNS client
+
+    :param url: mesos-dns URL
+    :type url: str
+    """
+    def __init__(self, url=None):
+        self.url = url or urllib.parse.urljoin(
+            util.get_config_vals(['core.dcos_url'])[0], '/mesos_dns/')
+
+    def _path(self, path):
+        """ Construct a full path
+
+        :param path: path suffix
+        :type path: str
+        :returns: full path
+        :rtype: str
+        """
+        return urllib.parse.urljoin(self.url, path)
+
+    def hosts(self, host):
+        """ GET v1/hosts/<host>
+
+        :param host: host
+        :type host: str
+        :returns: {'ip', 'host'} dictionary
+        :rtype: dict(str, str)
+        """
+        url = self._path('v1/hosts/{}'.format(host))
+        return http.get(url, headers={}).json()
 
 
 class Master(object):
