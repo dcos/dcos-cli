@@ -59,19 +59,25 @@ def _to_exception(response):
             'Error while fetching [{0}]: HTTP {1}: {2}'.format(
                 response.request.url, response.status_code, response.reason))
 
-    message = response.json().get('message')
+    try:
+        response_json = response.json()
+    except Exception:
+        return DCOSException(
+            'Error decoding response from [{0}]: HTTP {1}: {2}'.format(
+                response.request.url, response.status_code, response.reason))
+    message = response_json.get('message')
     if message is None:
-        errs = response.json().get('errors')
+        errs = response_json.get('errors')
         if errs is None:
             logger.error(
                 'Marathon server did not return a message: %s',
-                response.json())
+                response_json)
             return DCOSException(_default_marathon_error())
 
         msg = '\n'.join(error['error'] for error in errs)
         return DCOSException(_default_marathon_error(msg))
 
-    return DCOSException('Error: {}'.format(response.json()['message']))
+    return DCOSException('Error: {}'.format(response_json['message']))
 
 
 class Client(object):
