@@ -23,6 +23,10 @@ def create_client(config=None):
 
     marathon_url = _get_marathon_url(config)
 
+    if 'marathon.username' in config:
+        http.auth = (config.get('marathon.username'),
+                     config.get('marathon.password'))
+
     logger.info('Creating marathon client with: %r', marathon_url)
     return Client(marathon_url)
 

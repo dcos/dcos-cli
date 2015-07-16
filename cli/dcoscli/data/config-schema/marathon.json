@@ -8,6 +8,16 @@
       "title": "Marathon base URL",
       "description": "Base URL for talking to Marathon. It overwrites the value specified in core.dcos_url",
       "default": "http://localhost:8080"
+    },
+    "username": {
+      "type": "string",
+      "title": "Your Username",
+      "description": "Your Username"
+    },
+    "password": {
+      "type": "string",
+      "title": "Your Password",
+      "description": "Your Password"
     }
   },
   "additionalProperties": false

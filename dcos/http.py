@@ -4,6 +4,8 @@ from dcos.errors import DCOSException
 
 logger = util.get_logger(__name__)
 
+auth = None
+
 
 def _default_is_success(status_code):
     """Returns true if the success status is between [200, 300).
@@ -66,6 +68,8 @@ def request(method,
     :rtype: Response
     """
 
+    if auth:
+        kwargs['auth'] = auth
     try:
         if 'headers' in kwargs:
             request = requests.Request(method=method, url=url, **kwargs)
