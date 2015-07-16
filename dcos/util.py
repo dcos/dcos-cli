@@ -115,7 +115,7 @@ def get_config():
         os.environ[constants.DCOS_CONFIG_ENV])
 
 
-def get_config_vals(config, keys):
+def get_config_vals(keys, config=None):
     """Gets config values for each of the keys.  Raises a DCOSException if
     any of the keys don't exist.
 
@@ -127,6 +127,7 @@ def get_config_vals(config, keys):
     :rtype: [object]
     """
 
+    config = config or get_config()
     missing = [key for key in keys if key not in config]
     if missing:
         raise missing_config_exception(keys)

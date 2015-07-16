@@ -23,7 +23,6 @@ Options:
     --version               Show version
 """
 
-import os
 import subprocess
 
 import dcoscli
@@ -186,15 +185,7 @@ def _ssh(master, slave, option, config_file, user):
     :returns: process return code
 
     """
-    if not os.environ.get('SSH_AUTH_SOCK'):
-        raise DCOSException(
-            "There is no SSH_AUTH_SOCK env variable, which likely means you " +
-            "aren't running `ssh-agent`.  `dcos node ssh` depends on " +
-            "`ssh-agent` so we can safely use your private key to hop " +
-            "between nodes in your cluster.  Please run `ssh-agent`, " +
-            "then add your private key with `ssh-add`.")
 
-    master_public_ip = mesos.DCOSClient().metadata()['PUBLIC_IPV4']
     ssh_options = ' '.join('-o {}'.format(opt) for opt in option)
 
     if config_file:
@@ -203,7 +194,7 @@ def _ssh(master, slave, option, config_file, user):
         ssh_config = ''
 
     if master:
-        host = 'leader.mesos'
+        host = mesos.MesosDNSClient().hosts('leader.mesos.')[0]['ip']
     else:
         summary = mesos.DCOSClient().get_state_summary()
         slave_obj = next((slave_ for slave_ in summary['slaves']
@@ -214,11 +205,10 @@ def _ssh(master, slave, option, config_file, user):
         else:
             raise DCOSException('No slave found with ID [{}]'.format(slave))
 
-    cmd = "ssh -A -t {0} {1} {2}@{3} ssh -A -t {2}@{4}".format(
+    cmd = "ssh -t {0} {1} {2}@{3}".format(
         ssh_options,
         ssh_config,
         user,
-        master_public_ip,
         host)
 
     return subprocess.call(cmd, shell=True)

@@ -37,7 +37,7 @@ def _get_marathon_url(config):
 
     marathon_url = config.get('marathon.url')
     if marathon_url is None:
-        dcos_url = util.get_config_vals(config, ['core.dcos_url'])[0]
+        dcos_url = util.get_config_vals(['core.dcos_url'], config)[0]
         marathon_url = urllib.parse.urljoin(dcos_url, 'marathon/')
 
     return marathon_url

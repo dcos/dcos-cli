@@ -66,22 +66,21 @@ def request(method,
     :rtype: Response
     """
 
+    if 'headers' not in kwargs:
+        kwargs['headers'] = {'Accept': 'application/json'}
+
+    request = requests.Request(
+        method=method,
+        url=url,
+        **kwargs)
+
+    logger.info(
+        'Sending HTTP [%r] to [%r]: %r',
+        request.method,
+        request.url,
+        request.headers)
+
     try:
-        if 'headers' in kwargs:
-            request = requests.Request(method=method, url=url, **kwargs)
-        else:
-            request = requests.Request(
-                method=method,
-                url=url,
-                headers={'Accept': 'application/json'},
-                **kwargs)
-
-        logger.info(
-            'Sending HTTP [%r] to [%r]: %r',
-            request.method,
-            request.url,
-            request.headers)
-
         with requests.Session() as session:
             response = session.send(request.prepare(), timeout=timeout,
                                     proxies=util.get_proxy_dict_from_env())

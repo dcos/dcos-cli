@@ -590,7 +590,7 @@ def list_sources(config):
     :rtype: [Source]
     """
 
-    source_uris = util.get_config_vals(config, ['package.sources'])[0]
+    source_uris = util.get_config_vals(['package.sources'], config)[0]
 
     sources = [url_to_source(s) for s in source_uris]
 
@@ -659,7 +659,7 @@ def update_sources(config, validate=False):
 
     # ensure the cache directory is properly configured
     cache_dir = os.path.expanduser(
-        util.get_config_vals(config, ['package.cache'])[0])
+        util.get_config_vals(['package.cache'], config)[0])
 
     # ensure the cache directory exists
     if not os.path.exists(cache_dir):
@@ -758,7 +758,7 @@ class Source:
         """
 
         cache_dir = os.path.expanduser(
-            util.get_config_vals(config, ['package.cache'])[0])
+            util.get_config_vals(['package.cache'], config)[0])
         return os.path.join(cache_dir, self.hash())
 
     def copy_to_cache(self, target_dir):

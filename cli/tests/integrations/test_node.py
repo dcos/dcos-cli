@@ -145,26 +145,14 @@ def test_node_ssh_user():
     assert stderr.startswith(b'Permission denied')
 
 
-def test_node_ssh_no_agent():
-    stderr = (b"There is no SSH_AUTH_SOCK env variable, which likely means "
-              b"you aren't running `ssh-agent`.  `dcos node ssh` depends on"
-              b" `ssh-agent` so we can safely use your private key to hop "
-              b"between nodes in your cluster.  Please run `ssh-agent`, then "
-              b"add your private key with `ssh-add`.\n")
-    assert_command(['dcos', 'node', 'ssh', '--master'],
-                   stdout=b'',
-                   stderr=stderr,
-                   returncode=1)
-
-
 def _node_ssh_output(args):
     # ssh must run with stdin attached to a tty
     master, slave = pty.openpty()
+    cmd = ('dcos node ssh --option ' +
+           'IdentityFile=/host-home/.vagrant.d/insecure_private_key ' +
+           '--option StrictHostKeyChecking=no ' +
+           '{}').format(' '.join(args))
 
-    cmd = ('ssh-agent /bin/bash -c ' +
-           '"ssh-add /host-home/.vagrant.d/insecure_private_key ' +
-           '2> /dev/null && dcos node ssh --option StrictHostKeyChecking=no' +
-           ' {}"').format(' '.join(args))
     proc = subprocess.Popen(cmd,
                             stdin=slave,
                             stdout=subprocess.PIPE,
