@@ -266,6 +266,7 @@ def _confirm(prompt, yes):
     else:
         while True:
             sys.stdout.write('{} [yes/no] '.format(prompt))
+            sys.stdout.flush()
             response = sys.stdin.readline().strip().lower()
             if response == 'yes' or response == 'y':
                 return True
