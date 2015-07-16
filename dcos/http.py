@@ -29,18 +29,18 @@ def _default_to_exception(response):
        not isinstance(response, requests.exceptions.RequestException):
         return response
 
-    url = response.request.url
     if isinstance(response, requests.exceptions.ConnectionError):
         return DCOSException('URL [{0}] is unreachable: {1}'
-                             .format(url, response))
+                             .format(response.request.url, response))
     elif isinstance(response, requests.exceptions.Timeout):
-        return DCOSException('Request to URL [{0}] timed out'.format(url))
+        return DCOSException(
+            'Request to URL [{0}] timed out'.format(response.request.url))
     elif isinstance(response, requests.exceptions.RequestException):
         return response
     else:
         return DCOSException(
             'Error while fetching [{0}]: HTTP {1}: {2}'.format(
-                url, response.status_code, response.reason))
+                response.request.url, response.status_code, response.reason))
 
 
 @util.duration
