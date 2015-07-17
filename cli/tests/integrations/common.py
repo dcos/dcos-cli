@@ -480,7 +480,7 @@ def ssh_output(cmd):
     os.close(master)
     stdout, stderr = proc.communicate()
 
-    print('STDOUT: {}'.format(stdout.decode('utf-8')))
-    print('STDERR: {}'.format(stderr.decode('utf-8')))
+    print('SSH STDOUT: {}'.format(stdout.decode('utf-8')))
+    print('SSH STDERR: {}'.format(stderr.decode('utf-8')))
 
     return stdout, stderr

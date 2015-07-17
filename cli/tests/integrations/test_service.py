@@ -153,7 +153,7 @@ def test_log_marathon_config():
         '--ssh-config-file=tests/data/node/ssh_config')
 
     assert stdout == b''
-    assert stderr.startswith(b'ignoring bad proto spec')
+    assert b'ignoring bad proto spec' in stderr
 
 
 def test_log_marathon():
@@ -162,9 +162,11 @@ def test_log_marathon():
         '--ssh-config-file=tests/data/service/ssh_config')
 
     assert len(stdout.decode('utf-8').split('\n')) > 10
-    assert ((stderr == b'') or
-            (len(stderr.split('\n')) == 2 and
-             stderr.startswith('Warning: Permanently added')))
+
+    num_lines = len(stderr.decode('utf-8').split('\n'))
+    assert ((num_lines == 2) or
+            (num_lines == 3 and
+             b'Warning: Permanently added' in stderr))
 
 
 def test_log_config():

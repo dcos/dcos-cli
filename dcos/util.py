@@ -614,6 +614,9 @@ def get_ssh_options(config_file, options):
     if config_file:
         ssh_options += ' -F {}'.format(config_file)
 
+    if ssh_options:
+        ssh_options += ' '
+
     return ssh_options
 
 

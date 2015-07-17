@@ -124,14 +124,14 @@ def test_node_ssh_option():
     stdout, stderr = _node_ssh_output(
         ['--master', '--option', 'Protocol=0'])
     assert stdout == b''
-    assert stderr.startswith(b'ignoring bad proto spec')
+    assert b'ignoring bad proto spec' in stderr
 
 
 def test_node_ssh_config_file():
     stdout, stderr = _node_ssh_output(
         ['--master', '--config-file', 'tests/data/node/ssh_config'])
     assert stdout == b''
-    assert stderr.startswith(b'ignoring bad proto spec')
+    assert b'ignoring bad proto spec' in stderr
 
 
 def test_node_ssh_user():
@@ -153,13 +153,7 @@ def _node_ssh_output(args):
 def _node_ssh(args):
     stdout, stderr = _node_ssh_output(args)
 
-    print('SSH STDOUT: {}'.format(stdout.decode('utf-8')))
-    print('SSH STDERR: {}'.format(stderr.decode('utf-8')))
-
     assert stdout
-    assert ((stderr == b'') or
-            (len(stderr.split('\n')) == 2 and
-             stderr.startswith('Warning: Permanently added')))
 
 
 def _get_schema(slave):

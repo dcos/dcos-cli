@@ -41,7 +41,7 @@ import subprocess
 import dcoscli
 import docopt
 from dcos import cmds, emitting, marathon, mesos, package, util
-from dcos.errors import DCOSException
+from dcos.errors import DCOSException, DefaultError
 from dcoscli import log, tables
 
 logger = util.get_logger(__name__)
@@ -297,10 +297,12 @@ def _log_marathon(follow, lines, ssh_config_file):
 
     leader_ip = marathon.create_client().get_leader().split(':')[0]
 
-    cmd = ("ssh {0} core@{1} " +
-           "journalctl {2} -u marathon").format(
+    cmd = ("ssh {0}core@{1} " +
+           "journalctl {2}-u marathon").format(
                ssh_options,
                leader_ip,
                journalctl_args)
+
+    emitter.publish(DefaultError("Running `{}`".format(cmd)))
 
     return subprocess.call(cmd, shell=True)
