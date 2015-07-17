@@ -1,6 +1,7 @@
 import collections
 
 from dcos import package
+from dcos.errors import DCOSException
 
 import pytest
 
@@ -35,45 +36,74 @@ def merge_data(request):
     return request.param
 
 
-def test_extract_default_values():
-    config_schema = {
-        "type": "object",
-        "properties": {
-            "foo": {
-                "type": "object",
-                "properties": {
-                    "bar": {
-                        "type": "string",
-                        "description": "A bar name."
-                    },
-                    "baz": {
-                        "type": "integer",
-                        "description": "How many times to do baz.",
-                        "minimum": 0,
-                        "maximum": 16,
-                        "required": False,
-                        "default": 4
-                    }
-                }
-            },
-            "fiz": {
-                "type": "boolean",
-                "default": True,
-            },
-            "buz": {
-                "type": "string"
-            }
-        }
-    }
-
-    expected = {'foo': {'baz': 4}, 'fiz': True}
-
-    result = package._extract_default_values(config_schema)
-
-    assert result == expected
-
-
 def test_option_merge(merge_data):
     assert merge_data.expected == package._merge_options(
         merge_data.first,
         merge_data.second)
+
+
+DefaultConfigValues = collections.namedtuple(
+    'DefaultConfigValue',
+    ['schema', 'expected'])
+
+
+@pytest.fixture(params=[
+    DefaultConfigValues(
+        schema={
+            "type": "object",
+            "properties": {
+                "foo": {
+                    "type": "object",
+                    "properties": {
+                        "bar": {
+                            "type": "string",
+                            "description": "A bar name."
+                        },
+                        "baz": {
+                            "type": "integer",
+                            "description": "How many times to do baz.",
+                            "minimum": 0,
+                            "maximum": 16,
+                            "required": False,
+                            "default": 4
+                        }
+                    }
+                },
+                "fiz": {
+                    "type": "boolean",
+                    "default": True,
+                },
+                "buz": {
+                    "type": "string"
+                }
+            }
+        },
+        expected={'foo': {'baz': 4}, 'fiz': True}),
+    DefaultConfigValues(
+        schema={
+            "type": "object",
+            "properties": {
+                "fiz": {
+                    "type": "boolean",
+                    "default": True,
+                },
+                "additionalProperties": False
+            }
+        },
+        expected={'fiz': True}),
+    DefaultConfigValues(
+        schema={
+            "type": "object",
+        },
+        expected="Error with config schema. " +
+                 "Please make sure it's a valid jsonschema.")])
+def config_value(request):
+    return request.param
+
+
+def test_extract_default_values(config_value):
+    try:
+        result = package._extract_default_values(config_value.schema)
+    except DCOSException as e:
+        result = str(e)
+    assert result == config_value.expected
