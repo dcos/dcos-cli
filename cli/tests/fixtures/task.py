@@ -35,3 +35,31 @@ def task_fixture():
     slave = Slave({"hostname": "mock-hostname"}, None, None)
     task.slave = mock.Mock(return_value=slave)
     return task
+
+
+def browse_fixture():
+    return [
+        {u'uid': u'root',
+         u'mtime': 1437089500,
+         u'nlink': 1,
+         u'mode': u'-rw-r--r--',
+         u'gid': u'root',
+         u'path': (u'/var/lib/mesos/slave/slaves/' +
+                   u'20150716-183440-1695027628-5050-2710-S0/frameworks/' +
+                   u'20150716-183440-1695027628-5050-2710-0000/executors/' +
+                   u'chronos.8810d396-2c09-11e5-af1a-080027d3e806/runs/' +
+                   u'aaecec57-7c7c-4030-aca3-d7aac2f9fd29/stderr'),
+         u'size': 4507},
+
+        {u'uid': u'root',
+         u'mtime': 1437089604,
+         u'nlink': 1,
+         u'mode': u'-rw-r--r--',
+         u'gid': u'root',
+         u'path': (u'/var/lib/mesos/slave/slaves/' +
+                   u'20150716-183440-1695027628-5050-2710-S0/frameworks/' +
+                   u'20150716-183440-1695027628-5050-2710-0000/executors/' +
+                   u'chronos.8810d396-2c09-11e5-af1a-080027d3e806/runs/' +
+                   u'aaecec57-7c7c-4030-aca3-d7aac2f9fd29/stdout'),
+         u'size': 353857}
+    ]

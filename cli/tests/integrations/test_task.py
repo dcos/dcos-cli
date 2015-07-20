@@ -15,14 +15,35 @@ from dcoscli.task.main import _mesos_files, main
 from mock import MagicMock, patch
 
 from ..fixtures.task import task_fixture
-from .common import (app, assert_command, assert_lines, assert_mock,
-                     exec_command, watch_all_deployments)
+from .common import (add_app, app, assert_command, assert_lines, assert_mock,
+                     exec_command, remove_app, watch_all_deployments)
 
-SLEEP1 = 'tests/data/marathon/apps/sleep.json'
+SLEEP_COMPLETED = 'tests/data/marathon/apps/sleep-completed.json'
+SLEEP1 = 'tests/data/marathon/apps/sleep1.json'
 SLEEP2 = 'tests/data/marathon/apps/sleep2.json'
 FOLLOW = 'tests/data/file/follow.json'
 TWO_TASKS = 'tests/data/file/two_tasks.json'
 TWO_TASKS_FOLLOW = 'tests/data/file/two_tasks_follow.json'
+LS = 'tests/data/tasks/ls-app.json'
+
+INIT_APPS = ((LS, 'ls-app'),
+             (SLEEP1, 'test-app1'),
+             (SLEEP2, 'test-app2'))
+NUM_TASKS = len(INIT_APPS)
+
+
+def setup_module():
+    # create a completed task
+    with app(SLEEP_COMPLETED, 'test-app-completed', True):
+        pass
+
+    for app_ in INIT_APPS:
+        add_app(app_[0], True)
+
+
+def teardown_module():
+    for app_ in INIT_APPS:
+        remove_app(app_[1])
 
 
 def test_help():
@@ -32,22 +53,23 @@ Usage:
     dcos task --info
     dcos task [--completed --json <task>]
     dcos task log [--completed --follow --lines=N] <task> [<file>]
+    dcos task ls [--long] <task> [<path>]
 
 Options:
     -h, --help    Show this screen
     --info        Show a short description of this subcommand
     --completed   Include completed tasks as well
-    --follow      Output data as the file grows
+    --follow      Print data as the file grows
     --json        Print json-formatted tasks
-    --lines=N     Output the last N lines [default: 10]
+    --lines=N     Print the last N lines [default: 10]
+    --long        Use a long listing format
     --version     Show version
 
 Positional Arguments:
-
+    <file>        Print this file. [default: stdout]
+    <path>        List this directory. [default: '.']
     <task>        Only match tasks whose ID matches <task>.  <task> may be
                   a substring of the ID, or a unix glob pattern.
-
-    <file>        Output this file. [default: stdout]
 """
     assert_command(['dcos', 'task', '--help'], stdout=stdout)
 
@@ -58,8 +80,6 @@ def test_info():
 
 
 def test_task():
-    _install_sleep_task()
-
     # test `dcos task` output
     returncode, stdout, stderr = exec_command(['dcos', 'task', '--json'])
 
@@ -68,50 +88,37 @@ def test_task():
 
     tasks = json.loads(stdout.decode('utf-8'))
     assert isinstance(tasks, collections.Sequence)
-    assert len(tasks) == 1
+    assert len(tasks) == NUM_TASKS
 
     schema = create_schema(task_fixture().dict())
     for task in tasks:
         assert not util.validate_json(task, schema)
 
-    _uninstall_sleep()
-
 
 def test_task_table():
-    _install_sleep_task()
-    assert_lines(['dcos', 'task'], 2)
-    _uninstall_sleep()
+    assert_lines(['dcos', 'task'], NUM_TASKS+1)
 
 
 def test_task_completed():
-    _install_sleep_task()
-    _uninstall_sleep()
-    _install_sleep_task()
-
     returncode, stdout, stderr = exec_command(
         ['dcos', 'task', '--completed', '--json'])
     assert returncode == 0
     assert stderr == b''
-    assert len(json.loads(stdout.decode('utf-8'))) > 1
+    assert len(json.loads(stdout.decode('utf-8'))) > NUM_TASKS
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'task', '--json'])
     assert returncode == 0
     assert stderr == b''
-    assert len(json.loads(stdout.decode('utf-8'))) == 1
-
-    _uninstall_sleep()
+    assert len(json.loads(stdout.decode('utf-8'))) == NUM_TASKS
 
 
 def test_task_none():
-    assert_command(['dcos', 'task', '--json'],
+    assert_command(['dcos', 'task', 'bogus', '--json'],
                    stdout=b'[]\n')
 
 
 def test_filter():
-    _install_sleep_task()
-    _install_sleep_task(SLEEP2, 'test-app2')
-
     returncode, stdout, stderr = exec_command(
         ['dcos', 'task', 'test-app2', '--json'])
 
@@ -119,48 +126,42 @@ def test_filter():
     assert stderr == b''
     assert len(json.loads(stdout.decode('utf-8'))) == 1
 
-    _uninstall_sleep()
-    _uninstall_sleep('test-app2')
-
 
 def test_log_no_files():
     """ Tail stdout on nonexistant task """
-    assert_command(['dcos', 'task', 'log', 'asdf'],
+    assert_command(['dcos', 'task', 'log', 'bogus'],
                    returncode=1,
                    stderr=b'No matching tasks. Exiting.\n')
 
 
 def test_log_single_file():
     """ Tail a single file on a single task """
-    with app(SLEEP1, 'test-app', True):
-        returncode, stdout, stderr = exec_command(
-            ['dcos', 'task', 'log', 'test-app'])
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'task', 'log', 'test-app1'])
 
-        assert returncode == 0
-        assert stderr == b''
-        assert len(stdout.decode('utf-8').split('\n')) == 5
+    assert returncode == 0
+    assert stderr == b''
+    assert len(stdout.decode('utf-8').split('\n')) == 5
 
 
 def test_log_missing_file():
     """ Tail a single file on a single task """
-    with app(SLEEP1, 'test-app', True):
-        returncode, stdout, stderr = exec_command(
-            ['dcos', 'task', 'log', 'test-app', 'asdf'])
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'task', 'log', 'test-app', 'bogus'])
 
-        assert returncode == 1
-        assert stdout == b''
-        assert stderr == b'No files exist. Exiting.\n'
+    assert returncode == 1
+    assert stdout == b''
+    assert stderr == b'No files exist. Exiting.\n'
 
 
 def test_log_lines():
     """ Test --lines """
-    with app(SLEEP1, 'test-app', True):
-        assert_lines(['dcos', 'task', 'log', 'test-app', '--lines=2'], 2)
+    assert_lines(['dcos', 'task', 'log', 'test-app1', '--lines=2'], 2)
 
 
 def test_log_lines_invalid():
     """ Test invalid --lines value """
-    assert_command(['dcos', 'task', 'log', 'test-app', '--lines=bogus'],
+    assert_command(['dcos', 'task', 'log', 'test-app1', '--lines=bogus'],
                    stdout=b'',
                    stderr=b'Error parsing string as int\n',
                    returncode=1)
@@ -168,8 +169,8 @@ def test_log_lines_invalid():
 
 def test_log_follow():
     """ Test --follow """
+    # verify output
     with app(FOLLOW, 'follow', True):
-        # verify output
         proc = subprocess.Popen(['dcos', 'task', 'log', 'follow', '--follow'],
                                 stdout=subprocess.PIPE)
 
@@ -190,17 +191,16 @@ def test_log_follow():
 
 def test_log_two_tasks():
     """ Test tailing a single file on two separate tasks """
-    with app(TWO_TASKS, 'two-tasks', True):
-        returncode, stdout, stderr = exec_command(
-            ['dcos', 'task', 'log', 'two-tasks'])
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'task', 'log', 'test-app'])
 
-        assert returncode == 0
-        assert stderr == b''
+    assert returncode == 0
+    assert stderr == b''
 
-        lines = stdout.decode('utf-8').split('\n')
-        assert len(lines) == 11
-        assert re.match('===>.*<===', lines[0])
-        assert re.match('===>.*<===', lines[5])
+    lines = stdout.decode('utf-8').split('\n')
+    assert len(lines) == 11
+    assert re.match('===>.*<===', lines[0])
+    assert re.match('===>.*<===', lines[5])
 
 
 def test_log_two_tasks_follow():
@@ -231,20 +231,17 @@ def test_log_two_tasks_follow():
 
 
 def test_log_completed():
-    """ Test --completed """
+    """ Test `dcos task log --completed` """
     # create a completed task
     # ensure that tail lists nothing
     # ensure that tail --completed lists a completed task
-    with app(SLEEP1, 'test-app', True):
-        pass
-
-    assert_command(['dcos', 'task', 'log', 'test-app'],
+    assert_command(['dcos', 'task', 'log', 'test-app-completed'],
                    returncode=1,
                    stderr=b'No matching tasks. Exiting.\n',
                    stdout=b'')
 
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'task', 'log', '--completed', 'test-app'])
+        ['dcos', 'task', 'log', '--completed', 'test-app-completed'])
     assert returncode == 0
     assert stderr == b''
     assert len(stdout.decode('utf-8').split('\n')) > 4
@@ -262,28 +259,58 @@ def test_log_master_unavailable():
 
 def test_log_slave_unavailable():
     """ Test slave's state.json being unavailable """
-    with app(SLEEP1, 'test-app', True):
-        client = mesos.DCOSClient()
-        client.get_slave_state = _mock_exception()
+    client = mesos.DCOSClient()
+    client.get_slave_state = _mock_exception()
 
-        with patch('dcos.mesos.DCOSClient', return_value=client):
-            args = ['task', 'log', 'test-app']
-            stderr = (b"""Error accessing slave: exception\n"""
-                      b"""No matching tasks. Exiting.\n""")
-            assert_mock(main, args, returncode=1, stderr=stderr)
+    with patch('dcos.mesos.DCOSClient', return_value=client):
+        args = ['task', 'log', 'test-app1']
+        stderr = (b"""Error accessing slave: exception\n"""
+                  b"""No matching tasks. Exiting.\n""")
+        assert_mock(main, args, returncode=1, stderr=stderr)
 
 
 def test_log_file_unavailable():
     """ Test a file's read.json being unavailable """
-    with app(SLEEP1, 'test-app', True):
-        files = _mesos_files(False, "", "stdout")
-        assert len(files) == 1
-        files[0].read = _mock_exception('exception')
+    fltr = "test-app1"
+    files = _mesos_files(False, fltr, "stdout")
+    assert len(files) == 1
+    files[0].read = _mock_exception('exception')
 
-        with patch('dcoscli.task.main._mesos_files', return_value=files):
-            args = ['task', 'log', 'test-app']
-            stderr = b"No files exist. Exiting.\n"
-            assert_mock(main, args, returncode=1, stderr=stderr)
+    with patch('dcoscli.task.main._mesos_files', return_value=files):
+        args = ['task', 'log', fltr]
+        stderr = b"No files exist. Exiting.\n"
+        assert_mock(main, args, returncode=1, stderr=stderr)
+
+
+def test_ls():
+    assert_command(['dcos', 'task', 'ls', 'test-app1'],
+                   stdout=b'stderr  stdout\n')
+
+
+def test_ls_multiple_tasks():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'task', 'ls', 'test-app'])
+
+    assert returncode == 1
+    assert stdout == b''
+    assert stderr.startswith(b'There are multiple tasks with ID matching '
+                             b'[test-app]. Please choose one:\n\t')
+
+
+def test_ls_long():
+    assert_lines(['dcos', 'task', 'ls', '--long', 'test-app1'], 2)
+
+
+def test_ls_path():
+    assert_command(['dcos', 'task', 'ls', 'ls-app', 'test'],
+                   stdout=b'test1  test2\n')
+
+
+def test_ls_bad_path():
+    assert_command(
+        ['dcos', 'task', 'ls', 'test-app1', 'bogus'],
+        stderr=b'Cannot access [bogus]: No such file or directory\n',
+        returncode=1)
 
 
 def _mock_exception(contents='exception'):
@@ -295,7 +322,6 @@ def _mark_non_blocking(file_):
 
 
 def _install_sleep_task(app_path=SLEEP1, app_name='test-app'):
-    # install helloworld app
     args = ['dcos', 'marathon', 'app', 'add', app_path]
     assert_command(args)
     watch_all_deployments()

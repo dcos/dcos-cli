@@ -1,6 +1,9 @@
 import copy
+import datetime
+import posixpath
 from collections import OrderedDict
 
+import prettytable
 from dcos import mesos, util
 
 EMPTY_ENTRY = '---'
@@ -31,7 +34,7 @@ def task_table(tasks):
         ("ID", lambda t: t["id"]),
     ])
 
-    tb = util.table(fields, tasks, sortby="NAME")
+    tb = table(fields, tasks, sortby="NAME")
     tb.align["NAME"] = "l"
     tb.align["HOST"] = "l"
     tb.align["ID"] = "l"
@@ -101,7 +104,7 @@ def app_table(apps, deployments):
         ("CMD", get_cmd)
     ])
 
-    tb = util.table(fields, apps, sortby="ID")
+    tb = table(fields, apps, sortby="ID")
     tb.align["CMD"] = "l"
     tb.align["ID"] = "l"
 
@@ -125,7 +128,7 @@ def app_task_table(tasks):
         ("ID", lambda t: t["id"])
     ])
 
-    tb = util.table(fields, tasks, sortby="APP")
+    tb = table(fields, tasks, sortby="APP")
     tb.align["APP"] = "l"
     tb.align["ID"] = "l"
 
@@ -172,7 +175,7 @@ def deployment_table(deployments):
         ('ID', lambda d: d['id'])
     ])
 
-    tb = util.table(fields, deployments, sortby="APP")
+    tb = table(fields, deployments, sortby="APP")
     tb.align['APP'] = 'l'
     tb.align['ACTION'] = 'l'
     tb.align['ID'] = 'l'
@@ -199,7 +202,7 @@ def service_table(services):
         ("ID", lambda s: s['id']),
     ])
 
-    tb = util.table(fields, services, sortby="NAME")
+    tb = table(fields, services, sortby="NAME")
     tb.align["ID"] = 'l'
     tb.align["NAME"] = 'l'
 
@@ -248,7 +251,7 @@ def group_table(groups):
         ('APPS', lambda g: g[1]),
     ])
 
-    tb = util.table(fields, group_dict.values(), sortby="ID")
+    tb = table(fields, group_dict.values(), sortby="ID")
     tb.align['ID'] = 'l'
 
     return tb
@@ -273,7 +276,7 @@ def package_table(packages):
         ('DESCRIPTION', lambda p: p['description'])
     ])
 
-    tb = util.table(fields, packages, sortby="NAME")
+    tb = table(fields, packages, sortby="NAME")
     tb.align['NAME'] = 'l'
     tb.align['VERSION'] = 'l'
     tb.align['APP'] = 'l'
@@ -309,7 +312,7 @@ def package_search_table(search_results):
             package_['source'] = result['source']
             packages.append(package_)
 
-    tb = util.table(fields, packages, sortby="NAME")
+    tb = table(fields, packages, sortby="NAME")
     tb.align['NAME'] = 'l'
     tb.align['VERSION'] = 'l'
     tb.align['FRAMEWORK'] = 'l'
@@ -333,5 +336,77 @@ def slave_table(slaves):
         ('ID', lambda s: s['id'])
     ])
 
-    tb = util.table(fields, slaves, sortby="HOSTNAME")
+    tb = table(fields, slaves, sortby="HOSTNAME")
+    return tb
+
+
+def _format_unix_timestamp(ts):
+    """ Formats a unix timestamp in a `dcos task ls --long` format.
+
+    :param ts: unix timestamp
+    :type ts: int
+    :rtype: str
+    """
+    return datetime.datetime.fromtimestamp(ts).strftime('%b %d %H:%M')
+
+
+def ls_long_table(files):
+    """Returns a PrettyTable representation of `files`
+
+    :param files: Files to render.  Of the form returned from the
+        mesos /files/browse.json endpoint.
+    :param files: [dict]
+    :rtype: PrettyTable
+    """
+
+    fields = OrderedDict([
+        ('MODE', lambda f: f['mode']),
+        ('NLINK', lambda f: f['nlink']),
+        ('UID', lambda f: f['uid']),
+        ('GID', lambda f: f['gid']),
+        ('SIZE', lambda f: f['size']),
+        ('DATE', lambda f: _format_unix_timestamp(int(f['mtime']))),
+        ('PATH', lambda f: posixpath.basename(f['path']))])
+
+    tb = table(fields, files, sortby="PATH", header=False)
+    tb.align = 'r'
+    return tb
+
+
+def table(fields, objs, **kwargs):
+    """Returns a PrettyTable.  `fields` represents the header schema of
+    the table.  `objs` represents the objects to be rendered into
+    rows.
+
+    :param fields: An OrderedDict, where each element represents a
+                   column.  The key is the column header, and the
+                   value is the function that transforms an element of
+                   `objs` into a value for that column.
+    :type fields: OrderdDict(str, function)
+    :param objs: objects to render into rows
+    :type objs: [object]
+    :param **kwargs: kwargs to pass to `prettytable.PrettyTable`
+    :type **kwargs: dict
+    :rtype: PrettyTable
+    """
+
+    tb = prettytable.PrettyTable(
+        [k.upper() for k in fields.keys()],
+        border=False,
+        hrules=prettytable.NONE,
+        vrules=prettytable.NONE,
+        left_padding_width=0,
+        right_padding_width=1,
+        **kwargs
+    )
+
+    # Set these explicitly due to a bug in prettytable where
+    # '0' values are not honored.
+    tb._left_padding_width = 0
+    tb._right_padding_width = 2
+
+    for obj in objs:
+        row = [fn(obj) for fn in fields.values()]
+        tb.add_row(row)
+
     return tb

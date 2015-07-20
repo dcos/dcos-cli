@@ -630,9 +630,8 @@ def test_bad_configuration():
 
     assert returncode == 1
     assert stdout == b''
-    assert stderr.decode().startswith(
-        "Marathon likely misconfigured. Please check your proxy or "
-        "Marathon URL settings. See dcos config --help. ")
+    assert stderr.startswith(
+        b"URL [http://localhost:88888/v2/info] is unreachable")
 
     assert_command(['dcos', 'config', 'unset', 'marathon.url'])
 

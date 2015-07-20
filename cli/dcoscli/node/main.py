@@ -13,8 +13,8 @@ Options:
     -h, --help              Show this screen
     --info                  Show a short description of this subcommand
     --json                  Print json-formatted nodes
-    --follow                Output data as the file grows
-    --lines=N               Output the last N lines [default: 10]
+    --follow                Print data as the file grows
+    --lines=N               Print the last N lines [default: 10]
     --master                Access the leading master
     --slave=<slave-id>      Access the slave with the provided ID
     --option SSHOPT=VAL     SSH option (see `man ssh_config`)
