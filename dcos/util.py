@@ -583,21 +583,6 @@ def stream(fn, objs):
             yield job, jobs[job]
 
 
-def get_proxy_dict_from_env():
-    """ Returns dict with proxy parameters
-
-    :returns: Dict with proxy parameters
-    :rtype: dict
-    """
-
-    proxies = dict()
-
-    for name, value in os.environ.items():
-        if value and (name == 'http_proxy' or name == 'https_proxy'):
-            proxies[name] = value
-    return proxies
-
-
 def get_ssh_options(config_file, options):
     """Returns the SSH arguments for the given parameters.  Used by
     commands that wrap SSH.
