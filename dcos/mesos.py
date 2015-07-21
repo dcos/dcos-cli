@@ -9,8 +9,6 @@ from six.moves import urllib
 
 logger = util.get_logger(__name__)
 
-MESOS_TIMEOUT = 5
-
 
 def get_master(dcos_client=None):
     """Create a Master object using the url stored in the
@@ -40,6 +38,8 @@ class DCOSClient(object):
             self._dcos_url = util.get_config_vals(['core.dcos_url'], config)[0]
         else:
             self._mesos_master_url = mesos_master_url
+
+        self._timeout = config.get('core.timeout')
 
     def get_dcos_url(self, path):
         """ Create a DCOS URL
@@ -90,7 +90,7 @@ class DCOSClient(object):
         """
 
         url = self.master_url('master/state.json')
-        return http.get(url).json()
+        return http.get(url, timeout=self._timeout).json()
 
     def get_slave_state(self, slave_id):
         """Get the Mesos slave state json object
@@ -102,7 +102,7 @@ class DCOSClient(object):
         """
 
         url = self.slave_url(slave_id, 'state.json')
-        return http.get(url).json()
+        return http.get(url, timeout=self._timeout).json()
 
     def get_state_summary(self):
         """Get the Mesos master state summary json object
@@ -112,7 +112,7 @@ class DCOSClient(object):
         """
 
         url = self.master_url('master/state-summary')
-        return http.get(url).json()
+        return http.get(url, timeout=self._timeout).json()
 
     def slave_file_read(self, slave_id, path, offset, length):
         """ See the master_file_read() docs
@@ -134,7 +134,7 @@ class DCOSClient(object):
         params = {'path': path,
                   'length': length,
                   'offset': offset}
-        return http.get(url, params=params).json()
+        return http.get(url, params=params, timeout=self._timeout).json()
 
     def master_file_read(self, path, length, offset):
         """This endpoint isn't well documented anywhere, so here is the spec
@@ -178,7 +178,7 @@ class DCOSClient(object):
         params = {'path': path,
                   'length': length,
                   'offset': offset}
-        return http.get(url, params=params).json()
+        return http.get(url, params=params, timeout=self._timeout).json()
 
     def shutdown_framework(self, framework_id):
         """Shuts down a Mesos framework
@@ -192,7 +192,7 @@ class DCOSClient(object):
 
         data = 'frameworkId={}'.format(framework_id)
         url = self.master_url('master/shutdown')
-        http.post(url, data=data)
+        http.post(url, data=data, timeout=self._timeout)
 
     def metadata(self):
         """ Get /metadata
@@ -201,7 +201,7 @@ class DCOSClient(object):
         :rtype: dict
         """
         url = self.get_dcos_url('metadata')
-        return http.get(url).json()
+        return http.get(url, timeout=self._timeout).json()
 
 
 class MesosDNSClient(object):
@@ -399,7 +399,7 @@ class Master(object):
         """
 
         url = urllib.parse.urljoin(self._base_url(), path)
-        return http.get(url, timeout=MESOS_TIMEOUT, **kwargs)
+        return http.get(url, **kwargs)
 
     def _slave_obj(self, slave):
         """Returns the Slave object corresponding to the provided `slave`

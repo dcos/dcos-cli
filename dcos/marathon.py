@@ -22,9 +22,10 @@ def create_client(config=None):
         config = util.get_config()
 
     marathon_url = _get_marathon_url(config)
+    timeout = config.get('core.timeout', http.DEFAULT_TIMEOUT)
 
     logger.info('Creating marathon client with: %r', marathon_url)
-    return Client(marathon_url)
+    return Client(marathon_url, timeout)
 
 
 def _get_marathon_url(config):
@@ -87,8 +88,9 @@ class Client(object):
     :type marathon_url: str
     """
 
-    def __init__(self, marathon_url):
+    def __init__(self, marathon_url, timeout):
         self._base_url = marathon_url
+        self._timeout = timeout
 
         min_version = "0.8.1"
         version = LooseVersion(self.get_about()["version"])
@@ -127,7 +129,9 @@ class Client(object):
 
         url = self._create_url('v2/info')
 
-        response = http.get(url, to_exception=_to_exception)
+        response = http.get(url,
+                            to_exception=_to_exception,
+                            timeout=self._timeout)
 
         return response.json()
 
@@ -150,7 +154,9 @@ class Client(object):
             url = self._create_url(
                 'v2/apps{}/versions/{}'.format(app_id, version))
 
-        response = http.get(url, to_exception=_to_exception)
+        response = http.get(url,
+                            to_exception=_to_exception,
+                            timeout=self._timeout)
 
         # Looks like Marathon return different JSON for versions
         if version is None:
@@ -167,7 +173,9 @@ class Client(object):
 
         url = self._create_url('v2/groups')
 
-        response = http.get(url, to_exception=_to_exception)
+        response = http.get(url,
+                            to_exception=_to_exception,
+                            timeout=self._timeout)
 
         return response.json()['groups']
 
@@ -190,7 +198,9 @@ class Client(object):
             url = self._create_url(
                 'v2/groups{}/versions/{}'.format(group_id, version))
 
-        response = http.get(url, to_exception=_to_exception)
+        response = http.get(url,
+                            to_exception=_to_exception,
+                            timeout=self._timeout)
 
         return response.json()
 
@@ -217,7 +227,9 @@ class Client(object):
 
         url = self._create_url('v2/apps{}/versions'.format(app_id))
 
-        response = http.get(url, to_exception=_to_exception)
+        response = http.get(url,
+                            to_exception=_to_exception,
+                            timeout=self._timeout)
 
         if max_count is None:
             return response.json()['versions']
@@ -233,7 +245,9 @@ class Client(object):
 
         url = self._create_url('v2/apps')
 
-        response = http.get(url, to_exception=_to_exception)
+        response = http.get(url,
+                            to_exception=_to_exception,
+                            timeout=self._timeout)
 
         return response.json()['apps']
 
@@ -256,7 +270,8 @@ class Client(object):
 
         response = http.post(url,
                              json=app_json,
-                             to_exception=_to_exception)
+                             to_exception=_to_exception,
+                             timeout=self._timeout)
 
         return response.json()
 
@@ -287,7 +302,8 @@ class Client(object):
         response = http.put(url,
                             params=params,
                             json=payload,
-                            to_exception=_to_exception)
+                            to_exception=_to_exception,
+                            timeout=self._timeout)
 
         return response.json().get('deploymentId')
 
@@ -343,13 +359,11 @@ class Client(object):
 
         url = self._create_url('v2/apps{}'.format(app_id))
 
-        response, error = http.put(url,
-                                   params=params,
-                                   json={'instances': int(instances)},
-                                   to_exception=_to_exception)
-
-        if error is not None:
-            return (None, error)
+        response = http.put(url,
+                            params=params,
+                            json={'instances': int(instances)},
+                            to_exception=_to_exception,
+                            timeout=self._timeout)
 
         deployment = response.json()['deploymentId']
         return (deployment, None)
@@ -386,7 +400,10 @@ class Client(object):
 
         url = self._create_url('v2/apps{}'.format(app_id))
 
-        http.delete(url, params=params, to_exception=_to_exception)
+        http.delete(url,
+                    params=params,
+                    to_exception=_to_exception,
+                    timeout=self._timeout)
 
     def remove_group(self, group_id, force=None):
         """Completely removes the requested application.
@@ -407,7 +424,10 @@ class Client(object):
 
         url = self._create_url('v2/groups{}'.format(group_id))
 
-        http.delete(url, params=params, to_exception=_to_exception)
+        http.delete(url,
+                    params=params,
+                    to_exception=_to_exception,
+                    timeout=self._timeout)
 
     def restart_app(self, app_id, force=None):
         """Performs a rolling restart of all of the tasks.
@@ -431,7 +451,8 @@ class Client(object):
 
         response = http.post(url,
                              params=params,
-                             to_exception=_to_exception)
+                             to_exception=_to_exception,
+                             timeout=self._timeout)
 
         return response.json()
 
@@ -447,7 +468,8 @@ class Client(object):
         url = self._create_url('v2/deployments')
 
         response = http.get(url,
-                            to_exception=_to_exception)
+                            to_exception=_to_exception,
+                            timeout=self._timeout)
 
         deployment = next(
             (deployment for deployment in response.json()
@@ -467,7 +489,9 @@ class Client(object):
 
         url = self._create_url('v2/deployments')
 
-        response = http.get(url, to_exception=_to_exception)
+        response = http.get(url,
+                            to_exception=_to_exception,
+                            timeout=self._timeout)
 
         if app_id is not None:
             app_id = self.normalize_app_id(app_id)
@@ -504,7 +528,8 @@ class Client(object):
         response = http.delete(
             url,
             params=params,
-            to_exception=_to_exception)
+            to_exception=_to_exception,
+            timeout=self._timeout)
 
         if force:
             return None
@@ -543,7 +568,9 @@ class Client(object):
 
         url = self._create_url('v2/tasks')
 
-        response = http.get(url, to_exception=_to_exception)
+        response = http.get(url,
+                            to_exception=_to_exception,
+                            timeout=self._timeout)
 
         if app_id is not None:
             app_id = self.normalize_app_id(app_id)
@@ -567,7 +594,9 @@ class Client(object):
 
         url = self._create_url('v2/tasks')
 
-        response = http.get(url, to_exception=_to_exception)
+        response = http.get(url,
+                            to_exception=_to_exception,
+                            timeout=self._timeout)
 
         task = next(
             (task for task in response.json()['tasks']
@@ -589,7 +618,7 @@ class Client(object):
             return None
 
         url = self._create_url('v2/schemas/app')
-        response = http.get(url)
+        response = http.get(url, timeout=self._timeout)
 
         return response.json()
 
@@ -620,7 +649,10 @@ class Client(object):
         else:
             group_json = group_resource
 
-        response = http.post(url, json=group_json, to_exception=_to_exception)
+        response = http.post(url,
+                             json=group_json,
+                             to_exception=_to_exception,
+                             timeout=self._timeout)
 
         return response.json()
 
@@ -632,7 +664,7 @@ class Client(object):
         """
 
         url = self._create_url('v2/leader')
-        response = http.get(url)
+        response = http.get(url, timeout=self._timeout)
 
         return response.json()['leader']
 

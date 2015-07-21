@@ -75,6 +75,7 @@ def test_list_property(env):
     stdout = b"""core.dcos_url=http://change.dcos.url
 core.email=test@mail.com
 core.reporting=False
+core.timeout=5
 package.cache=tmp/cache
 package.sources=['https://github.com/mesosphere/universe/archive/\
 version-1.x.zip']
@@ -90,6 +91,10 @@ def test_get_existing_string_property(env):
 
 def test_get_existing_boolean_property(env):
     _get_value('core.reporting', False, env)
+
+
+def test_get_existing_number_property(env):
+    _get_value('core.timeout', 5, env)
 
 
 def test_get_missing_property(env):
@@ -119,6 +124,12 @@ def test_set_existing_boolean_property(env):
     _set_value('core.reporting', 'true', env)
     _get_value('core.reporting', True, env)
     _set_value('core.reporting', 'true', env)
+
+
+def test_set_existing_number_property(env):
+    _set_value('core.timeout', '5', env)
+    _get_value('core.timeout', 5, env)
+    _set_value('core.timeout', '5', env)
 
 
 def test_append_empty_list(env):
@@ -412,6 +423,21 @@ def test_append_fail_url_validation(env):
 
 def test_prepend_fail_url_validation(env):
     _fail_url_validation('prepend', 'package.sources', 'bad_url', env)
+
+
+def test_timeout(missing_env):
+    _set_value('marathon.url', 'http://1.2.3.4', missing_env)
+    _set_value('core.timeout', '1', missing_env)
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'marathon', 'app', 'list'], env=missing_env)
+
+    assert returncode == 1
+    assert stdout == b''
+    assert "(connect timeout=1)".encode('utf-8') in stderr
+
+    _unset_value('core.timeout', None, missing_env)
+    _unset_value('marathon.url', None, missing_env)
 
 
 def _fail_url_validation(command, key, value, env):
