@@ -19,6 +19,7 @@ USER_INFO_URL = 'https://accounts.mesosphere.com/api/v1/user.json'
 CORE_TOKEN_KEY = 'token'
 CORE_EMAIL_KEY = 'email'
 emitter = emitting.FlatEmitter()
+logger = util.get_logger(__name__)
 
 
 def _authorize():
@@ -39,6 +40,7 @@ def _authorize():
         )
         return _run(flow)
     except:
+        logger.exception('Error during OAuth web flow')
         raise DCOSException('There was a problem with '
                             'web authentication.')
 

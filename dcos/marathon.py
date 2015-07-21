@@ -62,6 +62,10 @@ def _to_exception(response):
     try:
         response_json = response.json()
     except Exception:
+        logger.exception(
+            'Unable to decode response body as a JSON value: %r',
+            response)
+
         return DCOSException(
             'Error decoding response from [{0}]: HTTP {1}: {2}'.format(
                 response.request.url, response.status_code, response.reason))

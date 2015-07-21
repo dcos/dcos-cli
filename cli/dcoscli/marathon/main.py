@@ -318,6 +318,8 @@ def _get_resource(resource):
                 else:
                     raise Exception
             except Exception:
+                logger.exception('Cannot read from resource %s', resource)
+
                 raise DCOSException(
                     "Can't read from resource: {0}.\n"
                     "Please check that it exists.".format(resource))
@@ -918,6 +920,7 @@ def _calculate_version(client, app_id, version):
     try:
         value = util.parse_int(version)
     except DCOSException:
+        logger.exception('Unable to parse version %s', version)
         return version
     else:
         if value < 0:

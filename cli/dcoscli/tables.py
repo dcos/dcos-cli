@@ -12,6 +12,8 @@ DEPLOYMENT_DISPLAY = {'ResolveArtifacts': 'artifacts',
                       'RestartApplication': 'restart',
                       'KillAllOldTasksOf': 'kill-tasks'}
 
+logger = util.get_logger(__name__)
+
 
 def task_table(tasks):
     """Returns a PrettyTable representation of the provided mesos tasks.
@@ -150,6 +152,8 @@ def deployment_table(deployments):
             try:
                 action_display = DEPLOYMENT_DISPLAY[action['action']]
             except KeyError:
+                logger.exception('Missing action entry')
+
                 raise ValueError(
                     'Unknown Marathon action: {}'.format(action['action']))
 

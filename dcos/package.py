@@ -425,8 +425,10 @@ def installed_apps(init_client, endpoints=False):
     for encoded in encoded_apps:
         try:
             decoded = decode_and_add_context(encoded)
-        except Exception as e:
-            logger.exception(e)
+        except Exception:
+            logger.exception(
+                'Unable to decode package metadata during install: %s',
+                encoded[0])
 
         valid_apps.append(decoded)
 
@@ -638,6 +640,8 @@ def _acquire_file_lock(lock_file_path):
     try:
         lock_file = open(lock_file_path, 'w')
     except IOError as e:
+        logger.exception('Failed to open lock file: %s', lock_file_path)
+
         raise util.io_exception(lock_file_path, e.errno)
 
     acquire_mode = portalocker.LOCK_EX | portalocker.LOCK_NB
@@ -646,6 +650,10 @@ def _acquire_file_lock(lock_file_path):
         portalocker.lock(lock_file, acquire_mode)
         return lock_file
     except portalocker.LockException:
+        logger.exception(
+            'Failure while tring to aquire file lock: %s',
+            lock_file_path)
+
         lock_file.close()
         raise DCOSException('Unable to acquire the package cache lock')
 
@@ -693,6 +701,11 @@ def update_sources(config, validate=False):
                 try:
                     source.copy_to_cache(stage_dir)
                 except DCOSException as e:
+                    logger.exception(
+                        'Failed to copy universe source %s to cache %s',
+                        source.url,
+                        stage_dir)
+
                     errors.append(e.message)
                     continue
 
@@ -717,6 +730,10 @@ def update_sources(config, validate=False):
                                       onerror=_rmtree_on_error,
                                       ignore_errors=False)
                 except OSError:
+                    logger.exception(
+                        'Error removing target directory before move: %s',
+                        target_dir)
+
                     err = Error(
                         'Could not remove directory [{}]'.format(target_dir))
                     errors.append(err)
@@ -813,6 +830,11 @@ class FileSource(Source):
             shutil.copytree(source_dir, target_dir)
             return None
         except OSError:
+            logger.exception(
+                'Error copying source director [%s] to target directory [%s].',
+                source_dir,
+                target_dir)
+
             raise DCOSException(
                 'Unable to fetch packages from [{}]'.format(self.url))
 
@@ -856,7 +878,10 @@ class HttpSource(Source):
                         for chunk in req.iter_content(1024):
                             f.write(chunk)
                 else:
-                    raise Exception
+                    raise Exception(
+                        'HTTP GET for {} did not return 200: {}'.format(
+                            self.url,
+                            req.status_code))
 
                 # Unzip the downloaded file.
                 packages_zip = zipfile.ZipFile(tmp_file, 'r')
@@ -890,6 +915,8 @@ class HttpSource(Source):
                 return None
 
         except Exception:
+            logger.exception('Unable to fetch packages from URL: %s', self.url)
+
             raise DCOSException(
                 'Unable to fetch packages from [{}]'.format(self.url))
 
@@ -944,6 +971,8 @@ PATH = {}""".format(os.environ[constants.PATH_ENV]))
             return None
 
         except git.exc.GitCommandError:
+            logger.exception('Unable to fetch packages from git: %s', self.url)
+
             raise DCOSException(
                 'Unable to fetch packages from [{}]'.format(self.url))
 
@@ -1080,6 +1109,8 @@ class Registry():
                 version_json = json.load(fd)
                 return version_json.get('version')
         except ValueError:
+            logger.exception('Unable to parse JSON: %s', index_path)
+
             raise DCOSException('Unable to parse [{}]'.format(index_path))
 
     def get_index(self):
@@ -1102,6 +1133,8 @@ class Registry():
             with util.open_file(index_path) as fd:
                 return json.load(fd)
         except ValueError:
+            logger.exception('Unable to parse JSON: %s', index_path)
+
             raise DCOSException('Unable to parse [{}]'.format(index_path))
 
     def get_package(self, package_name):
@@ -1132,6 +1165,8 @@ class Registry():
         try:
             return Package(self, package_path)
         except:
+            logger.exception('Unable to read package: %s', package_path)
+
             raise DCOSException(
                 'Could not read package [{}]'.format(package_name))
 
