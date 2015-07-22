@@ -52,6 +52,8 @@ Options:
                                 warning, error and critical messages to stderr.
                                 Note: that this does not affect the output sent
                                 to stdout by the command.
+    --debug                     If set then enable further debug messages which
+                                are sent to stdout.
 
 Environment Variables:
     DCOS_LOG_LEVEL              If set then it specifies that message should be
@@ -60,6 +62,9 @@ Environment Variables:
 
     DCOS_CONFIG                 This environment variable points to the
                                 location of the DCOS configuration file.
+
+    DCOS_DEBUG                  If set then enable further debug messages which
+                                are sent to stdout.
 """
 
     assert_command(['dcos', '--help'],
