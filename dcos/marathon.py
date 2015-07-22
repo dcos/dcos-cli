@@ -343,40 +343,13 @@ class Client(object):
 
         url = self._create_url('v2/apps{}'.format(app_id))
 
-        response = http.put(url,
-                            params=params,
-                            json={'instances': int(instances)},
-                            to_exception=_to_exception)
+        response, error = http.put(url,
+                                   params=params,
+                                   json={'instances': int(instances)},
+                                   to_exception=_to_exception)
 
-        deployment = response.json()['deploymentId']
-        return (deployment, None)
-
-    def scale_group(self, group_id, scale_factor, force=None):
-        """Scales a group with the requested scale-factor.
-
-        :param group_id: the ID of the group to scale
-        :type group_id: str
-        :param scale_factor: the requested value of scale-factor
-        :type scale_factor: int
-        :param force: whether to override running deployments
-        :type force: bool
-        :returns: the resulting deployment ID
-        :rtype: bool
-        """
-
-        group_id = self.normalize_app_id(group_id)
-
-        if not force:
-            params = None
-        else:
-            params = {'force': 'true'}
-
-        url = self._create_url('v2/groups{}'.format(group_id))
-
-        response = http.put(url,
-                            params=params,
-                            json={'scaleBy': float(scale_factor)},
-                            to_exception=_to_exception)
+        if error is not None:
+            return (None, error)
 
         deployment = response.json()['deploymentId']
         return (deployment, None)
