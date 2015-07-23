@@ -89,9 +89,6 @@ if (-Not(Test-Path $DCOS_CONFIG)) {
 [Environment]::SetEnvironmentVariable("DCOS_CONFIG", "$DCOS_CONFIG", "User")
 $env:DCOS_CONFIG = $DCOS_CONFIG
 
-[Environment]::SetEnvironmentVariable("DCOS_INSTALLATION_PATH", "$installation_path", "User")
-$env:DCOS_INSTALLATION_PATH = $installation_path
-
 dcos config set core.reporting true
 dcos config set core.dcos_url $dcos_url
 dcos config set package.cache $env:temp\dcos\package-cache
@@ -102,4 +99,4 @@ dcos package update
 echo "Finished installing and configuring DCOS CLI."
 echo ""
 echo "Run this command to set up your environment and to get started:"
-echo "& `"`$env:dcos_installation_path\Scripts\activate.ps1`""
+echo "& $installation_path\Scripts\activate.ps1"
