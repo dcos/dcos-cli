@@ -35,6 +35,13 @@
         "title": "Mesos Master URL",
         "description":
         "Mesos Master URL.  Must be of the format: \"http://host:port\""
+    },
+    "timeout": {
+        "type": "integer",
+        "default": 5,
+        "minimum": 1,
+        "title": "Request timeout in seconds",
+        "description": "Request timeout in seconds"
     }
   },
   "additionalProperties": false
