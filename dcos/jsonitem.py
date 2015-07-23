@@ -1,7 +1,10 @@
 import collections
 import json
 
+from dcos import util
 from dcos.errors import DCOSException
+
+logger = util.get_logger(__name__)
 
 
 def parse_json_item(json_item, schema):
@@ -141,6 +144,8 @@ def _parse_object(value):
             raise DCOSException(
                 'Unable to parse {!r} as a JSON object'.format(value))
     except ValueError as error:
+        logger.exception('Error parsing value as a JSON object')
+
         msg = 'Unable to parse {!r} as a JSON object: {}'.format(value, error)
         raise DCOSException(msg)
 
@@ -156,6 +161,8 @@ def _parse_number(value):
     try:
         return None if value == 'null' else float(value)
     except ValueError as error:
+        logger.exception('Error parsing value as a JSON number')
+
         msg = 'Unable to parse {!r} as a float: {}'.format(value, error)
         raise DCOSException(msg)
 
@@ -171,6 +178,8 @@ def _parse_integer(value):
     try:
         return None if value == 'null' else int(value)
     except ValueError as error:
+        logger.exception('Error parsing value as a JSON integer')
+
         msg = 'Unable to parse {!r} as an int: {}'.format(value, error)
         raise DCOSException(msg)
 
@@ -191,6 +200,8 @@ def _parse_boolean(value):
             raise DCOSException(
                 'Unable to parse {!r} as a boolean'.format(value))
     except ValueError as error:
+        logger.exception('Error parsing value as a JSON boolean')
+
         msg = 'Unable to parse {!r} as a boolean: {}'.format(value, error)
         raise DCOSException(msg)
 
@@ -211,5 +222,7 @@ def _parse_array(value):
             raise DCOSException(
                 'Unable to parse {!r} as an array'.format(value))
     except ValueError as error:
+        logger.exception('Error parsing value as a JSON array')
+
         msg = 'Unable to parse {!r} as an array: {}'.format(value, error)
         raise DCOSException(msg)

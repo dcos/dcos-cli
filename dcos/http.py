@@ -92,6 +92,8 @@ def request(method,
         with requests.Session() as session:
             response = session.send(request.prepare(), timeout=timeout)
     except Exception as ex:
+        logger.exception('Error making HTTP request: %r', request.url)
+
         raise to_exception(ex)
 
     logger.info('Received HTTP response [%r]: %r',

@@ -81,7 +81,7 @@ def _stream_files(curr_header, fn, mesos_files):
             # is unavailable, or if the file doesn't exist in the
             # sandbox.  In any case, we silently remove the file and
             # continue.
-            logger.warning("Error reading file: {}".format(e))
+            logger.exception("Error reading file: {}".format(e))
 
             reachable_files.remove(mesos_file)
             continue

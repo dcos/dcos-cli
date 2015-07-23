@@ -203,13 +203,16 @@ def configure_logger(log_level):
     :type log_level: str
     :rtype: None
     """
+
     if log_level is None:
         logging.disable(logging.CRITICAL)
         return None
 
     if log_level in constants.VALID_LOG_LEVEL_VALUES:
         logging.basicConfig(
-            format='%(message)s',
+            format=('%(asctime)s '
+                    '%(pathname)s:%(funcName)s:%(lineno)d - '
+                    '%(message)s'),
             stream=sys.stderr,
             level=log_level.upper())
         return None
@@ -234,6 +237,7 @@ def load_json(reader):
         logger.error(
             'Unhandled exception while loading JSON: %r',
             error)
+
         raise DCOSException('Error loading JSON: {}'.format(error))
 
 
@@ -249,11 +253,10 @@ def load_jsons(value):
     try:
         return json.loads(value)
     except:
-        error = sys.exc_info()[0]
-        logger.error(
-            'Unhandled exception while loading JSON: %r -- %r',
-            value,
-            error)
+        logger.exception(
+            'Unhandled exception while loading JSON: %r',
+            value)
+
         raise DCOSException('Error loading JSON.')
 
 
@@ -390,11 +393,10 @@ def parse_int(string):
     try:
         return int(string)
     except:
-        error = sys.exc_info()[0]
         logger.error(
-            'Unhandled exception while parsing string as int: %r -- %r',
-            string,
-            error)
+            'Unhandled exception while parsing string as int: %r',
+            string)
+
         raise DCOSException('Error parsing string as int')
 
 
@@ -413,6 +415,11 @@ def render_mustache_json(template, data):
         r = CustomJsonRenderer()
         rendered = r.render(template, data)
     except Exception as e:
+        logger.exception(
+            'Error rendering mustache template [%r] [%r]',
+            template,
+            data)
+
         raise DCOSException(e)
 
     logger.debug('Rendered mustache template: %s', rendered)
@@ -540,6 +547,8 @@ def open_file(path,  *args):
         file_ = open(path, *args)
         yield file_
     except IOError as e:
+        logger.exception('Unable to open file: %s', path)
+
         raise io_exception(path, e.errno)
 
     file_.close()

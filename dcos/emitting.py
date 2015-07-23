@@ -15,12 +15,6 @@ from dcos import constants, errors, util
 from pygments.formatters import Terminal256Formatter
 from pygments.lexers import JsonLexer
 
-try:
-    basestring = basestring
-except NameError:
-    # We are in python3 define basestring as str
-    basestring = str
-
 logger = util.get_logger(__name__)
 
 
