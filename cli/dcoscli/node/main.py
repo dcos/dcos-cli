@@ -28,7 +28,7 @@ import subprocess
 import dcoscli
 import docopt
 from dcos import cmds, emitting, errors, mesos, util
-from dcos.errors import DCOSException
+from dcos.errors import DCOSException, DefaultError
 from dcoscli import log, tables
 
 logger = util.get_logger(__name__)
@@ -183,7 +183,6 @@ def _ssh(master, slave, option, config_file, user):
     :type user: str | None
     :rtype: int
     :returns: process return code
-
     """
 
     ssh_options = util.get_ssh_options(config_file, option)
@@ -200,9 +199,10 @@ def _ssh(master, slave, option, config_file, user):
         else:
             raise DCOSException('No slave found with ID [{}]'.format(slave))
 
-    cmd = "ssh -t {0} {1}@{2}".format(
+    cmd = "ssh -t {0}{1}@{2}".format(
         ssh_options,
         user,
         host)
 
+    emitter.publish(DefaultError("Running `{}`".format(cmd)))
     return subprocess.call(cmd, shell=True)
