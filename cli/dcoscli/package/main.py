@@ -69,7 +69,7 @@ def main():
 
 
 def _main():
-    util.configure_logger_from_environ()
+    util.configure_process_from_environ()
 
     args = docopt.docopt(
         __doc__,

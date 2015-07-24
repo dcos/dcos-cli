@@ -187,13 +187,28 @@ def dcos_path():
     return os.path.dirname(os.path.dirname(os.sys.executable))
 
 
-def configure_logger_from_environ():
-    """Configure the program's logger using the environment variable
+def configure_process_from_environ():
+    """Configure the program's logger and debug messages using the environment
+    variable
 
     :rtype: None
     """
 
-    return configure_logger(os.environ.get(constants.DCOS_LOG_LEVEL_ENV))
+    configure_logger(os.environ.get(constants.DCOS_LOG_LEVEL_ENV))
+    configure_debug(os.environ.get(constants.DCOS_DEBUG_ENV))
+
+
+def configure_debug(is_debug):
+    """Configure debug messages for the program
+
+    :param is_debug: Enable debug message if true; otherwise disable debug
+                     messages
+    :type is_debug: bool
+    :rtype: None
+    """
+
+    if is_debug:
+        six.moves.http_client.HTTPConnection.debuglevel = 1
 
 
 def configure_logger(log_level):

@@ -19,6 +19,8 @@ Options:
                                 warning, error and critical messages to stderr.
                                 Note: that this does not affect the output sent
                                 to stdout by the command.
+    --debug                     If set then enable further debug messages which
+                                are sent to stdout.
 
 Environment Variables:
     DCOS_LOG_LEVEL              If set then it specifies that message should be
@@ -28,6 +30,8 @@ Environment Variables:
     DCOS_CONFIG                 This environment variable points to the
                                 location of the DCOS configuration file.
 
+    DCOS_DEBUG                  If set then enable further debug messages which
+                                are sent to stdout.
 """
 
 import os
@@ -70,10 +74,9 @@ def _main():
     if not _config_log_level_environ(args['--log-level']):
         return 1
 
-    err = util.configure_logger_from_environ()
-    if err is not None:
-        emitter.publish(err)
-        return 1
+    _config_debug_environ(args['--debug'])
+
+    util.configure_process_from_environ()
 
     command = args['<command>']
     http.silence_requests_warnings()
@@ -110,6 +113,19 @@ def _config_log_level_environ(log_level):
     emitter.publish(msg.format(log_level, constants.VALID_LOG_LEVEL_VALUES))
 
     return False
+
+
+def _config_debug_environ(is_debug):
+    """
+    :param is_debug: If true then enable debug; otherwise disable debug
+    :type is_debug: bool
+    :rtype: None
+    """
+
+    if is_debug:
+        os.environ[constants.DCOS_DEBUG_ENV] = 'true'
+    else:
+        os.environ.pop(constants.DCOS_DEBUG_ENV, None)
 
 
 def _is_valid_configuration():
