@@ -75,6 +75,7 @@ def print_handler(event):
 
     elif isinstance(event, errors.Error):
         print(event.error(), file=sys.stderr)
+        sys.stderr.flush()
 
     elif (isinstance(event, collections.Mapping) or
           isinstance(event, collections.Sequence) or isinstance(event, bool) or

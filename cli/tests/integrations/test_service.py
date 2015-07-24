@@ -163,10 +163,10 @@ def test_log_marathon():
 
     assert len(stdout.decode('utf-8').split('\n')) > 10
 
+    assert b"Running `" in stderr
     num_lines = len(stderr.decode('utf-8').split('\n'))
     assert ((num_lines == 2) or
-            (num_lines == 3 and
-             b'Warning: Permanently added' in stderr))
+            (num_lines == 3 and b'Warning: Permanently added' in stderr))
 
 
 def test_log_config():

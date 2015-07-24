@@ -133,6 +133,7 @@ def _wait_and_capture(subproc):
         line = subproc.stderr.readline().decode('utf-8')
         err += line
         sys.stderr.write(line)
+        sys.stderr.flush()
 
     exit_code = subproc.poll()
 

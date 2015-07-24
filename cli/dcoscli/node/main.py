@@ -205,4 +205,5 @@ def _ssh(master, slave, option, config_file, user):
         host)
 
     emitter.publish(DefaultError("Running `{}`".format(cmd)))
+
     return subprocess.call(cmd, shell=True)
