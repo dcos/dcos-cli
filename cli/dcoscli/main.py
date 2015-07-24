@@ -67,16 +67,16 @@ def _main():
         version='dcos version {}'.format(dcoscli.version),
         options_first=True)
 
-    if args['<command>'] != 'config' and \
-       not auth.check_if_user_authenticated():
-        auth.force_auth()
-
     if not _config_log_level_environ(args['--log-level']):
         return 1
 
     _config_debug_environ(args['--debug'])
 
     util.configure_process_from_environ()
+
+    if args['<command>'] != 'config' and \
+       not auth.check_if_user_authenticated():
+        auth.force_auth()
 
     command = args['<command>']
     http.silence_requests_warnings()
