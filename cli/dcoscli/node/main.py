@@ -23,6 +23,7 @@ Options:
     --version               Show version
 """
 
+import re
 import subprocess
 
 import dcoscli
@@ -186,23 +187,50 @@ def _ssh(master, slave, option, config_file, user):
     """
 
     ssh_options = util.get_ssh_options(config_file, option)
+    master_host = mesos.DCOSClient().master_ip()
 
     if master:
-        host = mesos.MesosDNSClient().hosts('leader.mesos.')[0]['ip']
+        cmd = "ssh -t {0}{1}@{2}".format(
+            ssh_options,
+            user,
+            master_host)
+
+        emitter.publish(DefaultError("Running `{}`".format(cmd)))
+        return subprocess.call(cmd, shell=True)
+
     else:
+        # Add the key for agent forwarding
+        for opt in option:
+            if "IdentityFile" in opt:
+                m = re.search('=(.*)', opt)
+                key_path = m.group(1)
+                subprocess.call("ssh-add {}".format(key_path), shell=True)
+
         summary = mesos.DCOSClient().get_state_summary()
         slave_obj = next((slave_ for slave_ in summary['slaves']
                           if slave_['id'] == slave),
                          None)
         if slave_obj:
-            host = mesos.parse_pid(slave_obj['pid'])[1]
+            slave_host = mesos.parse_pid(slave_obj['pid'])[1]
         else:
             raise DCOSException('No slave found with ID [{}]'.format(slave))
 
-    cmd = "ssh -t {0}{1}@{2}".format(
-        ssh_options,
-        user,
-        host)
+        # Generate the necessary config on the master node to enable
+        # ssh agent forwarding
+        cmd_fmt =
+            """ssh -t {0}{1}@{2} 'printf \"Host {2}\\nForwardAgent yes\" 
+            > ~/.ssh/config'"""
+        cmd = cmd_fmt.format(
+            ssh_options,
+            user,
+            master_host)
+        emitter.publish(DefaultError("Running `{}`".format(cmd)))
+        subprocess.call(cmd, shell=True)
 
-    emitter.publish(DefaultError("Running `{}`".format(cmd)))
-    return subprocess.call(cmd, shell=True)
+        cmd = "ssh -t -A {0}{1}@{2} 'ssh {1}@{3}'".format(
+            ssh_options,
+            user,
+            master_host,
+            slave_host)
+        emitter.publish(DefaultError("Running `{}`".format(cmd)))
+        return subprocess.call(cmd, shell=True)

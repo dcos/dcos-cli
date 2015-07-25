@@ -1,5 +1,6 @@
 import fnmatch
 import itertools
+import json
 import os
 
 from dcos import http, util
@@ -66,6 +67,12 @@ class DCOSClient(object):
         base_url = (self._mesos_master_url or
                     urllib.parse.urljoin(self._dcos_url, 'mesos/'))
         return urllib.parse.urljoin(base_url, path)
+
+    def master_ip(self):
+        path = urllib.parse.urljoin(self._dcos_url, 'metadata')
+        response = urllib.request.urlopen(path).read()
+        data = json.loads(response)
+        return data["PUBLIC_IPV4"]
 
     # TODO (mgummelt): this doesn't work with self._mesos_master_url
     def slave_url(self, slave_id, path):
