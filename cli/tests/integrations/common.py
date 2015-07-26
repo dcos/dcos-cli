@@ -196,6 +196,27 @@ def watch_all_deployments(count=300):
         watch_deployment(dep['id'], count)
 
 
+def wait_for_service(service_name, max_count=300):
+    """Wait for service to register with Mesos
+
+    :param service_name: name of service
+    :type service_name: str
+    :param max_count: max number of seconds to wait
+    :type max_count: int
+    :rtype: None
+    """
+
+    count = 0
+    while count < max_count:
+        services = get_services()
+
+        for service in services:
+            if service['name'] == service_name:
+                return
+
+        count += 1
+
+
 def add_app(app_path, deploy=False):
     """ Add an app, and wait for it to deploy
 
