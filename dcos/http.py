@@ -77,22 +77,21 @@ def request(method,
         kwargs['headers'] = {'Accept': 'application/json'}
 
     timeout = timeout or _timeout()
-    request = requests.Request(
-        method=method,
-        url=url,
-        **kwargs)
 
     logger.info(
         'Sending HTTP [%r] to [%r]: %r',
-        request.method,
-        request.url,
-        request.headers)
+        method,
+        url,
+        kwargs.get('headers'))
 
     try:
-        with requests.Session() as session:
-            response = session.send(request.prepare(), timeout=timeout)
+        response = requests.request(
+            method=method,
+            url=url,
+            timeout=timeout,
+            **kwargs)
     except Exception as ex:
-        logger.exception('Error making HTTP request: %r', request.url)
+        logger.exception('Error making HTTP request: %r', url)
 
         raise to_exception(ex)
 
