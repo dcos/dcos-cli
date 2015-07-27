@@ -111,10 +111,6 @@ def test_node_log_invalid_lines():
                    returncode=1)
 
 
-def test_node_ssh_master():
-    _node_ssh(['--master'])
-
-
 def test_node_ssh_slave():
     slave_id = mesos.DCOSClient().get_state_summary()['slaves'][0]['id']
     _node_ssh(['--slave={}'.format(slave_id)])
