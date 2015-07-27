@@ -154,6 +154,10 @@ def _node_ssh(args):
     stdout, stderr = _node_ssh_output(args)
 
     assert stdout
+    assert b"Running `" in stderr
+    num_lines = len(stderr.decode().split('\n'))
+    assert (num_lines == 2 or
+            (num_lines == 3 and b'Warning: Permanently added' in stderr))
 
 
 def _get_schema(slave):
