@@ -179,13 +179,13 @@ def noun(executable_path):
     return noun
 
 
-def _write_package_json(pkg, version):
+def _write_package_json(pkg, revision):
     """ Write package.json locally.
 
     :param pkg: the package being installed
     :type pkg: Package
-    :param version: the package version to install
-    :type version: str
+    :param revision: the package revision to install
+    :type revision: str
     :rtype: None
     """
 
@@ -193,28 +193,28 @@ def _write_package_json(pkg, version):
 
     package_path = os.path.join(pkg_dir, 'package.json')
 
-    package_json = pkg.package_json(version)
+    package_json = pkg.package_json(revision)
 
     with util.open_file(package_path, 'w') as package_file:
         json.dump(package_json, package_file)
 
 
-def _write_package_version(pkg, version):
-    """ Write package version locally.
+def _write_package_revision(pkg, revision):
+    """ Write package revision locally.
 
     :param pkg: the package being installed
     :type pkg: Package
-    :param version: the package version to install
-    :type version: str
+    :param revision: the package revision to install
+    :type revision: str
     :rtype: None
     """
 
     pkg_dir = package_dir(pkg.name())
 
-    version_path = os.path.join(pkg_dir, 'version')
+    revision_path = os.path.join(pkg_dir, 'version')
 
-    with util.open_file(version_path, 'w') as version_file:
-        version_file.write(version)
+    with util.open_file(revision_path, 'w') as revision_file:
+        revision_file.write(revision)
 
 
 def _write_package_source(pkg):
@@ -233,13 +233,13 @@ def _write_package_source(pkg):
         source_file.write(pkg.registry.source.url)
 
 
-def _install_env(pkg, version, options):
+def _install_env(pkg, revision, options):
     """ Install subcommand virtual env.
 
     :param pkg: the package to install
     :type pkg: Package
-    :param version: the package version to install
-    :type version: str
+    :param revision: the package revision to install
+    :type revision: str
     :param options: package parameters
     :type options: dict
     :rtype: None
@@ -247,7 +247,7 @@ def _install_env(pkg, version, options):
 
     pkg_dir = package_dir(pkg.name())
 
-    install_operation = pkg.command_json(version, options)
+    install_operation = pkg.command_json(revision, options)
 
     env_dir = os.path.join(pkg_dir,
                            constants.DCOS_SUBCOMMAND_VIRTUALENV_SUBDIR)
@@ -262,13 +262,13 @@ def _install_env(pkg, version, options):
             install_operation.keys()))
 
 
-def install(pkg, version, options):
+def install(pkg, revision, options):
     """Installs the dcos cli subcommand
 
     :param pkg: the package to install
     :type pkg: Package
-    :param version: the package version to install
-    :type version: str
+    :param revision: the package revision to install
+    :type revision: str
     :param options: package parameters
     :type options: dict
     :rtype: None
@@ -277,11 +277,11 @@ def install(pkg, version, options):
     pkg_dir = package_dir(pkg.name())
     util.ensure_dir(pkg_dir)
 
-    _write_package_json(pkg, version)
-    _write_package_version(pkg, version)
+    _write_package_json(pkg, revision)
+    _write_package_revision(pkg, revision)
     _write_package_source(pkg)
 
-    _install_env(pkg, version, options)
+    _install_env(pkg, revision, options)
 
 
 def _subcommand_dir():
@@ -432,14 +432,14 @@ class InstalledSubcommand(object):
 
         return package_dir(self.name)
 
-    def package_version(self):
+    def package_revision(self):
         """
-        :returns: this subcommand's version.
+        :returns: this subcommand's revision.
         :rtype: str
         """
 
-        version_path = os.path.join(self._dir(), 'version')
-        return util.read_file(version_path)
+        revision_path = os.path.join(self._dir(), 'version')
+        return util.read_file(revision_path)
 
     def package_source(self):
         """

@@ -37,13 +37,13 @@ PACKAGE_REGISTRY_VERSION_KEY = 'DCOS_PACKAGE_REGISTRY_VERSION'
 PACKAGE_FRAMEWORK_NAME_KEY = 'DCOS_PACKAGE_FRAMEWORK_NAME'
 
 
-def install_app(pkg, version, init_client, options, app_id):
+def install_app(pkg, revision, init_client, options, app_id):
     """Installs a package's application
 
     :param pkg: the package to install
     :type pkg: Package
-    :param version: the package version to install
-    :type version: str
+    :param revision: the package revision to install
+    :type revision: str
     :param init_client: the program to use to run the package
     :type init_client: object
     :param options: package parameters
@@ -54,7 +54,7 @@ def install_app(pkg, version, init_client, options, app_id):
     """
 
     # Insert option parameters into the init template
-    init_desc = pkg.marathon_json(version, options)
+    init_desc = pkg.marathon_json(revision, options)
 
     if app_id is not None:
         logger.debug('Setting app ID to "%s" (was "%s")',
@@ -66,20 +66,20 @@ def install_app(pkg, version, init_client, options, app_id):
     init_client.add_app(init_desc)
 
 
-def _make_package_labels(pkg, version, options):
+def _make_package_labels(pkg, revision, options):
     """Returns Marathon app labels for a package.
 
     :param pkg: The package to install
     :type pkg: Package
-    :param version: The package version to install
-    :type version: str
+    :param revision: The package revision to install
+    :type revision: str
     :param options: package parameters
     :type options: dict
     :returns: Marathon app labels
     :rtype: dict
     """
 
-    metadata = pkg.package_json(version)
+    metadata = pkg.package_json(revision)
 
     encoded_metadata = _base64_encode(metadata)
 
@@ -96,11 +96,11 @@ def _make_package_labels(pkg, version, options):
         PACKAGE_SOURCE_KEY: pkg.registry.source.url,
         PACKAGE_FRAMEWORK_KEY: json.dumps(is_framework),
         PACKAGE_REGISTRY_VERSION_KEY: package_registry_version,
-        PACKAGE_RELEASE_KEY: str(version)
+        PACKAGE_RELEASE_KEY: revision
     }
 
-    if pkg.has_command_definition(version):
-        command = pkg.command_json(version, options)
+    if pkg.has_command_definition(revision):
+        command = pkg.command_json(revision, options)
         package_labels[PACKAGE_COMMAND_KEY] = _base64_encode(command)
 
     # Run a heuristic that determines the hint for the framework name
@@ -319,7 +319,7 @@ class InstalledPackage(object):
             ret.update(package_json)
 
             ret['packageSource'] = self.subcommand.package_source()
-            ret['releaseVersion'] = self.subcommand.package_version()
+            ret['releaseVersion'] = self.subcommand.package_revision()
         else:
             ret.update(self.apps[0])
             ret.pop('appId')
@@ -357,9 +357,9 @@ def installed_packages(init_client, endpoints):
         dicts[key]['apps'].append(app)
 
     for subcmd in subcommands:
-        package_version = subcmd.package_version()
+        package_revision = subcmd.package_revision()
         package_source = subcmd.package_source()
-        key = (subcmd.name, package_version, package_source)
+        key = (subcmd.name, package_revision, package_source)
         dicts[key]['command'] = subcmd
 
     return [
@@ -709,7 +709,7 @@ def update_sources(config, validate=False):
                     errors.append(e.message)
                     continue
 
-                # check the version
+                # check version
                 # TODO(jsancio): move this to the validation when it is forced
                 Registry(source, stage_dir).check_version(
                     LooseVersion('1.0'),
@@ -1078,7 +1078,8 @@ class Registry():
         """
 
         version = LooseVersion(self.get_version())
-        if not (version >= min_version and version < max_version):
+        if not (version >= min_version and
+                version < max_version):
             raise DCOSException((
                 'Unable to update source [{}] because version {} is '
                 'not supported. Supported versions are between {} and '
@@ -1194,12 +1195,12 @@ class Package():
 
         return os.path.basename(self.path)
 
-    def options(self, version, user_options):
+    def options(self, revision, user_options):
         """Merges package options with user supplied options, validates, and
         returns the result.
 
-        :param version: the package version to install
-        :type version: str
+        :param revision: the package revision to install
+        :type revision: str
         :param user_options: package parameters
         :type user_options: dict
         :returns: a dictionary with the user supplied options
@@ -1209,7 +1210,7 @@ class Package():
         if user_options is None:
             user_options = {}
 
-        config_schema = self.config_json(version)
+        config_schema = self.config_json(revision)
         default_options = _extract_default_values(config_schema)
 
         logger.info('Generated default options: %r', default_options)
@@ -1239,11 +1240,11 @@ class Package():
 
         return self._registry
 
-    def has_definition(self, version, filename):
+    def has_definition(self, revision, filename):
         """Returns true if the package defines filename; false otherwise.
 
-        :param version: package version
-        :type version: str
+        :param revision: package revision
+        :type revision: str
         :param filename: file in package definition
         :type filename: str
         :returns: whether filename is defined
@@ -1253,54 +1254,56 @@ class Package():
         return os.path.isfile(
             os.path.join(
                 self.path,
-                os.path.join(version, filename)))
+                os.path.join(revision, filename)))
 
-    def has_command_definition(self, version):
+    def has_command_definition(self, revision):
         """Returns true if the package defines a command; false otherwise.
 
-        :param version: package version
-        :type version: str
+        :param revision: package revision
+        :type revision: str
         :rtype: bool
         """
 
-        return self.has_definition(version, 'command.json')
+        return self.has_definition(revision, 'command.json')
 
-    def has_marathon_definition(self, version):
+    def has_marathon_definition(self, revision):
         """Returns true if the package defines a Marathon json. false otherwise.
 
-        :param version: package version
-        :type version: str
+        :param revision: package revision
+        :type revision: str
         :rtype: bool
         """
 
-        return self.has_definition(version, 'marathon.json')
+        return self.has_definition(revision, 'marathon.json')
 
-    def config_json(self, version):
+    def config_json(self, revision):
         """Returns the JSON content of the config.json file.
 
+        :param revision: package revision
+        :type revision: str
         :returns: Package config schema
         :rtype: dict
         """
 
-        return self._json(os.path.join(version, 'config.json'))
+        return self._json(os.path.join(revision, 'config.json'))
 
-    def package_json(self, version):
+    def package_json(self, revision):
         """Returns the JSON content of the package.json file.
 
-        :param version: the package version
-        :type version: str
+        :param revision: the package revision
+        :type revision: str
         :returns: Package data
         :rtype: dict
         """
 
-        return self._json(os.path.join(version, 'package.json'))
+        return self._json(os.path.join(revision, 'package.json'))
 
-    def marathon_json(self, version, options):
+    def marathon_json(self, revision, options):
         """Returns the JSON content of the marathon.json template, after
         rendering it with options.
 
-        :param version: the package version
-        :type version: str
+        :param revision: the package revision
+        :type revision: str
         :param options: the template options to use in rendering
         :type options: dict
         :rtype: dict
@@ -1308,11 +1311,11 @@ class Package():
 
         init_desc = self._render_template(
             'marathon.json',
-            version,
+            revision,
             options)
 
         # Add package metadata
-        package_labels = _make_package_labels(self, version, options)
+        package_labels = _make_package_labels(self, revision, options)
 
         # Preserve existing labels
         labels = init_desc.get('labels', {})
@@ -1322,35 +1325,35 @@ class Package():
 
         return init_desc
 
-    def command_json(self, version, options):
+    def command_json(self, revision, options):
         """Returns the JSON content of the comand.json template, after
         rendering it with options.
 
-        :param version: the package version
-        :type version: str
+        :param revision: the package revision
+        :type revision: str
         :param options: the template options to use in rendering
         :type options: dict
         :returns: Package data
         :rtype: dict
         """
 
-        template = self._data(os.path.join(version, 'command.json'))
+        template = self._data(os.path.join(revision, 'command.json'))
         rendered = pystache.render(template, options)
         return json.loads(rendered)
 
-    def _render_template(self, name, version, options):
+    def _render_template(self, name, revision, options):
         """Render a template.
 
         :param name: the file name of the template
         :type name: str
-        :param version: the package version
-        :type version: str
+        :param revision: the package revision
+        :type revision: str
         :param options: the template options to use in rendering
         :type options: dict
         :rtype: dict
         """
 
-        template = self._data(os.path.join(version, name))
+        template = self._data(os.path.join(revision, name))
         return util.render_mustache_json(template, options)
 
     def _json(self, path):
@@ -1377,60 +1380,58 @@ class Package():
         full_path = os.path.join(self.path, path)
         return util.read_file(full_path)
 
-    def package_versions(self):
-        """Returns all of the available package versions, most recent first.
+    def package_revisions(self):
+        """Returns all of the available package revisions, most recent first.
 
-        Note that the result does not describe versions of the package, not
-        the software described by the package.
-
-        :returns: Available versions of this package
+        :returns: Available revisions of this package
         :rtype: [str]
         """
 
-        vs = [f for f in os.listdir(self.path) if not f.startswith('.')]
-        vs.reverse()
+        vs = sorted((f for f in os.listdir(self.path)
+                     if not f.startswith('.')), key=int, reverse=True)
         return vs
 
-    def software_versions(self):
-        """Returns a mapping from the package version to the version of the
-        software described by the package.
+    def package_revisions_map(self):
+        """Returns a mapping from the package revision to the package version.
 
-        :returns: Map from package versions to versions of the softwre.
-        :rtype: dict
+        :returns: Map from package revision to package version
+        :rtype: OrderedDict
         """
 
-        software_package_map = collections.OrderedDict()
-        for v in self.package_versions():
-            pkg_json = self.package_json(v)
-            software_package_map[v] = pkg_json['version']
-        return software_package_map
+        package_version_map = collections.OrderedDict()
+        for rev in self.package_revisions():
+            pkg_json = self.package_json(rev)
+            package_version_map[rev] = pkg_json['version']
+        return package_version_map
 
-    def latest_version(self):
-        """Returns the latest package version.
+    def latest_package_revision(self, package_version=None):
+        """Returns the most recent package revision, for a
+        given package version if specified.
 
-        :returns: The latest version of this package
-        :rtype: str
+        :param package_version: a given package version
+        :type package_version: str
+        :returns: package revision
+        :rtype: str | None
         """
 
-        pkg_versions = self.package_versions()
+        if package_version:
+            pkg_rev_map = self.package_revisions_map()
+            # depends on package_revisions() returning an OrderedDict
+            if package_version in pkg_rev_map.values():
+                return next(pkg_rev for pkg_rev in reversed(pkg_rev_map)
+                            if pkg_rev_map[pkg_rev] == package_version)
+            else:
+                return None
+        else:
+            pkg_revisions = self.package_revisions()
+            revision = pkg_revisions[0]
 
-        if len(pkg_versions) is 0:
-            raise DCOSException(
-                'No versions found for package [{}]'.format(self.name()))
-
-        pkg_versions.sort()
-        return pkg_versions[-1]
+        return revision
 
     def __repr__(self):
 
-        v, error = self.latest_version()
-        if error is not None:
-            return error.error()
-
-        pkg_json, error = self.package_json(v)
-
-        if error is not None:
-            return error.error()
+        rev = self.latest_package_revision()
+        pkg_json = self.package_json(rev)
 
         return json.dumps(pkg_json)
 

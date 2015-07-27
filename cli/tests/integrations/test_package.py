@@ -2,6 +2,7 @@ import contextlib
 import json
 import os
 
+import pkg_resources
 import six
 from dcos import subcommand
 
@@ -75,59 +76,16 @@ version-1.x.zip",
 
 
 def test_package():
-    stdout = b"""Install and manage DCOS software packages
-
-Usage:
-    dcos package --config-schema
-    dcos package --info
-    dcos package describe [--app --options=<file> --cli] <package_name>
-    dcos package install [--cli | [--app --app-id=<app_id>]]
-                         [--options=<file> --yes] <package_name>
-    dcos package list [--json --endpoints --app-id=<app-id> <package_name>]
-    dcos package search [--json <query>]
-    dcos package sources
-    dcos package uninstall [--cli | [--app --app-id=<app-id> --all]]
-                 <package_name>
-    dcos package update [--validate]
-
-Options:
-    -h, --help         Show this screen
-    --info             Show a short description of this subcommand
-    --version          Show version
-    --yes              Assume "yes" is the answer to all prompts and run
-                       non-interactively
-    --all              Apply the operation to all matching packages
-    --app              Apply the operation only to the package's application
-    --app-id=<app-id>  The application id
-    --cli              Apply the operation only to the package's CLI
-    --options=<file>   Path to a JSON file containing package installation
-                       options
-    --validate         Validate package content when updating sources
-
-Configuration:
-    [package]
-    # Path to the local package cache.
-    cache_dir = "/var/dcos/cache"
-
-    # List of package sources, in search order.
-    #
-    # Three protocols are supported:
-    #   - Local file
-    #   - HTTPS
-    #   - Git
-    sources = [
-      "file:///Users/me/test-registry",
-      "https://my.org/registry",
-      "git://github.com/mesosphere/universe.git"
-    ]
-"""
+    stdout = pkg_resources.resource_string(
+        'tests',
+        'data/package/help.txt')
     assert_command(['dcos', 'package', '--help'],
                    stdout=stdout)
 
 
 def test_info():
     assert_command(['dcos', 'package', '--info'],
-                   stdout=b'Install and manage DCOS software packages\n')
+                   stdout=b'Install and manage DCOS packages\n')
 
 
 def test_version():
@@ -224,6 +182,35 @@ def test_install_missing_options_file():
         stderr=b"Error opening file [asdf.json]: No such file or directory\n")
 
 
+def test_install_specific_version():
+    stdout = (b'We recommend a minimum of one node with at least 2 '
+              b'CPU\'s and 1GB of RAM available for the Marathon Service.\n'
+              b'Installing Marathon app for package [marathon] '
+              b'version [0.8.1]\n'
+              b'Marathon DCOS Service has been successfully installed!\n\n'
+              b'\tDocumentation: https://mesosphere.github.io/marathon\n'
+              b'\tIssues: https:/github.com/mesosphere/marathon/issues\n\n')
+
+    with _package('marathon',
+                  stdout=stdout,
+                  args=['--yes', '--package-version=0.8.1']):
+
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'package', 'list', 'marathon', '--json'])
+        assert returncode == 0
+        assert stderr == b''
+        assert json.loads(stdout.decode('utf-8'))[0]['version'] == "0.8.1"
+
+
+def test_install_bad_package_version():
+    stderr = b'Package [helloworld] not available with version a.b.c\n'
+    assert_command(
+        ['dcos', 'package', 'install', 'helloworld',
+         '--package-version=a.b.c'],
+        returncode=1,
+        stderr=stderr)
+
+
 def test_package_metadata():
     _install_helloworld()
 
@@ -293,13 +280,13 @@ version-1.x.zip'
 
 def test_install_with_id(zk_znode):
     args = ['--app-id=chronos-1', '--yes']
-    stdout = (b'Installing package [chronos] version [2.3.4] with app id '
-              b'[chronos-1]\n')
+    stdout = (b'Installing Marathon app for package [chronos] version [2.3.4] '
+              b'with app id [chronos-1]\n')
     _install_chronos(args=args, stdout=stdout)
 
     args = ['--app-id=chronos-2', '--yes']
-    stdout = (b'Installing package [chronos] version [2.3.4] with app id '
-              b'[chronos-2]\n')
+    stdout = (b'Installing Marathon app for package [chronos] version [2.3.4] '
+              b'with app id [chronos-2]\n')
     _install_chronos(args=args, stdout=stdout)
 
 
@@ -371,9 +358,10 @@ version-1.x.zip",
 
 def test_uninstall_multiple_apps():
     stdout = (b'A sample pre-installation message\n'
-              b'Installing package [helloworld] version [0.1.0] ' +
-              b'with app id [/helloworld-1]\n'
-              b'Installing CLI subcommand for package [helloworld]\n'
+              b'Installing Marathon app for package [helloworld] version '
+              b'[0.1.0] with app id [/helloworld-1]\n'
+              b'Installing CLI subcommand for package [helloworld] '
+              b'version [0.1.0]\n'
               b'New command available: dcos helloworld\n'
               b'A sample post-installation message\n')
 
@@ -381,18 +369,19 @@ def test_uninstall_multiple_apps():
                         stdout=stdout)
 
     stdout = (b'A sample pre-installation message\n'
-              b'Installing package [helloworld] version [0.1.0] ' +
-              b'with app id [/helloworld-2]\n'
-              b'Installing CLI subcommand for package [helloworld]\n'
+              b'Installing Marathon app for package [helloworld] version '
+              b'[0.1.0] with app id [/helloworld-2]\n'
+              b'Installing CLI subcommand for package [helloworld] '
+              b'version [0.1.0]\n'
               b'New command available: dcos helloworld\n'
               b'A sample post-installation message\n')
 
     _install_helloworld(['--yes', '--app-id=/helloworld-2'],
                         stdout=stdout)
 
-    stderr = (b"Multiple apps named [helloworld] are installed: " +
-              b"[/helloworld-1, /helloworld-2].\n" +
-              b"Please use --app-id to specify the ID of the app " +
+    stderr = (b"Multiple apps named [helloworld] are installed: "
+              b"[/helloworld-1, /helloworld-2].\n"
+              b"Please use --app-id to specify the ID of the app "
               b"to uninstall, or use --all to uninstall all apps.\n")
     _uninstall_helloworld(stderr=stderr,
                           returncode=1)
@@ -433,8 +422,10 @@ def test_install_yes():
             stdin=yes_file,
             stdout=b'A sample pre-installation message\n'
                    b'Continue installing? [yes/no] '
-                   b'Installing package [helloworld] version [0.1.0]\n'
-                   b'Installing CLI subcommand for package [helloworld]\n'
+                   b'Installing Marathon app for package [helloworld] version '
+                   b'[0.1.0]\n'
+                   b'Installing CLI subcommand for package [helloworld] '
+                   b'version [0.1.0]\n'
                    b'New command available: dcos helloworld\n'
                    b'A sample post-installation message\n')
         _uninstall_helloworld()
@@ -483,8 +474,9 @@ version-1.x.zip",
     _uninstall_helloworld()
 
     stdout = (b"A sample pre-installation message\n"
-              b"Installing CLI subcommand for package [helloworld]\n"
-              b'New command available: dcos helloworld\n'
+              b"Installing CLI subcommand for package [helloworld] " +
+              b"version [0.1.0]\n"
+              b"New command available: dcos helloworld\n"
               b"A sample post-installation message\n")
     _install_helloworld(args=['--cli', '--yes'], stdout=stdout)
 
@@ -610,8 +602,10 @@ def _get_app_labels(app_id):
 def _install_helloworld(
         args=['--yes'],
         stdout=b'A sample pre-installation message\n'
-               b'Installing package [helloworld] version [0.1.0]\n'
-               b'Installing CLI subcommand for package [helloworld]\n'
+               b'Installing Marathon app for package [helloworld] '
+               b'version [0.1.0]\n'
+               b'Installing CLI subcommand for package [helloworld] '
+               b'version [0.1.0]\n'
                b'New command available: dcos helloworld\n'
                b'A sample post-installation message\n',
         returncode=0,
@@ -646,7 +640,8 @@ def _uninstall_chronos(args=[], returncode=0, stdout=b'', stderr=''):
 def _install_chronos(
         args=['--yes'],
         returncode=0,
-        stdout=b'Installing package [chronos] version [2.3.4]\n',
+        stdout=b'Installing Marathon app for package [chronos] '
+               b'version [2.3.4]\n',
         stderr=b'',
         preInstallNotes=b'We recommend a minimum of one node with at least 1 '
                         b'CPU and 2GB of RAM available for the Chronos '
@@ -675,8 +670,8 @@ def _list(args=['--json'],
 
 def _helloworld():
     stdout = b'''A sample pre-installation message
-Installing package [helloworld] version [0.1.0]
-Installing CLI subcommand for package [helloworld]
+Installing Marathon app for package [helloworld] version [0.1.0]
+Installing CLI subcommand for package [helloworld] version [0.1.0]
 New command available: dcos helloworld
 A sample post-installation message
 '''
@@ -686,18 +681,21 @@ A sample post-installation message
 
 @contextlib.contextmanager
 def _package(name,
-             stdout=b''):
-    """Context manager that deploys an app on entrance, and removes it on
+             stdout=b'',
+             args=['--yes']):
+    """Context manager that installs a package on entrace, and uninstalls it on
     exit.
 
-    :param path: path to app's json definition:
-    :type path: str
-    :param app_id: app id
-    :type app_id: str
+    :param name: package name
+    :type name: str
+    :param stdout: Expected stdout
+    :type stdout: str
+    :param args: extra CLI args
+    :type args: [str]
     :rtype: None
     """
 
-    assert_command(['dcos', 'package', 'install', name, '--yes'],
+    assert_command(['dcos', 'package', 'install', name] + args,
                    stdout=stdout)
     try:
         yield

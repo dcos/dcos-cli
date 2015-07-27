@@ -1,0 +1,48 @@
+Install and manage DCOS packages
+
+Usage:
+    dcos package --config-schema
+    dcos package --info
+    dcos package describe [--app --options=<file> --cli] <package_name>
+    dcos package install [--cli | [--app --app-id=<app_id>]]
+                         [--package-version=<package_version>]
+                         [--options=<file>] [--yes] <package_name>
+    dcos package list [--json --endpoints --app-id=<app-id> <package_name>]
+    dcos package search [--json <query>]
+    dcos package sources
+    dcos package uninstall [--cli | [--app --app-id=<app-id> --all]]
+                 <package_name>
+    dcos package update [--validate]
+
+Options:
+    --all                                  Apply the operation to all matching packages
+    --app                                  Apply the operation only to the package's
+                                           application
+    --app-id=<app-id>                      The application id
+    --cli                                  Apply the operation only to the package's CLI
+    -h, --help                             Show this screen
+    --info                                 Show a short description of this subcommand
+    --options=<file>                       Path to a JSON file containing package
+                                           installation options
+    --package-version=<package_version>    Package version to install
+    --validate                             Validate package content when updating sources
+    --version                              Show version
+    --yes                                  Assume "yes" is the answer to all prompts and
+                                           run non-interactively
+
+Configuration:
+    [package]
+    # Path to the local package cache.
+    cache_dir = "/var/dcos/cache"
+
+    # List of package sources, in search order.
+    #
+    # Three protocols are supported:
+    #   - Local file
+    #   - HTTPS
+    #   - Git
+    sources = [
+      "file:///Users/me/test-registry",
+      "https://my.org/registry",
+      "git://github.com/mesosphere/universe.git"
+    ]

@@ -81,6 +81,7 @@ setup(
     package_data={
         'dcoscli': [
             'data/*.json',
+            'data/help/*.txt',
             'data/config-schema/*.json',
         ],
     },
