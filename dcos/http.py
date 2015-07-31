@@ -1,6 +1,7 @@
 import requests
 from dcos import util
 from dcos.errors import DCOSException
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 logger = util.get_logger(__name__)
 
@@ -11,6 +12,9 @@ def _timeout():
     config = util.get_config()
     return config.get('core.timeout', DEFAULT_TIMEOUT)
 
+def _ssl_verify():
+    config = util.get_config()
+    return config.get('core.ssl_verify', True)
 
 def _default_is_success(status_code):
     """Returns true if the success status is between [200, 300).
@@ -77,6 +81,7 @@ def request(method,
         kwargs['headers'] = {'Accept': 'application/json'}
 
     timeout = timeout or _timeout()
+    ssl_verify = _ssl_verify()
 
     logger.info(
         'Sending HTTP [%r] to [%r]: %r',
@@ -84,11 +89,15 @@ def request(method,
         url,
         kwargs.get('headers'))
 
+    if not ssl_verify:
+        requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
     try:
         response = requests.request(
             method=method,
             url=url,
             timeout=timeout,
+            verify=ssl_verify,
             **kwargs)
     except Exception as ex:
         logger.exception('Error making HTTP request: %r', url)

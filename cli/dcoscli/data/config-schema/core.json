@@ -42,6 +42,12 @@
         "minimum": 1,
         "title": "Request timeout in seconds",
         "description": "Request timeout in seconds"
+    },
+    "ssl_verify": {
+      "type": "boolean",
+      "default": true,
+      "title": "Verify SSL Certificates",
+      "description": "Whether to verify SSL certificates"
     }
   },
   "additionalProperties": false
