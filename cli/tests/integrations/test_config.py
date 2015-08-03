@@ -101,6 +101,13 @@ def test_get_missing_property(env):
     _get_missing_value('missing.property', env)
 
 
+def test_invalid_dcos_url(env):
+    stderr = b'Please check url \'abc.com\'. Missing http(s)://\n'
+    assert_command(['dcos', 'config', 'set', 'core.dcos_url', 'abc.com'],
+                   stderr=stderr,
+                   returncode=1)
+
+
 def test_get_top_property(env):
     stderr = (
         b"Property 'package' doesn't fully specify a value - "
@@ -473,12 +480,12 @@ def test_bad_port_fail_url_validation(env):
                          'http://localhost:bad_port/', env)
 
 
-def test_append_fail_url_validation(env):
-    _fail_url_validation('append', 'package.sources', 'bad_url', env)
+def test_append_fail_validation(env):
+    _fail_validation('append', 'package.sources', 'bad_url', env)
 
 
-def test_prepend_fail_url_validation(env):
-    _fail_url_validation('prepend', 'package.sources', 'bad_url', env)
+def test_prepend_fail_validation(env):
+    _fail_validation('prepend', 'package.sources', 'bad_url', env)
 
 
 def test_timeout(missing_env):
@@ -510,6 +517,16 @@ def test_parse_error():
 
 
 def _fail_url_validation(command, key, value, env):
+    returncode_, stdout_, stderr_ = exec_command(
+        ['dcos', 'config', command, key, value], env=env)
+
+    assert returncode_ == 1
+    assert stdout_ == b''
+    assert stderr_.startswith(str(
+        'Unable to parse {!r} as a url'.format(value)).encode('utf-8'))
+
+
+def _fail_validation(command, key, value, env):
     returncode_, stdout_, stderr_ = exec_command(
         ['dcos', 'config', command, key, value], env=env)
 

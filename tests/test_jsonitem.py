@@ -60,22 +60,33 @@ def bad_array(request):
     ][request.param]
 
 
-@pytest.fixture(params=range(12))
+@pytest.fixture(params=[
+    'www.test.com',
+    'http:/hi.com',
+    'https//www.hi.com',
+    'http://bad.port:here'
+    ])
+def bad_url(request):
+    return request.param
+
+
+@pytest.fixture(params=[
+    ('string', 'this is a string', 'this is a string'),
+    ('string', 'null', None),
+    ('object', '{"key":"value"}', {'key': 'value'}),
+    ('object', 'null', None),
+    ('number', '4.2', 4.2),
+    ('number', 'null', None),
+    ('integer', '42', 42),
+    ('integer', 'null', None),
+    ('boolean', 'true', True),
+    ('boolean', 'null', None),
+    ('array', '[1,2,3]', [1, 2, 3]),
+    ('array', 'null', None),
+    ('url', 'http://test.com', 'http://test.com')
+    ])
 def jsonitem_tuple(request):
-    return [
-        ('string', 'this is a string', 'this is a string'),
-        ('string', 'null', None),
-        ('object', '{"key":"value"}', {'key': 'value'}),
-        ('object', 'null', None),
-        ('number', '4.2', 4.2),
-        ('number', 'null', None),
-        ('integer', '42', 42),
-        ('integer', 'null', None),
-        ('boolean', 'true', True),
-        ('boolean', 'null', None),
-        ('array', '[1,2,3]', [1, 2, 3]),
-        ('array', 'null', None),
-    ][request.param]
+    return request.param
 
 
 @pytest.fixture(params=range(13))
@@ -123,16 +134,22 @@ def schema():
                 'type': 'number'
             },
             'string': {
-                'type': 'string'
+                'type': 'string',
             },
             'object': {
                 'type': 'object'
             },
             'array': {
                 'type': 'array'
+
             },
             'boolean': {
-                'type': 'boolean'
+                'type': 'boolean',
+            },
+            'url': {
+                'type': 'string',
+                'format': 'url',
+
             }
         }
     }
@@ -188,6 +205,15 @@ def test_parse_array():
 def test_parse_invalid_arrays(bad_array):
     with pytest.raises(DCOSException):
         jsonitem._parse_array(bad_array)
+
+
+def test_parse_url():
+    assert jsonitem._parse_url('http://test.com:12') == 'http://test.com:12'
+
+
+def test_parse_invalid_url(bad_url):
+    with pytest.raises(DCOSException):
+        jsonitem._parse_url(bad_url)
 
 
 def test_find_parser(schema, jsonitem_tuple):
