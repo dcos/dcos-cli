@@ -12,9 +12,11 @@ def _timeout():
     config = util.get_config()
     return config.get('core.timeout', DEFAULT_TIMEOUT)
 
+
 def _ssl_verify():
     config = util.get_config()
     return config.get('core.ssl_verify', True)
+
 
 def _default_is_success(status_code):
     """Returns true if the success status is between [200, 300).
