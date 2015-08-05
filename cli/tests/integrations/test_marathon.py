@@ -361,8 +361,8 @@ def test_update_missing_field():
         assert returncode == 1
         assert stdout == b''
         assert stderr.decode('utf-8').startswith(
-            "The property 'missing' does not conform to the expected format. "
-            "Possible values are: ")
+            "Error: 'missing' is not a valid property. "
+            "Possible properties are: ")
 
 
 def test_update_bad_type():

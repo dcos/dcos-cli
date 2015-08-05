@@ -59,8 +59,8 @@ def find_parser(key, schema):
     if key_schema is None:
         keys = ', '.join(schema['properties'].keys())
         raise DCOSException(
-            'The property {!r} does not conform to the expected format. '
-            'Possible values are: {}'.format(key, keys))
+            'Error: {!r} is not a valid property. '
+            'Possible properties are: {}'.format(key, keys))
     else:
         return ValueTypeParser(key_schema)
 
