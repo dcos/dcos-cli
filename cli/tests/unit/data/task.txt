@@ -1,2 +1,2 @@
- NAME      HOST           USER  STATE  ID                                            
- test-app  mock-hostname  root    R    test-app.d44dd7f2-f9b7-11e4-bb43-56847afe9799 
+NAME      HOST           USER  STATE  ID                                             
+test-app  mock-hostname  root    R    test-app.d44dd7f2-f9b7-11e4-bb43-56847afe9799  

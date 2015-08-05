@@ -47,7 +47,7 @@ Options:
     --ssh-config-file=<path>    Path to SSH config file.  Used to access
                                 marathon logs.
 
-    --follow                    Output data as the file grows
+    --follow                    Print data as the file grows
 
     --inactive                  Show inactive services in addition to active
                                 ones. Inactive services are those that have
@@ -56,7 +56,7 @@ Options:
 
     --json                      Print json-formatted services
 
-    --lines=N                   Output the last N lines [default: 10]
+    --lines=N                   Print the last N lines [default: 10]
 
     --version                   Show version
 

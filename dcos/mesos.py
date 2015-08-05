@@ -195,13 +195,41 @@ class DCOSClient(object):
         http.post(url, data=data, timeout=self._timeout)
 
     def metadata(self):
-        """ Get /metadata
+        """ GET /metadata
 
         :returns: /metadata content
         :rtype: dict
         """
         url = self.get_dcos_url('metadata')
         return http.get(url, timeout=self._timeout).json()
+
+    def browse(self, slave, path):
+        """ GET /files/browse.json
+
+        Request
+        path:...  # path to run ls on
+
+        Response
+        [
+          {
+            path:  # full path to file
+            nlink:
+            size:
+            mtime:
+            mode:
+            uid:
+            gid:
+          }
+        ]
+
+        :param slave: slave to issue the request on
+        :type slave: Slave
+        :returns: /files/browse.json response
+        :rtype: dict
+        """
+
+        url = self.slave_url(slave['id'], 'files/browse.json')
+        return http.get(url, params={'path': path}).json()
 
 
 class MesosDNSClient(object):
@@ -273,12 +301,12 @@ class Master(object):
                                         'slave/{}/'.format(slave['id']))
 
     def slave(self, fltr):
-        """Returns the slave that has `fltr` in its id.  Raises a
+        """Returns the slave that has `fltr` in its ID.  Raises a
         DCOSException if there is not exactly one such slave.
 
         :param fltr: filter string
         :type fltr: str
-        :returns: the slave that has `fltr` in its id
+        :returns: the slave that has `fltr` in its ID
         :rtype: Slave
         """
 
@@ -290,19 +318,19 @@ class Master(object):
         elif len(slaves) > 1:
             matches = ['\t{0}'.format(slave.id) for slave in slaves]
             raise DCOSException(
-                "There are multiple slaves with that id. " +
+                "There are multiple slaves with that ID. " +
                 "Please choose one: {}".format('\n'.join(matches)))
 
         else:
             return slaves[0]
 
     def task(self, fltr):
-        """Returns the task with `fltr` in its id.  Raises a DCOSException if
+        """Returns the task with `fltr` in its ID.  Raises a DCOSException if
         there is not exactly one such task.
 
         :param fltr: filter string
         :type fltr: str
-        :returns: the task that has `fltr` in its id
+        :returns: the task that has `fltr` in its ID
         :rtype: Task
         """
 
@@ -310,10 +338,11 @@ class Master(object):
 
         if len(tasks) == 0:
             raise DCOSException(
-                'Cannot find a task containing "{}"'.format(fltr))
+                'Cannot find a task with ID containing "{}"'.format(fltr))
 
         elif len(tasks) > 1:
-            msg = ["There are multiple tasks with that id. Please choose one:"]
+            msg = [("There are multiple tasks with ID matching [{}]. " +
+                    "Please choose one:").format(fltr)]
             msg += ["\t{0}".format(t["id"]) for t in tasks]
             raise DCOSException('\n'.join(msg))
 
@@ -321,9 +350,9 @@ class Master(object):
             return tasks[0]
 
     def framework(self, framework_id):
-        """Returns a framework by id
+        """Returns a framework by ID
 
-        :param framework_id: the framework's id
+        :param framework_id: the framework's ID
         :type framework_id: str
         :returns: the framework
         :rtype: Framework
