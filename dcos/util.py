@@ -282,7 +282,7 @@ def validate_json(instance, schema):
     :param schema: the schema to validate with
     :type schema: dict
     :returns: list of errors as strings
-    :rtype: list
+    :rtype: [str]
     """
 
     def sort_key(ve):
@@ -386,8 +386,8 @@ def create_schema(obj):
 def list_to_err(errs):
     """convert list of error strings to a single string
 
-    :param errors: list of string errors
-    :type errors: list of strings
+    :param errs: list of string errors
+    :type errs: [str]
     :returns: error message
     :rtype: str
     """
