@@ -734,8 +734,7 @@ def update_sources(config, validate=False):
                         'Error removing target directory before move: %s',
                         target_dir)
 
-                    err = Error(
-                        'Could not remove directory [{}]'.format(target_dir))
+                    err = "Could not remove directory [{}]".format(target_dir)
                     errors.append(err)
                     continue  # keep updating the other sources
 
