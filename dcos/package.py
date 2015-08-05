@@ -553,17 +553,20 @@ def _merge_options(first, second):
     return result
 
 
-def resolve_package(package_name, config):
+def resolve_package(package_name, config=None):
     """Returns the first package with the supplied name found by looking at
     the configured sources in the order they are defined.
 
     :param package_name: The name of the package to resolve
     :type package_name: str
-    :param config: Configuration dictionary
-    :type config: dcos.config.Toml
+    :param config: dcos config
+    :type config: dcos.config.Toml | None
     :returns: The named package, if found
     :rtype: Package
     """
+
+    if not config:
+        config = util.get_config()
 
     for registry in registries(config):
         package = registry.get_package(package_name)
@@ -1285,7 +1288,7 @@ class Package():
         :rtype: dict
         """
 
-        return self._json(os.path.join(revision, 'config.json'))
+        return self._json(revision, 'config.json')
 
     def package_json(self, revision):
         """Returns the JSON content of the package.json file.
@@ -1296,7 +1299,7 @@ class Package():
         :rtype: dict
         """
 
-        return self._json(os.path.join(revision, 'package.json'))
+        return self._json(revision, 'package.json')
 
     def marathon_json(self, revision, options):
         """Returns the JSON content of the marathon.json template, after
@@ -1337,9 +1340,29 @@ class Package():
         :rtype: dict
         """
 
-        template = self._data(os.path.join(revision, 'command.json'))
+        template = self._data(revision, 'command.json')
         rendered = pystache.render(template, options)
         return json.loads(rendered)
+
+    def marathon_template(self, revision):
+        """ Returns raw data from marathon.json
+
+        :param revision: the package revision
+        :type revision: str
+        :returns: raw data from marathon.json
+        :rtype: str
+        """
+        return self._data(revision, 'marathon.json')
+
+    def command_template(self, revision):
+        """ Returns raw data from command.json
+
+        :param revision: the package revision
+        :type revision: str
+        :returns: raw data from command.json
+        :rtype: str
+        """
+        return self._data(revision, 'command.json')
 
     def _render_template(self, name, revision, options):
         """Render a template.
@@ -1353,30 +1376,36 @@ class Package():
         :rtype: dict
         """
 
-        template = self._data(os.path.join(revision, name))
+        template = self._data(revision, name)
         return util.render_mustache_json(template, options)
 
-    def _json(self, path):
-        """Returns the json content of the supplied file, relative to the
-        base path.
+    def _json(self, revision, name):
+        """Returns the json content of the file named `name` in the directory
+           named `revision`
 
-        :param path: The relative path to the file to read
-        :type path: str
+        :param revision: the package revision
+        :type revision: str
+        :param name: file name
+        :type name: str
         :rtype: dict
         """
 
-        data = self._data(path)
+        data = self._data(revision, name)
         return util.load_jsons(data)
 
-    def _data(self, path):
-        """Returns the content of the supplied file, relative to the base path.
+    def _data(self, revision, name):
+        """Returns the content of the file named `name` in the directory named
+        `revision`
 
-        :param path: The relative path to the file to read
-        :type path: str
+        :param revision: the package revision
+        :type revision: str
+        :param name: file name
+        :type name: str
         :returns: File content of the supplied path
         :rtype: str
         """
 
+        path = os.path.join(revision, name)
         full_path = os.path.join(self.path, path)
         return util.read_file(full_path)
 
@@ -1392,10 +1421,12 @@ class Package():
         return vs
 
     def package_revisions_map(self):
-        """Returns a mapping from the package revision to the package version.
+        """Returns an ordered mapping from the package revision to the package
+           version, sorted by package revision.
 
         :returns: Map from package revision to package version
         :rtype: OrderedDict
+
         """
 
         package_version_map = collections.OrderedDict()

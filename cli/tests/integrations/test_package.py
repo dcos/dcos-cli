@@ -9,8 +9,8 @@ from dcos import subcommand
 import pytest
 
 from .common import (assert_command, assert_lines, delete_zk_nodes,
-                     exec_command, file_bytes, get_services, service_shutdown,
-                     watch_all_deployments)
+                     exec_command, file_bytes, file_json, get_services,
+                     service_shutdown, watch_all_deployments)
 
 
 @pytest.fixture(scope="module")
@@ -129,21 +129,89 @@ def test_describe_nonexistent():
 
 
 def test_describe():
-    stdout = file_bytes(
+    stdout = file_json(
         'tests/data/package/json/test_describe_marathon.json')
     assert_command(['dcos', 'package', 'describe', 'marathon'],
                    stdout=stdout)
 
-    stdout = file_bytes(
+
+def test_describe_cli():
+    stdout = file_json(
         'tests/data/package/json/test_describe_cli_helloworld.json')
-    assert_command(['dcos', 'package', 'describe', '--cli', 'helloworld'],
+    assert_command(['dcos', 'package', 'describe', 'helloworld', '--cli'],
                    stdout=stdout)
 
+
+def test_describe_app():
     stdout = file_bytes(
         'tests/data/package/json/test_describe_app_marathon.json')
+    assert_command(['dcos', 'package', 'describe', 'marathon', '--app'],
+                   stdout=stdout)
+
+
+def test_describe_config():
+    stdout = file_json(
+        'tests/data/package/json/test_describe_marathon_config.json')
+    assert_command(['dcos', 'package', 'describe', 'marathon', '--config'],
+                   stdout=stdout)
+
+
+def test_describe_render():
+    stdout = file_json(
+        'tests/data/package/json/test_describe_marathon_app_render.json')
+    assert_command(
+        ['dcos', 'package', 'describe', 'marathon', '--app', '--render'],
+        stdout=stdout)
+
+
+def test_describe_package_version():
+    stdout = file_json(
+        'tests/data/package/json/test_describe_marathon_package_version.json')
+    assert_command(
+        ['dcos', 'package', 'describe', 'marathon', '--package-version=0.8.1'],
+        stdout=stdout)
+
+
+def test_describe_package_version_missing():
+    stderr = b'Package [marathon] [bogus] not found\n'
+    assert_command(
+        ['dcos', 'package', 'describe', 'marathon', '--package-version=bogus'],
+        returncode=1,
+        stderr=stderr)
+
+
+def test_describe_package_versions():
+    stdout = file_bytes(
+        'tests/data/package/json/test_describe_marathon_package_versions.json')
+    assert_command(
+        ['dcos', 'package', 'describe', 'marathon', '--package-versions'],
+        stdout=stdout)
+
+
+def test_describe_package_versions_others():
+    stderr = (b'If --package-versions is provided, no other option can be '
+              b'provided\n')
+    assert_command(
+        ['dcos', 'package', 'describe', 'marathon', '--package-versions',
+         '--app'],
+        returncode=1,
+        stderr=stderr)
+
+
+def test_describe_options():
+    stdout = file_json(
+        'tests/data/package/json/test_describe_app_options.json')
     assert_command(['dcos', 'package', 'describe', '--app', '--options',
                     'tests/data/package/marathon.json', 'marathon'],
                    stdout=stdout)
+
+
+def test_describe_app_cli():
+    stdout = file_bytes(
+        'tests/data/package/json/test_describe_app_cli.json')
+    assert_command(
+        ['dcos', 'package', 'describe', 'helloworld', '--app', '--cli'],
+        stdout=stdout)
 
 
 def test_bad_install():
