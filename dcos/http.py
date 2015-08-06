@@ -71,6 +71,9 @@ def request(method,
         logger.exception("HTTP Timeout")
         raise DCOSException('Request to URL [{0}] timed out.'.format(
             e.request.url))
+    except requests.exceptions.RequestException as e:
+        logger.exception("HTTP Exception")
+        raise DCOSException('HTTP Exception: {}'.format(e))
 
     logger.info('Received HTTP response [%r]: %r',
                 response.status_code,
