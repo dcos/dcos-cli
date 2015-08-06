@@ -316,7 +316,7 @@ class Master(object):
             raise DCOSException('No slave found with ID "{}".'.format(fltr))
 
         elif len(slaves) > 1:
-            matches = ['\t{0}'.format(slave.id) for slave in slaves]
+            matches = ['\t{0}'.format(slave['id']) for slave in slaves]
             raise DCOSException(
                 "There are multiple slaves with that ID. " +
                 "Please choose one: {}".format('\n'.join(matches)))
