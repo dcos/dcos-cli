@@ -84,7 +84,12 @@ def ensure_dir(directory):
 
     if not os.path.exists(directory):
         logger.info('Creating directory: %r', directory)
-        os.makedirs(directory, 0o775)
+
+        try:
+            os.makedirs(directory, 0o775)
+        except os.error as e:
+            raise DCOSException(
+                'Cannot create directory [{}]: {}'.format(directory, e))
 
 
 def read_file(path):
