@@ -12,8 +12,8 @@ deactivate
 cd cli
 
 # overwrite core.dcos_url in the dcos.toml
-cp tests/data/dcos.toml $DCOS_CONFIG
-sed -i "s/change.dcos.url/$VBOX_IP/g" $DCOS_CONFIG
+cp tests/data/dcos.toml ${DCOS_CONFIG}
+sed -i "s,http://change.dcos.url,${CORE_DCOS_URL},g" ${DCOS_CONFIG}
 
 make clean env
 source env/bin/activate
