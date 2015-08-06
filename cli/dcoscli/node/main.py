@@ -166,9 +166,8 @@ def _mesos_files(master, slave_id):
 
 
 def _ssh(master, slave, option, config_file, user):
-    """SSH into a DCOS node.  Since only the masters are definitely
-    publicly available, we first ssh into an arbitrary master, then
-    hop to the desired node.
+    """SSH into a DCOS node using the IP addresses found in master's
+       state.json
 
     :param master: True if the user has opted to SSH into the leading
                    master
