@@ -3,7 +3,12 @@ Install and manage DCOS packages
 Usage:
     dcos package --config-schema
     dcos package --info
-    dcos package describe [--app --options=<file> --cli] <package_name>
+    dcos package describe [--app --cli --config]
+                          [--render]
+                          [--package-versions]
+                          [--options=<file>]
+                          [--package-version=<package_version>]
+                          <package_name>
     dcos package install [--cli | [--app --app-id=<app_id>]]
                          [--package-version=<package_version>]
                          [--options=<file>] [--yes] <package_name>
@@ -16,17 +21,39 @@ Usage:
 
 Options:
     --all                                  Apply the operation to all matching packages
+
     --app                                  Apply the operation only to the package's
-                                           application
+                                           Marathon application
+
     --app-id=<app-id>                      The application id
+
     --cli                                  Apply the operation only to the package's CLI
+                                           command
+
+    --config                               Print the package's config.json, which contains
+                                           the configurable properties for marathon.json
+                                           and command.json
+
     -h, --help                             Show this screen
+
     --info                                 Show a short description of this subcommand
+
     --options=<file>                       Path to a JSON file containing package
                                            installation options
+
     --package-version=<package_version>    Package version to install
+
+    --package-versions                     Print all versions for this package
+
+    --render                               Render the package's marathon.json or
+                                           command.json template with the values from
+                                           config.json and --options.  If not provided,
+                                           print the raw templates.
+
     --validate                             Validate package content when updating sources
+
     --version                              Show version
+
     --yes                                  Assume "yes" is the answer to all prompts and
                                            run non-interactively
 

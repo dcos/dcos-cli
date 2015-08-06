@@ -1,22 +1,6 @@
 {
-  "command": {
     "pip": [
-      "dcos<1.0",
-      "git+https://github.com/mesosphere/dcos-helloworld.git#dcos-helloworld=0.1.0"
+        "dcos<1.0",
+        "git+https://github.com/mesosphere/dcos-helloworld.git#dcos-helloworld=0.1.0"
     ]
-  },
-  "description": "Example DCOS application package",
-  "maintainer": "support@mesosphere.io",
-  "name": "helloworld",
-  "postInstallNotes": "A sample post-installation message",
-  "preInstallNotes": "A sample pre-installation message",
-  "tags": [
-    "mesosphere",
-    "example",
-    "subcommand"
-  ],
-  "versions": [
-    "0.1.0"
-  ],
-  "website": "https://github.com/mesosphere/dcos-helloworld"
 }

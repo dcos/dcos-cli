@@ -397,6 +397,22 @@ def file_bytes(path):
         return six.b(f.read())
 
 
+def file_json(path):
+    """ Returns formatted json from file
+
+    :param path: path to file
+    :type path: str
+    :returns: formatted json as a string
+    :rtype: bytes
+    """
+    with open(path) as f:
+        return six.b(
+            json.dumps(json.load(f),
+                       sort_keys=True,
+                       indent=2,
+                       separators=(',', ': '))) + b'\n'
+
+
 @contextlib.contextmanager
 def app(path, app_id, deploy=False):
     """Context manager that deploys an app on entrance, and removes it on

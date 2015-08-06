@@ -58,7 +58,9 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['package', 'describe'],
-            arg_keys=['<package_name>', '--cli', '--app', '--options'],
+            arg_keys=['<package_name>', '--app', '--cli', '--options',
+                      '--render', '--package-versions', '--package-version',
+                      '--config'],
             function=_describe),
 
         cmds.Command(
@@ -158,41 +160,90 @@ def _update(validate):
     return 0
 
 
-def _describe(package_name, cli, app, options_path):
+def _describe(package_name,
+              app,
+              cli,
+              options_path,
+              render,
+              package_versions,
+              package_version,
+              config):
     """Describe the specified package.
 
     :param package_name: The package to describe
     :type package_name: str
+    :param cli: If True, command.json should be printed
+    :type cli: boolean
+    :param app: If True, marathon.json will be printed
+    :type app: boolean
+    :param options_path: Path to json file with options to override
+                         config.json defaults.
+    :type options_path: str
+    :param render: If True, marathon.json and/or command.json templates
+                   will be rendered
+    :type render: boolean
+    :param package_versions: If True, a list of all package versions will
+                             be printed
+    :type package_versions: boolean
+    :param package_version: package version
+    :type package_version: str | None
+    :param config: If True, config.json will be printed
+    :type config: boolean
     :returns: Process status
     :rtype: int
     """
 
-    config = util.get_config()
+    # If the user supplied template options, they definitely want to
+    # render the template
+    if options_path:
+        render = True
 
-    pkg = package.resolve_package(package_name, config)
+    if package_versions and \
+       (app or cli or options_path or render or package_version or config):
+        raise DCOSException(
+            'If --package-versions is provided, no other option can be '
+            'provided')
 
+    pkg = package.resolve_package(package_name)
     if pkg is None:
         raise DCOSException("Package [{}] not found".format(package_name))
 
-    # TODO(CD): Make package version to describe configurable
-    pkg_revision = pkg.latest_package_revision()
-    pkg_json = pkg.package_json(pkg_revision)
-    revision_map = pkg.package_revisions_map()
-    pkg_versions = list(revision_map.values())
+    pkg_revision = pkg.latest_package_revision(package_version)
+    if not pkg_revision:
+        raise DCOSException(
+            "Package [{}] [{}] not found".format(
+                package_name, package_version))
 
-    del pkg_json['version']
-    pkg_json['versions'] = pkg_versions
-
-    if cli or app:
+    if package_versions:
+        versions = pkg.package_revisions_map().values()
+        emitter.publish('\n'.join(versions))
+    elif cli or app or config:
         user_options = _user_options(options_path)
         options = pkg.options(pkg_revision, user_options)
 
         if cli:
-            pkg_json['command'] = pkg.command_json(pkg_revision, options)
+            if render:
+                cli_output = pkg.command_json(pkg_revision, options)
+            else:
+                cli_output = pkg.command_template(pkg_revision)
+                if cli_output and cli_output[-1] == '\n':
+                    cli_output = cli_output[:-1]
+            emitter.publish(cli_output)
         if app:
-            pkg_json['app'] = pkg.marathon_json(pkg_revision, options)
+            if render:
+                app_output = pkg.marathon_json(pkg_revision, options)
+            else:
+                app_output = pkg.marathon_template(pkg_revision)
+                if app_output and app_output[-1] == '\n':
+                    app_output = app_output[:-1]
+            emitter.publish(app_output)
+        if config:
+            config_output = pkg.config_json(pkg_revision)
+            emitter.publish(config_output)
+    else:
+        pkg_json = pkg.package_json(pkg_revision)
+        emitter.publish(pkg_json)
 
-    emitter.publish(pkg_json)
     return 0
 
 
