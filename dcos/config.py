@@ -4,30 +4,33 @@ import toml
 from dcos import util
 
 
-def mutable_load_from_path(path):
+def load_from_path(path, mutable=False):
     """Loads a TOML file from the path
 
     :param path: Path to the TOML file
     :type path: str
-    :returns: Mutable map for the configuration file
-    :rtype: MutableToml
-    """
-
-    with util.open_file(path) as config_file:
-        return MutableToml(toml.loads(config_file.read()))
-
-
-def load_from_path(path):
-    """Loads a TOML file from the path
-
-    :param path: Path to the TOML file
-    :type path: str
+    :param mutable: True if the returned Toml object should be mutable
+    :type mutable: boolean
     :returns: Map for the configuration file
-    :rtype: Toml
+    :rtype: Toml | MutableToml
     """
 
-    with util.open_file(path) as config_file:
-        return Toml(toml.loads(config_file.read()))
+    util.ensure_file_exists(path)
+    with util.open_file(path, 'r') as config_file:
+        toml_obj = toml.loads(config_file.read())
+        return (MutableToml if mutable else Toml)(toml_obj)
+
+
+def save(toml_config):
+    """
+    :param toml_config: TOML configuration object
+    :type toml_config: MutableToml or Toml
+    """
+
+    serial = toml.dumps(toml_config._dictionary)
+    path = util.get_config_path()
+    with util.open_file(path, 'w') as config_file:
+        config_file.write(serial)
 
 
 def _get_path(config, path):

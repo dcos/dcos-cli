@@ -275,7 +275,7 @@ def install(pkg, revision, options):
     """
 
     pkg_dir = package_dir(pkg.name())
-    util.ensure_dir(pkg_dir)
+    util.ensure_dir_exists(pkg_dir)
 
     _write_package_json(pkg, revision)
     _write_package_revision(pkg, revision)
