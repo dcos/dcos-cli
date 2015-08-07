@@ -11,8 +11,6 @@ from six import iteritems
 
 from oauth2client import client
 
-CLIENT_ID = '6a552732-ab9b-410d-9b7d-d8c6523b09a1'
-CLIENT_SECRET = 'f56c1e2b-8599-40ca-b6a0-3aba3e702eae'
 AUTH_URL = 'https://accounts.google.com/o/oauth2/auth'
 TOKEN_URL = 'https://accounts.google.com/o/oauth2/token'
 USER_INFO_URL = 'https://www.googleapis.com/plus/v1/people/me'
