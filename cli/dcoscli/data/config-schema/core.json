@@ -42,6 +42,16 @@
         "minimum": 1,
         "title": "Request timeout in seconds",
         "description": "Request timeout in seconds"
+    },
+    "client_id": {
+      "type": "string",
+      "title": "Your OAuth client_id secret",
+      "description": "Your OAuth client_id secret"
+    },
+    "client_secret": {
+      "type": "string",
+      "title": "Your OAuth client_secret secret",
+      "description": "Your OAuth client_secret secret"
     }
   },
   "additionalProperties": false
