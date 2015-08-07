@@ -156,6 +156,6 @@ def _get_auth2_secrets():
     auth2_secrets = [util.get_config_vals(['core.client_id'], config)[0],
                      util.get_config_vals(['core.client_secret'], config)[0]]
     for value in auth2_secrets:
-        if value == None:
+        if value is None:
             raise DCOSException('There were no OAuth2 secrets configured.')
     return auth2_secrets
