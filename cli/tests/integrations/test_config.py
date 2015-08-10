@@ -440,6 +440,19 @@ def test_timeout(missing_env):
     _unset_value('marathon.url', None, missing_env)
 
 
+def test_parse_error():
+    env = os.environ.copy()
+    path = os.path.join('tests', 'data', 'config', 'parse_error.toml')
+    env['DCOS_CONFIG'] = path
+
+    assert_command(['dcos', 'config', 'show'],
+                   returncode=1,
+                   stderr=six.b(("Error parsing config file at [{}]: Found "
+                                 "invalid character in key name: ']'. "
+                                 "Try quoting the key name.\n").format(path)),
+                   env=env)
+
+
 def _fail_url_validation(command, key, value, env):
     returncode_, stdout_, stderr_ = exec_command(
         ['dcos', 'config', command, key, value], env=env)
