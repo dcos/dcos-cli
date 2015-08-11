@@ -395,6 +395,13 @@ def test_url_validation(env):
     config_set(key, 'http://marathon-1234:8080', env)
     config_set(key, 'http://marathon-1234.mydomain.com:5050', env)
 
+    config_set(key, 'http://user@localhost:8080', env)
+    config_set(key, 'http://u-ser@localhost:8080', env)
+    config_set(key, 'http://user123_@localhost:8080', env)
+    config_set(key, 'http://user:p-ssw_rd@localhost:8080', env)
+    config_set(key, 'http://user123:password321@localhost:8080', env)
+    config_set(key, 'http://us%r1$3:pa#sw*rd321@localhost:8080', env)
+
     config_set(key, default_value, env)
 
 
@@ -456,6 +463,9 @@ def test_prepend_url_validation(env):
 
 def test_fail_url_validation(env):
     _fail_url_validation('set', 'core.dcos_url', 'http://bad_domain/', env)
+    _fail_url_validation('set', 'core.dcos_url', 'http://@domain/', env)
+    _fail_url_validation('set', 'core.dcos_url', 'http://user:pass@/', env)
+    _fail_url_validation('set', 'core.dcos_url', 'http://us:r:pass@url', env)
 
 
 def test_bad_port_fail_url_validation(env):
