@@ -11,7 +11,7 @@ FULL_BIN_PATH=$(python -c "import os; print(os.path.realpath('$BIN_DIR'))")
 expr "$PATH" : "${FULL_BIN_PATH}.*" > /dev/null || export PATH=$FULL_BIN_PATH:$PATH
 export DCOS_CONFIG=~/.dcos/dcos.toml
 
-if [ ! -f $DCOS_CONFIG ]; then
+if [ ! -f "$DCOS_CONFIG" ]; then
     mkdir -p $(dirname "$DCOS_CONFIG")
-    touch $DCOS_CONFIG
+    touch "$DCOS_CONFIG"
 fi
