@@ -636,6 +636,16 @@ def test_bad_configuration():
     assert_command(['dcos', 'config', 'unset', 'marathon.url'])
 
 
+def test_app_locked_error():
+    with app('tests/data/marathon/apps/sleep_two_instances.json',
+             '/sleep-two-instances'):
+        assert_command(
+            ['dcos', 'marathon', 'app', 'stop', 'sleep-two-instances'],
+            returncode=1,
+            stderr=(b'App or group is locked by one or more deployments. '
+                    b'Override with --force.\n'))
+
+
 def _list_apps(app_id=None):
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'list', '--json'])
