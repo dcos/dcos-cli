@@ -9,8 +9,8 @@ import pytest
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 from .common import (app, assert_command, assert_lines, exec_command,
-                     list_deployments, show_app, watch_all_deployments,
-                     watch_deployment)
+                     list_deployments, popen_tty, show_app,
+                     watch_all_deployments, watch_deployment)
 
 
 def test_help():
@@ -644,6 +644,22 @@ def test_app_locked_error():
             returncode=1,
             stderr=(b'App or group is locked by one or more deployments. '
                     b'Override with --force.\n'))
+
+
+def test_app_add_no_tty():
+    proc, master = popen_tty('dcos marathon app add')
+
+    stdout, stderr = proc.communicate()
+    os.close(master)
+
+    print(stdout)
+    print(stderr)
+
+    assert proc.wait() == 1
+    assert stdout == b''
+    assert stderr == (b"We currently don't support reading from the TTY. "
+                      b"Please specify an application JSON.\n"
+                      b"Usage: dcos marathon app add < app_resource.json\n")
 
 
 def _list_apps(app_id=None):
