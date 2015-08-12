@@ -24,15 +24,12 @@ Positional Arguments:
 import collections
 import copy
 import json
-import os
 
 import dcoscli
 import docopt
 import pkg_resources
 import six
-import toml
-from dcos import (cmds, config, constants, emitting, http, jsonitem,
-                  subcommand, util)
+from dcos import cmds, config, emitting, http, jsonitem, subcommand, util
 from dcos.errors import DCOSException
 from dcoscli import analytics
 
@@ -153,7 +150,7 @@ def _set(name, value):
     :rtype: int
     """
 
-    config_path, toml_config = _load_config()
+    toml_config = util.get_config(True)
 
     section, subkey = _split_key(name)
 
@@ -172,7 +169,7 @@ def _set(name, value):
 
     _check_config(toml_config_pre, toml_config)
 
-    _save_config_file(config_path, toml_config)
+    config.save(toml_config)
     return 0
 
 
@@ -182,7 +179,7 @@ def _append(name, value):
     :rtype: int
     """
 
-    config_path, toml_config = _load_config()
+    toml_config = util.get_config(True)
 
     python_value = _parse_array_item(name, value)
     toml_config_pre = copy.deepcopy(toml_config)
@@ -194,7 +191,7 @@ def _append(name, value):
 
     _check_config(toml_config_pre, toml_config)
 
-    _save_config_file(config_path, toml_config)
+    config.save(toml_config)
     return 0
 
 
@@ -204,7 +201,7 @@ def _prepend(name, value):
     :rtype: int
     """
 
-    config_path, toml_config = _load_config()
+    toml_config = util.get_config(True)
 
     python_value = _parse_array_item(name, value)
 
@@ -215,7 +212,7 @@ def _prepend(name, value):
     toml_config[name] = python_value + toml_config.get(name, [])
     _check_config(toml_config_pre, toml_config)
 
-    _save_config_file(config_path, toml_config)
+    config.save(toml_config)
     return 0
 
 
@@ -225,7 +222,7 @@ def _unset(name, index):
     :rtype: int
     """
 
-    config_path, toml_config = _load_config()
+    toml_config = util.get_config(True)
     toml_config_pre = copy.deepcopy(toml_config)
     section = name.split(".", 1)[0]
     if section not in toml_config_pre._dictionary:
@@ -251,7 +248,7 @@ def _unset(name, index):
         raise DCOSException(
             'Unsetting based on an index is only supported for lists')
 
-    _save_config_file(config_path, toml_config)
+    config.save(toml_config)
     return 0
 
 
@@ -261,7 +258,7 @@ def _show(name):
     :rtype: int
     """
 
-    _, toml_config = _load_config()
+    toml_config = util.get_config(True)
 
     if name is not None:
         value = toml_config.get(name)
@@ -285,7 +282,7 @@ def _validate():
     :rtype: int
     """
 
-    _, toml_config = _load_config()
+    toml_config = util.get_config(True)
 
     errs = util.validate_json(toml_config._dictionary,
                               _generate_root_schema(toml_config))
@@ -336,29 +333,6 @@ def _generate_choice_msg(name, value):
         message += '\n{}.{}'.format(name, key)
 
     return message
-
-
-def _load_config():
-    """
-    :returns: process status
-    :rtype: int
-    """
-
-    config_path = os.environ[constants.DCOS_CONFIG_ENV]
-    return (config_path, config.mutable_load_from_path(config_path))
-
-
-def _save_config_file(config_path, toml_config):
-    """
-    :param config_path: path to configuration file.
-    :type config_path: str
-    :param toml_config: TOML configuration object
-    :type toml_config: MutableToml or Toml
-    """
-
-    serial = toml.dumps(toml_config._dictionary)
-    with util.open_file(config_path, 'w') as config_file:
-        config_file.write(serial)
 
 
 def _get_config_schema(command):

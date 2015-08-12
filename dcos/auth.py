@@ -1,11 +1,9 @@
 import json
-import os
 import sys
 import uuid
 
 import pkg_resources
-import toml
-from dcos import config, constants, emitting, errors, http, jsonitem, util
+from dcos import config, emitting, errors, http, jsonitem, util
 from dcos.errors import DCOSException
 from six import iteritems
 
@@ -124,8 +122,7 @@ def _save_auth_keys(key_dict):
     :rtype: None
     """
 
-    config_path = os.environ[constants.DCOS_CONFIG_ENV]
-    toml_config = config.mutable_load_from_path(config_path)
+    toml_config = util.get_config(True)
 
     section = 'core'
     config_schema = json.loads(
@@ -137,8 +134,5 @@ def _save_auth_keys(key_dict):
         name = '{}.{}'.format(section, k)
         toml_config[name] = python_value
 
-    serial = toml.dumps(toml_config._dictionary)
-    with util.open_file(config_path, 'w') as config_file:
-        config_file.write(serial)
-
+    config.save(toml_config)
     return None

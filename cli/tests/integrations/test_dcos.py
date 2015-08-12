@@ -1,7 +1,3 @@
-import os
-
-from dcos import constants
-
 from .common import assert_command, exec_command
 
 
@@ -62,6 +58,7 @@ Environment Variables:
 
     DCOS_CONFIG                 This environment variable points to the
                                 location of the DCOS configuration file.
+                                [default: ~/.dcos/dcos.toml]
 
     DCOS_DEBUG                  If set then enable further debug messages which
                                 are sent to stdout.
@@ -74,38 +71,6 @@ Environment Variables:
 def test_version():
     assert_command(['dcos', '--version'],
                    stdout=b'dcos version SNAPSHOT\n')
-
-
-def test_missing_dcos_config():
-    env = os.environ.copy()
-    del env['DCOS_CONFIG']
-    env.update({
-        constants.PATH_ENV: os.environ[constants.PATH_ENV],
-    })
-
-    stdout = (b"Environment variable 'DCOS_CONFIG' must be set "
-              b"to the DCOS config file.\n")
-
-    assert_command(['dcos'],
-                   stdout=stdout,
-                   returncode=1,
-                   env=env)
-
-
-def test_dcos_config_not_a_file():
-    env = os.environ.copy()
-    env.update({
-        constants.PATH_ENV: os.environ[constants.PATH_ENV],
-        'DCOS_CONFIG': 'missing/file',
-    })
-
-    stdout = (b"Environment variable 'DCOS_CONFIG' maps to "
-              b"'missing/file' and it is not a file.\n")
-
-    assert_command(['dcos'],
-                   returncode=1,
-                   stdout=stdout,
-                   env=env)
 
 
 def test_log_level_flag():

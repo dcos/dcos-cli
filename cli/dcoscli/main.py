@@ -29,6 +29,7 @@ Environment Variables:
 
     DCOS_CONFIG                 This environment variable points to the
                                 location of the DCOS configuration file.
+                                [default: ~/.dcos/dcos.toml]
 
     DCOS_DEBUG                  If set then enable further debug messages which
                                 are sent to stdout.
@@ -58,9 +59,6 @@ def main():
 
 def _main():
     signal.signal(signal.SIGINT, signal_handler)
-
-    if not _is_valid_configuration():
-        return 1
 
     args = docopt.docopt(
         __doc__,
@@ -126,27 +124,6 @@ def _config_debug_environ(is_debug):
         os.environ[constants.DCOS_DEBUG_ENV] = 'true'
     else:
         os.environ.pop(constants.DCOS_DEBUG_ENV, None)
-
-
-def _is_valid_configuration():
-    """Validates running environment
-
-    :returns: True if the environment is configure correctly; False otherwise.
-    :rtype: bool
-    """
-
-    dcos_config = os.environ.get(constants.DCOS_CONFIG_ENV)
-    if dcos_config is None:
-        msg = 'Environment variable {!r} must be set to the DCOS config file.'
-        emitter.publish(msg.format(constants.DCOS_CONFIG_ENV))
-        return False
-
-    if not os.path.isfile(dcos_config):
-        msg = 'Environment variable {!r} maps to {!r} and it is not a file.'
-        emitter.publish(msg.format(constants.DCOS_CONFIG_ENV, dcos_config))
-        return False
-
-    return True
 
 
 def signal_handler(signal, frame):
