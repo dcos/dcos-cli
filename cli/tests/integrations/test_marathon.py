@@ -8,9 +8,9 @@ from dcos import constants
 import pytest
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
-from .common import (app, assert_command, assert_lines, exec_command,
-                     list_deployments, popen_tty, show_app,
-                     watch_all_deployments, watch_deployment)
+from .common import (app, assert_command, assert_lines, config_set,
+                     config_unset, exec_command, list_deployments, popen_tty,
+                     show_app, watch_all_deployments, watch_deployment)
 
 
 def test_help():
@@ -622,8 +622,7 @@ def test_show_task():
 
 
 def test_bad_configuration():
-    assert_command(
-        ['dcos', 'config', 'set', 'marathon.url', 'http://localhost:88888'])
+    config_set('marathon.url', 'http://localhost:88888')
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'list'])
@@ -633,7 +632,7 @@ def test_bad_configuration():
     assert stderr.startswith(
         b"URL [http://localhost:88888/v2/info] is unreachable")
 
-    assert_command(['dcos', 'config', 'unset', 'marathon.url'])
+    config_unset('marathon.url')
 
 
 def test_app_locked_error():
