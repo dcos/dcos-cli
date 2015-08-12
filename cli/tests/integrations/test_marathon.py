@@ -1,6 +1,7 @@
 import contextlib
 import json
 import os
+import re
 import threading
 
 from dcos import constants
@@ -384,8 +385,35 @@ def test_update_invalid_request():
     assert returncode == 1
     assert stdout == b''
     stderr = stderr.decode()
-    assert stderr.startswith('Error while fetching')
+    assert stderr.startswith('Error on request')
     assert stderr.endswith('HTTP 400: Bad Request\n')
+
+
+def test_app_add_invalid_request():
+    path = os.path.join(
+        'tests', 'data', 'marathon', 'apps', 'app_add_400.json')
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'marathon', 'app', 'add', path])
+
+    assert returncode == 1
+    assert stdout == b''
+    assert re.match(b"Error on request \[POST .*\]: HTTP 400: Bad Request:",
+                    stderr)
+
+    stderr_end = b"""{
+  "details": [
+    {
+      "errors": [
+        "host is not a valid network type"
+      ],
+      "path": "/container/docker/network"
+    }
+  ],
+  "message": "Invalid JSON"
+}
+"""
+    assert stderr.endswith(stderr_end)
 
 
 def test_update_app():
