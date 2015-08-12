@@ -100,4 +100,4 @@ dcos package update
 echo "Finished installing and configuring DCOS CLI."
 echo ""
 echo "Run this command to set up your environment and to get started:"
-echo "& $installation_path\Scripts\activate.ps1"
+echo "& $installation_path\Scripts\activate.ps1; dcos help"
