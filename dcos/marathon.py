@@ -56,6 +56,10 @@ def _to_exception(response):
         return DCOSException(
             'Error while fetching [{0}]: HTTP {1}: {2}'.format(
                 response.request.url, response.status_code, response.reason))
+    elif response.status_code == 409:
+        return DCOSException(
+            'App or group is locked by one or more deployments. '
+            'Override with --force.')
 
     try:
         response_json = response.json()
