@@ -2,6 +2,7 @@ import collections
 
 import toml
 from dcos import util
+from dcos.errors import DCOSException
 
 
 def load_from_path(path, mutable=False):
@@ -17,7 +18,11 @@ def load_from_path(path, mutable=False):
 
     util.ensure_file_exists(path)
     with util.open_file(path, 'r') as config_file:
-        toml_obj = toml.loads(config_file.read())
+        try:
+            toml_obj = toml.loads(config_file.read())
+        except Exception as e:
+            raise DCOSException(
+                'Error parsing config file at [{}]: {}'.format(path, e))
         return (MutableToml if mutable else Toml)(toml_obj)
 
 
