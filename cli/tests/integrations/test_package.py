@@ -260,8 +260,6 @@ def test_install_missing_options_file():
         ['dcos', 'package', 'install', 'chronos', '--yes',
          '--options=asdf.json'],
         returncode=1,
-        stdout=b'We recommend a minimum of one node with at least 1 CPU and '
-               b'2GB of RAM available for the Chronos Service.\n',
         stderr=b"Error opening file [asdf.json]: No such file or directory\n")
 
 
