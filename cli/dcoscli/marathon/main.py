@@ -319,7 +319,6 @@ def _get_resource(resource):
                     raise Exception
             except Exception:
                 logger.exception('Cannot read from resource %s', resource)
-
                 raise DCOSException(
                     "Can't read from resource: {0}.\n"
                     "Please check that it exists.".format(resource))
@@ -331,7 +330,7 @@ def _get_resource(resource):
         raise DCOSException(
             "We currently don't support reading from the TTY. Please "
             "specify an application JSON.\n"
-            "Usage: dcos app add < app_resource.json")
+            "Usage: dcos marathon app add < app_resource.json")
 
     return util.load_json(sys.stdin)
 

@@ -468,15 +468,18 @@ def mock_args(args):
             sys.stdout, sys.stderr = stdout, stderr
 
 
-def ssh_output(cmd):
-    """ Runs an SSH command and returns the stdout/stderr.
+def popen_tty(cmd):
+    """Open a process with stdin connected to a pseudo-tty.  Returns a
 
     :param cmd: command to run
     :type cmd: str
-    :rtype: (str, str)
-    """
+    :returns: (Popen, master) tuple, where master is the master side
+       of the of the tty-pair.  It is the responsibility of the caller
+       to close the master fd, and to perform any cleanup (including
+       waiting for completion) of the Popen object.
+    :rtype: (Popen, int)
 
-    # ssh must run with stdin attached to a tty
+    """
     master, slave = pty.openpty()
     proc = subprocess.Popen(cmd,
                             stdin=slave,
@@ -486,6 +489,20 @@ def ssh_output(cmd):
                             close_fds=True,
                             shell=True)
     os.close(slave)
+
+    return (proc, master)
+
+
+def ssh_output(cmd):
+    """ Runs an SSH command and returns the stdout/stderr.
+
+    :param cmd: command to run
+    :type cmd: str
+    :rtype: (str, str)
+    """
+
+    # ssh must run with stdin attached to a tty
+    proc, master = popen_tty(cmd)
 
     # wait for the ssh connection
     time.sleep(8)
