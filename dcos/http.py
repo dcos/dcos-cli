@@ -7,11 +7,6 @@ logger = util.get_logger(__name__)
 DEFAULT_TIMEOUT = 5
 
 
-def _timeout():
-    config = util.get_config()
-    return config.get('core.timeout', DEFAULT_TIMEOUT)
-
-
 def _default_is_success(status_code):
     """Returns true if the success status is between [200, 300).
 
@@ -28,7 +23,7 @@ def _default_is_success(status_code):
 def request(method,
             url,
             is_success=_default_is_success,
-            timeout=None,
+            timeout=DEFAULT_TIMEOUT,
             **kwargs):
     """Sends an HTTP request.
 
@@ -48,8 +43,6 @@ def request(method,
 
     if 'headers' not in kwargs:
         kwargs['headers'] = {'Accept': 'application/json'}
-
-    timeout = timeout or _timeout()
 
     logger.info(
         'Sending HTTP [%r] to [%r]: %r',
