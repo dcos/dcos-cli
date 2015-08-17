@@ -156,20 +156,35 @@ def _set(name, value):
 
     config_schema = _get_config_schema(section)
 
-    python_value = jsonitem.parse_json_value(subkey, value, config_schema)
+    new_value = jsonitem.parse_json_value(subkey, value, config_schema)
 
     toml_config_pre = copy.deepcopy(toml_config)
     if section not in toml_config_pre._dictionary:
         toml_config_pre._dictionary[section] = {}
-    toml_config[name] = python_value
 
-    if (name == 'core.reporting' and python_value is True) or \
+    value_exists = name in toml_config
+    old_value = toml_config.get(name)
+
+    toml_config[name] = new_value
+
+    if (name == 'core.reporting' and new_value is True) or \
        (name == 'core.email'):
         analytics.segment_identify(toml_config)
 
     _check_config(toml_config_pre, toml_config)
 
     config.save(toml_config)
+
+    if not value_exists:
+        emitter.publish("[{}]: set to '{}'".format(name, new_value))
+    elif old_value == new_value:
+        emitter.publish("[{}]: already set to '{}'".format(name, old_value))
+    else:
+        emitter.publish(
+            "[{}]: changed from '{}' to '{}'".format(
+                name,
+                old_value,
+                new_value))
     return 0
 
 
@@ -232,24 +247,36 @@ def _unset(name, index):
         raise DCOSException("Property {!r} doesn't exist".format(name))
     elif isinstance(value, collections.Mapping):
         raise DCOSException(_generate_choice_msg(name, value))
-    elif (isinstance(value, collections.Sequence) and
-          not isinstance(value, six.string_types)):
-        if index is not None:
-            index = util.parse_int(index)
+    elif ((isinstance(value, collections.Sequence) and
+           not isinstance(value, six.string_types)) and
+          index is not None):
+        index = util.parse_int(index)
 
-            if index < 0 or index >= len(value):
-                raise DCOSException(
-                    'Index ({}) is out of bounds - possible values are '
-                    'between {} and {}'.format(index, 0, len(value) - 1))
+        if not value:
+            raise DCOSException(
+                'Index ({}) is out of bounds - [{}] is empty'.format(
+                    index,
+                    name))
+        if index < 0 or index >= len(value):
+            raise DCOSException(
+                'Index ({}) is out of bounds - possible values are '
+                'between {} and {}'.format(index, 0, len(value) - 1))
 
-            value.pop(index)
-            toml_config[name] = value
+        popped_value = value.pop(index)
+        emitter.publish(
+            "[{}]: removed element '{}' at index '{}'".format(
+                name, popped_value, index))
+
+        toml_config[name] = value
+        config.save(toml_config)
+        return 0
     elif index is not None:
         raise DCOSException(
             'Unsetting based on an index is only supported for lists')
-
-    config.save(toml_config)
-    return 0
+    else:
+        emitter.publish("Removed [{}]".format(name))
+        config.save(toml_config)
+        return 0
 
 
 def _show(name):

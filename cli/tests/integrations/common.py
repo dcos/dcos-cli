@@ -517,3 +517,44 @@ def ssh_output(cmd):
     print('SSH STDERR: {}'.format(stderr.decode('utf-8')))
 
     return stdout, stderr
+
+
+def config_set(key, value, env=None):
+    """ dcos config set <key> <value>
+
+    :param key: <key>
+    :type key: str
+    :param value: <value>
+    :type value: str
+    ;param env: env vars
+    :type env: dict
+    :rtype: None
+    """
+    returncode, _, stderr = exec_command(
+        ['dcos', 'config', 'set', key, value],
+        env=env)
+
+    assert returncode == 0
+    assert stderr == b''
+
+
+def config_unset(key, index=None, env=None):
+    """ dcos config unset <key> --index=<index>
+
+    :param key: <key>
+    :type key: str
+    :param index: <index>
+    :type index: str
+    :param env: env vars
+    :type env: dict
+    :rtype: None
+    """
+
+    cmd = ['dcos', 'config', 'unset', key]
+    if index is not None:
+        cmd.append('--index={}'.format(index))
+
+    returncode, stdout, stderr = exec_command(cmd, env=env)
+
+    assert returncode == 0
+    assert stderr == b''
