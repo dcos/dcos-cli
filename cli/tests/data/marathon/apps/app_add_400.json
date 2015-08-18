@@ -1,0 +1,13 @@
+{
+    "id": "/test",
+    "cmd": "ls",
+    "cpus": 1.0,
+    "mem": 128.0,
+    "container": {
+        "type": "DOCKER",
+        "docker": {
+            "image": "busybox",
+            "network": "host"
+        }
+    }
+}
