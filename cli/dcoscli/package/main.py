@@ -9,6 +9,7 @@ from dcos import (cmds, emitting, http, marathon, options, package, subcommand,
                   util)
 from dcos.errors import DCOSException
 from dcoscli import tables
+from dcoscli.main import decorate_docopt_usage
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -28,6 +29,7 @@ def _doc():
         'data/help/package.txt').decode('utf-8')
 
 
+@decorate_docopt_usage
 def _main():
     util.configure_process_from_environ()
 
