@@ -1,0 +1,37 @@
+Manage DCOS services
+
+Usage:
+    dcos service --info
+    dcos service [--inactive --json]
+    dcos service log [--follow --lines=N --ssh-config-file=<path>]
+                     <service> [<file>]
+    dcos service shutdown <service-id>
+
+Options:
+    -h, --help                  Show this screen
+
+    --info                      Show a short description of this subcommand
+
+    --ssh-config-file=<path>    Path to SSH config file.  Used to access
+                                marathon logs.
+
+    --follow                    Print data as the file grows
+
+    --inactive                  Show inactive services in addition to active
+                                ones. Inactive services are those that have
+                                been disconnected from master, but haven't yet
+                                reached their failover timeout.
+
+    --json                      Print json-formatted services
+
+    --lines=N                   Print the last N lines [default: 10]
+
+    --version                   Show version
+
+Positional Arguments:
+    <file>                      Output this file. [default: stdout]
+
+    <service>                   The DCOS Service name.
+
+    <service-id>                The DCOS Service ID
+
