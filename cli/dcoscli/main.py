@@ -66,10 +66,12 @@ def _main():
         version='dcos version {}'.format(dcoscli.version),
         options_first=True)
 
-    if not _config_log_level_environ(args['--log-level']):
+    log_level = args['--log-level']
+    if log_level and not _config_log_level_environ(log_level):
         return 1
 
-    _config_debug_environ(args['--debug'])
+    if args['--debug']:
+        os.environ[constants.DCOS_DEBUG_ENV] = 'true'
 
     util.configure_process_from_environ()
 
@@ -99,11 +101,8 @@ def _config_log_level_environ(log_level):
     :rtype: bool
     """
 
-    if log_level is None:
-        os.environ.pop(constants.DCOS_LOG_LEVEL_ENV, None)
-        return True
-
     log_level = log_level.lower()
+
     if log_level in constants.VALID_LOG_LEVEL_VALUES:
         os.environ[constants.DCOS_LOG_LEVEL_ENV] = log_level
         return True
@@ -112,19 +111,6 @@ def _config_log_level_environ(log_level):
     emitter.publish(msg.format(log_level, constants.VALID_LOG_LEVEL_VALUES))
 
     return False
-
-
-def _config_debug_environ(is_debug):
-    """
-    :param is_debug: If true then enable debug; otherwise disable debug
-    :type is_debug: bool
-    :rtype: None
-    """
-
-    if is_debug:
-        os.environ[constants.DCOS_DEBUG_ENV] = 'true'
-    else:
-        os.environ.pop(constants.DCOS_DEBUG_ENV, None)
 
 
 def signal_handler(signal, frame):
