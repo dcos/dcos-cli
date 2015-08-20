@@ -1,0 +1,24 @@
+Manage DCOS nodes
+
+Usage:
+    dcos node --info
+    dcos node [--json]
+    dcos node log [--follow --lines=N --master --slave=<slave-id>]
+    dcos node ssh [--option SSHOPT=VAL ...]
+                  [--config-file=<path>]
+                  [--user=<user>]
+                  (--master | --slave=<slave-id>)
+
+Options:
+    -h, --help              Show this screen
+    --info                  Show a short description of this subcommand
+    --json                  Print json-formatted nodes
+    --follow                Print data as the file grows
+    --lines=N               Print the last N lines [default: 10]
+    --master                Access the leading master
+    --slave=<slave-id>      Access the slave with the provided ID
+    --option SSHOPT=VAL     SSH option (see `man ssh_config`)
+    --config-file=<path>    Path to SSH config file
+    --user=<user>           SSH user [default: core]
+    --version               Show version
+

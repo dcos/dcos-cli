@@ -1,0 +1,24 @@
+Manage DCOS tasks
+
+Usage:
+    dcos task --info
+    dcos task [--completed --json <task>]
+    dcos task log [--completed --follow --lines=N] <task> [<file>]
+    dcos task ls [--long] <task> [<path>]
+
+Options:
+    -h, --help    Show this screen
+    --info        Show a short description of this subcommand
+    --completed   Include completed tasks as well
+    --follow      Print data as the file grows
+    --json        Print json-formatted tasks
+    --lines=N     Print the last N lines [default: 10]
+    --long        Use a long listing format
+    --version     Show version
+
+Positional Arguments:
+    <file>        Print this file. [default: stdout]
+    <path>        List this directory. [default: '.']
+    <task>        Only match tasks whose ID matches <task>.  <task> may be
+                  a substring of the ID, or a unix glob pattern.
+
