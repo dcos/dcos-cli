@@ -388,6 +388,35 @@ class Client(object):
         deployment = response.json()['deploymentId']
         return deployment
 
+    def scale_group(self, group_id, scale_factor, force=None):
+        """Scales a group with the requested scale-factor.
+        :param group_id: the ID of the group to scale
+        :type group_id: str
+        :param scale_factor: the requested value of scale-factor
+        :type scale_factor: float
+        :param force: whether to override running deployments
+        :type force: bool
+        :returns: the resulting deployment ID
+        :rtype: bool
+        """
+
+        group_id = self.normalize_app_id(group_id)
+
+        if not force:
+            params = None
+        else:
+            params = {'force': 'true'}
+
+        url = self._create_url('v2/groups{}'.format(group_id))
+
+        response = http.put(url,
+                            params=params,
+                            json={'scaleBy': scale_factor},
+                            timeout=self._timeout)
+
+        deployment = response.json()['deploymentId']
+        return deployment
+
     def stop_app(self, app_id, force=None):
         """Scales an application to zero instances.
 

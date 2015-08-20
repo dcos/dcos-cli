@@ -1,0 +1,15 @@
+{
+  "groups": [
+    {
+      "apps": [
+        {
+          "id": "sleep",
+          "cmd": "sleep 1000",
+          "instances": 1
+        }
+      ],
+      "id": "sleep"
+    }
+  ],
+  "id": "scale-group"
+}

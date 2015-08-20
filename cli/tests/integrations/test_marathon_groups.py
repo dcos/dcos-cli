@@ -123,6 +123,56 @@ def test_update_missing_field():
             "Possible properties are: ")
 
 
+def test_scale_group():
+    _deploy_group('tests/data/marathon/groups/scale.json')
+    returncode, stdout, stderr = exec_command(['dcos', 'marathon', 'group',
+                                               'scale', 'scale-group', '2'])
+    assert stderr == b''
+    assert returncode == 0
+    watch_all_deployments()
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'marathon', 'group', 'show',
+         'scale-group'])
+    res = json.loads(stdout.decode('utf-8'))
+
+    assert res['groups'][0]['apps'][0]['instances'] == 2
+    _remove_group('scale-group')
+
+
+def test_scale_group_not_exist():
+    returncode, stdout, stderr = exec_command(['dcos', 'marathon', 'group',
+                                               'scale', 'scale-group', '2'])
+    assert stderr == b''
+    watch_all_deployments()
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'marathon', 'group', 'show',
+         'scale-group'])
+    res = json.loads(stdout.decode('utf-8'))
+
+    assert len(res['apps']) == 0
+    _remove_group('scale-group')
+
+
+def test_scale_group_when_scale_factor_negative():
+    _deploy_group('tests/data/marathon/groups/scale.json')
+    returncode, stdout, stderr = exec_command(['dcos', 'marathon', 'group',
+                                               'scale', 'scale-group', '-2'])
+    assert b'Command not recognized' in stdout
+    assert returncode == 1
+    watch_all_deployments()
+    _remove_group('scale-group')
+
+
+def test_scale_group_when_scale_factor_not_float():
+    _deploy_group('tests/data/marathon/groups/scale.json')
+    returncode, stdout, stderr = exec_command(['dcos', 'marathon', 'group',
+                                               'scale', 'scale-group', '1.a'])
+    assert stderr == b'Error parsing string as float\n'
+    assert returncode == 1
+    watch_all_deployments()
+    _remove_group('scale-group')
+
+
 def _remove_group(group_id):
     assert_command(['dcos', 'marathon', 'group', 'remove', group_id])
 
