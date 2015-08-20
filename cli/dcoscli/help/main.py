@@ -15,6 +15,7 @@ import docopt
 from concurrent.futures import ThreadPoolExecutor
 from dcos import cmds, emitting, options, subcommand, util
 from dcos.errors import DCOSException
+from dcoscli.main import decorate_docopt_usage
 
 emitter = emitting.FlatEmitter()
 logger = util.get_logger(__name__)
@@ -28,6 +29,7 @@ def main():
         return 1
 
 
+@decorate_docopt_usage
 def _main():
     util.configure_process_from_environ()
 

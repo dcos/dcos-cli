@@ -1,6 +1,6 @@
 DCOS Command Line Interface
 ===========================
-The DCOS Command Line Interface (CLI) is a cross-platform command line utility 
+The DCOS Command Line Interface (CLI) is a cross-platform command line utility
 that provides a user-friendly yet powerful way to manage DCOS installations.
 
 Installation and Usage
@@ -30,7 +30,7 @@ The example below installs every package available in the DCOS repository::
 Using the CLI without DCOS
 --------------------------
 
-You may optionally configure the DCOS CLI to work with open source Mesos and 
+You may optionally configure the DCOS CLI to work with open source Mesos and
 Marathon_ by setting the following properties::
     dcos config set core.mesos_master_url http://<mesos-master-host>:5050
     dcos config set marathon.url http://<marathon-host>:8080
@@ -112,12 +112,9 @@ Running
 Tox will run unit and integration tests in both Python environments using a
 temporarily created virtualenv.
 
-You should ensure :code:`DCOS_CONFIG` is set and that the config file points
-to the Marathon instance you want to use for integration tests. If you're
-happy to use the default test configuration which assumes there is a Marathon
-instance running on localhost, set :code:`DCOS_CONFIG` as follows::
-
-    export DCOS_CONFIG=$(pwd)/tests/data/dcos.toml
+You can set :code:`DCOS_CONFIG` to a config file that points to a DCOS
+cluster you want to use for integration tests.  This defaults to
+:code:`~/.dcos/dcos.toml`
 
 If you are testing against the DCOS Image you can configure the URL to the
 Exhibitor::

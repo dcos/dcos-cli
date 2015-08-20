@@ -260,8 +260,6 @@ def test_install_missing_options_file():
         ['dcos', 'package', 'install', 'chronos', '--yes',
          '--options=asdf.json'],
         returncode=1,
-        stdout=b'We recommend a minimum of one node with at least 1 CPU and '
-               b'2GB of RAM available for the Chronos Service.\n',
         stderr=b"Error opening file [asdf.json]: No such file or directory\n")
 
 
@@ -671,6 +669,46 @@ def test_search_table():
     assert stderr == b''
 
 
+def test_search_ends_with_wildcard():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'search', 'c*', '--json'])
+
+    assert returncode == 0
+    assert b'chronos' in stdout
+    assert b'cassandra' in stdout
+    assert stderr == b''
+
+    registries = json.loads(stdout.decode('utf-8'))
+    for registry in registries:
+        assert len(registry['packages']) == 3
+
+
+def test_search_start_with_wildcard():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'search', '*nos', '--json'])
+
+    assert returncode == 0
+    assert b'chronos' in stdout
+    assert stderr == b''
+
+    registries = json.loads(stdout.decode('utf-8'))
+    for registry in registries:
+        assert len(registry['packages']) == 1
+
+
+def test_search_middle_with_wildcard():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'search', 'c*s', '--json'])
+
+    assert returncode == 0
+    assert b'chronos' in stdout
+    assert stderr == b''
+
+    registries = json.loads(stdout.decode('utf-8'))
+    for registry in registries:
+        assert len(registry['packages']) == 1
+
+
 def _get_app_labels(app_id):
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'show', app_id])
@@ -784,43 +822,3 @@ def _package(name,
         yield
     finally:
         assert_command(['dcos', 'package', 'uninstall', name])
-
-
-def test_search_ends_with_wildcard():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'package', 'search', 'c*', '--json'])
-
-    assert returncode == 0
-    assert b'chronos' in stdout
-    assert b'cassandra' in stdout
-    assert stderr == b''
-
-    registries = json.loads(stdout.decode('utf-8'))
-    for registry in registries:
-        assert len(registry['packages']) == 3
-
-
-def test_search_start_with_wildcard():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'package', 'search', '*nos', '--json'])
-
-    assert returncode == 0
-    assert b'chronos' in stdout
-    assert stderr == b''
-
-    registries = json.loads(stdout.decode('utf-8'))
-    for registry in registries:
-        assert len(registry['packages']) == 1
-
-
-def test_search_middle_with_wildcard():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'package', 'search', 'c*s', '--json'])
-
-    assert returncode == 0
-    assert b'chronos' in stdout
-    assert stderr == b''
-
-    registries = json.loads(stdout.decode('utf-8'))
-    for registry in registries:
-        assert len(registry['packages']) == 1

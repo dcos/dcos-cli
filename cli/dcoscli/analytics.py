@@ -6,6 +6,7 @@ import uuid
 import dcoscli
 import docopt
 import rollbar
+import six
 from concurrent.futures import ThreadPoolExecutor
 from dcos import http, util
 from dcoscli.constants import (ROLLBAR_SERVER_POST_KEY,
@@ -261,10 +262,18 @@ def _base_properties(conf=None):
         cmd = 'dcos'
         full_cmd = 'dcos'
 
+    try:
+        dcos_hostname = six.moves.urllib.parse.urlparse(
+            conf.get('core.dcos_url')).hostname
+    except:
+        logger.exception('Unable to find the hostname of the cluster.')
+        dcos_hostname = None
+
     return {
         'cmd': cmd,
         'full_cmd': full_cmd,
         'dcoscli.version': dcoscli.version,
         'python_version': str(sys.version_info),
-        'config': json.dumps(list(conf.property_items()))
+        'config': json.dumps(list(conf.property_items())),
+        'DCOS_HOSTNAME': dcos_hostname,
     }

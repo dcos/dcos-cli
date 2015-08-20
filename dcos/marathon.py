@@ -53,9 +53,28 @@ def _to_exception(response):
     """
 
     if response.status_code == 400:
+        msg = 'Error on request [{0} {1}]: HTTP {2}: {3}'.format(
+            response.request.method,
+            response.request.url,
+            response.status_code,
+            response.reason)
+
+        # Marathon is buggy and sometimes return JSON, and sometimes
+        # HTML.  We only include the error message if it's JSON.
+        try:
+            json_msg = response.json()
+            msg += ':\n' + json.dumps(json_msg,
+                                      indent=2,
+                                      sort_keys=True,
+                                      separators=(',', ': '))
+        except ValueError:
+            pass
+
+        return DCOSException(msg)
+    elif response.status_code == 409:
         return DCOSException(
-            'Error while fetching [{0}]: HTTP {1}: {2}'.format(
-                response.request.url, response.status_code, response.reason))
+            'App or group is locked by one or more deployments. '
+            'Override with --force.')
 
     try:
         response_json = response.json()

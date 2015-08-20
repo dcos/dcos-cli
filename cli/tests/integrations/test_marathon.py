@@ -1,6 +1,7 @@
 import contextlib
 import json
 import os
+import re
 import threading
 
 from dcos import constants
@@ -8,9 +9,9 @@ from dcos import constants
 import pytest
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
-from .common import (app, assert_command, assert_lines, exec_command,
-                     list_deployments, show_app, watch_all_deployments,
-                     watch_deployment)
+from .common import (app, assert_command, assert_lines, config_set,
+                     config_unset, exec_command, list_deployments, popen_tty,
+                     show_app, watch_all_deployments, watch_deployment)
 
 
 def test_help():
@@ -384,8 +385,35 @@ def test_update_invalid_request():
     assert returncode == 1
     assert stdout == b''
     stderr = stderr.decode()
-    assert stderr.startswith('Error while fetching')
+    assert stderr.startswith('Error on request')
     assert stderr.endswith('HTTP 400: Bad Request\n')
+
+
+def test_app_add_invalid_request():
+    path = os.path.join(
+        'tests', 'data', 'marathon', 'apps', 'app_add_400.json')
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'marathon', 'app', 'add', path])
+
+    assert returncode == 1
+    assert stdout == b''
+    assert re.match(b"Error on request \[POST .*\]: HTTP 400: Bad Request:",
+                    stderr)
+
+    stderr_end = b"""{
+  "details": [
+    {
+      "errors": [
+        "host is not a valid network type"
+      ],
+      "path": "/container/docker/network"
+    }
+  ],
+  "message": "Invalid JSON"
+}
+"""
+    assert stderr.endswith(stderr_end)
 
 
 def test_update_app():
@@ -622,8 +650,7 @@ def test_show_task():
 
 
 def test_bad_configuration():
-    assert_command(
-        ['dcos', 'config', 'set', 'marathon.url', 'http://localhost:88888'])
+    config_set('marathon.url', 'http://localhost:88888')
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'list'])
@@ -633,7 +660,33 @@ def test_bad_configuration():
     assert stderr.startswith(
         b"URL [http://localhost:88888/v2/info] is unreachable")
 
-    assert_command(['dcos', 'config', 'unset', 'marathon.url'])
+    config_unset('marathon.url')
+
+
+def test_app_locked_error():
+    with app('tests/data/marathon/apps/sleep_two_instances.json',
+             '/sleep-two-instances'):
+        assert_command(
+            ['dcos', 'marathon', 'app', 'stop', 'sleep-two-instances'],
+            returncode=1,
+            stderr=(b'App or group is locked by one or more deployments. '
+                    b'Override with --force.\n'))
+
+
+def test_app_add_no_tty():
+    proc, master = popen_tty('dcos marathon app add')
+
+    stdout, stderr = proc.communicate()
+    os.close(master)
+
+    print(stdout)
+    print(stderr)
+
+    assert proc.wait() == 1
+    assert stdout == b''
+    assert stderr == (b"We currently don't support reading from the TTY. "
+                      b"Please specify an application JSON.\n"
+                      b"Usage: dcos marathon app add < app_resource.json\n")
 
 
 def _list_apps(app_id=None):

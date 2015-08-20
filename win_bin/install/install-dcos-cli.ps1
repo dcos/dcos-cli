@@ -31,6 +31,15 @@ if (-Not(Get-Command pip -errorAction SilentlyContinue))
   exit 1
 }
 
+$PIP_VERSION = (pip -V)
+
+"$PIP_VERSION" -match "[0-9]+\.[0-9]+"
+
+if ([double]$matches[0] -le 1.4) {
+  echo "Pip version must be greater than 1.4. Aborting."
+  exit 1
+}
+
 if (-Not(Get-Command virtualenv -errorAction SilentlyContinue))
 {
   echo "The program 'virtualenv' could not be found. Make sure that it has been installed with the 'pip' Python package program."

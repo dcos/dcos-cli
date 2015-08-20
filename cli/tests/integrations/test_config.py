@@ -7,7 +7,7 @@ from dcos import constants
 
 import pytest
 
-from .common import assert_command, exec_command
+from .common import assert_command, config_set, config_unset, exec_command
 
 
 @pytest.fixture
@@ -115,25 +115,52 @@ def test_get_top_property(env):
 
 
 def test_set_existing_string_property(env):
-    _set_value('core.dcos_url', 'http://change.dcos.url:5081', env)
+    config_set('core.dcos_url', 'http://change.dcos.url:5081', env)
     _get_value('core.dcos_url', 'http://change.dcos.url:5081', env)
-    _set_value('core.dcos_url', 'http://change.dcos.url', env)
+    config_set('core.dcos_url', 'http://change.dcos.url', env)
 
 
 def test_set_existing_boolean_property(env):
-    _set_value('core.reporting', 'true', env)
+    config_set('core.reporting', 'true', env)
     _get_value('core.reporting', True, env)
-    _set_value('core.reporting', 'true', env)
+    config_set('core.reporting', 'true', env)
 
 
 def test_set_existing_number_property(env):
-    _set_value('core.timeout', '5', env)
+    config_set('core.timeout', '5', env)
     _get_value('core.timeout', 5, env)
-    _set_value('core.timeout', '5', env)
+    config_set('core.timeout', '5', env)
+
+
+def test_set_change_output(env):
+    assert_command(
+        ['dcos', 'config', 'set', 'core.dcos_url',
+         'http://change.dcos.url:5081'],
+        stdout=(b"[core.dcos_url]: changed from 'http://change.dcos.url' to "
+                b"'http://change.dcos.url:5081'\n"),
+        env=env)
+    config_set('core.dcos_url', 'http://change.dcos.url', env)
+
+
+def test_set_same_output(env):
+    assert_command(
+        ['dcos', 'config', 'set', 'core.dcos_url', 'http://change.dcos.url'],
+        stdout=b"[core.dcos_url]: already set to 'http://change.dcos.url'\n",
+        env=env)
+
+
+def test_set_new_output(env):
+    config_unset('core.dcos_url', None, env)
+    assert_command(
+        ['dcos', 'config', 'set', 'core.dcos_url',
+         'http://change.dcos.url:5081'],
+        stdout=(b"[core.dcos_url]: set to 'http://change.dcos.url:5081'\n"),
+        env=env)
+    config_set('core.dcos_url', 'http://change.dcos.url', env)
 
 
 def test_append_empty_list(env):
-    _set_value('package.sources', '[]', env)
+    config_set('package.sources', '[]', env)
     _append_value(
         'package.sources',
         'https://github.com/mesosphere/universe/archive/cli-tests.zip',
@@ -145,7 +172,7 @@ def test_append_empty_list(env):
 
 
 def test_prepend_empty_list(env):
-    _set_value('package.sources', '[]', env)
+    config_set('package.sources', '[]', env)
     _prepend_value(
         'package.sources',
         'https://github.com/mesosphere/universe/archive/cli-tests.zip',
@@ -166,7 +193,7 @@ def test_append_list(env):
         ['https://github.com/mesosphere/universe/archive/cli-tests.zip',
          'https://github.com/mesosphere/universe/archive/version-2.x.zip'],
         env)
-    _unset_value('package.sources', '1', env)
+    config_unset('package.sources', '1', env)
 
 
 def test_prepend_list(env):
@@ -179,7 +206,7 @@ def test_prepend_list(env):
         ['https://github.com/mesosphere/universe/archive/version-2.x.zip',
          'https://github.com/mesosphere/universe/archive/cli-tests.zip'],
         env)
-    _unset_value('package.sources', '0', env)
+    config_unset('package.sources', '0', env)
 
 
 def test_append_non_list(env):
@@ -205,9 +232,9 @@ def test_prepend_non_list(env):
 
 
 def test_unset_property(env):
-    _unset_value('core.reporting', None, env)
+    config_unset('core.reporting', None, env)
     _get_missing_value('core.reporting', env)
-    _set_value('core.reporting', 'false', env)
+    config_set('core.reporting', 'false', env)
 
 
 def test_unset_missing_property(env):
@@ -218,8 +245,32 @@ def test_unset_missing_property(env):
         env=env)
 
 
+def test_unset_output(env):
+    assert_command(['dcos', 'config', 'unset', 'core.reporting'],
+                   stdout=b'Removed [core.reporting]\n',
+                   env=env)
+    config_set('core.reporting', 'false', env)
+
+
+def test_unset_index_output(env):
+    stdout = (
+        b"[package.sources]: removed element "
+        b"'https://github.com/mesosphere/universe/archive/cli-tests.zip' "
+        b"at index '0'\n"
+    )
+
+    assert_command(['dcos', 'config', 'unset', 'package.sources', '--index=0'],
+                   stdout=stdout,
+                   env=env)
+
+    _prepend_value(
+        'package.sources',
+        'https://github.com/mesosphere/universe/archive/cli-tests.zip',
+        env)
+
+
 def test_set_whole_list(env):
-    _set_value(
+    config_set(
         'package.sources',
         '["https://github.com/mesosphere/universe/archive/cli-tests.zip"]',
         env)
@@ -241,7 +292,7 @@ def test_unset_top_property(env):
 
 
 def test_unset_list_index(env):
-    _unset_value('package.sources', '0', env)
+    config_unset('package.sources', '0', env)
     _get_value(
         'package.sources',
         [],
@@ -293,7 +344,7 @@ def test_validate(env):
 
 def test_validation_error(env):
     source = ["https://github.com/mesosphere/universe/archive/cli-tests.zip"]
-    assert_command(['dcos', 'config', 'unset', 'package.sources'], env=env)
+    config_unset('package.sources', None, env)
 
     stdout = b"Error: missing required property 'sources'.\n"
     assert_command(['dcos', 'config', 'validate'],
@@ -301,13 +352,8 @@ def test_validation_error(env):
                    stdout=stdout,
                    env=env)
 
-    assert_command(['dcos', 'config', 'set', 'package.sources',
-                   json.dumps(source)],
-                   env=env)
-    _get_value(
-        'package.sources',
-        source,
-        env)
+    config_set('package.sources', json.dumps(source), env)
+    _get_value('package.sources', source, env)
 
 
 def test_set_property_key(env):
@@ -319,44 +365,44 @@ def test_set_property_key(env):
 
 
 def test_set_missing_property(missing_env):
-    _set_value('core.dcos_url', 'http://localhost:8080', missing_env)
+    config_set('core.dcos_url', 'http://localhost:8080', missing_env)
     _get_value('core.dcos_url', 'http://localhost:8080', missing_env)
-    _unset_value('core.dcos_url', None, missing_env)
+    config_unset('core.dcos_url', None, missing_env)
 
 
 def test_set_core_property(env):
-    _set_value('core.reporting', 'true', env)
+    config_set('core.reporting', 'true', env)
     _get_value('core.reporting', True, env)
-    _set_value('core.reporting', 'false', env)
+    config_set('core.reporting', 'false', env)
 
 
 def test_url_validation(env):
     key = 'core.dcos_url'
     default_value = 'http://change.dcos.url'
 
-    _set_value(key, 'http://localhost', env)
-    _set_value(key, 'https://localhost', env)
-    _set_value(key, 'http://dcos-1234', env)
-    _set_value(key, 'http://dcos-1234.mydomain.com', env)
+    config_set(key, 'http://localhost', env)
+    config_set(key, 'https://localhost', env)
+    config_set(key, 'http://dcos-1234', env)
+    config_set(key, 'http://dcos-1234.mydomain.com', env)
 
-    _set_value(key, 'http://localhost:5050', env)
-    _set_value(key, 'https://localhost:5050', env)
-    _set_value(key, 'http://mesos-1234:5050', env)
-    _set_value(key, 'http://mesos-1234.mydomain.com:5050', env)
+    config_set(key, 'http://localhost:5050', env)
+    config_set(key, 'https://localhost:5050', env)
+    config_set(key, 'http://mesos-1234:5050', env)
+    config_set(key, 'http://mesos-1234.mydomain.com:5050', env)
 
-    _set_value(key, 'http://localhost:8080', env)
-    _set_value(key, 'https://localhost:8080', env)
-    _set_value(key, 'http://marathon-1234:8080', env)
-    _set_value(key, 'http://marathon-1234.mydomain.com:5050', env)
+    config_set(key, 'http://localhost:8080', env)
+    config_set(key, 'https://localhost:8080', env)
+    config_set(key, 'http://marathon-1234:8080', env)
+    config_set(key, 'http://marathon-1234.mydomain.com:5050', env)
 
-    _set_value(key, default_value, env)
+    config_set(key, default_value, env)
 
 
 def test_append_url_validation(env):
     default_value = ('["https://github.com/mesosphere/universe/archive/'
                      'cli-tests.zip"]')
 
-    _set_value('package.sources', '[]', env)
+    config_set('package.sources', '[]', env)
     _append_value(
         'package.sources',
         'https://github.com/mesosphere/universe/archive/cli-tests.zip',
@@ -377,14 +423,14 @@ def test_append_url_validation(env):
         'package.sources',
         'file:///path/to/file.extension',
         env)
-    _set_value('package.sources', default_value, env)
+    config_set('package.sources', default_value, env)
 
 
 def test_prepend_url_validation(env):
     default_value = ('["https://github.com/mesosphere/universe/archive/'
                      'cli-tests.zip"]')
 
-    _set_value('package.sources', '[]', env)
+    config_set('package.sources', '[]', env)
     _prepend_value(
         'package.sources',
         'https://github.com/mesosphere/universe/archive/cli-tests.zip',
@@ -405,7 +451,7 @@ def test_prepend_url_validation(env):
         'package.sources',
         'file:///path/to/file.extension',
         env)
-    _set_value('package.sources', default_value, env)
+    config_set('package.sources', default_value, env)
 
 
 def test_fail_url_validation(env):
@@ -426,8 +472,8 @@ def test_prepend_fail_url_validation(env):
 
 
 def test_timeout(missing_env):
-    _set_value('marathon.url', 'http://1.2.3.4', missing_env)
-    _set_value('core.timeout', '1', missing_env)
+    config_set('marathon.url', 'http://1.2.3.4', missing_env)
+    config_set('core.timeout', '1', missing_env)
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'list'], env=missing_env)
@@ -436,8 +482,21 @@ def test_timeout(missing_env):
     assert stdout == b''
     assert "(connect timeout=1)".encode('utf-8') in stderr
 
-    _unset_value('core.timeout', None, missing_env)
-    _unset_value('marathon.url', None, missing_env)
+    config_unset('core.timeout', None, missing_env)
+    config_unset('marathon.url', None, missing_env)
+
+
+def test_parse_error():
+    env = os.environ.copy()
+    path = os.path.join('tests', 'data', 'config', 'parse_error.toml')
+    env['DCOS_CONFIG'] = path
+
+    assert_command(['dcos', 'config', 'show'],
+                   returncode=1,
+                   stderr=six.b(("Error parsing config file at [{}]: Found "
+                                 "invalid character in key name: ']'. "
+                                 "Try quoting the key name.\n").format(path)),
+                   env=env)
 
 
 def _fail_url_validation(command, key, value, env):
@@ -448,12 +507,6 @@ def _fail_url_validation(command, key, value, env):
     assert stdout_ == b''
     assert stderr_.startswith(str(
         'Error: {!r} does not match'.format(value)).encode('utf-8'))
-
-
-def _set_value(key, value, env):
-    assert_command(
-        ['dcos', 'config', 'set', key, value],
-        env=env)
 
 
 def _append_value(key, value, env):
@@ -481,14 +534,6 @@ def _get_value(key, value, env):
     assert returncode == 0
     assert result == value
     assert stderr == b''
-
-
-def _unset_value(key, index, env):
-    cmd = ['dcos', 'config', 'unset', key]
-    if index is not None:
-        cmd.append('--index={}'.format(index))
-
-    assert_command(cmd, env=env)
 
 
 def _get_missing_value(key, env):

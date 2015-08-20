@@ -9,6 +9,7 @@ from dcos import (cmds, emitting, http, marathon, options, package, subcommand,
                   util)
 from dcos.errors import DCOSException
 from dcoscli import tables
+from dcoscli.main import decorate_docopt_usage
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -28,6 +29,7 @@ def _doc():
         'data/help/package.txt').decode('utf-8')
 
 
+@decorate_docopt_usage
 def _main():
     util.configure_process_from_environ()
 
@@ -339,6 +341,8 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
             msg = "Package [{}] not available".format(package_name)
         raise DCOSException(msg)
 
+    user_options = _user_options(options_path)
+
     pkg_json = pkg.package_json(pkg_revision)
     pre_install_notes = pkg_json.get('preInstallNotes')
     if pre_install_notes:
@@ -346,8 +350,6 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
         if not _confirm('Continue installing?', yes):
             emitter.publish('Exiting installation.')
             return 0
-
-    user_options = _user_options(options_path)
 
     options = pkg.options(pkg_revision, user_options)
 

@@ -74,7 +74,7 @@ def temptext():
         shutil.rmtree(path, ignore_errors=True)
 
 
-def ensure_dir(directory):
+def ensure_dir_exists(directory):
     """If `directory` does not exist, create it.
 
     :param directory: path to the directory
@@ -92,6 +92,22 @@ def ensure_dir(directory):
                 'Cannot create directory [{}]: {}'.format(directory, e))
 
 
+def ensure_file_exists(path):
+    """ Create file if it doesn't exist
+
+    :param path: path of file to create
+    :type path: str
+    :rtype: None
+    """
+
+    if not os.path.exists(path):
+        try:
+            open(path, 'w').close()
+        except IOError as e:
+            raise DCOSException(
+                'Cannot create file [{}]: {}'.format(path, e))
+
+
 def read_file(path):
     """
     :param path: path to file
@@ -106,17 +122,36 @@ def read_file(path):
         return file_.read()
 
 
-def get_config():
+def get_config_path():
+    """ Returns the path to the DCOS config file.
+
+    :returns: path to the DCOS config file
+    :rtype: str
     """
+
+    default = os.path.expanduser(
+        os.path.join("~",
+                     constants.DCOS_DIR,
+                     'dcos.toml'))
+
+    return os.environ.get(constants.DCOS_CONFIG_ENV, default)
+
+
+def get_config(mutable=False):
+    """ Returns the DCOS configuration object
+
+    :param mutable: True if the returned Toml object should be mutable
+    :type mutable: boolean
     :returns: Configuration object
-    :rtype: Toml
+    :rtype: Toml | MutableToml
     """
 
     # avoid circular import
     from dcos import config
 
-    return config.load_from_path(
-        os.environ[constants.DCOS_CONFIG_ENV])
+    path = get_config_path()
+
+    return config.load_from_path(path, mutable)
 
 
 def get_config_vals(keys, config=None):

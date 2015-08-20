@@ -108,6 +108,7 @@ import pkg_resources
 from dcos import cmds, emitting, http, jsonitem, marathon, options, util
 from dcos.errors import DCOSException
 from dcoscli import tables
+from dcoscli.main import decorate_docopt_usage
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -121,6 +122,7 @@ def main():
         return 1
 
 
+@decorate_docopt_usage
 def _main():
     util.configure_process_from_environ()
 
@@ -319,7 +321,6 @@ def _get_resource(resource):
                     raise Exception
             except Exception:
                 logger.exception('Cannot read from resource %s', resource)
-
                 raise DCOSException(
                     "Can't read from resource: {0}.\n"
                     "Please check that it exists.".format(resource))
@@ -331,7 +332,7 @@ def _get_resource(resource):
         raise DCOSException(
             "We currently don't support reading from the TTY. Please "
             "specify an application JSON.\n"
-            "Usage: dcos app add < app_resource.json")
+            "Usage: dcos marathon app add < app_resource.json")
 
     return util.load_json(sys.stdin)
 

@@ -54,10 +54,25 @@ prompt_add_dcos_path_to_profile()
     done
 }
 
+check_pip_version()
+{
+    PIP_INFO=$(pip -V);
+    REGEX="([0-9]+)\.([0-9]+)";
+    [[ $PIP_INFO =~ $REGEX ]];
+    MAJOR_PIP_VERSION="${BASH_REMATCH[1]}";
+    MINOR_PIP_VERSION="${BASH_REMATCH[2]}";
+    if [ "$MAJOR_PIP_VERSION" -lt 1 ] || ([ "$MAJOR_PIP_VERSION" -eq 1 ] && [ "$MINOR_PIP_VERSION" -le 4 ]);
+        then echo "Pip version must be greater than 1.4. Aborting.";
+        exit 1;
+    fi
+}
+
 if [ "$#" -lt 2 ]; then
   usage;
   exit 1;
 fi
+
+check_pip_version;
 
 ARGS=( "$@" );
 
