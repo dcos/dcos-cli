@@ -73,4 +73,3 @@ Configuration:
       "https://my.org/registry",
       "git://github.com/mesosphere/universe.git"
     ]
-
