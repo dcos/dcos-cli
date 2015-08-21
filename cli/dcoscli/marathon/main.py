@@ -667,7 +667,11 @@ def _validate_update(current_resource, properties, schema):
 
 def _clean_up_resource_definition(properties):
     """
-    Remove task properties and nulls from resource definition
+    Remove non user-specified properties and nulls from resource definition.
+    We remove fields that marathon adds because they aren't in the json-schema
+    because a user should not specity them. When we do a `get` to see the
+    current resource, we may see these fields, but leaving them will cause us
+    to unnecessarily fail the schema validation.
 
     :param properties: resource JSON
     :type properties: dict
@@ -675,15 +679,23 @@ def _clean_up_resource_definition(properties):
     :rtype: dict
     """
     clean_properties = {}
+    ignore_properties = ["deployments", "lastTaskFailure", "tasks",
+                         "tasksRunning", "tasksHealthy", "tasksUnhealthy",
+                         "tasksStaged"]
     for k, v in properties.items():
-        if v:
-            if k in ["apps", "groups"]:
-                clean_properties[k] = [_clean_up_resource_definition(v[0])]
-            # Remove fields that marathon adds. These aren't in the json-schema
-            # because a user should not specify them. When we do a `get` to see
-            # the current schema, we may see these fields, but leaving them
-            # will cause us to unnecessarily fail the schema validation.
-            elif not k.startswith("task") and k != "lastTaskFailure":
+        if v is not None and k not in ignore_properties:
+            # iterate through dict/list(s) to check all properties
+            if isinstance(v, list):
+                v = [value for value in v if value]
+                clean_properties[k] = [
+                    _clean_up_resource_definition(elem)
+                    if isinstance(elem, dict)
+                    else elem
+                    for elem in v
+                ]
+            elif isinstance(v, dict):
+                clean_properties[k] = _clean_up_resource_definition(v)
+            else:
                 clean_properties[k] = v
 
     return clean_properties
