@@ -10,7 +10,7 @@ import pytest
 
 from .common import (assert_command, assert_lines, delete_zk_nodes,
                      exec_command, file_bytes, file_json, get_services,
-                     service_shutdown, watch_all_deployments)
+                     service_shutdown, wait_for_service, watch_all_deployments)
 
 
 @pytest.fixture(scope="module")
@@ -249,8 +249,12 @@ Please create a JSON file with the appropriate options, and pass the \
 def test_install(zk_znode):
     _install_chronos()
     watch_all_deployments()
+    wait_for_service('chronos')
     _uninstall_chronos()
-    get_services(expected_count=1, args=['--inactive'])
+    watch_all_deployments()
+    services = get_services(args=['--inactive'])
+    assert len([service for service in services
+                if service['name'] == 'chronos']) == 0
 
 
 def test_install_missing_options_file():
