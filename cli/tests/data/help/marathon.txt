@@ -96,4 +96,3 @@ Positional Arguments:
                                 stdin.
 
     <task-id>                   The task id
-

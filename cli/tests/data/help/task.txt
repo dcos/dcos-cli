@@ -21,4 +21,3 @@ Positional Arguments:
     <path>        List this directory. [default: '.']
     <task>        Only match tasks whose ID matches <task>.  <task> may be
                   a substring of the ID, or a unix glob pattern.
-

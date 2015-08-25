@@ -34,4 +34,3 @@ Positional Arguments:
     <service>                   The DCOS Service name.
 
     <service-id>                The DCOS Service ID
-

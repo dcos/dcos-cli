@@ -21,4 +21,3 @@ Options:
     --config-file=<path>    Path to SSH config file
     --user=<user>           SSH user [default: core]
     --version               Show version
-

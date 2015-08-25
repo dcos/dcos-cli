@@ -10,13 +10,13 @@ Options:
     --info     Show a short description of this subcommand
     --version  Show version
 """
+import subprocess
 
 import dcoscli
 import docopt
 from concurrent.futures import ThreadPoolExecutor
 from dcos import cmds, emitting, options, subcommand, util
 from dcos.errors import DCOSException
-from dcoscli.common import exec_command
 from dcoscli.main import decorate_docopt_usage
 
 emitter = emitting.FlatEmitter()
@@ -112,9 +112,5 @@ def _help_command(command):
     :rtype: int
     """
 
-    returncode, stdout, stderr = exec_command(['dcos', command, '--help'])
-    if returncode == 1:
-        emitter.publish(stderr.decode("utf-8"))
-        return 1
-    emitter.publish(stdout.decode("utf-8"))
-    return 0
+    executable = subcommand.command_executables(command)
+    return subprocess.call([executable, command, '--help'])
