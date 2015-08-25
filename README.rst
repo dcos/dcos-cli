@@ -42,13 +42,10 @@ Mesos and Marathon.
 Controlling Analytics Reporting
 -------------------------------
 
-The CLI reports usage and exception information to Segment.io. If you're
-developing against the CLI or running the current master, please set
-the :code:`DCOS_PRODUCTION` environment variable to false. This will
-ensure analytics are sent to the correct environment::
-    export DCOS_PRODUCTION=false
+The CLI reports usage and exception information to Segment.io for production
+usage.
 
-Alternatively, if you wish to turn reporting of analytics off entirely,
+If you wish to turn reporting of analytics off entirely,
 you can set the :code:`core.reporting` property to false::
     dcos config set core.reporting false
 

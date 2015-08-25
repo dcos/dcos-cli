@@ -1,8 +1,8 @@
 [core]
 reporting = false
-email = "test@mail.com"
 timeout = 5
+email = "test@mail.com"
 dcos_url = "http://change.dcos.url"
 [package]
-cache = "tmp/cache"
 sources = [ "https://github.com/mesosphere/universe/archive/cli-tests.zip",]
+cache = "tmp/cache"

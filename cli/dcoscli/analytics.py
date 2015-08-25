@@ -1,5 +1,4 @@
 import json
-import os
 import sys
 import uuid
 
@@ -11,8 +10,8 @@ from concurrent.futures import ThreadPoolExecutor
 from dcos import http, util
 from dcoscli.constants import (ROLLBAR_SERVER_POST_KEY,
                                SEGMENT_IO_CLI_ERROR_EVENT,
-                               SEGMENT_IO_CLI_EVENT, SEGMENT_IO_WRITE_KEY_DEV,
-                               SEGMENT_IO_WRITE_KEY_PROD, SEGMENT_URL)
+                               SEGMENT_IO_CLI_EVENT, SEGMENT_IO_WRITE_KEY_PROD,
+                               SEGMENT_URL)
 from requests.auth import HTTPBasicAuth
 
 logger = util.get_logger(__name__)
@@ -29,8 +28,7 @@ def wait_and_track(subproc):
     :rtype: int
     """
 
-    rollbar.init(ROLLBAR_SERVER_POST_KEY,
-                 'prod' if _is_prod() else 'dev')
+    rollbar.init(ROLLBAR_SERVER_POST_KEY, 'prod')
 
     conf = util.get_config()
     report = conf.get('core.reporting', True)
@@ -38,7 +36,7 @@ def wait_and_track(subproc):
         if report:
             _segment_track_cli(pool, conf)
 
-        exit_code, err = _wait_and_capture(subproc)
+        exit_code, err = wait_and_capture(subproc)
 
         # We only want to catch exceptions, not other stderr messages
         # (such as "task does not exist", so we look for the 'Traceback'
@@ -49,6 +47,28 @@ def wait_and_track(subproc):
             _track_err(pool, exit_code, err, conf)
 
     return exit_code
+
+
+def wait_and_capture(subproc):
+    """
+    Run a subprocess and capture its stderr.
+
+    :param subproc: Subprocess to capture
+    :type subproc: Popen
+    :returns: exit code of subproc
+    :rtype: int
+    """
+
+    err = ''
+    while subproc.poll() is None:
+        line = subproc.stderr.readline().decode('utf-8')
+        err += line
+        sys.stderr.write(line)
+        sys.stderr.flush()
+
+    exit_code = subproc.poll()
+
+    return exit_code, err
 
 
 def _segment_track(event, conf, properties):
@@ -100,8 +120,7 @@ def _segment_request(path, data):
     :rtype: None
     """
 
-    key = SEGMENT_IO_WRITE_KEY_PROD if _is_prod() else \
-        SEGMENT_IO_WRITE_KEY_DEV
+    key = SEGMENT_IO_WRITE_KEY_PROD
 
     try:
         # Set both the connect timeout and the request timeout to 1s,
@@ -112,33 +131,6 @@ def _segment_request(path, data):
                   timeout=(1, 1))
     except Exception as e:
         logger.exception(e)
-
-
-def _is_prod():
-    """ True if this process is in production. """
-    return os.environ.get('DCOS_PRODUCTION', 'true') != 'false'
-
-
-def _wait_and_capture(subproc):
-    """
-    Run a subprocess and capture its stderr.
-
-    :param subproc: Subprocess to capture
-    :type subproc: Popen
-    :returns: exit code of subproc
-    :rtype: int
-    """
-
-    err = ''
-    while subproc.poll() is None:
-        line = subproc.stderr.readline().decode('utf-8')
-        err += line
-        sys.stderr.write(line)
-        sys.stderr.flush()
-
-    exit_code = subproc.poll()
-
-    return exit_code, err
 
 
 def _track_err(pool, exit_code, err, conf):
