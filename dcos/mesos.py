@@ -67,20 +67,27 @@ class DCOSClient(object):
                     urllib.parse.urljoin(self._dcos_url, 'mesos/'))
         return urllib.parse.urljoin(base_url, path)
 
-    # TODO (mgummelt): this doesn't work with self._mesos_master_url
-    def slave_url(self, slave_id, path):
-        """ Create a slave URL
+    def slave_url(self, slave_id, private_url, path):
+        """Create a slave URL
 
         :param slave_id: slave ID
         :type slave_id: str
+        :param private_url: The slave's private URL derived from its
+                            pid.  Used when we're accessing mesos
+                            directly, rather than through DCOS.
+        :type private_url: str
         :param path: the path suffix of the desired URL
         :type path: str
         :returns: URL that hits the master
         :rtype: str
+
         """
 
-        return urllib.parse.urljoin(self._dcos_url,
-                                    'slave/{}/{}'.format(slave_id, path))
+        if self._dcos_url:
+            return urllib.parse.urljoin(self._dcos_url,
+                                        'slave/{}/{}'.format(slave_id, path))
+        else:
+            return urllib.parse.urljoin(private_url, path)
 
     def get_master_state(self):
         """Get the Mesos master state json object
@@ -92,16 +99,21 @@ class DCOSClient(object):
         url = self.master_url('master/state.json')
         return http.get(url, timeout=self._timeout).json()
 
-    def get_slave_state(self, slave_id):
+    def get_slave_state(self, slave_id, private_url):
         """Get the Mesos slave state json object
 
         :param slave_id: slave ID
         :type slave_id: str
+        :param private_url: The slave's private URL derived from its
+                            pid.  Used when we're accessing mesos
+                            directly, rather than through DCOS.
+        :type private_url: str
         :returns: Mesos' master state json object
         :rtype: dict
+
         """
 
-        url = self.slave_url(slave_id, 'state.json')
+        url = self.slave_url(slave_id, private_url, 'state.json')
         return http.get(url, timeout=self._timeout).json()
 
     def get_state_summary(self):
@@ -114,11 +126,17 @@ class DCOSClient(object):
         url = self.master_url('master/state-summary')
         return http.get(url, timeout=self._timeout).json()
 
-    def slave_file_read(self, slave_id, path, offset, length):
-        """ See the master_file_read() docs
+    def slave_file_read(self, slave_id, private_url, path, offset, length):
+        """See the master_file_read() docs
 
+        :param slave_id: slave ID
+        :type slave_id: str
         :param path: absolute path to read
         :type path: str
+        :param private_url: The slave's private URL derived from its
+                            pid.  Used when we're accessing mesos
+                            directly, rather than through DCOS.
+        :type private_url: str
         :param offset: start byte location, or -1.  -1 means read no data, and
                        is used to fetch the size of the file in the response's
                        'offset' parameter.
@@ -128,9 +146,12 @@ class DCOSClient(object):
         :type length: int
         :returns: files/read.json response
         :rtype: dict
+
         """
 
-        url = self.slave_url(slave_id, 'files/read.json')
+        url = self.slave_url(slave_id,
+                             private_url,
+                             'files/read.json')
         params = {'path': path,
                   'length': length,
                   'offset': offset}
@@ -228,7 +249,9 @@ class DCOSClient(object):
         :rtype: dict
         """
 
-        url = self.slave_url(slave['id'], 'files/browse.json')
+        url = self.slave_url(slave['id'],
+                             slave.http_url(),
+                             'files/browse.json')
         return http.get(url, params={'path': path}).json()
 
 
@@ -482,7 +505,7 @@ class Slave(object):
     :param short_state: slave's entry from the master's state.json
     :type short_state: dict
     :param state: slave's state.json
-    :type state: dict
+    :type state: dict | None
     :param master: slave's master
     :type master: Master
     """
@@ -501,8 +524,19 @@ class Slave(object):
         """
 
         if not self._state:
-            self._state = DCOSClient().get_slave_state(self['id'])
+            self._state = DCOSClient().get_slave_state(self['id'],
+                                                       self.http_url())
         return self._state
+
+    def http_url(self):
+        """
+        :returns: The private HTTP URL of the slave.  Derived from the
+                  `pid` property.
+        :rtype: str
+        """
+
+        parsed_pid = parse_pid(self['pid'])
+        return 'http://{}:{}'.format(parsed_pid[1], parsed_pid[2])
 
     def _framework_dicts(self):
         """Returns the framework dictionaries from the state.json dict
@@ -848,6 +882,7 @@ class MesosFile(object):
 
         if self._slave:
             return self._dcos_client.slave_file_read(self._slave['id'],
+                                                     self._slave.http_url(),
                                                      **params)
         else:
             return self._dcos_client.master_file_read(**params)
@@ -872,7 +907,7 @@ def parse_pid(pid):
 
     :param pid: pid of the form "id@ip:port"
     :type pid: str
-    :returns: parsed pid
+    :returns: (id, ip, port)
     :rtype: (str, str, str)
     """
 
