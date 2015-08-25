@@ -10,7 +10,7 @@ import dcos.util as util
 from dcos import mesos
 from dcos.errors import DCOSException
 from dcos.util import create_schema
-from dcoscli.task.main import _mesos_files, main
+from dcoscli.task.main import main
 
 from mock import MagicMock, patch
 
@@ -235,10 +235,12 @@ def test_log_completed():
     # create a completed task
     # ensure that tail lists nothing
     # ensure that tail --completed lists a completed task
-    assert_command(['dcos', 'task', 'log', 'test-app-completed'],
-                   returncode=1,
-                   stderr=b'No matching tasks. Exiting.\n',
-                   stdout=b'')
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'task', 'log', 'test-app-completed'])
+
+    assert returncode == 1
+    assert stdout == b''
+    assert stderr.startswith(b'No running tasks match ID [test-app-completed]')
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'task', 'log', '--completed', 'test-app-completed'])
@@ -271,13 +273,11 @@ def test_log_slave_unavailable():
 
 def test_log_file_unavailable():
     """ Test a file's read.json being unavailable """
-    fltr = "test-app1"
-    files = _mesos_files(False, fltr, "stdout")
-    assert len(files) == 1
+    files = [mesos.MesosFile('bogus')]
     files[0].read = _mock_exception('exception')
 
     with patch('dcoscli.task.main._mesos_files', return_value=files):
-        args = ['task', 'log', fltr]
+        args = ['task', 'log', 'test-app1']
         stderr = b"No files exist. Exiting.\n"
         assert_mock(main, args, returncode=1, stderr=stderr)
 

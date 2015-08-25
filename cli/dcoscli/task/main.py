@@ -153,9 +153,30 @@ def _log(follow, completed, lines, task, file_):
 
     lines = util.parse_int(lines)
 
-    mesos_files = _mesos_files(completed, fltr, file_)
+    # get tasks
+    client = mesos.DCOSClient()
+    master = mesos.Master(client.get_master_state())
+    tasks = master.tasks(completed=completed, fltr=fltr)
+
+    if not tasks:
+        if not completed:
+            completed_tasks = master.tasks(completed=True, fltr=fltr)
+            if completed_tasks:
+                msg = 'No running tasks match ID [{}]; however, there '.format(
+                    fltr)
+                if len(completed_tasks) > 1:
+                    msg += 'are {} matching completed tasks. '.format(
+                        len(completed_tasks))
+                else:
+                    msg += 'is 1 matching completed task. '
+                msg += 'Run with --completed to see these logs.'
+                raise DCOSException(msg)
+        raise DCOSException('No matching tasks. Exiting.')
+
+    mesos_files = _mesos_files(tasks, file_, client)
     if not mesos_files:
         raise DCOSException('No matching tasks. Exiting.')
+
     log.log_files(mesos_files, follow, lines)
 
     return 0
@@ -201,28 +222,22 @@ def _ls(task, path, long_):
                           for file_ in files))
 
 
-def _mesos_files(completed, fltr, file_):
-    """Return MesosFile objects for the specified files.  Only include
-    files that satisfy all of the following:
+def _mesos_files(tasks, file_, client):
+    """Return MesosFile objects for the specified tasks and file name.
+    Only include files that satisfy all of the following:
 
     a) belong to an available slave
     b) have an executor entry on the slave
 
-    :param completed: whether to include completed tasks
-    :type completed: bool
-    :param fltr: task pattern to match
-    :type fltr: str
+    :param tasks: tasks on which files reside
+    :type tasks: [mesos.Task]
     :param file_: file path to read
     :type file_: str
+    :param client: DCOS client
+    :type client: mesos.DCOSClient
     :returns: MesosFile objects
-    :rtype: [MesosFile]
-
+    :rtype: [mesos.MesosFile]
     """
-
-    # get tasks
-    client = mesos.DCOSClient()
-    master = mesos.Master(client.get_master_state())
-    tasks = master.tasks(completed=completed, fltr=fltr)
 
     # load slave state in parallel
     slaves = _load_slaves_state([task.slave() for task in tasks])
