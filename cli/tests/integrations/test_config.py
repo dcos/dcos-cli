@@ -18,6 +18,7 @@ def env():
         constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "dcos.toml"),
         cli_constants.DCOS_PRODUCTION_ENV: 'false'
     })
+
     return r
 
 
@@ -72,9 +73,10 @@ def test_version():
 
 
 def test_list_property(env):
-    stdout = b"""core.dcos_url=http://change.dcos.url
+    stdout = b"""core.dcos_url=http://dcos.snakeoil.mesosphere.com
 core.email=test@mail.com
 core.reporting=False
+core.ssl_verify=false
 core.timeout=5
 package.cache=tmp/cache
 package.sources=['https://github.com/mesosphere/universe/archive/\
@@ -86,7 +88,7 @@ cli-tests.zip']
 
 
 def test_get_existing_string_property(env):
-    _get_value('core.dcos_url', 'http://change.dcos.url', env)
+    _get_value('core.dcos_url', 'http://dcos.snakeoil.mesosphere.com', env)
 
 
 def test_get_existing_boolean_property(env):
@@ -122,9 +124,11 @@ def test_get_top_property(env):
 
 
 def test_set_existing_string_property(env):
-    config_set('core.dcos_url', 'http://change.dcos.url:5081', env)
-    _get_value('core.dcos_url', 'http://change.dcos.url:5081', env)
-    config_set('core.dcos_url', 'http://change.dcos.url', env)
+    config_set('core.dcos_url',
+               'http://dcos.snakeoil.mesosphere.com:5081', env)
+    _get_value('core.dcos_url',
+               'http://dcos.snakeoil.mesosphere.com:5081', env)
+    config_set('core.dcos_url', 'http://dcos.snakeoil.mesosphere.com', env)
 
 
 def test_set_existing_boolean_property(env):
@@ -142,17 +146,20 @@ def test_set_existing_number_property(env):
 def test_set_change_output(env):
     assert_command(
         ['dcos', 'config', 'set', 'core.dcos_url',
-         'http://change.dcos.url:5081'],
-        stdout=(b"[core.dcos_url]: changed from 'http://change.dcos.url' to "
-                b"'http://change.dcos.url:5081'\n"),
+         'http://dcos.snakeoil.mesosphere.com:5081'],
+        stdout=(b"[core.dcos_url]: changed from "
+                b"'http://dcos.snakeoil.mesosphere.com' to "
+                b"'http://dcos.snakeoil.mesosphere.com:5081'\n"),
         env=env)
-    config_set('core.dcos_url', 'http://change.dcos.url', env)
+    config_set('core.dcos_url', 'http://dcos.snakeoil.mesosphere.com', env)
 
 
 def test_set_same_output(env):
     assert_command(
-        ['dcos', 'config', 'set', 'core.dcos_url', 'http://change.dcos.url'],
-        stdout=b"[core.dcos_url]: already set to 'http://change.dcos.url'\n",
+        ['dcos', 'config', 'set', 'core.dcos_url',
+            'http://dcos.snakeoil.mesosphere.com'],
+        stdout=(b"[core.dcos_url]: already set to "
+                b"'http://dcos.snakeoil.mesosphere.com'\n"),
         env=env)
 
 
@@ -160,10 +167,11 @@ def test_set_new_output(env):
     config_unset('core.dcos_url', None, env)
     assert_command(
         ['dcos', 'config', 'set', 'core.dcos_url',
-         'http://change.dcos.url:5081'],
-        stdout=(b"[core.dcos_url]: set to 'http://change.dcos.url:5081'\n"),
+         'http://dcos.snakeoil.mesosphere.com:5081'],
+        stdout=(b"[core.dcos_url]: set to "
+                b"'http://dcos.snakeoil.mesosphere.com:5081'\n"),
         env=env)
-    config_set('core.dcos_url', 'http://change.dcos.url', env)
+    config_set('core.dcos_url', 'http://dcos.snakeoil.mesosphere.com', env)
 
 
 def test_append_empty_list(env):
@@ -385,7 +393,7 @@ def test_set_core_property(env):
 
 def test_url_validation(env):
     key = 'core.dcos_url'
-    default_value = 'http://change.dcos.url'
+    default_value = 'http://dcos.snakeoil.mesosphere.com'
 
     config_set(key, 'http://localhost', env)
     config_set(key, 'https://localhost', env)

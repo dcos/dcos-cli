@@ -1,9 +1,10 @@
 import getpass
+import os
 import sys
 import threading
 
 import requests
-from dcos import util
+from dcos import constants, util
 from dcos.errors import DCOSException, DCOSHTTPException
 from requests.auth import HTTPBasicAuth
 
@@ -36,6 +37,7 @@ def _request(method,
              is_success=_default_is_success,
              timeout=DEFAULT_TIMEOUT,
              auth=None,
+             verify=None,
              **kwargs):
     """Sends an HTTP request.
 
@@ -49,6 +51,8 @@ def _request(method,
     :type timeout: int
     :param auth: authentication
     :type auth: AuthBase
+    :param verify: whether to verify SSL certs or path to cert(s)
+    :type verify: bool | str
     :param kwargs: Additional arguments to requests.request
         (see http://docs.python-requests.org/en/latest/api/#requests.request)
     :type kwargs: dict
@@ -67,6 +71,7 @@ def _request(method,
             url=url,
             timeout=timeout,
             auth=auth,
+            verify=verify,
             **kwargs)
     except requests.exceptions.ConnectionError as e:
         logger.exception("HTTP Connection Error")
@@ -92,6 +97,7 @@ def _request_with_auth(response,
                        url,
                        is_success=_default_is_success,
                        timeout=None,
+                       verify=None,
                        **kwargs):
     """Try request (3 times) with credentials if 401 returned from server
 
@@ -105,6 +111,8 @@ def _request_with_auth(response,
     :type is_success: Function from int to bool
     :param timeout: request timeout
     :type timeout: int
+    :param verify: whether to verify SSL certs or path to cert(s)
+    :type verify: bool | str
     :param kwargs: Additional arguments to requests.request
         (see http://docs.python-requests.org/en/latest/api/#requests.request)
     :type kwargs: dict
@@ -122,7 +130,8 @@ def _request_with_auth(response,
                 auth = AUTH_CREDS[creds]
 
         # try request again, with auth
-        response = _request(method, url, is_success, timeout, auth, **kwargs)
+        response = _request(method, url, is_success, timeout, auth,
+                            verify, **kwargs)
 
         # only store credentials if they're valid
         with lock:
@@ -141,6 +150,7 @@ def request(method,
             url,
             is_success=_default_is_success,
             timeout=None,
+            verify=None,
             **kwargs):
     """Sends an HTTP request. If the server responds with a 401, ask the
     user for their credentials, and try request again (up to 3 times).
@@ -153,6 +163,8 @@ def request(method,
     :type is_success: Function from int to bool
     :param timeout: request timeout
     :type timeout: int
+    :param verify: whether to verify SSL certs or path to cert(s)
+    :type verify: bool | str
     :param kwargs: Additional arguments to requests.request
         (see http://docs.python-requests.org/en/latest/api/#requests.request)
     :type kwargs: dict
@@ -162,11 +174,23 @@ def request(method,
     if 'headers' not in kwargs:
         kwargs['headers'] = {'Accept': 'application/json'}
 
-    response = _request(method, url, is_success, timeout, **kwargs)
+    if verify is None and constants.DCOS_SSL_VERIFY_ENV in os.environ:
+        verify = os.environ[constants.DCOS_SSL_VERIFY_ENV]
+        if verify.lower() == "true":
+            verify = True
+        elif verify.lower() == "false":
+            verify = False
+
+    # Silence 'Unverified HTTPS request' and 'SecurityWarning' for bad certs
+    if verify is not None:
+        silence_requests_warnings()
+
+    response = _request(method, url, is_success, timeout,
+                        verify=verify, **kwargs)
 
     if response.status_code == 401:
         response = _request_with_auth(response, method, url, is_success,
-                                      timeout, **kwargs)
+                                      timeout, verify, **kwargs)
 
     if is_success(response.status_code):
         return response

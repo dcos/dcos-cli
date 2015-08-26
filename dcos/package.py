@@ -754,7 +754,7 @@ def update_sources(config, validate=False):
                         source.url,
                         stage_dir)
 
-                    errors.append(e.message)
+                    errors.append(str(e))
                     continue
 
                 # check version

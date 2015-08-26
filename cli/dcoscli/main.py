@@ -33,6 +33,11 @@ Environment Variables:
 
     DCOS_DEBUG                  If set then enable further debug messages which
                                 are sent to stdout.
+
+    DCOS_SSL_VERIFY             If set, specifies whether to verify SSL certs
+                                for HTTPS, or the path to the certificate(s).
+                                Can also be configured by setting
+                                `core.ssl_config` in the config.
 """
 
 import os
@@ -78,6 +83,9 @@ def _main():
     if args['<command>'] != 'config' and \
        not auth.check_if_user_authenticated():
         auth.force_auth()
+
+    config = util.get_config()
+    set_ssl_info_env_vars(config)
 
     command = args['<command>']
     http.silence_requests_warnings()
@@ -140,3 +148,19 @@ def decorate_docopt_usage(func):
             return 1
         return result
     return wrapper
+
+
+def set_ssl_info_env_vars(config):
+    """Set SSL info from config to environment variable if enviornment
+       variable doesn't exist
+
+    :param config: config
+    :type config: Toml
+    :rtype: None
+    """
+
+    if 'core.ssl_verify' in config and (
+            not os.environ.get(constants.DCOS_SSL_VERIFY_ENV)):
+
+        os.environ[constants.DCOS_SSL_VERIFY_ENV] = str(
+            config['core.ssl_verify'])
