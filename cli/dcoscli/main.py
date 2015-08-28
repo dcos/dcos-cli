@@ -89,8 +89,10 @@ def _main():
 
     subproc = Popen([executable,  command] + args['<args>'],
                     stderr=PIPE)
-
-    return analytics.wait_and_track(subproc)
+    if dcoscli.version != 'SNAPSHOT':
+        return analytics.wait_and_track(subproc)
+    else:
+        return analytics.wait_and_capture(subproc)[0]
 
 
 def _config_log_level_environ(log_level):

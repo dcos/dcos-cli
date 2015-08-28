@@ -1,5 +1,4 @@
 # 1. source env-setup
-# 2. export DCOS_PRODUCTION=false
 
 if [ -n "$BASH_SOURCE" ] ; then
     BIN_DIR=$(dirname "$BASH_SOURCE")
@@ -12,4 +11,3 @@ fi
 BASE_DIR="$BIN_DIR/.."
 
 source ${BASE_DIR}/env/bin/env-setup
-export DCOS_PRODUCTION=false

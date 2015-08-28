@@ -6,10 +6,8 @@ import rollbar
 from dcos import constants, http, util
 from dcoscli.analytics import _base_properties
 from dcoscli.config.main import main as config_main
-from dcoscli.constants import (ROLLBAR_SERVER_POST_KEY,
-                               SEGMENT_IO_CLI_ERROR_EVENT,
-                               SEGMENT_IO_CLI_EVENT, SEGMENT_IO_WRITE_KEY_DEV,
-                               SEGMENT_IO_WRITE_KEY_PROD, SEGMENT_URL)
+from dcoscli.constants import (SEGMENT_IO_CLI_ERROR_EVENT,
+                               SEGMENT_IO_CLI_EVENT, SEGMENT_URL)
 from dcoscli.main import main
 
 from mock import patch
@@ -32,46 +30,6 @@ def _mock(fn):
             fn()
 
     return wrapper
-
-
-@_mock
-def test_production_setting_true():
-    '''Test that env var DCOS_PRODUCTION as empty string sends exceptions
-    to the 'prod' environment.
-
-    '''
-
-    args = [util.which('dcos')]
-    env = _env_reporting()
-    env['DCOS_PRODUCTION'] = ''
-
-    with patch('sys.argv', args), patch.dict(os.environ, env):
-        assert main() == 0
-
-        _, kwargs = http.post.call_args_list[0]
-        assert kwargs['auth'].username == SEGMENT_IO_WRITE_KEY_PROD
-
-        rollbar.init.assert_called_with(ROLLBAR_SERVER_POST_KEY, 'prod')
-
-
-@_mock
-def test_production_setting_false():
-    '''Test that env var DCOS_PRODUCTION=false sends exceptions to
-    the 'dev' environment.
-
-    '''
-
-    args = [util.which('dcos')]
-    env = _env_reporting()
-    env['DCOS_PRODUCTION'] = 'false'
-
-    with patch('sys.argv', args), patch.dict(os.environ, env):
-        assert main() == 0
-
-        _, kwargs = http.post.call_args_list[0]
-        assert kwargs['auth'].username == SEGMENT_IO_WRITE_KEY_DEV
-
-        rollbar.init.assert_called_with(ROLLBAR_SERVER_POST_KEY, 'dev')
 
 
 @_mock
@@ -101,8 +59,11 @@ def test_no_exc():
 
     args = [util.which('dcos')]
     env = _env_reporting()
+    version = 'release'
 
-    with patch('sys.argv', args), patch.dict(os.environ, env):
+    with patch('sys.argv', args), \
+            patch.dict(os.environ, env), \
+            patch('dcoscli.version', version):
         assert main() == 0
 
         # segment.io
@@ -127,10 +88,11 @@ def test_exc():
 
     args = [util.which('dcos')]
     env = _env_reporting()
-
+    version = 'release'
     with patch('sys.argv', args), \
+            patch('dcoscli.version', version), \
             patch.dict(os.environ, env), \
-            patch('dcoscli.analytics._wait_and_capture',
+            patch('dcoscli.analytics.wait_and_capture',
                   return_value=(1, 'Traceback')):
         assert main() == 1
 
@@ -161,10 +123,12 @@ def test_config_reporting_false():
 
     args = [util.which('dcos')]
     env = _env_no_reporting()
+    version = 'release'
 
     with patch('sys.argv', args), \
+            patch('dcoscli.version', version), \
             patch.dict(os.environ, env), \
-            patch('dcoscli.analytics._wait_and_capture',
+            patch('dcoscli.analytics.wait_and_capture',
                   return_value=(1, 'Traceback')):
 
         assert main() == 1
