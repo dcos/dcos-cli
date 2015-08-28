@@ -1,32 +1,9 @@
-"""Manage DCOS nodes
-
-Usage:
-    dcos node --info
-    dcos node [--json]
-    dcos node log [--follow --lines=N --master --slave=<slave-id>]
-    dcos node ssh [--option SSHOPT=VAL ...]
-                  [--config-file=<path>]
-                  [--user=<user>]
-                  (--master | --slave=<slave-id>)
-
-Options:
-    -h, --help              Show this screen
-    --info                  Show a short description of this subcommand
-    --json                  Print json-formatted nodes
-    --follow                Print data as the file grows
-    --lines=N               Print the last N lines [default: 10]
-    --master                Access the leading master
-    --slave=<slave-id>      Access the slave with the provided ID
-    --option SSHOPT=VAL     SSH option (see `man ssh_config`)
-    --config-file=<path>    Path to SSH config file
-    --user=<user>           SSH user [default: core]
-    --version               Show version
-"""
-
+import os
 import subprocess
 
 import dcoscli
 import docopt
+import pkg_resources
 from dcos import cmds, emitting, errors, mesos, util
 from dcos.errors import DCOSException, DefaultError
 from dcoscli import log, tables
@@ -49,10 +26,19 @@ def _main():
     util.configure_process_from_environ()
 
     args = docopt.docopt(
-        __doc__,
+        _doc(),
         version="dcos-node version {}".format(dcoscli.version))
 
     return cmds.execute(_cmds(), args)
+
+
+def _doc():
+    """
+    :rtype: str
+    """
+    return pkg_resources.resource_string(
+        'dcoscli',
+        'data/help/node.txt').decode('utf-8')
 
 
 def _cmds():
@@ -75,7 +61,7 @@ def _cmds():
         cmds.Command(
             hierarchy=['node', 'ssh'],
             arg_keys=['--master', '--slave', '--option', '--config-file',
-                      '--user'],
+                      '--user', '--master-proxy'],
             function=_ssh),
 
         cmds.Command(
@@ -92,7 +78,7 @@ def _info():
     :rtype: int
     """
 
-    emitter.publish(__doc__.split('\n')[0])
+    emitter.publish(_doc().split('\n')[0])
     return 0
 
 
@@ -167,7 +153,7 @@ def _mesos_files(master, slave_id):
     return files
 
 
-def _ssh(master, slave, option, config_file, user):
+def _ssh(master, slave, option, config_file, user, master_proxy):
     """SSH into a DCOS node using the IP addresses found in master's
        state.json
 
@@ -182,16 +168,19 @@ def _ssh(master, slave, option, config_file, user):
     :type config_file: str | None
     :param user: SSH user
     :type user: str | None
+    :param master_proxy: If True, SSH-hop from a master
+    :type master_proxy: bool | None
     :rtype: int
     :returns: process return code
     """
 
     ssh_options = util.get_ssh_options(config_file, option)
+    dcos_client = mesos.DCOSClient()
 
     if master:
         host = mesos.MesosDNSClient().hosts('leader.mesos.')[0]['ip']
     else:
-        summary = mesos.DCOSClient().get_state_summary()
+        summary = dcos_client.get_state_summary()
         slave_obj = next((slave_ for slave_ in summary['slaves']
                           if slave_['id'] == slave),
                          None)
@@ -200,11 +189,35 @@ def _ssh(master, slave, option, config_file, user):
         else:
             raise DCOSException('No slave found with ID [{}]'.format(slave))
 
-    cmd = "ssh -t {0}{1}@{2}".format(
-        ssh_options,
-        user,
-        host)
+    master_public_ip = dcos_client.metadata().get('PUBLIC_IPV4')
+    if master_proxy:
+        if not os.environ.get('SSH_AUTH_SOCK'):
+            raise DCOSException(
+                "There is no SSH_AUTH_SOCK env variable, which likely means "
+                "you aren't running `ssh-agent`.  `dcos node ssh "
+                "--master-proxy` depends on `ssh-agent` to safely use your "
+                "private key to hop between nodes in your cluster.  Please "
+                "run `ssh-agent`, then add your private key with `ssh-add`.")
+        if not master_public_ip:
+            raise DCOSException(("Cannot use --master-proxy.  Failed to find "
+                                 "'PUBLIC_IPV4' at {}").format(
+                                     dcos_client.get_dcos_url('metadata')))
+
+        cmd = "ssh -A -t {0}{1}@{2} ssh -A -t {1}@{3}".format(
+            ssh_options,
+            user,
+            master_public_ip,
+            host)
+    else:
+        cmd = "ssh -t {0}{1}@{2}".format(
+            ssh_options,
+            user,
+            host)
 
     emitter.publish(DefaultError("Running `{}`".format(cmd)))
+    if (not master_proxy) and master_public_ip:
+        emitter.publish(
+            DefaultError("If you are running this command from a separate "
+                         "network than DCOS, consider using `--master-proxy`"))
 
     return subprocess.call(cmd, shell=True)
