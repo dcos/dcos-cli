@@ -5,19 +5,11 @@ import time
 import dcos.util as util
 from dcos.util import create_schema
 
-import pytest
-
 from ..fixtures.service import framework_fixture
-from .common import (assert_command, assert_lines, delete_zk_nodes,
-                     exec_command, get_services, package_install,
-                     package_uninstall, service_shutdown, ssh_output,
-                     watch_all_deployments)
-
-
-@pytest.fixture(scope="module")
-def zk_znode(request):
-    request.addfinalizer(delete_zk_nodes)
-    return request
+from .common import (assert_command, assert_lines, delete_zk_node,
+                     delete_zk_nodes, exec_command, get_services,
+                     package_install, package_uninstall, service_shutdown,
+                     ssh_output, watch_all_deployments)
 
 
 def setup_module(module):
@@ -30,44 +22,9 @@ def teardown_module(module):
 
 
 def test_help():
-    stdout = b"""Manage DCOS services
-
-Usage:
-    dcos service --info
-    dcos service [--inactive --json]
-    dcos service log [--follow --lines=N --ssh-config-file=<path>]
-                     <service> [<file>]
-    dcos service shutdown <service-id>
-
-Options:
-    -h, --help                  Show this screen
-
-    --info                      Show a short description of this subcommand
-
-    --ssh-config-file=<path>    Path to SSH config file.  Used to access
-                                marathon logs.
-
-    --follow                    Print data as the file grows
-
-    --inactive                  Show inactive services in addition to active
-                                ones. Inactive services are those that have
-                                been disconnected from master, but haven't yet
-                                reached their failover timeout.
-
-    --json                      Print json-formatted services
-
-    --lines=N                   Print the last N lines [default: 10]
-
-    --version                   Show version
-
-Positional Arguments:
-    <file>                      Output this file. [default: stdout]
-
-    <service>                   The DCOS Service name.
-
-    <service-id>                The DCOS Service ID
-"""
-    assert_command(['dcos', 'service', '--help'], stdout=stdout)
+    with open('tests/data/help/service.txt') as content:
+        assert_command(['dcos', 'service', '--help'],
+                       stdout=content.read().encode('utf-8'))
 
 
 def test_info():
@@ -87,7 +44,7 @@ def test_service_table():
     assert_lines(['dcos', 'service'], 3)
 
 
-def test_service_inactive(zk_znode):
+def test_service_inactive():
     package_install('cassandra', True)
 
     # wait long enough for it to register
@@ -108,7 +65,8 @@ def test_service_inactive(zk_znode):
 
     # assert only marathon and chronos are active
     get_services(2)
-    # assert marathon, chronos, and cassandra are listed with --inactive
+
+    # assert marathon, chronos, and cassandra are inactive
     services = get_services(args=['--inactive'])
     assert len(services) >= 3
 
@@ -119,6 +77,38 @@ def test_service_inactive(zk_znode):
 
     # assert marathon, chronos are only listed with --inactive
     get_services(2, ['--inactive'])
+
+    delete_zk_node('cassandra-mesos')
+
+
+def test_service_completed():
+    package_install('cassandra', True)
+
+    time.sleep(5)
+
+    services = get_services(3)
+
+    # get cassandra's framework ID
+    cassandra_id = None
+    for service in services:
+        if service['name'] == 'cassandra.dcos':
+            cassandra_id = service['id']
+            break
+
+    assert cassandra_id is not None
+
+    assert_command(['dcos', 'marathon', 'group', 'remove', '/cassandra'])
+    service_shutdown(cassandra_id)
+    delete_zk_node('cassandra-mesos')
+
+    # assert cassandra is not running
+    services = get_services(2)
+    assert not any(service['id'] == cassandra_id for service in services)
+
+    # assert cassandra is completed
+    services = get_services(args=['--completed'])
+    assert len(services) >= 3
+    assert any(service['id'] == cassandra_id for service in services)
 
 
 def test_log():
@@ -194,7 +184,7 @@ def test_log_lines():
     assert_lines(['dcos', 'service', 'log', 'chronos', '--lines=4'], 4)
 
 
-def test_log_multiple_apps(zk_znode):
+def test_log_multiple_apps():
     package_install('marathon', True)
     package_install('marathon', True,
                     ['--options=tests/data/service/marathon-user2.json',
@@ -219,6 +209,7 @@ def _get_schema(service):
     schema = create_schema(service.dict())
     schema['required'].remove('reregistered_time')
     schema['required'].remove('pid')
+    schema['required'].remove('executors')
     schema['properties']['offered_resources']['required'].remove('ports')
     schema['properties']['resources']['required'].remove('ports')
     schema['properties']['used_resources']['required'].remove('ports')

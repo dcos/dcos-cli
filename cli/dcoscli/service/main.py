@@ -2,7 +2,7 @@
 
 Usage:
     dcos service --info
-    dcos service [--inactive --json]
+    dcos service [--completed --inactive --json]
     dcos service log [--follow --lines=N --ssh-config-file=<path>]
                      <service> [<file>]
     dcos service shutdown <service-id>
@@ -10,21 +10,27 @@ Usage:
 Options:
     -h, --help                  Show this screen
 
-    --info                      Show a short description of this subcommand
-
-    --ssh-config-file=<path>    Path to SSH config file.  Used to access
-                                marathon logs.
-
-    --follow                    Print data as the file grows
+    --completed                 Show completed services in addition to active
+                                ones. Completed services are those that have
+                                been disconnected from master, and have reached
+                                their failover timeout, or have been explicitly
+                                shutdown via the /shutdown endpoint.
 
     --inactive                  Show inactive services in addition to active
                                 ones. Inactive services are those that have
                                 been disconnected from master, but haven't yet
                                 reached their failover timeout.
 
+    --info                      Show a short description of this subcommand
+
+    --follow                    Print data as the file grows
+
     --json                      Print json-formatted services
 
     --lines=N                   Print the last N lines [default: 10]
+
+    --ssh-config-file=<path>    Path to SSH config file.  Used to access
+                                marathon logs.
 
     --version                   Show version
 
@@ -94,7 +100,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['service'],
-            arg_keys=['--inactive', '--json'],
+            arg_keys=['--inactive', '--completed', '--json'],
             function=_service),
     ]
 
@@ -110,9 +116,7 @@ def _info():
     return 0
 
 
-# TODO (mgummelt): support listing completed services as well.
-# blocked on framework shutdown.
-def _service(inactive, is_json):
+def _service(inactive, completed, is_json):
     """List dcos services
 
     :param inactive: If True, include completed tasks
@@ -124,7 +128,9 @@ def _service(inactive, is_json):
     :rtype: int
     """
 
-    services = mesos.get_master().frameworks(inactive=inactive)
+    services = mesos.get_master().frameworks(
+        inactive=inactive,
+        completed=completed)
 
     if is_json:
         emitter.publish([service.dict() for service in services])

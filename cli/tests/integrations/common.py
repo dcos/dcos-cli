@@ -377,15 +377,23 @@ def delete_zk_nodes():
     :rtype: None
     """
 
-    base_url = os.environ['EXHIBITOR_URL']
-    base_path = 'exhibitor/v1/explorer/znode/{}'
-
     for znode in ['universe', 'cassandra-mesos', 'chronos']:
-        znode_url = urllib.parse.urljoin(
-            base_url,
-            base_path.format(znode))
+        delete_zk_node(znode)
 
-        requests.delete(znode_url)
+
+def delete_zk_node(znode):
+    """Delete Zookeeper node
+
+    :param znode: znode to delete
+    :type znode: str
+    :rtype: None
+    """
+
+    dcos_url = util.get_config_vals(['core.dcos_url'])[0]
+    znode_url = urllib.parse.urljoin(
+        dcos_url,
+        '/exhibitor/exhibitor/v1/explorer/znode/{}'.format(znode))
+    requests.delete(znode_url)
 
 
 def assert_lines(cmd, num_lines):

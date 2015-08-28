@@ -11,6 +11,7 @@ def framework_fixture():
         "active": True,
         "checkpoint": True,
         "completed_tasks": [],
+        "executors": [],
         "failover_timeout": 604800,
         "hostname": "mesos.vm",
         "id": "20150502-231327-16842879-5050-3889-0000",
