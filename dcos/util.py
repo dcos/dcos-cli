@@ -454,6 +454,25 @@ def parse_int(string):
         raise DCOSException('Error parsing string as int')
 
 
+def parse_float(string):
+    """Parse string and an float
+
+    :param string: string to parse as an float
+    :type string: str
+    :returns: the float value of the string
+    :rtype: float
+    """
+
+    try:
+        return float(string)
+    except:
+        logger.error(
+            'Unhandled exception while parsing string as float: %r',
+            string)
+
+        raise DCOSException('Error parsing string as float')
+
+
 def render_mustache_json(template, data):
     """Render the supplied mustache template and data as a JSON value
 

@@ -22,6 +22,7 @@ Usage:
     dcos marathon task show <task-id>
     dcos marathon group add [<group-resource>]
     dcos marathon group list [--json]
+    dcos marathon group scale [--force] <group-id> <scale-factor>
     dcos marathon group show [--group-version=<group-version>] <group-id>
     dcos marathon group remove [--force] <group-id>
     dcos marathon group update [--force] <group-id> [<properties>...]
@@ -96,6 +97,8 @@ Positional Arguments:
                                 stdin.
 
     <task-id>                   The task id
+
+    <scale-factor>              The factor to scale an application group by
 """
 import json
 import os
@@ -239,6 +242,11 @@ def _cmds():
             hierarchy=['marathon', 'group', 'update'],
             arg_keys=['<group-id>', '<properties>', '--force'],
             function=_group_update),
+
+        cmds.Command(
+            hierarchy=['marathon', 'group', 'scale'],
+            arg_keys=['<group-id>', '<scale-factor>', '--force'],
+            function=_group_scale),
 
         cmds.Command(
             hierarchy=['marathon', 'about'],
@@ -641,6 +649,25 @@ def _update(app_id, properties, force):
 
     deployment = client.update_app(app_id, app_resource, force)
 
+    emitter.publish('Created deployment {}'.format(deployment))
+    return 0
+
+
+def _group_scale(group_id, scale_factor, force):
+    """
+    :param group_id: the id of the group
+    :type group_id: str
+    :param scale_factor: scale factor for application group
+    :type scale_factor: str
+    :param force: whether to override running deployments
+    :type force: bool
+    :returns: process return code
+    :rtype: int
+    """
+
+    client = marathon.create_client()
+    scale_factor = util.parse_float(scale_factor)
+    deployment = client.scale_group(group_id, scale_factor, force)
     emitter.publish('Created deployment {}'.format(deployment))
     return 0
 

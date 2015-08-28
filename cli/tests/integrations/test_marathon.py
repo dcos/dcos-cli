@@ -39,6 +39,7 @@ Usage:
     dcos marathon task show <task-id>
     dcos marathon group add [<group-resource>]
     dcos marathon group list [--json]
+    dcos marathon group scale [--force] <group-id> <scale-factor>
     dcos marathon group show [--group-version=<group-version>] <group-id>
     dcos marathon group remove [--force] <group-id>
     dcos marathon group update [--force] <group-id> [<properties>...]
@@ -113,6 +114,8 @@ Positional Arguments:
                                 stdin.
 
     <task-id>                   The task id
+
+    <scale-factor>              The factor to scale an application group by
 """
     assert_command(['dcos', 'marathon', '--help'],
                    stdout=stdout)
