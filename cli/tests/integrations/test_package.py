@@ -4,9 +4,11 @@ import os
 
 import pkg_resources
 import six
-from dcos import subcommand
+from dcos import package, subcommand
+from dcos.errors import DCOSException
 
 import pytest
+from mock import patch
 
 from .common import (assert_command, assert_lines, delete_zk_nodes,
                      exec_command, file_bytes, file_json, get_services,
@@ -711,6 +713,22 @@ def test_search_middle_with_wildcard():
     registries = json.loads(stdout.decode('utf-8'))
     for registry in registries:
         assert len(registry['packages']) == 1
+
+
+@patch('dcos.package.Package.package_json')
+@patch('dcos.package.Package.config_json')
+def test_bad_config_schema_msg(config_mock, package_mock):
+    pkg = package.Package("", "/")
+    config_mock.return_value = {}
+    package_mock.return_value = {'maintainer': 'support@test'}
+
+    with pytest.raises(DCOSException) as e:
+        pkg.options("1", {})
+
+    msg = ("An object in the package's config.json is missing the "
+           "required 'properties' feature:\n {}"
+           "\nPlease contact the project maintainer: support@test")
+    assert e.exconly().split(':', 1)[1].strip() == msg
 
 
 def _get_app_labels(app_id):

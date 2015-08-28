@@ -520,13 +520,13 @@ def _extract_default_values(config_schema):
     :param config_schema: A json-schema describing configuration options.
     :type config_schema: dict
     :returns: a dictionary with the default specified by the schema
-    :rtype: dict
+    :rtype: dict | None
     """
 
     defaults = {}
-    if not config_schema.get('properties'):
-        raise DCOSException("Error with config schema. " +
-                            "Please make sure it's a valid jsonschema.")
+    if 'properties' not in config_schema:
+        return None
+
     for key, value in config_schema['properties'].items():
         if isinstance(value, dict) and 'default' in value:
             defaults[key] = value['default']
@@ -1227,6 +1227,14 @@ class Package():
 
         config_schema = self.config_json(revision)
         default_options = _extract_default_values(config_schema)
+        if default_options is None:
+            pkg = self.package_json(revision)
+            msg = ("An object in the package's config.json is missing the "
+                   "required 'properties' feature:\n {}".format(config_schema))
+            if 'maintainer' in pkg:
+                msg += "\nPlease contact the project maintainer: {}".format(
+                       pkg['maintainer'])
+            raise DCOSException(msg)
 
         logger.info('Generated default options: %r', default_options)
 

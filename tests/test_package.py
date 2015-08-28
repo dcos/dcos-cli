@@ -95,8 +95,7 @@ DefaultConfigValues = collections.namedtuple(
         schema={
             "type": "object",
         },
-        expected="Error with config schema. " +
-                 "Please make sure it's a valid jsonschema.")])
+        expected=None)])
 def config_value(request):
     return request.param
 
