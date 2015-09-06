@@ -9,11 +9,9 @@ from six import iteritems
 
 from oauth2client import client
 
-CLIENT_ID = '6a552732-ab9b-410d-9b7d-d8c6523b09a1'
-CLIENT_SECRET = 'f56c1e2b-8599-40ca-b6a0-3aba3e702eae'
-AUTH_URL = 'https://accounts.mesosphere.com/oauth/authorize'
-TOKEN_URL = 'https://accounts.mesosphere.com/oauth/token'
-USER_INFO_URL = 'https://accounts.mesosphere.com/api/v1/user.json'
+AUTH_URL = 'https://accounts.google.com/o/oauth2/auth'
+TOKEN_URL = 'https://accounts.google.com/o/oauth2/token'
+USER_INFO_URL = 'https://www.googleapis.com/plus/v1/people/me'
 CORE_TOKEN_KEY = 'token'
 CORE_EMAIL_KEY = 'email'
 emitter = emitting.FlatEmitter()
@@ -26,11 +24,13 @@ def _authorize():
     :return: credentials dict
     :rtype: dict
     """
+
+    auth2_client_id, auth2_client_secret = _get_auth2_secrets()
     try:
         flow = client.OAuth2WebServerFlow(
-            client_id=CLIENT_ID,
-            client_secret=CLIENT_SECRET,
-            scope='',
+            client_id=auth2_client_id,
+            client_secret=auth2_client_secret,
+            scope='email profile',
             auth_uri=AUTH_URL,
             token_uri=TOKEN_URL,
             redirect_uri=client.OOB_CALLBACK_URN,
@@ -55,7 +55,7 @@ def make_oauth_request(code, flow):
     token = credential.access_token
     headers = {'Authorization': str('Bearer ' + token)}
     data = http.requests.get(USER_INFO_URL, headers=headers).json()
-    mail = data['email']
+    mail = data.get('emails', '')[0].get('value', '')
     credentials = {CORE_TOKEN_KEY: credential.access_token,
                    CORE_EMAIL_KEY: mail}
     return credentials
@@ -136,3 +136,20 @@ def _save_auth_keys(key_dict):
 
     config.save(toml_config)
     return None
+
+
+def _get_auth2_secrets():
+    """Returns list of OAuth2 secrets from configuration
+
+    :returns values: core.client_id, core.client_secret
+    :rtype: list
+    """
+
+    config = util.get_config()
+
+    auth2_secrets = [util.get_config_vals(['core.client_id'], config)[0],
+                     util.get_config_vals(['core.client_secret'], config)[0]]
+    for value in auth2_secrets:
+        if value is None:
+            raise DCOSException('There were no OAuth2 secrets configured.')
+    return auth2_secrets
