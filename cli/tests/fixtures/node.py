@@ -28,7 +28,6 @@ def slave_fixture():
         "pid": "slave(1)@172.17.8.101:5051",
         "registered_time": 1435625024.42234,
         "reregistered_time": 1435625024.42234,
-        "reserved_resources": {},
         "resources": {
             "cpus": 4.0,
             "disk": 10823.0,
@@ -36,12 +35,8 @@ def slave_fixture():
             "ports": ("[1025-2180, 2182-3887, 3889-5049, 5052-8079, " +
                       "8082-8180, 8182-65535]")
         },
-        "unreserved_resources": {
-            "cpus": 4.0,
-            "disk": 10823.0,
-            "mem": 2933.0,
-            "ports": "[1025-2180, 2182-3887, 3889-5049, 5052-32000]"
-        },
+        "reserved_resources": {},
+        "unreserved_resources": {},
         "used_resources": {
             "cpus": 0.0,
             "disk": 0.0,

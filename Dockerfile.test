@@ -1,0 +1,16 @@
+# This image runs the dcos-cli test suite.
+
+FROM ubuntu:15.04
+MAINTAINER support@mesosphere.com
+
+RUN apt-get update && apt-get install -y \
+  httpie \
+  jq \
+  make \
+  virtualenv \
+  openssh-client \
+  git \
+  sudo
+
+ADD . /dcos-cli
+WORKDIR /dcos-cli
