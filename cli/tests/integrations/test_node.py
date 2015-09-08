@@ -1,7 +1,9 @@
 import json
+import os
 import re
 
 import dcos.util as util
+import six
 from dcos import mesos
 from dcos.util import create_schema
 
@@ -10,30 +12,8 @@ from .common import assert_command, assert_lines, exec_command, ssh_output
 
 
 def test_help():
-    stdout = b"""Manage DCOS nodes
-
-Usage:
-    dcos node --info
-    dcos node [--json]
-    dcos node log [--follow --lines=N --master --slave=<slave-id>]
-    dcos node ssh [--option SSHOPT=VAL ...]
-                  [--config-file=<path>]
-                  [--user=<user>]
-                  (--master | --slave=<slave-id>)
-
-Options:
-    -h, --help              Show this screen
-    --info                  Show a short description of this subcommand
-    --json                  Print json-formatted nodes
-    --follow                Print data as the file grows
-    --lines=N               Print the last N lines [default: 10]
-    --master                Access the leading master
-    --slave=<slave-id>      Access the slave with the provided ID
-    --option SSHOPT=VAL     SSH option (see `man ssh_config`)
-    --config-file=<path>    Path to SSH config file
-    --user=<user>           SSH user [default: core]
-    --version               Show version
-"""
+    with open('tests/data/help/node.txt') as content:
+        stdout = six.b(content.read())
     assert_command(['dcos', 'node', '--help'], stdout=stdout)
 
 
@@ -141,11 +121,31 @@ def test_node_ssh_user():
     assert b'Permission denied' in stderr
 
 
+def test_node_ssh_master_proxy_no_agent():
+    env = os.environ.copy()
+    env.pop('SSH_AUTH_SOCK', None)
+    stderr = (b"There is no SSH_AUTH_SOCK env variable, which likely means "
+              b"you aren't running `ssh-agent`.  `dcos node ssh "
+              b"--master-proxy` depends on `ssh-agent` to safely use your "
+              b"private key to hop between nodes in your cluster.  Please "
+              b"run `ssh-agent`, then add your private key with `ssh-add`.\n")
+
+    assert_command(['dcos', 'node', 'ssh', '--master-proxy', '--master'],
+                   stderr=stderr,
+                   returncode=1,
+                   env=env)
+
+
+def test_node_ssh_master_proxy():
+    _node_ssh(['--master', '--master-proxy'])
+
+
 def _node_ssh_output(args):
-    cmd = ('dcos node ssh --option ' +
-           'IdentityFile=/host-home/.vagrant.d/insecure_private_key ' +
-           '--option StrictHostKeyChecking=no ' +
-           '{}').format(' '.join(args))
+    cli_test_ssh_key_path = os.environ['CLI_TEST_SSH_KEY_PATH']
+    cmd = ('ssh-agent /bin/bash -c "ssh-add {} 2> /dev/null && ' +
+           'dcos node ssh --option StrictHostKeyChecking=no {}"').format(
+               cli_test_ssh_key_path,
+               ' '.join(args))
 
     return ssh_output(cmd)
 
@@ -156,8 +156,10 @@ def _node_ssh(args):
     assert stdout
     assert b"Running `" in stderr
     num_lines = len(stderr.decode().split('\n'))
-    assert (num_lines == 2 or
-            (num_lines == 3 and b'Warning: Permanently added' in stderr))
+    expected_num_lines = 2 if '--master-proxy' in args else 3
+    assert (num_lines == expected_num_lines or
+            (num_lines == (expected_num_lines + 1) and
+             b'Warning: Permanently added' in stderr))
 
 
 def _get_schema(slave):
