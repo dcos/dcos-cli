@@ -463,6 +463,7 @@ def app(path, app_id, deploy=False):
         yield
     finally:
         remove_app(app_id)
+        watch_all_deployments()
 
 
 @contextlib.contextmanager
@@ -482,6 +483,7 @@ def package(package_name, deploy=False, args=[]):
         yield
     finally:
         package_uninstall(package_name)
+        watch_all_deployments()
 
 
 @contextlib.contextmanager
@@ -534,14 +536,22 @@ def ssh_output(cmd):
     :rtype: (str, str)
     """
 
+    print('SSH COMMAND: {}'.format(cmd))
+
     # ssh must run with stdin attached to a tty
     proc, master = popen_tty(cmd)
 
     # wait for the ssh connection
     time.sleep(8)
 
+    proc.poll()
+    returncode = proc.returncode
+
     # kill the whole process group
-    os.killpg(os.getpgid(proc.pid), 15)
+    try:
+        os.killpg(os.getpgid(proc.pid), 15)
+    except OSError:
+        pass
 
     os.close(master)
     stdout, stderr = proc.communicate()
@@ -549,7 +559,7 @@ def ssh_output(cmd):
     print('SSH STDOUT: {}'.format(stdout.decode('utf-8')))
     print('SSH STDERR: {}'.format(stderr.decode('utf-8')))
 
-    return stdout, stderr
+    return stdout, stderr, returncode
 
 
 def config_set(key, value, env=None):

@@ -179,12 +179,12 @@ def test_log_follow():
         _mark_non_blocking(proc.stdout)
 
         # wait for data to be output
-        time.sleep(1)
+        time.sleep(10)
 
         # assert lines before and after sleep
-        assert len(proc.stdout.read().decode('utf-8').split('\n')) == 5
-        time.sleep(8)
-        assert len(proc.stdout.read().decode('utf-8').split('\n')) == 2
+        assert len(proc.stdout.read().decode('utf-8').split('\n')) >= 5
+        time.sleep(5)
+        assert len(proc.stdout.read().decode('utf-8').split('\n')) >= 3
 
         proc.kill()
 
@@ -215,17 +215,17 @@ def test_log_two_tasks_follow():
         _mark_non_blocking(proc.stdout)
 
         # wait for data to be output
-        time.sleep(1)
+        time.sleep(10)
 
         # get output before and after the task's sleep
         first_lines = proc.stdout.read().decode('utf-8').split('\n')
-        time.sleep(8)
+        time.sleep(5)
         second_lines = proc.stdout.read().decode('utf-8').split('\n')
 
         # assert both tasks have printed the expected amount of output
-        assert len(first_lines) >= 11
+        assert len(first_lines) >= 5
         # assert there is some difference after sleeping
-        assert len(second_lines) > 0
+        assert len(second_lines) >= 3
 
         proc.kill()
 

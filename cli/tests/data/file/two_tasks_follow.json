@@ -1,7 +1,7 @@
 {
-  "id": "two-tasks-follow",
-  "cmd": "sleep 5 && echo \"follow_this\" && sleep 1000",
-  "cpus": 0.1,
-  "mem": 16,
-  "instances": 2
+    "id": "two-tasks-follow",
+    "cmd": "while true; do echo 'follow_this'; sleep 1; done;",
+    "cpus": 0.1,
+    "mem": 16,
+    "instances": 2
 }

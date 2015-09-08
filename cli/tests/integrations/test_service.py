@@ -5,6 +5,8 @@ import time
 import dcos.util as util
 from dcos.util import create_schema
 
+import pytest
+
 from ..fixtures.service import framework_fixture
 from .common import (assert_command, assert_lines, delete_zk_node,
                      delete_zk_nodes, exec_command, get_services,
@@ -144,7 +146,7 @@ def test_log_marathon_file():
 
 
 def test_log_marathon_config():
-    stdout, stderr = ssh_output(
+    stdout, stderr, _ = ssh_output(
         'dcos service log marathon ' +
         '--ssh-config-file=tests/data/node/ssh_config')
 
@@ -152,6 +154,10 @@ def test_log_marathon_config():
     assert b'ignoring bad proto spec' in stderr
 
 
+@pytest.mark.skipif(True,
+                    reason=(
+                        "Now that we test against an AWS cluster, this test "
+                        "is blocked on DCOS-3104requires python3.3"))
 def test_log_marathon():
     stdout, stderr = ssh_output(
         'dcos service log marathon ' +
@@ -176,14 +182,21 @@ def test_log_config():
 def test_log_follow():
     proc = subprocess.Popen(['dcos', 'service', 'log', 'chronos', '--follow'],
                             preexec_fn=os.setsid,
-                            stdout=subprocess.PIPE)
-    time.sleep(3)
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+    time.sleep(10)
 
     proc.poll()
     assert proc.returncode is None
 
     os.killpg(os.getpgid(proc.pid), 15)
-    assert len(proc.stdout.read().decode('utf-8').split('\n')) > 3
+
+    stdout = proc.stdout.read()
+    stderr = proc.stderr.read()
+
+    print('STDOUT: {}'.format(stdout))
+    print('STDERR: {}'.format(stderr))
+    assert len(stdout.decode('utf-8').split('\n')) > 3
 
 
 def test_log_lines():

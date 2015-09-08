@@ -35,6 +35,8 @@ def slave_fixture():
             "ports": ("[1025-2180, 2182-3887, 3889-5049, 5052-8079, " +
                       "8082-8180, 8182-65535]")
         },
+        "reserved_resources": {},
+        "unreserved_resources": {},
         "used_resources": {
             "cpus": 0.0,
             "disk": 0,
