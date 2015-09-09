@@ -491,10 +491,11 @@ class Master(object):
         :returns: a list of frameworks
         """
 
-        keys = ['frameworks']
         if completed:
-            keys.append('completed_frameworks')
-        for framework in _merge(self.state(), keys):
+            for framework in self.state()['completed_frameworks']:
+                yield framework
+
+        for framework in self.state()['frameworks']:
             if inactive or framework['active']:
                 yield framework
 
