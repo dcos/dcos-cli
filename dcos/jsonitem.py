@@ -1,5 +1,6 @@
 import collections
 import json
+import re
 
 from dcos import util
 from dcos.errors import DCOSException
@@ -86,7 +87,10 @@ class ValueTypeParser(object):
         value = clean_value(value)
 
         if self.schema['type'] == 'string':
-            return _parse_string(value)
+            if self.schema.get('format') == 'uri':
+                return _parse_url(value)
+            else:
+                return _parse_string(value)
         elif self.schema['type'] == 'object':
             return _parse_object(value)
         elif self.schema['type'] == 'number':
@@ -226,3 +230,37 @@ def _parse_array(value):
 
         msg = 'Unable to parse {!r} as an array: {}'.format(value, error)
         raise DCOSException(msg)
+
+
+def _parse_url(value):
+    """
+    :param value: The url to parse
+    :type url: str
+    :returns: The parsed value
+    :rtype: str
+    """
+
+    scheme_pattern = r'^(?P<scheme>(?:(?:https?)://))'
+    domain_pattern = (
+        r'(?P<hostname>(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.?)+'
+        '(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)?|')  # domain,
+
+    value_regex = re.match(
+        scheme_pattern +  # http:// or https://
+        r'(([^:])+(:[^:]+)?@){0,1}' +  # auth credentials
+        domain_pattern +
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}))'  # or ip
+        r'(?P<port>(?::\d+))?'  # port
+        r'(?P<path>(?:/?|[/?]\S+))$',  # resource path
+        value, re.IGNORECASE)
+
+    if value_regex is None:
+        scheme_match = re.match(scheme_pattern, value, re.IGNORECASE)
+        if scheme_match is None:
+            msg = 'Please check url {!r}. Missing http(s)://'.format(value)
+            raise DCOSException(msg)
+        else:
+            raise DCOSException(
+                'Unable to parse {!r} as a url'.format(value))
+    else:
+        return value
