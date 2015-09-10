@@ -278,8 +278,16 @@ def test_install_specific_version():
               b'\tDocumentation: https://mesosphere.github.io/marathon\n'
               b'\tIssues: https:/github.com/mesosphere/marathon/issues\n\n')
 
+    uninstall_stderr = (
+        b'Uninstalled package [marathon] version [0.8.1]\n'
+        b'The Marathon DCOS Service has been uninstalled and will no longer '
+        b'run.\nPlease follow the instructions at http://docs.mesosphere.com/'
+        b'services/marathon/#uninstall to clean up any persisted state\n'
+    )
+
     with _package('marathon',
                   stdout=stdout,
+                  uninstall_stderr=uninstall_stderr,
                   args=['--yes', '--package-version=0.8.1']):
 
         returncode, stdout, stderr = exec_command(
@@ -615,12 +623,22 @@ def test_uninstall_multiple_frameworknames(zk_znode):
     _uninstall_chronos(
         args=['--app-id=chronos-user-1'],
         returncode=1,
-        stderr='Unable to shutdown the framework for [chronos-user] because '
+        stderr='Uninstalled package [chronos] version [2.3.4]\n'
+               'The Chronos DCOS Service has been uninstalled and will no '
+               'longer run.\nPlease follow the instructions at http://docs.'
+               'mesosphere.com/services/chronos/#uninstall to clean up any '
+               'persisted state\n'
+               'Unable to shutdown the framework for [chronos-user] because '
                'there are multiple frameworks with the same name: ')
     _uninstall_chronos(
         args=['--app-id=chronos-user-2'],
         returncode=1,
-        stderr='Unable to shutdown the framework for [chronos-user] because '
+        stderr='Uninstalled package [chronos] version [2.3.4]\n'
+               'The Chronos DCOS Service has been uninstalled and will no '
+               'longer run.\nPlease follow the instructions at http://docs.'
+               'mesosphere.com/services/chronos/#uninstall to clean up any '
+               'persisted state\n'
+               'Unable to shutdown the framework for [chronos-user] because '
                'there are multiple frameworks with the same name: ')
 
     for framework in get_services(args=['--inactive']):
@@ -825,6 +843,7 @@ A sample post-installation message
 @contextlib.contextmanager
 def _package(name,
              stdout=b'',
+             uninstall_stderr=b'',
              args=['--yes']):
     """Context manager that installs a package on entrace, and uninstalls it on
     exit.
@@ -833,6 +852,8 @@ def _package(name,
     :type name: str
     :param stdout: Expected stdout
     :type stdout: str
+    :param uninstall_stderr: Expected stderr
+    :type uninstall_stderr: str
     :param args: extra CLI args
     :type args: [str]
     :rtype: None
@@ -843,4 +864,6 @@ def _package(name,
     try:
         yield
     finally:
-        assert_command(['dcos', 'package', 'uninstall', name])
+        assert_command(
+            ['dcos', 'package', 'uninstall', name],
+            stderr=uninstall_stderr)
