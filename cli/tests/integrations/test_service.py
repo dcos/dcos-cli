@@ -17,7 +17,13 @@ def setup_module(module):
 
 
 def teardown_module(module):
-    package_uninstall('chronos')
+    package_uninstall(
+        'chronos',
+        stderr=b'Uninstalled package [chronos] version [2.3.4]\n'
+               b'The Chronos DCOS Service has been uninstalled and will no '
+               b'longer run.\nPlease follow the instructions at http://docs.'
+               b'mesosphere.com/services/chronos/#uninstall to clean up any '
+               b'persisted state\n')
     delete_zk_nodes()
 
 
@@ -196,7 +202,20 @@ def test_log_multiple_apps():
                        returncode=1,
                        stderr=stderr)
     finally:
-        package_uninstall('marathon', ['--all'])
+        # Uninstall notes and message are printed twice because --all will
+        # uninstall two packages
+        package_uninstall(
+            'marathon', ['--all'],
+            stderr=b'Uninstalled package [marathon] version [0.9.0]\n'
+                   b'The Marathon DCOS Service has been uninstalled and will '
+                   b'no longer run.\nPlease follow the instructions at http://'
+                   b'docs.mesosphere.com/services/marathon/#uninstall to '
+                   b'clean up any persisted state\n'
+                   b'Uninstalled package [marathon] version [0.9.0]\n'
+                   b'The Marathon DCOS Service has been uninstalled and will '
+                   b'no longer run.\nPlease follow the instructions at http://'
+                   b'docs.mesosphere.com/services/marathon/#uninstall to '
+                   b'clean up any persisted state\n')
 
 
 def test_log_no_apps():

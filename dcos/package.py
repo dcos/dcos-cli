@@ -18,7 +18,7 @@ import pystache
 import six
 from dcos import (constants, emitting, errors, http, marathon, mesos,
                   subcommand, util)
-from dcos.errors import DCOSException
+from dcos.errors import DCOSException, DefaultError
 
 from six.moves import urllib
 
@@ -239,6 +239,9 @@ def uninstall_app(app_name, remove_all, app_id, init_client, dcos_client):
                  ', '.join(app_ids)))
 
     for app in matching_apps:
+        package_json = _decode_and_add_context(
+            app['id'],
+            app.get('labels', {}))
         # First, remove the app from Marathon
         init_client.remove_app(app['id'], force=True)
 
@@ -259,6 +262,17 @@ def uninstall_app(app_name, remove_all, app_id, init_client, dcos_client):
 
             logger.info(
                 'Found the following frameworks: {}'.format(framework_ids))
+
+            # Emit post uninstall notes
+            emitter.publish(
+                DefaultError(
+                    'Uninstalled package [{}] version [{}]'.format(
+                        package_json['name'],
+                        package_json['version'])))
+
+            if 'postUninstallNotes' in package_json:
+                emitter.publish(
+                    DefaultError(package_json['postUninstallNotes']))
 
             if len(framework_ids) == 1:
                 dcos_client.shutdown_framework(framework_ids[0])
@@ -410,26 +424,15 @@ def installed_apps(init_client, endpoints=False):
                     for a in apps
                     if a.get('labels', {}).get(PACKAGE_METADATA_KEY)]
 
-    def decode_and_add_context(pair):
-        app_id, labels = pair
-        encoded = labels.get(PACKAGE_METADATA_KEY, {})
-        decoded = base64.b64decode(six.b(encoded)).decode()
-
-        decoded_json = util.load_jsons(decoded)
-        decoded_json['appId'] = app_id
-        decoded_json['packageSource'] = labels.get(PACKAGE_SOURCE_KEY)
-        decoded_json['releaseVersion'] = labels.get(PACKAGE_RELEASE_KEY)
-        return decoded_json
-
     # Filter elements that failed to parse correctly as JSON
     valid_apps = []
-    for encoded in encoded_apps:
+    for app_id, labels in encoded_apps:
         try:
-            decoded = decode_and_add_context(encoded)
+            decoded = _decode_and_add_context(app_id, labels)
         except Exception:
             logger.exception(
                 'Unable to decode package metadata during install: %s',
-                encoded[0])
+                app_id)
 
         valid_apps.append(decoded)
 
@@ -440,6 +443,35 @@ def installed_apps(init_client, endpoints=False):
                                 for t in tasks]
 
     return valid_apps
+
+
+def _decode_and_add_context(app_id, labels):
+    """ Create an enhanced package JSON from Marathon labels
+
+    {
+      'appId': <appId>,
+      'packageSource': <source>,
+      'registryVersion': <app_version>,
+      'releaseVersion': <release_version>,
+      ..<package.json properties>..
+    }
+
+    :param app_id: Marathon application id
+    :type app_id: str
+    :param labels: Marathon label dictionary
+    :type labels: dict
+    :rtype: dict
+    """
+
+    encoded = labels.get(PACKAGE_METADATA_KEY, {})
+    decoded = base64.b64decode(six.b(encoded)).decode()
+
+    decoded_json = util.load_jsons(decoded)
+    decoded_json['appId'] = app_id
+    decoded_json['packageSource'] = labels.get(PACKAGE_SOURCE_KEY)
+    decoded_json['releaseVersion'] = labels.get(PACKAGE_RELEASE_KEY)
+
+    return decoded_json
 
 
 def search(query, cfg):
