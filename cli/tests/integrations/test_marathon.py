@@ -689,7 +689,8 @@ def test_app_add_no_tty():
     assert stdout == b''
     assert stderr == (b"We currently don't support reading from the TTY. "
                       b"Please specify an application JSON.\n"
-                      b"Usage: dcos marathon app add < app_resource.json\n")
+                      b"E.g.: dcos marathon app add your-app-id"
+                      b" < app_resource.json\n")
 
 
 def _list_apps(app_id=None):
