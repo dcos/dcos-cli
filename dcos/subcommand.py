@@ -68,9 +68,8 @@ def list_paths():
     :rtype: [str]
     """
 
-    dcos_path = util.dcos_path()
     # Let's get all the default subcommands
-    binpath = os.path.join(dcos_path, BIN_DIRECTORY)
+    binpath = util.dcos_bin_path()
     commands = [
         os.path.join(binpath, filename)
         for filename in os.listdir(binpath)
@@ -323,6 +322,24 @@ def uninstall(package_name):
 BIN_DIRECTORY = 'Scripts' if util.is_windows_platform() else 'bin'
 
 
+def _find_virtualenv(bin_directory):
+    """
+    :param bin_directory: directory to first use to find virtualenv
+    :type bin_directory: str
+    :returns: Absolute path to virutalenv program
+    :rtype: str
+    """
+
+    virtualenv_path = os.path.join(bin_directory, 'virtualenv')
+    if not os.path.exists(virtualenv_path):
+        virtualenv_path = util.which('virtualenv')
+
+    if virtualenv_path is None:
+        raise DCOSException('Unable to find the virtualenv program')
+
+    return virtualenv_path
+
+
 def _install_with_pip(
         package_name,
         env_directory,
@@ -338,12 +355,12 @@ def _install_with_pip(
     :rtype: None
     """
 
-    bin_directory = os.path.join(util.dcos_path(), BIN_DIRECTORY)
+    bin_directory = util.dcos_bin_path()
     new_package_dir = not os.path.exists(env_directory)
 
     pip_path = os.path.join(env_directory, BIN_DIRECTORY, 'pip')
     if not os.path.exists(pip_path):
-        cmd = [os.path.join(bin_directory, 'virtualenv'), env_directory]
+        cmd = [_find_virtualenv(bin_directory), env_directory]
 
         if _execute_install(cmd) != 0:
             raise _generic_error(package_name)

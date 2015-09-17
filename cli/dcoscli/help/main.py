@@ -82,8 +82,7 @@ def _help(command):
     if command is not None:
         _help_command(command)
     else:
-        directory = util.dcos_path()
-        logger.debug("DCOS Path: {!r}".format(directory))
+        logger.debug("DCOS bin path: {!r}".format(util.dcos_bin_path()))
 
         paths = subcommand.list_paths()
         with ThreadPoolExecutor(max_workers=len(paths)) as executor:
