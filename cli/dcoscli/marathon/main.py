@@ -340,7 +340,7 @@ def _get_resource(resource):
         raise DCOSException(
             "We currently don't support reading from the TTY. Please "
             "specify an application JSON.\n"
-            "E.g.: dcos marathon app add your-app-id < app_resource.json")
+            "E.g.: dcos marathon app add < app_resource.json")
 
     return util.load_json(sys.stdin)
 
