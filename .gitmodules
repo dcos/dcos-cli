@@ -1,0 +1,6 @@
+[submodule "dcos-cli-docker"]
+	path = dcos-cli-docker
+	url = https://github.com/mesosphere/dcos-cli-docker
+[submodule "Docker"]
+	path = Docker
+	url = https://github.com/mesosphere/dcos-cli-docker
