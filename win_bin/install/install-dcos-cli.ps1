@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+﻿param([Parameter(Mandatory=$true,ValueFromPipeline=$true)]
   [string]
   $installation_path,
   [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
