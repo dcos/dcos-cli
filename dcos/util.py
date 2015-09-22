@@ -211,19 +211,21 @@ def which(program):
             exe_file = os.path.join(path, program)
             if is_exe(exe_file):
                 return exe_file
+
     if is_windows_platform() and not program.endswith('.exe'):
         return which(program + '.exe')
+
     return None
 
 
-def dcos_path():
+def dcos_bin_path():
     """Returns the real DCOS path based on the current executable
 
     :returns: the real path to the DCOS path
     :rtype: str
     """
 
-    return os.path.dirname(os.path.dirname(os.sys.executable))
+    return os.path.dirname(os.path.realpath(sys.argv[0]))
 
 
 def configure_process_from_environ():
