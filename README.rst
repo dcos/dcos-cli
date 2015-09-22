@@ -15,6 +15,10 @@ command and for specific subcommands through :code:`dcos <subcommand> --help`.
 Additional documentation for the CLI and for the DCOS in general is available
 in the `Mesosphere docs`_.
 
+To run the DCOS CLI as a container, you can pull it from the docker hub with :code:`docker run -i -t mesosphere/dcos-cli <url of your cluster` where :code:`<url of your cluster>` is the http address at which your cluster can be found.
+
+There is also a debugging version of this container tagged with :code:`debug`. You can run it with :code:`mesosphere/dcos-cli:debug` instead.
+
 Parsing CLI Output
 ------------------
 
