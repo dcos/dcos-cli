@@ -4,7 +4,53 @@ set -o errexit -o pipefail
 
 usage()
 { # Show usage information.
-  echo "$(basename "$(test -L "$0" && readlink "$0" || echo "$0")") <installation-path> <dcos-url>"
+  echo "$(basename "$(test -L "$0" && readlink "$0" || echo "$0")") <installation-path> <dcos-url> [--add-path yes/no]"
+}
+
+post_install_message()
+{
+    echo 'Finished installing and configuring DCOS CLI.'
+    echo ''
+    echo 'Run this command to set up your environment and to get started:'
+    echo "source $1 && dcos help"
+}
+
+RC_NAME=""
+
+write_to_profile()
+{
+    echo "" >> ~/"$2";
+    echo "# path to the DCOS CLI binary" >> ~/"$2";
+    echo "if [[ \"\$PATH\" != *\"$1\"* ]];" >> ~/"$2";
+    echo "  then export PATH=\$PATH:$1;" >> ~/"$2";
+    echo "fi" >> ~/"$2";
+}
+
+add_dcos_path_to_profile()
+{
+    UNAME=`uname`
+    case "$UNAME" in
+        Linux ) RC_NAME=".bashrc";;
+        Darwin ) RC_NAME=".bash_profile";;
+        CYGWIN* ) RC_NAME=".bashrc";;
+        MINGW* ) RC_NAME=".profile";;
+        * ) RC_NAME=".bashrc";;
+    esac
+    write_to_profile "$1" "$RC_NAME"
+}
+
+prompt_add_dcos_path_to_profile()
+{
+    while true; do
+        echo ""
+        read -p "Modify your bash profile to add DCOS to your PATH? [yes/no] " ANSWER
+        echo ""
+        case "$ANSWER" in
+            [Yy]* ) add_dcos_path_to_profile "$1"; break;;
+            [Nn]* ) break;;
+            * ) echo "Please answer yes or no.";;
+        esac
+    done
 }
 
 check_pip_version()
@@ -70,7 +116,22 @@ dcos config set package.cache ~/.dcos/cache
 dcos config set package.sources '["https://github.com/mesosphere/universe/archive/version-1.x.zip"]'
 dcos package update
 
-echo 'Finished installing and configuring DCOS CLI.'
-echo ''
-echo 'Run this command to set up your environment and to get started:'
-echo "source $ENV_SETUP && dcos help"
+ADD_PATH=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+            --add-path ) ADD_PATH="$2"; break;;
+            * ) shift;;
+    esac
+done
+
+case "$ADD_PATH" in
+    [Yy]* ) add_dcos_path_to_profile "$VIRTUAL_ENV_PATH/bin";;
+    [Nn]* ) ;;
+    * ) prompt_add_dcos_path_to_profile "$VIRTUAL_ENV_PATH/bin";;
+esac
+
+if [ -z "$RC_NAME" ]; then
+    post_install_message "$ENV_SETUP"
+else
+    post_install_message "~/$RC_NAME"
+fi
