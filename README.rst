@@ -17,7 +17,7 @@ in the `Mesosphere docs`_.
 
 To run the DCOS CLI as a container, you can pull it from the docker hub with::
 
-docker run -i -t mesosphere/dcos-cli <url of your cluster
+    docker run -i -t mesosphere/dcos-cli <url of your cluster
 
 where :code:`<url of your cluster>` is the http address at which your cluster can be found.
 
