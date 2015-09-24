@@ -10,6 +10,7 @@ from dcos.errors import DCOSException
 import pytest
 from mock import patch
 
+from .common import package as common_package
 from .common import (assert_command, assert_lines, delete_zk_nodes,
                      exec_command, file_bytes, file_json, get_services,
                      service_shutdown, wait_for_service, watch_all_deployments)
@@ -304,6 +305,14 @@ def test_install_bad_package_version():
          '--package-version=a.b.c'],
         returncode=1,
         stderr=stderr)
+
+
+def test_install_stopped():
+    with common_package('helloworld', args=['--stopped']):
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'app', 'show', 'helloworld'])
+        stdout = json.loads(stdout.decode('utf8'))
+        assert(stdout['instances'] == 0)
 
 
 def test_package_metadata():
