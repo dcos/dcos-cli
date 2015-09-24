@@ -9,6 +9,7 @@ def framework_fixture():
 
     return Framework({
         "active": True,
+        "capabilities": [],
         "checkpoint": True,
         "completed_tasks": [],
         "executors": [],

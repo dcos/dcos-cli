@@ -19,8 +19,8 @@
   "preInstallNotes": "We recommend a minimum of one node with at least 2 CPU's and 1GB of RAM available for the Marathon Service.",
   "scm": "https://github.com/mesosphere/marathon.git",
   "tags": [
-    "mesosphere",
-    "framework"
+    "init",
+    "long-running"
   ],
-  "version": "0.9.0"
+  "version": "0.11.1"
 }

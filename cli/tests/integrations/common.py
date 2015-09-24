@@ -196,11 +196,13 @@ def watch_all_deployments(count=300):
         watch_deployment(dep['id'], count)
 
 
-def wait_for_service(service_name, max_count=300):
+def wait_for_service(service_name, number_of_services=1, max_count=300):
     """Wait for service to register with Mesos
 
     :param service_name: name of service
     :type service_name: str
+    :param number_of_services: number of services with that name
+    :type number_of_services: int
     :param max_count: max number of seconds to wait
     :type max_count: int
     :rtype: None
@@ -210,24 +212,25 @@ def wait_for_service(service_name, max_count=300):
     while count < max_count:
         services = get_services()
 
-        for service in services:
-            if service['name'] == service_name:
-                return
+        if (len([service for service in services
+                 if service['name'] == service_name]) >= number_of_services):
+            return
 
         count += 1
 
 
-def add_app(app_path, deploy=False):
+def add_app(app_path, wait=True):
     """ Add an app, and wait for it to deploy
 
     :param app_path: path to app's json definition
     :type app_path: str
+    :param wait: whether to wait for the deploy
+    :type wait: bool
     :rtype: None
     """
 
     assert_command(['dcos', 'marathon', 'app', 'add', app_path])
-
-    if deploy:
+    if wait:
         watch_all_deployments()
 
 
@@ -447,7 +450,7 @@ def file_json(path):
 
 
 @contextlib.contextmanager
-def app(path, app_id, deploy=False):
+def app(path, app_id, wait=True):
     """Context manager that deploys an app on entrance, and removes it on
     exit.
 
@@ -455,14 +458,17 @@ def app(path, app_id, deploy=False):
     :type path: str
     :param app_id: app id
     :type app_id: str
+    :param wait: whether to wait for the deploy
+    :type wait: bool
     :rtype: None
     """
 
-    add_app(path, deploy)
+    add_app(path, wait)
     try:
         yield
     finally:
         remove_app(app_id)
+        watch_all_deployments()
 
 
 @contextlib.contextmanager

@@ -357,14 +357,6 @@ def _add(app_resource):
     # Add application to marathon
     client = marathon.create_client()
 
-    schema = client.get_app_schema()
-    if schema is None:
-        schema = _app_schema()
-
-    errs = util.validate_json(application_resource, schema)
-    if errs:
-        raise DCOSException(util.list_to_err(errs))
-
     # Check that the application doesn't exist
     app_id = client.normalize_app_id(application_resource['id'])
 
@@ -427,11 +419,6 @@ def _group_add(group_resource):
     """
 
     group_resource = _get_resource(group_resource)
-    schema = _data_schema()
-
-    errs = util.validate_json(group_resource, schema)
-    if errs:
-        raise DCOSException(util.list_to_err(errs))
 
     client = marathon.create_client()
 
@@ -536,13 +523,10 @@ def _group_update(group_id, properties, force):
     client = marathon.create_client()
 
     # Ensure that the group exists
-    current_group = client.get_group(group_id)
+    client.get_group(group_id)
 
-    schema = _data_schema()
-    group_resource = _parse_properties(properties, schema)
-    _validate_update(current_group, group_resource, schema)
-
-    deployment = client.update_group(group_id, group_resource, force)
+    properties = _parse_properties(properties)
+    deployment = client.update_group(group_id, properties, force)
 
     emitter.publish('Created deployment {}'.format(deployment))
     return 0
@@ -641,13 +625,10 @@ def _update(app_id, properties, force):
     client = marathon.create_client()
 
     # Ensure that the application exists
-    current_app = client.get_app(app_id)
+    client.get_app(app_id)
 
-    schema = _app_schema()
-    app_resource = _parse_properties(properties, schema)
-    _validate_update(current_app, app_resource, schema)
-
-    deployment = client.update_app(app_id, app_resource, force)
+    properties = _parse_properties(properties)
+    deployment = client.update_app(app_id, properties, force)
 
     emitter.publish('Created deployment {}'.format(deployment))
     return 0
@@ -672,68 +653,10 @@ def _group_scale(group_id, scale_factor, force):
     return 0
 
 
-def _validate_update(current_resource, properties, schema):
-    """
-    Validate resource ("app" or "group") update
-
-    :param current_resource: Marathon app definition
-    :type current_resource: dict
-    :param properties: resource JSON
-    :type properties: dict
-    :param schema: JSON schema used to verify properties
-    :type schema: dict
-    :rtype: None
-    """
-    updated_resource = _clean_up_resource_definition(current_resource.copy())
-    updated_resource.update(properties)
-
-    errs = util.validate_json(updated_resource, schema)
-    if errs:
-        raise DCOSException(util.list_to_err(errs))
-
-
-def _clean_up_resource_definition(properties):
-    """
-    Remove non user-specified properties and nulls from resource definition.
-    We remove fields that marathon adds because they aren't in the json-schema
-    because a user should not specity them. When we do a `get` to see the
-    current resource, we may see these fields, but leaving them will cause us
-    to unnecessarily fail the schema validation.
-
-    :param properties: resource JSON
-    :type properties: dict
-    :returns: resource JSON
-    :rtype: dict
-    """
-    clean_properties = {}
-    ignore_properties = ["deployments", "lastTaskFailure", "tasks",
-                         "tasksRunning", "tasksHealthy", "tasksUnhealthy",
-                         "tasksStaged"]
-    for k, v in properties.items():
-        if v is not None and k not in ignore_properties:
-            # iterate through dict/list(s) to check all properties
-            if isinstance(v, list):
-                v = [value for value in v if value]
-                clean_properties[k] = [
-                    _clean_up_resource_definition(elem)
-                    if isinstance(elem, dict)
-                    else elem
-                    for elem in v
-                ]
-            elif isinstance(v, dict):
-                clean_properties[k] = _clean_up_resource_definition(v)
-            else:
-                clean_properties[k] = v
-
-    return clean_properties
-
-
-def _parse_properties(properties, schema):
+def _parse_properties(properties):
     """
     :param properties: JSON items in the form key=value
     :type properties: [str]
-    :param schema: The JSON schema used to verify properties
-    :type schema: dict
     :returns: resource JSON
     :rtype: dict
     """
@@ -751,7 +674,7 @@ def _parse_properties(properties, schema):
 
     resource_json = {}
     for prop in properties:
-        key, value = jsonitem.parse_json_item(prop, schema)
+        key, value = jsonitem.parse_json_item(prop, None)
 
         key = jsonitem.clean_value(key)
         if key in resource_json:
@@ -759,7 +682,6 @@ def _parse_properties(properties, schema):
                 'Key {!r} was specified more than once'.format(key))
 
         resource_json[key] = value
-
     return resource_json
 
 
@@ -990,22 +912,3 @@ def _cli_config_schema():
         pkg_resources.resource_string(
             'dcoscli',
             'data/config-schema/marathon.json').decode('utf-8'))
-
-
-def _data_schema():
-    """
-    :returns: schema for marathon data
-    :rtype: dict
-    """
-    return json.loads(
-        pkg_resources.resource_string(
-            'dcoscli',
-            'data/marathon-group-schema.json').decode('utf-8'))
-
-
-def _app_schema():
-    """
-    :returns: schema for apps
-    :rtype: dict
-    """
-    return _data_schema()['definitions']['app']

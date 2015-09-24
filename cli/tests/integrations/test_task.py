@@ -34,11 +34,11 @@ NUM_TASKS = len(INIT_APPS)
 
 def setup_module():
     # create a completed task
-    with app(SLEEP_COMPLETED, 'test-app-completed', True):
+    with app(SLEEP_COMPLETED, 'test-app-completed'):
         pass
 
     for app_ in INIT_APPS:
-        add_app(app_[0], True)
+        add_app(app_[0])
 
 
 def teardown_module():
@@ -170,7 +170,7 @@ def test_log_lines_invalid():
 def test_log_follow():
     """ Test --follow """
     # verify output
-    with app(FOLLOW, 'follow', True):
+    with app(FOLLOW, 'follow'):
         proc = subprocess.Popen(['dcos', 'task', 'log', 'follow', '--follow'],
                                 stdout=subprocess.PIPE)
 
@@ -205,7 +205,7 @@ def test_log_two_tasks():
 
 def test_log_two_tasks_follow():
     """ Test tailing a single file on two separate tasks with --follow """
-    with app(TWO_TASKS_FOLLOW, 'two-tasks-follow', True):
+    with app(TWO_TASKS_FOLLOW, 'two-tasks-follow'):
         proc = subprocess.Popen(
             ['dcos', 'task', 'log', 'two-tasks-follow', '--follow'],
             stdout=subprocess.PIPE)
