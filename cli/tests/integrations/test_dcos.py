@@ -62,6 +62,11 @@ Environment Variables:
 
     DCOS_DEBUG                  If set then enable further debug messages which
                                 are sent to stdout.
+
+    DCOS_SSL_VERIFY             If set, specifies whether to verify SSL certs
+                                for HTTPS, or the path to the certificate(s).
+                                Can also be configured by setting
+                                `core.ssl_config` in the config.
 """
 
     assert_command(['dcos', '--help'],

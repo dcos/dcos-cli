@@ -41,6 +41,12 @@
             "description": "Your OAuth access token",
             "title": "Your OAuth access token",
             "type": "string"
+        },
+        "ssl_verify": {
+                "type": "string",
+                "default": "false",
+                "title": "SSL Verification",
+                "description": "Whether or not to verify SSL certs for HTTPS or path to cert(s)"
         }
     },
     "type": "object"

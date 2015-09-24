@@ -111,6 +111,7 @@ ENV_SETUP="$VIRTUAL_ENV_PATH/bin/env-setup"
 source "$ENV_SETUP"
 dcos config set core.reporting true
 dcos config set core.dcos_url $DCOS_URL
+dcos config set core.ssl_verify false
 dcos config set core.timeout 5
 dcos config set package.cache ~/.dcos/cache
 dcos config set package.sources '["https://github.com/mesosphere/universe/archive/version-1.x.zip"]'
