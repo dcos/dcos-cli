@@ -68,7 +68,7 @@ def _cmds():
         cmds.Command(
             hierarchy=['package', 'install'],
             arg_keys=['<package_name>', '--package-version', '--options',
-                      '--app-id', '--cli', '--app', '--yes'],
+                      '--app-id', '--cli', '--app', '--yes', '--stopped'],
             function=_install),
 
         cmds.Command(
@@ -298,7 +298,7 @@ def _confirm(prompt, yes):
 
 
 def _install(package_name, package_version, options_path, app_id, cli, app,
-             yes):
+             yes, stopped):
     """Install the specified package.
 
     :param package_name: the package to install
@@ -315,6 +315,8 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
     :type app: bool
     :param yes: automatically assume yes to all prompts
     :type yes: bool
+    :param stopped: add the marathon app with instances=0
+    :type stopped: bool
     :returns: process status
     :rtype: int
     """
@@ -372,7 +374,8 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
             pkg_revision,
             init_client,
             options,
-            app_id)
+            app_id,
+            stopped)
 
     if cli and pkg.has_command_definition(pkg_revision):
         # Install subcommand

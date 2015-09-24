@@ -38,7 +38,7 @@ PACKAGE_REGISTRY_VERSION_KEY = 'DCOS_PACKAGE_REGISTRY_VERSION'
 PACKAGE_FRAMEWORK_NAME_KEY = 'DCOS_PACKAGE_FRAMEWORK_NAME'
 
 
-def install_app(pkg, revision, init_client, options, app_id):
+def install_app(pkg, revision, init_client, options, app_id, stopped):
     """Installs a package's application
 
     :param pkg: the package to install
@@ -51,6 +51,9 @@ def install_app(pkg, revision, init_client, options, app_id):
     :type options: dict
     :param app_id: app ID for installation of this package
     :type app_id: str
+    :param stopped: add the app with instances=0
+    :type stopped: bool
+    :param stopped:
     :rtype: None
     """
 
@@ -62,6 +65,9 @@ def install_app(pkg, revision, init_client, options, app_id):
                      app_id,
                      init_desc['id'])
         init_desc['id'] = app_id
+
+    if stopped:
+        init_desc['instances'] = 0
 
     # Send the descriptor to init
     init_client.add_app(init_desc)
