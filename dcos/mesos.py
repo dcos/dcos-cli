@@ -3,7 +3,7 @@ import itertools
 import os
 
 from dcos import http, util
-from dcos.errors import DCOSException
+from dcos.errors import DCOSException, DCOSHTTPException
 
 from six.moves import urllib
 
@@ -212,8 +212,19 @@ class DCOSClient(object):
         logger.info('Shutting down framework {}'.format(framework_id))
 
         data = 'frameworkId={}'.format(framework_id)
-        url = self.master_url('master/shutdown')
-        http.post(url, data=data, timeout=self._timeout)
+
+        url = self.master_url('master/teardown')
+
+        # In Mesos 0.24, /shutdown was removed.
+        # If /teardown doesn't exist, we try /shutdown.
+        try:
+            http.post(url, data=data, timeout=self._timeout)
+        except DCOSHTTPException as e:
+            if e.response.status_code == 404:
+                url = self.master_url('master/shutdown')
+                http.post(url, data=data, timeout=self._timeout)
+            else:
+                raise
 
     def metadata(self):
         """ GET /metadata
