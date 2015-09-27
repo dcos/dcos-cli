@@ -13,6 +13,7 @@ import time
 
 import concurrent.futures
 import jsonschema
+import png
 import pystache
 import six
 from dcos import constants
@@ -49,29 +50,29 @@ def tempdir():
         shutil.rmtree(tmpdir, ignore_errors=True)
 
 
-@contextlib.contextmanager
-def temptext():
-    """A context manager for temporary files.
+def sh_copy(src, dst):
+    """Copy file src to the file or directory dst.
 
-    The lifetime of the returned temporary file corresponds to the
-    lexical scope of the returned file descriptor.
-
-    :return: reference to a temporary file
-    :rtype: (fd, str)
+    :param src: source file
+    :type src: str
+    :param dst: destination file or directory
+    :type dst: str
+    :rtype: None
     """
-
-    fd, path = tempfile.mkstemp()
     try:
-        yield (fd, path)
-    finally:
-        # Close the file descriptor and ignore errors
-        try:
-            os.close(fd)
-        except OSError:
-            pass
-
-        # delete the path
-        shutil.rmtree(path, ignore_errors=True)
+        shutil.copy(src, dst)
+    except EnvironmentError as e:
+        logger.exception('Unable to copy [%s] to [%s]', src, dst)
+        if e.strerror:
+            if e.filename:
+                raise DCOSException("{}: {}".format(e.strerror, e.filename))
+            else:
+                raise DCOSException(e.strerror)
+        else:
+            raise DCOSException(e)
+    except Exception as e:
+        logger.exception('Unknown error while coping [%s] to [%s]', src, dst)
+        raise DCOSException(e)
 
 
 def ensure_dir_exists(directory):
@@ -656,6 +657,22 @@ def get_ssh_options(config_file, options):
         ssh_options += ' '
 
     return ssh_options
+
+
+def validate_png(filename):
+    """Validate file as a png image. Throws a DCOSException if it is not an PNG
+
+    :param filename: path to the image
+    :type filename: str
+    :rtype: None
+    """
+
+    try:
+        png.Reader(filename=filename).validate_signature()
+    except Exception as e:
+        logger.exception(e)
+        raise DCOSException(
+            'Unable to validate [{}] as a PNG file'.format(filename))
 
 
 logger = get_logger(__name__)

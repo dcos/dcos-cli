@@ -83,6 +83,7 @@ setup(
             'data/*.json',
             'data/help/*.txt',
             'data/config-schema/*.json',
+            'data/universe-schema/*.json',
         ],
     },
 

@@ -81,7 +81,7 @@ cli-test-2.zip",
 def test_package():
     stdout = pkg_resources.resource_string(
         'tests',
-        'data/package/help.txt')
+        'data/help/package.txt')
     assert_command(['dcos', 'package', '--help'],
                    stdout=stdout)
 

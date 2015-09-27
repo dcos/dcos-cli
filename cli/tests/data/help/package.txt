@@ -3,73 +3,82 @@ Install and manage DCOS packages
 Usage:
     dcos package --config-schema
     dcos package --info
+    dcos package bundle [--output-directory=<output-directory>]
+                        <package-directory>
     dcos package describe [--app --cli --config]
                           [--render]
                           [--package-versions]
                           [--options=<file>]
                           [--package-version=<package_version>]
-                          <package_name>
+                          <package-name>
     dcos package install [--cli | [--app --app-id=<app_id>]]
                          [--package-version=<package_version>]
-                         [--options=<file>] [--yes] <package_name>
-    dcos package list [--json --endpoints --app-id=<app-id> <package_name>]
+                         [--options=<file>]
+                         [--yes]
+                         <package-name>
+    dcos package list [--json --endpoints --app-id=<app-id> <package-name>]
     dcos package search [--json <query>]
     dcos package sources
     dcos package uninstall [--cli | [--app --app-id=<app-id> --all]]
-                 <package_name>
+                           <package-name>
     dcos package update [--validate]
 
 Options:
-    --all                                  Apply the operation to all matching packages
+    --all
+        Apply the operation to all matching packages
 
-    --app                                  Apply the operation only to the package's
-                                           Marathon application
+    --app
+        Apply the operation only to the package's Marathon application
 
-    --app-id=<app-id>                      The application id
+    --app-id=<app-id>
+        The application id
 
-    --cli                                  Apply the operation only to the package's CLI
-                                           command
+    --cli
+        Apply the operation only to the package's CLI command
 
-    --config                               Print the package's config.json, which contains
-                                           the configurable properties for marathon.json
-                                           and command.json
+    --config
+        Print the package's config.json, which contains the configurable
+        properties for marathon.json and command.json
 
-    -h, --help                             Show this screen
+    -h, --help
+        Show this screen
 
-    --info                                 Show a short description of this subcommand
+    --info
+        Show a short description of this subcommand
 
-    --options=<file>                       Path to a JSON file containing package
-                                           installation options
+    --options=<file>
+        Path to a JSON file containing package installation options
 
-    --package-version=<package_version>    Package version to install
+    --output-directory=<output-directory>
+        Directory path where the DCOS package will be created. By default the
+        package will be created in the current working directory
 
-    --package-versions                     Print all versions for this package
+    --package-version=<package_version>
+        Package version to install
 
-    --render                               Render the package's marathon.json or
-                                           command.json template with the values from
-                                           config.json and --options.  If not provided,
-                                           print the raw templates.
+    --package-versions
+        Print all versions for this package
 
-    --validate                             Validate package content when updating sources
+    --render
+        Render the package's marathon.json or command.json template with the
+        values from config.json and --options. If not provided, print the raw
+        templates.
 
-    --version                              Show version
+    --validate
+        Validate package content when updating sources
 
-    --yes                                  Assume "yes" is the answer to all prompts and
-                                           run non-interactively
+    --version
+        Show version
 
-Configuration:
-    [package]
-    # Path to the local package cache.
-    cache_dir = "/var/dcos/cache"
+    --yes
+        Assume "yes" is the answer to all prompts and run non-interactively
 
-    # List of package sources, in search order.
-    #
-    # Three protocols are supported:
-    #   - Local file
-    #   - HTTPS
-    #   - Git
-    sources = [
-      "file:///Users/me/test-registry",
-      "https://my.org/registry",
-      "git://github.com/mesosphere/universe.git"
-    ]
+Positional Arguments:
+    <package-directory>
+        Path to the directory containing the DCOS package
+
+    <package-name>
+        Name of the DCOS package
+
+    <query>
+        Pattern to use for searching for package
