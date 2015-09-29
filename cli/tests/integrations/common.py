@@ -463,6 +463,7 @@ def app(path, app_id, deploy=False):
         yield
     finally:
         remove_app(app_id)
+        watch_all_deployments()
 
 
 @contextlib.contextmanager
