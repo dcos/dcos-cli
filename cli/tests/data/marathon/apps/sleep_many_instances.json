@@ -1,9 +1,9 @@
 {
-  "id": "sleep-two-instances",
+  "id": "sleep-many-instances",
   "cmd": "sleep 1000",
   "cpus": 0.1,
   "mem": 16,
-  "instances": 2,
+  "instances": 10,
   "labels": {
     "PACKAGE_ID": "test-app",
     "PACKAGE_VERSION": "1.2.3"

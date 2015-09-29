@@ -456,9 +456,7 @@ def test_restarting_missing_app():
 def test_restarting_app():
     with _zero_instance_app():
         _start_app('zero-instance-app', 3)
-        result = list_deployments(1, 'zero-instance-app')
-        watch_deployment(result[0]['id'], 60)
-
+        watch_all_deployments()
         returncode, stdout, stderr = exec_command(
             ['dcos', 'marathon', 'app', 'restart', 'zero-instance-app'])
 
@@ -508,7 +506,7 @@ def test_list_empty_deployment():
 
 def test_list_deployment():
     with _zero_instance_app():
-        _start_app('zero-instance-app', 3)
+        _start_app('zero-instance-app', 100)
         list_deployments(1)
 
 
@@ -519,7 +517,7 @@ def test_list_deployment_table():
     """
 
     with _zero_instance_app():
-        _start_app('zero-instance-app', 3)
+        _start_app('zero-instance-app', 100)
         assert_lines(['dcos', 'marathon', 'deployment', 'list'], 2)
 
 
@@ -531,7 +529,7 @@ def test_list_deployment_missing_app():
 
 def test_list_deployment_app():
     with _zero_instance_app():
-        _start_app('zero-instance-app', 3)
+        _start_app('zero-instance-app', 100)
         list_deployments(1, 'zero-instance-app')
 
 
@@ -544,7 +542,7 @@ def test_rollback_missing_deployment():
 
 def test_rollback_deployment():
     with _zero_instance_app():
-        _start_app('zero-instance-app', 3)
+        _start_app('zero-instance-app', 100)
         result = list_deployments(1, 'zero-instance-app')
 
         returncode, stdout, stderr = exec_command(
@@ -557,12 +555,13 @@ def test_rollback_deployment():
         assert 'version' in result
         assert stderr == b''
 
+        watch_all_deployments()
         list_deployments(0)
 
 
 def test_stop_deployment():
     with _zero_instance_app():
-        _start_app('zero-instance-app', 3)
+        _start_app('zero-instance-app', 100)
         result = list_deployments(1, 'zero-instance-app')
 
         assert_command(
@@ -577,7 +576,7 @@ def test_watching_missing_deployment():
 
 def test_watching_deployment():
     with _zero_instance_app():
-        _start_app('zero-instance-app', 3)
+        _start_app('zero-instance-app', 10)
         result = list_deployments(1, 'zero-instance-app')
         watch_deployment(result[0]['id'], 60)
         list_deployments(0, 'zero-instance-app')
@@ -595,8 +594,7 @@ def test_list_empty_task_not_running_app():
 def test_list_tasks():
     with _zero_instance_app():
         _start_app('zero-instance-app', 3)
-        result = list_deployments(1, 'zero-instance-app')
-        watch_deployment(result[0]['id'], 60)
+        watch_all_deployments()
         _list_tasks(3)
 
 
@@ -610,16 +608,14 @@ def test_list_tasks_table():
 def test_list_app_tasks():
     with _zero_instance_app():
         _start_app('zero-instance-app', 3)
-        result = list_deployments(1, 'zero-instance-app')
-        watch_deployment(result[0]['id'], 60)
+        watch_all_deployments()
         _list_tasks(3, 'zero-instance-app')
 
 
 def test_list_missing_app_tasks():
     with _zero_instance_app():
         _start_app('zero-instance-app', 3)
-        result = list_deployments(1, 'zero-instance-app')
-        watch_deployment(result[0]['id'], 60)
+        watch_all_deployments()
         _list_tasks(0, 'missing-id')
 
 
@@ -638,8 +634,7 @@ def test_show_missing_task():
 def test_show_task():
     with _zero_instance_app():
         _start_app('zero-instance-app', 3)
-        result = list_deployments(1, 'zero-instance-app')
-        watch_deployment(result[0]['id'], 60)
+        watch_all_deployments()
         result = _list_tasks(3, 'zero-instance-app')
 
         returncode, stdout, stderr = exec_command(
@@ -667,10 +662,10 @@ def test_bad_configuration():
 
 
 def test_app_locked_error():
-    with app('tests/data/marathon/apps/sleep_two_instances.json',
-             '/sleep-two-instances'):
+    with app('tests/data/marathon/apps/sleep_many_instances.json',
+             '/sleep-many-instances'):
         assert_command(
-            ['dcos', 'marathon', 'app', 'stop', 'sleep-two-instances'],
+            ['dcos', 'marathon', 'app', 'stop', 'sleep-many-instances'],
             returncode=1,
             stderr=(b'App or group is locked by one or more deployments. '
                     b'Override with --force.\n'))
