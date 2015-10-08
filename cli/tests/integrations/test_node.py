@@ -97,26 +97,27 @@ def test_node_ssh_master():
 
 def test_node_ssh_slave():
     slave_id = mesos.DCOSClient().get_state_summary()['slaves'][0]['id']
-    _node_ssh(['--slave={}'.format(slave_id)])
+    _node_ssh(['--slave={}'.format(slave_id), '--master-proxy'])
 
 
 def test_node_ssh_option():
-    stdout, stderr = _node_ssh_output(
+    stdout, stderr, _ = _node_ssh_output(
         ['--master', '--option', 'Protocol=0'])
     assert stdout == b''
     assert b'ignoring bad proto spec' in stderr
 
 
 def test_node_ssh_config_file():
-    stdout, stderr = _node_ssh_output(
+    stdout, stderr, _ = _node_ssh_output(
         ['--master', '--config-file', 'tests/data/node/ssh_config'])
     assert stdout == b''
     assert b'ignoring bad proto spec' in stderr
 
 
 def test_node_ssh_user():
-    stdout, stderr = _node_ssh_output(
-        ['--master', '--user=bogus', '--option', 'PasswordAuthentication=no'])
+    stdout, stderr, _ = _node_ssh_output(
+        ['--master-proxy', '--master', '--user=bogus', '--option',
+         'PasswordAuthentication=no'])
     assert stdout == b''
     assert b'Permission denied' in stderr
 
@@ -142,6 +143,7 @@ def test_node_ssh_master_proxy():
 
 def _node_ssh_output(args):
     cli_test_ssh_key_path = os.environ['CLI_TEST_SSH_KEY_PATH']
+
     cmd = ('ssh-agent /bin/bash -c "ssh-add {} 2> /dev/null && ' +
            'dcos node ssh --option StrictHostKeyChecking=no {}"').format(
                cli_test_ssh_key_path,
@@ -151,7 +153,11 @@ def _node_ssh_output(args):
 
 
 def _node_ssh(args):
-    stdout, stderr = _node_ssh_output(args)
+    if os.environ.get('CLI_TEST_AWS') and '--master-proxy' not in args:
+        args.append('--master-proxy')
+
+    stdout, stderr, returncode = _node_ssh_output(args)
+    assert returncode is None
 
     assert stdout
     assert b"Running `" in stderr
@@ -165,6 +171,15 @@ def _node_ssh(args):
 def _get_schema(slave):
     schema = create_schema(slave)
     schema['required'].remove('reregistered_time')
+
+    schema['required'].remove('reserved_resources')
+    schema['properties']['reserved_resources']['required'] = []
+    schema['properties']['reserved_resources']['additionalProperties'] = True
+
+    schema['required'].remove('unreserved_resources')
+    schema['properties']['unreserved_resources']['required'] = []
+    schema['properties']['unreserved_resources']['additionalProperties'] = True
+
     schema['properties']['used_resources']['required'].remove('ports')
     schema['properties']['offered_resources']['required'].remove('ports')
     schema['properties']['attributes']['additionalProperties'] = True

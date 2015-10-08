@@ -72,9 +72,15 @@ def _to_exception(response):
 
         return DCOSException(msg)
     elif response.status_code == 409:
-        return DCOSException(
-            'App or group is locked by one or more deployments. '
-            'Override with --force.')
+        message = response.json()['message']
+        # This is hacky, but it's the only way we can translate the marathon
+        # error into an appropriate CLI error.
+        if "?force=true" in message:
+            return DCOSException(
+                'App or group is locked by one or more deployments. '
+                'Override with --force.')
+        else:
+            return DCOSException(message)
 
     try:
         response_json = response.json()
@@ -448,7 +454,10 @@ class Client(object):
             params = {'force': 'true'}
 
         url = self._create_url('v2/apps{}'.format(app_id))
-        _http_req(http.delete, url, params=params, timeout=self._timeout)
+        response = _http_req(http.delete, url,
+                             params=params,
+                             timeout=self._timeout)
+        return response.json()
 
     def remove_group(self, group_id, force=None):
         """Completely removes the requested application.

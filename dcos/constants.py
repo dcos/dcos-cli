@@ -21,7 +21,7 @@ DCOS_PAGER_COMMAND_ENV = 'PAGER'
 """Command to use to page long command output (e.g. 'less -R')"""
 
 DCOS_SSL_VERIFY_ENV = 'DCOS_SSL_VERIFY'
-"""Whether or not ot verify SSL certs for HTTPS or path to certificate(s)"""
+"""Whether or not to verify SSL certs for HTTPS or path to certificate(s)"""
 
 PATH_ENV = 'PATH'
 """Name of the environment variable pointing to the executable directories."""
