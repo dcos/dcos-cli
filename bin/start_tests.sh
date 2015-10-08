@@ -20,6 +20,10 @@ cd cli
 cp ./tests/data/dcos.toml $DCOS_CONFIG
 sed -i "s/change.dcos.url/$DCOS_URL/g" $DCOS_CONFIG
 
+# update hosts file for ssl test
+IP=$(host $DCOS_URL | awk 'NF>1{print $NF}' | head -1)
+echo "$IP dcos.snakeoil.mesosphere.com" | sudo tee -a /etc/hosts > /dev/null
+
 make clean env
 source env/bin/activate
 make || exit $?
