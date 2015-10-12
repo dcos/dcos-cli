@@ -11,7 +11,7 @@ def test_render_mustache_json():
     template = '{ "x": {{{xs}}}, "y": {{{ys}}}, "z": "{{{z}}}"}'
     xs = [1, 2, 3]
     ys = {'y1': 1, 'y2': 2}
-    z = 'abc'
+    z = 'abc\ndef'
     data = {'xs': xs, 'ys': ys, 'z': z}
     result = util.render_mustache_json(template, data)
 
