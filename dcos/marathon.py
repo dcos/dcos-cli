@@ -71,10 +71,6 @@ def _to_exception(response):
             pass
 
         return DCOSException(msg)
-    elif response.status_code == 409:
-        return DCOSException(
-            'App or group is locked by one or more deployments. '
-            'Override with --force.')
 
     try:
         response_json = response.json()
