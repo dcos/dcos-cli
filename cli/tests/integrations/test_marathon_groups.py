@@ -42,42 +42,27 @@ def test_show_group():
         _show_group('test-group')
 
 
-def test_add_bad_app():
-    with open('tests/data/marathon/groups/bad_app.json') as fd:
-        returncode, stdout, stderr = exec_command(
-            ['dcos', 'marathon', 'group', 'add'],
-            stdin=fd)
-
-        expected = "Error: Additional properties are not allowed" + \
-                   " ('badtype' was unexpected)"
-        assert returncode == 1
-        assert stdout == b''
-        assert stderr.decode('utf-8').startswith(expected)
-
-
-def test_add_bad_group():
-    with open('tests/data/marathon/groups/bad_group.json') as fd:
-        returncode, stdout, stderr = exec_command(
-            ['dcos', 'marathon', 'group', 'add'],
-            stdin=fd)
-
-        expected = "Error: Additional properties are not allowed" + \
-                   " ('fakeapp' was unexpected)"
-        assert returncode == 1
-        assert stdout == b''
-        assert stderr.decode('utf-8').startswith(expected)
-
-
 def test_add_bad_complicated_group():
     with open('tests/data/marathon/groups/complicated_bad.json') as fd:
         returncode, stdout, stderr = exec_command(
             ['dcos', 'marathon', 'group', 'add'],
             stdin=fd)
 
-        err = "Error: missing required property 'id'"
+        err = b"""{
+  "details": [
+    {
+      "errors": [
+        "error.path.missing"
+      ],
+      "path": "/groups(0)/apps(0)/id"
+    }
+  ],
+  "message": "Invalid JSON"
+}
+"""
         assert returncode == 1
         assert stdout == b''
-        assert err in stderr.decode('utf-8')
+        assert err in stderr
 
 
 def test_update_group():
@@ -108,19 +93,6 @@ def test_update_missing_group():
     assert_command(['dcos', 'marathon', 'group', 'update', 'missing-id'],
                    stderr=b"Error: Group '/missing-id' does not exist\n",
                    returncode=1)
-
-
-def test_update_missing_field():
-    with _group(GOOD_GROUP, 'test-group'):
-        returncode, stdout, stderr = exec_command(
-            ['dcos', 'marathon', 'group', 'update',
-                'test-group/sleep', 'missing="a string"'])
-
-        assert returncode == 1
-        assert stdout == b''
-        assert stderr.decode('utf-8').startswith(
-            "Error: 'missing' is not a valid property. "
-            "Possible properties are: ")
 
 
 def test_scale_group():

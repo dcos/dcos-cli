@@ -9,7 +9,7 @@ logger = util.get_logger(__name__)
 
 
 def parse_json_item(json_item, schema):
-    """Parse the json item based on a schema.
+    """Parse the json item (optionally based on a schema).
 
     :param json_item: A JSON item in the form 'key=value'
     :type json_item: str
@@ -25,7 +25,13 @@ def parse_json_item(json_item, schema):
 
     # Check that it is a valid key in our jsonschema
     key = terms[0]
-    value = parse_json_value(key, terms[1], schema)
+
+    # Use the schema if we have it else, guess the type
+    if schema:
+        value = parse_json_value(key, terms[1], schema)
+    else:
+        value = _find_type(clean_value(terms[1]))
+
     return (json.dumps(key), value)
 
 
@@ -119,6 +125,26 @@ def clean_value(value):
         return value[1:-1]
     else:
         return value
+
+
+def _find_type(value):
+    """Find the correct type of the value
+
+    :param value: value to parse
+    :type value: str
+    :returns: The parsed value
+    :rtype: int|float|
+    """
+    to_try = [_parse_integer, _parse_number, _parse_boolean, _parse_array,
+              _parse_url, _parse_object, _parse_string]
+    while len(to_try) > 0:
+        try:
+            return to_try.pop(0)(value)
+        except DCOSException:
+            pass
+
+    raise DCOSException(
+        'Unable to parse {!r} as a JSON object'.format(value))
 
 
 def _parse_string(value):
