@@ -11,6 +11,7 @@ Usage:
     dcos marathon app show [--app-version=<app-version>] <app-id>
     dcos marathon app start [--force] <app-id> [<instances>]
     dcos marathon app stop [--force] <app-id>
+    dcos marathon app kill [--scale] [--host=<host>] <app-id>
     dcos marathon app update [--force] <app-id> [<properties>...]
     dcos marathon app version list [--max-count=<max-count>] <app-id>
     dcos marathon deployment list [--json <app-id>]
@@ -68,6 +69,12 @@ Options:
                                      and return
 
     --interval=<interval>            Number of seconds to wait between actions
+
+    --scale                          Scale the app down after performing the
+                                     the operation.
+
+    --host=<host>                    The host name to isolate your command to
+
 
 Positional Arguments:
     <app-id>                    The application id
@@ -217,6 +224,11 @@ def _cmds():
             hierarchy=['marathon', 'app', 'restart'],
             arg_keys=['<app-id>', '--force'],
             function=_restart),
+
+        cmds.Command(
+            hierarchy=['marathon', 'app', 'kill'],
+            arg_keys=['<app-id>', '--scale', '--host'],
+            function=_kill),
 
         cmds.Command(
             hierarchy=['marathon', 'group', 'add'],
@@ -711,6 +723,35 @@ def _restart(app_id, force):
     payload = client.restart_app(app_id, force)
 
     emitter.publish('Created deployment {}'.format(payload['deploymentId']))
+    return 0
+
+
+def _kill(app_id, scale, host):
+    """
+    :param app_id: the id of the application
+    :type app_id: str
+    :param: scale: Scale the app down
+    :type: scale: bool
+    :param: host: Kill only those tasks running on host specified
+    :type: string
+    :returns: process return code
+    :rtype: int
+    """
+    client = marathon.create_client()
+
+    payload = client.kill_tasks(app_id, host=host, scale=scale)
+    # If scale is provided, the API return a "deploymentResult"
+    # https://github.com/mesosphere/marathon/blob/50366c8/src/main/scala/mesosphere/marathon/api/RestResource.scala#L34-L36
+    if scale:
+        emitter.publish("Started deployment: {}".format(payload))
+    else:
+        if 'tasks' in payload:
+            emitter.publish('Killed tasks: {}'.format(payload['tasks']))
+            if len(payload['tasks']) == 0:
+                return 1
+        else:
+            emitter.publish('Killed tasks: []')
+            return 1
     return 0
 
 
