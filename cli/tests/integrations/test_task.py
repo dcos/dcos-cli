@@ -91,6 +91,8 @@ def test_task():
     assert len(tasks) == NUM_TASKS
 
     schema = create_schema(task_fixture().dict())
+    schema['required'].remove('labels')
+
     for task in tasks:
         assert not util.validate_json(task, schema)
 

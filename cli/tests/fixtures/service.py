@@ -13,7 +13,7 @@ def framework_fixture():
         "checkpoint": True,
         "completed_tasks": [],
         "executors": [],
-        "failover_timeout": 604800,
+        "failover_timeout": 604800.0,
         "hostname": "mesos.vm",
         "id": "20150502-231327-16842879-5050-3889-0000",
         "name": "marathon",
@@ -30,17 +30,17 @@ def framework_fixture():
         "reregistered_time": 1431543498.31959,
         "resources": {
             "cpus": 0.2,
-            "disk": 0,
-            "mem": 32,
+            "disk": 0.0,
+            "mem": 32.0,
             "ports": "[1379-1379, 10000-10000]"
         },
         "role": "*",
         "tasks": [],
-        "unregistered_time": 0,
+        "unregistered_time": 0.0,
         "used_resources": {
             "cpus": 0.2,
-            "disk": 0,
-            "mem": 32,
+            "disk": 0.0,
+            "mem": 32.0,
             "ports": "[1379-1379, 10000-10000]"
         },
         "user": "root",
