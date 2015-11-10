@@ -30,6 +30,7 @@ Usage:
     dcos marathon app show [--app-version=<app-version>] <app-id>
     dcos marathon app start [--force] <app-id> [<instances>]
     dcos marathon app stop [--force] <app-id>
+    dcos marathon app kill [--scale] [--host=<host>] <app-id>
     dcos marathon app update [--force] <app-id> [<properties>...]
     dcos marathon app version list [--max-count=<max-count>] <app-id>
     dcos marathon deployment list [--json <app-id>]
@@ -87,6 +88,12 @@ Options:
                                      and return
 
     --interval=<interval>            Number of seconds to wait between actions
+
+    --scale                          Scale the app down after performing the
+                                     the operation.
+
+    --host=<host>                    The host name to isolate your command to
+
 
 Positional Arguments:
     <app-id>                    The application id
@@ -465,6 +472,86 @@ def test_restarting_app():
         assert stderr == b''
 
 
+def test_killing_app():
+    with _zero_instance_app():
+        _start_app('zero-instance-app', 3)
+        watch_all_deployments()
+        task_set_1 = set([task['id']
+                          for task in _list_tasks(3, 'zero-instance-app')])
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'app', 'kill', 'zero-instance-app'])
+        assert returncode == 0
+        assert stdout.decode().startswith('Killed tasks: ')
+        assert stderr == b''
+        watch_all_deployments()
+        task_set_2 = set([task['id']
+                          for task in _list_tasks(app_id='zero-instance-app')])
+        assert len(task_set_1.intersection(task_set_2)) == 0
+
+
+def test_killing_scaling_app():
+    with _zero_instance_app():
+        _start_app('zero-instance-app', 3)
+        watch_all_deployments()
+        _list_tasks(3)
+        command = ['dcos', 'marathon', 'app', 'kill', '--scale',
+                   'zero-instance-app']
+        returncode, stdout, stderr = exec_command(command)
+        assert returncode == 0
+        assert stdout.decode().startswith('Started deployment: ')
+        assert stdout.decode().find('version') > -1
+        assert stdout.decode().find('deploymentId') > -1
+        assert stderr == b''
+        watch_all_deployments()
+        _list_tasks(0)
+
+
+def test_killing_with_host_app():
+    with _zero_instance_app():
+        _start_app('zero-instance-app', 3)
+        watch_all_deployments()
+        existing_tasks = _list_tasks(3, 'zero-instance-app')
+        task_hosts = set([task['host'] for task in existing_tasks])
+        if len(task_hosts) <= 1:
+            pytest.skip('test needs 2 or more agents to succeed, '
+                        'only {} agents available'.format(len(task_hosts)))
+        assert len(task_hosts) > 1
+        kill_host = list(task_hosts)[0]
+        expected_to_be_killed = set([task['id']
+                                     for task in existing_tasks
+                                     if task['host'] == kill_host])
+        not_to_be_killed = set([task['id']
+                                for task in existing_tasks
+                                if task['host'] != kill_host])
+        assert len(not_to_be_killed) > 0
+        assert len(expected_to_be_killed) > 0
+        command = ['dcos', 'marathon', 'app', 'kill', '--host', kill_host,
+                   'zero-instance-app']
+        returncode, stdout, stderr = exec_command(command)
+        assert stdout.decode().startswith('Killed tasks: ')
+        assert stderr == b''
+        new_tasks = set([task['id'] for task in _list_tasks()])
+        assert not_to_be_killed.intersection(new_tasks) == not_to_be_killed
+        assert len(expected_to_be_killed.intersection(new_tasks)) == 0
+
+
+def test_kill_stopped_app():
+    with _zero_instance_app():
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'app', 'kill', 'zero-instance-app'])
+        assert returncode == 1
+        assert stdout.decode().startswith('Killed tasks: []')
+
+
+def test_kill_missing_app():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'marathon', 'app', 'kill', 'app'])
+    assert returncode == 1
+    assert stdout.decode() == ''
+    stderr_expected = "Error: App '/app' does not exist"
+    assert stderr.decode().strip() == stderr_expected
+
+
 def test_list_version_missing_app():
     assert_command(
         ['dcos', 'marathon', 'app', 'version', 'list', 'missing-id'],
@@ -744,7 +831,7 @@ def _list_versions(app_id, expected_count, max_count=None):
     assert stderr == b''
 
 
-def _list_tasks(expected_count, app_id=None):
+def _list_tasks(expected_count=None, app_id=None):
     cmd = ['dcos', 'marathon', 'task', 'list', '--json']
     if app_id is not None:
         cmd.append(app_id)
@@ -754,7 +841,8 @@ def _list_tasks(expected_count, app_id=None):
     result = json.loads(stdout.decode('utf-8'))
 
     assert returncode == 0
-    assert len(result) == expected_count
+    if expected_count:
+        assert len(result) == expected_count
     assert stderr == b''
 
     return result

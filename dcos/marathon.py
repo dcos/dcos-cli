@@ -471,6 +471,29 @@ class Client(object):
 
         _http_req(http.delete, url, params=params, timeout=self._timeout)
 
+    def kill_tasks(self, app_id, scale=None, host=None):
+        """Kills the tasks for a given application,
+        and can target a given agent, with a future target scale
+
+        :param app_id: the id of the application to restart
+        :type app_id: str
+        :param scale: Scale the app down after killing the specified tasks
+        :type scale: bool
+        :param host: host to target restarts on
+        :type host: string
+        """
+        params = {}
+        app_id = self.normalize_app_id(app_id)
+        if host:
+            params['host'] = host
+        if scale:
+            params['scale'] = scale
+        url = self._create_url('v2/apps{}/tasks'.format(app_id))
+        response = _http_req(http.delete, url,
+                             params=params,
+                             timeout=self._timeout)
+        return response.json()
+
     def restart_app(self, app_id, force=None):
         """Performs a rolling restart of all of the tasks.
 
