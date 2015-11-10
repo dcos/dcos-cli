@@ -17,14 +17,21 @@ def task_fixture():
         "name": "test-app",
         "resources": {
             "cpus": 0.1,
-            "disk": 0,
-            "mem": 16,
+            "disk": 0.0,
+            "mem": 16.0,
             "ports": "[31651-31651]"
         },
         "slave_id": "20150513-185808-177048842-5050-1220-S0",
         "state": "TASK_RUNNING",
         "statuses": [
             {
+                "container_status": {
+                    "network_infos": [
+                        {
+                            "ip_address": "172.17.8.12"
+                        }
+                    ]
+                },
                 "state": "TASK_RUNNING",
                 "timestamp": 1431552866.52692
             }
