@@ -7,7 +7,7 @@ import docopt
 import rollbar
 import six
 from concurrent.futures import ThreadPoolExecutor
-from dcos import http, util
+from dcos import http, mesos, util
 from dcoscli.constants import (ROLLBAR_SERVER_POST_KEY,
                                SEGMENT_IO_CLI_ERROR_EVENT,
                                SEGMENT_IO_CLI_EVENT, SEGMENT_IO_WRITE_KEY_PROD,
@@ -261,6 +261,12 @@ def _base_properties(conf=None):
         logger.exception('Unable to find the hostname of the cluster.')
         dcos_hostname = None
 
+    try:
+        cluster_id = mesos.DCOSClient().metadata().get('CLUSTER_ID')
+    except:
+        logger.exception('Unable to get the cluster_id of the cluster.')
+        cluster_id = None
+
     return {
         'cmd': cmd,
         'full_cmd': full_cmd,
@@ -268,4 +274,5 @@ def _base_properties(conf=None):
         'python_version': str(sys.version_info),
         'config': json.dumps(list(conf.property_items())),
         'DCOS_HOSTNAME': dcos_hostname,
+        'CLUSTER_ID': cluster_id
     }
