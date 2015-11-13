@@ -1,4 +1,4 @@
 [core]
-reporting = false
 email = "test@mail.com"
+reporting = true
 dcos_url = "http://dcos.snakeoil.mesosphere.com"

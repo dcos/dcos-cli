@@ -24,6 +24,7 @@ def _mock(fn):
         with patch('rollbar.init'), \
                 patch('rollbar.report_message'), \
                 patch('dcos.http.post'), \
+                patch('dcos.http.get'), \
                 patch('dcoscli.analytics.session_id'):
 
             dcoscli.analytics.session_id = ANON_ID
@@ -47,6 +48,31 @@ def test_config_set():
         assert mock_called_some_args(http.post,
                                      '{}/identify'.format(SEGMENT_URL),
                                      json={'userId': 'test@mail.com'},
+                                     timeout=(1, 1))
+
+
+@_mock
+def test_cluster_id_sent():
+    '''Tests that cluster_id is sent to segment.io'''
+
+    args = [util.which('dcos')]
+    env = _env_reporting_with_url()
+    version = 'release'
+
+    with patch('sys.argv', args), \
+            patch.dict(os.environ, env), \
+            patch('dcoscli.version', version):
+        assert main() == 0
+
+        props = _base_properties()
+        # segment.io
+        data = {'userId': USER_ID,
+                'event': SEGMENT_IO_CLI_EVENT,
+                'properties': props}
+        assert props.get('CLUSTER_ID')
+        assert mock_called_some_args(http.post,
+                                     '{}/track'.format(SEGMENT_URL),
+                                     json=data,
                                      timeout=(1, 1))
 
 
@@ -135,6 +161,7 @@ def test_config_reporting_false():
 
         assert rollbar.report_message.call_count == 0
         assert http.post.call_count == 0
+        assert http.get.call_count == 0
 
 
 def _env_reporting():
@@ -144,4 +171,10 @@ def _env_reporting():
 
 def _env_no_reporting():
     path = os.path.join('tests', 'data', 'analytics', 'dcos_no_reporting.toml')
+    return {constants.DCOS_CONFIG_ENV: path}
+
+
+def _env_reporting_with_url():
+    path = os.path.join('tests', 'data', 'analytics',
+                        'dcos_reporting_with_url.toml')
     return {constants.DCOS_CONFIG_ENV: path}
