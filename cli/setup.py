@@ -1,4 +1,5 @@
 from codecs import open
+import os
 from os import path
 
 import dcoscli
@@ -6,12 +7,21 @@ from setuptools import find_packages, setup
 
 here = path.abspath(path.dirname(__file__))
 
+data_files = []
+if os.uname()[0] == "Linux" || os.uname()[0] == "Darwin":
+    if os.getuid() == 0:
+        data_files = [('/etc/bash_completion.d', ['etc/dcos.bash_completion']),]
+    else:
+        data_files = [('etc/bash_completion.d', ['etc/dcos.bash_completion']),]
+
 # Get the long description from the relevant file
 with open(path.join(here, 'DESCRIPTION.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
     name='dcoscli',
+
+    data_files=data_files,
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
