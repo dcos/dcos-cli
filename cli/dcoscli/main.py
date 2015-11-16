@@ -1,45 +1,3 @@
-"""
-Command line utility for the Mesosphere Datacenter Operating
-System (DCOS)
-
-'dcos help' lists all available subcommands. See 'dcos <command> --help'
-to read about a specific subcommand.
-
-Usage:
-    dcos [options] [<command>] [<args>...]
-
-Options:
-    --help                      Show this screen
-    --version                   Show version
-    --log-level=<log-level>     If set then print supplementary messages to
-                                stderr at or above this level. The severity
-                                levels in the order of severity are: debug,
-                                info, warning, error, and critical. E.g.
-                                Setting the option to warning will print
-                                warning, error and critical messages to stderr.
-                                Note: that this does not affect the output sent
-                                to stdout by the command.
-    --debug                     If set then enable further debug messages which
-                                are sent to stdout.
-
-Environment Variables:
-    DCOS_LOG_LEVEL              If set then it specifies that message should be
-                                printed to stderr at or above this level. See
-                                the --log-level option for details.
-
-    DCOS_CONFIG                 This environment variable points to the
-                                location of the DCOS configuration file.
-                                [default: ~/.dcos/dcos.toml]
-
-    DCOS_DEBUG                  If set then enable further debug messages which
-                                are sent to stdout.
-
-    DCOS_SSL_VERIFY             If set, specifies whether to verify SSL certs
-                                for HTTPS, or the path to the certificate(s).
-                                Can also be configured by setting
-                                `core.ssl_config` in the config.
-"""
-
 import os
 import signal
 import sys
@@ -48,6 +6,7 @@ from subprocess import PIPE, Popen
 
 import dcoscli
 import docopt
+import pkg_resources
 from dcos import auth, constants, emitting, errors, http, subcommand, util
 from dcos.errors import DCOSException
 from dcoscli import analytics
@@ -67,7 +26,7 @@ def _main():
     signal.signal(signal.SIGINT, signal_handler)
 
     args = docopt.docopt(
-        __doc__,
+        _doc(),
         version='dcos version {}'.format(dcoscli.version),
         options_first=True)
 
@@ -101,6 +60,15 @@ def _main():
         return analytics.wait_and_track(subproc)
     else:
         return analytics.wait_and_capture(subproc)[0]
+
+
+def _doc():
+    """
+    :rtype: str
+    """
+    return pkg_resources.resource_string(
+        'dcoscli',
+        'data/help/dcos.txt').decode('utf-8')
 
 
 def _config_log_level_environ(log_level):

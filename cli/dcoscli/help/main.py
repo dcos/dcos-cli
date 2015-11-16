@@ -1,19 +1,8 @@
-"""Display command line usage information
-
-Usage:
-    dcos help
-    dcos help --info
-    dcos help <command>
-
-Options:
-    --help     Show this screen
-    --info     Show a short description of this subcommand
-    --version  Show version
-"""
 import subprocess
 
 import dcoscli
 import docopt
+import pkg_resources
 from concurrent.futures import ThreadPoolExecutor
 from dcos import cmds, emitting, options, subcommand, util
 from dcos.errors import DCOSException
@@ -36,10 +25,19 @@ def _main():
     util.configure_process_from_environ()
 
     args = docopt.docopt(
-        __doc__,
+        _doc(),
         version='dcos-help version {}'.format(dcoscli.version))
 
     return cmds.execute(_cmds(), args)
+
+
+def _doc():
+    """
+    :rtype: str
+    """
+    return pkg_resources.resource_string(
+        'dcoscli',
+        'data/help/help.txt').decode('utf-8')
 
 
 def _cmds():
@@ -67,7 +65,7 @@ def _info():
     :rtype: int
     """
 
-    emitter.publish(__doc__.split('\n')[0])
+    emitter.publish(_doc().split('\n')[0])
     return 0
 
 

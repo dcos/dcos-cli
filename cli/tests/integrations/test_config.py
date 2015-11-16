@@ -34,30 +34,9 @@ def missing_env():
 
 
 def test_help():
-    stdout = b"""Get and set DCOS CLI configuration properties
-
-Usage:
-    dcos config --info
-    dcos config append <name> <value>
-    dcos config prepend <name> <value>
-    dcos config set <name> <value>
-    dcos config show [<name>]
-    dcos config unset [--index=<index>] <name>
-    dcos config validate
-
-Options:
-    -h, --help       Show this screen
-    --info           Show a short description of this subcommand
-    --version        Show version
-    --index=<index>  Index into the list. The first element in the list has an
-                     index of zero
-
-Positional Arguments:
-    <name>           The name of the property
-    <value>          The value of the property
-"""
-    assert_command(['dcos', 'config', '--help'],
-                   stdout=stdout)
+    with open('tests/data/help/config.txt') as content:
+        assert_command(['dcos', 'config', '--help'],
+                       stdout=content.read().encode('utf-8'))
 
 
 def test_info():

@@ -2,20 +2,9 @@ from .common import assert_command
 
 
 def test_help():
-    stdout = b"""Display command line usage information
-
-Usage:
-    dcos help
-    dcos help --info
-    dcos help <command>
-
-Options:
-    --help     Show this screen
-    --info     Show a short description of this subcommand
-    --version  Show version
-"""
-    assert_command(['dcos', 'help', '--help'],
-                   stdout=stdout)
+    with open('tests/data/help/help.txt') as content:
+        assert_command(['dcos', 'help', '--help'],
+                       stdout=content.read().encode('utf-8'))
 
 
 def test_info():

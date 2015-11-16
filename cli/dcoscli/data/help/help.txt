@@ -1,0 +1,11 @@
+Display command line usage information
+
+Usage:
+    dcos help
+    dcos help --info
+    dcos help <command>
+
+Options:
+    --help     Show this screen
+    --info     Show a short description of this subcommand
+    --version  Show version

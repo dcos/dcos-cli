@@ -1,32 +1,8 @@
-"""Manage DCOS tasks
-
-Usage:
-    dcos task --info
-    dcos task [--completed --json <task>]
-    dcos task log [--completed --follow --lines=N] <task> [<file>]
-    dcos task ls [--long] <task> [<path>]
-
-Options:
-    -h, --help    Show this screen
-    --info        Show a short description of this subcommand
-    --completed   Include completed tasks as well
-    --follow      Print data as the file grows
-    --json        Print json-formatted tasks
-    --lines=N     Print the last N lines [default: 10]
-    --long        Use a long listing format
-    --version     Show version
-
-Positional Arguments:
-    <file>        Print this file. [default: stdout]
-    <path>        List this directory. [default: '.']
-    <task>        Only match tasks whose ID matches <task>.  <task> may be
-                  a substring of the ID, or a unix glob pattern.
-"""
-
 import posixpath
 
 import dcoscli
 import docopt
+import pkg_resources
 from dcos import cmds, emitting, mesos, util
 from dcos.errors import DCOSException, DCOSHTTPException, DefaultError
 from dcoscli import log, tables
@@ -49,10 +25,19 @@ def _main():
     util.configure_process_from_environ()
 
     args = docopt.docopt(
-        __doc__,
+        _doc(),
         version="dcos-task version {}".format(dcoscli.version))
 
     return cmds.execute(_cmds(), args)
+
+
+def _doc():
+    """
+    :rtype: str
+    """
+    return pkg_resources.resource_string(
+        'dcoscli',
+        'data/help/task.txt').decode('utf-8')
 
 
 def _cmds():
@@ -92,7 +77,7 @@ def _info():
     :rtype: int
     """
 
-    emitter.publish(__doc__.split('\n')[0])
+    emitter.publish(_doc().split('\n')[0])
     return 0
 
 

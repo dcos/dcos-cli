@@ -229,7 +229,7 @@ def _command():
     # avoid circular import
     import dcoscli.main
 
-    args = docopt.docopt(dcoscli.main.__doc__,
+    args = docopt.docopt(dcoscli.main._doc(),
                          help=False,
                          options_first=True)
     return args['<command>']
