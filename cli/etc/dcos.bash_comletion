@@ -52,9 +52,9 @@ _dcos()
     elif [ $COMP_CWORD == "2" ] ; then
         COMPREPLY=($(compgen -W "${SUBCOMMANDS[${prev}]}" -- ${cur}))
     else
-        if [ $prev == "--filename" ] ; then
-            _filedir "@(json|ya?ml)"
-        elif [ $prev == "--output-file" ] || [ $prev == "--out" ]; then
+        if [ $prev == "--config-file" ] ; then
+            _filedir "@(json)"
+        elif [ $prev == "--ssh-config-file" ] || [ $prev == "--option" ]; then
             _filedir
         else
             COMMAND="${COMP_WORDS[1]}_${COMP_WORDS[2]}"
