@@ -1,26 +1,3 @@
-"""Get and set DCOS CLI configuration properties
-
-Usage:
-    dcos config --info
-    dcos config append <name> <value>
-    dcos config prepend <name> <value>
-    dcos config set <name> <value>
-    dcos config show [<name>]
-    dcos config unset [--index=<index>] <name>
-    dcos config validate
-
-Options:
-    -h, --help       Show this screen
-    --info           Show a short description of this subcommand
-    --version        Show version
-    --index=<index>  Index into the list. The first element in the list has an
-                     index of zero
-
-Positional Arguments:
-    <name>           The name of the property
-    <value>          The value of the property
-"""
-
 import collections
 import copy
 import json
@@ -51,12 +28,21 @@ def _main():
     util.configure_process_from_environ()
 
     args = docopt.docopt(
-        __doc__,
+        _doc(),
         version='dcos-config version {}'.format(dcoscli.version))
 
     http.silence_requests_warnings()
 
     return cmds.execute(_cmds(), args)
+
+
+def _doc():
+    """
+    :rtype: str
+    """
+    return pkg_resources.resource_string(
+        'dcoscli',
+        'data/help/config.txt').decode('utf-8')
 
 
 def _check_config(toml_config_pre, toml_config_post):
@@ -142,7 +128,7 @@ def _info(info):
     :rtype: int
     """
 
-    emitter.publish(__doc__.split('\n')[0])
+    emitter.publish(_doc().split('\n')[0])
     return 0
 
 

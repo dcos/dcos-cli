@@ -1,51 +1,8 @@
-"""Manage DCOS services
-
-Usage:
-    dcos service --info
-    dcos service [--completed --inactive --json]
-    dcos service log [--follow --lines=N --ssh-config-file=<path>]
-                     <service> [<file>]
-    dcos service shutdown <service-id>
-
-Options:
-    -h, --help                  Show this screen
-
-    --completed                 Show completed services in addition to active
-                                ones. Completed services are those that have
-                                been disconnected from master, and have reached
-                                their failover timeout, or have been explicitly
-                                shutdown via the /shutdown endpoint.
-
-    --inactive                  Show inactive services in addition to active
-                                ones. Inactive services are those that have
-                                been disconnected from master, but haven't yet
-                                reached their failover timeout.
-
-    --info                      Show a short description of this subcommand
-
-    --follow                    Print data as the file grows
-
-    --json                      Print json-formatted services
-
-    --lines=N                   Print the last N lines [default: 10]
-
-    --ssh-config-file=<path>    Path to SSH config file.  Used to access
-                                marathon logs.
-
-    --version                   Show version
-
-Positional Arguments:
-    <file>                      Output this file. [default: stdout]
-
-    <service>                   The DCOS Service name.
-
-    <service-id>                The DCOS Service ID
-"""
-
 import subprocess
 
 import dcoscli
 import docopt
+import pkg_resources
 from dcos import cmds, emitting, marathon, mesos, package, util
 from dcos.errors import DCOSException, DefaultError
 from dcoscli import log, tables
@@ -68,10 +25,19 @@ def _main():
     util.configure_process_from_environ()
 
     args = docopt.docopt(
-        __doc__,
+        _doc(),
         version="dcos-service version {}".format(dcoscli.version))
 
     return cmds.execute(_cmds(), args)
+
+
+def _doc():
+    """
+    :rtype: str
+    """
+    return pkg_resources.resource_string(
+        'dcoscli',
+        'data/help/service.txt').decode('utf-8')
 
 
 def _cmds():
@@ -112,7 +78,7 @@ def _info():
     :rtype: int
     """
 
-    emitter.publish(__doc__.split('\n')[0])
+    emitter.publish(_doc().split('\n')[0])
     return 0
 
 
