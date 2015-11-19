@@ -203,6 +203,30 @@ def test_remove_app():
     _list_apps()
 
 
+def test_add_multiapp():
+    with _zero_instance_multiapp():
+        _list_apps(['zero-instance-app1', 'zero-instance-app2'])
+
+
+def test_remove_multiapp():
+    with _zero_instance_multiapp():
+        pass
+    _list_apps()
+
+
+def test_add_existing_multiapp():
+    with _zero_instance_multiapp():
+        app_path = \
+            'tests/data/marathon/apps/zero_instance_sleep_v2_multiapp.json'
+        with open(app_path) as fd:
+            stderr = (b"Application '/zero-instance-app1' already exists\n"
+                      b"Application '/zero-instance-app2' already exists\n")
+            assert_command(['dcos', 'marathon', 'app', 'add'],
+                           returncode=1,
+                           stderr=stderr,
+                           stdin=fd)
+
+
 def test_add_bad_json_app():
     with open('tests/data/marathon/apps/bad.json') as fd:
         returncode, stdout, stderr = exec_command(
@@ -408,7 +432,7 @@ def test_app_add_invalid_request():
 
     assert returncode == 1
     assert stdout == b''
-    assert re.match(b"Error on request \[POST .*\]: HTTP 400: Bad Request:",
+    assert re.match(b"Error on request \[PUT .*\]: HTTP 400: Bad Request:",
                     stderr)
 
     stderr_end = b"""{
@@ -417,7 +441,7 @@ def test_app_add_invalid_request():
       "errors": [
         "host is not a valid network type"
       ],
-      "path": "/container/docker/network"
+      "path": "(0)/container/docker/network"
     }
   ],
   "message": "Invalid JSON"
@@ -784,8 +808,11 @@ def _list_apps(app_id=None):
     if app_id is None:
         assert len(result) == 0
     else:
-        assert len(result) == 1
-        assert result[0]['id'] == '/' + app_id
+        if not isinstance(app_id, list):
+            assert len(result) == 1
+            assert result[0]['id'] == '/' + app_id
+        else:
+            assert len(result) == len(app_id)
 
     assert returncode == 0
     assert stderr == b''
@@ -879,3 +906,10 @@ def _zero_instance_app_through_http():
             yield
         finally:
             server.shutdown()
+
+
+@contextlib.contextmanager
+def _zero_instance_multiapp():
+    with app('tests/data/marathon/apps/zero_instance_sleep_v2_multiapp.json',
+             ['zero-instance-app1', 'zero-instance-app2']):
+        yield

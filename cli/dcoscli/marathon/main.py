@@ -364,22 +364,33 @@ def _add(app_resource):
     :returns: process return code
     :rtype: int
     """
-    application_resource = _get_resource(app_resource)
+    application_resources = _get_resource(app_resource)
 
     # Add application to marathon
     client = marathon.create_client()
 
     # Check that the application doesn't exist
-    app_id = client.normalize_app_id(application_resource['id'])
+    if not isinstance(application_resources, list):
+        application_resources = [application_resources]
 
-    try:
-        client.get_app(app_id)
-    except DCOSException as e:
-        logger.exception(e)
-    else:
-        raise DCOSException("Application '{}' already exists".format(app_id))
+    error_msg = ''
+    for application_resource in application_resources:
+        app_id = client.normalize_app_id(application_resource['id'])
 
-    client.add_app(application_resource)
+        try:
+            client.get_app(app_id)
+        except DCOSException as e:
+            logger.exception(e)
+        else:
+            if error_msg is not '':
+                error_msg += "\n"
+            error_msg += "Application '{}' already exists".format(app_id)
+
+    # Abort entire deployment if any app(s) already exist
+    if error_msg is not '':
+        raise DCOSException(error_msg)
+
+    client.add_app(application_resources)
 
     return 0
 

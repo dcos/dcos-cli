@@ -245,6 +245,18 @@ def remove_app(app_id):
     assert_command(['dcos', 'marathon', 'app', 'remove', app_id])
 
 
+def remove_apps(app_ids):
+    """ Remove multiple apps
+
+    :param app_ids: list of ids of apps to remove
+    :type app_ids: list
+    :rtype: None
+    """
+
+    for app_id in app_ids:
+        remove_app(app_id)
+
+
 def package_install(package, deploy=False, args=[]):
     """ Calls `dcos package install`
 
@@ -467,7 +479,10 @@ def app(path, app_id, wait=True):
     try:
         yield
     finally:
-        remove_app(app_id)
+        if isinstance(app_id, list):
+            remove_apps(app_id)
+        else:
+            remove_app(app_id)
         watch_all_deployments()
 
 
