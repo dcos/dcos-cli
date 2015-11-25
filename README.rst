@@ -113,9 +113,6 @@ Setup
 Tox, our test runner, tests against both Python 2.7 and Python 3.4
 environments.
 
-If you're using OS X, be sure to use the officially distributed Python 3.4
-installer_ since the Homebrew version is missing a necessary library.
-
 Running
 #######
 
@@ -179,8 +176,6 @@ These packages are now available to be installed by the DCOS CLI installation sc
 .. _jq: http://stedolan.github.io/jq/
 .. _git: http://git-scm.com
 .. _installation instructions: http://docs.mesosphere.com/install/cli/
-.. _installer: https://www.python.org/downloads/
-.. _installer: https://www.python.org/downloads/
 .. _Marathon: https://mesosphere.github.io/marathon/
 .. _Mesosphere docs: http://docs.mesosphere.com
 .. _mesosphere/install-scripts: https://github.com/mesosphere/install-scripts
