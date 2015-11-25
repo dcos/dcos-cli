@@ -1,0 +1,24 @@
+[
+  {
+    "id": "zero-instance-app1",
+    "cmd": "sleep 2000",
+    "cpus": 0.1,
+    "mem": 16,
+    "instances": 0,
+    "labels": {
+      "PACKAGE_ID": "zero-instance-app",
+      "PACKAGE_VERSION": "1.2.3"
+    }
+  },
+  {
+    "id": "zero-instance-app2",
+    "cmd": "sleep 2000",
+    "cpus": 0.1,
+    "mem": 16,
+    "instances": 0,
+    "labels": {
+      "PACKAGE_ID": "zero-instance-app",
+      "PACKAGE_VERSION": "1.2.3"
+    }
+  }
+]

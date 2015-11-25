@@ -290,7 +290,10 @@ class Client(object):
         else:
             app_json = app_resource
 
-        response = _http_req(http.post, url,
+        if not isinstance(app_json, list):
+            app_json = [app_json]
+
+        response = _http_req(http.put, url,
                              json=app_json,
                              timeout=self._timeout)
 
