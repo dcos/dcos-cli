@@ -234,6 +234,13 @@ def add_app(app_path, wait=True):
         watch_all_deployments()
 
 
+def remove_group(group_id):
+    assert_command(['dcos', 'marathon', 'group', 'remove', group_id])
+
+    # Let's make sure that we don't return until the deployment has finished
+    watch_all_deployments()
+
+
 def remove_app(app_id):
     """ Remove an app
 
