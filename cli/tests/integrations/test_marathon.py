@@ -48,7 +48,8 @@ def missing_env():
     env.update({
         constants.PATH_ENV: os.environ[constants.PATH_ENV],
         constants.DCOS_CONFIG_ENV:
-            os.path.join("tests", "data", "missing_marathon_params.toml")
+            os.path.join("tests", "data", "marathon",
+                         "missing_marathon_params.toml")
     })
     return env
 
