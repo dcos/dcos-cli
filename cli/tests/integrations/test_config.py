@@ -28,7 +28,7 @@ def missing_env():
     r.update({
         constants.PATH_ENV: os.environ[constants.PATH_ENV],
         constants.DCOS_CONFIG_ENV:
-            os.path.join("tests", "data", "missing_params_dcos.toml")
+            os.path.join("tests", "data", "config", "missing_params_dcos.toml")
     })
     return r
 
