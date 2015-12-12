@@ -111,3 +111,7 @@ def _help_command(command):
 
     executable = subcommand.command_executables(command)
     return subprocess.call([executable, command, '--help'])
+
+
+if __name__ == "__main__":
+    main()

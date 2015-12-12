@@ -853,3 +853,7 @@ def _cli_config_schema():
         pkg_resources.resource_string(
             'dcoscli',
             'data/config-schema/marathon.json').decode('utf-8'))
+
+
+if __name__ == "__main__":
+    main()

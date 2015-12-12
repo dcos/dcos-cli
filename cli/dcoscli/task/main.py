@@ -259,3 +259,7 @@ def _load_slaves_state(slaves):
                 DefaultError('Error accessing slave: {0}'.format(e)))
 
     return reachable_slaves
+
+
+if __name__ == "__main__":
+    main()

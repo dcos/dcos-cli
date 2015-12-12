@@ -221,3 +221,7 @@ def _ssh(master, slave, option, config_file, user, master_proxy):
                          "network than DCOS, consider using `--master-proxy`"))
 
     return subprocess.call(cmd, shell=True)
+
+
+if __name__ == "__main__":
+    main()
