@@ -364,7 +364,8 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
     revision_map = pkg.package_revisions_map()
     package_version = revision_map.get(pkg_revision)
 
-    if app and pkg.has_marathon_definition(pkg_revision):
+    if app and (pkg.has_marathon_definition(pkg_revision) or
+                pkg.has_marathon_mustache_definition(pkg_revision)):
         # Install in Marathon
         msg = 'Installing Marathon app for package [{}] version [{}]'.format(
             pkg.name(), package_version)

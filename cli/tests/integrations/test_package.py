@@ -51,7 +51,7 @@ def _chronos_description(app_ids):
          "maintainer": "support@mesosphere.io",
          "name": "chronos",
          "packageSource": "https://github.com/mesosphere/universe/archive/\
-cli-test-2.zip",
+cli-test-3.zip",
          "postInstallNotes": "Chronos DCOS Service has been successfully "
                              "installed!\n\n\tDocumentation: http://mesos."
                              "github.io/chronos\n\tIssues: https://github.com/"
@@ -97,8 +97,8 @@ def test_version():
 
 
 def test_sources_list():
-    stdout = b"1a9bef0c579dd0692af9c6ba22c3ec910fb03efc " + \
-             b"https://github.com/mesosphere/universe/archive/cli-test-2.zip\n"
+    stdout = b"fd40db7f075490e0c92ec6fcd62ec1caa361b313 " + \
+             b"https://github.com/mesosphere/universe/archive/cli-test-3.zip\n"
     assert_command(['dcos', 'package', 'sources'],
                    stdout=stdout)
 
@@ -324,12 +324,12 @@ b3NwaGVyZS9kY29zLWhlbGxvd29ybGQifQ=="""
 CJdfQ=="""
 
     expected_source = b"""https://github.com/mesosphere/universe/archive/\
-cli-test-2.zip"""
+cli-test-3.zip"""
 
     expected_labels = {
         'DCOS_PACKAGE_METADATA': expected_metadata,
         'DCOS_PACKAGE_COMMAND': expected_command,
-        'DCOS_PACKAGE_REGISTRY_VERSION': b'1.0.0-rc1',
+        'DCOS_PACKAGE_REGISTRY_VERSION': b'2.0.0-rc1',
         'DCOS_PACKAGE_NAME': b'helloworld',
         'DCOS_PACKAGE_VERSION': b'0.1.0',
         'DCOS_PACKAGE_SOURCE': expected_source,
@@ -434,7 +434,7 @@ def test_uninstall_cli():
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
     "packageSource": "https://github.com/mesosphere/universe/archive/\
-cli-test-2.zip",
+cli-test-3.zip",
     "postInstallNotes": "A sample post-installation message",
     "preInstallNotes": "A sample pre-installation message",
     "releaseVersion": "0",
@@ -552,7 +552,7 @@ def test_list_cli():
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
     "packageSource": "https://github.com/mesosphere/universe/archive/\
-cli-test-2.zip",
+cli-test-3.zip",
     "postInstallNotes": "A sample post-installation message",
     "preInstallNotes": "A sample pre-installation message",
     "releaseVersion": "0",
@@ -586,7 +586,7 @@ cli-test-2.zip",
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
     "packageSource": "https://github.com/mesosphere/universe/archive/\
-cli-test-2.zip",
+cli-test-3.zip",
     "postInstallNotes": "A sample post-installation message",
     "preInstallNotes": "A sample pre-installation message",
     "releaseVersion": "0",
@@ -661,7 +661,7 @@ def test_search():
     assert returncode == 0
     assert b'"packages": []' in stdout
     assert b'"source": "https://github.com/mesosphere/universe/archive/\
-cli-test-2.zip"' in stdout
+cli-test-3.zip"' in stdout
     assert stderr == b''
 
     returncode, stdout, stderr = exec_command(

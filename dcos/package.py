@@ -242,6 +242,7 @@ def uninstall_app(app_name, remove_all, app_id, init_client, dcos_client):
         package_json = _decode_and_add_context(
             app['id'],
             app.get('labels', {}))
+
         # First, remove the app from Marathon
         init_client.remove_app(app['id'], force=True)
 
@@ -569,7 +570,7 @@ def _extract_default_values(config_schema):
     return defaults
 
 
-def _merge_options(first, second):
+def _merge_options(first, second, overrides=True):
     """Merges the :code:`second` dictionary into the :code:`first` dictionary.
     If both dictionaries have the same key and both values are dictionaries
     then it recursively merges those two dictionaries.
@@ -578,6 +579,8 @@ def _merge_options(first, second):
     :type first: dict
     :param second: second dictionary
     :type second: dict
+    :param overrides: allow second to override first if both have same key
+    :type overrides: bool
     :returns: merged dictionary
     :rtype: dict
     """
@@ -590,6 +593,10 @@ def _merge_options(first, second):
             if (isinstance(first_value, collections.Mapping) and
                isinstance(second_value, collections.Mapping)):
                 result[key] = _merge_options(first_value, second_value)
+            elif not overrides and first_value != second_value:
+                raise DCOSException(
+                    "Trying to override package.json's key {} to {}".format(
+                        key, second_value))
             else:
                 result[key] = second_value
         else:
@@ -761,7 +768,7 @@ def update_sources(config, validate=False):
                 # TODO(jsancio): move this to the validation when it is forced
                 Registry(source, stage_dir).check_version(
                     LooseVersion('1.0'),
-                    LooseVersion('2.0'))
+                    LooseVersion('3.0'))
 
                 # validate content
                 if validate:
@@ -1162,7 +1169,7 @@ class Registry():
             raise DCOSException('Unable to parse [{}]'.format(index_path))
 
     def get_index(self):
-        """Retuprns the index of packages in this registry.
+        """Returns the index of packages in this registry.
 
         :rtype: dict
         """
@@ -1270,7 +1277,7 @@ class Package():
 
         logger.info('Generated default options: %r', default_options)
 
-        # Merge option overrides
+        # Merge option overrides, second argument takes precedence
         options = _merge_options(default_options, user_options)
 
         logger.info('Merged options: %r', options)
@@ -1321,6 +1328,16 @@ class Package():
 
         return self.has_definition(revision, 'command.json')
 
+    def _has_resource_definition(self, revision):
+        """Returns true if the package defines a resource; false otherwise.
+
+        :param revision: package revision
+        :type revision: str
+        :rtype: bool
+        """
+
+        return self.has_definition(revision, 'resource.json')
+
     def has_marathon_definition(self, revision):
         """Returns true if the package defines a Marathon json. false otherwise.
 
@@ -1330,6 +1347,32 @@ class Package():
         """
 
         return self.has_definition(revision, 'marathon.json')
+
+    def has_marathon_mustache_definition(self, revision):
+        """Returns true if the package defines a Marathon.json.mustache false
+        otherwise.
+
+        :param revision: package revision
+        :type revision: str
+        :rtype: bool
+        """
+
+        return self.has_definition(revision, 'marathon.json.mustache')
+
+    def _get_marathon_json_file(self, revision):
+        """Returns the file name of Marathon json
+
+        :param revision: package revision
+        :type revision: str
+        :returns: Marathon file name
+        :rtype: str
+        """
+        if self.has_marathon_definition(revision):
+            return 'marathon.json'
+        elif self.has_marathon_mustache_definition(revision):
+            return 'marathon.json.mustache'
+        else:
+            raise DCOSException("Missing Marathon json definition of package")
 
     def config_json(self, revision):
         """Returns the JSON content of the config.json file.
@@ -1353,6 +1396,17 @@ class Package():
 
         return self._json(revision, 'package.json')
 
+    def _resource_json(self, revision):
+        """Returns the JSON content of the resource.json file.
+
+        :param revision: the package revision
+        :type revision: str
+        :returns: Package data
+        :rtype: dict
+        """
+
+        return self._json(revision, 'resource.json')
+
     def marathon_json(self, revision, options):
         """Returns the JSON content of the marathon.json template, after
         rendering it with options.
@@ -1364,8 +1418,13 @@ class Package():
         :rtype: dict
         """
 
+        marathon_file = self._get_marathon_json_file(revision)
+        if self.has_marathon_mustache_definition(revision) and \
+                self._has_resource_definition(revision):
+            resources = {"resource": self._resource_json(revision)}
+            options = _merge_options(options, resources, False)
         init_desc = self._render_template(
-            'marathon.json',
+            marathon_file,
             revision,
             options)
 
@@ -1404,7 +1463,7 @@ class Package():
         :returns: raw data from marathon.json
         :rtype: str
         """
-        return self._data(revision, 'marathon.json')
+        return self._data(revision, self._get_marathon_json_file(revision))
 
     def command_template(self, revision):
         """ Returns raw data from command.json

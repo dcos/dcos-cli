@@ -87,7 +87,7 @@ def _request(method,
 
     logger.info('Received HTTP response [%r]: %r',
                 response.status_code,
-                response.text)
+                response.headers)
 
     return response
 
