@@ -60,6 +60,19 @@ def test_bundle_fail_missing_package_json():
     assert not glob.glob(_PACKAGE_NAME_GLOB)
 
 
+def test_bundle_fail_duplicate_asset_names():
+    common.assert_command(
+        ['dcos', 'package', 'bundle', '--output-directory=/tmp',
+         'tests/data/package/invalid-asset-names-directory'],
+        returncode=1,
+        stderr=(b'Error bundling package. Multiple assets map to the same '
+                b'property name (periods [.] are replaced with dashes [-]): '
+                b'[[\'cassandra-mesos-tar-gz\', '
+                b'\'cassandra-mesos.tar.gz\']]\n'))
+
+    assert not glob.glob(_PACKAGE_NAME_GLOB)
+
+
 def test_bundle_fail_invalid_package_json():
     common.assert_command(
         ['dcos', 'package', 'bundle', '--output-directory=/tmp',
