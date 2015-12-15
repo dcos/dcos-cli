@@ -92,11 +92,6 @@ def _cmds():
             function=_uninstall),
 
         cmds.Command(
-            hierarchy=['package', 'bundle'],
-            arg_keys=['<package-directory>', '--output-directory'],
-            function=_bundle),
-
-        cmds.Command(
             hierarchy=['package'],
             arg_keys=['--config-schema', '--info'],
             function=_package),
