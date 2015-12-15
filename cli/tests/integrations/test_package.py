@@ -1,3 +1,4 @@
+import base64
 import contextlib
 import json
 import os
@@ -10,8 +11,9 @@ from dcos.errors import DCOSException
 import pytest
 from mock import patch
 
-from .common import (assert_command, assert_lines, delete_zk_nodes,
-                     exec_command, file_bytes, file_json, get_services,
+from .common import (assert_command, assert_lines, delete_zk_node,
+                     delete_zk_nodes, exec_command, file_bytes, file_json,
+                     get_services, package_install, package_uninstall,
                      service_shutdown, wait_for_service, watch_all_deployments)
 
 
@@ -372,6 +374,29 @@ cli-test-3.zip"""
 
     # uninstall helloworld
     _uninstall_helloworld()
+
+
+def test_images_in_metadata():
+    package_install('cassandra')
+
+    labels = _get_app_labels('/cassandra/dcos')
+    dcos_package_metadata = labels.get("DCOS_PACKAGE_METADATA")
+    images = json.loads(
+        base64.b64decode(dcos_package_metadata).decode('utf-8'))["images"]
+    assert images.get("icon-small") is not None
+    assert images.get("icon-medium") is not None
+    assert images.get("icon-large") is not None
+
+    # uninstall
+    stderr = (b'Uninstalled package [cassandra] version [0.2.0-1]\n'
+              b'The Apache Cassandra DCOS Service has been uninstalled and '
+              b'will no longer run.\n'
+              b'Please follow the instructions at http://docs.mesosphere.com/'
+              b'services/cassandra/#uninstall to clean up any persisted '
+              b'state\n')
+    package_uninstall('cassandra', stderr=stderr)
+    assert_command(['dcos', 'marathon', 'group', 'remove', '/cassandra'])
+    delete_zk_node('cassandra-mesos')
 
 
 def test_install_with_id(zk_znode):

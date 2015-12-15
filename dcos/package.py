@@ -81,6 +81,10 @@ def _make_package_labels(pkg, revision, options):
     """
 
     metadata = pkg.package_json(revision)
+    # add images to package.json metadata for backwards compatability in the UI
+    if pkg._has_resource_definition(revision):
+        images = {"images": pkg._resource_json(revision)["images"]}
+        metadata.update(images)
 
     encoded_metadata = _base64_encode(metadata)
 
