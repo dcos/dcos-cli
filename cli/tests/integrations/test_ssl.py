@@ -88,7 +88,7 @@ def test_verify_ssl_with_bad_cert_config(env):
 
 
 def test_verify_ssl_with_good_cert_env_var(env):
-    env[constants.DCOS_SSL_VERIFY_ENV] = '/adminrouter/snakeoil.crt'
+    env[constants.DCOS_SSL_VERIFY_ENV] = '/dcos-cli/adminrouter/snakeoil.crt'
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'list'], env)
@@ -99,7 +99,7 @@ def test_verify_ssl_with_good_cert_env_var(env):
 
 
 def test_verify_ssl_with_good_cert_config(env):
-    config_set('core.ssl_verify', '/adminrouter/snakeoil.crt', env)
+    config_set('core.ssl_verify', '/dcos-cli/adminrouter/snakeoil.crt', env)
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'list'], env)

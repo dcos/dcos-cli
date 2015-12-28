@@ -556,9 +556,11 @@ def test_watching_missing_deployment():
 
 def test_watching_deployment():
     with _zero_instance_app():
-        _start_app('zero-instance-app', 10)
+        _start_app('zero-instance-app', _ZERO_INSTANCE_APP_INSTANCES)
         result = list_deployments(1, 'zero-instance-app')
         watch_deployment(result[0]['id'], 60)
+        assert_command(
+            ['dcos', 'marathon', 'deployment', 'stop', result[0]['id']])
         list_deployments(0, 'zero-instance-app')
 
 

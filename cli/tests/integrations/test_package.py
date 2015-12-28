@@ -868,3 +868,4 @@ def _package(name,
         assert_command(
             ['dcos', 'package', 'uninstall', name],
             stderr=uninstall_stderr)
+        watch_all_deployments()
