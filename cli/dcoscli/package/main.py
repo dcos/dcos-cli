@@ -4,6 +4,7 @@ import os
 import sys
 import tempfile
 import zipfile
+from collections import defaultdict
 
 import dcoscli
 import docopt
@@ -13,6 +14,7 @@ from dcos import (cmds, emitting, errors, http, marathon, options, package,
 from dcos.errors import DCOSException
 from dcoscli import tables
 from dcoscli.main import decorate_docopt_usage
+from six import iteritems
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -682,7 +684,23 @@ def _bundle_uris(uris_directory, zip_file):
     :rtype: None
     """
 
-    for filename in sorted(os.listdir(uris_directory)):
+    uris = sorted(os.listdir(uris_directory))
+
+    # these uris will be found through a mustache template from the property
+    # name so make sure each name is unique.
+    uri_properties = defaultdict(list)
+    for name in uris:
+        uri_properties[name.replace('.', '-')].append(name)
+
+    collisions = [uri_list for (prop, uri_list) in iteritems(uri_properties)
+                  if len(uri_list) > 1]
+
+    if collisions:
+        raise DCOSException(
+            'Error bundling package. Multiple assets map to the same property '
+            'name (periods [.] are replaced with dashes [-]): {}'.format(
+                collisions))
+    for filename in uris:
         fullpath = os.path.join(uris_directory, filename)
 
         zip_file.write(fullpath, arcname='assets/uris/{}'.format(filename))
