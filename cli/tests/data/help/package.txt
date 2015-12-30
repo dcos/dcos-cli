@@ -3,8 +3,6 @@ Install and manage DCOS packages
 Usage:
     dcos package --config-schema
     dcos package --info
-    dcos package bundle [--output-directory=<output-directory>]
-                        <package-directory>
     dcos package describe [--app --cli --config]
                           [--render]
                           [--package-versions]
@@ -49,10 +47,6 @@ Options:
     --options=<file>
         Path to a JSON file containing package installation options
 
-    --output-directory=<output-directory>
-        Directory path where the DCOS package will be created. By default the
-        package will be created in the current working directory
-
     --package-version=<package_version>
         Package version to install
 
@@ -74,9 +68,6 @@ Options:
         Assume "yes" is the answer to all prompts and run non-interactively
 
 Positional Arguments:
-    <package-directory>
-        Path to the directory containing the DCOS package
-
     <package-name>
         Name of the DCOS package
 
