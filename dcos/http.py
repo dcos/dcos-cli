@@ -6,8 +6,9 @@ import threading
 import requests
 from dcos import constants, util
 from dcos.errors import DCOSException, DCOSHTTPException
-from requests.auth import HTTPBasicAuth
+from requests.auth import AuthBase, HTTPBasicAuth
 
+from six.moves import urllib
 from six.moves.urllib.parse import urlparse
 
 logger = util.get_logger(__name__)
@@ -16,7 +17,7 @@ lock = threading.Lock()
 DEFAULT_TIMEOUT = 5
 
 # only accessed from _request_with_auth
-AUTH_CREDS = {}  # (hostname, realm) -> AuthBase()
+AUTH_CREDS = {}  # (hostname, auth_scheme, realm) -> AuthBase()
 
 
 def _default_is_success(status_code):
@@ -118,12 +119,14 @@ def _request_with_auth(response,
     """
     i = 0
     while i < 3 and response.status_code == 401:
-        hostname = urlparse(response.url).hostname
-        creds = (hostname, _get_realm(response))
+        parsed_url = urlparse(response.url)
+        hostname = parsed_url.hostname
+        auth_scheme, realm = get_auth_scheme(response)
+        creds = (hostname, auth_scheme, realm)
 
         with lock:
             if creds not in AUTH_CREDS:
-                auth = _get_http_auth_credentials(response)
+                auth = _get_http_auth(response, parsed_url, auth_scheme)
             else:
                 auth = AUTH_CREDS[creds]
 
@@ -293,15 +296,15 @@ def silence_requests_warnings():
     requests.packages.urllib3.disable_warnings()
 
 
-def _get_basic_auth_credentials(username, hostname):
-    """Get username/password for basic auth
+def _get_auth_credentials(username, hostname):
+    """Get username/password for auth
 
     :param username: username user for authentication
     :type username: str
     :param hostname: hostname for credentials
     :type hostname: str
-    :returns: HTTPBasicAuth
-    :rtype: requests.auth.HTTPBasicAuth
+    :returns: username, password
+    :rtype: str, str
     """
 
     if username is None:
@@ -311,55 +314,102 @@ def _get_basic_auth_credentials(username, hostname):
 
     password = getpass.getpass("{}@{}'s password: ".format(username, hostname))
 
-    return HTTPBasicAuth(username, password)
+    return username, password
 
 
-def _get_realm(response):
-    """Return authentication realm requested by server for 'Basic' type or None
+def get_auth_scheme(response):
+    """Return authentication scheme and realm requested by server for 'Basic'
+       or 'acsjwt' (DCOS acs auth) type or None
 
     :param response: requests.response
     :type response: requests.Response
-    :returns: realm
-    :rtype: str | None
+    :returns: auth_scheme, realm
+    :rtype: (str, str) | None
     """
 
     if 'www-authenticate' in response.headers:
         auths = response.headers['www-authenticate'].split(',')
-        basic_realm = next((auth_type for auth_type in auths
-                           if auth_type.rstrip().lower().startswith("basic")),
-                           None)
-        if basic_realm:
-            realm = basic_realm.split('=')[-1].strip(' \'\"').lower()
-            return realm
+        scheme = next((auth_type.rstrip().lower() for auth_type in auths
+                       if auth_type.rstrip().lower().startswith("basic") or
+                       auth_type.rstrip().lower().startswith("acsjwt")),
+                      None)
+        if scheme:
+            scheme_info = scheme.split("=")
+            auth_scheme = scheme_info[0].split(" ")[0].lower()
+            realm = scheme_info[-1].strip(' \'\"').lower()
+            return auth_scheme, realm
         else:
             return None
     else:
         return None
 
 
-def _get_http_auth_credentials(response):
-    """Get authentication credentials required by server
+def _get_http_auth(response, url, auth_scheme):
+    """Get authentication mechanism required by server
 
     :param response: requests.response
     :type response: requests.Response
-    :returns: HTTPBasicAuth
-    :rtype: HTTPBasicAuth
+    :param url: parsed request url
+    :type url: str
+    :param auth_scheme: str
+    :type auth_scheme: str
+    :returns: AuthBase
+    :rtype: AuthBase
     """
 
-    parsed_url = urlparse(response.url)
-    hostname = parsed_url.hostname
-    user = parsed_url.username
+    hostname = url.hostname
+    username = url.username
 
     if 'www-authenticate' in response.headers:
-        realm = _get_realm(response)
-        if realm:
-            return _get_basic_auth_credentials(user, hostname)
-        else:
+        if auth_scheme not in ['basic', 'acsjwt']:
             msg = ("Server responded with an HTTP 'www-authenticate' field of "
                    "'{}', DCOS only supports 'Basic'".format(
                        response.headers['www-authenticate']))
             raise DCOSException(msg)
+
+        username, password = _get_auth_credentials(username, hostname)
+        if auth_scheme == 'basic':
+            return HTTPBasicAuth(username, password)
+        else:
+            return _get_dcos_acs_auth(username, password)
     else:
         msg = ("Invalid HTTP response: server returned an HTTP 401 response "
                "with no 'www-authenticate' field")
         raise DCOSException(msg)
+
+
+def _get_dcos_acs_auth(uid, password):
+    """Get authentication flow for dcos acs auth
+
+    :param uid: uid
+    :type uid: str
+    :param password: password
+    :type password: str
+    :returns: DCOSAcsAuth
+    :rtype: AuthBase
+    """
+
+    dcos_url = util.get_config_vals(
+        ['core.dcos_url'], util.get_config())[0]
+    url = urllib.parse.urljoin(dcos_url, 'acs/api/v1/auth/login')
+    creds = {"uid": uid, "password": password}
+
+    # using private method here, so we don't retry on this request
+    # error here will be bubbled up to _request_with_auth
+    response = _request('post', url, json=creds)
+
+    token = None
+    if response.status_code == 200:
+        token = response.json()['token']
+
+    return DCOSAcsAuth(token)
+
+
+class DCOSAcsAuth(AuthBase):
+    """Invokes DCOS Authentication flow for given Request object."""
+    def __init__(self, token):
+        self.token = token
+
+    def __call__(self, r):
+        r.headers['Authorization'] = "token={}".format(self.token)
+        return r
