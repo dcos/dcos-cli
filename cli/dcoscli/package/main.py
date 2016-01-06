@@ -9,8 +9,8 @@ from collections import defaultdict
 import dcoscli
 import docopt
 import pkg_resources
-from dcos import (cmds, emitting, errors, http, marathon, options, package,
-                  subcommand, util)
+from dcos import (cmds, cosmospackage, emitting, errors, http, marathon,
+                  options, package, subcommand, util)
 from dcos.errors import DCOSException
 from dcoscli import tables
 from dcoscli.main import decorate_docopt_usage
@@ -43,6 +43,7 @@ def _main():
         version='dcos-package version {}'.format(dcoscli.version))
     http.silence_requests_warnings()
 
+    _check_cluster_capabilities()
     return cmds.execute(_cmds(), args)
 
 
@@ -747,3 +748,21 @@ def _bundle_screenshots(screenshot_directory, zip_file):
         zip_file.write(
             fullpath,
             arcname='images/screenshots/{}'.format(filename))
+
+
+def _check_cluster_capabilities():
+    """Make sure this version the cli is compatible with version of DCOS
+
+    :returns: PackageManager instance
+    :rtype: None
+    """
+
+    dcos_url = util.get_config().get("core.dcos_url")
+    cosmos_manager = cosmospackage.Cosmos(dcos_url)
+    if cosmos_manager.enabled():
+        msg = ("This version of the DCOS CLI is not supported for your "
+               "cluster. Please upgrade the CLI to the latest version: "
+               "https://docs.mesosphere.com/administration/introcli/updatecli/"
+               )
+
+        raise DCOSException(msg)
