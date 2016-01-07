@@ -371,12 +371,10 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
 
         emitter.publish(msg)
 
-        init_client = marathon.create_client(config)
-
-        package.install_app(
+        package_manager = package._get_package_manager()
+        package_manager.install_app(
             pkg,
             pkg_revision,
-            init_client,
             options,
             app_id)
 

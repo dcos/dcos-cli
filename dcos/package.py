@@ -38,35 +38,6 @@ PACKAGE_REGISTRY_VERSION_KEY = 'DCOS_PACKAGE_REGISTRY_VERSION'
 PACKAGE_FRAMEWORK_NAME_KEY = 'DCOS_PACKAGE_FRAMEWORK_NAME'
 
 
-def install_app(pkg, revision, init_client, options, app_id):
-    """Installs a package's application
-
-    :param pkg: the package to install
-    :type pkg: Package
-    :param revision: the package revision to install
-    :type revision: str
-    :param init_client: the program to use to run the package
-    :type init_client: object
-    :param options: package parameters
-    :type options: dict
-    :param app_id: app ID for installation of this package
-    :type app_id: str
-    :rtype: None
-    """
-
-    # Insert option parameters into the init template
-    init_desc = pkg.marathon_json(revision, options)
-
-    if app_id is not None:
-        logger.debug('Setting app ID to "%s" (was "%s")',
-                     app_id,
-                     init_desc['id'])
-        init_desc['id'] = app_id
-
-    # Send the descriptor to init
-    init_client.add_app(init_desc)
-
-
 def _make_package_labels(pkg, revision, options):
     """Returns Marathon app labels for a package.
 
@@ -1636,3 +1607,72 @@ def get_apps_for_framework(framework_name, client):
     return [app for app in client.get_apps()
             if app.get('labels', {}).get(
                 PACKAGE_FRAMEWORK_NAME_KEY) == framework_name]
+
+
+def _get_package_manager():
+    """Returns type of package manager to use
+
+    :returns: PackageManager instance
+    :rtype: PackageManager
+    """
+    url = os.environ.get(constants.COSMOS_URL_ENV)
+    if url:
+        return Cosmos(url)
+    else:
+        return PackageManager()
+
+
+class PackageManager():
+    """Package Manager using local file system"""
+
+    def install_app(self, pkg, revision, options, app_id):
+        """Installs a package's application
+
+        :param pkg: the package to install
+        :type pkg: Package
+        :param revision: the package revision to install
+        :type revision: str
+        :param options: package parameters
+        :type options: dict
+        :param app_id: app ID for installation of this package
+        :type app_id: str
+        :rtype: None
+        """
+
+        config = util.get_config()
+        init_client = marathon.create_client(config)
+
+        # Insert option parameters into the init template
+        init_desc = pkg.marathon_json(revision, options)
+
+        if app_id is not None:
+            logger.debug('Setting app ID to "%s" (was "%s")',
+                         app_id,
+                         init_desc['id'])
+            init_desc['id'] = app_id
+
+        # Send the descriptor to init
+        init_client.add_app(init_desc)
+
+
+class Cosmos(PackageManager):
+    """Implementation of Package Manager using Cosmos"""
+    def __init__(self, cosmos_url):
+        self.cosmos_url = cosmos_url
+
+    def install_app(self, pkg, revision, options, app_id):
+        """Installs a package's application
+
+        :param pkg: the package to install
+        :type pkg: Package
+        :param revision: the package revision to install
+        :type revision: str
+        :param options: package parameters
+        :type options: dict
+        :param app_id: app ID for installation of this package
+        :type app_id: str
+        :rtype: None
+        """
+        url = urllib.parse.urljoin(self.cosmos_url, 'v1/package/install')
+        param = {"name": pkg.name()}
+        http.post(url, json=param)
