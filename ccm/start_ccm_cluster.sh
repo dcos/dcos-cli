@@ -3,6 +3,7 @@
 # This script expects the following env var:
 #   CLUSTER_NAME
 #   CCM_AUTH_TOKEN
+#   DCOS_CHANNEL
 
 set -e
 set -x
@@ -14,7 +15,7 @@ CLUSTER_ID=$(http --ignore-stdin \https://ccm.mesosphere.com/api/cluster/ \
      cloud_provider=0 \
      region=us-west-2 \
      time=60 \
-     channel=stable \
+     channel=$DCOS_CHANNEL \
      cluster_desc="DCOS CLI testing cluster" \
      template=single-master.cloudformation.json \
      adminlocation=0.0.0.0/0 \
