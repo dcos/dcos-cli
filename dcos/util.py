@@ -488,7 +488,7 @@ def render_mustache_json(template, data):
     """
 
     try:
-        r = CustomJsonRenderer()
+        r = CustomJsonRenderer(escape=lambda s: s.replace("\n", "\\n"))
         rendered = r.render(template, data)
     except Exception as e:
         logger.exception(
