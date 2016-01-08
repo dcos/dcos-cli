@@ -650,8 +650,9 @@ def test_app_locked_error():
         assert_command(
             ['dcos', 'marathon', 'app', 'stop', 'sleep-many-instances'],
             returncode=1,
-            stderr=(b'App or group is locked by one or more deployments. '
-                    b'Override with --force.\n'))
+            stderr=(b"Error: App is locked by one or more deployments. "
+                    b"Override with the option '?force=true'. View details"
+                    b" at '/v2/deployments/<DEPLOYMENT_ID>'.\n"))
 
 
 def test_app_add_no_tty():
