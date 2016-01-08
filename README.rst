@@ -15,6 +15,14 @@ command and for specific subcommands through :code:`dcos <subcommand> --help`.
 Additional documentation for the CLI and for the DCOS in general is available
 in the `Mesosphere docs`_.
 
+To run the DCOS CLI as a container, you can pull it from the docker hub with::
+
+    docker run -i -t mesosphere/dcos-cli <url of your cluster>
+
+where :code:`<url of your cluster>` is the http address at which your cluster can be found.
+
+There is also a debugging version of this container tagged with :code:`debug`. You can run it with :code:`mesosphere/dcos-cli:debug` instead. More information is available at the `README`_.
+
 Parsing CLI Output
 ------------------
 
@@ -182,5 +190,6 @@ These packages are now available to be installed by the DCOS CLI installation sc
 .. _packages: https://packaging.python.org/en/latest/installing.html#installing-requirements
 .. _PEP-440 version scheme: https://www.python.org/dev/peps/pep-0440/
 .. _publish_to_pypi.sh script: https://github.com/mesosphere/dcos-cli/blob/master/bin/publish_to_pypi.sh
+.. _README: Docker/README.md
 .. _setup: https://github.com/mesosphere/dcos-helloworld#setup
 .. _virtualenv: https://virtualenv.pypa.io/en/latest/
