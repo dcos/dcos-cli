@@ -59,7 +59,7 @@ core.ssl_verify=false
 core.timeout=5
 package.cache=tmp/cache
 package.sources=['https://github.com/mesosphere/universe/archive/\
-cli-test-2.zip']
+cli-test-3.zip']
 """
     assert_command(['dcos', 'config', 'show'],
                    stdout=stdout,
@@ -157,11 +157,11 @@ def test_append_empty_list(env):
     config_set('package.sources', '[]', env)
     _append_value(
         'package.sources',
-        'https://github.com/mesosphere/universe/archive/cli-test-2.zip',
+        'https://github.com/mesosphere/universe/archive/cli-test-3.zip',
         env)
     _get_value(
         'package.sources',
-        ['https://github.com/mesosphere/universe/archive/cli-test-2.zip'],
+        ['https://github.com/mesosphere/universe/archive/cli-test-3.zip'],
         env)
 
 
@@ -169,11 +169,11 @@ def test_prepend_empty_list(env):
     config_set('package.sources', '[]', env)
     _prepend_value(
         'package.sources',
-        'https://github.com/mesosphere/universe/archive/cli-test-2.zip',
+        'https://github.com/mesosphere/universe/archive/cli-test-3.zip',
         env)
     _get_value(
         'package.sources',
-        ['https://github.com/mesosphere/universe/archive/cli-test-2.zip'],
+        ['https://github.com/mesosphere/universe/archive/cli-test-3.zip'],
         env)
 
 
@@ -184,7 +184,7 @@ def test_append_list(env):
         env)
     _get_value(
         'package.sources',
-        ['https://github.com/mesosphere/universe/archive/cli-test-2.zip',
+        ['https://github.com/mesosphere/universe/archive/cli-test-3.zip',
          'https://github.com/mesosphere/universe/archive/version-2.x.zip'],
         env)
     config_unset('package.sources', '1', env)
@@ -198,7 +198,7 @@ def test_prepend_list(env):
     _get_value(
         'package.sources',
         ['https://github.com/mesosphere/universe/archive/version-2.x.zip',
-         'https://github.com/mesosphere/universe/archive/cli-test-2.zip'],
+         'https://github.com/mesosphere/universe/archive/cli-test-3.zip'],
         env)
     config_unset('package.sources', '0', env)
 
@@ -249,7 +249,7 @@ def test_unset_output(env):
 def test_unset_index_output(env):
     stdout = (
         b"[package.sources]: removed element "
-        b"'https://github.com/mesosphere/universe/archive/cli-test-2.zip' "
+        b"'https://github.com/mesosphere/universe/archive/cli-test-3.zip' "
         b"at index '0'\n"
     )
 
@@ -259,14 +259,14 @@ def test_unset_index_output(env):
 
     _prepend_value(
         'package.sources',
-        'https://github.com/mesosphere/universe/archive/cli-test-2.zip',
+        'https://github.com/mesosphere/universe/archive/cli-test-3.zip',
         env)
 
 
 def test_set_whole_list(env):
     config_set(
         'package.sources',
-        '["https://github.com/mesosphere/universe/archive/cli-test-2.zip"]',
+        '["https://github.com/mesosphere/universe/archive/cli-test-3.zip"]',
         env)
 
 
@@ -293,7 +293,7 @@ def test_unset_list_index(env):
         env)
     _prepend_value(
         'package.sources',
-        'https://github.com/mesosphere/universe/archive/cli-test-2.zip',
+        'https://github.com/mesosphere/universe/archive/cli-test-3.zip',
         env)
 
 
@@ -337,7 +337,7 @@ def test_validate(env):
 
 
 def test_validation_error(env):
-    source = ["https://github.com/mesosphere/universe/archive/cli-test-2.zip"]
+    source = ["https://github.com/mesosphere/universe/archive/cli-test-3.zip"]
     config_unset('package.sources', None, env)
 
     stdout = b"Error: missing required property 'sources'.\n"
@@ -401,12 +401,12 @@ def test_url_validation(env):
 
 def test_append_url_validation(env):
     default_value = ('["https://github.com/mesosphere/universe/archive/'
-                     'cli-test-2.zip"]')
+                     'cli-test-3.zip"]')
 
     config_set('package.sources', '[]', env)
     _append_value(
         'package.sources',
-        'https://github.com/mesosphere/universe/archive/cli-test-2.zip',
+        'https://github.com/mesosphere/universe/archive/cli-test-3.zip',
         env)
     _append_value(
         'package.sources',
@@ -429,12 +429,12 @@ def test_append_url_validation(env):
 
 def test_prepend_url_validation(env):
     default_value = ('["https://github.com/mesosphere/universe/archive/'
-                     'cli-test-2.zip"]')
+                     'cli-test-3.zip"]')
 
     config_set('package.sources', '[]', env)
     _prepend_value(
         'package.sources',
-        'https://github.com/mesosphere/universe/archive/cli-test-2.zip',
+        'https://github.com/mesosphere/universe/archive/cli-test-3.zip',
         env)
     _prepend_value(
         'package.sources',

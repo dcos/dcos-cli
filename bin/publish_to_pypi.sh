@@ -5,9 +5,16 @@ set -o errexit -o pipefail
 cd /dcos-cli
 
 # copy generated pypirc configuration to correct location
-cp .pypirc ~/.pypirc
+cat <<EOF > ~/.pypirc
+[distutils]
+index-servers =
+    pypi
 
-TAG_VERSION=`cat tag-version`
+    [pypi]
+    repository: https://pypi.python.org/pypi
+    username:$PYPI_USERNAME
+    password:$PYPI_PASSWORD
+EOF
 
 # replace SNAPSHOT with tagged version
 sed -i "s/version = 'SNAPSHOT'/version = '$TAG_VERSION'/g" dcos/__init__.py

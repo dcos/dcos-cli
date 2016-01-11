@@ -234,6 +234,13 @@ def add_app(app_path, wait=True):
         watch_all_deployments()
 
 
+def remove_group(group_id):
+    assert_command(['dcos', 'marathon', 'group', 'remove', group_id])
+
+    # Let's make sure that we don't return until the deployment has finished
+    watch_all_deployments()
+
+
 def remove_app(app_id):
     """ Remove an app
 
@@ -488,6 +495,7 @@ def package(package_name, deploy=False, args=[]):
         yield
     finally:
         package_uninstall(package_name)
+        watch_all_deployments()
 
 
 @contextlib.contextmanager
@@ -533,12 +541,14 @@ def popen_tty(cmd):
 
 
 def ssh_output(cmd):
-    """ Runs an SSH command and returns the stdout/stderr.
+    """ Runs an SSH command and returns the stdout/stderr/returncode.
 
     :param cmd: command to run
     :type cmd: str
-    :rtype: (str, str)
+    :rtype: (str, str, int)
     """
+
+    print('SSH COMMAND: {}'.format(cmd))
 
     # ssh must run with stdin attached to a tty
     proc, master = popen_tty(cmd)
@@ -546,8 +556,14 @@ def ssh_output(cmd):
     # wait for the ssh connection
     time.sleep(8)
 
+    proc.poll()
+    returncode = proc.returncode
+
     # kill the whole process group
-    os.killpg(os.getpgid(proc.pid), 15)
+    try:
+        os.killpg(os.getpgid(proc.pid), 15)
+    except OSError:
+        pass
 
     os.close(master)
     stdout, stderr = proc.communicate()
@@ -555,7 +571,7 @@ def ssh_output(cmd):
     print('SSH STDOUT: {}'.format(stdout.decode('utf-8')))
     print('SSH STDERR: {}'.format(stderr.decode('utf-8')))
 
-    return stdout, stderr
+    return stdout, stderr, returncode
 
 
 def config_set(key, value, env=None):

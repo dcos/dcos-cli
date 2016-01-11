@@ -1,3 +1,4 @@
+import base64
 import contextlib
 import json
 import os
@@ -10,8 +11,9 @@ from dcos.errors import DCOSException
 import pytest
 from mock import patch
 
-from .common import (assert_command, assert_lines, delete_zk_nodes,
-                     exec_command, file_bytes, file_json, get_services,
+from .common import (assert_command, assert_lines, delete_zk_node,
+                     delete_zk_nodes, exec_command, file_bytes, file_json,
+                     get_services, package_install, package_uninstall,
                      service_shutdown, wait_for_service, watch_all_deployments)
 
 
@@ -51,7 +53,7 @@ def _chronos_description(app_ids):
          "maintainer": "support@mesosphere.io",
          "name": "chronos",
          "packageSource": "https://github.com/mesosphere/universe/archive/\
-cli-test-2.zip",
+cli-test-3.zip",
          "postInstallNotes": "Chronos DCOS Service has been successfully "
                              "installed!\n\n\tDocumentation: http://mesos."
                              "github.io/chronos\n\tIssues: https://github.com/"
@@ -97,8 +99,8 @@ def test_version():
 
 
 def test_sources_list():
-    stdout = b"1a9bef0c579dd0692af9c6ba22c3ec910fb03efc " + \
-             b"https://github.com/mesosphere/universe/archive/cli-test-2.zip\n"
+    stdout = b"fd40db7f075490e0c92ec6fcd62ec1caa361b313 " + \
+             b"https://github.com/mesosphere/universe/archive/cli-test-3.zip\n"
     assert_command(['dcos', 'package', 'sources'],
                    stdout=stdout)
 
@@ -324,12 +326,12 @@ b3NwaGVyZS9kY29zLWhlbGxvd29ybGQifQ=="""
 CJdfQ=="""
 
     expected_source = b"""https://github.com/mesosphere/universe/archive/\
-cli-test-2.zip"""
+cli-test-3.zip"""
 
     expected_labels = {
         'DCOS_PACKAGE_METADATA': expected_metadata,
         'DCOS_PACKAGE_COMMAND': expected_command,
-        'DCOS_PACKAGE_REGISTRY_VERSION': b'1.0.0-rc1',
+        'DCOS_PACKAGE_REGISTRY_VERSION': b'2.0.0-rc1',
         'DCOS_PACKAGE_NAME': b'helloworld',
         'DCOS_PACKAGE_VERSION': b'0.1.0',
         'DCOS_PACKAGE_SOURCE': expected_source,
@@ -372,6 +374,29 @@ cli-test-2.zip"""
 
     # uninstall helloworld
     _uninstall_helloworld()
+
+
+def test_images_in_metadata():
+    package_install('cassandra')
+
+    labels = _get_app_labels('/cassandra/dcos')
+    dcos_package_metadata = labels.get("DCOS_PACKAGE_METADATA")
+    images = json.loads(
+        base64.b64decode(dcos_package_metadata).decode('utf-8'))["images"]
+    assert images.get("icon-small") is not None
+    assert images.get("icon-medium") is not None
+    assert images.get("icon-large") is not None
+
+    # uninstall
+    stderr = (b'Uninstalled package [cassandra] version [0.2.0-1]\n'
+              b'The Apache Cassandra DCOS Service has been uninstalled and '
+              b'will no longer run.\n'
+              b'Please follow the instructions at http://docs.mesosphere.com/'
+              b'services/cassandra/#uninstall to clean up any persisted '
+              b'state\n')
+    package_uninstall('cassandra', stderr=stderr)
+    assert_command(['dcos', 'marathon', 'group', 'remove', '/cassandra'])
+    delete_zk_node('cassandra-mesos')
 
 
 def test_install_with_id(zk_znode):
@@ -434,7 +459,7 @@ def test_uninstall_cli():
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
     "packageSource": "https://github.com/mesosphere/universe/archive/\
-cli-test-2.zip",
+cli-test-3.zip",
     "postInstallNotes": "A sample post-installation message",
     "preInstallNotes": "A sample pre-installation message",
     "releaseVersion": "0",
@@ -552,7 +577,7 @@ def test_list_cli():
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
     "packageSource": "https://github.com/mesosphere/universe/archive/\
-cli-test-2.zip",
+cli-test-3.zip",
     "postInstallNotes": "A sample post-installation message",
     "preInstallNotes": "A sample pre-installation message",
     "releaseVersion": "0",
@@ -586,7 +611,7 @@ cli-test-2.zip",
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
     "packageSource": "https://github.com/mesosphere/universe/archive/\
-cli-test-2.zip",
+cli-test-3.zip",
     "postInstallNotes": "A sample post-installation message",
     "preInstallNotes": "A sample pre-installation message",
     "releaseVersion": "0",
@@ -661,7 +686,7 @@ def test_search():
     assert returncode == 0
     assert b'"packages": []' in stdout
     assert b'"source": "https://github.com/mesosphere/universe/archive/\
-cli-test-2.zip"' in stdout
+cli-test-3.zip"' in stdout
     assert stderr == b''
 
     returncode, stdout, stderr = exec_command(
@@ -868,3 +893,4 @@ def _package(name,
         assert_command(
             ['dcos', 'package', 'uninstall', name],
             stderr=uninstall_stderr)
+        watch_all_deployments()

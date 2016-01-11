@@ -75,19 +75,17 @@ def _request(method,
             **kwargs)
     except requests.exceptions.ConnectionError as e:
         logger.exception("HTTP Connection Error")
-        raise DCOSException('URL [{0}] is unreachable: {1}'.format(
-            e.request.url, e))
+        raise DCOSException('URL [{0}] is unreachable: {1}'.format(url, e))
     except requests.exceptions.Timeout as e:
         logger.exception("HTTP Timeout")
-        raise DCOSException('Request to URL [{0}] timed out.'.format(
-            e.request.url))
+        raise DCOSException('Request to URL [{0}] timed out.'.format(url))
     except requests.exceptions.RequestException as e:
         logger.exception("HTTP Exception")
         raise DCOSException('HTTP Exception: {}'.format(e))
 
     logger.info('Received HTTP response [%r]: %r',
                 response.status_code,
-                response.text)
+                response.headers)
 
     return response
 

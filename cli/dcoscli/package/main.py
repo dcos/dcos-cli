@@ -4,6 +4,7 @@ import os
 import sys
 import tempfile
 import zipfile
+from collections import defaultdict
 
 import dcoscli
 import docopt
@@ -13,6 +14,7 @@ from dcos import (cmds, emitting, errors, http, marathon, options, package,
 from dcos.errors import DCOSException
 from dcoscli import tables
 from dcoscli.main import decorate_docopt_usage
+from six import iteritems
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -88,11 +90,6 @@ def _cmds():
             hierarchy=['package', 'uninstall'],
             arg_keys=['<package-name>', '--all', '--app-id', '--cli', '--app'],
             function=_uninstall),
-
-        cmds.Command(
-            hierarchy=['package', 'bundle'],
-            arg_keys=['<package-directory>', '--output-directory'],
-            function=_bundle),
 
         cmds.Command(
             hierarchy=['package'],
@@ -364,7 +361,8 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
     revision_map = pkg.package_revisions_map()
     package_version = revision_map.get(pkg_revision)
 
-    if app and pkg.has_marathon_definition(pkg_revision):
+    if app and (pkg.has_marathon_definition(pkg_revision) or
+                pkg.has_marathon_mustache_definition(pkg_revision)):
         # Install in Marathon
         msg = 'Installing Marathon app for package [{}] version [{}]'.format(
             pkg.name(), package_version)
@@ -681,7 +679,23 @@ def _bundle_uris(uris_directory, zip_file):
     :rtype: None
     """
 
-    for filename in sorted(os.listdir(uris_directory)):
+    uris = sorted(os.listdir(uris_directory))
+
+    # these uris will be found through a mustache template from the property
+    # name so make sure each name is unique.
+    uri_properties = defaultdict(list)
+    for name in uris:
+        uri_properties[name.replace('.', '-')].append(name)
+
+    collisions = [uri_list for (prop, uri_list) in iteritems(uri_properties)
+                  if len(uri_list) > 1]
+
+    if collisions:
+        raise DCOSException(
+            'Error bundling package. Multiple assets map to the same property '
+            'name (periods [.] are replaced with dashes [-]): {}'.format(
+                collisions))
+    for filename in uris:
         fullpath = os.path.join(uris_directory, filename)
 
         zip_file.write(fullpath, arcname='assets/uris/{}'.format(filename))

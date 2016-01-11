@@ -5,5 +5,5 @@ timeout = 5
 ssl_verify = "false"
 dcos_url = "http://dcos.snakeoil.mesosphere.com"
 [package]
-sources = [ "https://github.com/mesosphere/universe/archive/cli-test-2.zip",]
+sources = [ "https://github.com/mesosphere/universe/archive/cli-test-3.zip",]
 cache = "tmp/cache"

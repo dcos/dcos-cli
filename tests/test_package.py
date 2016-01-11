@@ -31,9 +31,18 @@ MergeData = collections.namedtuple(
         first={'b': {'a': 'a'}},
         second={'b': {'c': 'c'}},
         expected={'b': {'c': 'c', 'a': 'a'}}),
+    MergeData(
+        first={'b': 'c'},
+        second={'b': 'd'},
+        expected={'b': 'd'}),
     ])
 def merge_data(request):
     return request.param
+
+
+def test_options_merge_wont_override():
+    with pytest.raises(DCOSException):
+        package._merge_options({'b': 'c'}, {'b': 'd'}, False)
 
 
 def test_option_merge(merge_data):
