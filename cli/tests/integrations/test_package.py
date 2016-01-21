@@ -412,9 +412,7 @@ def test_install_with_id(zk_znode):
 
 
 def test_install_missing_package():
-    stderr = b"""Package [missing-package] not found
-You may need to run 'dcos package update' to update your repositories
-"""
+    stderr = b'Package [missing-package] not found\n'
     assert_command(['dcos', 'package', 'install', 'missing-package'],
                    returncode=1,
                    stderr=stderr)

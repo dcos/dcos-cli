@@ -179,13 +179,11 @@ def noun(executable_path):
     return noun
 
 
-def _write_package_json(pkg, revision):
+def _write_package_json(pkg):
     """ Write package.json locally.
 
     :param pkg: the package being installed
-    :type pkg: Package
-    :param revision: the package revision to install
-    :type revision: str
+    :type pkg: PackageVersion
     :rtype: None
     """
 
@@ -193,7 +191,7 @@ def _write_package_json(pkg, revision):
 
     package_path = os.path.join(pkg_dir, 'package.json')
 
-    package_json = pkg.package_json(revision)
+    package_json = pkg.package_json()
 
     with util.open_file(package_path, 'w') as package_file:
         json.dump(package_json, package_file)
@@ -230,16 +228,19 @@ def _write_package_source(pkg):
     source_path = os.path.join(pkg_dir, 'source')
 
     with util.open_file(source_path, 'w') as source_file:
-        source_file.write(pkg.registry.source.url)
+        registry = pkg.registry()
+        if registry == "cosmos":
+            url = pkg.cosmos_url()
+        else:
+            url = registry.source.url
+        source_file.write(url)
 
 
-def _install_env(pkg, revision, options):
+def _install_env(pkg, options):
     """ Install subcommand virtual env.
 
     :param pkg: the package to install
-    :type pkg: Package
-    :param revision: the package revision to install
-    :type revision: str
+    :type pkg: PackageVersion
     :param options: package parameters
     :type options: dict
     :rtype: None
@@ -247,7 +248,7 @@ def _install_env(pkg, revision, options):
 
     pkg_dir = package_dir(pkg.name())
 
-    install_operation = pkg.command_json(revision, options)
+    install_operation = pkg.command_json(options)
 
     env_dir = os.path.join(pkg_dir,
                            constants.DCOS_SUBCOMMAND_VIRTUALENV_SUBDIR)
@@ -262,13 +263,11 @@ def _install_env(pkg, revision, options):
             install_operation.keys()))
 
 
-def install(pkg, revision, options):
+def install(pkg, options):
     """Installs the dcos cli subcommand
 
     :param pkg: the package to install
     :type pkg: Package
-    :param revision: the package revision to install
-    :type revision: str
     :param options: package parameters
     :type options: dict
     :rtype: None
@@ -277,11 +276,11 @@ def install(pkg, revision, options):
     pkg_dir = package_dir(pkg.name())
     util.ensure_dir_exists(pkg_dir)
 
-    _write_package_json(pkg, revision)
-    _write_package_revision(pkg, revision)
+    _write_package_json(pkg)
+    _write_package_revision(pkg, pkg.revision())
     _write_package_source(pkg)
 
-    _install_env(pkg, revision, options)
+    _install_env(pkg, options)
 
 
 def _subcommand_dir():
@@ -451,12 +450,12 @@ class InstalledSubcommand(object):
 
     def package_revision(self):
         """
-        :returns: this subcommand's revision.
+        :returns: this subcommand's version.
         :rtype: str
         """
 
-        revision_path = os.path.join(self._dir(), 'version')
-        return util.read_file(revision_path)
+        version_path = os.path.join(self._dir(), 'version')
+        return util.read_file(version_path)
 
     def package_source(self):
         """

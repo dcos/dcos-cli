@@ -38,55 +38,6 @@ PACKAGE_REGISTRY_VERSION_KEY = 'DCOS_PACKAGE_REGISTRY_VERSION'
 PACKAGE_FRAMEWORK_NAME_KEY = 'DCOS_PACKAGE_FRAMEWORK_NAME'
 
 
-def _make_package_labels(pkg, revision, options):
-    """Returns Marathon app labels for a package.
-
-    :param pkg: The package to install
-    :type pkg: Package
-    :param revision: The package revision to install
-    :type revision: str
-    :param options: package parameters
-    :type options: dict
-    :returns: Marathon app labels
-    :rtype: dict
-    """
-
-    metadata = pkg.package_json(revision)
-    # add images to package.json metadata for backwards compatability in the UI
-    if pkg._has_resource_definition(revision):
-        images = {"images": pkg._resource_json(revision)["images"]}
-        metadata.update(images)
-
-    encoded_metadata = _base64_encode(metadata)
-
-    is_framework = metadata.get('framework')
-    if not is_framework:
-        is_framework = False
-
-    package_registry_version = pkg.registry.get_version()
-
-    package_labels = {
-        PACKAGE_METADATA_KEY: encoded_metadata,
-        PACKAGE_NAME_KEY: metadata['name'],
-        PACKAGE_VERSION_KEY: metadata['version'],
-        PACKAGE_SOURCE_KEY: pkg.registry.source.url,
-        PACKAGE_FRAMEWORK_KEY: json.dumps(is_framework),
-        PACKAGE_REGISTRY_VERSION_KEY: package_registry_version,
-        PACKAGE_RELEASE_KEY: revision
-    }
-
-    if pkg.has_command_definition(revision):
-        command = pkg.command_json(revision, options)
-        package_labels[PACKAGE_COMMAND_KEY] = _base64_encode(command)
-
-    # Run a heuristic that determines the hint for the framework name
-    framework_name = _find_framework_name(pkg.name(), options)
-    if framework_name:
-        package_labels[PACKAGE_FRAMEWORK_NAME_KEY] = framework_name
-
-    return package_labels
-
-
 def _find_framework_name(package_name, options):
     """
     :param package_name: the name of the package
@@ -114,9 +65,11 @@ def _base64_encode(dictionary):
     return base64.b64encode(str_bytes).decode('utf-8')
 
 
-def uninstall(package_name, remove_all, app_id, cli, app):
+def uninstall(pkg, package_name, remove_all, app_id, cli, app):
     """Uninstalls a package.
 
+    :param pkg: package manager to uninstall with
+    :type pkg: PackageManager
     :param package_name: The package to uninstall
     :type package_name: str
     :param remove_all: Whether to remove all instances of the named app
@@ -137,14 +90,7 @@ def uninstall(package_name, remove_all, app_id, cli, app):
             uninstalled = True
 
     if app:
-        num_apps = uninstall_app(
-            package_name,
-            remove_all,
-            app_id,
-            marathon.create_client(),
-            mesos.DCOSClient())
-
-        if num_apps > 0:
+        if pkg.uninstall_app(package_name, remove_all, app_id):
             uninstalled = True
 
     if uninstalled:
@@ -167,101 +113,6 @@ def uninstall_subcommand(distribution_name):
     """
 
     return subcommand.uninstall(distribution_name)
-
-
-def uninstall_app(app_name, remove_all, app_id, init_client, dcos_client):
-    """Uninstalls an app.
-
-    :param app_name: The app to uninstall
-    :type app_name: str
-    :param remove_all: Whether to remove all instances of the named app
-    :type remove_all: boolean
-    :param app_id: App ID of the app instance to uninstall
-    :type app_id: str
-    :param init_client: The program to use to run the app
-    :type init_client: object
-    :param dcos_client: the DCOS client
-    :type dcos_client: dcos.mesos.DCOSClient
-    :returns: number of apps uninstalled
-    :rtype: int
-    """
-
-    apps = init_client.get_apps()
-
-    def is_match(app):
-        encoding = 'utf-8'  # We normalize encoding for byte-wise comparison
-        name_label = app.get('labels', {}).get(PACKAGE_NAME_KEY, u'')
-        name_label_enc = name_label.encode(encoding)
-        app_name_enc = app_name.encode(encoding)
-        name_matches = name_label_enc == app_name_enc
-
-        if app_id is not None:
-            pkg_app_id = app.get('id', '')
-            normalized_app_id = init_client.normalize_app_id(app_id)
-            return name_matches and pkg_app_id == normalized_app_id
-        else:
-            return name_matches
-
-    matching_apps = [a for a in apps if is_match(a)]
-
-    if not remove_all and len(matching_apps) > 1:
-        app_ids = [a.get('id') for a in matching_apps]
-        raise DCOSException(
-            ("Multiple apps named [{}] are installed: [{}].\n" +
-             "Please use --app-id to specify the ID of the app to uninstall," +
-             " or use --all to uninstall all apps.").format(
-                 app_name,
-                 ', '.join(app_ids)))
-
-    for app in matching_apps:
-        package_json = _decode_and_add_context(
-            app['id'],
-            app.get('labels', {}))
-
-        # First, remove the app from Marathon
-        init_client.remove_app(app['id'], force=True)
-
-        # Second, shutdown the framework with Mesos
-        framework_name = app.get('labels', {}).get(PACKAGE_FRAMEWORK_NAME_KEY)
-        if framework_name is not None:
-            logger.info(
-                'Trying to shutdown framework {}'.format(framework_name))
-            frameworks = mesos.Master(dcos_client.get_master_state()) \
-                              .frameworks(inactive=True)
-
-            # Look up all the framework names
-            framework_ids = [
-                framework['id']
-                for framework in frameworks
-                if framework['name'] == framework_name
-            ]
-
-            logger.info(
-                'Found the following frameworks: {}'.format(framework_ids))
-
-            # Emit post uninstall notes
-            emitter.publish(
-                DefaultError(
-                    'Uninstalled package [{}] version [{}]'.format(
-                        package_json['name'],
-                        package_json['version'])))
-
-            if 'postUninstallNotes' in package_json:
-                emitter.publish(
-                    DefaultError(package_json['postUninstallNotes']))
-
-            if len(framework_ids) == 1:
-                dcos_client.shutdown_framework(framework_ids[0])
-            elif len(framework_ids) > 1:
-                raise DCOSException(
-                    "Unable to shutdown the framework for [{}] because there "
-                    "are multiple frameworks with the same name: [{}]. "
-                    "Manually shut them down using 'dcos service "
-                    "shutdown'.".format(
-                        framework_name,
-                        ', '.join(framework_ids)))
-
-    return len(matching_apps)
 
 
 class InstalledPackage(object):
@@ -1213,7 +1064,7 @@ class Package():
     def __init__(self, registry, path):
         assert os.path.isdir(path)
         self._registry = registry
-        self.path = path
+        self._path = path
 
     def name(self):
         """Returns the package name.
@@ -1222,7 +1073,7 @@ class Package():
         :rtype: str
         """
 
-        return os.path.basename(self.path)
+        return os.path.basename(self._path)
 
     def options(self, revision, user_options):
         """Merges package options with user supplied options, validates, and
@@ -1239,7 +1090,7 @@ class Package():
         if user_options is None:
             user_options = {}
 
-        config_schema = self.config_json(revision)
+        config_schema = self.config_json()
         default_options = _extract_default_values(config_schema)
         if default_options is None:
             pkg = self.package_json(revision)
@@ -1268,7 +1119,6 @@ class Package():
 
         return options
 
-    @property
     def registry(self):
         """Returns the containing registry for this package.
 
@@ -1276,6 +1126,14 @@ class Package():
         """
 
         return self._registry
+
+    def get_path(self):
+        """Returns the path on disk to this package.
+
+        :rtype: str
+        """
+
+        return self._path
 
     def has_definition(self, revision, filename):
         """Returns true if the package defines filename; false otherwise.
@@ -1290,7 +1148,7 @@ class Package():
 
         return os.path.isfile(
             os.path.join(
-                self.path,
+                self._path,
                 os.path.join(revision, filename)))
 
     def has_command_definition(self, revision):
@@ -1395,8 +1253,8 @@ class Package():
 
         marathon_file = self._get_marathon_json_file(revision)
         if self.has_marathon_mustache_definition(revision) and \
-                self._has_resource_definition(revision):
-            resources = {"resource": self._resource_json(revision)}
+                self._has_resource_definition():
+            resources = {"resource": self._resource_json()}
             options = _merge_options(options, resources, False)
         init_desc = self._render_template(
             marathon_file,
@@ -1404,7 +1262,7 @@ class Package():
             options)
 
         # Add package metadata
-        package_labels = _make_package_labels(self, revision, options)
+        package_labels = self._make_package_labels(options)
 
         # Preserve existing labels
         labels = init_desc.get('labels', {})
@@ -1415,7 +1273,7 @@ class Package():
         return init_desc
 
     def command_json(self, revision, options):
-        """Returns the JSON content of the comand.json template, after
+        """Returns the JSON content of the command.json template, after
         rendering it with options.
 
         :param revision: the package revision
@@ -1477,6 +1335,7 @@ class Package():
         """
 
         data = self._data(revision, name)
+        logger.info("JSON {}".format(data))
         return util.load_jsons(data)
 
     def _data(self, revision, name):
@@ -1492,7 +1351,7 @@ class Package():
         """
 
         path = os.path.join(revision, name)
-        full_path = os.path.join(self.path, path)
+        full_path = os.path.join(self._path, path)
         return util.read_file(full_path)
 
     def package_revisions(self):
@@ -1502,7 +1361,7 @@ class Package():
         :rtype: [str]
         """
 
-        vs = sorted((f for f in os.listdir(self.path)
+        vs = sorted((f for f in os.listdir(self._path)
                      if not f.startswith('.')), key=int, reverse=True)
         return vs
 
@@ -1512,14 +1371,22 @@ class Package():
 
         :returns: Map from package revision to package version
         :rtype: OrderedDict
-
         """
 
         package_version_map = collections.OrderedDict()
         for rev in self.package_revisions():
-            pkg_json = self.package_json(rev)
+            pkg_json = Package.package_json(self, rev)
             package_version_map[rev] = pkg_json['version']
         return package_version_map
+
+    def package_versions(self):
+        """Returns a list of available versions for this package
+
+        :returns: package version
+        :rtype: []
+        """
+        revision_map = self.package_revisions_map()
+        return list(revision_map.values())
 
     def latest_package_revision(self, package_version=None):
         """Returns the most recent package revision, for a
@@ -1551,6 +1418,350 @@ class Package():
         pkg_json = self.package_json(rev)
 
         return json.dumps(pkg_json)
+
+
+class PackageVersion(Package):
+    """Interface to a specific package version on disk"""
+
+    def __init__(self, name, version, revision, registry, path):
+        self._name = name
+        self._version = version
+        self._revision = revision
+        self._registry = registry
+        self._path = path
+
+    def name(self):
+        """Returns the package name.
+
+        :returns: The name of this package
+        :rtype: str
+        """
+
+        return self._name
+
+    def version(self):
+        """Returns the package version.
+
+        :returns: The version of this package
+        :rtype: str
+        """
+
+        return self._version
+
+    def revision(self):
+        """Returns the package version.
+
+        :returns: The version of this package
+        :rtype: str
+        """
+
+        return self._revision
+
+    def package_json(self):
+        """Returns the JSON content of the package.json file.
+
+        :returns: Package data
+        :rtype: dict
+        """
+
+        return Package.package_json(self, self._revision)
+
+    def marathon_json(self, options):
+        """Returns the JSON content of the marathon.json template, after
+        rendering it with options.
+
+        :param options: the template options to use in rendering
+        :type options: dict
+        :rtype: dict
+        """
+
+        return Package.marathon_json(self, self._revision, options)
+
+    def has_command_definition(self):
+        """Returns true if the package defines a command; false otherwise.
+
+        :rtype: bool
+        """
+
+        return Package.has_command_definition(self, self._revision)
+
+    def command_json(self, options):
+        """Returns the JSON content of the comand.json template, after
+        rendering it with options.
+
+        :param options: the template options to use in rendering
+        :type options: dict
+        :returns: Package subcommand data
+        :rtype: dict
+        """
+
+        return Package.command_json(self, self._revision, options)
+
+    def config_json(self):
+        """Returns the JSON content of the config.json file.
+
+        :returns: Package config schema
+        :rtype: dict
+        """
+
+        return Package.config_json(self, self._revision)
+
+    def options(self, user_options):
+        """Merges package options with user supplied options, validates, and
+        returns the result.
+
+        :param user_options: package parameters
+        :type user_options: dict
+        :returns: a dictionary with the user supplied options
+        :rtype: dict
+        """
+
+        return Package.options(self, self._revision, user_options)
+
+    def has_mustache_definition(self):
+        """Returns true if the package defines a Marathon json or mustache.
+        false otherwise.
+
+        :rtype: bool
+        """
+
+        return self.has_marathon_definition(self._revision) or \
+            self.has_marathon_mustache_definition(self._revision)
+
+    def _has_resource_definition(self):
+        """Returns true if the package defines a resource; false otherwise.
+
+        :rtype: bool
+        """
+
+        return Package._has_resource_definition(self, self._revision)
+
+    def _resource_json(self):
+        """Returns the JSON content of the resource.json file.
+
+        :returns: Package resources
+        :rtype: dict
+        """
+
+        return Package._resource_json(self, self._revision)
+
+    def marathon_template(self):
+        """Returns raw data from marathon.json
+
+        :returns: raw data from marathon.json
+        :rtype: str
+        """
+
+        return Package.marathon_template(self, self._revision)
+
+    def command_template(self):
+        """ Returns raw data from command.json
+
+        :returns: raw data from command.json
+        :rtype: str
+        """
+        return Package.command_template(self, self._revision)
+
+    def _make_package_labels(self, options):
+        """Returns Marathon app labels for a package.
+
+        :param pkg: The package to install
+        :type pkg: Package
+        :param revision: The package revision to install
+        :type revision: str
+        :param options: package parameters
+        :type options: dict
+        :returns: Marathon app labels
+        :rtype: dict
+        """
+
+        metadata = self.package_json()
+        # add images to package.json metadata for backwards compatability
+        # in the UI
+        if self._has_resource_definition():
+            images = {"images": self._resource_json()["images"]}
+            metadata.update(images)
+
+        encoded_metadata = _base64_encode(metadata)
+
+        is_framework = metadata.get('framework')
+        if not is_framework:
+            is_framework = False
+
+        package_registry_version = self.registry().get_version()
+
+        package_labels = {
+            PACKAGE_METADATA_KEY: encoded_metadata,
+            PACKAGE_NAME_KEY: self.name(),
+            PACKAGE_VERSION_KEY: self.version(),
+            PACKAGE_SOURCE_KEY: self.registry().source.url,
+            PACKAGE_FRAMEWORK_KEY: json.dumps(is_framework),
+            PACKAGE_REGISTRY_VERSION_KEY: package_registry_version,
+            PACKAGE_RELEASE_KEY: self._revision
+        }
+
+        if self.has_command_definition():
+            command = self.command_json(options)
+            package_labels[PACKAGE_COMMAND_KEY] = _base64_encode(command)
+
+        # Run a heuristic that determines the hint for the framework name
+        framework_name = _find_framework_name(self.name(), options)
+        if framework_name:
+            package_labels[PACKAGE_FRAMEWORK_NAME_KEY] = framework_name
+
+        return package_labels
+
+
+class CosmosPackageVersion(PackageVersion):
+    """Interface to a specific package version from cosmos"""
+
+    def __init__(self, name, version, url):
+        self._name = name
+        self._cosmos_url = url
+
+        params = {"packageName":  name}
+        if version is not None:
+            params += {"packageVersion": version}
+
+        url = urllib.parse.urljoin(self._cosmos_url, 'v1/package/describe')
+        response = http.post(url, json=params)
+
+        if response.status_code != 200:
+            raise DCOSException(response.json().get("message"))
+
+        package_info = response.json()
+        self._package_json = package_info.get("package")
+        self._version = version or self._package_json.get("version")
+        self._config_json = package_info.get("config")
+        self._command_json = package_info.get("command")
+        self._resource_json = package_info.get("resource")
+        self._marathon_template = package_info.get("marathonTemplate")
+
+    def registry(self):
+        """Cosmos only supports one registry right now, so default to cosmos
+
+        :returns: registry
+        :rtype: str
+        """
+
+        return "cosmos"
+
+    def revision(self):
+        """We aren't exposing revisions for cosmos right now, so make
+           custom string.
+
+        :returns: revision
+        :rtype: str
+        """
+        return "cosmos" + self._version
+
+    def cosmos_url(self):
+        """
+        Returns location of cosmos server from `DCOS_COSMOS_URL` env variable
+
+        :returns: revision
+        :rtype: str
+        """
+
+        return self._cosmos_url
+
+    def package_json(self):
+        """Returns the JSON content of the package.json file.
+
+        :returns: Package data
+        :rtype: dict
+        """
+
+        return self._package_json
+
+    def config_json(self):
+        """Returns the JSON content of the config.json file.
+
+        :returns: Package config schema
+        :rtype: dict
+        """
+
+        return self._config_json
+
+    def _resource_json(self):
+        """Returns the JSON content of the resource.json file.
+
+        :returns: Package resources
+        :rtype: dict
+        """
+
+        return self._resource_json
+
+    def command_template(self):
+        """ Returns raw data from command.json
+
+        :returns: raw data from command.json
+        :rtype: str
+        """
+        return json.dumps(self._command_json)
+
+    def marathon_template(self):
+        """Returns raw data from marathon.json
+
+        :returns: raw data from marathon.json
+        :rtype: str
+        """
+
+        return self._marathon_template
+
+    def has_mustache_definition(self):
+        """Dummy method since all packages in cosmos must have mustache
+           definition.
+        """
+
+        return True
+
+    def options(self, user_options):
+        """Merges package options with user supplied options, validates, and
+        returns the result.
+
+        This will be /v1/package/render.
+        For now pass, rendering will happen on server during install
+        """
+
+        return user_options
+
+    def has_command_definition(self):
+        """Returns true if the package defines a command; false otherwise.
+
+        :rtype: bool
+        """
+
+        return self._command_json is not None
+
+    def command_json(self, options):
+        """Returns the JSON content of the command.json template, after
+        rendering it with options.
+
+        :param options: the template options to use in rendering
+        :type options: dict
+        :returns: Package data
+        :rtype: dict
+        """
+
+        rendered = pystache.render(json.dumps(self._command_json), options)
+        return util.load_jsons(rendered)
+
+    def package_versions(self):
+        """Returns a list of available versions for this package
+
+        :returns: package version
+        :rtype: []
+        """
+
+        params = {"packageName": self.name(), "packageVersions": True}
+        url = urllib.parse.urljoin(self._cosmos_url, 'v1/package/describe')
+        response = http.post(url, json=params)
+
+        if response.status_code != 200:
+            raise DCOSException(response.json().get("message"))
+
+        return list(response.json().keys())
 
 
 class IndexEntries():
@@ -1625,14 +1836,14 @@ def _get_package_manager():
 class PackageManager():
     """Package Manager using local file system"""
 
-    def install_app(self, pkg, revision, options, app_id):
+    def install_app(self, pkg, options, app_id):
         """Installs a package's application
 
         :param pkg: the package to install
-        :type pkg: Package
+        :type pkg: PackageVersion
         :param revision: the package revision to install
         :type revision: str
-        :param options: package parameters
+        :param options: user supplied options
         :type options: dict
         :param app_id: app ID for installation of this package
         :type app_id: str
@@ -1643,7 +1854,7 @@ class PackageManager():
         init_client = marathon.create_client(config)
 
         # Insert option parameters into the init template
-        init_desc = pkg.marathon_json(revision, options)
+        init_desc = pkg.marathon_json(options)
 
         if app_id is not None:
             logger.debug('Setting app ID to "%s" (was "%s")',
@@ -1654,25 +1865,195 @@ class PackageManager():
         # Send the descriptor to init
         init_client.add_app(init_desc)
 
+    def uninstall_app(self, app_name, remove_all, app_id):
+        """Uninstalls an app.
+
+        :param app_name: The app to uninstall
+        :type app_name: str
+        :param remove_all: Whether to remove all instances of the named app
+        :type remove_all: boolean
+        :param app_id: App ID of the app instance to uninstall
+        :type app_id: str
+        :returns: whether uninstall was successful or not
+        :rtype: bool
+        """
+
+        init_client = marathon.create_client()
+        dcos_client = mesos.DCOSClient()
+        apps = init_client.get_apps()
+
+        def is_match(app):
+            # We normalize encoding for byte-wise comparison
+            encoding = 'utf-8'
+            name_label = app.get('labels', {}).get(PACKAGE_NAME_KEY, u'')
+            name_label_enc = name_label.encode(encoding)
+            app_name_enc = app_name.encode(encoding)
+            name_matches = name_label_enc == app_name_enc
+
+            if app_id is not None:
+                pkg_app_id = app.get('id', '')
+                normalized_app_id = init_client.normalize_app_id(app_id)
+                return name_matches and pkg_app_id == normalized_app_id
+            else:
+                return name_matches
+
+        matching_apps = [a for a in apps if is_match(a)]
+
+        if not remove_all and len(matching_apps) > 1:
+            app_ids = [a.get('id') for a in matching_apps]
+            raise DCOSException(
+                ("Multiple apps named [{}] are installed: [{}].\n" +
+                 "Please use --app-id to specify the ID of the app to" +
+                 " uninstall, or use --all to uninstall all apps.").format(
+                    app_name,
+                    ', '.join(app_ids)))
+
+        for app in matching_apps:
+            package_json = _decode_and_add_context(
+                app['id'],
+                app.get('labels', {}))
+
+            # First, remove the app from Marathon
+            init_client.remove_app(app['id'], force=True)
+
+            # Second, shutdown the framework with Mesos
+            framework_name = app.get('labels', {}).get(
+                PACKAGE_FRAMEWORK_NAME_KEY)
+            if framework_name is not None:
+                logger.info(
+                    'Trying to shutdown framework {}'.format(framework_name))
+                frameworks = mesos.Master(dcos_client.get_master_state()) \
+                    .frameworks(inactive=True)
+
+                # Look up all the framework names
+                framework_ids = [
+                    framework['id']
+                    for framework in frameworks
+                    if framework['name'] == framework_name
+                ]
+
+                logger.info(
+                    'Found the following frameworks: {}'.format(framework_ids))
+
+                # Emit post uninstall notes
+                emitter.publish(
+                    DefaultError(
+                        'Uninstalled package [{}] version [{}]'.format(
+                            package_json['name'],
+                            package_json['version'])))
+
+                if 'postUninstallNotes' in package_json:
+                    emitter.publish(
+                        DefaultError(package_json['postUninstallNotes']))
+
+                if len(framework_ids) == 1:
+                    dcos_client.shutdown_framework(framework_ids[0])
+                elif len(framework_ids) > 1:
+                    raise DCOSException(
+                        "Unable to shutdown the framework for [{}] because "
+                        "there are multiple frameworks with the same name: "
+                        "[{}]. Manually shut them down using 'dcos service "
+                        "shutdown'.".format(
+                            framework_name,
+                            ', '.join(framework_ids)))
+
+        return len(matching_apps) > 0
+
+    def get_package_version(self, package_name, package_version):
+        """Returns PackageVersion of specified package
+
+        :param package_name: package name
+        :type package_name: str
+        :param package_version: version of package
+        :type package_version: str | None
+        :rtype: PackageVersion
+
+        """
+        pkg = resolve_package(package_name)
+        if pkg is None:
+            msg = "Package [{}] not found".format(package_name)
+            raise DCOSException(msg)
+
+        pkg_revision = pkg.latest_package_revision(package_version)
+        if pkg_revision is None:
+            if package_version is not None:
+                msg = "Version {} of package [{}] is not available".format(
+                    package_version, package_name)
+            else:
+                msg = "Package [{}] not available".format(package_name)
+            raise DCOSException(msg)
+
+        if package_version is None:
+            revision_map = pkg.package_revisions_map()
+            package_version = revision_map.get(pkg_revision)
+
+        return PackageVersion(package_name, package_version, pkg_revision,
+                              pkg.registry(), pkg.get_path())
+
 
 class Cosmos(PackageManager):
     """Implementation of Package Manager using Cosmos"""
+
     def __init__(self, cosmos_url):
         self.cosmos_url = cosmos_url
 
-    def install_app(self, pkg, revision, options, app_id):
+    def install_app(self, pkg, options, app_id):
         """Installs a package's application
 
         :param pkg: the package to install
-        :type pkg: Package
-        :param revision: the package revision to install
-        :type revision: str
-        :param options: package parameters
+        :type pkg: CosmosPackageVersion
+        :param options: user supplied package parameters
         :type options: dict
         :param app_id: app ID for installation of this package
+
         :type app_id: str
         :rtype: None
         """
+
         url = urllib.parse.urljoin(self.cosmos_url, 'v1/package/install')
-        param = {"name": pkg.name()}
-        http.post(url, json=param)
+        params = {"name": pkg.name(), "version": pkg.version()}
+        if options is not None:
+            params["options"] = options
+        if app_id is not None:
+            params["appId"] = app_id
+
+        response = http.post(url, json=params)
+
+        if response.status_code != 200:
+            raise DCOSException(response.json().get("message"))
+
+    def uninstall_app(self, app_name, remove_all, app_id):
+        """Uninstalls an app.
+
+        :param app_name: The app to uninstall
+        :type app_name: str
+        :param remove_all: Whether to remove all instances of the named app
+        :type remove_all: boolean
+        :param app_id: App ID of the app instance to uninstall
+        :type app_id: str
+        :returns: whether uninstall was successful or not
+        :rtype: bool
+        """
+
+        url = urllib.parse.urljoin(self.cosmos_url, 'v1/package/uninstall')
+        params = {"name": app_name}
+        if remove_all is not None:
+            params["all"] = True
+        if app_id is not None:
+            params["appId"] = app_id
+
+        response = http.post(url, json=params)
+        return response.status_code == 200
+
+    def get_package_version(self, package_name, package_version):
+        """Returns PackageVersion of specified package
+
+        :param package_name: package name
+        :type package_name: str
+        :param package_version: version of package
+        :type package_version: str | None
+        :rtype: PackageVersion
+
+        """
+        return CosmosPackageVersion(package_name, package_version,
+                                    self.cosmos_url)
