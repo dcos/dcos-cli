@@ -211,21 +211,13 @@ def _describe(package_name,
             'If --package-versions is provided, no other option can be '
             'provided')
 
-    pkg = package.resolve_package(package_name)
-    if pkg is None:
-        raise DCOSException("Package [{}] not found".format(package_name))
+    package_manager = package._get_package_manager()
+    pkg = package_manager.get_package_version(package_name, package_version)
 
-    pkg_revision = pkg.latest_package_revision(package_version)
-
-    if pkg_revision is None:
-        raise DCOSException("Version {} of package [{}] is not available".
-                            format(package_version, package_name))
-
-    pkg_json = pkg.package_json(pkg_revision)
+    pkg_json = pkg.package_json()
 
     if package_version is None:
-        revision_map = pkg.package_revisions_map()
-        pkg_versions = list(revision_map.values())
+        pkg_versions = pkg.package_versions()
         del pkg_json['version']
         pkg_json['versions'] = pkg_versions
 
@@ -233,29 +225,27 @@ def _describe(package_name,
         emitter.publish('\n'.join(pkg_json['versions']))
     elif cli or app or config:
         user_options = _user_options(options_path)
-        options = pkg.options(pkg_revision, user_options)
+        options = pkg.options(user_options)
 
         if cli:
             if render:
-                cli_output = pkg.command_json(pkg_revision, options)
+                cli_output = pkg.command_json(options)
             else:
-                cli_output = pkg.command_template(pkg_revision)
-                if cli_output and cli_output[-1] == '\n':
-                    cli_output = cli_output[:-1]
+                cli_output = pkg.command_template().rstrip("\n")
             emitter.publish(cli_output)
         if app:
             if render:
-                app_output = pkg.marathon_json(pkg_revision, options)
+                app_output = pkg.marathon_json(options)
             else:
-                app_output = pkg.marathon_template(pkg_revision)
+                app_output = pkg.marathon_template()
                 if app_output and app_output[-1] == '\n':
                     app_output = app_output[:-1]
             emitter.publish(app_output)
         if config:
-            config_output = pkg.config_json(pkg_revision)
+            config_output = pkg.config_json()
             emitter.publish(config_output)
     else:
-        pkg_json = pkg.package_json(pkg_revision)
+        pkg_json = pkg.package_json()
         emitter.publish(pkg_json)
 
     return 0
@@ -328,27 +318,13 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
         # Install both if neither flag is specified
         cli = app = True
 
-    config = util.get_config()
-
-    pkg = package.resolve_package(package_name, config)
-    if pkg is None:
-        msg = "Package [{}] not found\n".format(package_name) + \
-              "You may need to run 'dcos package update' to update your " + \
-              "repositories"
-        raise DCOSException(msg)
-
-    pkg_revision = pkg.latest_package_revision(package_version)
-    if pkg_revision is None:
-        if package_version is not None:
-            msg = "Version {} of package [{}] is not available".format(
-                package_version, package_name)
-        else:
-            msg = "Package [{}] not available".format(package_name)
-        raise DCOSException(msg)
-
+    # validation options path
     user_options = _user_options(options_path)
 
-    pkg_json = pkg.package_json(pkg_revision)
+    package_manager = package._get_package_manager()
+    pkg = package_manager.get_package_version(package_name, package_version)
+
+    pkg_json = pkg.package_json()
     pre_install_notes = pkg_json.get('preInstallNotes')
     if pre_install_notes:
         emitter.publish(pre_install_notes)
@@ -356,35 +332,31 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
             emitter.publish('Exiting installation.')
             return 0
 
-    options = pkg.options(pkg_revision, user_options)
+    # render options before start installation
+    options = pkg.options(user_options)
 
-    revision_map = pkg.package_revisions_map()
-    package_version = revision_map.get(pkg_revision)
+    if app and pkg.has_mustache_definition():
 
-    if app and (pkg.has_marathon_definition(pkg_revision) or
-                pkg.has_marathon_mustache_definition(pkg_revision)):
         # Install in Marathon
         msg = 'Installing Marathon app for package [{}] version [{}]'.format(
-            pkg.name(), package_version)
+            pkg.name(), pkg.version())
         if app_id is not None:
             msg += ' with app id [{}]'.format(app_id)
 
         emitter.publish(msg)
 
-        package_manager = package._get_package_manager()
         package_manager.install_app(
             pkg,
-            pkg_revision,
             options,
             app_id)
 
-    if cli and pkg.has_command_definition(pkg_revision):
+    if cli and pkg.has_command_definition():
         # Install subcommand
         msg = 'Installing CLI subcommand for package [{}] version [{}]'.format(
-            pkg.name(), package_version)
+            pkg.name(), pkg.version())
         emitter.publish(msg)
 
-        subcommand.install(pkg, pkg_revision, options)
+        subcommand.install(pkg, pkg.options(user_options))
 
         subcommand_paths = subcommand.get_package_commands(package_name)
         new_commands = [os.path.basename(p).replace('-', ' ', 1)
@@ -515,7 +487,9 @@ def _uninstall(package_name, remove_all, app_id, cli, app):
     :rtype: int
     """
 
-    err = package.uninstall(package_name, remove_all, app_id, cli, app)
+    package_manager = package._get_package_manager()
+    err = package.uninstall(
+        package_manager, package_name, remove_all, app_id, cli, app)
     if err is not None:
         emitter.publish(err)
         return 1
