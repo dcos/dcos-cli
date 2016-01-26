@@ -9,7 +9,7 @@ from collections import defaultdict
 import dcoscli
 import docopt
 import pkg_resources
-from dcos import (cmds, emitting, errors, http, marathon, options, package,
+from dcos import (cmds, emitting, errors, http, options, package,
                   subcommand, util)
 from dcos.errors import DCOSException
 from dcoscli import tables
@@ -391,9 +391,8 @@ def _list(json_, endpoints, app_id, package_name):
     :rtype: int
     """
 
-    config = util.get_config()
-    init_client = marathon.create_client(config)
-    installed = package.installed_packages(init_client, endpoints)
+    package_manager = package._get_package_manager()
+    installed = package.installed_packages(package_manager, endpoints)
 
     # only emit those packages that match the provided package_name and app_id
     results = []
