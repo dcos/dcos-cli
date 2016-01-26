@@ -1959,6 +1959,20 @@ class PackageManager():
 
         return len(matching_apps) > 0
 
+    def search_sources(self, query):
+        """Returns a dict of index entry collections, one for each registry
+        in the supllied config
+
+        :param query: The search term
+        :type query: str
+        :rtype: [IndexEntries]
+        """
+        config = util.get_config()
+        results = [index_entry.as_dict() for index_entry in
+                   search(query, config)]
+
+        return results
+
     def get_package_version(self, package_name, package_version):
         """Returns PackageVersion of specified package
 
@@ -2044,6 +2058,23 @@ class Cosmos(PackageManager):
 
         response = http.post(url, json=params)
         return response.status_code == 200
+
+    def search_sources(self, query):
+        """package search
+
+        :param query: query to search
+        :type query: str
+        :returns: list of package indicies of matching packages
+        :rtype: [packages]
+        """
+        url = urllib.parse.urljoin(self.cosmos_url, 'v1/package/search')
+        response = http.post(url, json={"query": query})
+
+        if response.status_code != 200:
+            raise DCOSException(response.json().get("message"))
+
+        packages = response.json()
+        return [{"packages": packages, "source": "cosmos"}]
 
     def get_package_version(self, package_name, package_version):
         """Returns PackageVersion of specified package

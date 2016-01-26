@@ -457,12 +457,12 @@ def _search(json_, query):
     :returns: Process status
     :rtype: int
     """
+
     if not query:
         query = ''
 
-    config = util.get_config()
-    results = [index_entry.as_dict()
-               for index_entry in package.search(query, config)]
+    package_manager = package._get_package_manager()
+    results = package_manager.search_sources(query)
 
     if any(result['packages'] for result in results) or json_:
         emitting.publish_table(emitter,
