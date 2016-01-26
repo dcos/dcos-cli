@@ -26,7 +26,7 @@
   "container": {
     "type": "DOCKER",
     "docker": {
-      "image": "mesosphere/marathon:v0.11.1",
+      "image": "{{resource.assets.container.docker.5e187be16235}}",
       "network": "HOST"
     }
   },

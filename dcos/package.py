@@ -154,7 +154,7 @@ class InstalledPackage(object):
             ret['command'] = {'name': self.subcommand.name}
 
         if self.apps:
-            ret['apps'] = [app['appId'] for app in self.apps]
+            ret['apps'] = sorted([app['appId'] for app in self.apps])
 
         if self.subcommand:
             package_json = self.subcommand.package_json()
