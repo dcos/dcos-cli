@@ -9,8 +9,8 @@ from collections import defaultdict
 import dcoscli
 import docopt
 import pkg_resources
-from dcos import (cmds, emitting, errors, http, options, package,
-                  subcommand, util)
+from dcos import (cmds, emitting, errors, http, options, package, subcommand,
+                  util)
 from dcos.errors import DCOSException
 from dcoscli import tables
 from dcoscli.main import decorate_docopt_usage
