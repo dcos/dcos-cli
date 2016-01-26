@@ -1954,7 +1954,6 @@ class PackageManager():
         return PackageVersion(package_name, package_version, pkg_revision,
                               pkg.registry(), pkg.get_path())
 
-
     def installed_apps(package_name, app_id, endpoints=False):
         """Returns all installed apps.  An app is of the format:
 
@@ -2128,7 +2127,7 @@ class Cosmos(PackageManager):
             result['packageSource'] = (
                 package['packageInformation']['packageSource']
             )
-            result['releaseVersion'] =  (
+            result['releaseVersion'] = (
                 package['packageInformation']['releaseVersion']
             )
 
