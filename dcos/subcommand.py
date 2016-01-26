@@ -46,7 +46,7 @@ def get_package_commands(package_name):
     :returns: list of all the dcos program paths in package
     :rtype: [str]
     """
-    bin_dir = os.path.join(package_dir(package_name),
+    bin_dir = os.path.join(_package_dir(package_name),
                            constants.DCOS_SUBCOMMAND_VIRTUALENV_SUBDIR,
                            BIN_DIRECTORY)
 
@@ -187,7 +187,7 @@ def _write_package_json(pkg):
     :rtype: None
     """
 
-    pkg_dir = package_dir(pkg.name())
+    pkg_dir = _package_dir(pkg.name())
 
     package_path = os.path.join(pkg_dir, 'package.json')
 
@@ -207,7 +207,7 @@ def _write_package_revision(pkg, revision):
     :rtype: None
     """
 
-    pkg_dir = package_dir(pkg.name())
+    pkg_dir = _package_dir(pkg.name())
 
     revision_path = os.path.join(pkg_dir, 'version')
 
@@ -223,7 +223,7 @@ def _write_package_source(pkg):
     :rtype: None
     """
 
-    pkg_dir = package_dir(pkg.name())
+    pkg_dir = _package_dir(pkg.name())
 
     source_path = os.path.join(pkg_dir, 'source')
 
@@ -246,7 +246,7 @@ def _install_env(pkg, options):
     :rtype: None
     """
 
-    pkg_dir = package_dir(pkg.name())
+    pkg_dir = _package_dir(pkg.name())
 
     install_operation = pkg.command_json(options)
 
@@ -273,7 +273,7 @@ def install(pkg, options):
     :rtype: None
     """
 
-    pkg_dir = package_dir(pkg.name())
+    pkg_dir = _package_dir(pkg.name())
     util.ensure_dir_exists(pkg_dir)
 
     _write_package_json(pkg)
@@ -290,8 +290,7 @@ def _subcommand_dir():
                                            constants.DCOS_SUBCOMMAND_SUBDIR))
 
 
-# TODO(mgummelt): should be made private after "dcos subcommand" is removed
-def package_dir(name):
+def _package_dir(name):
     """ Returns ~/.dcos/subcommands/<name>
 
     :param name: package name
@@ -311,7 +310,7 @@ def uninstall(package_name):
     :rtype: bool
     """
 
-    pkg_dir = package_dir(package_name)
+    pkg_dir = _package_dir(package_name)
 
     if os.path.isdir(pkg_dir):
         shutil.rmtree(pkg_dir)
@@ -446,7 +445,7 @@ class InstalledSubcommand(object):
         :rtype: str
         """
 
-        return package_dir(self.name)
+        return _package_dir(self.name)
 
     def package_revision(self):
         """

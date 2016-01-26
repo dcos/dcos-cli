@@ -169,7 +169,7 @@ class InstalledPackage(object):
         return ret
 
 
-def installed_packages(init_client, endpoints):
+def installed_packages(package_manager, endpoints):
     """Returns all installed packages in the format:
 
     [{
@@ -189,7 +189,8 @@ def installed_packages(init_client, endpoints):
     :rtype: [InstalledPackage]
     """
 
-    apps = installed_apps(init_client, endpoints)
+    # TODO: make sure that endpoints works
+    apps = package_manager.installed_apps(None, None)
     subcommands = installed_subcommands()
 
     dicts = collections.defaultdict(lambda: {'apps': [], 'command': None})
@@ -220,65 +221,12 @@ def installed_subcommands():
             subcommand.distributions()]
 
 
-def installed_apps(init_client, endpoints=False):
-    """
-    Returns all installed apps.  An app is of the format:
-
-    {
-      'appId': <appId>,
-      'packageSource': <source>,
-      'registryVersion': <app_version>,
-      'releaseVersion': <release_version>
-      'endpoints' (optional): [{
-        'host': <host>,
-        'ports': <ports>,
-      }]
-      ..<package.json properties>..
-    }
-
-    :param init_client: The program to use to list packages
-    :type init_client: object
-    :param endpoints: Whether to include a list of
-                      endpoints as port-host pairs
-    :type endpoints: boolean
-    :returns: all installed apps
-    :rtype: [dict]
-    """
-
-    apps = init_client.get_apps()
-
-    encoded_apps = [(a['id'], a['labels'])
-                    for a in apps
-                    if a.get('labels', {}).get(PACKAGE_METADATA_KEY)]
-
-    # Filter elements that failed to parse correctly as JSON
-    valid_apps = []
-    for app_id, labels in encoded_apps:
-        try:
-            decoded = _decode_and_add_context(app_id, labels)
-        except Exception:
-            logger.exception(
-                'Unable to decode package metadata during install: %s',
-                app_id)
-
-        valid_apps.append(decoded)
-
-    if endpoints:
-        for app in valid_apps:
-            tasks = init_client.get_tasks(app["appId"])
-            app['endpoints'] = [{"host": t["host"], "ports": t["ports"]}
-                                for t in tasks]
-
-    return valid_apps
-
-
 def _decode_and_add_context(app_id, labels):
     """ Create an enhanced package JSON from Marathon labels
 
     {
       'appId': <appId>,
       'packageSource': <source>,
-      'registryVersion': <app_version>,
       'releaseVersion': <release_version>,
       ..<package.json properties>..
     }
@@ -289,6 +237,8 @@ def _decode_and_add_context(app_id, labels):
     :type labels: dict
     :rtype: dict
     """
+
+    # TODO: remove images if it exists
 
     encoded = labels.get(PACKAGE_METADATA_KEY, {})
     decoded = base64.b64decode(six.b(encoded)).decode()
@@ -1991,6 +1941,55 @@ class PackageManager():
                               pkg.registry(), pkg.get_path())
 
 
+    def installed_apps(package_name, app_id, endpoints=False):
+        """Returns all installed apps.  An app is of the format:
+
+        {
+            'appId': <appId>,
+            'packageSource': <source>,
+            'releaseVersion': <release_version>
+            'endpoints' (optional): [{
+                'host': <host>,
+                'ports': <ports>,
+            }]
+            ..<package.json properties>..
+        }
+
+        :param endpoints: Whether to include a list of endpoints as port-host
+                          pairs
+        :type endpoints: boolean
+        :returns: all installed apps
+        :rtype: [dict]
+        """
+
+        init_client = marathon.create_client()
+        apps = init_client.get_apps()
+
+        encoded_apps = [(a['id'], a['labels'])
+                        for a in apps
+                        if a.get('labels', {}).get(PACKAGE_METADATA_KEY)]
+
+        # Filter elements that failed to parse correctly as JSON
+        valid_apps = []
+        for app_id, labels in encoded_apps:
+            try:
+                decoded = _decode_and_add_context(app_id, labels)
+            except Exception:
+                logger.exception(
+                    'Unable to decode package metadata during install: %s',
+                    app_id)
+
+            valid_apps.append(decoded)
+
+        if endpoints:
+            for app in valid_apps:
+                tasks = init_client.get_tasks(app["appId"])
+                app['endpoints'] = [{"host": t["host"], "ports": t["ports"]}
+                                    for t in tasks]
+
+        return valid_apps
+
+
 class Cosmos(PackageManager):
     """Implementation of Package Manager using Cosmos"""
 
@@ -2022,11 +2021,11 @@ class Cosmos(PackageManager):
         if response.status_code != 200:
             raise DCOSException(response.json().get("message"))
 
-    def uninstall_app(self, app_name, remove_all, app_id):
+    def uninstall_app(self, package_name, remove_all, app_id):
         """Uninstalls an app.
 
-        :param app_name: The app to uninstall
-        :type app_name: str
+        :param package_name: The package to uninstall
+        :type package_name: str
         :param remove_all: Whether to remove all instances of the named app
         :type remove_all: boolean
         :param app_id: App ID of the app instance to uninstall
@@ -2036,7 +2035,7 @@ class Cosmos(PackageManager):
         """
 
         url = urllib.parse.urljoin(self.cosmos_url, 'v1/package/uninstall')
-        params = {"name": app_name}
+        params = {"name": package_name}
         if remove_all is not None:
             params["all"] = True
         if app_id is not None:
@@ -2055,5 +2054,53 @@ class Cosmos(PackageManager):
         :rtype: PackageVersion
 
         """
+
         return CosmosPackageVersion(package_name, package_version,
                                     self.cosmos_url)
+
+    def installed_apps(self, package_name, app_id):
+        """List installed packages
+
+        {
+            'appId': <appId>,
+            'packageSource': <source>,
+            'releaseVersion': <release_version>,
+            'endpoints' (optional): [{
+                'host': <host>,
+                'ports': <ports>,
+            }],
+            ..<package.json properties>..
+        }
+
+        :param package_name: the optional package to list
+        :type package_name: str
+        :param app_id: the optional application id to list
+        :type app_id: str
+        :rtype: [dict]
+        """
+
+        params = {}
+        if package_name is not None:
+            params["packageName"] = package_name
+        if app_id is not None:
+            params["appId"] = app_id
+
+        url = urllib.parse.urljoin(self.cosmos_url, 'package/list')
+        # TODO: handle error cases
+        list_response = http.post(url, json=params).json()
+
+        packages = []
+        for package in list_response['packages']:
+            result = package['packageInformation']['packageDefinition']
+
+            result['appId'] = package['appId']
+            result['packageSource'] = (
+                package['packageInformation']['packageSource']
+            )
+            result['releaseVersion'] =  (
+                package['packageInformation']['releaseVersion']
+            )
+
+            packages.append(result)
+
+        return packages
