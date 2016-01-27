@@ -123,11 +123,6 @@ You can set :code:`DCOS_CONFIG` to a config file that points to a DCOS
 cluster you want to use for integration tests.  This defaults to
 :code:`~/.dcos/dcos.toml`
 
-If you are testing against the DCOS Image you can configure the URL to the
-Exhibitor::
-
-    export EXHIBITOR_URL=http://<hostname>:8181/
-
 There are two ways to run tests, you can either use the virtualenv created by
 :code:`make env` above::
 
