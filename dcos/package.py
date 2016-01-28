@@ -2023,7 +2023,7 @@ class Cosmos(PackageManager):
         """
 
         url = urllib.parse.urljoin(self.cosmos_url, 'v1/package/install')
-        params = {"name": pkg.name(), "version": pkg.version()}
+        params = {"packageName": pkg.name(), "packageVersion": pkg.version()}
         if options is not None:
             params["options"] = options
         if app_id is not None:
