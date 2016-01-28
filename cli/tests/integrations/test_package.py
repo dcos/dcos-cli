@@ -628,8 +628,6 @@ def test_search():
 
     assert returncode == 0
     assert b'"packages": []' in stdout
-    assert b'"source": "https://github.com/mesosphere/universe/archive/\
-cli-test-4.zip"' in stdout
     assert stderr == b''
 
     returncode, stdout, stderr = exec_command(
@@ -673,7 +671,9 @@ def test_search_ends_with_wildcard():
 
     registries = json.loads(stdout.decode('utf-8'))
     for registry in registries:
-        assert len(registry['packages']) == 2
+        # cosmos matches wildcards in name/description/tags
+        # so will find more results (3 instead of 2)
+        assert len(registry['packages']) >= 2
 
 
 def test_search_start_with_wildcard():

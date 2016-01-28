@@ -1752,7 +1752,7 @@ class IndexEntries():
         :rtype: dict
         """
 
-        return {'source': self.source.url, 'packages': self.packages}
+        return {'packages': self.packages}
 
 
 def get_apps_for_framework(framework_name, client):
@@ -2072,7 +2072,7 @@ class Cosmos(PackageManager):
             raise DCOSException(response.json().get("message"))
 
         packages = response.json()
-        return [{"packages": packages, "source": "cosmos"}]
+        return [packages]
 
     def get_package_version(self, package_name, package_version):
         """Returns PackageVersion of specified package
