@@ -489,93 +489,6 @@ def _acquire_file_lock(lock_file_path):
         raise DCOSException('Unable to acquire the package cache lock')
 
 
-def update_sources(config, validate=False):
-    """Overwrites the local package cache with the latest source data.
-
-    :param config: Configuration dictionary
-    :type config: dcos.config.Toml
-    :rtype: None
-    """
-
-    errors = []
-
-    # ensure the cache directory is properly configured
-    cache_dir = os.path.expanduser(
-        util.get_config_vals(['package.cache'], config)[0])
-
-    # ensure the cache directory exists
-    if not os.path.exists(cache_dir):
-        os.makedirs(cache_dir)
-
-    if not os.path.isdir(cache_dir):
-        raise DCOSException(
-            'Cache directory does not exist! [{}]'.format(cache_dir))
-
-    # obtain an exclusive file lock on $CACHE/.lock
-    lock_path = os.path.join(cache_dir, '.lock')
-
-    with _acquire_file_lock(lock_path):
-
-        # list sources
-        sources = list_sources(config)
-
-        for source in sources:
-
-            emitter.publish('Updating source [{}]'.format(source))
-
-            # create a temporary staging directory
-            with util.tempdir() as tmp_dir:
-
-                stage_dir = os.path.join(tmp_dir, source.hash())
-
-                # copy to the staging directory
-                try:
-                    source.copy_to_cache(stage_dir)
-                except DCOSException as e:
-                    logger.exception(
-                        'Failed to copy universe source %s to cache %s',
-                        source.url,
-                        stage_dir)
-
-                    errors.append(str(e))
-                    continue
-
-                # check version
-                # TODO(jsancio): move this to the validation when it is forced
-                Registry(source, stage_dir).check_version(
-                    LooseVersion('1.0'),
-                    LooseVersion('3.0'))
-
-                # validate content
-                if validate:
-                    validation_errors = Registry(source, stage_dir).validate()
-                    if len(validation_errors) > 0:
-                        errors += validation_errors
-                        continue  # keep updating the other sources
-
-                # remove the $CACHE/source.hash() directory
-                target_dir = os.path.join(cache_dir, source.hash())
-                try:
-                    if os.path.exists(target_dir):
-                        shutil.rmtree(target_dir,
-                                      onerror=_rmtree_on_error,
-                                      ignore_errors=False)
-                except OSError:
-                    logger.exception(
-                        'Error removing target directory before move: %s',
-                        target_dir)
-
-                    err = "Could not remove directory [{}]".format(target_dir)
-                    errors.append(err)
-                    continue  # keep updating the other sources
-
-                # move the staging directory to $CACHE/source.hash()
-                shutil.move(stage_dir, target_dir)
-
-    if errors:
-        raise DCOSException(util.list_to_err(errors))
-
-
 class Source:
     """A source of DCOS packages."""
 
@@ -1836,3 +1749,92 @@ class PackageManager():
                                     for t in tasks]
 
         return valid_apps
+
+    def update_sources(self, validate=False):
+        """Overwrites the local package cache with the latest source data.
+
+        :param validate: Whether or not to validate package sources
+        :type validate: bool
+        :rtype: None
+        """
+
+        config = util.get_config()
+        errors = []
+
+        # ensure the cache directory is properly configured
+        cache_dir = os.path.expanduser(
+            util.get_config_vals(['package.cache'], config)[0])
+
+        # ensure the cache directory exists
+        if not os.path.exists(cache_dir):
+            os.makedirs(cache_dir)
+
+        if not os.path.isdir(cache_dir):
+            raise DCOSException(
+                'Cache directory does not exist! [{}]'.format(cache_dir))
+
+        # obtain an exclusive file lock on $CACHE/.lock
+        lock_path = os.path.join(cache_dir, '.lock')
+
+        with _acquire_file_lock(lock_path):
+
+            # list sources
+            sources = list_sources(config)
+
+            for source in sources:
+
+                emitter.publish('Updating source [{}]'.format(source))
+
+                # create a temporary staging directory
+                with util.tempdir() as tmp_dir:
+
+                    stage_dir = os.path.join(tmp_dir, source.hash())
+
+                    # copy to the staging directory
+                    try:
+                        source.copy_to_cache(stage_dir)
+                    except DCOSException as e:
+                        logger.exception(
+                            'Failed to copy universe source %s to cache %s',
+                            source.url,
+                            stage_dir)
+
+                        errors.append(str(e))
+                        continue
+
+                    # check version
+                    # TODO(jsancio): move this to the validation when forced
+                    Registry(source, stage_dir).check_version(
+                        LooseVersion('1.0'),
+                        LooseVersion('3.0'))
+
+                    # validate content
+                    if validate:
+                        validation_errors = Registry(source,
+                                                     stage_dir).validate()
+                        if len(validation_errors) > 0:
+                            errors += validation_errors
+                            continue  # keep updating the other sources
+
+                    # remove the $CACHE/source.hash() directory
+                    target_dir = os.path.join(cache_dir, source.hash())
+                    try:
+                        if os.path.exists(target_dir):
+                            shutil.rmtree(target_dir,
+                                          onerror=_rmtree_on_error,
+                                          ignore_errors=False)
+                    except OSError:
+                        logger.exception(
+                            'Error removing target directory before move: %s',
+                            target_dir)
+
+                        err = "Could not remove directory [{}]".format(
+                            target_dir)
+                        errors.append(err)
+                        continue  # keep updating the other sources
+
+                    # move the staging directory to $CACHE/source.hash()
+                    shutil.move(stage_dir, target_dir)
+
+        if errors:
+            raise DCOSException(util.list_to_err(errors))
