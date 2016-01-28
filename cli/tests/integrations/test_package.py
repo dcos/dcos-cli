@@ -1,7 +1,6 @@
 import base64
 import contextlib
 import json
-import os
 
 import pkg_resources
 import six
@@ -23,63 +22,6 @@ def zk_znode(request):
     return request
 
 
-def _chronos_description(app_ids):
-    """
-    :param app_ids: a list of application id
-    :type app_ids: [str]
-    :returns: a binary string representing the chronos description
-    :rtype: str
-    """
-
-    result = [
-        {"apps": app_ids,
-         "description": "A fault tolerant job scheduler for Mesos which "
-                        "handles dependencies and ISO8601 based schedules.",
-         "framework": True,
-         "images": {
-             "icon-large": "https://downloads.mesosphere.io/chronos/assets/"
-                           "icon-service-chronos-large.png",
-             "icon-medium": "https://downloads.mesosphere.io/chronos/assets/"
-                            "icon-service-chronos-medium.png",
-             "icon-small": "https://downloads.mesosphere.io/chronos/assets/"
-                           "icon-service-chronos-small.png"
-         },
-         "licenses": [
-             {
-                 "name": "Apache License Version 2.0",
-                 "url": "https://github.com/mesos/chronos/blob/master/LICENSE"
-             }
-         ],
-         "maintainer": "support@mesosphere.io",
-         "name": "chronos",
-         "packageSource": "https://github.com/mesosphere/universe/archive/\
-cli-test-3.zip",
-         "postInstallNotes": "Chronos DCOS Service has been successfully "
-                             "installed!\n\n\tDocumentation: http://mesos."
-                             "github.io/chronos\n\tIssues: https://github.com/"
-                             "mesos/chronos/issues",
-         "postUninstallNotes": "The Chronos DCOS Service has been uninstalled "
-                               "and will no longer run.\nPlease follow the "
-                               "instructions at http://docs.mesosphere."
-                               "com/services/chronos/#uninstall to clean up "
-                               "any persisted state",
-         "preInstallNotes": "We recommend a minimum of one node with at least "
-                            "1 CPU and 2GB of RAM available for the Chronos "
-                            "Service.",
-         "releaseVersion": "1",
-         "scm": "https://github.com/mesos/chronos.git",
-         "tags": [
-             "cron",
-             "analytics",
-             "batch"
-         ],
-         "version": "2.4.0"
-         }]
-
-    return (json.dumps(result, sort_keys=True, indent=2).replace(' \n', '\n') +
-            '\n').encode('utf-8')
-
-
 def test_package():
     stdout = pkg_resources.resource_string(
         'tests',
@@ -99,8 +41,8 @@ def test_version():
 
 
 def test_sources_list():
-    stdout = b"fd40db7f075490e0c92ec6fcd62ec1caa361b313 " + \
-             b"https://github.com/mesosphere/universe/archive/cli-test-3.zip\n"
+    stdout = b"70a675b4a34ea8d36514f952b5744695a746650c " + \
+             b"https://github.com/mesosphere/universe/archive/cli-test-4.zip\n"
     assert_command(['dcos', 'package', 'sources'],
                    stdout=stdout)
 
@@ -180,7 +122,8 @@ def test_describe_package_version():
     stdout = file_json(
         'tests/data/package/json/test_describe_marathon_package_version.json')
     assert_command(
-        ['dcos', 'package', 'describe', 'marathon', '--package-version=0.8.1'],
+        ['dcos', 'package', 'describe', 'marathon',
+            '--package-version=0.11.1'],
         stdout=stdout)
 
 
@@ -228,8 +171,8 @@ def test_describe_app_cli():
 
 def test_describe_specific_version():
     stdout = file_bytes(
-        'tests/data/package/json/test_describe_marathon_0.8.1.json')
-    assert_command(['dcos', 'package', 'describe', '--package-version=0.8.1',
+        'tests/data/package/json/test_describe_marathon_0.11.1.json')
+    assert_command(['dcos', 'package', 'describe', '--package-version=0.11.1',
                     'marathon'],
                    stdout=stdout)
 
@@ -276,13 +219,13 @@ def test_install_specific_version():
     stdout = (b'We recommend a minimum of one node with at least 2 '
               b'CPU\'s and 1GB of RAM available for the Marathon Service.\n'
               b'Installing Marathon app for package [marathon] '
-              b'version [0.8.1]\n'
+              b'version [0.11.1]\n'
               b'Marathon DCOS Service has been successfully installed!\n\n'
               b'\tDocumentation: https://mesosphere.github.io/marathon\n'
               b'\tIssues: https:/github.com/mesosphere/marathon/issues\n\n')
 
     uninstall_stderr = (
-        b'Uninstalled package [marathon] version [0.8.1]\n'
+        b'Uninstalled package [marathon] version [0.11.1]\n'
         b'The Marathon DCOS Service has been uninstalled and will no longer '
         b'run.\nPlease follow the instructions at http://docs.mesosphere.com/'
         b'services/marathon/#uninstall to clean up any persisted state\n'
@@ -291,13 +234,13 @@ def test_install_specific_version():
     with _package('marathon',
                   stdout=stdout,
                   uninstall_stderr=uninstall_stderr,
-                  args=['--yes', '--package-version=0.8.1']):
+                  args=['--yes', '--package-version=0.11.1']):
 
         returncode, stdout, stderr = exec_command(
             ['dcos', 'package', 'list', 'marathon', '--json'])
         assert returncode == 0
         assert stderr == b''
-        assert json.loads(stdout.decode('utf-8'))[0]['version'] == "0.8.1"
+        assert json.loads(stdout.decode('utf-8'))[0]['version'] == "0.11.1"
 
 
 def test_install_bad_package_version():
@@ -315,18 +258,18 @@ def test_package_metadata():
     # test marathon labels
     expected_metadata = b"""eyJkZXNjcmlwdGlvbiI6ICJFeGFtcGxlIERDT1MgYXBwbGljYX\
 Rpb24gcGFja2FnZSIsICJtYWludGFpbmVyIjogInN1cHBvcnRAbWVzb3NwaGVyZS5pbyIsICJuYW1l\
-IjogImhlbGxvd29ybGQiLCAicG9zdEluc3RhbGxOb3RlcyI6ICJBIHNhbXBsZSBwb3N0LWluc3RhbG\
-xhdGlvbiBtZXNzYWdlIiwgInByZUluc3RhbGxOb3RlcyI6ICJBIHNhbXBsZSBwcmUtaW5zdGFsbGF0\
-aW9uIG1lc3NhZ2UiLCAidGFncyI6IFsibWVzb3NwaGVyZSIsICJleGFtcGxlIiwgInN1YmNvbW1hbm\
-QiXSwgInZlcnNpb24iOiAiMC4xLjAiLCAid2Vic2l0ZSI6ICJodHRwczovL2dpdGh1Yi5jb20vbWVz\
-b3NwaGVyZS9kY29zLWhlbGxvd29ybGQifQ=="""
+IjogImhlbGxvd29ybGQiLCAicGFja2FnaW5nVmVyc2lvbiI6ICIyLjAiLCAicG9zdEluc3RhbGxOb3\
+RlcyI6ICJBIHNhbXBsZSBwb3N0LWluc3RhbGxhdGlvbiBtZXNzYWdlIiwgInByZUluc3RhbGxOb3Rl\
+cyI6ICJBIHNhbXBsZSBwcmUtaW5zdGFsbGF0aW9uIG1lc3NhZ2UiLCAidGFncyI6IFsibWVzb3NwaG\
+VyZSIsICJleGFtcGxlIiwgInN1YmNvbW1hbmQiXSwgInZlcnNpb24iOiAiMC4xLjAiLCAid2Vic2l0\
+ZSI6ICJodHRwczovL2dpdGh1Yi5jb20vbWVzb3NwaGVyZS9kY29zLWhlbGxvd29ybGQifQ=="""
 
     expected_command = b"""eyJwaXAiOiBbImRjb3M8MS4wIiwgImdpdCtodHRwczovL2dpdGh\
 1Yi5jb20vbWVzb3NwaGVyZS9kY29zLWhlbGxvd29ybGQuZ2l0I2Rjb3MtaGVsbG93b3JsZD0wLjEuM\
 CJdfQ=="""
 
     expected_source = b"""https://github.com/mesosphere/universe/archive/\
-cli-test-3.zip"""
+cli-test-4.zip"""
 
     expected_labels = {
         'DCOS_PACKAGE_METADATA': expected_metadata,
@@ -348,6 +291,7 @@ cli-test-3.zip"""
         "description": "Example DCOS application package",
         "maintainer": "support@mesosphere.io",
         "name": "helloworld",
+        "packagingVersion": "2.0",
         "postInstallNotes": "A sample post-installation message",
         "preInstallNotes": "A sample pre-installation message",
         "tags": ["mesosphere", "example", "subcommand"],
@@ -355,22 +299,17 @@ cli-test-3.zip"""
         "website": "https://github.com/mesosphere/dcos-helloworld",
     }
 
-    package_dir = subcommand.package_dir('helloworld')
+    helloworld_subcommand = subcommand.InstalledSubcommand("helloworld")
 
     # test local package.json
-    package_path = os.path.join(package_dir, 'package.json')
-    with open(package_path) as f:
-        assert json.load(f) == package
+    assert helloworld_subcommand.package_json() == package
 
     # test local source
-    source_path = os.path.join(package_dir, 'source')
-    with open(source_path) as f:
-        assert six.b(f.read()) == expected_source
+    assert helloworld_subcommand.package_source() == \
+        expected_source.decode('utf-8')
 
     # test local version
-    version_path = os.path.join(package_dir, 'version')
-    with open(version_path) as f:
-        assert six.b(f.read()) == b'0'
+    assert helloworld_subcommand.package_revision() == "0"
 
     # uninstall helloworld
     _uninstall_helloworld()
@@ -457,7 +396,8 @@ def test_uninstall_cli():
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
     "packageSource": "https://github.com/mesosphere/universe/archive/\
-cli-test-3.zip",
+cli-test-4.zip",
+    "packagingVersion": "2.0",
     "postInstallNotes": "A sample post-installation message",
     "preInstallNotes": "A sample pre-installation message",
     "releaseVersion": "0",
@@ -516,7 +456,8 @@ def test_list(zk_znode):
     _list(args=['--app-id=/xyzzy', '--json'])
 
     _install_chronos()
-    expected_output = _chronos_description(['/chronos'])
+    expected_output = file_json(
+        'tests/data/package/json/test_list_chronos.json')
 
     _list(stdout=expected_output)
     _list(args=['--json', 'chronos'],
@@ -575,7 +516,8 @@ def test_list_cli():
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
     "packageSource": "https://github.com/mesosphere/universe/archive/\
-cli-test-3.zip",
+cli-test-4.zip",
+    "packagingVersion": "2.0",
     "postInstallNotes": "A sample post-installation message",
     "preInstallNotes": "A sample pre-installation message",
     "releaseVersion": "0",
@@ -609,7 +551,8 @@ cli-test-3.zip",
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
     "packageSource": "https://github.com/mesosphere/universe/archive/\
-cli-test-3.zip",
+cli-test-4.zip",
+    "packagingVersion": "2.0",
     "postInstallNotes": "A sample post-installation message",
     "preInstallNotes": "A sample pre-installation message",
     "releaseVersion": "0",
@@ -635,15 +578,17 @@ def test_uninstall_multiple_frameworknames(zk_znode):
 
     watch_all_deployments()
 
-    expected_output = _chronos_description(
-        ['/chronos-user-1', '/chronos-user-2'])
+    expected_output = file_json(
+        'tests/data/package/json/test_list_chronos_two_users.json')
 
     _list(stdout=expected_output)
     _list(args=['--json', 'chronos'], stdout=expected_output)
-    _list(args=['--json', '--app-id=/chronos-user-1'],
-          stdout=_chronos_description(['/chronos-user-1']))
-    _list(args=['--json', '--app-id=/chronos-user-2'],
-          stdout=_chronos_description(['/chronos-user-2']))
+    _list(args=['--json', '--app-id=/chronos-user-1'], stdout=file_json(
+        'tests/data/package/json/test_list_chronos_user_1.json'))
+
+    _list(args=['--json', '--app-id=/chronos-user-2'], stdout=file_json(
+        'tests/data/package/json/test_list_chronos_user_2.json'))
+
     _uninstall_chronos(
         args=['--app-id=chronos-user-1'],
         returncode=1,
@@ -684,7 +629,7 @@ def test_search():
     assert returncode == 0
     assert b'"packages": []' in stdout
     assert b'"source": "https://github.com/mesosphere/universe/archive/\
-cli-test-3.zip"' in stdout
+cli-test-4.zip"' in stdout
     assert stderr == b''
 
     returncode, stdout, stderr = exec_command(
