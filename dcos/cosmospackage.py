@@ -1,8 +1,9 @@
+import functools
 import json
 
 import pystache
 from dcos import emitting, http, package, util
-from dcos.errors import DCOSException
+from dcos.errors import DCOSException, DCOSHTTPException
 
 from six.moves import urllib
 
@@ -25,22 +26,17 @@ class Cosmos(package.PackageManager):
         :param options: user supplied package parameters
         :type options: dict
         :param app_id: app ID for installation of this package
-
         :type app_id: str
         :rtype: None
         """
 
-        url = urllib.parse.urljoin(self.cosmos_url, 'v1/package/install')
         params = {"packageName": pkg.name(), "packageVersion": pkg.version()}
         if options is not None:
             params["options"] = options
         if app_id is not None:
             params["appId"] = app_id
 
-        response = http.post(url, json=params)
-
-        if response.status_code != 200:
-            raise DCOSException(response.json().get("message"))
+        self.cosmos_post("install", params)
 
     def uninstall_app(self, package_name, remove_all, app_id):
         """Uninstalls an app.
@@ -55,15 +51,15 @@ class Cosmos(package.PackageManager):
         :rtype: bool
         """
 
-        url = urllib.parse.urljoin(self.cosmos_url, 'v1/package/uninstall')
-        params = {"name": package_name}
+        params = {"packageName": package_name}
         if remove_all is not None:
             params["all"] = True
         if app_id is not None:
             params["appId"] = app_id
 
-        response = http.post(url, json=params)
-        return response.status_code == 200
+        self.cosmos_post("uninstall", params)
+
+        return True
 
     def search_sources(self, query):
         """package search
@@ -73,14 +69,8 @@ class Cosmos(package.PackageManager):
         :returns: list of package indicies of matching packages
         :rtype: [packages]
         """
-        url = urllib.parse.urljoin(self.cosmos_url, 'v1/package/search')
-        response = http.post(url, json={"query": query})
-
-        if response.status_code != 200:
-            raise DCOSException(response.json().get("message"))
-
-        packages = response.json()
-        return [packages]
+        response = self.cosmos_post("search", {"query": query})
+        return [response.json()]
 
     def get_package_version(self, package_name, package_version):
         """Returns PackageVersion of specified package
@@ -123,9 +113,7 @@ class Cosmos(package.PackageManager):
         if app_id is not None:
             params["appId"] = app_id
 
-        url = urllib.parse.urljoin(self.cosmos_url, 'package/list')
-        # TODO: handle error cases
-        list_response = http.post(url, json=params).json()
+        list_response = self.cosmos_post("list", params).json()
 
         packages = []
         for pkg in list_response['packages']:
@@ -152,6 +140,58 @@ class Cosmos(package.PackageManager):
         emitter.publish("This command is deprecated")
         return 0
 
+    def cosmos_error(fn):
+        """Decorator for errors returned from cosmos
+
+        :param fn: function to check for errors from cosmos
+        :type fn: function
+        :rtype: Response
+        :returns: Response
+        """
+
+        @functools.wraps(fn)
+        def check_for_cosmos_error(*args, **kwargs):
+            """Returns response from cosmos or raises exception
+
+            :param response: response from cosmos
+            :type response: Response
+            :returns: Response or raises Exception
+            :rtype: valid response
+            """
+
+            response = fn(*args, **kwargs)
+            content_type = response.headers.get('Content-Type')
+            if content_type is None or _get_header("error") in content_type:
+                errors = response.json().get("errors")
+                error_messages = [err.get("message") for err in errors]
+                raise DCOSException(", ".join(error_messages))
+            return response
+
+        return check_for_cosmos_error
+
+    @cosmos_error
+    def cosmos_post(self, request, params):
+        """Request to cosmos server
+
+        :param request: type of request
+        :type requet: str
+        :param params: body of request
+        :type params: dict
+        :returns: Response
+        :rtype: Response
+        """
+
+        url = urllib.parse.urljoin(self.cosmos_url,
+                                   'v1/package/{}'.format(request))
+        try:
+            response = http.post(url, json=params,
+                                 headers=_get_cosmos_header(request))
+        except DCOSHTTPException as e:
+            # let the response be handled by `cosmos_error` so we can expose
+            # errors reported by cosmos
+            response = e.response
+        return response
+
 
 class CosmosPackageVersion(package.PackageVersion):
     """Interface to a specific package version from cosmos"""
@@ -163,12 +203,7 @@ class CosmosPackageVersion(package.PackageVersion):
         params = {"packageName":  name}
         if package_version is not None:
             params += {"packageVersion": package_version}
-
-        url = urllib.parse.urljoin(self._cosmos_url, 'v1/package/describe')
-        response = http.post(url, json=params)
-
-        if response.status_code != 200:
-            raise DCOSException(response.json().get("message"))
+        response = Cosmos(url).cosmos_post("describe", params)
 
         package_info = response.json()
         self._package_json = package_info.get("package")
@@ -297,10 +332,32 @@ class CosmosPackageVersion(package.PackageVersion):
         """
 
         params = {"packageName": self.name(), "packageVersions": True}
-        url = urllib.parse.urljoin(self._cosmos_url, 'v1/package/describe')
-        response = http.post(url, json=params)
-
-        if response.status_code != 200:
-            raise DCOSException(response.json().get("message"))
+        response = Cosmos(self._cosmos_url).cosmos_post("describe", params)
 
         return list(response.json().keys())
+
+
+def _get_header(request_type):
+    """Returns header str for talking with cosmos
+
+    :param request_type: name of specified request (ie uninstall-request)
+    :type request_type: str
+    :returns: header information
+    :rtype: str
+    """
+
+    return ("application/vnd.dcos.cosmos.{}+json;"
+            "charset=utf-8;version=v1").format(request_type)
+
+
+def _get_cosmos_header(request_name):
+    """Returns header fields needed for a valid request to cosmos
+
+    :param request_name: name of specified request (ie uninstall)
+    :type request_name: str
+    :returns: dict of required headers
+    :rtype: {}
+    """
+
+    return {"Accept": _get_header("{}-response".format(request_name)),
+            "Content-Type": _get_header("{}-request".format(request_name))}
