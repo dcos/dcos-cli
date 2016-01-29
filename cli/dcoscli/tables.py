@@ -301,7 +301,6 @@ def package_search_table(search_results):
         ('NAME', lambda p: p['name']),
         ('VERSION', lambda p: p['currentVersion']),
         ('FRAMEWORK', lambda p: p['framework']),
-        ('SOURCE', lambda p: p['source']),
         ('DESCRIPTION', lambda p: p['description'])
     ])
 
@@ -309,14 +308,12 @@ def package_search_table(search_results):
     for result in search_results:
         for package in result['packages']:
             package_ = copy.deepcopy(package)
-            package_['source'] = result['source']
             packages.append(package_)
 
     tb = table(fields, packages, sortby="NAME")
     tb.align['NAME'] = 'l'
     tb.align['VERSION'] = 'l'
     tb.align['FRAMEWORK'] = 'l'
-    tb.align['SOURCE'] = 'l'
     tb.align['DESCRIPTION'] = 'l'
 
     return tb
