@@ -1,10 +1,11 @@
 import base64
 import contextlib
 import json
+import os
 
 import pkg_resources
 import six
-from dcos import package, subcommand
+from dcos import constants, package, subcommand
 from dcos.errors import DCOSException
 
 import pytest
@@ -51,10 +52,13 @@ def test_update_without_validation():
     returncode, stdout, stderr = exec_command(['dcos', 'package', 'update'])
 
     assert returncode == 0
-    assert b'source' in stdout
-    assert b'Validating package definitions...' not in stdout
-    assert b'OK' not in stdout
     assert stderr == b''
+    if os.environ.get(constants.COSMOS_URL_ENV) is None:
+        assert b'source' in stdout
+        assert b'Validating package definitions...' not in stdout
+        assert b'OK' not in stdout
+    else:
+        assert stdout == b'This command is deprecated\n'
 
 
 def test_update_with_validation():
@@ -62,10 +66,13 @@ def test_update_with_validation():
         ['dcos', 'package', 'update', '--validate'])
 
     assert returncode == 0
-    assert b'source' in stdout
-    assert b'Validating package definitions...' in stdout
-    assert b'OK' in stdout
     assert stderr == b''
+    if os.environ.get(constants.COSMOS_URL_ENV) is None:
+        assert b'source' in stdout
+        assert b'Validating package definitions...' in stdout
+        assert b'OK' in stdout
+    else:
+        assert stdout == b'This command is deprecated\n'
 
 
 def test_describe_nonexistent():

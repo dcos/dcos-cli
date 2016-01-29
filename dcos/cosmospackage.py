@@ -143,6 +143,15 @@ class Cosmos(package.PackageManager):
 
         return packages
 
+    def update_sources(self, validate=False):
+        """Update package sources
+
+        We are deprecating this command since it doesn't make sense for cosmos.
+        """
+
+        emitter.publish("This command is deprecated")
+        return 0
+
 
 class CosmosPackageVersion(package.PackageVersion):
     """Interface to a specific package version from cosmos"""

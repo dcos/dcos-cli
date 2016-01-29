@@ -160,9 +160,8 @@ def _update(validate):
     :rtype: int
     """
 
-    config = util.get_config()
-
-    package.update_sources(config, validate)
+    package_manager = _get_package_manager()
+    package_manager.update_sources(validate)
 
     return 0
 
