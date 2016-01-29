@@ -197,45 +197,6 @@ def _write_package_json(pkg):
         json.dump(package_json, package_file)
 
 
-def _write_package_revision(pkg, revision):
-    """ Write package revision locally.
-
-    :param pkg: the package being installed
-    :type pkg: Package
-    :param revision: the package revision to install
-    :type revision: str
-    :rtype: None
-    """
-
-    pkg_dir = _package_dir(pkg.name())
-
-    revision_path = os.path.join(pkg_dir, 'version')
-
-    with util.open_file(revision_path, 'w') as revision_file:
-        revision_file.write(revision)
-
-
-def _write_package_source(pkg):
-    """ Write package source locally.
-
-    :param pkg: the package being installed
-    :type pkg: Package
-    :rtype: None
-    """
-
-    pkg_dir = _package_dir(pkg.name())
-
-    source_path = os.path.join(pkg_dir, 'source')
-
-    with util.open_file(source_path, 'w') as source_file:
-        registry = pkg.registry()
-        if registry == "cosmos":
-            url = pkg.cosmos_url()
-        else:
-            url = registry.source.url
-        source_file.write(url)
-
-
 def _install_env(pkg, options):
     """ Install subcommand virtual env.
 
@@ -277,8 +238,6 @@ def install(pkg, options):
     util.ensure_dir_exists(pkg_dir)
 
     _write_package_json(pkg)
-    _write_package_revision(pkg, pkg.revision())
-    _write_package_source(pkg)
 
     _install_env(pkg, options)
 

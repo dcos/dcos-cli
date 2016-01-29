@@ -85,11 +85,17 @@ def uninstall(pkg, package_name, remove_all, app_id, cli, app):
         cli = app = True
 
     uninstalled = False
-    if cli:
+    installed = installed_packages(pkg, app_id, package_name)
+    installed_cli = next((True for installed_pkg in installed
+                          if installed_pkg.get("command")), False)
+    installed_app = next((True for installed_pkg in installed
+                          if installed_pkg.get("apps")), False)
+
+    if cli and installed_cli:
         if subcommand.uninstall(package_name):
             uninstalled = True
 
-    if app:
+    if app and installed_app:
         if pkg.uninstall_app(package_name, remove_all, app_id):
             uninstalled = True
 
@@ -98,8 +104,9 @@ def uninstall(pkg, package_name, remove_all, app_id, cli, app):
     else:
         msg = 'Package [{}]'.format(package_name)
         if app_id is not None:
+            app_id = util.normalize_app_id(app_id)
             msg += " with id [{}]".format(app_id)
-        msg += " is not installed."
+        msg += " is not installed"
         raise DCOSException(msg)
 
 
@@ -159,9 +166,6 @@ class InstalledPackage(object):
         if self.subcommand:
             package_json = self.subcommand.package_json()
             ret.update(package_json)
-
-            ret['packageSource'] = self.subcommand.package_source()
-            ret['releaseVersion'] = self.subcommand.package_revision()
         else:
             ret.update(self.apps[0])
             ret.pop('appId')
@@ -169,7 +173,34 @@ class InstalledPackage(object):
         return ret
 
 
-def installed_packages(package_manager, endpoints):
+def _matches_package_name(name, pkg_info):
+    """
+    :param name: the name of the package
+    :type name: str
+    :param pkg_info: the package description
+    :type pkg_info: dict
+    :returns: True if the name is not defined or the package matches that name;
+              False otherwise
+    :rtype: bool
+    """
+
+    return name is None or pkg_info['name'] == name
+
+
+def _matches_app_id(app_id, pkg_info):
+    """
+    :param app_id: the application id
+    :type app_id: str
+    :param pkg_info: the package description
+    :type pkg_info: dict
+    :returns: True if the app id is not defined or the package matches that app
+              id; False otherwize
+    :rtype: bool
+    """
+    return app_id is None or app_id in pkg_info.get('apps')
+
+
+def installed_packages(package_manager, app_id, package_name):
     """Returns all installed packages in the format:
 
     [{
@@ -182,32 +213,46 @@ def installed_packages(package_manager, endpoints):
 
     :param init_client: The program to use to list packages
     :type init_client: object
-    :param endpoints: Whether to include a list of
-                      endpoints as port-host pairs
-    :type endpoints: boolean
-    :returns: A list of installed packages
-    :rtype: [InstalledPackage]
+    :param app_id: App ID of app to show
+    :type app_id: str
+    :param package_name: The package to show
+    :type package_name: str
+    :returns: A list of installed packages matching criteria
+    :rtype: [dict]
     """
 
-    # TODO: make sure that endpoints works
     apps = package_manager.installed_apps(None, None)
     subcommands = installed_subcommands()
 
     dicts = collections.defaultdict(lambda: {'apps': [], 'command': None})
 
     for app in apps:
-        key = (app['name'], app['releaseVersion'], app['packageSource'])
+        key = app['name']
         dicts[key]['apps'].append(app)
 
     for subcmd in subcommands:
-        package_revision = subcmd.package_revision()
-        package_source = subcmd.package_source()
-        key = (subcmd.name, package_revision, package_source)
+        key = subcmd.name
         dicts[key]['command'] = subcmd
 
-    return [
+    installed = [
         InstalledPackage(pkg['apps'], pkg['command']) for pkg in dicts.values()
     ]
+
+    results = []
+    for pkg in installed:
+        pkg_info = pkg.dict()
+        app_id = app_id and urllib.parse.quote('/' + app_id.strip('/'))
+        if (_matches_package_name(package_name, pkg_info) and
+                _matches_app_id(app_id, pkg_info)):
+            if app_id:
+                # if the user is asking a specific id then only show that id
+                pkg_info['apps'] = [
+                    app for app in pkg_info['apps']
+                    if app == app_id
+                ]
+
+            results.append(pkg_info)
+    return results
 
 
 def installed_subcommands():
@@ -226,8 +271,6 @@ def _decode_and_add_context(app_id, labels):
 
     {
       'appId': <appId>,
-      'packageSource': <source>,
-      'releaseVersion': <release_version>,
       ..<package.json properties>..
     }
 
@@ -238,53 +281,17 @@ def _decode_and_add_context(app_id, labels):
     :rtype: dict
     """
 
-    # TODO: remove images if it exists
-
     encoded = labels.get(PACKAGE_METADATA_KEY, {})
     decoded = base64.b64decode(six.b(encoded)).decode()
 
     decoded_json = util.load_jsons(decoded)
     decoded_json['appId'] = app_id
-    decoded_json['packageSource'] = labels.get(PACKAGE_SOURCE_KEY)
-    decoded_json['releaseVersion'] = labels.get(PACKAGE_RELEASE_KEY)
+    registry_version = labels.get(PACKAGE_REGISTRY_VERSION_KEY)
+    # remove images if universe version >= 2.0
+    if LooseVersion(registry_version) >= LooseVersion("2.0"):
+        decoded_json.pop("images", None)
 
     return decoded_json
-
-
-def search(query, cfg):
-    """Returns a list of index entry collections, one for each registry in
-    the supplied config.
-
-    :param query: The search term
-    :type query: str
-    :param cfg: Configuration dictionary
-    :type cfg: dcos.config.Toml
-    :rtype: [IndexEntries]
-    """
-
-    threshold = 0.5  # Minimum rank required to appear in results
-    results = []
-
-    def clean_package_entry(entry):
-        result = entry.copy()
-        result.update({
-            'versions': list(entry['versions'].keys())
-        })
-        return result
-
-    for registry in registries(cfg):
-        source_results = []
-        index = registry.get_index()
-
-        for pkg in index['packages']:
-            rank = _search_rank(pkg, query)
-            if rank >= threshold:
-                source_results.append(clean_package_entry(pkg))
-
-        entries = IndexEntries(registry.source, source_results)
-        results.append(entries)
-
-    return results
 
 
 def _search_rank(pkg, query):
@@ -379,62 +386,6 @@ def _merge_options(first, second, overrides=True):
             result[key] = second_value
 
     return result
-
-
-def resolve_package(package_name, config=None):
-    """Returns the first package with the supplied name found by looking at
-    the configured sources in the order they are defined.
-
-    :param package_name: The name of the package to resolve
-    :type package_name: str
-    :param config: dcos config
-    :type config: dcos.config.Toml | None
-    :returns: The named package, if found
-    :rtype: Package
-    """
-
-    if not config:
-        config = util.get_config()
-
-    for registry in registries(config):
-        package = registry.get_package(package_name)
-        if package:
-            return package
-
-    return None
-
-
-def registries(config):
-    """Returns configured cached package registries.
-
-    :param config: Configuration dictionary
-    :type config: dcos.config.Toml
-    :returns: The list of registries, in resolution order
-    :rtype: [Registry]
-    """
-
-    sources = list_sources(config)
-    return [Registry(source, source.local_cache(config)) for source in sources]
-
-
-def list_sources(config):
-    """List configured package sources.
-
-    :param config: Configuration dictionary
-    :type config: dcos.config.Toml
-    :returns: The list of sources, in resolution order
-    :rtype: [Source]
-    """
-
-    source_uris = util.get_config_vals(['package.sources'], config)[0]
-
-    sources = [url_to_source(s) for s in source_uris]
-
-    errs = [source for source in sources if isinstance(source, Error)]
-    if errs:
-        raise DCOSException('\n'.join(err.error() for err in errs))
-
-    return sources
 
 
 def url_to_source(url):
@@ -1169,7 +1120,7 @@ class Package():
         :returns: raw data from command.json
         :rtype: str
         """
-        return self._data(revision, 'command.json')
+        return self._data(revision, 'command.json').rstrip("\n")
 
     def _render_template(self, name, revision, options):
         """Render a template.
@@ -1451,7 +1402,8 @@ class PackageVersion(Package):
         if not is_framework:
             is_framework = False
 
-        package_registry_version = self.registry().get_version()
+        package_registry_version = metadata.get("packagingVersion") or \
+            self.registry().get_version()
 
         package_labels = {
             PACKAGE_METADATA_KEY: encoded_metadata,
@@ -1606,6 +1558,8 @@ class PackageManager():
                     app_name,
                     ', '.join(app_ids)))
 
+        non_framework_apps = {}
+
         for app in matching_apps:
             package_json = _decode_and_add_context(
                 app['id'],
@@ -1617,7 +1571,10 @@ class PackageManager():
             # Second, shutdown the framework with Mesos
             framework_name = app.get('labels', {}).get(
                 PACKAGE_FRAMEWORK_NAME_KEY)
-            if framework_name is not None:
+            if framework_name is None:
+                non_framework_apps["name"] = package_json['name']
+                non_framework_apps["version"] = package_json['version']
+            else:
                 logger.info(
                     'Trying to shutdown framework {}'.format(framework_name))
                 frameworks = mesos.Master(dcos_client.get_master_state()) \
@@ -1633,27 +1590,35 @@ class PackageManager():
                 logger.info(
                     'Found the following frameworks: {}'.format(framework_ids))
 
-                # Emit post uninstall notes
                 emitter.publish(
                     DefaultError(
                         'Uninstalled package [{}] version [{}]'.format(
                             package_json['name'],
                             package_json['version'])))
 
-                if 'postUninstallNotes' in package_json:
-                    emitter.publish(
-                        DefaultError(package_json['postUninstallNotes']))
-
                 if len(framework_ids) == 1:
                     dcos_client.shutdown_framework(framework_ids[0])
                 elif len(framework_ids) > 1:
                     raise DCOSException(
-                        "Unable to shutdown the framework for [{}] because "
-                        "there are multiple frameworks with the same name: "
-                        "[{}]. Manually shut them down using 'dcos service "
-                        "shutdown'.".format(
+                        "Unable to shutdown [{}] service framework with name "
+                        "[{}] because there are multiple framework ids "
+                        "matching this name: [{}]. Manually shut them down "
+                        "using 'dcos service shutdown'.".format(
+                            package_json['name'],
                             framework_name,
                             ', '.join(framework_ids)))
+
+                # Emit post uninstall notes
+                if 'postUninstallNotes' in package_json:
+                    emitter.publish(
+                        DefaultError(package_json['postUninstallNotes']))
+
+        if non_framework_apps:
+            emitter.publish(
+                DefaultError(
+                    'Uninstalled package [{}] version [{}]'.format(
+                        non_framework_apps['name'],
+                        non_framework_apps['version'])))
 
         return len(matching_apps) > 0
 
@@ -1667,7 +1632,7 @@ class PackageManager():
         """
         config = util.get_config()
         results = [index_entry.as_dict() for index_entry in
-                   search(query, config)]
+                   self.search(query, config)]
 
         return results
 
@@ -1681,7 +1646,7 @@ class PackageManager():
         :rtype: PackageVersion
 
         """
-        pkg = resolve_package(package_name)
+        pkg = self.resolve_package(package_name)
         if pkg is None:
             msg = "Package [{}] not found".format(package_name)
             raise DCOSException(msg)
@@ -1689,10 +1654,10 @@ class PackageManager():
         pkg_revision = pkg.latest_package_revision(package_version)
         if pkg_revision is None:
             if package_version is not None:
-                msg = "Version {} of package [{}] is not available".format(
+                msg = "Version [{}] of package [{}] not found".format(
                     package_version, package_name)
             else:
-                msg = "Package [{}] not available".format(package_name)
+                msg = "Package [{}] not found".format(package_name)
             raise DCOSException(msg)
 
         if package_version is None:
@@ -1702,23 +1667,14 @@ class PackageManager():
         return PackageVersion(package_name, package_version, pkg_revision,
                               pkg.registry(), pkg.get_path())
 
-    def installed_apps(package_name, app_id, endpoints=False):
+    def installed_apps(self, package_name, app_id):
         """Returns all installed apps.  An app is of the format:
 
         {
             'appId': <appId>,
-            'packageSource': <source>,
-            'releaseVersion': <release_version>
-            'endpoints' (optional): [{
-                'host': <host>,
-                'ports': <ports>,
-            }]
             ..<package.json properties>..
         }
 
-        :param endpoints: Whether to include a list of endpoints as port-host
-                          pairs
-        :type endpoints: boolean
         :returns: all installed apps
         :rtype: [dict]
         """
@@ -1741,12 +1697,6 @@ class PackageManager():
                     app_id)
 
             valid_apps.append(decoded)
-
-        if endpoints:
-            for app in valid_apps:
-                tasks = init_client.get_tasks(app["appId"])
-                app['endpoints'] = [{"host": t["host"], "ports": t["ports"]}
-                                    for t in tasks]
 
         return valid_apps
 
@@ -1779,7 +1729,7 @@ class PackageManager():
         with _acquire_file_lock(lock_path):
 
             # list sources
-            sources = list_sources(config)
+            sources = self.list_sources()
 
             for source in sources:
 
@@ -1838,3 +1788,85 @@ class PackageManager():
 
         if errors:
             raise DCOSException(util.list_to_err(errors))
+
+    def list_sources(self):
+        """List configured package sources.
+
+        :returns: The list of sources, in resolution order
+        :rtype: [Source]
+        """
+
+        config = util.get_config()
+        source_uris = util.get_config_vals(['package.sources'], config)[0]
+
+        sources = [url_to_source(s) for s in source_uris]
+
+        errs = [source for source in sources if isinstance(source, Error)]
+        if errs:
+            raise DCOSException('\n'.join(err.error() for err in errs))
+
+        return sources
+
+    def registries(self):
+        """Returns configured cached package registries.
+
+        :returns: The list of registries, in resolution order
+        :rtype: [Registry]
+        """
+
+        config = util.get_config()
+        sources = self.list_sources()
+        return [Registry(source, source.local_cache(config))
+                for source in sources]
+
+    def resolve_package(self, package_name):
+        """Returns the first package with the supplied name found by looking at
+        the configured sources in the order they are defined.
+
+        :param package_name: The name of the package to resolve
+        :type package_name: str
+        :returns: The named package, if found
+        :rtype: Package
+        """
+
+        for registry in self.registries():
+            package = registry.get_package(package_name)
+            if package:
+                return package
+
+        return None
+
+    def search(self, query, cfg):
+        """Returns a list of index entry collections, one for each registry in
+        the supplied config.
+
+        :param query: The search term
+        :type query: str
+        :param cfg: Configuration dictionary
+        :type cfg: dcos.config.Toml
+        :rtype: [IndexEntries]
+        """
+
+        threshold = 0.5  # Minimum rank required to appear in results
+        results = []
+
+        def clean_package_entry(entry):
+            result = entry.copy()
+            result.update({
+                'versions': list(entry['versions'].keys())
+            })
+            return result
+
+        for registry in self.registries():
+            source_results = []
+            index = registry.get_index()
+
+            for pkg in index['packages']:
+                rank = _search_rank(pkg, query)
+                if rank >= threshold:
+                    source_results.append(clean_package_entry(pkg))
+
+            entries = IndexEntries(registry.source, source_results)
+            results.append(entries)
+
+        return results
