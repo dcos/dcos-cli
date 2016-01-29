@@ -9,8 +9,8 @@ from collections import defaultdict
 import dcoscli
 import docopt
 import pkg_resources
-from dcos import (cmds, emitting, errors, http, options, package, subcommand,
-                  util)
+from dcos import (cmds, constants, cosmospackage, emitting, errors, http,
+                  options, package, subcommand, util)
 from dcos.errors import DCOSException
 from dcoscli import tables
 from dcoscli.main import decorate_docopt_usage
@@ -211,7 +211,7 @@ def _describe(package_name,
             'If --package-versions is provided, no other option can be '
             'provided')
 
-    package_manager = package._get_package_manager()
+    package_manager = _get_package_manager()
     pkg = package_manager.get_package_version(package_name, package_version)
 
     pkg_json = pkg.package_json()
@@ -321,7 +321,7 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
     # validation options path
     user_options = _user_options(options_path)
 
-    package_manager = package._get_package_manager()
+    package_manager = _get_package_manager()
     pkg = package_manager.get_package_version(package_name, package_version)
 
     pkg_json = pkg.package_json()
@@ -391,7 +391,7 @@ def _list(json_, endpoints, app_id, package_name):
     :rtype: int
     """
 
-    package_manager = package._get_package_manager()
+    package_manager = _get_package_manager()
     installed = package.installed_packages(package_manager, endpoints)
 
     # only emit those packages that match the provided package_name and app_id
@@ -460,7 +460,7 @@ def _search(json_, query):
     if not query:
         query = ''
 
-    package_manager = package._get_package_manager()
+    package_manager = _get_package_manager()
     results = package_manager.search_sources(query)
 
     if any(result['packages'] for result in results) or json_:
@@ -486,7 +486,7 @@ def _uninstall(package_name, remove_all, app_id, cli, app):
     :rtype: int
     """
 
-    package_manager = package._get_package_manager()
+    package_manager = _get_package_manager()
     err = package.uninstall(
         package_manager, package_name, remove_all, app_id, cli, app)
     if err is not None:
@@ -718,3 +718,16 @@ def _bundle_screenshots(screenshot_directory, zip_file):
         zip_file.write(
             fullpath,
             arcname='images/screenshots/{}'.format(filename))
+
+
+def _get_package_manager():
+    """Returns type of package manager to use
+
+    :returns: PackageManager instance
+    :rtype: PackageManager
+    """
+    url = os.environ.get(constants.COSMOS_URL_ENV)
+    if url:
+        return cosmospackage.Cosmos(url)
+    else:
+        return package.PackageManager()
