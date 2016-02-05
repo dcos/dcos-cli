@@ -40,16 +40,71 @@ def test_version():
                    stdout=b'dcos-package version SNAPSHOT\n')
 
 
-# issue 424
-def test_sources_list():
-    stdout = b"70a675b4a34ea8d36514f952b5744695a746650c " + \
-             b"https://github.com/mesosphere/universe/archive/cli-test-4.zip\n"
+def test_repo_list():
+    repo_list = b"""\
+Universe: https://github.com/mesosphere/universe/archive/cli-test-4.zip
+"""
+    assert_command(['dcos', 'package', 'repo', 'list'], stdout=repo_list)
 
-    returncode, stdout_, stderr = exec_command(['dcos', 'package', 'sources'])
-    if stderr != b'Not implemented\n':
-        assert stdout_ == stdout
-        assert returncode == 0
-        assert stderr == b''
+
+def test_repo_add():
+    repo = \
+        "https://github.com/mesosphere/universe/archive/cli-test-3.zip"
+    repo_list = b"""\
+test: https://github.com/mesosphere/universe/archive/cli-test-3.zip
+Universe: https://github.com/mesosphere/universe/archive/cli-test-4.zip
+"""
+    args = ["test", repo]
+    _repo_add(args, repo_list)
+
+
+def test_repo_add_index():
+    repo = \
+        "https://github.com/mesosphere/universe/archive/cli-test-2.zip"
+    repo_list = b"""\
+test: https://github.com/mesosphere/universe/archive/cli-test-3.zip
+test2: https://github.com/mesosphere/universe/archive/cli-test-2.zip
+Universe: https://github.com/mesosphere/universe/archive/cli-test-4.zip
+"""
+    args = ["test2", repo, '--index=1']
+    _repo_add(args, repo_list)
+
+
+def test_repo_remove_by_repo_name():
+    repo_list = b"""\
+test2: https://github.com/mesosphere/universe/archive/cli-test-2.zip
+Universe: https://github.com/mesosphere/universe/archive/cli-test-4.zip
+"""
+    _repo_remove(['--repo-name=test'], repo_list)
+
+
+def test_repo_remove_by_package_repo():
+    repo = \
+      "https://github.com/mesosphere/universe/archive/cli-test-2.zip"
+    repo_list = b"""\
+Universe: https://github.com/mesosphere/universe/archive/cli-test-4.zip
+"""
+    _repo_remove(['--package-repo={}'.format(repo)], repo_list)
+
+
+def test_repo_empty():
+    assert_command(
+        ['dcos', 'package', 'repo', 'remove', '--repo-name=Universe'])
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'repo', 'list'])
+    stderr_msg = (b"There are currently no repos configured. "
+                  b"Please use `dcos package repo add` to add a repo\n")
+    assert returncode == 1
+    assert stdout == b''
+    assert stderr == stderr_msg
+
+    repo = \
+        "https://github.com/mesosphere/universe/archive/cli-test-4.zip"
+    repo_list = b"""\
+Universe: https://github.com/mesosphere/universe/archive/cli-test-4.zip
+"""
+    _repo_add(["Universe", repo], repo_list)
 
 
 def test_update_without_validation():
@@ -876,6 +931,7 @@ Installing CLI subcommand for package [helloworld] version [0.1.0]
 New command available: dcos helloworld
 A sample post-installation message
 '''
+
     stderr = b'Uninstalled package [helloworld] version [0.1.0]\n'
     return _package('helloworld',
                     stdout=stdout,
@@ -910,6 +966,16 @@ def _package(name,
             ['dcos', 'package', 'uninstall', name],
             stderr=uninstall_stderr)
         watch_all_deployments()
+
+
+def _repo_add(args=[], repo_list=[]):
+    assert_command(['dcos', 'package', 'repo', 'add'] + args)
+    assert_command(['dcos', 'package', 'repo', 'list'], stdout=repo_list)
+
+
+def _repo_remove(args=[], repo_list=[]):
+    assert_command(['dcos', 'package', 'repo', 'remove'] + args)
+    assert_command(['dcos', 'package', 'repo', 'list'], stdout=repo_list)
 
 
 # issue 431

@@ -16,7 +16,9 @@ Usage:
                          <package-name>
     dcos package list [--json --endpoints --app-id=<app-id> <package-name>]
     dcos package search [--json <query>]
-    dcos package sources
+    dcos package repo add [--index=<index>] <repo-name> <package-repo>
+    dcos package repo remove [--repo-name=<repo_name>] [--package-repo=<package_repo>]
+    dcos package repo list
     dcos package uninstall [--cli | [--app --app-id=<app-id> --all]]
                            <package-name>
     dcos package update [--validate]
@@ -41,11 +43,17 @@ Options:
     -h, --help
         Show this screen
 
+    --index=<index>
+        Index of repository precedence
+
     --info
         Show a short description of this subcommand
 
     --options=<file>
         Path to a JSON file containing package installation options
+
+    --package-repo=<package_repo>
+        Repository of DCOS packages
 
     --package-version=<package_version>
         Package version to install
@@ -57,6 +65,9 @@ Options:
         Render the package's marathon.json or command.json template with the
         values from config.json and --options. If not provided, print the raw
         templates.
+
+    --repo-name=<repo_name>
+        Human readable name for repository
 
     --validate
         Validate package content when updating sources
@@ -71,5 +82,11 @@ Positional Arguments:
     <package-name>
         Name of the DCOS package
 
+    <package-repo>
+        Repository of DCOS packages
+
     <query>
         Pattern to use for searching for package
+
+    <repo-name>
+        Human readable name for repository

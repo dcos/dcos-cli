@@ -54,9 +54,19 @@ def _cmds():
 
     return [
         cmds.Command(
-            hierarchy=['package', 'sources'],
+            hierarchy=['package', 'repo', 'list'],
             arg_keys=[],
-            function=_list_sources),
+            function=_list_response),
+
+        cmds.Command(
+            hierarchy=['package', 'repo', 'add'],
+            arg_keys=['<repo-name>', '<package-repo>', '--index'],
+            function=_add_repo),
+
+        cmds.Command(
+            hierarchy=['package', 'repo', 'remove'],
+            arg_keys=['--repo-name', '--package-repo'],
+            function=_remove_repo),
 
         cmds.Command(
             hierarchy=['package', 'update'],
@@ -134,18 +144,59 @@ def _info():
     return 0
 
 
-def _list_sources():
-    """List configured package sources.
+def _list_response():
+    """List configured package repositories.
 
     :returns: Process status
     :rtype: int
     """
 
     package_manager = _get_package_manager()
-    sources = package_manager.list_sources()
+    repos = package_manager.get_repos()
 
-    for source in sources:
-        emitter.publish("{} {}".format(source.hash(), source.url))
+    if repos:
+        emitter.publish(repos)
+    else:
+        msg = ("There are currently no repos configured. "
+               "Please use `dcos package repo add` to add a repo")
+        raise DCOSException(msg)
+
+    return 0
+
+
+def _add_repo(repo_name, package_repo, index):
+    """Add package repo and update repo with new repo
+
+    :param repo_name: name to call repo
+    :type repo_name: str
+    :param package_repo: location of repo to add
+    :type package_repo: str
+    :param index: index to add this repo
+    :type index: int
+    :rtype: None
+    """
+
+    package_manager = _get_package_manager()
+    package_manager.add_repo(repo_name, package_repo, index)
+
+    return 0
+
+
+def _remove_repo(repo_name, package_repo):
+    """Remove package repo and update repo with new repo
+
+    :param repo_name: name to call repo
+    :type repo_name: str
+    :param package_repo: location of repo to add
+    :type package_repo: str
+    :returns: Process status
+    :rtype: int
+    """
+
+    if repo_name is None and package_repo is None:
+        raise DCOSException("Must specify --repo-name and/or --package-repo")
+    package_manager = _get_package_manager()
+    package_manager.remove_repo(repo_name, package_repo)
 
     return 0
 
