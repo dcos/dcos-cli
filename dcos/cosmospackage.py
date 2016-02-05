@@ -3,7 +3,7 @@ import json
 
 import pystache
 from dcos import emitting, http, package, util
-from dcos.errors import DCOSException, DCOSHTTPException
+from dcos.errors import DCOSException, DCOSHTTPException, DefaultError
 
 from six.moves import urllib
 
@@ -52,12 +52,28 @@ class Cosmos(package.PackageManager):
         """
 
         params = {"packageName": package_name}
-        if remove_all is not None:
+        if remove_all is True:
             params["all"] = True
         if app_id is not None:
             params["appId"] = app_id
 
-        self.cosmos_post("uninstall", params)
+        response = self.cosmos_post("uninstall", params)
+        results = response.json().get("results")
+
+        uninstalled_versions = []
+        for res in results:
+            version = res.get("version")
+            if version not in uninstalled_versions:
+                emitter.publish(
+                    DefaultError(
+                        'Uninstalled package [{}] version [{}]'.format(
+                            res.get("packageName"),
+                            res.get("version"))))
+                uninstalled_versions += [res.get("version")]
+
+                if res.get("postUninstallNotes") is not None:
+                    emitter.publish(
+                        DefaultError(res.get("postUninstallNotes")))
 
         return True
 
@@ -91,12 +107,6 @@ class Cosmos(package.PackageManager):
 
         {
             'appId': <appId>,
-            'packageSource': <source>,
-            'releaseVersion': <release_version>,
-            'endpoints' (optional): [{
-                'host': <host>,
-                'ports': <ports>,
-            }],
             ..<package.json properties>..
         }
 
@@ -120,16 +130,18 @@ class Cosmos(package.PackageManager):
             result = pkg['packageInformation']['packageDefinition']
 
             result['appId'] = pkg['appId']
-            result['packageSource'] = (
-                pkg['packageInformation']['packageSource']
-            )
-            result['releaseVersion'] = (
-                pkg['packageInformation']['releaseVersion']
-            )
-
             packages.append(result)
 
         return packages
+
+    def list_sources(self):
+        """List configured package sources.
+
+        :returns: The list of sources, in resolution order
+        :rtype: [Source]
+        """
+        # TODO: issue 424
+        raise DCOSException("Not implemented")
 
     def update_sources(self, validate=False):
         """Update package sources
@@ -161,10 +173,11 @@ class Cosmos(package.PackageManager):
 
             response = fn(*args, **kwargs)
             content_type = response.headers.get('Content-Type')
-            if content_type is None or _get_header("error") in content_type:
-                errors = response.json().get("errors")
-                error_messages = [err.get("message") for err in errors]
-                raise DCOSException(", ".join(error_messages))
+            if content_type is None:
+                raise DCOSHTTPException(response)
+            elif _get_header("error") in content_type:
+                error_msg = _format_error_message(response.json())
+                raise DCOSException(error_msg)
             return response
 
         return check_for_cosmos_error
@@ -186,6 +199,10 @@ class Cosmos(package.PackageManager):
         try:
             response = http.post(url, json=params,
                                  headers=_get_cosmos_header(request))
+            if not _check_cosmos_header(request, response):
+                raise DCOSException(
+                    "Server returned incorrect response type: {}".format(
+                        response.headers))
         except DCOSHTTPException as e:
             # let the response be handled by `cosmos_error` so we can expose
             # errors reported by cosmos
@@ -202,7 +219,7 @@ class CosmosPackageVersion(package.PackageVersion):
 
         params = {"packageName":  name}
         if package_version is not None:
-            params += {"packageVersion": package_version}
+            params["packageVersion"] = package_version
         response = Cosmos(url).cosmos_post("describe", params)
 
         package_info = response.json()
@@ -212,7 +229,7 @@ class CosmosPackageVersion(package.PackageVersion):
         self._config_json = package_info.get("config")
         self._command_json = package_info.get("command")
         self._resource_json = package_info.get("resource")
-        self._marathon_template = package_info.get("marathonTemplate")
+        self._marathon_template = package_info.get("marathonMustache")
 
     def registry(self):
         """Cosmos only supports one registry right now, so default to cosmos
@@ -275,7 +292,7 @@ class CosmosPackageVersion(package.PackageVersion):
         :returns: raw data from command.json
         :rtype: str
         """
-        return json.dumps(self._command_json)
+        return self._command_json
 
     def marathon_template(self):
         """Returns raw data from marathon.json
@@ -286,6 +303,21 @@ class CosmosPackageVersion(package.PackageVersion):
 
         return self._marathon_template
 
+    def marathon_json(self, options):
+        """Returns the JSON content of the marathon.json template, after
+        rendering it with options.
+
+        :param options: the template options to use in rendering
+        :type options: dict
+        :rtype: dict
+        """
+
+        params = {"packageName":  self._name}
+        params["packageVersion"] = self._package_version
+        params["options"] = options
+        response = Cosmos(self._cosmos_url).cosmos_post("render", params)
+        return response.json().get("marathonJson")
+
     def has_mustache_definition(self):
         """Dummy method since all packages in cosmos must have mustache
            definition.
@@ -294,12 +326,14 @@ class CosmosPackageVersion(package.PackageVersion):
         return True
 
     def options(self, user_options):
-        """Merges package options with user supplied options, validates, and
-        returns the result.
+        """Makes sure user supplied options are valid, and returns valid options
 
-        This will be /v1/package/render.
-        For now pass, rendering will happen on server during install
+        :param options: the template options to use in rendering
+        :type options: dict
+        :rtype: dict
         """
+
+        self.marathon_json(user_options)
 
         return user_options
 
@@ -332,9 +366,10 @@ class CosmosPackageVersion(package.PackageVersion):
         """
 
         params = {"packageName": self.name(), "packageVersions": True}
-        response = Cosmos(self._cosmos_url).cosmos_post("describe", params)
+        response = Cosmos(self._cosmos_url).cosmos_post(
+            "list-versions", params)
 
-        return list(response.json().keys())
+        return list(response.json().get("results").keys())
 
 
 def _get_header(request_type):
@@ -361,3 +396,67 @@ def _get_cosmos_header(request_name):
 
     return {"Accept": _get_header("{}-response".format(request_name)),
             "Content-Type": _get_header("{}-request".format(request_name))}
+
+
+def _check_cosmos_header(request_name, response):
+    """Validate that cosmos returned correct header for request
+
+    :param request_type: name of specified request (ie uninstall-request)
+    :type request_type: str
+    :param response: response object
+    :type response: Response
+    :returns: whether or not we got expected response
+    :rtype: bool
+    """
+
+    rsp = "{}-response".format(request_name)
+    return _get_header(rsp) in response.headers.get('Content-Type')
+
+
+def _format_error_message(error):
+    """Returns formatted error message based on error type
+
+    :param error: cosmos error
+    :type error: dict
+    :returns: formatted error
+    :rtype: str
+    """
+    if error.get("type") == "AmbiguousAppId":
+        helper = (".\nPlease use --app-id to specify the ID of the app "
+                  "to uninstall, or use --all to uninstall all apps.")
+        error_message = error.get("message") + helper
+    elif error.get("type") == "MultipleFrameworkIds":
+        helper = ". Manually shut them down using 'dcos service shutdown'"
+        error_message = error.get("message") + helper
+    elif error.get("type") == "JsonSchemaMismatch":
+        error_message = _format_json_schema_mismatch_message(error)
+    else:
+        error_message = error.get("message")
+
+    return error_message
+
+
+def _format_json_schema_mismatch_message(error):
+    """Returns the formatted error message for JsonSchemaMismatch
+
+    :param error: cosmos JsonSchemMismatch error
+    :type error: dict
+    :returns: formatted error
+    :rtype: str
+    """
+
+    error_messages = ["Error: {}".format(error.get("message"))]
+    for err in error.get("data").get("errors"):
+        found = "Found: {}\n".format(err.get("found"))
+        expected = "Expected: {}\n".format(",".join(err.get("expected")))
+        pointer = err.get("instance").get("pointer")
+        formatted_path = pointer.lstrip("/").replace("/", ".")
+        path = "Path: {}".format(formatted_path)
+        error_messages += [found + expected + path]
+
+    error_messages += [
+        "\nPlease create a JSON file with the appropriate options, and"
+        " pass the /path/to/file as an --options argument."
+    ]
+
+    return "\n".join(error_messages)

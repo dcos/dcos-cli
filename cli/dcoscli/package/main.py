@@ -141,9 +141,8 @@ def _list_sources():
     :rtype: int
     """
 
-    config = util.get_config()
-
-    sources = package.list_sources(config)
+    package_manager = _get_package_manager()
+    sources = package_manager.list_sources()
 
     for source in sources:
         emitter.publish("{} {}".format(source.hash(), source.url))
@@ -221,7 +220,7 @@ def _describe(package_name,
         pkg_json['versions'] = pkg_versions
 
     if package_versions:
-        emitter.publish('\n'.join(pkg_json['versions']))
+        emitter.publish(pkg.package_versions())
     elif cli or app or config:
         user_options = _user_options(options_path)
         options = pkg.options(user_options)
@@ -230,7 +229,7 @@ def _describe(package_name,
             if render:
                 cli_output = pkg.command_json(options)
             else:
-                cli_output = pkg.command_template().rstrip("\n")
+                cli_output = pkg.command_template()
             emitter.publish(cli_output)
         if app:
             if render:
@@ -244,7 +243,6 @@ def _describe(package_name,
             config_output = pkg.config_json()
             emitter.publish(config_output)
     else:
-        pkg_json = pkg.package_json()
         emitter.publish(pkg_json)
 
     return 0
@@ -390,24 +388,16 @@ def _list(json_, endpoints, app_id, package_name):
     :rtype: int
     """
 
+    if endpoints:
+        emitter.publish(
+            errors.DefaultError("The --endpoints flag is deprecated"))
+
     package_manager = _get_package_manager()
-    installed = package.installed_packages(package_manager, endpoints)
-
+    if app_id is not None:
+        app_id = util.normalize_app_id(app_id)
+    results = package.installed_packages(
+        package_manager, app_id, package_name)
     # only emit those packages that match the provided package_name and app_id
-    results = []
-    for pkg in installed:
-        pkg_info = pkg.dict()
-        if (_matches_package_name(package_name, pkg_info) and
-                _matches_app_id(app_id, pkg_info)):
-            if app_id:
-                # if the user is asking a specific id then only show that id
-                pkg_info['apps'] = [
-                    app for app in pkg_info['apps']
-                    if app == app_id
-                ]
-
-            results.append(pkg_info)
-
     if results or json_:
         emitting.publish_table(emitter, results, tables.package_table, json_)
     else:

@@ -41,11 +41,20 @@ def test_version():
                    stdout=b'dcos-package version SNAPSHOT\n')
 
 
+# issue 424
 def test_sources_list():
     stdout = b"70a675b4a34ea8d36514f952b5744695a746650c " + \
              b"https://github.com/mesosphere/universe/archive/cli-test-4.zip\n"
-    assert_command(['dcos', 'package', 'sources'],
-                   stdout=stdout)
+
+    returncode, stdout_, stderr = exec_command(['dcos', 'package', 'sources'])
+    if os.environ.get(constants.COSMOS_URL_ENV) is None:
+        assert stdout_ == stdout
+        assert returncode == 0
+        assert stderr == b''
+    else:
+        assert stdout_ == b''
+        assert returncode == 1
+        assert stderr == b'Not implemented\n'
 
 
 def test_update_without_validation():
@@ -82,7 +91,7 @@ def test_describe_nonexistent():
 
 
 def test_describe_nonexistent_version():
-    stderr = b'Version a.b.c of package [marathon] is not available\n'
+    stderr = b'Version [a.b.c] of package [marathon] not found\n'
     assert_command(['dcos', 'package', 'describe', 'marathon',
                     '--package-version=a.b.c'],
                    stderr=stderr,
@@ -92,8 +101,14 @@ def test_describe_nonexistent_version():
 def test_describe():
     stdout = file_json(
         'tests/data/package/json/test_describe_marathon.json')
-    assert_command(['dcos', 'package', 'describe', 'marathon'],
-                   stdout=stdout)
+
+    returncode_, stdout_, stderr_ = exec_command(
+        ['dcos', 'package', 'describe', 'marathon'])
+
+    assert returncode_ == 0
+    output = json.loads(stdout_.decode('utf-8'))
+    assert _remove_nulls(output) == json.loads(stdout.decode('utf-8'))
+    assert stderr_ == b''
 
 
 def test_describe_cli():
@@ -120,22 +135,43 @@ def test_describe_config():
 def test_describe_render():
     stdout = file_json(
         'tests/data/package/json/test_describe_marathon_app_render.json')
-    assert_command(
-        ['dcos', 'package', 'describe', 'marathon', '--app', '--render'],
-        stdout=stdout)
+    stdout = json.loads(stdout.decode('utf-8'))
+    expected_labels = stdout.pop("labels", None)
+
+    returncode, stdout_, stderr = exec_command(
+        ['dcos', 'package', 'describe', 'marathon', '--app', '--render'])
+
+    stdout_ = json.loads(stdout_.decode('utf-8'))
+    actual_labels = stdout_.pop("labels", None)
+
+    for label, value in expected_labels.items():
+        # this labels is different for cosmos b/c of null problem (issue 431)
+        if label == "DCOS_PACKAGE_METADATA" and \
+                os.environ.get(constants.COSMOS_URL_ENV) is not None:
+            continue
+        assert value == actual_labels.get(label)
+
+    assert stdout == stdout_
+    assert stderr == b''
+    assert returncode == 0
 
 
 def test_describe_package_version():
     stdout = file_json(
         'tests/data/package/json/test_describe_marathon_package_version.json')
-    assert_command(
+
+    returncode_, stdout_, stderr_ = exec_command(
         ['dcos', 'package', 'describe', 'marathon',
-            '--package-version=0.11.1'],
-        stdout=stdout)
+            '--package-version=0.11.1'])
+
+    assert returncode_ == 0
+    output = json.loads(stdout_.decode('utf-8'))
+    assert _remove_nulls(output) == json.loads(stdout.decode('utf-8'))
+    assert stderr_ == b''
 
 
 def test_describe_package_version_missing():
-    stderr = b'Version bogus of package [marathon] is not available\n'
+    stderr = b'Version [bogus] of package [marathon] not found\n'
     assert_command(
         ['dcos', 'package', 'describe', 'marathon', '--package-version=bogus'],
         returncode=1,
@@ -163,9 +199,26 @@ def test_describe_package_versions_others():
 def test_describe_options():
     stdout = file_json(
         'tests/data/package/json/test_describe_app_options.json')
-    assert_command(['dcos', 'package', 'describe', '--app', '--options',
-                    'tests/data/package/marathon.json', 'marathon'],
-                   stdout=stdout)
+    stdout = json.loads(stdout.decode('utf-8'))
+    expected_labels = stdout.pop("labels", None)
+
+    returncode, stdout_, stderr = exec_command(
+        ['dcos', 'package', 'describe', '--app', '--options',
+         'tests/data/package/marathon.json', 'marathon'])
+
+    stdout_ = json.loads(stdout_.decode('utf-8'))
+    actual_labels = stdout_.pop("labels", None)
+
+    for label, value in expected_labels.items():
+        # this labels is different for cosmos b/c of null problem (issue 431)
+        if label == "DCOS_PACKAGE_METADATA" and \
+                os.environ.get(constants.COSMOS_URL_ENV) is not None:
+            continue
+        assert value == actual_labels.get(label)
+
+    assert stdout == stdout_
+    assert stderr == b''
+    assert returncode == 0
 
 
 def test_describe_app_cli():
@@ -179,24 +232,40 @@ def test_describe_app_cli():
 def test_describe_specific_version():
     stdout = file_bytes(
         'tests/data/package/json/test_describe_marathon_0.11.1.json')
-    assert_command(['dcos', 'package', 'describe', '--package-version=0.11.1',
-                    'marathon'],
-                   stdout=stdout)
+
+    returncode_, stdout_, stderr_ = exec_command(
+        ['dcos', 'package', 'describe', '--package-version=0.11.1',
+         'marathon'])
+
+    assert returncode_ == 0
+    output = json.loads(stdout_.decode('utf-8'))
+    assert _remove_nulls(output) == json.loads(stdout.decode('utf-8'))
+    assert stderr_ == b''
 
 
 def test_bad_install():
     args = ['--options=tests/data/package/chronos-bad.json', '--yes']
-    stderr = b"""Error: False is not of type 'string'
+    stdout = b""
+    if os.environ.get(constants.COSMOS_URL_ENV) is None:
+        stderr = b"""Error: False is not of type 'string'
 Path: chronos.zk-hosts
 Value: false
 
 Please create a JSON file with the appropriate options, and pass the \
 /path/to/file as an --options argument.
 """
+    else:
+        stderr = b"""Error: Options JSON failed validation
+Found: boolean
+Expected: string
+Path: chronos.zk-hosts
 
+Please create a JSON file with the appropriate options, and pass the \
+/path/to/file as an --options argument.
+"""
     _install_chronos(args=args,
                      returncode=1,
-                     stdout=b'',
+                     stdout=stdout,
                      stderr=stderr,
                      postInstallNotes=b'')
 
@@ -233,9 +302,10 @@ def test_install_specific_version():
 
     uninstall_stderr = (
         b'Uninstalled package [marathon] version [0.11.1]\n'
-        b'The Marathon DCOS Service has been uninstalled and will no longer '
-        b'run.\nPlease follow the instructions at http://docs.mesosphere.com/'
-        b'services/marathon/#uninstall to clean up any persisted state\n'
+        b'The Marathon DCOS Service has been uninstalled and will no '
+        b'longer run.\nPlease follow the instructions at http://docs.'
+        b'mesosphere.com/services/marathon/#uninstall to clean up any '
+        b'persisted state\n'
     )
 
     with _package('marathon',
@@ -251,7 +321,7 @@ def test_install_specific_version():
 
 
 def test_install_bad_package_version():
-    stderr = b'Version a.b.c of package [cassandra] is not available\n'
+    stderr = b'Version [a.b.c] of package [cassandra] not found\n'
     assert_command(
         ['dcos', 'package', 'install', 'cassandra',
          '--package-version=a.b.c'],
@@ -279,9 +349,7 @@ CJdfQ=="""
 cli-test-4.zip"""
 
     expected_labels = {
-        'DCOS_PACKAGE_METADATA': expected_metadata,
-        'DCOS_PACKAGE_COMMAND': expected_command,
-        'DCOS_PACKAGE_REGISTRY_VERSION': b'2.0.0-rc1',
+        'DCOS_PACKAGE_REGISTRY_VERSION': b'2.0',
         'DCOS_PACKAGE_NAME': b'helloworld',
         'DCOS_PACKAGE_VERSION': b'0.1.0',
         'DCOS_PACKAGE_SOURCE': expected_source,
@@ -289,9 +357,16 @@ cli-test-4.zip"""
     }
 
     app_labels = _get_app_labels('helloworld')
-
     for label, value in expected_labels.items():
         assert value == six.b(app_labels.get(label))
+
+    # these labels are different for cosmos b/c of null problem
+    # we have cosmos tests for test, and will fix in issue 431
+    if os.environ.get(constants.COSMOS_URL_ENV) is None:
+        assert expected_metadata == six.b(
+            app_labels.get('DCOS_PACKAGE_METADATA'))
+        assert expected_command == six.b(
+            app_labels.get('DCOS_PACKAGE_COMMAND'))
 
     # test local package.json
     package = {
@@ -309,14 +384,7 @@ cli-test-4.zip"""
     helloworld_subcommand = subcommand.InstalledSubcommand("helloworld")
 
     # test local package.json
-    assert helloworld_subcommand.package_json() == package
-
-    # test local source
-    assert helloworld_subcommand.package_source() == \
-        expected_source.decode('utf-8')
-
-    # test local version
-    assert helloworld_subcommand.package_revision() == "0"
+    assert _remove_nulls(helloworld_subcommand.package_json()) == package
 
     # uninstall helloworld
     _uninstall_helloworld()
@@ -340,6 +408,7 @@ def test_images_in_metadata():
               b'Please follow the instructions at http://docs.mesosphere.com/'
               b'services/cassandra/#uninstall to clean up any persisted '
               b'state\n')
+
     package_uninstall('cassandra', stderr=stderr)
     assert_command(['dcos', 'marathon', 'group', 'remove', '/cassandra'])
     delete_zk_node('cassandra-mesos')
@@ -370,14 +439,13 @@ def test_uninstall_with_id(zk_znode):
 
 def test_uninstall_all(zk_znode):
     _uninstall_chronos(args=['--all'])
-    get_services(expected_count=1, args=['--inactive'])
 
 
 def test_uninstall_missing():
-    stderr = 'Package [chronos] is not installed.\n'
+    stderr = 'Package [chronos] is not installed\n'
     _uninstall_chronos(returncode=1, stderr=stderr)
 
-    stderr = 'Package [chronos] with id [chronos-1] is not installed.\n'
+    stderr = 'Package [chronos] with id [/chronos-1] is not installed\n'
     _uninstall_chronos(
         args=['--app-id=chronos-1'],
         returncode=1,
@@ -392,9 +460,9 @@ def test_uninstall_subcommand():
 
 def test_uninstall_cli():
     _install_helloworld()
-    _uninstall_helloworld(args=['--cli'])
+    _uninstall_cli_helloworld(args=['--cli'])
 
-    stdout = b"""[
+    stdout = b"""
   {
     "apps": [
       "/helloworld"
@@ -402,12 +470,9 @@ def test_uninstall_cli():
     "description": "Example DCOS application package",
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
-    "packageSource": "https://github.com/mesosphere/universe/archive/\
-cli-test-4.zip",
     "packagingVersion": "2.0",
     "postInstallNotes": "A sample post-installation message",
     "preInstallNotes": "A sample pre-installation message",
-    "releaseVersion": "0",
     "tags": [
       "mesosphere",
       "example",
@@ -416,9 +481,13 @@ cli-test-4.zip",
     "version": "0.1.0",
     "website": "https://github.com/mesosphere/dcos-helloworld"
   }
-]
 """
-    _list(stdout=stdout)
+    returncode_, stdout_, stderr_ = exec_command(
+        ['dcos', 'package', 'list', '--json'])
+    assert stderr_ == b''
+    assert returncode_ == 0
+    output = json.loads(stdout_.decode('utf-8'))[0]
+    assert _remove_nulls(output) == json.loads(stdout.decode('utf-8'))
     _uninstall_helloworld()
 
 
@@ -449,10 +518,13 @@ def test_uninstall_multiple_apps():
               b"[/helloworld-1, /helloworld-2].\n"
               b"Please use --app-id to specify the ID of the app "
               b"to uninstall, or use --all to uninstall all apps.\n")
-    _uninstall_helloworld(stderr=stderr,
-                          returncode=1)
+    returncode = 1
 
-    assert_command(['dcos', 'package', 'uninstall', 'helloworld', '--all'])
+    _uninstall_helloworld(stderr=stderr,
+                          returncode=returncode,
+                          uninstalled=b'')
+
+    _uninstall_helloworld(args=['--all'], stdout=b'', stderr=b'', returncode=0)
 
     watch_all_deployments()
 
@@ -463,14 +535,14 @@ def test_list(zk_znode):
     _list(args=['--app-id=/xyzzy', '--json'])
 
     _install_chronos()
+
     expected_output = file_json(
         'tests/data/package/json/test_list_chronos.json')
 
-    _list(stdout=expected_output)
-    _list(args=['--json', 'chronos'],
-          stdout=expected_output)
-    _list(args=['--json', '--app-id=/chronos'],
-          stdout=expected_output)
+    _list_remove_nulls(stdout=expected_output)
+    _list_remove_nulls(args=['--json', 'chronos'], stdout=expected_output)
+    _list_remove_nulls(args=['--json', '--app-id=/chronos'],
+                       stdout=expected_output)
     _list(args=['--json', 'ceci-nest-pas-une-package'])
     _list(args=['--json', '--app-id=/ceci-nest-pas-une-package'])
 
@@ -508,10 +580,7 @@ def test_install_no():
 
 
 def test_list_cli():
-    _install_helloworld()
-
-    stdout = b"""\
-[
+    stdout = b"""
   {
     "apps": [
       "/helloworld"
@@ -522,12 +591,9 @@ def test_list_cli():
     "description": "Example DCOS application package",
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
-    "packageSource": "https://github.com/mesosphere/universe/archive/\
-cli-test-4.zip",
     "packagingVersion": "2.0",
     "postInstallNotes": "A sample post-installation message",
     "preInstallNotes": "A sample pre-installation message",
-    "releaseVersion": "0",
     "tags": [
       "mesosphere",
       "example",
@@ -536,9 +602,9 @@ cli-test-4.zip",
     "version": "0.1.0",
     "website": "https://github.com/mesosphere/dcos-helloworld"
   }
-]
 """
-    _list(stdout=stdout)
+    _install_helloworld()
+    _list_remove_nulls(stdout=stdout)
     _uninstall_helloworld()
 
     stdout = (b"A sample pre-installation message\n"
@@ -549,7 +615,6 @@ cli-test-4.zip",
     _install_helloworld(args=['--cli', '--yes'], stdout=stdout)
 
     stdout = b"""\
-[
   {
     "command": {
       "name": "helloworld"
@@ -557,12 +622,9 @@ cli-test-4.zip",
     "description": "Example DCOS application package",
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
-    "packageSource": "https://github.com/mesosphere/universe/archive/\
-cli-test-4.zip",
     "packagingVersion": "2.0",
     "postInstallNotes": "A sample post-installation message",
     "preInstallNotes": "A sample pre-installation message",
-    "releaseVersion": "0",
     "tags": [
       "mesosphere",
       "example",
@@ -571,10 +633,9 @@ cli-test-4.zip",
     "version": "0.1.0",
     "website": "https://github.com/mesosphere/dcos-helloworld"
   }
-]
 """
-    _list(stdout=stdout)
-    _uninstall_helloworld()
+    _list_remove_nulls(stdout=stdout)
+    _uninstall_cli_helloworld()
 
 
 def test_uninstall_multiple_frameworknames(zk_znode):
@@ -588,34 +649,32 @@ def test_uninstall_multiple_frameworknames(zk_znode):
     expected_output = file_json(
         'tests/data/package/json/test_list_chronos_two_users.json')
 
-    _list(stdout=expected_output)
-    _list(args=['--json', 'chronos'], stdout=expected_output)
-    _list(args=['--json', '--app-id=/chronos-user-1'], stdout=file_json(
+    # issue 431
+    _list_remove_nulls(stdout=expected_output)
+    _list_remove_nulls(args=['--json', 'chronos'], stdout=expected_output)
+    _list_remove_nulls(args=['--json', '--app-id=/chronos-user-1'],
+                       stdout=file_json(
         'tests/data/package/json/test_list_chronos_user_1.json'))
 
-    _list(args=['--json', '--app-id=/chronos-user-2'], stdout=file_json(
+    _list_remove_nulls(args=['--json', '--app-id=/chronos-user-2'],
+                       stdout=file_json(
         'tests/data/package/json/test_list_chronos_user_2.json'))
 
     _uninstall_chronos(
         args=['--app-id=chronos-user-1'],
         returncode=1,
         stderr='Uninstalled package [chronos] version [2.4.0]\n'
-               'The Chronos DCOS Service has been uninstalled and will no '
-               'longer run.\nPlease follow the instructions at http://docs.'
-               'mesosphere.com/services/chronos/#uninstall to clean up any '
-               'persisted state\n'
-               'Unable to shutdown the framework for [chronos-user] because '
-               'there are multiple frameworks with the same name: ')
+               'Unable to shutdown [chronos] service framework with name '
+               '[chronos-user] because there are multiple framework ids '
+               'matching this name: ')
+
     _uninstall_chronos(
         args=['--app-id=chronos-user-2'],
         returncode=1,
         stderr='Uninstalled package [chronos] version [2.4.0]\n'
-               'The Chronos DCOS Service has been uninstalled and will no '
-               'longer run.\nPlease follow the instructions at http://docs.'
-               'mesosphere.com/services/chronos/#uninstall to clean up any '
-               'persisted state\n'
-               'Unable to shutdown the framework for [chronos-user] because '
-               'there are multiple frameworks with the same name: ')
+               'Unable to shutdown [chronos] service framework with name '
+               '[chronos-user] because there are multiple framework ids '
+               'matching this name: ')
 
     for framework in get_services(args=['--inactive']):
         if framework['name'] == 'chronos-user':
@@ -758,6 +817,18 @@ def _uninstall_helloworld(
         args=[],
         stdout=b'',
         stderr=b'',
+        returncode=0,
+        uninstalled=b'Uninstalled package [helloworld] version [0.1.0]\n'):
+    assert_command(['dcos', 'package', 'uninstall', 'helloworld'] + args,
+                   stdout=stdout,
+                   stderr=uninstalled+stderr,
+                   returncode=returncode)
+
+
+def _uninstall_cli_helloworld(
+        args=[],
+        stdout=b'',
+        stderr=b'',
         returncode=0):
     assert_command(['dcos', 'package', 'uninstall', 'helloworld'] + args,
                    stdout=stdout,
@@ -805,6 +876,16 @@ def _list(args=['--json'],
                    stdout=stdout)
 
 
+def _list_remove_nulls(args=['--json'], stdout=b'[]\n'):
+    returncode_, stdout_, stderr_ = exec_command(
+        ['dcos', 'package', 'list'] + args)
+
+    assert returncode_ == 0
+    output = json.loads(stdout_.decode('utf-8'))[0]
+    assert _remove_nulls(output) == json.loads(stdout.decode('utf-8'))
+    assert stderr_ == b''
+
+
 def _helloworld():
     stdout = b'''A sample pre-installation message
 Installing Marathon app for package [helloworld] version [0.1.0]
@@ -812,8 +893,10 @@ Installing CLI subcommand for package [helloworld] version [0.1.0]
 New command available: dcos helloworld
 A sample post-installation message
 '''
+    stderr = b'Uninstalled package [helloworld] version [0.1.0]\n'
     return _package('helloworld',
-                    stdout=stdout)
+                    stdout=stdout,
+                    uninstall_stderr=stderr)
 
 
 @contextlib.contextmanager
@@ -844,3 +927,16 @@ def _package(name,
             ['dcos', 'package', 'uninstall', name],
             stderr=uninstall_stderr)
         watch_all_deployments()
+
+
+# issue 431
+def _remove_nulls(output):
+    """Remove nulls from dict. Temporary until we fix this in cosmos
+
+    :param output: dict with possible null values
+    :type output: dict
+    :returns: dict without null
+    :rtype: dict
+    """
+
+    return {k: v for k, v in output.items() if v}
