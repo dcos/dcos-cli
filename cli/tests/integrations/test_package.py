@@ -1,11 +1,10 @@
 import base64
 import contextlib
 import json
-import os
 
 import pkg_resources
 import six
-from dcos import constants, package, subcommand
+from dcos import package, subcommand
 from dcos.errors import DCOSException
 
 import pytest
@@ -47,14 +46,10 @@ def test_sources_list():
              b"https://github.com/mesosphere/universe/archive/cli-test-4.zip\n"
 
     returncode, stdout_, stderr = exec_command(['dcos', 'package', 'sources'])
-    if os.environ.get(constants.COSMOS_URL_ENV) is None:
+    if stderr != b'Not implemented\n':
         assert stdout_ == stdout
         assert returncode == 0
         assert stderr == b''
-    else:
-        assert stdout_ == b''
-        assert returncode == 1
-        assert stderr == b'Not implemented\n'
 
 
 def test_update_without_validation():
@@ -62,12 +57,10 @@ def test_update_without_validation():
 
     assert returncode == 0
     assert stderr == b''
-    if os.environ.get(constants.COSMOS_URL_ENV) is None:
+    if stdout != b'This command is deprecated\n':
         assert b'source' in stdout
         assert b'Validating package definitions...' not in stdout
         assert b'OK' not in stdout
-    else:
-        assert stdout == b'This command is deprecated\n'
 
 
 def test_update_with_validation():
@@ -76,12 +69,10 @@ def test_update_with_validation():
 
     assert returncode == 0
     assert stderr == b''
-    if os.environ.get(constants.COSMOS_URL_ENV) is None:
+    if stdout != b'This command is deprecated\n':
         assert b'source' in stdout
         assert b'Validating package definitions...' in stdout
         assert b'OK' in stdout
-    else:
-        assert stdout == b'This command is deprecated\n'
 
 
 def test_describe_nonexistent():
@@ -133,6 +124,7 @@ def test_describe_config():
 
 
 def test_describe_render():
+    # DCOS_PACKAGE_METADATA label will need to be changed for cosmos- issue 431
     stdout = file_json(
         'tests/data/package/json/test_describe_marathon_app_render.json')
     stdout = json.loads(stdout.decode('utf-8'))
@@ -145,10 +137,6 @@ def test_describe_render():
     actual_labels = stdout_.pop("labels", None)
 
     for label, value in expected_labels.items():
-        # this labels is different for cosmos b/c of null problem (issue 431)
-        if label == "DCOS_PACKAGE_METADATA" and \
-                os.environ.get(constants.COSMOS_URL_ENV) is not None:
-            continue
         assert value == actual_labels.get(label)
 
     assert stdout == stdout_
@@ -209,11 +197,9 @@ def test_describe_options():
     stdout_ = json.loads(stdout_.decode('utf-8'))
     actual_labels = stdout_.pop("labels", None)
 
+    # these labels are different for cosmos b/c of null problem
+    # we have cosmos tests for test, and will fix in issue 431
     for label, value in expected_labels.items():
-        # this labels is different for cosmos b/c of null problem (issue 431)
-        if label == "DCOS_PACKAGE_METADATA" and \
-                os.environ.get(constants.COSMOS_URL_ENV) is not None:
-            continue
         assert value == actual_labels.get(label)
 
     assert stdout == stdout_
@@ -246,28 +232,13 @@ def test_describe_specific_version():
 def test_bad_install():
     args = ['--options=tests/data/package/chronos-bad.json', '--yes']
     stdout = b""
-    if os.environ.get(constants.COSMOS_URL_ENV) is None:
-        stderr = b"""Error: False is not of type 'string'
-Path: chronos.zk-hosts
-Value: false
-
+    stderr = """\
 Please create a JSON file with the appropriate options, and pass the \
 /path/to/file as an --options argument.
 """
-    else:
-        stderr = b"""Error: Options JSON failed validation
-Found: boolean
-Expected: string
-Path: chronos.zk-hosts
-
-Please create a JSON file with the appropriate options, and pass the \
-/path/to/file as an --options argument.
-"""
-    _install_chronos(args=args,
-                     returncode=1,
-                     stdout=stdout,
-                     stderr=stderr,
-                     postInstallNotes=b'')
+    _install_bad_chronos(args=args,
+                         stdout=stdout,
+                         stderr=stderr)
 
 
 def test_install(zk_znode):
@@ -362,11 +333,10 @@ cli-test-4.zip"""
 
     # these labels are different for cosmos b/c of null problem
     # we have cosmos tests for test, and will fix in issue 431
-    if os.environ.get(constants.COSMOS_URL_ENV) is None:
-        assert expected_metadata == six.b(
-            app_labels.get('DCOS_PACKAGE_METADATA'))
-        assert expected_command == six.b(
-            app_labels.get('DCOS_PACKAGE_COMMAND'))
+    assert expected_metadata == six.b(
+        app_labels.get('DCOS_PACKAGE_METADATA'))
+    assert expected_command == six.b(
+        app_labels.get('DCOS_PACKAGE_COMMAND'))
 
     # test local package.json
     package = {
@@ -843,6 +813,19 @@ def _uninstall_chronos(args=[], returncode=0, stdout=b'', stderr=''):
     assert result_returncode == returncode
     assert result_stdout == stdout
     assert result_stderr.decode('utf-8').startswith(stderr)
+
+
+def _install_bad_chronos(args=['--yes'],
+                         stdout=b'',
+                         stderr=''):
+    cmd = ['dcos', 'package', 'install', 'chronos'] + args
+    returncode_, stdout_, stderr_ = exec_command(cmd)
+    assert returncode_ == 1
+    assert stderr in stderr_.decode('utf-8')
+    preInstallNotes = (b'We recommend a minimum of one node with at least 1 '
+                       b'CPU and 2GB of RAM available for the Chronos '
+                       b'Service.\n')
+    assert stdout_ == preInstallNotes
 
 
 def _install_chronos(
