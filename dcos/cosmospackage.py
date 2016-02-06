@@ -62,14 +62,14 @@ class Cosmos(package.PackageManager):
 
         uninstalled_versions = []
         for res in results:
-            version = res.get("version")
+            version = res.get("packageVersion")
             if version not in uninstalled_versions:
                 emitter.publish(
                     DefaultError(
                         'Uninstalled package [{}] version [{}]'.format(
                             res.get("packageName"),
-                            res.get("version"))))
-                uninstalled_versions += [res.get("version")]
+                            res.get("packageVersion"))))
+                uninstalled_versions += [res.get("packageVersion")]
 
                 if res.get("postUninstallNotes") is not None:
                     emitter.publish(
@@ -195,7 +195,7 @@ class Cosmos(package.PackageManager):
         """
 
         url = urllib.parse.urljoin(self.cosmos_url,
-                                   'v1/package/{}'.format(request))
+                                   'package/{}'.format(request))
         try:
             response = http.post(url, json=params,
                                  headers=_get_cosmos_header(request))
@@ -365,7 +365,7 @@ class CosmosPackageVersion(package.PackageVersion):
         :rtype: []
         """
 
-        params = {"packageName": self.name(), "packageVersions": True}
+        params = {"packageName": self.name(), "includePackageVersions": True}
         response = Cosmos(self._cosmos_url).cosmos_post(
             "list-versions", params)
 
@@ -381,7 +381,7 @@ def _get_header(request_type):
     :rtype: str
     """
 
-    return ("application/vnd.dcos.cosmos.{}+json;"
+    return ("application/vnd.dcos.package.{}+json;"
             "charset=utf-8;version=v1").format(request_type)
 
 
