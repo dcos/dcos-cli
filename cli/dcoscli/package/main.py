@@ -9,8 +9,8 @@ from collections import defaultdict
 import dcoscli
 import docopt
 import pkg_resources
-from dcos import (cmds, constants, cosmospackage, emitting, errors, http,
-                  options, package, subcommand, util)
+from dcos import (cmds, cosmospackage, emitting, errors, http, options,
+                  package, subcommand, util)
 from dcos.errors import DCOSException
 from dcoscli import tables
 from dcoscli.main import decorate_docopt_usage
@@ -715,8 +715,11 @@ def _get_package_manager():
     :returns: PackageManager instance
     :rtype: PackageManager
     """
-    url = os.environ.get(constants.COSMOS_URL_ENV)
-    if url:
-        return cosmospackage.Cosmos(url)
+
+    config = util.get_config()
+    dcos_url = util.get_config_vals(['core.dcos_url'], config)[0]
+    cosmos_manager = cosmospackage.Cosmos(dcos_url)
+    if cosmos_manager.enabled():
+        return cosmos_manager
     else:
         return package.PackageManager()

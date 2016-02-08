@@ -18,6 +18,19 @@ class Cosmos(package.PackageManager):
     def __init__(self, cosmos_url):
         self.cosmos_url = cosmos_url
 
+    def enabled(self):
+        """Returns whether or not cosmos is enabled on specified dcos cluter
+
+        :rtype: bool
+        """
+        try:
+            url = urllib.parse.urljoin(self.cosmos_url, 'capabilities')
+            response = http.get(url,
+                                headers=_get_cosmos_header("capabilities"))
+        except Exception:
+            return False
+        return response.status_code == 200
+
     def install_app(self, pkg, options, app_id):
         """Installs a package's application
 
@@ -251,7 +264,7 @@ class CosmosPackageVersion(package.PackageVersion):
 
     def cosmos_url(self):
         """
-        Returns location of cosmos server from `DCOS_COSMOS_URL` env variable
+        Returns location of cosmos server
 
         :returns: revision
         :rtype: str
