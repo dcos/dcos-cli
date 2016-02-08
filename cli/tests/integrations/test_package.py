@@ -281,6 +281,32 @@ def test_install(zk_znode):
                 if service['name'] == 'chronos']) == 0
 
 
+def test_bad_install_marathon_msg():
+    stdout = (b'A sample pre-installation message\n'
+              b'Installing Marathon app for package [helloworld] version '
+              b'[0.1.0] with app id [/foo]\n'
+              b'Installing CLI subcommand for package [helloworld] '
+              b'version [0.1.0]\n'
+              b'New command available: dcos helloworld\n'
+              b'A sample post-installation message\n')
+
+    _install_helloworld(['--yes', '--app-id=/foo'],
+                        stdout=stdout)
+
+    stdout2 = (b'A sample pre-installation message\n'
+               b'Installing Marathon app for package [helloworld] version '
+               b'[0.1.0] with app id [/foo/bar]\n')
+
+    stderr = (b'Object is not valid\n'
+              b'Groups and Applications may not have the same '
+              b'identifier: /foo\n')
+
+    _install_helloworld(['--yes', '--app-id=/foo/bar'],
+                        stdout=stdout2,
+                        stderr=stderr,
+                        returncode=1)
+
+
 def test_install_missing_options_file():
     """Test that a missing options file results in the expected stderr
     message."""
@@ -804,13 +830,15 @@ def _install_helloworld(
                b'version [0.1.0]\n'
                b'New command available: dcos helloworld\n'
                b'A sample post-installation message\n',
+        stderr=b'',
         returncode=0,
         stdin=None):
     assert_command(
         ['dcos', 'package', 'install', 'helloworld'] + args,
         stdout=stdout,
         returncode=returncode,
-        stdin=stdin)
+        stdin=stdin,
+        stderr=stderr)
 
 
 def _uninstall_helloworld(
