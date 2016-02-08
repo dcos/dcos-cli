@@ -54,14 +54,19 @@ def _cmds():
 
     return [
         cmds.Command(
-            hierarchy=['package', 'sources'],
+            hierarchy=['package', 'repo', 'list'],
             arg_keys=[],
-            function=_list_sources),
+            function=_list_response),
 
         cmds.Command(
-            hierarchy=['package', 'update'],
-            arg_keys=['--validate'],
-            function=_update),
+            hierarchy=['package', 'repo', 'add'],
+            arg_keys=['<repo-name>', '<package-repo>', '--index'],
+            function=_add_repo),
+
+        cmds.Command(
+            hierarchy=['package', 'repo', 'remove'],
+            arg_keys=['--repo-name', '--package-repo'],
+            function=_remove_repo),
 
         cmds.Command(
             hierarchy=['package', 'describe'],
@@ -107,7 +112,6 @@ def _package(config_schema, info):
     :returns: Process status
     :rtype: int
     """
-
     if config_schema:
         schema = json.loads(
             pkg_resources.resource_string(
@@ -134,33 +138,59 @@ def _info():
     return 0
 
 
-def _list_sources():
-    """List configured package sources.
+def _list_response():
+    """List configured package repositories.
 
     :returns: Process status
     :rtype: int
     """
 
     package_manager = _get_package_manager()
-    sources = package_manager.list_sources()
+    repos = package_manager.get_repos()
 
-    for source in sources:
-        emitter.publish("{} {}".format(source.hash(), source.url))
+    if repos:
+        emitter.publish(repos)
+    else:
+        msg = ("There are currently no repos configured. "
+               "Please use `dcos package repo add` to add a repo")
+        raise DCOSException(msg)
 
     return 0
 
 
-def _update(validate):
-    """Update local package definitions from sources.
+def _add_repo(repo_name, package_repo, index):
+    """Add package repo and update repo with new repo
 
-    :param validate: Whether to validate package content when updating sources.
-    :type validate: bool
+    :param repo_name: name to call repo
+    :type repo_name: str
+    :param package_repo: location of repo to add
+    :type package_repo: str
+    :param index: index to add this repo
+    :type index: int
+    :rtype: None
+    """
+
+    package_manager = _get_package_manager()
+    package_manager.add_repo(repo_name, package_repo, index)
+
+    return 0
+
+
+def _remove_repo(repo_name, package_repo):
+    """Remove package repo and update repo with new repo
+
+    :param repo_name: name to call repo
+    :type repo_name: str
+    :param package_repo: location of repo to add
+    :type package_repo: str
     :returns: Process status
     :rtype: int
     """
 
+    if repo_name is None and package_repo is None:
+        raise DCOSException("Must specify --repo-name and/or --package-repo")
     package_manager = _get_package_manager()
-    package_manager.update_sources(validate)
+    package_manager.remove_repo(repo_name, package_repo)
 
     return 0
 
@@ -733,4 +763,7 @@ def _get_package_manager():
     if cosmos_manager.enabled():
         return cosmos_manager
     else:
-        return package.PackageManager()
+        msg = ("This version of the dcos-cli is unsupported for your DCOS "
+               "cluster. Please use a dcos-cli version < 0.4.0 or upgrade your"
+               "cluster to DCOS 1.6 or greater")
+        return DCOSException(msg)

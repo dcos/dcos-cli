@@ -593,21 +593,17 @@ def config_set(key, value, env=None):
     assert stderr == b''
 
 
-def config_unset(key, index=None, env=None):
+def config_unset(key, env=None):
     """ dcos config unset <key> --index=<index>
 
     :param key: <key>
     :type key: str
-    :param index: <index>
-    :type index: str
     :param env: env vars
     :type env: dict
     :rtype: None
     """
 
     cmd = ['dcos', 'config', 'unset', key]
-    if index is not None:
-        cmd.append('--index={}'.format(index))
 
     returncode, stdout, stderr = exec_command(cmd, env=env)
 

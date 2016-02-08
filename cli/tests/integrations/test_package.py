@@ -4,11 +4,9 @@ import json
 
 import pkg_resources
 import six
-from dcos import package, subcommand
-from dcos.errors import DCOSException
+from dcos import subcommand
 
 import pytest
-from mock import patch
 
 from .common import (assert_command, assert_lines, delete_zk_node,
                      delete_zk_nodes, exec_command, file_bytes, file_json,
@@ -40,39 +38,71 @@ def test_version():
                    stdout=b'dcos-package version SNAPSHOT\n')
 
 
-# issue 424
-def test_sources_list():
-    stdout = b"70a675b4a34ea8d36514f952b5744695a746650c " + \
-             b"https://github.com/mesosphere/universe/archive/cli-test-4.zip\n"
-
-    returncode, stdout_, stderr = exec_command(['dcos', 'package', 'sources'])
-    if stderr != b'Not implemented\n':
-        assert stdout_ == stdout
-        assert returncode == 0
-        assert stderr == b''
+def test_repo_list():
+    repo_list = b"""\
+Universe: https://github.com/mesosphere/universe/archive/cli-test-4.zip
+"""
+    assert_command(['dcos', 'package', 'repo', 'list'], stdout=repo_list)
 
 
-def test_update_without_validation():
-    returncode, stdout, stderr = exec_command(['dcos', 'package', 'update'])
+def test_repo_add():
+    repo = \
+        "https://github.com/mesosphere/universe/archive/cli-test-3.zip"
+    repo_list = b"""\
+test: https://github.com/mesosphere/universe/archive/cli-test-3.zip
+Universe: https://github.com/mesosphere/universe/archive/cli-test-4.zip
+"""
+    args = ["test", repo]
+    _repo_add(args, repo_list)
 
-    assert returncode == 0
-    assert stderr == b''
-    if stdout != b'This command is deprecated\n':
-        assert b'source' in stdout
-        assert b'Validating package definitions...' not in stdout
-        assert b'OK' not in stdout
+
+def test_repo_add_index():
+    repo = \
+        "https://github.com/mesosphere/universe/archive/cli-test-2.zip"
+    repo_list = b"""\
+test: https://github.com/mesosphere/universe/archive/cli-test-3.zip
+test2: https://github.com/mesosphere/universe/archive/cli-test-2.zip
+Universe: https://github.com/mesosphere/universe/archive/cli-test-4.zip
+"""
+    args = ["test2", repo, '--index=1']
+    _repo_add(args, repo_list)
 
 
-def test_update_with_validation():
+def test_repo_remove_by_repo_name():
+    repo_list = b"""\
+test2: https://github.com/mesosphere/universe/archive/cli-test-2.zip
+Universe: https://github.com/mesosphere/universe/archive/cli-test-4.zip
+"""
+    _repo_remove(['--repo-name=test'], repo_list)
+
+
+def test_repo_remove_by_package_repo():
+    repo = \
+        "https://github.com/mesosphere/universe/archive/cli-test-2.zip"
+    repo_list = b"""\
+Universe: https://github.com/mesosphere/universe/archive/cli-test-4.zip
+"""
+    _repo_remove(['--package-repo={}'.format(repo)], repo_list)
+
+
+def test_repo_empty():
+    assert_command(
+        ['dcos', 'package', 'repo', 'remove', '--repo-name=Universe'])
+
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'package', 'update', '--validate'])
+        ['dcos', 'package', 'repo', 'list'])
+    stderr_msg = (b"There are currently no repos configured. "
+                  b"Please use `dcos package repo add` to add a repo\n")
+    assert returncode == 1
+    assert stdout == b''
+    assert stderr == stderr_msg
 
-    assert returncode == 0
-    assert stderr == b''
-    if stdout != b'This command is deprecated\n':
-        assert b'source' in stdout
-        assert b'Validating package definitions...' in stdout
-        assert b'OK' in stdout
+    repo = \
+        "https://github.com/mesosphere/universe/archive/cli-test-4.zip"
+    repo_list = b"""\
+Universe: https://github.com/mesosphere/universe/archive/cli-test-4.zip
+"""
+    _repo_add(["Universe", repo], repo_list)
 
 
 def test_describe_nonexistent():
@@ -124,7 +154,7 @@ def test_describe_config():
 
 
 def test_describe_render():
-    # DCOS_PACKAGE_METADATA label will need to be changed for cosmos- issue 431
+    # DCOS_PACKAGE_METADATA label will need to be changed after issue 431
     stdout = file_json(
         'tests/data/package/json/test_describe_marathon_app_render.json')
     stdout = json.loads(stdout.decode('utf-8'))
@@ -197,8 +227,6 @@ def test_describe_options():
     stdout_ = json.loads(stdout_.decode('utf-8'))
     actual_labels = stdout_.pop("labels", None)
 
-    # these labels are different for cosmos b/c of null problem
-    # we have cosmos tests for test, and will fix in issue 431
     for label, value in expected_labels.items():
         assert value == actual_labels.get(label)
 
@@ -276,6 +304,7 @@ def test_bad_install_marathon_msg():
                         stdout=stdout2,
                         stderr=stderr,
                         returncode=1)
+    _uninstall_helloworld()
 
 
 def test_install_missing_options_file():
@@ -330,17 +359,17 @@ def test_package_metadata():
     _install_helloworld()
 
     # test marathon labels
-    expected_metadata = b"""eyJkZXNjcmlwdGlvbiI6ICJFeGFtcGxlIERDT1MgYXBwbGljYX\
-Rpb24gcGFja2FnZSIsICJtYWludGFpbmVyIjogInN1cHBvcnRAbWVzb3NwaGVyZS5pbyIsICJuYW1l\
-IjogImhlbGxvd29ybGQiLCAicGFja2FnaW5nVmVyc2lvbiI6ICIyLjAiLCAicG9zdEluc3RhbGxOb3\
-RlcyI6ICJBIHNhbXBsZSBwb3N0LWluc3RhbGxhdGlvbiBtZXNzYWdlIiwgInByZUluc3RhbGxOb3Rl\
-cyI6ICJBIHNhbXBsZSBwcmUtaW5zdGFsbGF0aW9uIG1lc3NhZ2UiLCAidGFncyI6IFsibWVzb3NwaG\
-VyZSIsICJleGFtcGxlIiwgInN1YmNvbW1hbmQiXSwgInZlcnNpb24iOiAiMC4xLjAiLCAid2Vic2l0\
-ZSI6ICJodHRwczovL2dpdGh1Yi5jb20vbWVzb3NwaGVyZS9kY29zLWhlbGxvd29ybGQifQ=="""
+    expected_metadata = b"""eyJ3ZWJzaXRlIjoiaHR0cHM6Ly9naXRodWIuY29tL21lc29zcG\
+hlcmUvZGNvcy1oZWxsb3dvcmxkIiwibmFtZSI6ImhlbGxvd29ybGQiLCJwb3N0SW5zdGFsbE5vdGVz\
+IjoiQSBzYW1wbGUgcG9zdC1pbnN0YWxsYXRpb24gbWVzc2FnZSIsImRlc2NyaXB0aW9uIjoiRXhhbX\
+BsZSBEQ09TIGFwcGxpY2F0aW9uIHBhY2thZ2UiLCJwYWNrYWdpbmdWZXJzaW9uIjoiMi4wIiwidGFn\
+cyI6WyJtZXNvc3BoZXJlIiwiZXhhbXBsZSIsInN1YmNvbW1hbmQiXSwibWFpbnRhaW5lciI6InN1cH\
+BvcnRAbWVzb3NwaGVyZS5pbyIsInZlcnNpb24iOiIwLjEuMCIsInByZUluc3RhbGxOb3RlcyI6IkEg\
+c2FtcGxlIHByZS1pbnN0YWxsYXRpb24gbWVzc2FnZSJ9"""
 
-    expected_command = b"""eyJwaXAiOiBbImRjb3M8MS4wIiwgImdpdCtodHRwczovL2dpdGh\
-1Yi5jb20vbWVzb3NwaGVyZS9kY29zLWhlbGxvd29ybGQuZ2l0I2Rjb3MtaGVsbG93b3JsZD0wLjEuM\
-CJdfQ=="""
+    expected_command = b"""eyJwaXAiOlsiZGNvczwxLjAiLCJnaXQraHR0cHM6Ly9naXRodWI\
+uY29tL21lc29zcGhlcmUvZGNvcy1oZWxsb3dvcmxkLmdpdCNkY29zLWhlbGxvd29ybGQ9MC4xLjAiX\
+X0="""
 
     expected_source = b"""https://github.com/mesosphere/universe/archive/\
 cli-test-4.zip"""
@@ -764,22 +793,6 @@ def test_search_middle_with_wildcard():
         assert len(registry['packages']) == 1
 
 
-@patch('dcos.package.Package.package_json')
-@patch('dcos.package.Package.config_json')
-def test_bad_config_schema_msg(config_mock, package_mock):
-    pkg = package.Package("", "/")
-    config_mock.return_value = {}
-    package_mock.return_value = {'maintainer': 'support@test'}
-
-    with pytest.raises(DCOSException) as e:
-        pkg.options("1", {})
-
-    msg = ("An object in the package's config.json is missing the "
-           "required 'properties' feature:\n {}"
-           "\nPlease contact the project maintainer: support@test")
-    assert e.exconly().split(':', 1)[1].strip() == msg
-
-
 def _get_app_labels(app_id):
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'show', app_id])
@@ -904,6 +917,7 @@ Installing CLI subcommand for package [helloworld] version [0.1.0]
 New command available: dcos helloworld
 A sample post-installation message
 '''
+
     stderr = b'Uninstalled package [helloworld] version [0.1.0]\n'
     return _package('helloworld',
                     stdout=stdout,
@@ -938,6 +952,16 @@ def _package(name,
             ['dcos', 'package', 'uninstall', name],
             stderr=uninstall_stderr)
         watch_all_deployments()
+
+
+def _repo_add(args=[], repo_list=[]):
+    assert_command(['dcos', 'package', 'repo', 'add'] + args)
+    assert_command(['dcos', 'package', 'repo', 'list'], stdout=repo_list)
+
+
+def _repo_remove(args=[], repo_list=[]):
+    assert_command(['dcos', 'package', 'repo', 'remove'] + args)
+    assert_command(['dcos', 'package', 'repo', 'list'], stdout=repo_list)
 
 
 # issue 431

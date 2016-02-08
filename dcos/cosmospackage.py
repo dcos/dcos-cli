@@ -2,7 +2,7 @@ import functools
 import json
 
 import pystache
-from dcos import emitting, http, package, util
+from dcos import emitting, http, util
 from dcos.errors import DCOSException, DCOSHTTPException, DefaultError
 
 from six.moves import urllib
@@ -12,7 +12,7 @@ logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
 
 
-class Cosmos(package.PackageManager):
+class Cosmos():
     """Implementation of Package Manager using Cosmos"""
 
     def __init__(self, cosmos_url):
@@ -147,23 +147,47 @@ class Cosmos(package.PackageManager):
 
         return packages
 
-    def list_sources(self):
-        """List configured package sources.
+    def get_repos(self):
+        """List locations of repos
 
-        :returns: The list of sources, in resolution order
-        :rtype: [Source]
-        """
-        # TODO: issue 424
-        raise DCOSException("Not implemented")
-
-    def update_sources(self, validate=False):
-        """Update package sources
-
-        We are deprecating this command since it doesn't make sense for cosmos.
+        :returns: the list of repos, in resolution order
+        :rtype: [str]
         """
 
-        emitter.publish("This command is deprecated")
-        return 0
+        response = self.cosmos_post("repository/list", params={})
+        repos = ["{}: {}".format(repo.get("name"), repo.get("uri"))
+                 for repo in response.json().get("repositories")]
+        return "\n".join(repos)
+
+    def add_repo(self, name, package_repo, index):
+        """Add package repo and update repo with new repo
+
+        :param name: name to call repo
+        :type name: str
+        :param package_repo: location of repo to add
+        :type package_repo: str
+        :param index: index to add this repo
+        :type index: int
+        :rtype: None
+        """
+
+        params = {"name": name, "uri": package_repo}
+        if index is not None:
+            params["index"] = index
+        response = self.cosmos_post("repository/add", params=params)
+        return response.json()
+
+    def remove_repo(self, name, package_repo):
+        """Remove package repo and update repo
+
+        :param package_repo: location of repo to remove
+        :type package_repo: str
+        :rtype: None
+        """
+
+        params = {"name": name, "uri": package_repo}
+        response = self.cosmos_post("repository/delete", params=params)
+        return response.json()
 
     def cosmos_error(fn):
         """Decorator for errors returned from cosmos
@@ -223,7 +247,7 @@ class Cosmos(package.PackageManager):
         return response
 
 
-class CosmosPackageVersion(package.PackageVersion):
+class CosmosPackageVersion():
     """Interface to a specific package version from cosmos"""
 
     def __init__(self, name, package_version, url):
@@ -252,6 +276,24 @@ class CosmosPackageVersion(package.PackageVersion):
         """
 
         return "cosmos"
+
+    def version(self):
+        """Returns the package version.
+
+        :returns: The version of this package
+        :rtype: str
+        """
+
+        return self._package_version
+
+    def name(self):
+        """Returns the package name.
+
+        :returns: The name of this package
+        :rtype: str
+        """
+
+        return self._name
 
     def revision(self):
         """We aren't exposing revisions for cosmos right now, so make
@@ -407,6 +449,7 @@ def _get_cosmos_header(request_name):
     :rtype: {}
     """
 
+    request_name = request_name.replace("/", ".")
     return {"Accept": _get_header("{}-response".format(request_name)),
             "Content-Type": _get_header("{}-request".format(request_name))}
 
@@ -422,6 +465,7 @@ def _check_cosmos_header(request_name, response):
     :rtype: bool
     """
 
+    request_name = request_name.replace("/", ".")
     rsp = "{}-response".format(request_name)
     return _get_header(rsp) in response.headers.get('Content-Type')
 

@@ -1,6 +1,5 @@
 [package]
-cache = "tmp/cache"
-sources = [ "https://github.com/mesosphere/universe/archive/cli-test-4.zip",]
+cosmos_url = "http://localhost:7070"
 [core]
 timeout = 5
 dcos_url = "https://dcos.snakeoil.mesosphere.com"

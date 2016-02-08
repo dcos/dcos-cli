@@ -96,9 +96,6 @@ Configure Environment and Run
    installation of DCOS::
 
     dcos config set core.dcos_url http://dcos-ea-1234.us-west-2.elb.amazonaws.com
-    dcos config append package.sources https://github.com/mesosphere/universe/archive/version-1.x.zip
-    dcos config set package.cache /tmp/dcos
-    dcos package update
 
 #. Get started by calling the DCOS CLI help::
 
