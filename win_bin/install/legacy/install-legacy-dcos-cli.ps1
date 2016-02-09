@@ -86,7 +86,7 @@ if ($PYTHON_ARCHITECTURE -eq 64) {
 if ($env:DCOS_CLI_VERSION) {
   & $installation_path\Scripts\pip install --quiet "dcoscli==$env:DCOS_CLI_VERSION"
 } else {
-  & $installation_path\Scripts\pip install --quiet "dcoscli"
+  & $installation_path\Scripts\pip install --quiet "dcoscli<0.4.0"
 }
 
 $env:Path="$env:Path;$installation_path\Scripts\"
@@ -103,6 +103,10 @@ $env:DCOS_CONFIG = $DCOS_CONFIG
 dcos config set core.reporting true
 dcos config set core.dcos_url $dcos_url
 dcos config set core.timeout 5
+dcos config set package.cache $env:temp\dcos\package-cache
+dcos config set package.sources '[\"https://github.com/mesosphere/universe/archive/version-1.x.zip\"]'
+
+dcos package update
 
 $ACTIVATE_PATH="$installation_path\Scripts\activate.ps1"
 
