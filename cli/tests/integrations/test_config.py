@@ -374,29 +374,32 @@ def test_url_validation(env):
     key = 'core.dcos_url'
     default_value = 'http://dcos.snakeoil.mesosphere.com'
 
+    key2 = 'package.cosmos_url'
+
     config_set(key, 'http://localhost', env)
     config_set(key, 'https://localhost', env)
     config_set(key, 'http://dcos-1234', env)
-    config_set(key, 'http://dcos-1234.mydomain.com', env)
+    config_set(key2, 'http://dcos-1234.mydomain.com', env)
 
     config_set(key, 'http://localhost:5050', env)
     config_set(key, 'https://localhost:5050', env)
     config_set(key, 'http://mesos-1234:5050', env)
-    config_set(key, 'http://mesos-1234.mydomain.com:5050', env)
+    config_set(key2, 'http://mesos-1234.mydomain.com:5050', env)
 
     config_set(key, 'http://localhost:8080', env)
     config_set(key, 'https://localhost:8080', env)
     config_set(key, 'http://marathon-1234:8080', env)
-    config_set(key, 'http://marathon-1234.mydomain.com:5050', env)
+    config_set(key2, 'http://marathon-1234.mydomain.com:5050', env)
 
     config_set(key, 'http://user@localhost:8080', env)
     config_set(key, 'http://u-ser@localhost:8080', env)
     config_set(key, 'http://user123_@localhost:8080', env)
     config_set(key, 'http://user:p-ssw_rd@localhost:8080', env)
     config_set(key, 'http://user123:password321@localhost:8080', env)
-    config_set(key, 'http://us%r1$3:pa#sw*rd321@localhost:8080', env)
+    config_set(key2, 'http://us%r1$3:pa#sw*rd321@localhost:8080', env)
 
     config_set(key, default_value, env)
+    config_unset(key2, None, env)
 
 
 def test_append_url_validation(env):

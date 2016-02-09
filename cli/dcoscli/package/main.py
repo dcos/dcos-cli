@@ -709,6 +709,18 @@ def _bundle_screenshots(screenshot_directory, zip_file):
             arcname='images/screenshots/{}'.format(filename))
 
 
+def _get_cosmos_url():
+    """
+    :returns: cosmos base url
+    :rtype: str
+    """
+    config = util.get_config()
+    cosmos_url = config.get("package.cosmos_url")
+    if cosmos_url is None:
+        cosmos_url = util.get_config_vals(['core.dcos_url'], config)[0]
+    return cosmos_url
+
+
 def _get_package_manager():
     """Returns type of package manager to use
 
@@ -716,9 +728,8 @@ def _get_package_manager():
     :rtype: PackageManager
     """
 
-    config = util.get_config()
-    dcos_url = util.get_config_vals(['core.dcos_url'], config)[0]
-    cosmos_manager = cosmospackage.Cosmos(dcos_url)
+    cosmos_url = _get_cosmos_url()
+    cosmos_manager = cosmospackage.Cosmos(cosmos_url)
     if cosmos_manager.enabled():
         return cosmos_manager
     else:
