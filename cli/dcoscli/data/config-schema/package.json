@@ -19,6 +19,13 @@
       "title": "Package cache directory",
       "description": "Path to the local package cache directory",
       "default": "/tmp/cache"
+    },
+    "cosmos_url": {
+      "type": "string",
+      "format": "uri",
+      "title": "Cosmos base URL",
+      "description": "Base URL for talking to COSMOS. It overwrites the value specified in core.dcos_url",
+      "default": "http://localhost:7070"
     }
   },
   "additionalProperties": false,
