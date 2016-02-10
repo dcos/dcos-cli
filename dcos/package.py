@@ -16,7 +16,7 @@ import git
 import portalocker
 import pystache
 import six
-from dcos import (constants, emitting, errors, http, marathon, mesos,
+from dcos import (config, constants, emitting, errors, http, marathon, mesos,
                   subcommand, util)
 from dcos.errors import DCOSException, DefaultError
 
@@ -1789,6 +1789,49 @@ class PackageManager():
         if errors:
             raise DCOSException(util.list_to_err(errors))
 
+    def get_repos(self):
+        """List locations of repositories
+
+        :returns: the list of repos, in resolution order
+        :rtype: [str]
+        """
+
+        config = util.get_config()
+        source_uris = util.get_config_vals(['package.sources'], config)[0]
+        return source_uris
+
+    def add_repo(self, name, package_repo, index):
+        """Add package repo and update repo with new source
+
+        :param name: name to call repo
+        :type name: str
+        :param package_repo: location of repo to add
+        :type package_repo: str
+        :param index: index to add this repo
+        :type index: int
+        :rtype: None
+        """
+
+        config.append("package.sources", package_repo)
+        self.update_sources()
+
+    def remove_source(self, package_repo):
+        """Remove package repo and update with new source
+
+        :param package_souurce: location of source to add
+        :type package_source: str
+        :returns: Process status
+        :rtype: int
+        """
+
+        index = next((i for i, v in enumerate(self.get_repos())
+                      if v == package_repo), None)
+        if index is None:
+            raise DCOSException(
+                "source [{}] not found in sources list".format(package_repo))
+        config.unset("package.sources", index)
+        self.update_sources()
+
     def list_sources(self):
         """List configured package sources.
 
@@ -1796,9 +1839,7 @@ class PackageManager():
         :rtype: [Source]
         """
 
-        config = util.get_config()
-        source_uris = util.get_config_vals(['package.sources'], config)[0]
-
+        source_uris = self.get_sources()
         sources = [url_to_source(s) for s in source_uris]
 
         errs = [source for source in sources if isinstance(source, Error)]
