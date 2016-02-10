@@ -4,7 +4,6 @@ import json
 import os
 import shutil
 import subprocess
-import tempfile
 
 from dcos import constants, util
 from dcos.errors import DCOSException
@@ -366,18 +365,21 @@ def _install_with_pip(
         if _execute_install(cmd) != 0:
             raise _generic_error(package_name)
 
-    with tempfile.NamedTemporaryFile() as temp_file:
+    # Do not replace util.temptext NamedTemporaryFile
+    # otherwise bad things will happen on Windows
+    with util.temptext() as text_file:
+        fd, requirement_path = text_file
+
         # Write the requirements to the file
-        for line in requirements:
-            temp_file.write((line + os.linesep).encode('utf-8'))
-        # Make sure that we flush the file before passing it to pip
-        temp_file.flush()
+        with os.fdopen(fd, 'w') as requirements_file:
+            for line in requirements:
+                print(line, file=requirements_file)
 
         cmd = [
             os.path.join(env_directory, BIN_DIRECTORY, 'pip'),
             'install',
             '--requirement',
-            temp_file.name,
+            requirement_path,
         ]
 
         if _execute_install(cmd) != 0:
