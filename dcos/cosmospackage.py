@@ -443,6 +443,8 @@ def _format_error_message(error):
         error_message = error.get("message") + helper
     elif error.get("type") == "JsonSchemaMismatch":
         error_message = _format_json_schema_mismatch_message(error)
+    elif error.get("type") == "MarathonBadResponse":
+        error_message = _format_marathon_bad_response_message(error)
     else:
         error_message = error.get("message")
 
@@ -472,4 +474,12 @@ def _format_json_schema_mismatch_message(error):
         " pass the /path/to/file as an --options argument."
     ]
 
+    return "\n".join(error_messages)
+
+
+def _format_marathon_bad_response_message(error):
+    data = error.get("data")
+    error_messages = [error.get("message")]
+    if data is not None:
+        error_messages += [err.get("error") for err in data.get("errors")]
     return "\n".join(error_messages)
