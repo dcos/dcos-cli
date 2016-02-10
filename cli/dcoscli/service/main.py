@@ -280,3 +280,7 @@ def _log_marathon(follow, lines, ssh_config_file):
     emitter.publish(DefaultError("Running `{}`".format(cmd)))
 
     return subprocess.call(cmd, shell=True)
+
+
+if __name__ == "__main__":
+    main()

@@ -418,3 +418,7 @@ def _parse_array_item(name, value):
         value = '[' + value + ']'
 
     return parser(value)
+
+
+if __name__ == "__main__":
+    main()

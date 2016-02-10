@@ -747,3 +747,7 @@ def _bundle_screenshots(screenshot_directory, zip_file):
         zip_file.write(
             fullpath,
             arcname='images/screenshots/{}'.format(filename))
+
+
+if __name__ == "__main__":
+    main()
