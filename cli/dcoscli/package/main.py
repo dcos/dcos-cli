@@ -83,7 +83,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['package', 'list'],
-            arg_keys=['--json', '--endpoints', '--app-id', '<package-name>'],
+            arg_keys=['--json', '--app-id', '<package-name>'],
             function=_list),
 
         cmds.Command(
@@ -402,14 +402,11 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
     return 0
 
 
-def _list(json_, endpoints, app_id, package_name):
+def _list(json_, app_id, package_name):
     """List installed apps
 
     :param json_: output json if True
     :type json_: bool
-    :param endpoints: Whether to include a list of
-        endpoints as port-host pairs
-    :type endpoints: boolean
     :param app_id: App ID of app to show
     :type app_id: str
     :param package_name: The package to show
@@ -417,10 +414,6 @@ def _list(json_, endpoints, app_id, package_name):
     :returns: process return code
     :rtype: int
     """
-
-    if endpoints:
-        emitter.publish(
-            errors.DefaultError("The --endpoints flag is deprecated"))
 
     package_manager = _get_package_manager()
     if app_id is not None:
