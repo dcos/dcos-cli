@@ -3,8 +3,6 @@ import collections
 from dcos import (emitting, subcommand, util)
 from dcos.errors import DCOSException
 
-from six.moves import urllib
-
 logger = util.get_logger(__name__)
 
 emitter = emitting.FlatEmitter()
@@ -118,31 +116,18 @@ class InstalledPackage(object):
         return ret
 
 
-def _matches_package_name(name, pkg_info):
+def _matches_package_name(name, command_name):
     """
     :param name: the name of the package
     :type name: str
-    :param pkg_info: the package description
-    :type pkg_info: dict
+    :param command_name: the name of the command
+    :type command_name: str
     :returns: True if the name is not defined or the package matches that name;
               False otherwise
     :rtype: bool
     """
 
-    return name is None or pkg_info['name'] == name
-
-
-def _matches_app_id(app_id, pkg_info):
-    """
-    :param app_id: the application id
-    :type app_id: str
-    :param pkg_info: the package description
-    :type pkg_info: dict
-    :returns: True if the app id is not defined or the package matches that app
-              id; False otherwize
-    :rtype: bool
-    """
-    return app_id is None or app_id in pkg_info.get('apps')
+    return name is None or command_name == name
 
 
 def installed_packages(package_manager, app_id, package_name):
@@ -166,38 +151,23 @@ def installed_packages(package_manager, app_id, package_name):
     :rtype: [dict]
     """
 
-    apps = package_manager.installed_apps(None, None)
-    subcommands = installed_subcommands()
-
     dicts = collections.defaultdict(lambda: {'apps': [], 'command': None})
 
+    apps = package_manager.installed_apps(package_name, app_id)
     for app in apps:
         key = app['name']
         dicts[key]['apps'].append(app)
 
+    subcommands = installed_subcommands()
     for subcmd in subcommands:
-        key = subcmd.name
-        dicts[key]['command'] = subcmd
+        if _matches_package_name(package_name, subcmd.name):
+            dicts[subcmd.name]['command'] = subcmd
 
     installed = [
         InstalledPackage(pkg['apps'], pkg['command']) for pkg in dicts.values()
     ]
 
-    results = []
-    for pkg in installed:
-        pkg_info = pkg.dict()
-        app_id = app_id and urllib.parse.quote('/' + app_id.strip('/'))
-        if (_matches_package_name(package_name, pkg_info) and
-                _matches_app_id(app_id, pkg_info)):
-            if app_id:
-                # if the user is asking a specific id then only show that id
-                pkg_info['apps'] = [
-                    app for app in pkg_info['apps']
-                    if app == app_id
-                ]
-
-            results.append(pkg_info)
-    return results
+    return [pkg.dict() for pkg in installed]
 
 
 def installed_subcommands():
