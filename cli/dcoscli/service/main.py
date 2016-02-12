@@ -271,9 +271,14 @@ def _log_marathon(follow, lines, ssh_config_file):
 
     leader_ip = marathon.create_client().get_leader().split(':')[0]
 
-    cmd = ("ssh {0}core@{1} " +
-           "journalctl {2}-u dcos-marathon").format(
+    user_string = 'core@'
+    if ssh_config_file:
+        user_string = ''
+
+    cmd = ("ssh {0}{1}{2} " +
+           "journalctl {3}-u dcos-marathon").format(
                ssh_options,
+               user_string,
                leader_ip,
                journalctl_args)
 
