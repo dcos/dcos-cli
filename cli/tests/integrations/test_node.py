@@ -185,6 +185,7 @@ def _get_schema(slave):
     schema['properties']['offered_resources']['required'].remove('ports')
     schema['properties']['attributes']['additionalProperties'] = True
 
+    schema['required'].remove('version')
     return schema
 
 
