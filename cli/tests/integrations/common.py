@@ -249,7 +249,7 @@ def remove_app(app_id):
     :rtype: None
     """
 
-    assert_command(['dcos', 'marathon', 'app', 'remove', app_id])
+    assert_command(['dcos', 'marathon', 'app', 'remove', '--force', app_id])
 
 
 def package_install(package, deploy=False, args=[]):
