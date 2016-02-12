@@ -28,7 +28,12 @@ def task_fixture():
                 "container_status": {
                     "network_infos": [
                         {
-                            "ip_address": "172.17.8.12"
+                            "ip_address": "172.17.8.12",
+                            "ip_addresses": [
+                                {
+                                    "ip_address": "127.17.8.12"
+                                }
+                            ]
                         }
                     ]
                 },
