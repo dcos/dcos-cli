@@ -1,6 +1,6 @@
 import collections
 
-from dcos import (emitting, subcommand, util)
+from dcos import emitting, subcommand, util
 from dcos.errors import DCOSException
 
 logger = util.get_logger(__name__)
