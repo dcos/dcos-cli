@@ -14,6 +14,20 @@ from .common import (assert_command, assert_lines, delete_zk_node,
                      service_shutdown, wait_for_service, watch_all_deployments)
 
 
+def setup_module(module):
+    assert_command(
+        ['dcos', 'package', 'repo', 'remove', '--repo-name=Universe'])
+    repo = "https://github.com/mesosphere/universe/archive/cli-test-4.zip"
+    assert_command(['dcos', 'package', 'repo', 'add', 'test4', repo])
+
+
+def teardown_module(module):
+    assert_command(
+        ['dcos', 'package', 'repo', 'remove', '--repo-name=test4'])
+    repo = "https://universe.mesosphere.com/repo"
+    assert_command(['dcos', 'package', 'repo', 'add', 'Universe', repo])
+
+
 @pytest.fixture(scope="module")
 def zk_znode(request):
     request.addfinalizer(delete_zk_nodes)
@@ -40,7 +54,7 @@ def test_version():
 
 def test_repo_list():
     repo_list = b"""\
-Universe: https://github.com/mesosphere/universe/archive/cli-test-4.zip
+test4: https://github.com/mesosphere/universe/archive/cli-test-4.zip
 """
     assert_command(['dcos', 'package', 'repo', 'list'], stdout=repo_list)
 
@@ -50,7 +64,7 @@ def test_repo_add():
         "https://github.com/mesosphere/universe/archive/cli-test-3.zip"
     repo_list = b"""\
 test: https://github.com/mesosphere/universe/archive/cli-test-3.zip
-Universe: https://github.com/mesosphere/universe/archive/cli-test-4.zip
+test4: https://github.com/mesosphere/universe/archive/cli-test-4.zip
 """
     args = ["test", repo]
     _repo_add(args, repo_list)
@@ -62,7 +76,7 @@ def test_repo_add_index():
     repo_list = b"""\
 test: https://github.com/mesosphere/universe/archive/cli-test-3.zip
 test2: https://github.com/mesosphere/universe/archive/cli-test-2.zip
-Universe: https://github.com/mesosphere/universe/archive/cli-test-4.zip
+test4: https://github.com/mesosphere/universe/archive/cli-test-4.zip
 """
     args = ["test2", repo, '--index=1']
     _repo_add(args, repo_list)
@@ -71,7 +85,7 @@ Universe: https://github.com/mesosphere/universe/archive/cli-test-4.zip
 def test_repo_remove_by_repo_name():
     repo_list = b"""\
 test2: https://github.com/mesosphere/universe/archive/cli-test-2.zip
-Universe: https://github.com/mesosphere/universe/archive/cli-test-4.zip
+test4: https://github.com/mesosphere/universe/archive/cli-test-4.zip
 """
     _repo_remove(['--repo-name=test'], repo_list)
 
@@ -80,14 +94,14 @@ def test_repo_remove_by_package_repo():
     repo = \
         "https://github.com/mesosphere/universe/archive/cli-test-2.zip"
     repo_list = b"""\
-Universe: https://github.com/mesosphere/universe/archive/cli-test-4.zip
+test4: https://github.com/mesosphere/universe/archive/cli-test-4.zip
 """
     _repo_remove(['--package-repo={}'.format(repo)], repo_list)
 
 
 def test_repo_empty():
     assert_command(
-        ['dcos', 'package', 'repo', 'remove', '--repo-name=Universe'])
+        ['dcos', 'package', 'repo', 'remove', '--repo-name=test4'])
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'package', 'repo', 'list'])
@@ -100,9 +114,9 @@ def test_repo_empty():
     repo = \
         "https://github.com/mesosphere/universe/archive/cli-test-4.zip"
     repo_list = b"""\
-Universe: https://github.com/mesosphere/universe/archive/cli-test-4.zip
+test4: https://github.com/mesosphere/universe/archive/cli-test-4.zip
 """
-    _repo_add(["Universe", repo], repo_list)
+    _repo_add(["test4", repo], repo_list)
 
 
 def test_describe_nonexistent():
