@@ -52,6 +52,31 @@ def tempdir():
         shutil.rmtree(tmpdir, ignore_errors=True)
 
 
+@contextlib.contextmanager
+def temptext():
+    """A context manager for temporary files.
+
+    The lifetime of the returned temporary file corresponds to the
+    lexical scope of the returned file descriptor.
+
+    :return: reference to a temporary file
+    :rtype: (fd, str)
+    """
+
+    fd, path = tempfile.mkstemp()
+    try:
+        yield (fd, path)
+    finally:
+        # Close the file descriptor and ignore errors
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+
+        # delete the path
+        shutil.rmtree(path, ignore_errors=True)
+
+
 def sh_copy(src, dst):
     """Copy file src to the file or directory dst.
 

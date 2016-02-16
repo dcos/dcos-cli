@@ -195,6 +195,8 @@ def request(method,
 
     if is_success(response.status_code):
         return response
+    elif response.status_code == 403:
+        raise DCOSException("You are not authorized to perform this operation")
     else:
         raise DCOSHTTPException(response)
 
