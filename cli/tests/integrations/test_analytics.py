@@ -4,10 +4,8 @@ from functools import wraps
 import dcoscli.analytics
 import rollbar
 from dcos import constants, http, util
-from dcoscli.analytics import _base_properties
 from dcoscli.config.main import main as config_main
-from dcoscli.constants import (SEGMENT_IO_CLI_ERROR_EVENT,
-                               SEGMENT_IO_CLI_EVENT, SEGMENT_URL)
+from dcoscli.constants import SEGMENT_URL
 from dcoscli.main import main
 
 from mock import patch
@@ -52,22 +50,6 @@ def test_config_set():
 
 
 @_mock
-def test_cluster_id_sent():
-    '''Tests that cluster_id is sent to segment.io'''
-
-    args = [util.which('dcos'), 'package', 'list']
-    version = 'release'
-    env = _env_reporting_with_url()
-
-    with patch('sys.argv', args), \
-            patch.dict(os.environ, env), \
-            patch('dcoscli.version', version):
-
-        props = _base_properties()
-        assert props.get('CLUSTER_ID')
-
-
-@_mock
 def test_cluster_id_not_sent():
     '''Tests that cluster_id is sent to segment.io'''
 
@@ -77,11 +59,11 @@ def test_cluster_id_not_sent():
 
     with patch('sys.argv', args), \
             patch.dict(os.environ, env), \
-            patch('dcoscli.version', version):
+            patch('dcoscli.version', version), \
+            patch('dcos.mesos.DCOSClient.metadata') as get_cluster_id:
         assert main() == 0
 
-        props = _base_properties()
-        assert not props.get('CLUSTER_ID')
+        assert get_cluster_id.call_count == 0
 
 
 @_mock
@@ -100,16 +82,6 @@ def test_no_exc():
             patch('dcoscli.version', version):
         assert main() == 0
 
-        # segment.io
-        data = {'userId': USER_ID,
-                'event': SEGMENT_IO_CLI_EVENT,
-                'properties': _base_properties()}
-        assert mock_called_some_args(http.post,
-                                     '{}/track'.format(SEGMENT_URL),
-                                     json=data,
-                                     timeout=(1, 1))
-
-        # rollbar
         assert rollbar.report_message.call_count == 0
 
 
@@ -127,28 +99,12 @@ def test_exc():
             patch('dcoscli.version', version), \
             patch.dict(os.environ, env), \
             patch('dcoscli.analytics.wait_and_capture',
-                  return_value=(1, 'Traceback')):
+                  return_value=(1, 'Traceback')), \
+            patch('dcoscli.analytics._segment_track_cli') as track:
+
         assert main() == 1
-
-        # segment.io
-        props = _base_properties()
-        props['err'] = 'Traceback'
-        props['exit_code'] = 1
-        data = {'userId': USER_ID,
-                'event': SEGMENT_IO_CLI_ERROR_EVENT,
-                'properties': props}
-
-        assert mock_called_some_args(http.post,
-                                     '{}/track'.format(SEGMENT_URL),
-                                     json=data,
-                                     timeout=(1, 1))
-
-        # rollbar
-        props = _base_properties()
-        props['exit_code'] = 1
-        props['stderr'] = 'Traceback'
-        rollbar.report_message.assert_called_with('Traceback', 'error',
-                                                  extra_data=props)
+        assert track.call_count == 1
+        assert rollbar.report_message.call_count == 1
 
 
 @_mock
@@ -163,13 +119,11 @@ def test_config_reporting_false():
             patch('dcoscli.version', version), \
             patch.dict(os.environ, env), \
             patch('dcoscli.analytics.wait_and_capture',
-                  return_value=(1, 'Traceback')):
+                  return_value=(1, 'Traceback')), \
+            patch('dcoscli.analytics._segment_track_cli') as track:
 
         assert main() == 1
-
-        assert rollbar.report_message.call_count == 0
-        assert http.post.call_count == 0
-        assert http.get.call_count == 0
+        assert track.call_count == 0
 
 
 def _env_reporting():

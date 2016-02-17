@@ -7,7 +7,7 @@ import docopt
 import rollbar
 import six
 from concurrent.futures import ThreadPoolExecutor
-from dcos import http, mesos, util
+from dcos import http, util
 from dcoscli.constants import (ROLLBAR_SERVER_POST_KEY,
                                SEGMENT_IO_CLI_ERROR_EVENT,
                                SEGMENT_IO_CLI_EVENT, SEGMENT_IO_WRITE_KEY_PROD,
@@ -18,12 +18,14 @@ logger = util.get_logger(__name__)
 session_id = uuid.uuid4().hex
 
 
-def wait_and_track(subproc):
+def wait_and_track(subproc, cluster_id):
     """
     Run a command and report it to analytics services.
 
     :param subproc: Subprocess to capture
     :type subproc: Popen
+    :param cluster_id: dcos cluster id to send to segment
+    :type cluster_id: str
     :returns: exit code of subproc
     :rtype: int
     """
@@ -34,7 +36,7 @@ def wait_and_track(subproc):
     report = conf.get('core.reporting', True)
     with ThreadPoolExecutor(max_workers=2) as pool:
         if report:
-            _segment_track_cli(pool, conf)
+            _segment_track_cli(pool, conf, cluster_id)
 
         exit_code, err = wait_and_capture(subproc)
 
@@ -44,7 +46,7 @@ def wait_and_track(subproc):
         # this in the future when we support subcommands written in other
         # languages.
         if report and 'Traceback' in err:
-            _track_err(pool, exit_code, err, conf)
+            _track_err(pool, exit_code, err, conf, cluster_id)
 
     return exit_code
 
@@ -133,7 +135,7 @@ def _segment_request(path, data):
         logger.exception(e)
 
 
-def _track_err(pool, exit_code, err, conf):
+def _track_err(pool, exit_code, err, conf, cluster_id):
     """
     Report error details to analytics services.
 
@@ -145,16 +147,18 @@ def _track_err(pool, exit_code, err, conf):
     :type err: str
     :param conf: dcos config file
     :type conf: Toml
+    :param cluster_id: dcos cluster id to send to segment
+    :type cluster_id: str
     :rtype: None
     """
 
     # Segment.io calls are async, but rollbar is not, so for
     # parallelism, we must call segment first.
-    _segment_track_err(pool, conf, err, exit_code)
-    _rollbar_track_err(conf, err, exit_code)
+    _segment_track_err(pool, conf, cluster_id, err, exit_code)
+    _rollbar_track_err(conf, cluster_id, err, exit_code)
 
 
-def _segment_track_cli(pool, conf):
+def _segment_track_cli(pool, conf, cluster_id):
     """
     Send segment.io cli event.
 
@@ -162,14 +166,16 @@ def _segment_track_cli(pool, conf):
     :type pool: ThreadPoolExecutor
     :param conf: dcos config file
     :type conf: Toml
+    :param cluster_id: dcos cluster id to send to segment
+    :type cluster_id: str
     :rtype: None
     """
 
-    props = _base_properties(conf)
+    props = _base_properties(conf, cluster_id)
     pool.submit(_segment_track, SEGMENT_IO_CLI_EVENT, conf, props)
 
 
-def _segment_track_err(pool, conf, err, exit_code):
+def _segment_track_err(pool, conf, cluster_id, err, exit_code):
     """
     Send segment.io error event.
 
@@ -177,6 +183,8 @@ def _segment_track_err(pool, conf, err, exit_code):
     :type segment: ThreadPoolExecutor
     :param conf: dcos config file
     :type conf: Toml
+    :param cluster_id: dcos cluster id to send to segment
+    :type cluster_id: str
     :param err: stderr of tracked process
     :type err: str
     :param exit_code: exit code of tracked process
@@ -184,26 +192,28 @@ def _segment_track_err(pool, conf, err, exit_code):
     :rtype: None
     """
 
-    props = _base_properties(conf)
+    props = _base_properties(conf, cluster_id)
     props['err'] = err
     props['exit_code'] = exit_code
     pool.submit(_segment_track, SEGMENT_IO_CLI_ERROR_EVENT, conf, props)
 
 
-def _rollbar_track_err(conf, err, exit_code):
+def _rollbar_track_err(conf, cluster_id, err, exit_code):
     """
     Report to rollbar.  Synchronous.
 
-    :param exit_code: exit code of tracked process
-    :type exit_code: int
-    :param err: stderr of tracked process
-    :type err: str
     :param conf: dcos config file
     :type conf: Toml
+    :param cluster_id: dcos cluster id to send to segment
+    :type cluster_id: str
+    :param err: stderr of tracked process
+    :type err: str
+    :param exit_code: exit code of tracked process
+    :type exit_code: int
     :rtype: None
     """
 
-    props = _base_properties(conf)
+    props = _base_properties(conf, cluster_id)
     props['exit_code'] = exit_code
 
     lines = err.split('\n')
@@ -235,19 +245,20 @@ def _command():
     return args['<command>']
 
 
-def _base_properties(conf=None):
+def _base_properties(conf=None, cluster_id=None):
     """
     These properties are sent with every analytics event.
 
     :param conf: dcos config file
     :type conf: Toml
+    :param cluster_id: dcos cluster id to send to segment
+    :type cluster_id: str
     :rtype: dict
     """
 
     if not conf:
         conf = util.get_config()
 
-    command = _command()
     if len(sys.argv) > 1:
         cmd = 'dcos ' + _command()
         full_cmd = 'dcos ' + ' '.join(sys.argv[1:])
@@ -261,15 +272,6 @@ def _base_properties(conf=None):
     except:
         logger.exception('Unable to find the hostname of the cluster.')
         dcos_hostname = None
-
-    cluster_id = None
-    if command and command != "config":
-        try:
-            cluster_id = mesos.DCOSClient().metadata().get('CLUSTER_ID')
-        except:
-            msg = 'Unable to get the cluster_id of the cluster.'
-            logger.debug(msg)
-            logger.exception(msg)
 
     return {
         'cmd': cmd,
