@@ -7,17 +7,17 @@ Usage:
                           [--render]
                           [--package-versions]
                           [--options=<file>]
-                          [--package-version=<package_version>]
+                          [--package-version=<package-version>]
                           <package-name>
     dcos package install [--cli | [--app --app-id=<app_id>]]
-                         [--package-version=<package_version>]
+                         [--package-version=<package-version>]
                          [--options=<file>]
                          [--yes]
                          <package-name>
     dcos package list [--json --app-id=<app-id> <package-name>]
     dcos package search [--json <query>]
     dcos package repo add [--index=<index>] <repo-name> <package-repo>
-    dcos package repo remove [--repo-name=<repo_name>] [--package-repo=<package_repo>]
+    dcos package repo remove (--repo-name=<repo-name> | --package-repo=<package-repo>)
     dcos package repo list
     dcos package uninstall [--cli | [--app --app-id=<app-id> --all]]
                            <package-name>
@@ -51,10 +51,10 @@ Options:
     --options=<file>
         Path to a JSON file containing package installation options
 
-    --package-repo=<package_repo>
+    --package-repo=<package-repo>
         Repository of DCOS packages
 
-    --package-version=<package_version>
+    --package-version=<package-version>
         Package version to install
 
     --package-versions
@@ -65,7 +65,7 @@ Options:
         values from config.json and --options. If not provided, print the raw
         templates.
 
-    --repo-name=<repo_name>
+    --repo-name=<repo-name>
         Human readable name for repository
 
     --version

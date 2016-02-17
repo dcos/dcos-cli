@@ -187,8 +187,6 @@ def _remove_repo(repo_name, package_repo):
     :rtype: int
     """
 
-    if repo_name is None and package_repo is None:
-        raise DCOSException("Must specify --repo-name and/or --package-repo")
     package_manager = _get_package_manager()
     package_manager.remove_repo(repo_name, package_repo)
 
@@ -759,4 +757,4 @@ def _get_package_manager():
         msg = ("This version of the dcos-cli is unsupported for your DCOS "
                "cluster. Please use a dcos-cli version < 0.4.0 or upgrade your"
                "cluster to DCOS 1.6 or greater")
-        return DCOSException(msg)
+        raise DCOSException(msg)
