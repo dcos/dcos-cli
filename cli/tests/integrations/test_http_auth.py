@@ -70,11 +70,13 @@ def test_get_http_auth_credentials_basic(auth_mock):
 
 
 @patch('dcos.http._get_auth_credentials')
-def test_get_http_auth_credentials_acl(auth_mock):
+@patch('dcos.http._request')
+def test_get_http_auth_credentials_acl(req_mock, auth_mock):
     m = Mock()
     m.url = 'http://domain.com'
     m.headers = {'www-authenticate': 'acsjwt"'}
     auth_mock.return_value = ("username", "password")
+    req_mock.status_code = 404
 
     returned_auth = http._get_http_auth(m, urlparse(m.url), "acsjwt")
     assert type(returned_auth) == http.DCOSAcsAuth
