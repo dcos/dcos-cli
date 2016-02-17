@@ -55,7 +55,23 @@ def test_config_set():
 def test_cluster_id_sent():
     '''Tests that cluster_id is sent to segment.io'''
 
-    args = [util.which('dcos')]
+    args = [util.which('dcos'), 'package', 'list']
+    version = 'release'
+    env = _env_reporting_with_url()
+
+    with patch('sys.argv', args), \
+            patch.dict(os.environ, env), \
+            patch('dcoscli.version', version):
+
+        props = _base_properties()
+        assert props.get('CLUSTER_ID')
+
+
+@_mock
+def test_cluster_id_not_sent():
+    '''Tests that cluster_id is sent to segment.io'''
+
+    args = [util.which('dcos'), 'config', 'show']
     env = _env_reporting_with_url()
     version = 'release'
 
@@ -65,15 +81,7 @@ def test_cluster_id_sent():
         assert main() == 0
 
         props = _base_properties()
-        # segment.io
-        data = {'userId': USER_ID,
-                'event': SEGMENT_IO_CLI_EVENT,
-                'properties': props}
-        assert props.get('CLUSTER_ID')
-        assert mock_called_some_args(http.post,
-                                     '{}/track'.format(SEGMENT_URL),
-                                     json=data,
-                                     timeout=(1, 1))
+        assert not props.get('CLUSTER_ID')
 
 
 @_mock

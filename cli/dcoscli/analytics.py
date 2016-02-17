@@ -247,6 +247,7 @@ def _base_properties(conf=None):
     if not conf:
         conf = util.get_config()
 
+    command = _command()
     if len(sys.argv) > 1:
         cmd = 'dcos ' + _command()
         full_cmd = 'dcos ' + ' '.join(sys.argv[1:])
@@ -261,11 +262,14 @@ def _base_properties(conf=None):
         logger.exception('Unable to find the hostname of the cluster.')
         dcos_hostname = None
 
-    try:
-        cluster_id = mesos.DCOSClient().metadata().get('CLUSTER_ID')
-    except:
-        logger.exception('Unable to get the cluster_id of the cluster.')
-        cluster_id = None
+    cluster_id = None
+    if command and command != "config":
+        try:
+            cluster_id = mesos.DCOSClient().metadata().get('CLUSTER_ID')
+        except:
+            msg = 'Unable to get the cluster_id of the cluster.'
+            logger.debug(msg)
+            logger.exception(msg)
 
     return {
         'cmd': cmd,
