@@ -428,6 +428,8 @@ def test_killing_with_host_app():
         assert len(expected_to_be_killed.intersection(new_tasks)) == 0
 
 
+@pytest.mark.skipif(
+    True, reason='https://github.com/mesosphere/marathon/issues/3251')
 def test_kill_stopped_app():
     with _zero_instance_app():
         returncode, stdout, stderr = exec_command(
