@@ -7,10 +7,12 @@ from subprocess import PIPE, Popen
 import dcoscli
 import docopt
 import pkg_resources
-from dcos import auth, constants, emitting, errors, http, subcommand, util
+from dcos import (auth, constants, emitting, errors, http, mesos, subcommand,
+                  util)
 from dcos.errors import DCOSException
 from dcoscli import analytics
 
+logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
 
 
@@ -54,10 +56,25 @@ def _main():
 
     executable = subcommand.command_executables(command)
 
+    cluster_id = None
+    if dcoscli.version != 'SNAPSHOT' and command and command != "config":
+        try:
+            cluster_id = mesos.DCOSClient().metadata().get('CLUSTER_ID')
+        except DCOSException:
+            raise
+        except:
+            msg = 'Unable to get the cluster_id of the cluster.'
+            logger.exception(msg)
+
+    # the call to retrieve cluster_id must happen before we run the subcommand
+    # so that if you have auth enabled we don't ask for user/pass multiple
+    # times (with the text being out of order) before we can cache the auth
+    # token
     subproc = Popen([executable,  command] + args['<args>'],
                     stderr=PIPE)
+
     if dcoscli.version != 'SNAPSHOT':
-        return analytics.wait_and_track(subproc)
+        return analytics.wait_and_track(subproc, cluster_id)
     else:
         return analytics.wait_and_capture(subproc)[0]
 

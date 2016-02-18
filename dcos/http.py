@@ -4,7 +4,7 @@ import sys
 import threading
 
 import requests
-from dcos import constants, util
+from dcos import config, constants, util
 from dcos.errors import DCOSException, DCOSHTTPException
 from requests.auth import AuthBase, HTTPBasicAuth
 
@@ -117,6 +117,7 @@ def _request_with_auth(response,
     :type kwargs: dict
     :rtype: requests.Response
     """
+
     i = 0
     while i < 3 and response.status_code == 401:
         parsed_url = urlparse(response.url)
@@ -138,6 +139,10 @@ def _request_with_auth(response,
         with lock:
             if creds not in AUTH_CREDS and response.status_code == 200:
                 AUTH_CREDS[creds] = auth
+            # acs invalid token
+            elif response.status_code == 401 and auth_scheme == "acsjwt":
+                if util.get_config().get("core.dcos_acs_token") is not None:
+                    config.unset("core.dcos_acs_token", None)
 
         i += 1
 
@@ -361,6 +366,7 @@ def _get_http_auth(response, url, auth_scheme):
 
     hostname = url.hostname
     username = url.username
+    password = url.password
 
     if 'www-authenticate' in response.headers:
         if auth_scheme not in ['basic', 'acsjwt']:
@@ -369,40 +375,48 @@ def _get_http_auth(response, url, auth_scheme):
                        response.headers['www-authenticate']))
             raise DCOSException(msg)
 
-        username, password = _get_auth_credentials(username, hostname)
         if auth_scheme == 'basic':
+            # for basic auth if username + password was present,
+            # we'd already be authed by python requests module
+            username, password = _get_auth_credentials(username, hostname)
             return HTTPBasicAuth(username, password)
         else:
-            return _get_dcos_acs_auth(username, password)
+            return _get_dcos_acs_auth(username, password, hostname)
     else:
         msg = ("Invalid HTTP response: server returned an HTTP 401 response "
                "with no 'www-authenticate' field")
         raise DCOSException(msg)
 
 
-def _get_dcos_acs_auth(uid, password):
+def _get_dcos_acs_auth(username, password, hostname):
     """Get authentication flow for dcos acs auth
 
-    :param uid: uid
-    :type uid: str
-    :param password: password
+    :param username: username user for authentication
+    :type username: str
+    :param password: password for authentication
     :type password: str
+    :param hostname: hostname for credentials
+    :type hostname: str
     :returns: DCOSAcsAuth
     :rtype: AuthBase
     """
 
-    dcos_url = util.get_config_vals(
-        ['core.dcos_url'], util.get_config())[0]
-    url = urllib.parse.urljoin(dcos_url, 'acs/api/v1/auth/login')
-    creds = {"uid": uid, "password": password}
+    toml_config = util.get_config()
+    token = toml_config.get("core.dcos_acs_token")
+    if token is None:
+        dcos_url = toml_config.get("core.dcos_url")
+        url = urllib.parse.urljoin(dcos_url, 'acs/api/v1/auth/login')
+        if password is None:
+            username, password = _get_auth_credentials(username, hostname)
+        creds = {"uid": username, "password": password}
 
-    # using private method here, so we don't retry on this request
-    # error here will be bubbled up to _request_with_auth
-    response = _request('post', url, json=creds)
+        # using private method here, so we don't retry on this request
+        # error here will be bubbled up to _request_with_auth
+        response = _request('post', url, json=creds)
 
-    token = None
-    if response.status_code == 200:
-        token = response.json()['token']
+        if response.status_code == 200:
+            token = response.json()['token']
+            config.set_val("core.dcos_acs_token", token)
 
     return DCOSAcsAuth(token)
 

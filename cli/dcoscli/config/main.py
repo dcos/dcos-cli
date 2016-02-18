@@ -1,12 +1,10 @@
 import collections
 import copy
-import json
 
 import dcoscli
 import docopt
 import pkg_resources
-import six
-from dcos import cmds, config, emitting, http, jsonitem, subcommand, util
+from dcos import cmds, config, emitting, http, jsonitem, util
 from dcos.errors import DCOSException
 from dcoscli import analytics
 from dcoscli.main import decorate_docopt_usage
@@ -43,37 +41,6 @@ def _doc():
     return pkg_resources.resource_string(
         'dcoscli',
         'data/help/config.txt').decode('utf-8')
-
-
-def _check_config(toml_config_pre, toml_config_post):
-    """
-    :param toml_config_pre: dictionary for the value before change
-    :type toml_config_pre: dcos.api.config.Toml
-    :param toml_config_post: dictionary for the value with change
-    :type toml_config_post: dcos.api.config.Toml
-    :returns: process status
-    :rtype: int
-    """
-
-    errors_pre = util.validate_json(toml_config_pre._dictionary,
-                                    _generate_root_schema(toml_config_pre))
-    errors_post = util.validate_json(toml_config_post._dictionary,
-                                     _generate_root_schema(toml_config_post))
-
-    logger.info('Comparing changes in the configuration...')
-    logger.info('Errors before the config command: %r', errors_pre)
-    logger.info('Errors after the config command: %r', errors_post)
-
-    if len(errors_post) != 0:
-        if len(errors_pre) == 0:
-            raise DCOSException(util.list_to_err(errors_post))
-
-        def _errs(errs):
-            return set([e.split('\n')[0] for e in errs])
-
-        diff_errors = _errs(errors_post) - _errs(errors_pre)
-        if len(diff_errors) != 0:
-            raise DCOSException(util.list_to_err(errors_post))
 
 
 def _cmds():
@@ -138,41 +105,10 @@ def _set(name, value):
     :rtype: int
     """
 
-    toml_config = util.get_config(True)
-
-    section, subkey = _split_key(name)
-
-    config_schema = _get_config_schema(section)
-
-    new_value = jsonitem.parse_json_value(subkey, value, config_schema)
-
-    toml_config_pre = copy.deepcopy(toml_config)
-    if section not in toml_config_pre._dictionary:
-        toml_config_pre._dictionary[section] = {}
-
-    value_exists = name in toml_config
-    old_value = toml_config.get(name)
-
-    toml_config[name] = new_value
-
-    if (name == 'core.reporting' and new_value is True) or \
-       (name == 'core.email'):
+    toml_config = config.set_val(name, value)
+    if (name == 'core.reporting' is True) or (name == 'core.email'):
         analytics.segment_identify(toml_config)
 
-    _check_config(toml_config_pre, toml_config)
-
-    config.save(toml_config)
-
-    if not value_exists:
-        emitter.publish("[{}]: set to '{}'".format(name, new_value))
-    elif old_value == new_value:
-        emitter.publish("[{}]: already set to '{}'".format(name, old_value))
-    else:
-        emitter.publish(
-            "[{}]: changed from '{}' to '{}'".format(
-                name,
-                old_value,
-                new_value))
     return 0
 
 
@@ -192,7 +128,7 @@ def _append(name, value):
 
     toml_config[name] = toml_config.get(name, []) + python_value
 
-    _check_config(toml_config_pre, toml_config)
+    config.check_config(toml_config_pre, toml_config)
 
     config.save(toml_config)
     return 0
@@ -213,7 +149,7 @@ def _prepend(name, value):
     if section not in toml_config_pre._dictionary:
         toml_config_pre._dictionary[section] = {}
     toml_config[name] = python_value + toml_config.get(name, [])
-    _check_config(toml_config_pre, toml_config)
+    config.check_config(toml_config_pre, toml_config)
 
     config.save(toml_config)
     return 0
@@ -225,46 +161,8 @@ def _unset(name, index):
     :rtype: int
     """
 
-    toml_config = util.get_config(True)
-    toml_config_pre = copy.deepcopy(toml_config)
-    section = name.split(".", 1)[0]
-    if section not in toml_config_pre._dictionary:
-        toml_config_pre._dictionary[section] = {}
-    value = toml_config.pop(name, None)
-    if value is None:
-        raise DCOSException("Property {!r} doesn't exist".format(name))
-    elif isinstance(value, collections.Mapping):
-        raise DCOSException(_generate_choice_msg(name, value))
-    elif ((isinstance(value, collections.Sequence) and
-           not isinstance(value, six.string_types)) and
-          index is not None):
-        index = util.parse_int(index)
-
-        if not value:
-            raise DCOSException(
-                'Index ({}) is out of bounds - [{}] is empty'.format(
-                    index,
-                    name))
-        if index < 0 or index >= len(value):
-            raise DCOSException(
-                'Index ({}) is out of bounds - possible values are '
-                'between {} and {}'.format(index, 0, len(value) - 1))
-
-        popped_value = value.pop(index)
-        emitter.publish(
-            "[{}]: removed element '{}' at index '{}'".format(
-                name, popped_value, index))
-
-        toml_config[name] = value
-        config.save(toml_config)
-        return 0
-    elif index is not None:
-        raise DCOSException(
-            'Unsetting based on an index is only supported for lists')
-    else:
-        emitter.publish("Removed [{}]".format(name))
-        config.save(toml_config)
-        return 0
+    config.unset(name, index)
+    return 0
 
 
 def _show(name):
@@ -280,7 +178,7 @@ def _show(name):
         if value is None:
             raise DCOSException("Property {!r} doesn't exist".format(name))
         elif isinstance(value, collections.Mapping):
-            raise DCOSException(_generate_choice_msg(name, value))
+            raise DCOSException(config.generate_choice_msg(name, value))
         else:
             emitter.publish(value)
     else:
@@ -300,91 +198,13 @@ def _validate():
     toml_config = util.get_config(True)
 
     errs = util.validate_json(toml_config._dictionary,
-                              _generate_root_schema(toml_config))
+                              config.generate_root_schema(toml_config))
     if len(errs) != 0:
         emitter.publish(util.list_to_err(errs))
         return 1
 
     emitter.publish("Congratulations, your configuration is valid!")
     return 0
-
-
-def _generate_root_schema(toml_config):
-    """
-    :param toml_configs: dictionary of values
-    :type toml_config: TomlConfig
-    :returns: configuration_schema
-    :rtype: jsonschema
-    """
-
-    root_schema = {
-        '$schema': 'http://json-schema.org/schema#',
-        'type': 'object',
-        'properties': {},
-        'additionalProperties': False,
-    }
-
-    # Load the config schema from all the subsections into the root schema
-    for section in toml_config.keys():
-        config_schema = _get_config_schema(section)
-        root_schema['properties'][section] = config_schema
-
-    return root_schema
-
-
-def _generate_choice_msg(name, value):
-    """
-    :param name: name of the property
-    :type name: str
-    :param value: dictionary for the value
-    :type value: dcos.config.Toml
-    :returns: an error message for top level properties
-    :rtype: str
-    """
-
-    message = ("Property {!r} doesn't fully specify a value - "
-               "possible properties are:").format(name)
-    for key, _ in sorted(value.property_items()):
-        message += '\n{}.{}'.format(name, key)
-
-    return message
-
-
-def _get_config_schema(command):
-    """
-    :param command: the subcommand name
-    :type command: str
-    :returns: the subcommand's configuration schema
-    :rtype: dict
-    """
-
-    # core.* config variables are special.  They're valid, but don't
-    # correspond to any particular subcommand, so we must handle them
-    # separately.
-    if command == "core":
-        return json.loads(
-            pkg_resources.resource_string(
-                'dcoscli',
-                'data/config-schema/core.json').decode('utf-8'))
-
-    executable = subcommand.command_executables(command)
-    return subcommand.config_schema(executable)
-
-
-def _split_key(name):
-    """
-    :param name: the full property path - e.g. marathon.url
-    :type name: str
-    :returns: the section and property name
-    :rtype: (str, str)
-    """
-
-    terms = name.split('.', 1)
-    if len(terms) != 2:
-        raise DCOSException('Property name must have both a section and '
-                            'key: <section>.<key> - E.g. marathon.url')
-
-    return (terms[0], terms[1])
 
 
 def _parse_array_item(name, value):
@@ -398,9 +218,9 @@ def _parse_array_item(name, value):
             float, bool, array or dict
     """
 
-    section, subkey = _split_key(name)
+    section, subkey = config.split_key(name)
 
-    config_schema = _get_config_schema(section)
+    config_schema = config.get_config_schema(section)
 
     parser = jsonitem.find_parser(subkey, config_schema)
 
