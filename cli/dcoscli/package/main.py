@@ -43,7 +43,6 @@ def _main():
         version='dcos-package version {}'.format(dcoscli.version))
     http.silence_requests_warnings()
 
-    _check_cluster_capabilities()
     return cmds.execute(_cmds(), args)
 
 
@@ -142,6 +141,7 @@ def _list_sources():
     :rtype: int
     """
 
+    _check_cluster_capabilities()
     config = util.get_config()
 
     sources = package.list_sources(config)
@@ -161,6 +161,7 @@ def _update(validate):
     :rtype: int
     """
 
+    _check_cluster_capabilities()
     config = util.get_config()
 
     package.update_sources(config, validate)
@@ -201,6 +202,7 @@ def _describe(package_name,
     :rtype: int
     """
 
+    _check_cluster_capabilities()
     # If the user supplied template options, they definitely want to
     # render the template
     if options_path:
@@ -325,6 +327,7 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
     :rtype: int
     """
 
+    _check_cluster_capabilities()
     if cli is False and app is False:
         # Install both if neither flag is specified
         cli = app = True
@@ -422,6 +425,7 @@ def _list(json_, endpoints, app_id, package_name):
     :rtype: int
     """
 
+    _check_cluster_capabilities()
     config = util.get_config()
     init_client = marathon.create_client(config)
     installed = package.installed_packages(init_client, endpoints)
@@ -488,6 +492,8 @@ def _search(json_, query):
     :returns: Process status
     :rtype: int
     """
+
+    _check_cluster_capabilities()
     if not query:
         query = ''
 
@@ -518,6 +524,7 @@ def _uninstall(package_name, remove_all, app_id, cli, app):
     :rtype: int
     """
 
+    _check_cluster_capabilities()
     err = package.uninstall(package_name, remove_all, app_id, cli, app)
     if err is not None:
         emitter.publish(err)
