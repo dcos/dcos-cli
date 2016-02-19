@@ -273,6 +273,18 @@ class Client(object):
         response = _http_req(http.get, url, timeout=self._timeout)
         return response.json()['apps']
 
+    def get_apps_for_framework(self, framework_name):
+        """ Return all apps running the given framework.
+
+        :param framework_name: framework name
+        :type framework_name: str
+        :rtype: [dict]
+        """
+
+        return [app for app in self.get_apps()
+                if app.get('labels', {}).get(
+                    'DCOS_PACKAGE_IS_FRAMEWORK') == framework_name]
+
     def add_app(self, app_resource):
         """Add a new application.
 
