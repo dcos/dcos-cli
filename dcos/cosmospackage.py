@@ -1,4 +1,5 @@
 from dcos import emitting, http, util
+from dcos.errors import DCOSException, DCOSHTTPException
 
 from six.moves import urllib
 
@@ -18,12 +19,21 @@ class Cosmos:
 
         :rtype: bool
         """
+
         try:
             url = urllib.parse.urljoin(self.cosmos_url, 'capabilities')
             response = http.get(url,
                                 headers=_get_cosmos_header("capabilities"))
-        except Exception:
+        # return `Authentication failed` error messages, but all other errors
+        # are treated as endpoint not available
+        except DCOSHTTPException:
             return False
+        except DCOSException:
+            raise
+        except Exception as e:
+            logger.exception(e)
+            return False
+
         return response.status_code == 200
 
 

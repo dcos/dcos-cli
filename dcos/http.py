@@ -120,7 +120,7 @@ def _request_with_auth(response,
 
     i = 0
     while i < 3 and response.status_code == 401:
-        parsed_url = urlparse(response.url)
+        parsed_url = urlparse(url)
         hostname = parsed_url.hostname
         auth_scheme, realm = get_auth_scheme(response)
         creds = (hostname, auth_scheme, realm)
