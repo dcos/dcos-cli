@@ -180,12 +180,12 @@ def test_prepend_empty_list(env):
 def test_append_list(env):
     _append_value(
         'package.sources',
-        'https://github.com/mesosphere/universe/archive/version-2.x.zip',
+        'https://universe.mesosphere.com/repo',
         env)
     _get_value(
         'package.sources',
         ['https://github.com/mesosphere/universe/archive/cli-test-3.zip',
-         'https://github.com/mesosphere/universe/archive/version-2.x.zip'],
+         'https://universe.mesosphere.com/repo'],
         env)
     config_unset('package.sources', '1', env)
 
@@ -193,11 +193,11 @@ def test_append_list(env):
 def test_prepend_list(env):
     _prepend_value(
         'package.sources',
-        'https://github.com/mesosphere/universe/archive/version-2.x.zip',
+        'https://universe.mesosphere.com/repo',
         env)
     _get_value(
         'package.sources',
-        ['https://github.com/mesosphere/universe/archive/version-2.x.zip',
+        ['https://universe.mesosphere.com/repo',
          'https://github.com/mesosphere/universe/archive/cli-test-3.zip'],
         env)
     config_unset('package.sources', '0', env)
