@@ -207,6 +207,8 @@ def _describe(package_name,
     # render the template
     if options_path:
         render = True
+        # Expand ~ in the options file path
+        options_path = os.path.expanduser(options_path)
 
     if package_versions and \
        (app or cli or options_path or render or package_version or config):
@@ -349,6 +351,10 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
         else:
             msg = "Package [{}] not available".format(package_name)
         raise DCOSException(msg)
+
+    # Expand ~ in the options file path
+    if options_path:
+        options_path = os.path.expanduser(options_path)
 
     user_options = _user_options(options_path)
 
