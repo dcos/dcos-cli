@@ -127,7 +127,7 @@ def _save_auth_keys(key_dict):
     section = 'core'
     config_schema = json.loads(
         pkg_resources.resource_string(
-            'dcoscli',
+            'dcos',
             'data/config-schema/core.json').decode('utf-8'))
     for k, v in iteritems(key_dict):
         python_value = jsonitem.parse_json_value(k, v, config_schema)

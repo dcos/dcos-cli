@@ -78,4 +78,10 @@ setup(
         'six>=1.9, <2.0',
         'toml>=0.9, <1.0',
     ],
+
+    package_data={
+        'dcos': [
+            'data/config-schema/core.json',
+        ],
+    },
 )

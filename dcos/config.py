@@ -211,7 +211,7 @@ def get_config_schema(command):
     if command == "core":
         return json.loads(
             pkg_resources.resource_string(
-                'dcoscli',
+                'dcos',
                 'data/config-schema/core.json').decode('utf-8'))
 
     executable = subcommand.command_executables(command)
