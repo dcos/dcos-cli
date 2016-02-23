@@ -9,8 +9,8 @@ from collections import defaultdict
 import dcoscli
 import docopt
 import pkg_resources
-from dcos import (cmds, cosmospackage, emitting, errors, http, marathon,
-                  options, package, subcommand, util)
+from dcos import (cmds, cosmospackage, emitting, errors, http, options,
+                  package, subcommand, util)
 from dcos.errors import DCOSException
 from dcoscli import tables
 from dcoscli.main import decorate_docopt_usage
@@ -54,14 +54,19 @@ def _cmds():
 
     return [
         cmds.Command(
-            hierarchy=['package', 'sources'],
+            hierarchy=['package', 'repo', 'list'],
             arg_keys=[],
-            function=_list_sources),
+            function=_list_response),
 
         cmds.Command(
-            hierarchy=['package', 'update'],
-            arg_keys=['--validate'],
-            function=_update),
+            hierarchy=['package', 'repo', 'add'],
+            arg_keys=['<repo-name>', '<repo-url>', '--index'],
+            function=_add_repo),
+
+        cmds.Command(
+            hierarchy=['package', 'repo', 'remove'],
+            arg_keys=['--repo-name', '--repo-url'],
+            function=_remove_repo),
 
         cmds.Command(
             hierarchy=['package', 'describe'],
@@ -78,7 +83,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['package', 'list'],
-            arg_keys=['--json', '--endpoints', '--app-id', '<package-name>'],
+            arg_keys=['--json', '--app-id', '<package-name>'],
             function=_list),
 
         cmds.Command(
@@ -107,7 +112,6 @@ def _package(config_schema, info):
     :returns: Process status
     :rtype: int
     """
-
     if config_schema:
         schema = json.loads(
             pkg_resources.resource_string(
@@ -134,37 +138,57 @@ def _info():
     return 0
 
 
-def _list_sources():
-    """List configured package sources.
+def _list_response():
+    """List configured package repositories.
 
     :returns: Process status
     :rtype: int
     """
 
-    _check_cluster_capabilities()
-    config = util.get_config()
+    package_manager = _get_package_manager()
+    repos = package_manager.get_repos()
 
-    sources = package.list_sources(config)
-
-    for source in sources:
-        emitter.publish("{} {}".format(source.hash(), source.url))
+    if repos:
+        emitter.publish(repos)
+    else:
+        msg = ("There are currently no repos configured. "
+               "Please use `dcos package repo add` to add a repo")
+        raise DCOSException(msg)
 
     return 0
 
 
-def _update(validate):
-    """Update local package definitions from sources.
+def _add_repo(repo_name, repo_url, index):
+    """Add package repo and update repo with new repo
 
-    :param validate: Whether to validate package content when updating sources.
-    :type validate: bool
+    :param repo_name: name to call repo
+    :type repo_name: str
+    :param repo_url: location of repo to add
+    :type repo_url: str
+    :param index: index to add this repo
+    :type index: int
+    :rtype: None
+    """
+
+    package_manager = _get_package_manager()
+    package_manager.add_repo(repo_name, repo_url, index)
+
+    return 0
+
+
+def _remove_repo(repo_name, repo_url):
+    """Remove package repo and update repo with new repo
+
+    :param repo_name: name to call repo
+    :type repo_name: str
+    :param repo_url: location of repo to add
+    :type repo_url: str
     :returns: Process status
     :rtype: int
     """
 
-    _check_cluster_capabilities()
-    config = util.get_config()
-
-    package.update_sources(config, validate)
+    package_manager = _get_package_manager()
+    package_manager.remove_repo(repo_name, repo_url)
 
     return 0
 
@@ -202,7 +226,6 @@ def _describe(package_name,
     :rtype: int
     """
 
-    _check_cluster_capabilities()
     # If the user supplied template options, they definitely want to
     # render the template
     if options_path:
@@ -216,51 +239,40 @@ def _describe(package_name,
             'If --package-versions is provided, no other option can be '
             'provided')
 
-    pkg = package.resolve_package(package_name)
-    if pkg is None:
-        raise DCOSException("Package [{}] not found".format(package_name))
+    package_manager = _get_package_manager()
+    pkg = package_manager.get_package_version(package_name, package_version)
 
-    pkg_revision = pkg.latest_package_revision(package_version)
-
-    if pkg_revision is None:
-        raise DCOSException("Version {} of package [{}] is not available".
-                            format(package_version, package_name))
-
-    pkg_json = pkg.package_json(pkg_revision)
+    pkg_json = pkg.package_json()
 
     if package_version is None:
-        revision_map = pkg.package_revisions_map()
-        pkg_versions = list(revision_map.values())
+        pkg_versions = pkg.package_versions()
         del pkg_json['version']
         pkg_json['versions'] = pkg_versions
 
     if package_versions:
-        emitter.publish('\n'.join(pkg_json['versions']))
+        emitter.publish(pkg.package_versions())
     elif cli or app or config:
         user_options = _user_options(options_path)
-        options = pkg.options(pkg_revision, user_options)
+        options = pkg.options(user_options)
 
         if cli:
             if render:
-                cli_output = pkg.command_json(pkg_revision, options)
+                cli_output = pkg.command_json(options)
             else:
-                cli_output = pkg.command_template(pkg_revision)
-                if cli_output and cli_output[-1] == '\n':
-                    cli_output = cli_output[:-1]
+                cli_output = pkg.command_template()
             emitter.publish(cli_output)
         if app:
             if render:
-                app_output = pkg.marathon_json(pkg_revision, options)
+                app_output = pkg.marathon_json(options)
             else:
-                app_output = pkg.marathon_template(pkg_revision)
+                app_output = pkg.marathon_template()
                 if app_output and app_output[-1] == '\n':
                     app_output = app_output[:-1]
             emitter.publish(app_output)
         if config:
-            config_output = pkg.config_json(pkg_revision)
+            config_output = pkg.config_json()
             emitter.publish(config_output)
     else:
-        pkg_json = pkg.package_json(pkg_revision)
         emitter.publish(pkg_json)
 
     return 0
@@ -329,36 +341,19 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
     :rtype: int
     """
 
-    _check_cluster_capabilities()
     if cli is False and app is False:
         # Install both if neither flag is specified
         cli = app = True
 
-    config = util.get_config()
-
-    pkg = package.resolve_package(package_name, config)
-    if pkg is None:
-        msg = "Package [{}] not found\n".format(package_name) + \
-              "You may need to run 'dcos package update' to update your " + \
-              "repositories"
-        raise DCOSException(msg)
-
-    pkg_revision = pkg.latest_package_revision(package_version)
-    if pkg_revision is None:
-        if package_version is not None:
-            msg = "Version {} of package [{}] is not available".format(
-                package_version, package_name)
-        else:
-            msg = "Package [{}] not available".format(package_name)
-        raise DCOSException(msg)
-
     # Expand ~ in the options file path
     if options_path:
         options_path = os.path.expanduser(options_path)
-
     user_options = _user_options(options_path)
 
-    pkg_json = pkg.package_json(pkg_revision)
+    package_manager = _get_package_manager()
+    pkg = package_manager.get_package_version(package_name, package_version)
+
+    pkg_json = pkg.package_json()
     pre_install_notes = pkg_json.get('preInstallNotes')
     if pre_install_notes:
         emitter.publish(pre_install_notes)
@@ -366,37 +361,31 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
             emitter.publish('Exiting installation.')
             return 0
 
-    options = pkg.options(pkg_revision, user_options)
+    # render options before start installation
+    options = pkg.options(user_options)
 
-    revision_map = pkg.package_revisions_map()
-    package_version = revision_map.get(pkg_revision)
+    if app and pkg.has_mustache_definition():
 
-    if app and (pkg.has_marathon_definition(pkg_revision) or
-                pkg.has_marathon_mustache_definition(pkg_revision)):
         # Install in Marathon
         msg = 'Installing Marathon app for package [{}] version [{}]'.format(
-            pkg.name(), package_version)
+            pkg.name(), pkg.version())
         if app_id is not None:
             msg += ' with app id [{}]'.format(app_id)
 
         emitter.publish(msg)
 
-        init_client = marathon.create_client(config)
-
-        package.install_app(
+        package_manager.install_app(
             pkg,
-            pkg_revision,
-            init_client,
             options,
             app_id)
 
-    if cli and pkg.has_command_definition(pkg_revision):
+    if cli and pkg.has_command_definition():
         # Install subcommand
         msg = 'Installing CLI subcommand for package [{}] version [{}]'.format(
-            pkg.name(), package_version)
+            pkg.name(), pkg.version())
         emitter.publish(msg)
 
-        subcommand.install(pkg, pkg_revision, options)
+        subcommand.install(pkg, pkg.options(user_options))
 
         subcommand_paths = subcommand.get_package_commands(package_name)
         new_commands = [os.path.basename(p).replace('-', ' ', 1)
@@ -415,14 +404,11 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
     return 0
 
 
-def _list(json_, endpoints, app_id, package_name):
+def _list(json_, app_id, package_name):
     """List installed apps
 
     :param json_: output json if True
     :type json_: bool
-    :param endpoints: Whether to include a list of
-        endpoints as port-host pairs
-    :type endpoints: boolean
     :param app_id: App ID of app to show
     :type app_id: str
     :param package_name: The package to show
@@ -431,26 +417,13 @@ def _list(json_, endpoints, app_id, package_name):
     :rtype: int
     """
 
-    _check_cluster_capabilities()
-    config = util.get_config()
-    init_client = marathon.create_client(config)
-    installed = package.installed_packages(init_client, endpoints)
+    package_manager = _get_package_manager()
+    if app_id is not None:
+        app_id = util.normalize_app_id(app_id)
+    results = package.installed_packages(
+        package_manager, app_id, package_name)
 
     # only emit those packages that match the provided package_name and app_id
-    results = []
-    for pkg in installed:
-        pkg_info = pkg.dict()
-        if (_matches_package_name(package_name, pkg_info) and
-                _matches_app_id(app_id, pkg_info)):
-            if app_id:
-                # if the user is asking a specific id then only show that id
-                pkg_info['apps'] = [
-                    app for app in pkg_info['apps']
-                    if app == app_id
-                ]
-
-            results.append(pkg_info)
-
     if results or json_:
         emitting.publish_table(emitter, results, tables.package_table, json_)
     else:
@@ -499,13 +472,11 @@ def _search(json_, query):
     :rtype: int
     """
 
-    _check_cluster_capabilities()
     if not query:
         query = ''
 
-    config = util.get_config()
-    results = [index_entry.as_dict()
-               for index_entry in package.search(query, config)]
+    package_manager = _get_package_manager()
+    results = package_manager.search_sources(query)
 
     if any(result['packages'] for result in results) or json_:
         emitting.publish_table(emitter,
@@ -530,8 +501,9 @@ def _uninstall(package_name, remove_all, app_id, cli, app):
     :rtype: int
     """
 
-    _check_cluster_capabilities()
-    err = package.uninstall(package_name, remove_all, app_id, cli, app)
+    package_manager = _get_package_manager()
+    err = package.uninstall(
+        package_manager, package_name, remove_all, app_id, cli, app)
     if err is not None:
         emitter.publish(err)
         return 1
@@ -763,19 +735,31 @@ def _bundle_screenshots(screenshot_directory, zip_file):
             arcname='images/screenshots/{}'.format(filename))
 
 
-def _check_cluster_capabilities():
-    """Make sure this version the cli is compatible with version of DCOS
+def _get_cosmos_url():
+    """
+    :returns: cosmos base url
+    :rtype: str
+    """
+    config = util.get_config()
+    cosmos_url = config.get("package.cosmos_url")
+    if cosmos_url is None:
+        cosmos_url = util.get_config_vals(['core.dcos_url'], config)[0]
+    return cosmos_url
+
+
+def _get_package_manager():
+    """Returns type of package manager to use
 
     :returns: PackageManager instance
-    :rtype: None
+    :rtype: PackageManager
     """
 
-    dcos_url = util.get_config().get("core.dcos_url")
-    cosmos_manager = cosmospackage.Cosmos(dcos_url)
+    cosmos_url = _get_cosmos_url()
+    cosmos_manager = cosmospackage.Cosmos(cosmos_url)
     if cosmos_manager.enabled():
-        msg = ("This version of the DCOS CLI is not supported for your "
-               "cluster. Please upgrade the CLI to the latest version: "
-               "https://docs.mesosphere.com/administration/introcli/updatecli/"
-               )
-
+        return cosmos_manager
+    else:
+        msg = ("This version of the dcos-cli is unsupported for your DCOS "
+               "cluster. Please use a dcos-cli version < 0.4.0 or upgrade your"
+               " cluster to DCOS version >= 1.6.1")
         raise DCOSException(msg)

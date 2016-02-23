@@ -13,7 +13,7 @@
                     "cmd": "sleep 10",
                     "id": "sleep10",
                     "instances": 0,
-                    "dependencies": ["/product/database", "../backend"]
+                    "dependencies": ["/product/database"]
                 }
             ],
             "id": "app"

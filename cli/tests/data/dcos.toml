@@ -2,8 +2,5 @@
 reporting = false
 email = "test@mail.com"
 timeout = 5
-ssl_verify = "false"
 dcos_url = "http://dcos.snakeoil.mesosphere.com"
-[package]
-sources = [ "https://github.com/mesosphere/universe/archive/cli-test-3.zip",]
-cache = "tmp/cache"
+ssl_verify = "false"

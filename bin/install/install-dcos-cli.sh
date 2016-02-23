@@ -66,12 +66,29 @@ check_pip_version()
     fi
 }
 
+check_dcoscli_version()
+{
+    if [ ! -z "$DCOS_CLI_VERSION" ]; then
+        # result is the larger of the two versions
+        COSMOS_VERSION="0.4.0"
+        # convert the str to numbers, sort, and return the larger
+        result=$(echo -e "$COSMOS_VERSION\n$DCOS_CLI_VERSION" | sed '/^$/d' | sort -nr | head -1)
+        # if DCOS_CLI_VERSION < COSMOS_VERSION, exit
+        if [ "$result" != "$DCOS_CLI_VERSION" ]; then
+                echo "Please use legacy installer for dcoscli versions <0.4.0. Aborting.";
+                exit 1;
+        fi
+    fi
+    exit 1;
+}
+
 if [ "$#" -lt 2 ]; then
   usage;
   exit 1;
 fi
 
 check_pip_version;
+check_dcoscli_version;
 
 ARGS=( "$@" );
 
@@ -113,9 +130,6 @@ dcos config set core.reporting true
 dcos config set core.dcos_url $DCOS_URL
 dcos config set core.ssl_verify false
 dcos config set core.timeout 5
-dcos config set package.cache ~/.dcos/cache
-dcos config set package.sources '["https://universe.mesosphere.com/repo"]'
-dcos package update
 
 ADD_PATH=""
 while [ $# -gt 0 ]; do

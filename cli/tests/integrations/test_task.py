@@ -263,8 +263,9 @@ def test_log_file_unavailable():
 
 
 def test_ls():
+    stdout = b'stderr  stderr.logrotate.conf  stdout  stdout.logrotate.conf\n'
     assert_command(['dcos', 'task', 'ls', 'test-app1'],
-                   stdout=b'stderr  stdout\n')
+                   stdout=stdout)
 
 
 def test_ls_multiple_tasks():
@@ -278,7 +279,7 @@ def test_ls_multiple_tasks():
 
 
 def test_ls_long():
-    assert_lines(['dcos', 'task', 'ls', '--long', 'test-app1'], 2)
+    assert_lines(['dcos', 'task', 'ls', '--long', 'test-app1'], 4)
 
 
 def test_ls_path():
