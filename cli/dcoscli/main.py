@@ -9,7 +9,7 @@ import docopt
 import pkg_resources
 from dcos import (auth, constants, emitting, errors, http, mesos, subcommand,
                   util)
-from dcos.errors import DCOSException
+from dcos.errors import DCOSAuthenticationException, DCOSException
 from dcoscli import analytics
 
 logger = util.get_logger(__name__)
@@ -57,11 +57,12 @@ def _main():
     executable = subcommand.command_executables(command)
 
     cluster_id = None
-    if dcoscli.version != 'SNAPSHOT' and command and command != "config":
+    if dcoscli.version != 'SNAPSHOT' and command and \
+            command not in ["config", "help"]:
         try:
             cluster_id = mesos.DCOSClient().metadata().get('CLUSTER_ID')
-        except DCOSException:
-            raise
+        except DCOSAuthenticationException:
+                raise
         except:
             msg = 'Unable to get the cluster_id of the cluster.'
             logger.exception(msg)

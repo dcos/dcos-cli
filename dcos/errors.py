@@ -21,6 +21,32 @@ class DCOSHTTPException(DCOSException):
             self.response.reason)
 
 
+class DCOSAuthenticationException(DCOSHTTPException):
+    """A wrapper around Response objects for HTTP Authentication errors (401).
+
+    :param response: requests Response object
+    :type response: Response
+    """
+    def __init__(self, response):
+        self.response = response
+
+    def __str__(self):
+        return "Authentication failed"
+
+
+class DCOSAuthorizationException(DCOSHTTPException):
+    """A wrapper around Response objects for HTTP Authorization errors (403).
+
+    :param response: requests Response object
+    :type response: Response
+    """
+    def __init__(self, response):
+        self.response = response
+
+    def __str__(self):
+        return "You are not authorized to perform this operation"
+
+
 class Error(object):
     """Abstract class for describing errors."""
 

@@ -5,7 +5,9 @@ import threading
 
 import requests
 from dcos import config, constants, util
-from dcos.errors import DCOSException, DCOSHTTPException
+from dcos.errors import (DCOSAuthenticationException,
+                         DCOSAuthorizationException, DCOSException,
+                         DCOSHTTPException)
 from requests.auth import AuthBase, HTTPBasicAuth
 
 from six.moves import urllib
@@ -147,7 +149,7 @@ def _request_with_auth(response,
         i += 1
 
     if response.status_code == 401:
-        raise DCOSException("Authentication failed")
+        raise DCOSAuthenticationException(response)
 
     return response
 
@@ -201,7 +203,7 @@ def request(method,
     if is_success(response.status_code):
         return response
     elif response.status_code == 403:
-        raise DCOSException("You are not authorized to perform this operation")
+        raise DCOSAuthorizationException(response)
     else:
         raise DCOSHTTPException(response)
 
