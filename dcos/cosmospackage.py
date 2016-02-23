@@ -1,5 +1,5 @@
 from dcos import emitting, http, util
-from dcos.errors import DCOSException, DCOSHTTPException
+from dcos.errors import DCOSAuthenticationException
 
 from six.moves import urllib
 
@@ -26,9 +26,7 @@ class Cosmos:
                                 headers=_get_cosmos_header("capabilities"))
         # return `Authentication failed` error messages, but all other errors
         # are treated as endpoint not available
-        except DCOSHTTPException:
-            return False
-        except DCOSException:
+        except DCOSAuthenticationException:
             raise
         except Exception as e:
             logger.exception(e)
