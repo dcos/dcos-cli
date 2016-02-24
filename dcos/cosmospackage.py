@@ -23,7 +23,7 @@ class Cosmos:
         try:
             url = urllib.parse.urljoin(self.cosmos_url, 'capabilities')
             response = http.get(url,
-                                headers=_get_cosmos_header("capabilities"))
+                                headers=_get_capabilities_header())
         # return `Authentication failed` error messages, but all other errors
         # are treated as endpoint not available
         except DCOSAuthenticationException:
@@ -59,3 +59,14 @@ def _get_cosmos_header(request_name):
 
     return {"Accept": _get_header("{}-response".format(request_name)),
             "Content-Type": _get_header("{}-request".format(request_name))}
+
+
+def _get_capabilities_header():
+    """Returns header fields needed for a valid request to cosmos capabilities
+    endpoint
+    :returns: header information
+    :rtype: dict
+    """
+
+    header = "application/vnd.dcos.capabilities+json;charset=utf-8;version=v1"
+    return {"Accept": header}
