@@ -73,13 +73,12 @@ check_dcoscli_version()
         COSMOS_VERSION="0.4.0"
         # convert the str to numbers, sort, and return the larger
         result=$(echo -e "$COSMOS_VERSION\n$DCOS_CLI_VERSION" | sed '/^$/d' | sort -nr | head -1)
-        # if DCOS_CLI_VERSION < COSMOS_VERSION, exit
-        if [ "$result" != "$DCOS_CLI_VERSION" ]; then
-                echo "Please use legacy installer for dcoscli versions <0.4.0. Aborting.";
+        # if DCOS_CLI_VERSION >= COSMOS_VERSION, exit
+        if [ "$result" = "$DCOS_CLI_VERSION" ]; then
+                echo "Legacy mode is only supported in dcoscli version <0.4.0. Aborting.";
                 exit 1;
         fi
     fi
-    exit 1;
 }
 
 if [ "$#" -lt 2 ]; then
@@ -119,18 +118,20 @@ virtualenv "$VIRTUAL_ENV_PATH"
 
 # Install the DCOS CLI package, using version if set
 if [ -z "$DCOS_CLI_VERSION" ]; then
-    "$VIRTUAL_ENV_PATH/bin/pip" install --quiet "dcoscli"
+    "$VIRTUAL_ENV_PATH/bin/pip" install --quiet "dcoscli<0.4.0"
 else
     "$VIRTUAL_ENV_PATH/bin/pip" install --quiet "dcoscli==$DCOS_CLI_VERSION"
 fi
 
 ENV_SETUP="$VIRTUAL_ENV_PATH/bin/env-setup"
 source "$ENV_SETUP"
-dcos config set core.email anonymous-optout
-dcos config set core.reporting false
+dcos config set core.reporting true
 dcos config set core.dcos_url $DCOS_URL
 dcos config set core.ssl_verify false
 dcos config set core.timeout 5
+dcos config set package.cache ~/.dcos/cache
+dcos config set package.sources '["https://github.com/mesosphere/universe/archive/version-1.x.zip"]'
+dcos package update
 
 ADD_PATH=""
 while [ $# -gt 0 ]; do

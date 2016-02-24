@@ -19,6 +19,8 @@ import six
 from dcos import constants
 from dcos.errors import DCOSException
 
+from six.moves import urllib
+
 
 def get_logger(name):
     """Get a logger
@@ -698,6 +700,18 @@ def validate_png(filename):
         logger.exception(e)
         raise DCOSException(
             'Unable to validate [{}] as a PNG file'.format(filename))
+
+
+def normalize_app_id(app_id):
+    """Normalizes the application id.
+
+    :param app_id: raw application ID
+    :type app_id: str
+    :returns: normalized application ID
+    :rtype: str
+    """
+
+    return urllib.parse.quote('/' + app_id.strip('/'))
 
 
 logger = get_logger(__name__)

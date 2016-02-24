@@ -45,7 +45,7 @@ def get_package_commands(package_name):
     :returns: list of all the dcos program paths in package
     :rtype: [str]
     """
-    bin_dir = os.path.join(package_dir(package_name),
+    bin_dir = os.path.join(_package_dir(package_name),
                            constants.DCOS_SUBCOMMAND_VIRTUALENV_SUBDIR,
                            BIN_DIRECTORY)
 
@@ -178,75 +178,37 @@ def noun(executable_path):
     return noun
 
 
-def _write_package_json(pkg, revision):
+def _write_package_json(pkg):
     """ Write package.json locally.
 
     :param pkg: the package being installed
-    :type pkg: Package
-    :param revision: the package revision to install
-    :type revision: str
+    :type pkg: PackageVersion
     :rtype: None
     """
 
-    pkg_dir = package_dir(pkg.name())
+    pkg_dir = _package_dir(pkg.name())
 
     package_path = os.path.join(pkg_dir, 'package.json')
 
-    package_json = pkg.package_json(revision)
+    package_json = pkg.package_json()
 
     with util.open_file(package_path, 'w') as package_file:
         json.dump(package_json, package_file)
 
 
-def _write_package_revision(pkg, revision):
-    """ Write package revision locally.
-
-    :param pkg: the package being installed
-    :type pkg: Package
-    :param revision: the package revision to install
-    :type revision: str
-    :rtype: None
-    """
-
-    pkg_dir = package_dir(pkg.name())
-
-    revision_path = os.path.join(pkg_dir, 'version')
-
-    with util.open_file(revision_path, 'w') as revision_file:
-        revision_file.write(revision)
-
-
-def _write_package_source(pkg):
-    """ Write package source locally.
-
-    :param pkg: the package being installed
-    :type pkg: Package
-    :rtype: None
-    """
-
-    pkg_dir = package_dir(pkg.name())
-
-    source_path = os.path.join(pkg_dir, 'source')
-
-    with util.open_file(source_path, 'w') as source_file:
-        source_file.write(pkg.registry.source.url)
-
-
-def _install_env(pkg, revision, options):
+def _install_env(pkg, options):
     """ Install subcommand virtual env.
 
     :param pkg: the package to install
-    :type pkg: Package
-    :param revision: the package revision to install
-    :type revision: str
+    :type pkg: PackageVersion
     :param options: package parameters
     :type options: dict
     :rtype: None
     """
 
-    pkg_dir = package_dir(pkg.name())
+    pkg_dir = _package_dir(pkg.name())
 
-    install_operation = pkg.command_json(revision, options)
+    install_operation = pkg.command_json(options)
 
     env_dir = os.path.join(pkg_dir,
                            constants.DCOS_SUBCOMMAND_VIRTUALENV_SUBDIR)
@@ -261,26 +223,22 @@ def _install_env(pkg, revision, options):
             install_operation.keys()))
 
 
-def install(pkg, revision, options):
+def install(pkg, options):
     """Installs the dcos cli subcommand
 
     :param pkg: the package to install
     :type pkg: Package
-    :param revision: the package revision to install
-    :type revision: str
     :param options: package parameters
     :type options: dict
     :rtype: None
     """
 
-    pkg_dir = package_dir(pkg.name())
+    pkg_dir = _package_dir(pkg.name())
     util.ensure_dir_exists(pkg_dir)
 
-    _write_package_json(pkg, revision)
-    _write_package_revision(pkg, revision)
-    _write_package_source(pkg)
+    _write_package_json(pkg)
 
-    _install_env(pkg, revision, options)
+    _install_env(pkg, options)
 
 
 def _subcommand_dir():
@@ -290,8 +248,7 @@ def _subcommand_dir():
                                            constants.DCOS_SUBCOMMAND_SUBDIR))
 
 
-# TODO(mgummelt): should be made private after "dcos subcommand" is removed
-def package_dir(name):
+def _package_dir(name):
     """ Returns ~/.dcos/subcommands/<name>
 
     :param name: package name
@@ -311,7 +268,7 @@ def uninstall(package_name):
     :rtype: bool
     """
 
-    pkg_dir = package_dir(package_name)
+    pkg_dir = _package_dir(package_name)
 
     if os.path.isdir(pkg_dir):
         shutil.rmtree(pkg_dir)
@@ -449,16 +406,16 @@ class InstalledSubcommand(object):
         :rtype: str
         """
 
-        return package_dir(self.name)
+        return _package_dir(self.name)
 
     def package_revision(self):
         """
-        :returns: this subcommand's revision.
+        :returns: this subcommand's version.
         :rtype: str
         """
 
-        revision_path = os.path.join(self._dir(), 'version')
-        return util.read_file(revision_path)
+        version_path = os.path.join(self._dir(), 'version')
+        return util.read_file(version_path)
 
     def package_source(self):
         """

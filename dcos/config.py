@@ -3,7 +3,6 @@ import copy
 import json
 
 import pkg_resources
-import six
 import toml
 from dcos import emitting, jsonitem, subcommand, util
 from dcos.errors import DCOSException
@@ -58,57 +57,6 @@ def set_val(name, value):
     return toml_config
 
 
-def unset(name, index):
-    """
-    :param name: name of paramater
-    :type name: str
-    :param index: index in list to unset
-    :type param: int
-    :rtype: None
-    """
-
-    toml_config = util.get_config(True)
-    toml_config_pre = copy.deepcopy(toml_config)
-    section = name.split(".", 1)[0]
-    if section not in toml_config_pre._dictionary:
-        toml_config_pre._dictionary[section] = {}
-    value = toml_config.pop(name, None)
-    if value is None:
-        raise DCOSException("Property {!r} doesn't exist".format(name))
-    elif isinstance(value, collections.Mapping):
-        raise DCOSException(generate_choice_msg(name, value))
-    elif ((isinstance(value, collections.Sequence) and
-           not isinstance(value, six.string_types)) and
-          index is not None):
-        index = util.parse_int(index)
-
-        if not value:
-            raise DCOSException(
-                'Index ({}) is out of bounds - [{}] is empty'.format(
-                    index,
-                    name))
-        if index < 0 or index >= len(value):
-            raise DCOSException(
-                'Index ({}) is out of bounds - possible values are '
-                'between {} and {}'.format(index, 0, len(value) - 1))
-
-        popped_value = value.pop(index)
-        emitter.publish(
-            "[{}]: removed element '{}' at index '{}'".format(
-                name, popped_value, index))
-
-        toml_config[name] = value
-        save(toml_config)
-        return
-    elif index is not None:
-        raise DCOSException(
-            'Unsetting based on an index is only supported for lists')
-    else:
-        emitter.publish("Removed [{}]".format(name))
-        save(toml_config)
-        return
-
-
 def load_from_path(path, mutable=False):
     """Loads a TOML file from the path
 
@@ -156,6 +104,48 @@ def _get_path(toml_config, path):
         toml_config = toml_config[section]
 
     return toml_config
+
+
+def unset(name):
+    """
+    :param name: name of config value to unset
+    :type name: str
+    :returns: process status
+    :rtype: None
+    """
+
+    toml_config = util.get_config(True)
+    toml_config_pre = copy.deepcopy(toml_config)
+    section = name.split(".", 1)[0]
+    if section not in toml_config_pre._dictionary:
+        toml_config_pre._dictionary[section] = {}
+    value = toml_config.pop(name, None)
+    if value is None:
+        raise DCOSException("Property {!r} doesn't exist".format(name))
+    elif isinstance(value, collections.Mapping):
+        raise DCOSException(_generate_choice_msg(name, value))
+    else:
+        emitter.publish("Removed [{}]".format(name))
+        save(toml_config)
+        return
+
+
+def _generate_choice_msg(name, value):
+    """
+    :param name: name of the property
+    :type name: str
+    :param value: dictionary for the value
+    :type value: dcos.config.Toml
+    :returns: an error message for top level properties
+    :rtype: str
+    """
+
+    message = ("Property {!r} doesn't fully specify a value - "
+               "possible properties are:").format(name)
+    for key, _ in sorted(value.property_items()):
+        message += '\n{}.{}'.format(name, key)
+
+    return message
 
 
 def _iterator(parent, dictionary):

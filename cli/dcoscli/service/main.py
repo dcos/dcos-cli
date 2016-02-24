@@ -3,7 +3,7 @@ import subprocess
 import dcoscli
 import docopt
 import pkg_resources
-from dcos import cmds, emitting, marathon, mesos, package, util
+from dcos import cmds, emitting, marathon, mesos, util
 from dcos.errors import DCOSException, DefaultError
 from dcoscli import log, tables
 from dcoscli.main import decorate_docopt_usage
@@ -234,7 +234,7 @@ def _get_service_app(marathon_client, service_name):
     :rtype: dict
     """
 
-    apps = package.get_apps_for_framework(service_name, marathon_client)
+    apps = marathon_client.get_apps_for_framework(service_name)
 
     if len(apps) > 1:
         raise DCOSException(

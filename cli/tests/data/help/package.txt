@@ -7,19 +7,20 @@ Usage:
                           [--render]
                           [--package-versions]
                           [--options=<file>]
-                          [--package-version=<package_version>]
+                          [--package-version=<package-version>]
                           <package-name>
-    dcos package install [--cli | [--app --app-id=<app_id>]]
-                         [--package-version=<package_version>]
+    dcos package install [--cli | [--app --app-id=<app-id>]]
+                         [--package-version=<package-version>]
                          [--options=<file>]
                          [--yes]
                          <package-name>
-    dcos package list [--json --endpoints --app-id=<app-id> <package-name>]
+    dcos package list [--json --app-id=<app-id> <package-name>]
     dcos package search [--json <query>]
-    dcos package sources
+    dcos package repo add [--index=<index>] <repo-name> <repo-url>
+    dcos package repo remove (--repo-name=<repo-name> | --repo-url=<repo-url>)
+    dcos package repo list
     dcos package uninstall [--cli | [--app --app-id=<app-id> --all]]
                            <package-name>
-    dcos package update [--validate]
 
 Options:
     --all
@@ -41,13 +42,16 @@ Options:
     -h, --help
         Show this screen
 
+    --index=<index>
+        Index into the list. The first element in the list has an index of zero
+
     --info
         Show a short description of this subcommand
 
     --options=<file>
         Path to a JSON file containing package installation options
 
-    --package-version=<package_version>
+    --package-version=<package-version>
         Package version to install
 
     --package-versions
@@ -58,8 +62,11 @@ Options:
         values from config.json and --options. If not provided, print the raw
         templates.
 
-    --validate
-        Validate package content when updating sources
+    --repo-name=<repo-name>
+        Name for repository
+
+    --repo-url=<repo-url>
+        URL of repository of DCOS packages. E.g. https://universe.mesosphere.com/repo
 
     --version
         Show version
@@ -73,3 +80,9 @@ Positional Arguments:
 
     <query>
         Pattern to use for searching for package
+
+    <repo-name>
+        Name for repository
+
+    <repo-url>
+        URL of repository of DCOS packages. E.g. https://universe.mesosphere.com/repo
