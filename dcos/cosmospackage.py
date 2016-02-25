@@ -179,6 +179,7 @@ class Cosmos():
         :rtype: None
         """
 
+        _check_repo_url_scheme(package_repo)
         params = {"name": name, "uri": package_repo}
         if index is not None:
             params["index"] = index
@@ -546,3 +547,19 @@ def _format_marathon_bad_response_message(error):
     if data is not None:
         error_messages += [err.get("error") for err in data.get("errors")]
     return "\n".join(error_messages)
+
+
+def _check_repo_url_scheme(url):
+    """Validates repo_url scheme for early fault detection
+
+    :param url: Location of the package source
+    :type url: str
+    :rtype: None
+    """
+
+    parse_result = urllib.parse.urlparse(url)
+    scheme = parse_result.scheme
+
+    if scheme not in ["http", "https"]:
+        raise DCOSException(
+            "Repo URL uses unsupported protocol [{}]".format(scheme))
