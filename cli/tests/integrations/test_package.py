@@ -82,6 +82,14 @@ test: https://github.com/mesosphere/universe/archive/cli-test-3.zip
     _repo_add(args, repo_list)
 
 
+def test_repo_add_invalid():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'package', 'repo', 'add', 'invalid', 'file://foobar'])
+    assert returncode == 1
+    assert stdout == b''
+    assert stderr == b'Repo URL uses unsupported protocol [file]\n'
+
+
 def test_repo_remove_by_repo_name():
     repo_list = b"""\
 test4: https://github.com/mesosphere/universe/archive/cli-test-4.zip
