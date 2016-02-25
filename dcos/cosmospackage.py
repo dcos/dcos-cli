@@ -525,12 +525,20 @@ def _format_json_schema_mismatch_message(error):
 
     error_messages = ["Error: {}".format(error.get("message"))]
     for err in error.get("data").get("errors"):
-        found = "Found: {}\n".format(err.get("found"))
-        expected = "Expected: {}\n".format(",".join(err.get("expected")))
-        pointer = err.get("instance").get("pointer")
-        formatted_path = pointer.lstrip("/").replace("/", ".")
-        path = "Path: {}".format(formatted_path)
-        error_messages += [found + expected + path]
+        if err.get("unwanted"):
+            reason = "Unexpected properties: {}".format(err["unwanted"])
+            error_messages += [reason]
+        if err.get("found"):
+            found = "Found: {}".format(err["found"])
+            error_messages += [found]
+        if err.get("expected"):
+            expected = "Expected: {}".format(",".join(err["expected"]))
+            error_messages += [expected]
+        if err.get("instance"):
+            pointer = err["instance"].get("pointer")
+            formatted_path = pointer.lstrip("/").replace("/", ".")
+            path = "Path: {}".format(formatted_path)
+            error_messages += [path]
 
     error_messages += [
         "\nPlease create a JSON file with the appropriate options, and"
