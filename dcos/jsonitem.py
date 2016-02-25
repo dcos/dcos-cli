@@ -223,7 +223,7 @@ def _parse_boolean(value):
     """
 
     try:
-        boolean = json.loads(value)
+        boolean = json.loads(value.lower())
         if boolean is None or isinstance(boolean, bool):
             return boolean
         else:
