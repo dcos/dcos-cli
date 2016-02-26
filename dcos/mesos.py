@@ -410,21 +410,25 @@ class Master(object):
                 for slave in self.state()['slaves']
                 if fltr in slave['id']]
 
-    def tasks(self, fltr="", completed=False):
+    def tasks(self, fltr="", completed=False, active=True,):
         """Returns tasks running under the master
 
         :param fltr: May be a substring or regex.  Only return tasks
                      whose 'id' matches `fltr`.
         :type fltr: str
-        :param completed: also include completed tasks
+        :param completed: include completed tasks
         :type completed: bool
+        :param active: include active tasks
+        :type active: bool
         :returns: a list of tasks
         :rtype: [Task]
         """
 
-        keys = ['tasks']
+        keys = []
+        if active:
+            keys.append('tasks')
         if completed:
-            keys = ['completed_tasks']
+            keys.append('completed_tasks')
 
         tasks = []
         for framework in self._framework_dicts(completed, completed):
