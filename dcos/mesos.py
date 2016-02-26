@@ -707,7 +707,9 @@ class Task(object):
                            ['completed_tasks',
                             'tasks',
                             'queued_tasks'])
-            if any(task['id'] == self['id'] for task in tasks):
+            if any(task['id'] == self['id'] and 
+                   task.get('framework_id',None) == self['framework_id']
+                   for task in tasks):
                 return executor
         return None
 
