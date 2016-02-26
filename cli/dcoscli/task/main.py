@@ -60,12 +60,12 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['task', 'ls'],
-            arg_keys=['<task>', '<path>', '--long'],
+            arg_keys=['<task>', '<path>', '--long', '--framework'],
             function=_ls),
 
         cmds.Command(
             hierarchy=['task'],
-            arg_keys=['<task>', '--completed', '--json'],
+            arg_keys=['<task>', '--completed', '--json', '--framework'],
             function=_task),
     ]
 
@@ -81,11 +81,13 @@ def _info():
     return 0
 
 
-def _task(fltr, completed, json_):
+def _task(fltr, completed, json_, framework_id=None):
     """List DCOS tasks
 
     :param fltr: task id filter
     :type fltr: str
+    :param framework_id: framework id filter
+    :type framework_id: str
     :param completed: If True, include completed tasks
     :type completed: bool
     :param json_: If True, output json.  Otherwise, output a human
@@ -94,11 +96,8 @@ def _task(fltr, completed, json_):
     :returns: process return code
     """
 
-    if fltr is None:
-        fltr = ""
-
-    tasks = sorted(mesos.get_master().tasks(completed=completed, fltr=fltr),
-                   key=lambda task: task['name'])
+    tasks = _get_tasks(completed=completed, fltr=fltr,
+                       framework_id=framework_id)
 
     if json_:
         emitter.publish([task.dict() for task in tasks])
@@ -111,7 +110,7 @@ def _task(fltr, completed, json_):
     return 0
 
 
-def _log(follow, completed, lines, task, file_):
+def _log(follow, completed, lines, fltr, file_, framework_id=None):
     """ Tail a file in the task's sandbox.
 
     :param follow: same as unix tail's -f
@@ -120,18 +119,15 @@ def _log(follow, completed, lines, task, file_):
     :type completed: bool
     :param lines: number of lines to print
     :type lines: int
-    :param task: task pattern to match
-    :type task: str
+    :param fltr: task pattern to match
+    :type fltr: str
     :param file_: file path to read
     :type file_: str
+    :param framework_id: framework id filter
+    :type framework_id: str
     :returns: process return code
     :rtype: int
     """
-
-    if task is None:
-        fltr = ""
-    else:
-        fltr = task
 
     if file_ is None:
         file_ = 'stdout'
@@ -141,11 +137,13 @@ def _log(follow, completed, lines, task, file_):
     # get tasks
     client = mesos.DCOSClient()
     master = mesos.Master(client.get_master_state())
-    tasks = master.tasks(completed=completed, fltr=fltr)
+    tasks = _get_tasks(completed=completed, fltr=fltr,
+                       framework_id=framework_id)
 
     if not tasks:
         if not completed:
-            completed_tasks = master.tasks(completed=True, fltr=fltr)
+            completed_tasks = _get_tasks(completed=True, fltr=fltr,
+                                         framework_id=framework_id)
             if completed_tasks:
                 msg = 'No running tasks match ID [{}]; however, there '.format(
                     fltr)
@@ -167,15 +165,17 @@ def _log(follow, completed, lines, task, file_):
     return 0
 
 
-def _ls(task, path, long_):
+def _ls(fltr, path, long_, framework_id=None):
     """ List files in a task's sandbox.
 
-    :param task: task pattern to match
-    :type task: str
+    :param fltr: task pattern to match
+    :type fltr: str
     :param path: file path to read
     :type path: str
     :param long_: whether to use a long listing format
     :type long_: bool
+    :param framework_id: framework id filter
+    :type framework_id: str
     :returns: process return code
     :rtype: int
     """
@@ -186,25 +186,38 @@ def _ls(task, path, long_):
         path = path[1:]
 
     dcos_client = mesos.DCOSClient()
-    task_obj = mesos.get_master(dcos_client).task(task)
-    dir_ = posixpath.join(task_obj.directory(), path)
+    tasks = _get_tasks(completed=True, fltr=fltr,
+                       framework_id=framework_id)
+    for task_obj in tasks:
+        print("Task: {} ({} on {})".format(task_obj["id"],
+                                           task_obj["framework_id"],
+                                           task_obj["slave_id"]))
+        dir_ = posixpath.join(task_obj.directory(), path)
 
-    try:
-        files = dcos_client.browse(task_obj.slave(), dir_)
-    except DCOSHTTPException as e:
-        if e.response.status_code == 404:
-            raise DCOSException(
-                'Cannot access [{}]: No such file or directory'.format(path))
-        else:
-            raise
+        try:
+            files = dcos_client.browse(task_obj.slave(), dir_)
+        except DCOSHTTPException as e:
+            if e.response.status_code == 404:
+                raise DCOSException(
+                    'Cannot access [{}]: No such file or directory'.format(path))
+            else:
+                raise
 
-    if files:
-        if long_:
-            emitter.publish(tables.ls_long_table(files))
-        else:
-            emitter.publish(
-                '  '.join(posixpath.basename(file_['path'])
-                          for file_ in files))
+        if files:
+            if long_:
+                emitter.publish(tables.ls_long_table(files))
+            else:
+                emitter.publish(
+                    '  '.join(posixpath.basename(file_['path'])
+                              for file_ in files))
+
+
+def _get_tasks(completed, fltr, framework_id=None):
+    if fltr is None:
+        fltr = ""
+    return sorted(mesos.get_master().tasks(completed=completed, fltr=fltr,
+                     framework_id=framework_id),
+                   key=lambda task: task['name'])
 
 
 def _mesos_files(tasks, file_, client):
