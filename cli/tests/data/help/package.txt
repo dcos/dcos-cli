@@ -18,7 +18,7 @@ Usage:
     dcos package search [--json <query>]
     dcos package repo add [--index=<index>] <repo-name> <repo-url>
     dcos package repo remove (--repo-name=<repo-name> | --repo-url=<repo-url>)
-    dcos package repo list
+    dcos package repo list [--json]
     dcos package uninstall [--cli | [--app --app-id=<app-id> --all]]
                            <package-name>
 

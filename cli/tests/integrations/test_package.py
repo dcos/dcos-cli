@@ -59,6 +59,13 @@ test4: https://github.com/mesosphere/universe/archive/cli-test-4.zip
     assert_command(['dcos', 'package', 'repo', 'list'], stdout=repo_list)
 
 
+def test_repo_list_json():
+    repo_list = file_json(
+        'tests/data/package/json/test_repo_list.json')
+    assert_command(
+        ['dcos', 'package', 'repo', 'list', '--json'], stdout=repo_list)
+
+
 def test_repo_add():
     repo = \
         "https://github.com/mesosphere/universe/archive/cli-test-3.zip"

@@ -55,8 +55,8 @@ def _cmds():
     return [
         cmds.Command(
             hierarchy=['package', 'repo', 'list'],
-            arg_keys=[],
-            function=_list_response),
+            arg_keys=['--json'],
+            function=_list_repos),
 
         cmds.Command(
             hierarchy=['package', 'repo', 'add'],
@@ -138,9 +138,11 @@ def _info():
     return 0
 
 
-def _list_response():
+def _list_repos(is_json):
     """List configured package repositories.
 
+    :param json_: output json if True
+    :type json_: bool
     :returns: Process status
     :rtype: int
     """
@@ -148,8 +150,12 @@ def _list_response():
     package_manager = _get_package_manager()
     repos = package_manager.get_repos()
 
-    if repos:
-        emitter.publish(repos)
+    if is_json:
+        return emitter.publish(repos)
+    elif repos.get("repositories"):
+        repos = ["{}: {}".format(repo.get("name"), repo.get("uri"))
+                 for repo in repos.get("repositories")]
+        emitter.publish("\n".join(repos))
     else:
         msg = ("There are currently no repos configured. "
                "Please use `dcos package repo add` to add a repo")

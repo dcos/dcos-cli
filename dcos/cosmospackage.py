@@ -158,14 +158,11 @@ class Cosmos():
     def get_repos(self):
         """List locations of repos
 
-        :returns: the list of repos, in resolution order
-        :rtype: [str]
+        :returns: the list of repos, in resolution order or list
+        :rtype: dict
         """
 
-        response = self.cosmos_post("repository/list", params={})
-        repos = ["{}: {}".format(repo.get("name"), repo.get("uri"))
-                 for repo in response.json().get("repositories")]
-        return "\n".join(repos)
+        return self.cosmos_post("repository/list", params={}).json()
 
     def add_repo(self, name, package_repo, index):
         """Add package repo and update repo with new repo
