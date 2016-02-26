@@ -55,7 +55,7 @@ def _cmds():
         cmds.Command(
             hierarchy=['task', 'log'],
             arg_keys=['--follow', '--completed', '--lines', '<task>',
-                      '<file>'],
+                      '<file>', '--framework'],
             function=_log),
 
         cmds.Command(
