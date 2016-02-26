@@ -189,9 +189,8 @@ def _ls(fltr, path, long_, framework_id=None):
     tasks = _get_tasks(completed=True, fltr=fltr,
                        framework_id=framework_id)
     for task_obj in tasks:
-        print("Task: {} ({} on {})".format(task_obj["id"],
-                                           task_obj["framework_id"],
-                                           task_obj["slave_id"]))
+        emitter.publish("Task: {} ({} on {})".format(task_obj["id"],
+                        task_obj["framework_id"], task_obj["slave_id"]))
         dir_ = posixpath.join(task_obj.directory(), path)
 
         try:
