@@ -478,7 +478,7 @@ def _search(json_, query):
     package_manager = _get_package_manager()
     results = package_manager.search_sources(query)
 
-    if any(result['packages'] for result in results) or json_:
+    if json_ or results['packages']:
         emitting.publish_table(emitter,
                                results,
                                tables.package_search_table,

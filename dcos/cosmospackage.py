@@ -107,7 +107,7 @@ class Cosmos():
         :rtype: [packages]
         """
         response = self.cosmos_post("search", {"query": query})
-        return [response.json()]
+        return response.json()
 
     def get_package_version(self, package_name, package_version):
         """Returns PackageVersion of specified package

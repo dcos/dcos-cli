@@ -59,7 +59,7 @@ def test_package_table():
 
 def test_package_search_table():
     _test_table(tables.package_search_table,
-                [search_result_fixture()],
+                search_result_fixture(),
                 'tests/unit/data/package_search.txt')
 
 
