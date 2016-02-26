@@ -746,10 +746,9 @@ def test_search():
         ['dcos', 'package', 'search', '--json'])
 
     registries = json.loads(stdout.decode('utf-8'))
-    for registry in registries:
-        # assert the number of packages is gte the number at the time
-        # this test was written
-        assert len(registry['packages']) >= 5
+    # assert the number of packages is gte the number at the time
+    # this test was written
+    assert len(registries['packages']) >= 5
 
     assert returncode == 0
     assert stderr == b''
@@ -775,10 +774,9 @@ def test_search_ends_with_wildcard():
     assert stderr == b''
 
     registries = json.loads(stdout.decode('utf-8'))
-    for registry in registries:
-        # cosmos matches wildcards in name/description/tags
-        # so will find more results (3 instead of 2)
-        assert len(registry['packages']) >= 2
+    # cosmos matches wildcards in name/description/tags
+    # so will find more results (3 instead of 2)
+    assert len(registries['packages']) >= 2
 
 
 def test_search_start_with_wildcard():
@@ -790,8 +788,7 @@ def test_search_start_with_wildcard():
     assert stderr == b''
 
     registries = json.loads(stdout.decode('utf-8'))
-    for registry in registries:
-        assert len(registry['packages']) == 1
+    assert len(registries['packages']) == 1
 
 
 def test_search_middle_with_wildcard():
@@ -803,8 +800,7 @@ def test_search_middle_with_wildcard():
     assert stderr == b''
 
     registries = json.loads(stdout.decode('utf-8'))
-    for registry in registries:
-        assert len(registry['packages']) == 1
+    assert len(registries['packages']) == 1
 
 
 def _get_app_labels(app_id):

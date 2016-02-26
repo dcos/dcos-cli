@@ -305,10 +305,9 @@ def package_search_table(search_results):
     ])
 
     packages = []
-    for result in search_results:
-        for package in result['packages']:
-            package_ = copy.deepcopy(package)
-            packages.append(package_)
+    for package in search_results['packages']:
+        package_ = copy.deepcopy(package)
+        packages.append(package_)
 
     tb = table(fields, packages, sortby="NAME")
     tb.align['NAME'] = 'l'
