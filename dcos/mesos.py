@@ -435,10 +435,10 @@ class Master(object):
         tasks = []
         for framework in self._framework_dicts(completed, completed):
             if not framework_id or framework['id'] == framework_id:
-            for task in _merge(framework, keys):
-                if fltr in task['id'] or fnmatch.fnmatchcase(task['id'], fltr):
-                    task = self._framework_obj(framework).task(task['id'])
-                    tasks.append(task)
+                for task in _merge(framework, keys):
+                    if fltr in task['id'] or fnmatch.fnmatchcase(task['id'], fltr):
+                        task = self._framework_obj(framework).task(task['id'])
+                        tasks.append(task)
 
         return tasks
 
