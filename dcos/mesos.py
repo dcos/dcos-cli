@@ -410,7 +410,7 @@ class Master(object):
                 for slave in self.state()['slaves']
                 if fltr in slave['id']]
 
-    def tasks(self, fltr="", completed=False, active=True,):
+    def tasks(self, fltr="", completed=False, active=True, framework_id=None):
         """Returns tasks running under the master
 
         :param fltr: May be a substring or regex.  Only return tasks
@@ -420,6 +420,8 @@ class Master(object):
         :type completed: bool
         :param active: include active tasks
         :type active: bool
+        :param framework_id: framework_id to filter by
+        :type framework_id: str
         :returns: a list of tasks
         :rtype: [Task]
         """
@@ -432,6 +434,7 @@ class Master(object):
 
         tasks = []
         for framework in self._framework_dicts(completed, completed):
+            if not framework_id or framework['id'] == framework_id:
             for task in _merge(framework, keys):
                 if fltr in task['id'] or fnmatch.fnmatchcase(task['id'], fltr):
                     task = self._framework_obj(framework).task(task['id'])
