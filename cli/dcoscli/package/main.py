@@ -65,7 +65,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['package', 'repo', 'remove'],
-            arg_keys=['--repo-name', '--repo-url'],
+            arg_keys=['<repo-name>'],
             function=_remove_repo),
 
         cmds.Command(
@@ -182,19 +182,17 @@ def _add_repo(repo_name, repo_url, index):
     return 0
 
 
-def _remove_repo(repo_name, repo_url):
+def _remove_repo(repo_name):
     """Remove package repo and update repo with new repo
 
     :param repo_name: name to call repo
     :type repo_name: str
-    :param repo_url: location of repo to add
-    :type repo_url: str
     :returns: Process status
     :rtype: int
     """
 
     package_manager = _get_package_manager()
-    package_manager.remove_repo(repo_name, repo_url)
+    package_manager.remove_repo(repo_name)
 
     return 0
 

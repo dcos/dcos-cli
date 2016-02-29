@@ -173,7 +173,8 @@ class Cosmos():
         :type package_repo: str
         :param index: index to add this repo
         :type index: int
-        :rtype: None
+        :returns: current repo list
+        :rtype: dict
         """
 
         params = {"name": name, "uri": package_repo}
@@ -182,15 +183,16 @@ class Cosmos():
         response = self.cosmos_post("repository/add", params=params)
         return response.json()
 
-    def remove_repo(self, name, package_repo):
+    def remove_repo(self, name):
         """Remove package repo and update repo
 
-        :param package_repo: location of repo to remove
-        :type package_repo: str
-        :rtype: None
+        :param name: name of repo to remove
+        :type name: str
+        :returns: current repo list
+        :rtype: dict
         """
 
-        params = {"name": name, "uri": package_repo}
+        params = {"name": name}
         response = self.cosmos_post("repository/delete", params=params)
         return response.json()
 
