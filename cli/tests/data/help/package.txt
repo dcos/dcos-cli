@@ -17,7 +17,7 @@ Usage:
     dcos package list [--json --app-id=<app-id> <package-name>]
     dcos package search [--json <query>]
     dcos package repo add [--index=<index>] <repo-name> <repo-url>
-    dcos package repo remove (--repo-name=<repo-name> | --repo-url=<repo-url>)
+    dcos package repo remove <repo-name>
     dcos package repo list [--json]
     dcos package uninstall [--cli | [--app --app-id=<app-id> --all]]
                            <package-name>
@@ -61,12 +61,6 @@ Options:
         Render the package's marathon.json or command.json template with the
         values from config.json and --options. If not provided, print the raw
         templates.
-
-    --repo-name=<repo-name>
-        Name for repository
-
-    --repo-url=<repo-url>
-        URL of repository of DCOS packages. E.g. https://universe.mesosphere.com/repo
 
     --version
         Show version
