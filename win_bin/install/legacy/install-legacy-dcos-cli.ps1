@@ -83,11 +83,7 @@ if ($PYTHON_ARCHITECTURE -eq 64) {
   & $installation_path\Scripts\easy_install  "http://downloads.sourceforge.net/project/pywin32/pywin32/Build%20219/pywin32-219.win32-py$PYTHON_VERSION.exe" 2>&1 | out-null
 }
 
-if ($env:DCOS_CLI_VERSION) {
-  & $installation_path\Scripts\pip install --quiet "dcoscli==$env:DCOS_CLI_VERSION"
-} else {
-  & $installation_path\Scripts\pip install --quiet "dcoscli<0.4.0"
-}
+& $installation_path\Scripts\pip install --quiet "dcoscli<0.4.0"
 
 $env:Path="$env:Path;$installation_path\Scripts\"
 
