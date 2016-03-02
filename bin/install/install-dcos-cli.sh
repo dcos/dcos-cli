@@ -79,7 +79,6 @@ check_dcoscli_version()
                 exit 1;
         fi
     fi
-    exit 1;
 }
 
 if [ "$#" -lt 2 ]; then
