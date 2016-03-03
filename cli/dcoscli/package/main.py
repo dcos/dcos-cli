@@ -763,7 +763,9 @@ def _get_package_manager():
     if cosmos_manager.enabled():
         return cosmos_manager
     else:
-        msg = ("This version of the dcos-cli is unsupported for your DCOS "
-               "cluster. Please use a dcos-cli version < 0.4.0 or upgrade your"
-               " cluster to DCOS version >= 1.6.1")
+        msg = ("This version of the DCOS CLI is not supported for your "
+               "cluster. Please downgrade the CLI to an older version: "
+               "https://docs.mesosphere.com/administration/introcli/updatecli/"
+               "#scrollNav-2"
+               )
         raise DCOSException(msg)
