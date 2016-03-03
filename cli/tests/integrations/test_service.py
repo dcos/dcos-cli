@@ -54,7 +54,7 @@ def test_service_table():
 
 
 def test_service_inactive():
-    package_install('cassandra', True)
+    package_install('cassandra', True, ['--package-version=0.2.0-1'])
 
     # wait long enough for it to register
     time.sleep(5)
@@ -93,7 +93,7 @@ def test_service_inactive():
 
 
 def test_service_completed():
-    package_install('cassandra', True)
+    package_install('cassandra', True, ['--package-version=0.2.0-1'])
 
     time.sleep(5)
 
