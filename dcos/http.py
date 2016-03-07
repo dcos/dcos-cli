@@ -144,7 +144,7 @@ def _request_with_auth(response,
             # acs invalid token
             elif response.status_code == 401 and auth_scheme == "acsjwt":
                 if util.get_config().get("core.dcos_acs_token") is not None:
-                    config.unset("core.dcos_acs_token", None)
+                    config.unset("core.dcos_acs_token")
 
         i += 1
 
