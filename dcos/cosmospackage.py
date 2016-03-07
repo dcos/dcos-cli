@@ -3,7 +3,8 @@ import json
 
 import pystache
 from dcos import emitting, http, util
-from dcos.errors import (DCOSAuthenticationException, DCOSException,
+from dcos.errors import (DCOSAuthenticationException,
+                         DCOSAuthorizationException, DCOSException,
                          DCOSHTTPException, DefaultError)
 
 from six.moves import urllib
@@ -29,10 +30,14 @@ class Cosmos():
             url = urllib.parse.urljoin(self.cosmos_url, 'capabilities')
             response = http.get(url,
                                 headers=_get_capabilities_header())
-        # return `Authentication failed` error messages, but all other errors
-        # are treated as endpoint not available
+        # return `Authentication failed` error messages
         except DCOSAuthenticationException:
             raise
+        # Authorization errors mean endpoint exists, and user could be
+        # authorized for the command specified, not this endpoint
+        except DCOSAuthorizationException:
+            return True
+        # all other errors are treated as endpoint not available
         except Exception as e:
             logger.exception(e)
             return False
@@ -247,10 +252,15 @@ class Cosmos():
                 raise DCOSException(
                     "Server returned incorrect response type: {}".format(
                         response.headers))
+        except DCOSAuthenticationException:
+            raise
+        except DCOSAuthorizationException:
+            raise
         except DCOSHTTPException as e:
-            # let the response be handled by `cosmos_error` so we can expose
-            # errors reported by cosmos
+            # let non authentication responses be handled by `cosmos_error` so
+            # we can expose errors reported by cosmos
             response = e.response
+
         return response
 
 
