@@ -359,7 +359,7 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
 
     pkg_json = pkg.package_json()
     pre_install_notes = pkg_json.get('preInstallNotes')
-    if pre_install_notes:
+    if app and pre_install_notes:
         emitter.publish(pre_install_notes)
         if not _confirm('Continue installing?', yes):
             emitter.publish('Exiting installation.')
@@ -402,7 +402,7 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
                                                                  commands))
 
     post_install_notes = pkg_json.get('postInstallNotes')
-    if post_install_notes:
+    if app and post_install_notes:
         emitter.publish(post_install_notes)
 
     return 0
