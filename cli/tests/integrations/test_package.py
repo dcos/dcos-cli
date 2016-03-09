@@ -648,11 +648,9 @@ def test_list_cli():
     _list_remove_nulls(stdout=stdout)
     _uninstall_helloworld()
 
-    stdout = (b"A sample pre-installation message\n"
-              b"Installing CLI subcommand for package [helloworld] " +
+    stdout = (b"Installing CLI subcommand for package [helloworld] " +
               b"version [0.1.0]\n"
-              b"New command available: dcos helloworld\n"
-              b"A sample post-installation message\n")
+              b"New command available: dcos helloworld\n")
     _install_helloworld(args=['--cli', '--yes'], stdout=stdout)
 
     stdout = b"""\
