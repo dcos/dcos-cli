@@ -81,6 +81,22 @@ check_dcoscli_version()
     fi
 }
 
+validate_dcos_url()
+{
+    curl -f -k -s ${DCOS_URL} 2>&1 >/dev/null
+    echo $?
+}
+
+get_dcos_environment_version()
+{
+    VER=$(curl -f -k -s ${DCOS_URL}/dcos-metadata/dcos-version.json)
+    if [ $? -eq 22 ]; then
+        echo "1.1"
+    else
+        echo $VER | python -c 'import json,sys;obj=json.load(sys.stdin);print(obj.get("version", "1.0"))'
+    fi
+}
+
 if [ "$#" -lt 2 ]; then
   usage;
   exit 1;
@@ -98,6 +114,8 @@ if [[ $VIRTUAL_ENV_PATH =~ \  ]];
 fi
 DCOS_URL=${ARGS[1]}
 
+hash curl 2>/dev/null || { echo >&2 "Cannot find curl. You may need to install it by following the documentation at https://docs.mesosphere.com/install/cli/#linux. Aborting."; exit 1; }
+
 command -v virtualenv >/dev/null 2>&1 || { echo "Cannot find virtualenv. You may need to install it by following the documentation at https://docs.mesosphere.com/install/cli/#linux. Aborting."; exit 1; }
 
 VIRTUALENV_VERSION=$(virtualenv --version)
@@ -112,13 +130,30 @@ fi
 echo "Installing DCOS CLI from PyPI...";
 echo "";
 
+if [ "$(validate_dcos_url)" -gt 0 ]; then
+    echo "dcos-url is invalid. Please double check that the URL is formatted correctly and pointing at a valid cluster."
+    exit 1
+fi
+
+DCOS_ENVIRONMENT_VERSION=$(get_dcos_environment_version)
+
+compare_version()
+{
+    python -c "import distutils.version as v, sys; sys.exit(not (v.LooseVersion('"${DCOS_ENVIRONMENT_VERSION}"') < v.LooseVersion('"${1}"')))"
+}
+
 # Let's first setup a virtualenv: we are assuming that the path is absolute
 mkdir -p "$VIRTUAL_ENV_PATH"
 virtualenv "$VIRTUAL_ENV_PATH"
 
+
 # Install the DCOS CLI package, using version if set
 if [ -z "$DCOS_CLI_VERSION" ]; then
-    "$VIRTUAL_ENV_PATH/bin/pip" install --quiet "dcoscli"
+    if $(compare_version 1.6.1); then
+        "$VIRTUAL_ENV_PATH/bin/pip" install --quiet "dcoscli<0.4.0"
+    else
+        "$VIRTUAL_ENV_PATH/bin/pip" install --quiet "dcoscli"
+    fi
 else
     "$VIRTUAL_ENV_PATH/bin/pip" install --quiet "dcoscli==$DCOS_CLI_VERSION"
 fi
