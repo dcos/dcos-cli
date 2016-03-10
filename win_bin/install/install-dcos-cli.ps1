@@ -46,6 +46,25 @@ if (-Not(Get-Command virtualenv -errorAction SilentlyContinue))
   exit 1
 }
 
+function ValidateDCOSUrl ()
+{
+  [void] (Invoke-RestMethod -Uri $dcos_url)
+  if (-Not($?)) {
+    echo "dcos-url is invalid. Please double check that the URL is formatted correctly and pointing at a valid cluster."
+    exit 1
+  }
+}
+
+function GetDcosVersion ()
+{
+  $VER = (Invoke-RestMethod -Uri "${DCOS_URL}/dcos-metadata/dcos-version.json")
+  if ($? -eq "22") {
+    echo "1.0"
+  } else {
+    echo $VER | python -c 'import json,sys;obj=json.load(sys.stdin);print(obj.get("version", "1.0"))'
+  }
+}
+
 $VIRTUAL_ENV_VERSION = (virtualenv --version)
 
 $VIRTUAL_ENV_VERSION  -match "[0-9]+"
@@ -63,6 +82,8 @@ if (-Not(Get-Command git -errorAction SilentlyContinue))
 
 echo "Installing DCOS CLI from PyPI..."
 echo ""
+
+ValidateDCOSURL
 
 if (-Not([System.IO.Path]::IsPathRooted("$installation_path"))) {
   $installation_path = Join-Path (pwd) $installation_path
@@ -83,7 +104,14 @@ if ($PYTHON_ARCHITECTURE -eq 64) {
   & $installation_path\Scripts\easy_install  "http://downloads.sourceforge.net/project/pywin32/pywin32/Build%20219/pywin32-219.win32-py$PYTHON_VERSION.exe" 2>&1 | out-null
 }
 
-& $installation_path\Scripts\pip install --quiet "dcoscli"
+$DCOS_ENVIRONMENT_VERSION = GetDcosVersion
+$CURRENT_DCOS_VERSION = (python -c "import distutils.version as v, sys; sys.exit(not (v.LooseVersion('${DCOS_ENVIRONMENT_VERSION}') < v.LooseVersion('1.6.1')))")
+
+if ($CURRENT_DCOS_VERSION) {
+  & $installation_path\Scripts\pip install --quiet "dcoscli"
+} else {
+  & $installation_path\Scripts\pip install --quiet "dcoscli<0.4.0"
+}
 
 $env:Path="$env:Path;$installation_path\Scripts\"
 
@@ -99,6 +127,11 @@ $env:DCOS_CONFIG = $DCOS_CONFIG
 dcos config set core.reporting true
 dcos config set core.dcos_url $dcos_url
 dcos config set core.timeout 5
+if (-Not($CURRENT_DCOS_VERSION)) {
+  dcos config set package.cache $env:temp\dcos\package-cache
+  dcos config set package.sources '[\"https://universe.mesosphere.com/repo\"]'
+  dcos package update
+}
 
 $ACTIVATE_PATH="$installation_path\Scripts\activate.ps1"
 
