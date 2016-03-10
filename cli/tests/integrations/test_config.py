@@ -102,6 +102,14 @@ def test_get_top_property(env):
                    returncode=1)
 
 
+def test_set_package_sources_property(env):
+    notice = (b"This config property has been deprecated. "
+              b"Please add your repositories with `dcos package repo add`\n")
+    assert_command(['dcos', 'config', 'set', 'package.sources', '[\"foo\"]'],
+                   stderr=notice,
+                   returncode=1)
+
+
 def test_set_existing_string_property(env):
     config_set('core.dcos_url',
                'http://dcos.snakeoil.mesosphere.com:5081', env)

@@ -21,6 +21,7 @@ Usage:
     dcos package repo list [--json]
     dcos package uninstall [--cli | [--app --app-id=<app-id> --all]]
                            <package-name>
+    dcos package update
 
 Options:
     --all

@@ -54,6 +54,11 @@ def _cmds():
 
     return [
         cmds.Command(
+            hierarchy=['package', 'update'],
+            arg_keys=[],
+            function=_update),
+
+        cmds.Command(
             hierarchy=['package', 'repo', 'list'],
             arg_keys=['--json'],
             function=_list_repos),
@@ -136,6 +141,19 @@ def _info():
 
     emitter.publish(_doc().split('\n')[0])
     return 0
+
+
+def _update():
+    """
+    :returns: Deprecation notice
+    :rtype: str
+    """
+
+    _get_package_manager()
+    notice = ("This command has been deprecated. "
+              "Repositories will be automatically updated after they are added"
+              " by `dcos package repo add`")
+    raise DCOSException(notice)
 
 
 def _list_repos(is_json):
