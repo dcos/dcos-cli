@@ -94,6 +94,10 @@ def _set(name, value):
     :rtype: int
     """
 
+    if name == "package.sources":
+        notice = ("This config property has been deprecated. "
+                  "Please add your repositories with `dcos package repo add`")
+        return DCOSException(notice)
     toml_config = config.set_val(name, value)
     if (name == 'core.reporting' is True) or (name == 'core.email'):
         analytics.segment_identify(toml_config)
