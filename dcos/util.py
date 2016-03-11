@@ -157,16 +157,25 @@ def get_config_path():
     :rtype: str
     """
 
-    default = os.path.expanduser(
+    return os.environ.get(constants.DCOS_CONFIG_ENV, get_default_config_path())
+
+
+def get_default_config_path():
+    """Returns the default path to the DCOS config file.
+
+    :returns: path to the DCOS config file
+    :rtype: str
+    """
+
+    return os.path.expanduser(
         os.path.join("~",
                      constants.DCOS_DIR,
                      'dcos.toml'))
 
-    return os.environ.get(constants.DCOS_CONFIG_ENV, default)
-
 
 def get_config(mutable=False):
-    """ Returns the DCOS configuration object
+    """Returns the DCOS configuration object and creates config file is none
+    found and `DCOS_CONFIG` set to default value
 
     :param mutable: True if the returned Toml object should be mutable
     :type mutable: boolean
@@ -178,7 +187,10 @@ def get_config(mutable=False):
     from dcos import config
 
     path = get_config_path()
+    default = get_default_config_path()
 
+    if path == default:
+        ensure_dir_exists(os.path.dirname(default))
     return config.load_from_path(path, mutable)
 
 
