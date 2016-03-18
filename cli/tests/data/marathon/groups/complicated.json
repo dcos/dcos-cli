@@ -2,7 +2,7 @@
     "apps": [
         {
             "cmd": "sleep 1",
-            "id": "appingroups",
+            "id": "/appingroups",
             "instances": 0
         }
     ],
@@ -11,7 +11,7 @@
             "apps": [
                 {
                     "cmd": "sleep 10",
-                    "id": "sleep10",
+                    "id": "/sleep10",
                     "instances": 0,
                     "dependencies": ["/product/database"]
                 }
@@ -24,7 +24,7 @@
                     "apps": [
                         {
                             "cmd": "sleep 1",
-                            "id": "sleep1",
+                            "id": "/sleep1",
                             "instances": 0
                         }
                     ],
