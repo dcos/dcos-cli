@@ -95,7 +95,7 @@ Positional Arguments:
                                 the definition is read from stdin. For a
                                 detailed description see
                                 (https://mesosphere.github.io/
-                                marathon/docs/rest-api.html#post-/v2/groups).
+                                marathon/docs/rest-api.html#post-v2-groups).
 
     <instances>                 The number of instances to start
 
