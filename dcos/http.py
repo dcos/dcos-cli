@@ -34,6 +34,25 @@ def _default_is_success(status_code):
     return 200 <= status_code < 300
 
 
+def _verify_ssl(verify=None):
+    """Returns whether to verify ssl
+
+    :param verify: whether to verify SSL certs or path to cert(s)
+    :type verify: bool | str
+    :return: whether to verify SSL certs or path to cert(s)
+    :rtype: bool | str
+    """
+
+    if verify is None and constants.DCOS_SSL_VERIFY_ENV in os.environ:
+        verify = os.environ[constants.DCOS_SSL_VERIFY_ENV]
+        if verify.lower() == "true":
+            verify = True
+        elif verify.lower() == "false":
+            verify = False
+
+    return verify
+
+
 @util.duration
 def _request(method,
              url,
@@ -182,12 +201,7 @@ def request(method,
     if 'headers' not in kwargs:
         kwargs['headers'] = {'Accept': 'application/json'}
 
-    if verify is None and constants.DCOS_SSL_VERIFY_ENV in os.environ:
-        verify = os.environ[constants.DCOS_SSL_VERIFY_ENV]
-        if verify.lower() == "true":
-            verify = True
-        elif verify.lower() == "false":
-            verify = False
+    verify = _verify_ssl(verify)
 
     # Silence 'Unverified HTTPS request' and 'SecurityWarning' for bad certs
     if verify is not None:
@@ -412,9 +426,14 @@ def _get_dcos_acs_auth(username, password, hostname):
             username, password = _get_auth_credentials(username, hostname)
         creds = {"uid": username, "password": password}
 
+        verify = _verify_ssl()
+        # Silence 'Unverified HTTPS request' and 'SecurityWarning' for bad cert
+        if verify is not None:
+            silence_requests_warnings()
+
         # using private method here, so we don't retry on this request
         # error here will be bubbled up to _request_with_auth
-        response = _request('post', url, json=creds)
+        response = _request('post', url, json=creds, verify=verify)
 
         if response.status_code == 200:
             token = response.json()['token']
