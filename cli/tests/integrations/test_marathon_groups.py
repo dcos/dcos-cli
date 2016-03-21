@@ -67,7 +67,7 @@ def test_add_bad_complicated_group():
 
 def test_update_group():
     with _group(GOOD_GROUP, 'test-group'):
-        newapp = json.dumps([{"id": "appadded", "cmd": "sleep 0"}])
+        newapp = json.dumps([{"id": "/appadded", "cmd": "sleep 0"}])
         appjson = "apps={}".format(newapp)
         returncode, stdout, stderr = exec_command(
             ['dcos', 'marathon', 'group', 'update', 'test-group/sleep',
@@ -78,7 +78,7 @@ def test_update_group():
         assert stderr == b''
 
         watch_all_deployments()
-        show_app('test-group/sleep/appadded')
+        show_app('appadded')
 
 
 def test_update_group_from_stdin():
@@ -86,7 +86,7 @@ def test_update_group_from_stdin():
         _update_group(
             'test-group',
             'tests/data/marathon/groups/update_good.json')
-        show_app('test-group/updated')
+        show_app('updated')
 
 
 def test_update_missing_group():

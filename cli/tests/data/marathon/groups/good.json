@@ -3,7 +3,7 @@
         {
             "apps": [
                 {
-                    "id": "goodnight",
+                    "id": "/goodnight",
                     "cmd": "sleep 1",
                     "instances": 0
                 }
