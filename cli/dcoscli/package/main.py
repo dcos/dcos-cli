@@ -13,34 +13,27 @@ from dcos import (cmds, cosmospackage, emitting, errors, http, options,
                   package, subcommand, util)
 from dcos.errors import DCOSException
 from dcoscli import tables
-from dcoscli.common import command_info
-from dcoscli.main import decorate_docopt_usage
+from dcoscli.subcommand import default_command_info, default_doc
+from dcoscli.util import decorate_docopt_usage
 from six import iteritems
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
 
 
-def main():
+def main(argv):
     try:
-        return _main()
+        return _main(argv)
     except DCOSException as e:
         emitter.publish(e)
         return 1
 
 
-def _doc():
-    return pkg_resources.resource_string(
-        'dcoscli',
-        'data/help/package.txt').decode('utf-8')
-
-
 @decorate_docopt_usage
-def _main():
-    util.configure_process_from_environ()
-
+def _main(argv):
     args = docopt.docopt(
-        _doc(),
+        default_doc("package"),
+        argv=argv,
         version='dcos-package version {}'.format(dcoscli.version))
     http.silence_requests_warnings()
 
@@ -127,7 +120,8 @@ def _package(config_schema, info):
     elif info:
         _info()
     else:
-        emitter.publish(options.make_generic_usage_message(_doc()))
+        doc = default_doc("package")
+        emitter.publish(options.make_generic_usage_message(doc))
         return 1
 
     return 0
@@ -140,7 +134,7 @@ def _info():
     :rtype: int
     """
 
-    emitter.publish(command_info(_doc()))
+    emitter.publish(default_command_info("package"))
     return 0
 
 

@@ -1,16 +1,15 @@
 import os
 import signal
 import sys
-from functools import wraps
-from subprocess import PIPE, Popen
 
 import dcoscli
 import docopt
-import pkg_resources
+from concurrent.futures import ThreadPoolExecutor
 from dcos import (auth, constants, emitting, errors, http, mesos, subcommand,
                   util)
 from dcos.errors import DCOSAuthenticationException, DCOSException
 from dcoscli import analytics
+from dcoscli.subcommand import SubcommandMain, default_doc
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -28,7 +27,7 @@ def _main():
     signal.signal(signal.SIGINT, signal_handler)
 
     args = docopt.docopt(
-        _doc(),
+        default_doc("dcos"),
         version='dcos version {}'.format(dcoscli.version),
         options_first=True)
 
@@ -54,8 +53,6 @@ def _main():
     if not command:
         command = "help"
 
-    executable = subcommand.command_executables(command)
-
     cluster_id = None
     if dcoscli.version != 'SNAPSHOT' and command and \
             command not in ["config", "help"]:
@@ -67,26 +64,28 @@ def _main():
             msg = 'Unable to get the cluster_id of the cluster.'
             logger.exception(msg)
 
-    # the call to retrieve cluster_id must happen before we run the subcommand
-    # so that if you have auth enabled we don't ask for user/pass multiple
-    # times (with the text being out of order) before we can cache the auth
-    # token
-    subproc = Popen([executable,  command] + args['<args>'],
-                    stderr=PIPE)
+    # send args call to segment.io
+    with ThreadPoolExecutor(max_workers=2) as reporting_executor:
+        analytics.segment_track_cli(reporting_executor, config, cluster_id)
 
-    if dcoscli.version != 'SNAPSHOT':
-        return analytics.wait_and_track(subproc, cluster_id)
-    else:
-        return analytics.wait_and_capture(subproc)[0]
+        # the call to retrieve cluster_id must happen before we run the
+        # subcommand so that if you have auth enabled we don't ask for
+        # user/pass multiple times (with the text being out of order)
+        # before we can cache the auth token
+        if command in subcommand.default_subcommands():
+            sc = SubcommandMain(command, args['<args>'])
+        else:
+            executable = subcommand.command_executables(command)
+            sc = subcommand.SubcommandProcess(
+                executable, command, args['<args>'])
 
+        exitcode, err = sc.run_and_capture()
 
-def _doc():
-    """
-    :rtype: str
-    """
-    return pkg_resources.resource_string(
-        'dcoscli',
-        'data/help/dcos.txt').decode('utf-8')
+        if err:
+            analytics.track_err(
+                reporting_executor, exitcode, err, config, cluster_id)
+
+        return exitcode
 
 
 def _config_log_level_environ(log_level):
@@ -113,27 +112,6 @@ def signal_handler(signal, frame):
     emitter.publish(
         errors.DefaultError("User interrupted command with Ctrl-C"))
     sys.exit(0)
-
-
-def decorate_docopt_usage(func):
-    """Handle DocoptExit exception
-
-    :param func: function
-    :type func: function
-    :return: wrapped function
-    :rtype: function
-    """
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            result = func(*args, **kwargs)
-        except docopt.DocoptExit as e:
-            emitter.publish("Command not recognized\n")
-            emitter.publish(e)
-            return 1
-        return result
-    return wrapper
 
 
 def set_ssl_info_env_vars(config):

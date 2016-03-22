@@ -92,14 +92,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
-            'dcos=dcoscli.main:main',
-            'dcos-help=dcoscli.help.main:main',
-            'dcos-config=dcoscli.config.main:main',
-            'dcos-marathon=dcoscli.marathon.main:main',
-            'dcos-package=dcoscli.package.main:main',
-            'dcos-service=dcoscli.service.main:main',
-            'dcos-task=dcoscli.task.main:main',
-            'dcos-node=dcoscli.node.main:main'
+            'dcos=dcoscli.main:main'
         ],
     },
 

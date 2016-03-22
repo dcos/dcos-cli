@@ -2,45 +2,34 @@ import collections
 
 import dcoscli
 import docopt
-import pkg_resources
 from dcos import cmds, config, emitting, http, util
 from dcos.errors import DCOSException
 from dcoscli import analytics
-from dcoscli.common import command_info
-from dcoscli.main import decorate_docopt_usage
+from dcoscli.subcommand import default_command_info, default_doc
+from dcoscli.util import decorate_docopt_usage
 
 emitter = emitting.FlatEmitter()
 logger = util.get_logger(__name__)
 
 
-def main():
+def main(argv):
     try:
-        return _main()
+        return _main(argv)
     except DCOSException as e:
         emitter.publish(e)
         return 1
 
 
 @decorate_docopt_usage
-def _main():
-    util.configure_process_from_environ()
-
+def _main(argv):
     args = docopt.docopt(
-        _doc(),
+        default_doc("config"),
+        argv=argv,
         version='dcos-config version {}'.format(dcoscli.version))
 
     http.silence_requests_warnings()
 
     return cmds.execute(_cmds(), args)
-
-
-def _doc():
-    """
-    :rtype: str
-    """
-    return pkg_resources.resource_string(
-        'dcoscli',
-        'data/help/config.txt').decode('utf-8')
 
 
 def _cmds():
@@ -85,7 +74,7 @@ def _info(info):
     :rtype: int
     """
 
-    emitter.publish(command_info(_doc()))
+    emitter.publish(default_command_info("config"))
     return 0
 
 

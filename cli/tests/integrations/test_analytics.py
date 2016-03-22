@@ -36,11 +36,11 @@ def test_config_set():
     '''Tests that a `dcos config set core.email <email>` makes a
     segment.io identify call'''
 
-    args = [util.which('dcos'), 'config', 'set', 'core.email', 'test@mail.com']
+    argv = ['config', 'set', 'core.email', 'test@mail.com']
     env = _env_reporting()
 
-    with patch('sys.argv', args), patch.dict(os.environ, env):
-        assert config_main() == 0
+    with patch.dict(os.environ, env):
+        assert config_main(argv) == 0
 
         # segment.io
         assert mock_called_some_args(http.post,
@@ -98,12 +98,12 @@ def test_exc():
     with patch('sys.argv', args), \
             patch('dcoscli.version', version), \
             patch.dict(os.environ, env), \
-            patch('dcoscli.analytics.wait_and_capture',
-                  return_value=(1, 'Traceback')), \
-            patch('dcoscli.analytics._segment_track_cli') as track:
+            patch('dcoscli.subcommand.SubcommandMain.run_and_capture',
+                  return_value=(1, "Traceback")), \
+            patch('dcoscli.analytics._segment_track') as track:
 
         assert main() == 1
-        assert track.call_count == 1
+        assert track.call_count == 2
         assert rollbar.report_message.call_count == 1
 
 
@@ -118,9 +118,9 @@ def test_config_reporting_false():
     with patch('sys.argv', args), \
             patch('dcoscli.version', version), \
             patch.dict(os.environ, env), \
-            patch('dcoscli.analytics.wait_and_capture',
-                  return_value=(1, 'Traceback')), \
-            patch('dcoscli.analytics._segment_track_cli') as track:
+            patch('dcoscli.subcommand.SubcommandMain.run_and_capture',
+                  return_value=(1, "Traceback")), \
+            patch('dcoscli.analytics._segment_track') as track:
 
         assert main() == 1
         assert track.call_count == 0
