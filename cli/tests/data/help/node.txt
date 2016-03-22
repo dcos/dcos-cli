@@ -3,12 +3,12 @@ Manage DCOS nodes
 Usage:
     dcos node --info
     dcos node [--json]
-    dcos node log [--follow --lines=N --master --slave=<slave-id>]
+    dcos node log [--follow --lines=N --leader --master --slave=<slave-id>]
     dcos node ssh [--option SSHOPT=VAL ...]
                   [--config-file=<path>]
                   [--user=<user>]
                   [--master-proxy]
-                  (--master | --slave=<slave-id>)
+                  (--leader | --master | --slave=<slave-id>)
 
 Options:
     -h, --help              Show this screen
@@ -16,7 +16,8 @@ Options:
     --json                  Print json-formatted nodes
     --follow                Print data as the file grows
     --lines=N               Print the last N lines [default: 10]
-    --master                Access the leading master
+    --leader                Access the leading master
+    --master                Deprecated. Please use --leader.
     --master-proxy          Proxy the SSH connection through a master node. This can be useful when
                             accessing DCOS from a separate network. For example, in the default AWS
                             configuration, the private slaves are unreachable from the public

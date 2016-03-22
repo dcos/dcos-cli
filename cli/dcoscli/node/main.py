@@ -29,6 +29,11 @@ def _main():
         _doc(),
         version="dcos-node version {}".format(dcoscli.version))
 
+    if args.get('--master'):
+        raise DCOSException(
+            '--master has been deprecated. Please use --leader.'
+        )
+
     return cmds.execute(_cmds(), args)
 
 
@@ -55,12 +60,12 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['node', 'log'],
-            arg_keys=['--follow', '--lines', '--master', '--slave'],
+            arg_keys=['--follow', '--lines', '--leader', '--slave'],
             function=_log),
 
         cmds.Command(
             hierarchy=['node', 'ssh'],
-            arg_keys=['--master', '--slave', '--option', '--config-file',
+            arg_keys=['--leader', '--slave', '--option', '--config-file',
                       '--user', '--master-proxy'],
             function=_ssh),
 
@@ -105,38 +110,38 @@ def _list(json_):
             emitter.publish(errors.DefaultError('No slaves found.'))
 
 
-def _log(follow, lines, master, slave):
-    """ Prints the contents of master and slave logs.
+def _log(follow, lines, leader, slave):
+    """ Prints the contents of leader and slave logs.
 
     :param follow: same as unix tail's -f
     :type follow: bool
     :param lines: number of lines to print
     :type lines: int
-    :param master: whether to print the master log
-    :type master: bool
+    :param leader: whether to print the leading master's log
+    :type leader: bool
     :param slave: the slave ID to print
     :type slave: str | None
     :returns: process return code
     :rtype: int
     """
 
-    if not (master or slave):
-        raise DCOSException('You must choose one of --master or --slave.')
+    if not (leader or slave):
+        raise DCOSException('You must choose one of --leader or --slave.')
 
     lines = util.parse_int(lines)
 
-    mesos_files = _mesos_files(master, slave)
+    mesos_files = _mesos_files(leader, slave)
 
     log.log_files(mesos_files, follow, lines)
 
     return 0
 
 
-def _mesos_files(master, slave_id):
+def _mesos_files(leader, slave_id):
     """Returns the MesosFile objects to log
 
-    :param master: whether to include the master log file
-    :type master: bool
+    :param leader: whether to include the leading master's log file
+    :type leader: bool
     :param slave_id: the ID of a slave.  used to include a slave's log
                      file
     :type slave_id: str | None
@@ -145,7 +150,7 @@ def _mesos_files(master, slave_id):
     """
 
     files = []
-    if master:
+    if leader:
         files.append(mesos.MesosFile('/master/log'))
     if slave_id:
         slave = mesos.get_master().slave(slave_id)
@@ -153,13 +158,13 @@ def _mesos_files(master, slave_id):
     return files
 
 
-def _ssh(master, slave, option, config_file, user, master_proxy):
+def _ssh(leader, slave, option, config_file, user, master_proxy):
     """SSH into a DCOS node using the IP addresses found in master's
        state.json
 
-    :param master: True if the user has opted to SSH into the leading
+    :param leader: True if the user has opted to SSH into the leading
                    master
-    :type master: bool | None
+    :type leader: bool | None
     :param slave: The slave ID if the user has opted to SSH into a slave
     :type slave: str | None
     :param option: SSH option
@@ -177,7 +182,7 @@ def _ssh(master, slave, option, config_file, user, master_proxy):
     ssh_options = util.get_ssh_options(config_file, option)
     dcos_client = mesos.DCOSClient()
 
-    if master:
+    if leader:
         host = mesos.MesosDNSClient().hosts('leader.mesos.')[0]['ip']
     else:
         summary = dcos_client.get_state_summary()

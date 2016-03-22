@@ -43,12 +43,12 @@ def test_node_table():
 
 
 def test_node_log_empty():
-    stderr = b"You must choose one of --master or --slave.\n"
+    stderr = b"You must choose one of --leader or --slave.\n"
     assert_command(['dcos', 'node', 'log'], returncode=1, stderr=stderr)
 
 
-def test_node_log_master():
-    assert_lines(['dcos', 'node', 'log', '--master'], 10)
+def test_node_log_leader():
+    assert_lines(['dcos', 'node', 'log', '--leader'], 10)
 
 
 def test_node_log_slave():
@@ -65,11 +65,11 @@ def test_node_log_missing_slave():
     assert stderr == b'No slave found with ID "bogus".\n'
 
 
-def test_node_log_master_slave():
+def test_node_log_leader_slave():
     slave_id = _node()[0]['id']
 
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'node', 'log', '--master', '--slave={}'.format(slave_id)])
+        ['dcos', 'node', 'log', '--leader', '--slave={}'.format(slave_id)])
 
     assert returncode == 0
     assert stderr == b''
@@ -81,18 +81,18 @@ def test_node_log_master_slave():
 
 
 def test_node_log_lines():
-    assert_lines(['dcos', 'node', 'log', '--master', '--lines=4'], 4)
+    assert_lines(['dcos', 'node', 'log', '--leader', '--lines=4'], 4)
 
 
 def test_node_log_invalid_lines():
-    assert_command(['dcos', 'node', 'log', '--master', '--lines=bogus'],
+    assert_command(['dcos', 'node', 'log', '--leader', '--lines=bogus'],
                    stdout=b'',
                    stderr=b'Error parsing string as int\n',
                    returncode=1)
 
 
-def test_node_ssh_master():
-    _node_ssh(['--master'])
+def test_node_ssh_leader():
+    _node_ssh(['--leader'])
 
 
 def test_node_ssh_slave():
@@ -102,21 +102,21 @@ def test_node_ssh_slave():
 
 def test_node_ssh_option():
     stdout, stderr, _ = _node_ssh_output(
-        ['--master', '--option', 'Protocol=0'])
+        ['--leader', '--option', 'Protocol=0'])
     assert stdout == b''
     assert b'ignoring bad proto spec' in stderr
 
 
 def test_node_ssh_config_file():
     stdout, stderr, _ = _node_ssh_output(
-        ['--master', '--config-file', 'tests/data/node/ssh_config'])
+        ['--leader', '--config-file', 'tests/data/node/ssh_config'])
     assert stdout == b''
     assert b'ignoring bad proto spec' in stderr
 
 
 def test_node_ssh_user():
     stdout, stderr, _ = _node_ssh_output(
-        ['--master-proxy', '--master', '--user=bogus', '--option',
+        ['--master-proxy', '--leader', '--user=bogus', '--option',
          'PasswordAuthentication=no'])
     assert stdout == b''
     assert b'Permission denied' in stderr
@@ -131,14 +131,24 @@ def test_node_ssh_master_proxy_no_agent():
               b"private key to hop between nodes in your cluster.  Please "
               b"run `ssh-agent`, then add your private key with `ssh-add`.\n")
 
-    assert_command(['dcos', 'node', 'ssh', '--master-proxy', '--master'],
+    assert_command(['dcos', 'node', 'ssh', '--master-proxy', '--leader'],
                    stderr=stderr,
                    returncode=1,
                    env=env)
 
 
 def test_node_ssh_master_proxy():
-    _node_ssh(['--master', '--master-proxy'])
+    _node_ssh(['--leader', '--master-proxy'])
+
+
+def test_master_arg_deprecation_notice():
+    stderr = b"--master has been deprecated. Please use --leader.\n"
+    assert_command(['dcos', 'node', 'log', '--master'],
+                   stderr=stderr,
+                   returncode=1)
+    assert_command(['dcos', 'node', 'ssh', '--master'],
+                   stderr=stderr,
+                   returncode=1)
 
 
 def _node_ssh_output(args):
