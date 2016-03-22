@@ -225,6 +225,7 @@ class Cosmos():
             if content_type is None:
                 raise DCOSHTTPException(response)
             elif _get_header("error") in content_type:
+                logger.debug("Error: {}".format(response.json()))
                 error_msg = _format_error_message(response.json())
                 raise DCOSException(error_msg)
             return response
