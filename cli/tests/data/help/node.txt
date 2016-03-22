@@ -3,12 +3,12 @@ Manage DCOS nodes
 Usage:
     dcos node --info
     dcos node [--json]
-    dcos node log [--follow --lines=N --leader --master --slave=<slave-id>]
+    dcos node log [--follow --lines=N --leader --master --mesos-id=<mesos-id> --slave=<slave-id>]
     dcos node ssh [--option SSHOPT=VAL ...]
                   [--config-file=<path>]
                   [--user=<user>]
                   [--master-proxy]
-                  (--leader | --master | --slave=<slave-id>)
+                  (--leader | --master | --mesos-id=<mesos-id> | --slave=<slave-id>)
 
 Options:
     -h, --help              Show this screen
@@ -23,7 +23,8 @@ Options:
                             configuration, the private slaves are unreachable from the public
                             internet. You can access them using this option, which will first hop
                             from the publicly available master.
-    --slave=<slave-id>      Access the slave with the provided ID
+    --slave=<slave-id>      Deprecated. Please use --mesos-id.
+    --mesos-id=<mesos-id>   Access the node with the provided Mesos ID
     --option SSHOPT=VAL     SSH option (see `man ssh_config`)
     --config-file=<path>    Path to SSH config file
     --user=<user>           SSH user [default: core]

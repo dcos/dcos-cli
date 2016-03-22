@@ -33,6 +33,10 @@ def _main():
         raise DCOSException(
             '--master has been deprecated. Please use --leader.'
         )
+    elif args.get('--slave'):
+        raise DCOSException(
+            '--slave has been deprecated. Please use --mesos-id.'
+        )
 
     return cmds.execute(_cmds(), args)
 
@@ -60,12 +64,12 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['node', 'log'],
-            arg_keys=['--follow', '--lines', '--leader', '--slave'],
+            arg_keys=['--follow', '--lines', '--leader', '--mesos-id'],
             function=_log),
 
         cmds.Command(
             hierarchy=['node', 'ssh'],
-            arg_keys=['--leader', '--slave', '--option', '--config-file',
+            arg_keys=['--leader', '--mesos-id', '--option', '--config-file',
                       '--user', '--master-proxy'],
             function=_ssh),
 
@@ -126,7 +130,7 @@ def _log(follow, lines, leader, slave):
     """
 
     if not (leader or slave):
-        raise DCOSException('You must choose one of --leader or --slave.')
+        raise DCOSException('You must choose one of --leader or --mesos-id.')
 
     lines = util.parse_int(lines)
 
