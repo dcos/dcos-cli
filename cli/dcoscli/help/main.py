@@ -6,6 +6,7 @@ import pkg_resources
 from concurrent.futures import ThreadPoolExecutor
 from dcos import cmds, emitting, options, subcommand, util
 from dcos.errors import DCOSException
+from dcoscli.common import command_info
 from dcoscli.main import decorate_docopt_usage
 
 emitter = emitting.FlatEmitter()
@@ -54,7 +55,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['help'],
-            arg_keys=['<command>'],
+            arg_keys=['<subcommand>'],
             function=_help),
     ]
 
@@ -65,7 +66,7 @@ def _info():
     :rtype: int
     """
 
-    emitter.publish(_doc().split('\n')[0])
+    emitter.publish(command_info(_doc()))
     return 0
 
 

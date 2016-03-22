@@ -1,0 +1,16 @@
+Command line utility for the Mesosphere Datacenter Operating
+System (DCOS). The Mesosphere DCOS is a distributed operating
+system built around Apache Mesos. This utility provides tools
+for easy management of a DCOS installation.
+
+Available DCOS commands:
+
+	config         	Manage the DCOS configuration file
+	help           	Display help information about DCOS
+	marathon       	Deploy and manage applications to DCOS
+	node           	Administer and manage DCOS cluster nodes
+	package        	Install and manage DCOS software packages
+	service        	Manage DCOS services
+	task           	Manage DCOS tasks
+
+Get detailed command description with 'dcos <command> --help'.

@@ -40,7 +40,7 @@ def test_help():
 
 
 def test_info():
-    stdout = b'Get and set DCOS CLI configuration properties\n'
+    stdout = b'Manage the DCOS configuration file\n'
     assert_command(['dcos', 'config', '--info'],
                    stdout=stdout)
 

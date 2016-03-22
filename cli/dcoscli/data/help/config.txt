@@ -1,4 +1,5 @@
-Get and set DCOS CLI configuration properties
+Description:
+    Manage the DCOS configuration file.
 
 Usage:
     dcos config --info
@@ -7,11 +8,26 @@ Usage:
     dcos config unset <name>
     dcos config validate
 
+Commands:
+    set
+        Add or set a DCOS configuration property.
+    show
+        Print the DCOS configuration file contents.
+    unset
+        Remove a property from the configuration file.
+    validate
+        Validate changes to the configuration file.
+
 Options:
-    -h, --help       Show this screen
-    --info           Show a short description of this subcommand
-    --version        Show version
+    -h, --help
+        Print usage.
+    --info
+        Print a short description of this subcommand.
+    --version
+        Print version information.
 
 Positional Arguments:
-    <name>           The name of the property
-    <value>          The value of the property
+    <name>
+        The name of the property.
+    <value>
+        The value of the property.

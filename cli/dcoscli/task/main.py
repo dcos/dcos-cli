@@ -6,6 +6,7 @@ import pkg_resources
 from dcos import cmds, emitting, mesos, util
 from dcos.errors import DCOSException, DCOSHTTPException, DefaultError
 from dcoscli import log, tables
+from dcoscli.common import command_info
 from dcoscli.main import decorate_docopt_usage
 
 logger = util.get_logger(__name__)
@@ -77,7 +78,7 @@ def _info():
     :rtype: int
     """
 
-    emitter.publish(_doc().split('\n')[0])
+    emitter.publish(command_info(_doc()))
     return 0
 
 
@@ -136,6 +137,8 @@ def _log(follow, completed, lines, task, file_):
     if file_ is None:
         file_ = 'stdout'
 
+    if lines is None:
+        lines = 10
     lines = util.parse_int(lines)
 
     # get tasks

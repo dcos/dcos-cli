@@ -9,7 +9,7 @@ def test_help():
 
 def test_info():
     assert_command(['dcos', 'help', '--info'],
-                   stdout=b'Display command line usage information\n')
+                   stdout=b'Display help information about DCOS\n')
 
 
 def test_version():
@@ -26,11 +26,11 @@ for easy management of a DCOS installation.
 
 Available DCOS commands:
 
-\tconfig         \tGet and set DCOS CLI configuration properties
-\thelp           \tDisplay command line usage information
-\tmarathon       \tDeploy and manage applications on the DCOS
-\tnode           \tManage DCOS nodes
-\tpackage        \tInstall and manage DCOS packages
+\tconfig         \tManage the DCOS configuration file
+\thelp           \tDisplay help information about DCOS
+\tmarathon       \tDeploy and manage applications to DCOS
+\tnode           \tAdminister and manage DCOS cluster nodes
+\tpackage        \tInstall and manage DCOS software packages
 \tservice        \tManage DCOS services
 \ttask           \tManage DCOS tasks
 

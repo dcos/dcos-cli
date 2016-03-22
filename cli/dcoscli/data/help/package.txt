@@ -1,4 +1,5 @@
-Install and manage DCOS packages
+Description:
+    Install and manage DCOS software packages.
 
 Usage:
     dcos package --config-schema
@@ -23,61 +24,71 @@ Usage:
                            <package-name>
     dcos package update
 
+Commands:
+    describe
+        Get specific details for packages.
+    install
+        Install a package.
+    list
+        Print a list of the installed DCOS packages.
+    search
+        Search the package repository.
+    repo add
+        Add a package repository to DCOS.
+    repo remove
+        Remove a package repository from DCOS.
+    repo list
+        Print the package repository sources. Possible sources include a local
+        file, HTTPS, and Git.
+    uninstall
+        Uninstall a package.
+    update
+        This command has been deprecated. Repositories are dynamically updated
+        as they are added by `dcos package repo add`.
+
 Options:
     --all
-        Apply the operation to all matching packages
-
+        All packages.
     --app
-        Apply the operation only to the package's Marathon application
-
+        Application only.
     --app-id=<app-id>
-        The application id
-
+        The application ID.
     --cli
-        Apply the operation only to the package's CLI command
-
+        Command line only.
     --config
-        Print the package's config.json, which contains the configurable
-        properties for marathon.json and command.json
-
-    -h, --help
-        Show this screen
-
+        Print the the configurable properties for the `marathon.json` and
+        `command.json` files.
     --index=<index>
-        Index into the list. The first element in the list has an index of zero
-
+        The numerical position in the package repository list. Package
+        repositories are searched in descending order. By default the Universe
+        repository first in the list.
+    -h, --help
+        Print usage.
     --info
-        Show a short description of this subcommand
-
+        Print a short description of this subcommand.
     --options=<file>
-        Path to a JSON file containing package installation options
-
+        Path to a JSON file that contains customized package installation options.
     --package-version=<package-version>
-        Package version to install
-
+        The package version to install.
     --package-versions
-        Print all versions for this package
-
+        Print all versions for this package.
     --render
-        Render the package's marathon.json or command.json template with the
+        Collate the marathon.json or command.json package templates with the
         values from config.json and --options. If not provided, print the raw
         templates.
-
     --version
-        Show version
-
+        Print version information.
     --yes
-        Assume "yes" is the answer to all prompts and run non-interactively
+        Turn off interactive mode and assume "yes" is the answer to all prompts.
 
 Positional Arguments:
     <package-name>
-        Name of the DCOS package
-
+        Name of the DCOS package in the package repository.
     <query>
-        Pattern to use for searching for package
-
+        Pattern to use for searching the package repository.  You can use
+        complete or partial values.
     <repo-name>
-        Name for repository
-
+        Name of the package repository. For example, `Universe`.
     <repo-url>
-        URL of repository of DCOS packages. E.g. https://universe.mesosphere.com/repo
+        URL of the package repository. For example,
+        https://universe.mesosphere.com/repo.
