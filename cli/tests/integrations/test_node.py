@@ -43,7 +43,7 @@ def test_node_table():
 
 
 def test_node_log_empty():
-    stderr = b"You must choose one of --leader or --slave.\n"
+    stderr = b"You must choose one of --leader or --mesos-id.\n"
     assert_command(['dcos', 'node', 'log'], returncode=1, stderr=stderr)
 
 
@@ -53,12 +53,12 @@ def test_node_log_leader():
 
 def test_node_log_slave():
     slave_id = _node()[0]['id']
-    assert_lines(['dcos', 'node', 'log', '--slave={}'.format(slave_id)], 10)
+    assert_lines(['dcos', 'node', 'log', '--mesos-id={}'.format(slave_id)], 10)
 
 
 def test_node_log_missing_slave():
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'node', 'log', '--slave=bogus'])
+        ['dcos', 'node', 'log', '--mesos-id=bogus'])
 
     assert returncode == 1
     assert stdout == b''
@@ -69,7 +69,7 @@ def test_node_log_leader_slave():
     slave_id = _node()[0]['id']
 
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'node', 'log', '--leader', '--slave={}'.format(slave_id)])
+        ['dcos', 'node', 'log', '--leader', '--mesos-id={}'.format(slave_id)])
 
     assert returncode == 0
     assert stderr == b''
@@ -97,7 +97,7 @@ def test_node_ssh_leader():
 
 def test_node_ssh_slave():
     slave_id = mesos.DCOSClient().get_state_summary()['slaves'][0]['id']
-    _node_ssh(['--slave={}'.format(slave_id), '--master-proxy'])
+    _node_ssh(['--mesos-id={}'.format(slave_id), '--master-proxy'])
 
 
 def test_node_ssh_option():
@@ -147,6 +147,16 @@ def test_master_arg_deprecation_notice():
                    stderr=stderr,
                    returncode=1)
     assert_command(['dcos', 'node', 'ssh', '--master'],
+                   stderr=stderr,
+                   returncode=1)
+
+
+def test_slave_arg_deprecation_notice():
+    stderr = b"--slave has been deprecated. Please use --mesos-id.\n"
+    assert_command(['dcos', 'node', 'log', '--slave=bogus'],
+                   stderr=stderr,
+                   returncode=1)
+    assert_command(['dcos', 'node', 'ssh', '--slave=bogus'],
                    stderr=stderr,
                    returncode=1)
 
