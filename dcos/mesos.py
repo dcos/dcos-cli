@@ -410,28 +410,35 @@ class Master(object):
                 for slave in self.state()['slaves']
                 if fltr in slave['id']]
 
-    def tasks(self, fltr="", completed=False):
+    def tasks(self, fltr="", completed=False, active=True, framework_id=None):
         """Returns tasks running under the master
 
         :param fltr: May be a substring or regex.  Only return tasks
                      whose 'id' matches `fltr`.
         :type fltr: str
-        :param completed: also include completed tasks
+        :param completed: include completed tasks
         :type completed: bool
+        :param active: include active tasks
+        :type active: bool
+        :param framework_id: framework_id to filter by
+        :type framework_id: str
         :returns: a list of tasks
         :rtype: [Task]
         """
 
-        keys = ['tasks']
+        keys = []
+        if active:
+            keys.append('tasks')
         if completed:
-            keys = ['completed_tasks']
+            keys.append('completed_tasks')
 
         tasks = []
         for framework in self._framework_dicts(completed, completed):
-            for task in _merge(framework, keys):
-                if fltr in task['id'] or fnmatch.fnmatchcase(task['id'], fltr):
-                    task = self._framework_obj(framework).task(task['id'])
-                    tasks.append(task)
+            if not framework_id or framework['id'] == framework_id:
+                for task in _merge(framework, keys):
+                    if fltr in task['id'] or fnmatch.fnmatchcase(task['id'], fltr):
+                        task = self._framework_obj(framework).task(task['id'])
+                        tasks.append(task)
 
         return tasks
 
@@ -700,7 +707,9 @@ class Task(object):
                            ['completed_tasks',
                             'tasks',
                             'queued_tasks'])
-            if any(task['id'] == self['id'] for task in tasks):
+            if any(task['id'] == self['id'] and 
+                   task.get('framework_id',None) == self['framework_id']
+                   for task in tasks):
                 return executor
         return None
 
