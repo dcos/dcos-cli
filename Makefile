@@ -14,3 +14,7 @@ doc: env
 
 packages: env
 	bin/packages.sh
+
+binary: clean env packages
+	rm -rf dist build
+	pyinstaller binary/binary.spec

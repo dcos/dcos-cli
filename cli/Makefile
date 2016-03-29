@@ -9,6 +9,9 @@ env:
 test: env
 	bin/test.sh
 
+test-binary: env
+	bin/test-binary.sh
+
 doc: env
 	bin/doc.sh
 
