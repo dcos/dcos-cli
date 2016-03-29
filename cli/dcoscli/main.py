@@ -129,3 +129,6 @@ def set_ssl_info_env_vars(config):
 
         os.environ[constants.DCOS_SSL_VERIFY_ENV] = str(
             config['core.ssl_verify'])
+
+if __name__ == "__main__":
+    main()
