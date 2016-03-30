@@ -1,7 +1,6 @@
 import json
 import os
 
-import dcoscli.constants as cli_constants
 import six
 from dcos import constants
 
@@ -16,7 +15,6 @@ def env():
     r.update({
         constants.PATH_ENV: os.environ[constants.PATH_ENV],
         constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "dcos.toml"),
-        cli_constants.DCOS_PRODUCTION_ENV: 'false'
     })
 
     return r

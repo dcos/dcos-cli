@@ -1,10 +1,10 @@
 import os
 import signal
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
 import dcoscli
 import docopt
-from concurrent.futures import ThreadPoolExecutor
 from dcos import (auth, constants, emitting, errors, http, mesos, subcommand,
                   util)
 from dcos.errors import DCOSAuthenticationException, DCOSException

@@ -7,15 +7,10 @@ import subprocess
 import time
 
 import dcos.util as util
-from dcos import mesos
-from dcos.errors import DCOSException
 from dcos.util import create_schema
-from dcoscli.task.main import main
-
-from mock import MagicMock, patch
 
 from ..fixtures.task import task_fixture
-from .common import (add_app, app, assert_command, assert_lines, assert_mock,
+from .common import (add_app, app, assert_command, assert_lines,
                      exec_command, remove_app, watch_all_deployments)
 
 SLEEP_COMPLETED = 'tests/data/marathon/apps/sleep-completed.json'
@@ -229,39 +224,6 @@ def test_log_completed():
     assert len(stdout.decode('utf-8').split('\n')) > 4
 
 
-def test_log_master_unavailable():
-    """ Test master's state.json being unavailable """
-    client = mesos.DCOSClient()
-    client.get_master_state = _mock_exception()
-
-    with patch('dcos.mesos.DCOSClient', return_value=client):
-        args = ['task', 'log', '_']
-        assert_mock(main, args, returncode=1, stderr=(b"exception\n"))
-
-
-def test_log_slave_unavailable():
-    """ Test slave's state.json being unavailable """
-    client = mesos.DCOSClient()
-    client.get_slave_state = _mock_exception()
-
-    with patch('dcos.mesos.DCOSClient', return_value=client):
-        args = ['task', 'log', 'test-app1']
-        stderr = (b"""Error accessing slave: exception\n"""
-                  b"""No matching tasks. Exiting.\n""")
-        assert_mock(main, args, returncode=1, stderr=stderr)
-
-
-def test_log_file_unavailable():
-    """ Test a file's read.json being unavailable """
-    files = [mesos.MesosFile('bogus')]
-    files[0].read = _mock_exception('exception')
-
-    with patch('dcoscli.task.main._mesos_files', return_value=files):
-        args = ['task', 'log', 'test-app1']
-        stderr = b"No files exist. Exiting.\n"
-        assert_mock(main, args, returncode=1, stderr=stderr)
-
-
 def test_ls():
     stdout = b'stderr  stderr.logrotate.conf  stdout  stdout.logrotate.conf\n'
     assert_command(['dcos', 'task', 'ls', 'test-app1'],
@@ -292,10 +254,6 @@ def test_ls_bad_path():
         ['dcos', 'task', 'ls', 'test-app1', 'bogus'],
         stderr=b'Cannot access [bogus]: No such file or directory\n',
         returncode=1)
-
-
-def _mock_exception(contents='exception'):
-    return MagicMock(side_effect=DCOSException(contents))
 
 
 def _mark_non_blocking(file_):

@@ -1,4 +1,5 @@
 import collections
+import concurrent.futures
 import contextlib
 import functools
 import json
@@ -11,7 +12,6 @@ import sys
 import tempfile
 import time
 
-import concurrent.futures
 import jsonschema
 import png
 import pystache

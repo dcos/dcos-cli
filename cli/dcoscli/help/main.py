@@ -1,8 +1,8 @@
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 
 import dcoscli
 import docopt
-from concurrent.futures import ThreadPoolExecutor
 from dcos import cmds, emitting, options, subcommand, util
 from dcos.errors import DCOSException
 from dcoscli.subcommand import (default_command_documentation,
