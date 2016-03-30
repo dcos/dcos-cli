@@ -6,71 +6,29 @@ import dcoscli
 import docopt
 import rollbar
 import six
-from concurrent.futures import ThreadPoolExecutor
 from dcos import http, util
 from dcoscli.constants import (ROLLBAR_SERVER_POST_KEY,
                                SEGMENT_IO_CLI_ERROR_EVENT,
                                SEGMENT_IO_CLI_EVENT, SEGMENT_IO_WRITE_KEY_PROD,
                                SEGMENT_URL)
+from dcoscli.subcommand import default_doc
 from requests.auth import HTTPBasicAuth
 
 logger = util.get_logger(__name__)
 session_id = uuid.uuid4().hex
 
 
-def wait_and_track(subproc, cluster_id):
+def _track(conf):
     """
-    Run a command and report it to analytics services.
+    Whether or not to send reporting information
 
-    :param subproc: Subprocess to capture
-    :type subproc: Popen
-    :param cluster_id: dcos cluster id to send to segment
-    :type cluster_id: str
-    :returns: exit code of subproc
-    :rtype: int
+    :param conf: dcos config file
+    :type conf: Toml
+    :returns: whether to send reporting information
+    :rtype: bool
     """
 
-    rollbar.init(ROLLBAR_SERVER_POST_KEY, 'prod')
-
-    conf = util.get_config()
-    report = conf.get('core.reporting', True)
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        if report:
-            _segment_track_cli(pool, conf, cluster_id)
-
-        exit_code, err = wait_and_capture(subproc)
-
-        # We only want to catch exceptions, not other stderr messages
-        # (such as "task does not exist", so we look for the 'Traceback'
-        # string.  This only works for python, so we'll need to revisit
-        # this in the future when we support subcommands written in other
-        # languages.
-        if report and 'Traceback' in err:
-            _track_err(pool, exit_code, err, conf, cluster_id)
-
-    return exit_code
-
-
-def wait_and_capture(subproc):
-    """
-    Run a subprocess and capture its stderr.
-
-    :param subproc: Subprocess to capture
-    :type subproc: Popen
-    :returns: exit code of subproc
-    :rtype: int
-    """
-
-    err = ''
-    while subproc.poll() is None:
-        line = subproc.stderr.readline().decode('utf-8')
-        err += line
-        sys.stderr.write(line)
-        sys.stderr.flush()
-
-    exit_code = subproc.poll()
-
-    return exit_code, err
+    return dcoscli.version != 'SNAPSHOT' and conf.get('core.reporting', True)
 
 
 def _segment_track(event, conf, properties):
@@ -135,7 +93,7 @@ def _segment_request(path, data):
         logger.exception(e)
 
 
-def _track_err(pool, exit_code, err, conf, cluster_id):
+def track_err(pool, exit_code, err, conf, cluster_id):
     """
     Report error details to analytics services.
 
@@ -152,13 +110,16 @@ def _track_err(pool, exit_code, err, conf, cluster_id):
     :rtype: None
     """
 
+    if not _track(conf):
+        return
+
     # Segment.io calls are async, but rollbar is not, so for
     # parallelism, we must call segment first.
     _segment_track_err(pool, conf, cluster_id, err, exit_code)
     _rollbar_track_err(conf, cluster_id, err, exit_code)
 
 
-def _segment_track_cli(pool, conf, cluster_id):
+def segment_track_cli(pool, conf, cluster_id):
     """
     Send segment.io cli event.
 
@@ -170,6 +131,9 @@ def _segment_track_cli(pool, conf, cluster_id):
     :type cluster_id: str
     :rtype: None
     """
+
+    if not _track(conf):
+        return
 
     props = _base_properties(conf, cluster_id)
     pool.submit(_segment_track, SEGMENT_IO_CLI_EVENT, conf, props)
@@ -213,6 +177,8 @@ def _rollbar_track_err(conf, cluster_id, err, exit_code):
     :rtype: None
     """
 
+    rollbar.init(ROLLBAR_SERVER_POST_KEY, 'prod')
+
     props = _base_properties(conf, cluster_id)
     props['exit_code'] = exit_code
 
@@ -236,13 +202,10 @@ def _command():
     :rtype: str
     """
 
-    # avoid circular import
-    import dcoscli.main
-
-    args = docopt.docopt(dcoscli.main._doc(),
+    args = docopt.docopt(default_doc("dcos"),
                          help=False,
                          options_first=True)
-    return args['<command>']
+    return args.get('<command>', "")
 
 
 def _base_properties(conf=None, cluster_id=None):

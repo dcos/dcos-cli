@@ -4,11 +4,14 @@ import json
 import os
 import shutil
 import subprocess
+import sys
+from subprocess import PIPE, Popen
 
-from dcos import constants, util
+from dcos import constants, emitting, util
 from dcos.errors import DCOSException
 
 logger = util.get_logger(__name__)
+emitter = emitting.FlatEmitter()
 
 
 def command_executables(subcommand):
@@ -20,7 +23,11 @@ def command_executables(subcommand):
     :rtype: str
     """
 
-    executables = [
+    executables = []
+    if subcommand in default_subcommands():
+        executables += [default_list_paths()]
+
+    executables += [
         command_path
         for command_path in list_paths()
         if noun(command_path) == subcommand
@@ -61,6 +68,18 @@ def get_package_commands(package_name):
     return executables
 
 
+def default_list_paths():
+    """List the real path to dcos executable
+
+    :returns: list dcos program path
+    :rtype: str
+    """
+
+    # Let's get all the default subcommands
+    binpath = util.dcos_bin_path()
+    return os.path.join(binpath, "dcos")
+
+
 def list_paths():
     """List the real path to executable dcos subcommand programs.
 
@@ -68,20 +87,11 @@ def list_paths():
     :rtype: [str]
     """
 
-    # Let's get all the default subcommands
-    binpath = util.dcos_bin_path()
-    commands = [
-        os.path.join(binpath, filename)
-        for filename in os.listdir(binpath)
-        if (filename.startswith(constants.DCOS_COMMAND_PREFIX) and
-            _is_executable(os.path.join(binpath, filename)))
-    ]
-
     subcommands = []
     for package in distributions():
         subcommands += get_package_commands(package)
 
-    return commands + subcommands
+    return subcommands
 
 
 def _is_executable(path):
@@ -118,6 +128,16 @@ def distributions():
         return []
 
 
+def default_subcommands():
+    """List the default dcos cli subcommands
+
+    :returns: list of all the default dcos cli subcommands
+    :rtype: [str]
+    """
+
+    return ["config", "help", "marathon", "node", "package", "service", "task"]
+
+
 def documentation(executable_path):
     """Gather subcommand summary
 
@@ -148,17 +168,20 @@ def info(executable_path, path_noun):
     return out.decode('utf-8').strip()
 
 
-def config_schema(executable_path):
+def config_schema(executable_path, noun=None):
     """Collects subcommand config schema
 
     :param executable_path: real path to the dcos subcommand
     :type executable_path: str
+    :param noun: name of subcommand
+    :type noun: str
     :returns: the subcommand config schema
     :rtype: dict
     """
-
+    if noun is None:
+        noun = noun(executable_path)
     out = subprocess.check_output(
-        [executable_path, noun(executable_path), '--config-schema'])
+        [executable_path, noun, '--config-schema'])
 
     return json.loads(out.decode('utf-8'))
 
@@ -435,3 +458,47 @@ class InstalledSubcommand(object):
         package_json_path = os.path.join(self._dir(), 'package.json')
         with util.open_file(package_json_path) as package_json_file:
             return util.load_json(package_json_file)
+
+
+class SubcommandProcess():
+
+    def __init__(self, executable, command, args):
+        """Representes a subcommand running by a forked process
+
+        :param executable: executable to run
+        :type executable: executable
+        :param command: command to run by executable
+        :type command: str
+        :param args: arguments for command
+        :type args: [str]
+        """
+
+        self._executable = executable
+        self._command = command
+        self._args = args
+
+    def run_and_capture(self):
+        """
+        Run a command and capture exceptions. This is a blocking call
+        :returns: tuple of exitcode, error (or None)
+        :rtype: int, str | None
+        """
+
+        subproc = Popen([self._executable,  self._command] + self._args,
+                        stderr=PIPE)
+        err = ''
+        while subproc.poll() is None:
+            line = subproc.stderr.readline().decode('utf-8')
+            err += line
+            sys.stderr.write(line)
+            sys.stderr.flush()
+
+        exitcode = subproc.poll()
+        # We only want to catch exceptions, not other stderr messages
+        # (such as "task does not exist", so we look for the 'Traceback'
+        # string.  This only works for python, so we'll need to revisit
+        # this in the future when we support subcommands written in other
+        # languages.
+        err = ('Traceback' in err and err) or None
+
+        return exitcode, err

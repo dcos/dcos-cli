@@ -2,43 +2,32 @@ import posixpath
 
 import dcoscli
 import docopt
-import pkg_resources
 from dcos import cmds, emitting, mesos, util
 from dcos.errors import DCOSException, DCOSHTTPException, DefaultError
 from dcoscli import log, tables
-from dcoscli.common import command_info
-from dcoscli.main import decorate_docopt_usage
+from dcoscli.subcommand import default_command_info, default_doc
+from dcoscli.util import decorate_docopt_usage
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
 
 
-def main():
+def main(argv):
     try:
-        return _main()
+        return _main(argv)
     except DCOSException as e:
         emitter.publish(e)
         return 1
 
 
 @decorate_docopt_usage
-def _main():
-    util.configure_process_from_environ()
-
+def _main(argv):
     args = docopt.docopt(
-        _doc(),
+        default_doc("task"),
+        argv=argv,
         version="dcos-task version {}".format(dcoscli.version))
 
     return cmds.execute(_cmds(), args)
-
-
-def _doc():
-    """
-    :rtype: str
-    """
-    return pkg_resources.resource_string(
-        'dcoscli',
-        'data/help/task.txt').decode('utf-8')
 
 
 def _cmds():
@@ -78,7 +67,7 @@ def _info():
     :rtype: int
     """
 
-    emitter.publish(command_info(_doc()))
+    emitter.publish(default_command_info("task"))
     return 0
 
 

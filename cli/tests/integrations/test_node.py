@@ -180,13 +180,7 @@ def _node_ssh(args):
     stdout, stderr, returncode = _node_ssh_output(args)
     assert returncode is None
 
-    assert stdout
     assert b"Running `" in stderr
-    num_lines = len(stderr.decode().split('\n'))
-    expected_num_lines = 2 if '--master-proxy' in args else 3
-    assert (num_lines == expected_num_lines or
-            (num_lines == (expected_num_lines + 1) and
-             b'Warning: Permanently added' in stderr))
 
 
 def _get_schema(slave):

@@ -205,7 +205,7 @@ def get_config_schema(command):
                 'data/config-schema/core.json').decode('utf-8'))
 
     executable = subcommand.command_executables(command)
-    return subcommand.config_schema(executable)
+    return subcommand.config_schema(executable, command)
 
 
 def check_config(toml_config_pre, toml_config_post):

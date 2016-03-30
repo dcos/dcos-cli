@@ -101,7 +101,7 @@ def exec_mock(main, args):
     print('MOCK ARGS: {}'.format(' '.join(args)))
 
     with mock_args(args) as (stdout, stderr):
-        returncode = main()
+        returncode = main(args)
 
     stdout_val = six.b(stdout.getvalue())
     stderr_val = six.b(stderr.getvalue())
@@ -554,7 +554,7 @@ def ssh_output(cmd):
     proc, master = popen_tty(cmd)
 
     # wait for the ssh connection
-    time.sleep(8)
+    time.sleep(3)
 
     proc.poll()
     returncode = proc.returncode
