@@ -18,7 +18,7 @@ def test_help():
 
 
 def test_info():
-    stdout = b"Manage DCOS nodes\n"
+    stdout = b"Administer and manage DCOS cluster nodes\n"
     assert_command(['dcos', 'node', '--info'], stdout=stdout)
 
 

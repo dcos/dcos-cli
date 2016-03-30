@@ -26,3 +26,14 @@ def exec_command(cmd, env=None, stdin=None):
                       for std_stream in process.communicate()]
 
     return (process.returncode, stdout, stderr)
+
+
+def command_info(doc):
+    """Get description from doc text
+    :param doc: command help text
+    :type doc: str
+    :returns: one line description of command
+    :rtype: str
+    """
+
+    return doc.split('\n')[1].strip(".").lstrip()

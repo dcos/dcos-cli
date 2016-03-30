@@ -29,7 +29,7 @@ def test_version():
 
 def test_info():
     assert_command(['dcos', 'marathon', '--info'],
-                   stdout=b'Deploy and manage applications on the DCOS\n')
+                   stdout=b'Deploy and manage applications to DCOS\n')
 
 
 def test_about():

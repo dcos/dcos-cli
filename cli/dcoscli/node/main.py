@@ -7,6 +7,7 @@ import pkg_resources
 from dcos import cmds, emitting, errors, mesos, util
 from dcos.errors import DCOSException, DefaultError
 from dcoscli import log, tables
+from dcoscli.common import command_info
 from dcoscli.main import decorate_docopt_usage
 
 logger = util.get_logger(__name__)
@@ -87,7 +88,7 @@ def _info():
     :rtype: int
     """
 
-    emitter.publish(_doc().split('\n')[0])
+    emitter.publish(command_info(_doc()))
     return 0
 
 
@@ -132,6 +133,8 @@ def _log(follow, lines, leader, slave):
     if not (leader or slave):
         raise DCOSException('You must choose one of --leader or --mesos-id.')
 
+    if lines is None:
+        lines = 10
     lines = util.parse_int(lines)
 
     mesos_files = _mesos_files(leader, slave)

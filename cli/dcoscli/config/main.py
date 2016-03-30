@@ -6,6 +6,7 @@ import pkg_resources
 from dcos import cmds, config, emitting, http, util
 from dcos.errors import DCOSException
 from dcoscli import analytics
+from dcoscli.common import command_info
 from dcoscli.main import decorate_docopt_usage
 
 emitter = emitting.FlatEmitter()
@@ -84,7 +85,7 @@ def _info(info):
     :rtype: int
     """
 
-    emitter.publish(_doc().split('\n')[0])
+    emitter.publish(command_info(_doc()))
     return 0
 
 

@@ -9,6 +9,7 @@ import pkg_resources
 from dcos import cmds, emitting, http, jsonitem, marathon, options, util
 from dcos.errors import DCOSException
 from dcoscli import tables
+from dcoscli.common import command_info
 from dcoscli.main import decorate_docopt_usage
 
 logger = util.get_logger(__name__)
@@ -200,7 +201,7 @@ def _info():
     :rtype: int
     """
 
-    emitter.publish(_doc().split('\n')[0])
+    emitter.publish(command_info(_doc()))
     return 0
 
 

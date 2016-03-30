@@ -13,3 +13,4 @@ pydoc/_build/
 
 Vagrantfile
 .vagrant
+.idea
