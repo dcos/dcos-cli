@@ -1,6 +1,5 @@
 import os
 
-import dcoscli.constants as cli_constants
 from dcos import constants
 
 import pytest
@@ -15,7 +14,6 @@ def env():
         constants.PATH_ENV: os.environ[constants.PATH_ENV],
         constants.DCOS_CONFIG_ENV: os.path.join("tests",
                                                 "data", "ssl", "ssl.toml"),
-        cli_constants.DCOS_PRODUCTION_ENV: 'false'
     })
 
     return r

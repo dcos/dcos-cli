@@ -3,10 +3,10 @@ from functools import wraps
 
 import dcoscli.analytics
 import rollbar
-from dcos import constants, http, util
-from dcoscli.config.main import main as config_main
+from dcos import constants, http
 from dcoscli.constants import SEGMENT_URL
 from dcoscli.main import main
+from dcoscli.subcommand import SubcommandMain
 
 from mock import patch
 
@@ -33,33 +33,29 @@ def _mock(fn):
 
 @_mock
 def test_config_set():
-    '''Tests that a `dcos config set core.email <email>` makes a
-    segment.io identify call'''
+    argv = ['set', 'core.email', 'test@mail.com']
 
-    argv = ['config', 'set', 'core.email', 'test@mail.com']
-    env = _env_reporting()
+    config_thread = SubcommandMain("config", argv)
+    exitcode, err = config_thread.run_and_capture()
+    assert exitcode == 0
+    assert err is None
 
-    with patch.dict(os.environ, env):
-        assert config_main(argv) == 0
-
-        # segment.io
-        assert mock_called_some_args(http.post,
-                                     '{}/identify'.format(SEGMENT_URL),
-                                     json={'userId': 'test@mail.com'},
-                                     timeout=(1, 1))
+    # segment.io
+    assert mock_called_some_args(http.post,
+                                 '{}/identify'.format(SEGMENT_URL),
+                                 json={'userId': 'test@mail.com'},
+                                 timeout=(1, 1))
 
 
 @_mock
-def test_cluster_id_not_sent():
-    '''Tests that cluster_id is sent to segment.io'''
+def test_cluster_id_not_sent_on_config_call():
+    """Tests that cluster_id is not sent to segment.io on call to config
+    subcommand
+    """
 
-    args = [util.which('dcos'), 'config', 'show']
-    env = _env_reporting_with_url()
-    version = 'release'
+    args = ['dcos', 'config', 'show']
 
     with patch('sys.argv', args), \
-            patch.dict(os.environ, env), \
-            patch('dcoscli.version', version), \
             patch('dcos.mesos.DCOSClient.metadata') as get_cluster_id:
         assert main() == 0
 
@@ -73,7 +69,7 @@ def test_no_exc():
 
     '''
 
-    args = [util.which('dcos')]
+    args = ['dcos']
     env = _env_reporting()
     version = 'release'
 
@@ -92,7 +88,7 @@ def test_exc():
 
     '''
 
-    args = [util.which('dcos')]
+    args = ['dcos']
     env = _env_reporting()
     version = 'release'
     with patch('sys.argv', args), \
@@ -107,11 +103,16 @@ def test_exc():
         assert rollbar.report_message.call_count == 1
 
 
+def _env_reporting():
+    path = os.path.join('tests', 'data', 'analytics', 'dcos_reporting.toml')
+    return {constants.DCOS_CONFIG_ENV: path}
+
+
 @_mock
 def test_config_reporting_false():
     '''Test that "core.reporting = false" blocks exception reporting.'''
 
-    args = [util.which('dcos')]
+    args = ['dcos']
     env = _env_no_reporting()
     version = 'release'
 
@@ -126,17 +127,6 @@ def test_config_reporting_false():
         assert track.call_count == 0
 
 
-def _env_reporting():
-    path = os.path.join('tests', 'data', 'analytics', 'dcos_reporting.toml')
-    return {constants.DCOS_CONFIG_ENV: path}
-
-
 def _env_no_reporting():
     path = os.path.join('tests', 'data', 'analytics', 'dcos_no_reporting.toml')
-    return {constants.DCOS_CONFIG_ENV: path}
-
-
-def _env_reporting_with_url():
-    path = os.path.join('tests', 'data', 'analytics',
-                        'dcos_reporting_with_url.toml')
     return {constants.DCOS_CONFIG_ENV: path}
