@@ -300,7 +300,7 @@ def package_search_table(search_results):
     fields = OrderedDict([
         ('NAME', lambda p: p['name']),
         ('VERSION', lambda p: p['currentVersion']),
-        ('PROMOTED', lambda p: p.get("promoted", False)),
+        ('SELECTED', lambda p: p.get("selected", False)),
         ('FRAMEWORK', lambda p: p['framework']),
         ('DESCRIPTION', lambda p: p['description'])
     ])
@@ -313,7 +313,7 @@ def package_search_table(search_results):
     tb = table(fields, packages, sortby="NAME")
     tb.align['NAME'] = 'l'
     tb.align['VERSION'] = 'l'
-    tb.align['PROMOTED'] = 'l'
+    tb.align['SELECTED'] = 'l'
     tb.align['FRAMEWORK'] = 'l'
     tb.align['DESCRIPTION'] = 'l'
 
