@@ -354,7 +354,7 @@ class CosmosPackageVersion():
 
         return self._config_json
 
-    def _resource_json(self):
+    def resource_json(self):
         """Returns the JSON content of the resource.json file.
 
         :returns: Package resources
@@ -406,13 +406,14 @@ class CosmosPackageVersion():
 
         return user_options
 
-    def has_command_definition(self):
+    def has_cli_definition(self):
         """Returns true if the package defines a command; false otherwise.
 
         :rtype: bool
         """
 
-        return self._command_json is not None
+        return self._command_json is not None or (
+            self._resource_json and self._resource_json.get("cli"))
 
     def command_json(self):
         """Returns the JSON content of the command.json file.
