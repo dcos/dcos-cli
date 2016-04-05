@@ -37,10 +37,14 @@ class Cosmos():
         # authorized for the command specified, not this endpoint
         except DCOSAuthorizationException:
             return True
-        # all other errors are treated as endpoint not available
+        # allow exception through so we can show user actual http exception
+        # except 404, because then the url is fine, just not cosmos enabled
+        except DCOSHTTPException as e:
+            logger.exception(e)
+            return e.status() != 404
         except Exception as e:
             logger.exception(e)
-            return False
+            return True
 
         return response.status_code == 200
 

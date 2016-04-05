@@ -14,6 +14,9 @@ class DCOSHTTPException(DCOSException):
     def __init__(self, response):
         self.response = response
 
+    def status(self):
+        return self.response.status_code
+
     def __str__(self):
         return 'Error while fetching [{0}]: HTTP {1}: {2}'.format(
             self.response.request.url,
