@@ -306,7 +306,8 @@ def configure_logger(log_level):
 
     if log_level in constants.VALID_LOG_LEVEL_VALUES:
         logging.basicConfig(
-            format=('%(asctime)s '
+            format=('%(threadName)s: '
+                    '%(asctime)s '
                     '%(pathname)s:%(funcName)s:%(lineno)d - '
                     '%(message)s'),
             stream=sys.stderr,
