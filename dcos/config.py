@@ -5,7 +5,7 @@ import json
 import pkg_resources
 import toml
 from dcos import emitting, jsonitem, subcommand, util
-from dcos.errors import DCOSException
+from dcos.errors import DCOSException, DefaultError
 
 emitter = emitting.FlatEmitter()
 
@@ -43,16 +43,21 @@ def set_val(name, value):
 
     save(toml_config)
 
-    if not value_exists:
-        emitter.publish("[{}]: set to '{}'".format(name, new_value))
+    msg = "[{}]: ".format(name)
+    if name == "core.dcos_acs_token":
+        if not value_exists:
+            msg += "set"
+        elif old_value == new_value:
+            msg += "already set to that value"
+        else:
+            msg += "changed"
+    elif not value_exists:
+        msg += "set to '{}'".format(new_value)
     elif old_value == new_value:
-        emitter.publish("[{}]: already set to '{}'".format(name, old_value))
+        msg += "already set to '{}'".format(old_value)
     else:
-        emitter.publish(
-            "[{}]: changed from '{}' to '{}'".format(
-                name,
-                old_value,
-                new_value))
+        msg += "changed from '{}' to '{}'".format(old_value, new_value)
+    emitter.publish(DefaultError(msg))
 
     return toml_config
 

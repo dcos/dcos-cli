@@ -487,12 +487,12 @@ def config_set(key, value, env=None):
     :type env: dict
     :rtype: None
     """
-    returncode, _, stderr = exec_command(
+    returncode, stdout, _ = exec_command(
         ['dcos', 'config', 'set', key, value],
         env=env)
 
     assert returncode == 0
-    assert stderr == b''
+    assert stdout == b''
 
 
 def config_unset(key, env=None):
