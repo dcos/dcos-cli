@@ -1,3 +1,4 @@
+import json
 import os
 from functools import wraps
 
@@ -64,6 +65,21 @@ def test_cluster_id_not_sent():
         assert main() == 0
 
         assert get_cluster_id.call_count == 0
+
+
+def test_dont_send_acs_token():
+    """Tests that we donn't send acs token"""
+
+    args = ['dcos', 'help']
+    env = _env_reporting()
+    version = 'release'
+
+    with patch('sys.argv', args), \
+            patch.dict(os.environ, env), \
+            patch('dcoscli.version', version):
+        to_send = dcoscli.analytics._base_properties()
+        config_to_send = json.loads(to_send.get("config"))
+        assert "core.dcos_acs_token" not in config_to_send
 
 
 @_mock

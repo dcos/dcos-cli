@@ -273,12 +273,15 @@ def _base_properties(conf=None, cluster_id=None):
         logger.exception('Unable to find the hostname of the cluster.')
         dcos_hostname = None
 
+    conf = [prop for prop in list(conf.property_items())
+            if prop[0] != "core.dcos_acs_token"]
+
     return {
         'cmd': cmd,
         'full_cmd': full_cmd,
         'dcoscli.version': dcoscli.version,
         'python_version': str(sys.version_info),
-        'config': json.dumps(list(conf.property_items())),
+        'config': json.dumps(conf),
         'DCOS_HOSTNAME': dcos_hostname,
         'CLUSTER_ID': cluster_id
     }
