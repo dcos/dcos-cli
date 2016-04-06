@@ -205,7 +205,7 @@ def _command():
     args = docopt.docopt(default_doc("dcos"),
                          help=False,
                          options_first=True)
-    return args.get('<command>', "")
+    return args.get('<command>', "") or ""
 
 
 def _base_properties(conf=None, cluster_id=None):
