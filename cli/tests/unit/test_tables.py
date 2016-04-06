@@ -1,5 +1,6 @@
 import datetime
 
+from dcos.mesos import Slave
 from dcoscli import tables
 
 import mock
@@ -14,8 +15,12 @@ from ..fixtures.task import browse_fixture, task_fixture
 
 
 def test_task_table():
+    task = task_fixture()
+    task.user = mock.Mock(return_value='root')
+    slave = Slave({"hostname": "mock-hostname"}, None, None)
+    task.slave = mock.Mock(return_value=slave)
     _test_table(tables.task_table,
-                [task_fixture()],
+                [task],
                 'tests/unit/data/task.txt')
 
 
