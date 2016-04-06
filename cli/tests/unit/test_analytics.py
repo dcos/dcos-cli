@@ -146,3 +146,10 @@ def test_config_reporting_false():
 def _env_no_reporting():
     path = os.path.join('tests', 'data', 'analytics', 'dcos_no_reporting.toml')
     return {constants.DCOS_CONFIG_ENV: path}
+
+
+def test_command_always_returns_str():
+    """Test that _command() returns str even if not subcommand specified"""
+    args = ['dcos']
+    with patch('sys.argv', args):
+        assert dcoscli.analytics._command() == ""
