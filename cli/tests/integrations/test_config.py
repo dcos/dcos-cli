@@ -132,7 +132,7 @@ def test_set_change_output(env):
     assert_command(
         ['dcos', 'config', 'set', 'core.dcos_url',
          'http://dcos.snakeoil.mesosphere.com:5081'],
-        stdout=(b"[core.dcos_url]: changed from "
+        stderr=(b"[core.dcos_url]: changed from "
                 b"'http://dcos.snakeoil.mesosphere.com' to "
                 b"'http://dcos.snakeoil.mesosphere.com:5081'\n"),
         env=env)
@@ -143,7 +143,7 @@ def test_set_same_output(env):
     assert_command(
         ['dcos', 'config', 'set', 'core.dcos_url',
             'http://dcos.snakeoil.mesosphere.com'],
-        stdout=(b"[core.dcos_url]: already set to "
+        stderr=(b"[core.dcos_url]: already set to "
                 b"'http://dcos.snakeoil.mesosphere.com'\n"),
         env=env)
 
@@ -153,7 +153,7 @@ def test_set_new_output(env):
     assert_command(
         ['dcos', 'config', 'set', 'core.dcos_url',
          'http://dcos.snakeoil.mesosphere.com:5081'],
-        stdout=(b"[core.dcos_url]: set to "
+        stderr=(b"[core.dcos_url]: set to "
                 b"'http://dcos.snakeoil.mesosphere.com:5081'\n"),
         env=env)
     config_set('core.dcos_url', 'http://dcos.snakeoil.mesosphere.com', env)

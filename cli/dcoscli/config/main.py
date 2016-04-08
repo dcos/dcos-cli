@@ -124,6 +124,8 @@ def _show(name):
     else:
         # Let's list all of the values
         for key, value in sorted(toml_config.property_items()):
+            if key == "core.dcos_acs_token":
+                value = "*"*8
             emitter.publish('{}={}'.format(key, value))
 
     return 0
