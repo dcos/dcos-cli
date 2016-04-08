@@ -5,8 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import dcoscli
 import docopt
-from dcos import (auth, constants, emitting, errors, http, mesos, subcommand,
-                  util)
+from dcos import constants, emitting, errors, http, mesos, subcommand, util
 from dcos.errors import DCOSAuthenticationException, DCOSException
 from dcoscli import analytics
 from dcoscli.subcommand import SubcommandMain, default_doc
@@ -39,10 +38,6 @@ def _main():
         os.environ[constants.DCOS_DEBUG_ENV] = 'true'
 
     util.configure_process_from_environ()
-
-    if args['<command>'] != 'config' and \
-       not auth.check_if_user_authenticated():
-        auth.force_auth()
 
     config = util.get_config()
     set_ssl_info_env_vars(config)

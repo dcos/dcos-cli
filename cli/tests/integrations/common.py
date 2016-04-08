@@ -510,4 +510,4 @@ def config_unset(key, env=None):
     returncode, stdout, stderr = exec_command(cmd, env=env)
 
     assert returncode == 0
-    assert stderr == b''
+    assert stdout == b''

@@ -51,7 +51,6 @@ def test_version():
 
 def _test_list_property(env):
     stdout = b"""core.dcos_url=http://dcos.snakeoil.mesosphere.com
-core.email=test@mail.com
 core.reporting=False
 core.ssl_verify=false
 core.timeout=5
@@ -89,7 +88,6 @@ def test_get_top_property(env):
         b"Property 'core' doesn't fully specify a value - "
         b"possible properties are:\n"
         b"core.dcos_url\n"
-        b"core.email\n"
         b"core.reporting\n"
         b"core.ssl_verify\n"
         b"core.timeout\n"
@@ -104,6 +102,13 @@ def test_set_package_sources_property(env):
     notice = (b"This config property has been deprecated. "
               b"Please add your repositories with `dcos package repo add`\n")
     assert_command(['dcos', 'config', 'set', 'package.sources', '[\"foo\"]'],
+                   stderr=notice,
+                   returncode=1)
+
+
+def test_set_core_email_property(env):
+    notice = (b"This config property has been deprecated.\n")
+    assert_command(['dcos', 'config', 'set', 'core.email', 'foo@bar.com'],
                    stderr=notice,
                    returncode=1)
 
@@ -175,7 +180,7 @@ def test_unset_missing_property(env):
 
 def test_unset_output(env):
     assert_command(['dcos', 'config', 'unset', 'core.reporting'],
-                   stdout=b'Removed [core.reporting]\n',
+                   stderr=b'Removed [core.reporting]\n',
                    env=env)
     config_set('core.reporting', 'false', env)
 
@@ -185,7 +190,6 @@ def test_unset_top_property(env):
         b"Property 'core' doesn't fully specify a value - "
         b"possible properties are:\n"
         b"core.dcos_url\n"
-        b"core.email\n"
         b"core.reporting\n"
         b"core.ssl_verify\n"
         b"core.timeout\n"

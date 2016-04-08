@@ -1,6 +1,5 @@
 [core]
 reporting = false
-email = "test@mail.com"
 timeout = 5
 dcos_url = "http://dcos.snakeoil.mesosphere.com"
 ssl_verify = "false"
