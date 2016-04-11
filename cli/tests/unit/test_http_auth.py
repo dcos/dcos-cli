@@ -121,7 +121,8 @@ def test_request_with_bad_auth_acl(mock, req_mock, auth_mock):
 
     with pytest.raises(DCOSException) as e:
         http._request_with_auth(mock, "method", mock.url)
-    assert e.exconly().split(':')[1].strip() == "Authentication failed"
+    msg = "Your core.dcos_acs_token is invalid. Please run: `dcos auth login`"
+    assert e.exconly().split(':', 1)[1].strip() == msg
 
 
 @patch('requests.Response')
@@ -138,7 +139,8 @@ def test_request_with_bad_oauth(mock, req_mock, auth_mock):
 
     with pytest.raises(DCOSException) as e:
         http._request_with_auth(mock, "method", mock.url)
-    assert e.exconly().split(':')[1].strip() == "Authentication failed"
+    msg = "Your core.dcos_acs_token is invalid. Please run: `dcos auth login`"
+    assert e.exconly().split(':', 1)[1].strip() == msg
 
 
 @patch('requests.Response')

@@ -1,3 +1,0 @@
-[core]
-reporting = true
-dcos_url = "http://dcos.snakeoil.mesosphere.com"

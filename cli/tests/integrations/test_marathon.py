@@ -11,7 +11,8 @@ from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 from .common import (app, assert_command, assert_lines, config_set,
                      config_unset, exec_command, list_deployments, popen_tty,
-                     show_app, watch_all_deployments, watch_deployment)
+                     show_app, update_config, watch_all_deployments,
+                     watch_deployment)
 
 _ZERO_INSTANCE_APP_INSTANCES = 100
 
@@ -43,24 +44,24 @@ def test_about():
 
 
 @pytest.fixture
-def missing_env():
-    env = os.environ.copy()
-    env.update({
+def env():
+    r = os.environ.copy()
+    r.update({
         constants.PATH_ENV: os.environ[constants.PATH_ENV],
-        constants.DCOS_CONFIG_ENV:
-            os.path.join("tests", "data", "marathon",
-                         "missing_marathon_params.toml")
+        constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "dcos.toml"),
     })
-    return env
+
+    return r
 
 
-def test_missing_config(missing_env):
-    assert_command(
-        ['dcos', 'marathon', 'app', 'list'],
-        returncode=1,
-        stderr=(b'Missing required config parameter: "core.dcos_url".  '
-                b'Please run `dcos config set core.dcos_url <value>`.\n'),
-        env=missing_env)
+def test_missing_config(env):
+    with update_config("core.dcos_url", None, env):
+        assert_command(
+            ['dcos', 'marathon', 'app', 'list'],
+            returncode=1,
+            stderr=(b'Missing required config parameter: "core.dcos_url".  '
+                    b'Please run `dcos config set core.dcos_url <value>`.\n'),
+            env=env)
 
 
 def test_empty_list():
