@@ -167,7 +167,7 @@ These packages are now available to be installed by the DCOS CLI installation sc
 .. _dcos-helloworld: https://github.com/mesosphere/dcos-helloworld
 .. _jq: http://stedolan.github.io/jq/
 .. _git: http://git-scm.com
-.. _installation instructions: https://docs.mesosphere.com/usage/cli/install/
+.. _installation instructions: https://dcos.io/docs/usage/cli/install/
 .. _Marathon: https://mesosphere.github.io/marathon/
 .. _Mesosphere docs: https://docs.mesosphere.com
 .. _mesosphere/install-scripts: https://github.com/mesosphere/install-scripts
