@@ -11,6 +11,7 @@ def _default_modules():
     """
 
     # avoid circular imports
+    from dcoscli.auth import main as auth_main
     from dcoscli.config import main as config_main
     from dcoscli.help import main as help_main
     from dcoscli.marathon import main as marathon_main
@@ -19,7 +20,8 @@ def _default_modules():
     from dcoscli.service import main as service_main
     from dcoscli.task import main as task_main
 
-    return {'config': config_main,
+    return {'auth': auth_main,
+            'config': config_main,
             'help': help_main,
             'marathon': marathon_main,
             'node': node_main,

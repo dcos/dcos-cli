@@ -4,14 +4,11 @@ from functools import wraps
 
 import dcoscli.analytics
 import rollbar
-from dcos import constants, http
-from dcoscli.constants import SEGMENT_URL
+from dcos import constants
 from dcoscli.main import main
-from dcoscli.subcommand import SubcommandMain
 
 from mock import patch
 
-from .common import mock_called_some_args
 
 ANON_ID = 0
 USER_ID = 'test@mail.com'
@@ -30,22 +27,6 @@ def _mock(fn):
             fn()
 
     return wrapper
-
-
-@_mock
-def test_config_set():
-    argv = ['set', 'core.email', 'test@mail.com']
-
-    config_thread = SubcommandMain("config", argv)
-    exitcode, err = config_thread.run_and_capture()
-    assert exitcode == 0
-    assert err is None
-
-    # segment.io
-    assert mock_called_some_args(http.post,
-                                 '{}/identify'.format(SEGMENT_URL),
-                                 json={'userId': 'test@mail.com'},
-                                 timeout=(1, 1))
 
 
 @_mock

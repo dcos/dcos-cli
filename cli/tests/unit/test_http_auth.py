@@ -25,6 +25,14 @@ def test_get_auth_scheme_acs():
         assert realm == "acsjwt"
 
 
+def test_get_auth_scheme_oauth():
+    with patch('requests.Response') as mock:
+        mock.headers = {'www-authenticate': 'oauthjwt'}
+        auth_scheme, realm = http.get_auth_scheme(mock)
+        assert auth_scheme == "oauthjwt"
+        assert realm == "oauthjwt"
+
+
 def test_get_auth_scheme_bad_request():
     with patch('requests.Response') as mock:
         mock.headers = {'www-authenticate': ''}
@@ -119,6 +127,23 @@ def test_request_with_bad_auth_acl(mock, req_mock, auth_mock):
 @patch('requests.Response')
 @patch('dcos.http._request')
 @patch('dcos.http._get_http_auth')
+def test_request_with_bad_oauth(mock, req_mock, auth_mock):
+    mock.url = 'http://domain.com'
+    mock.headers = {'www-authenticate': 'oauthjwt'}
+    mock.status_code = 401
+
+    auth_mock.return_value = http.DCOSAcsAuth("token")
+
+    req_mock.return_value = mock
+
+    with pytest.raises(DCOSException) as e:
+        http._request_with_auth(mock, "method", mock.url)
+    assert e.exconly().split(':')[1].strip() == "Authentication failed"
+
+
+@patch('requests.Response')
+@patch('dcos.http._request')
+@patch('dcos.http._get_http_auth')
 def test_request_with_auth_basic(mock, req_mock, auth_mock):
     mock.url = 'http://domain.com'
     mock.headers = {'www-authenticate': 'Basic realm="Restricted"'}
@@ -141,6 +166,25 @@ def test_request_with_auth_basic(mock, req_mock, auth_mock):
 def test_request_with_auth_acl(mock, req_mock, auth_mock):
     mock.url = 'http://domain.com'
     mock.headers = {'www-authenticate': 'acsjwt'}
+    mock.status_code = 401
+
+    auth = http.DCOSAcsAuth("token")
+    auth_mock.return_value = auth
+
+    mock2 = copy.deepcopy(mock)
+    mock2.status_code = 200
+    req_mock.return_value = mock2
+
+    response = http._request_with_auth(mock, "method", mock.url)
+    assert response.status_code == 200
+
+
+@patch('requests.Response')
+@patch('dcos.http._request')
+@patch('dcos.http._get_http_auth')
+def test_request_with_auth_oauth(mock, req_mock, auth_mock):
+    mock.url = 'http://domain.com'
+    mock.headers = {'www-authenticate': 'oauthjwt'}
     mock.status_code = 401
 
     auth = http.DCOSAcsAuth("token")

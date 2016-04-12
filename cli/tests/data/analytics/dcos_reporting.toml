@@ -1,5 +1,4 @@
 [core]
 dcos_acs_token = "foobar"
 dcos_url = "https://dcos.snakeoil.mesosphere.com"
-email = "test@mail.com"
 reporting = true

@@ -26,6 +26,7 @@ for easy management of a DCOS installation.
 
 Available DCOS commands:
 
+\tauth           \tAuthenticate to DCOS cluster
 \tconfig         \tManage the DCOS configuration file
 \thelp           \tDisplay help information about DCOS
 \tmarathon       \tDeploy and manage applications to DCOS
@@ -74,4 +75,10 @@ def test_help_service():
 def test_help_task():
     with open('tests/data/help/task.txt') as content:
         assert_command(['dcos', 'help', 'task'],
+                       stdout=content.read().encode('utf-8'))
+
+
+def test_help_auth():
+    with open('tests/data/help/auth.txt') as content:
+        assert_command(['dcos', 'help', 'auth'],
                        stdout=content.read().encode('utf-8'))

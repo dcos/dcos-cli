@@ -1,6 +1,5 @@
 [core]
 reporting = false
-email = "test@mail.com"
 [marathon]
 [package]
 cosmos_url = "http://localhost:7070"

@@ -130,7 +130,7 @@ def unset(name):
     elif isinstance(value, collections.Mapping):
         raise DCOSException(_generate_choice_msg(name, value))
     else:
-        emitter.publish("Removed [{}]".format(name))
+        emitter.publish(DefaultError("Removed [{}]".format(name)))
         save(toml_config)
         return
 

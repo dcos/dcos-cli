@@ -13,20 +13,10 @@
             "title": "DCOS ACS token",
             "type": "string"
         },
-        "email": {
-            "description": "Your email address",
-            "title": "Your email address",
-            "type": "string"
-        },
         "mesos_master_url": {
             "description": "Mesos master URL. Must be set in format: \"http://host:port\"",
             "format": "uri",
             "title": "Mesos Master URL",
-            "type": "string"
-        },
-        "refresh_token": {
-            "description": "Your OAuth refresh token",
-            "title": "The OAuth refresh token",
             "type": "string"
         },
         "reporting": {
@@ -41,11 +31,6 @@
             "minimum": 1,
             "title": "Request timeout in seconds",
             "type": "integer"
-        },
-        "token": {
-            "description": "Your OAuth access token",
-            "title": "Your OAuth access token",
-            "type": "string"
         },
         "ssl_verify": {
             "type": "string",

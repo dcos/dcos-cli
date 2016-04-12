@@ -45,28 +45,10 @@ def _segment_track(event, conf, properties):
     """
 
     data = {'event': event,
-            'properties': properties}
-
-    if 'core.email' in conf:
-        data['userId'] = conf['core.email']
-    else:
-        data['anonymousId'] = session_id
+            'properties': properties,
+            'anonymousId': session_id}
 
     _segment_request('track', data)
-
-
-def segment_identify(conf):
-    """
-    Send a segment.io 'identify' event
-
-    :param conf: dcos config file
-    :type conf: Toml
-    :rtype: None
-    """
-
-    if 'core.email' in conf:
-        data = {'userId': conf.get('core.email')}
-        _segment_request('identify', data)
 
 
 def _segment_request(path, data):
