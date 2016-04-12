@@ -1,13 +1,11 @@
 import os
 import signal
 import sys
-from concurrent.futures import ThreadPoolExecutor
 
 import dcoscli
 import docopt
-from dcos import constants, emitting, errors, http, mesos, subcommand, util
-from dcos.errors import DCOSAuthenticationException, DCOSException
-from dcoscli import analytics
+from dcos import constants, emitting, errors, http, subcommand, util
+from dcos.errors import DCOSException
 from dcoscli.subcommand import SubcommandMain, default_doc
 
 logger = util.get_logger(__name__)
@@ -48,39 +46,15 @@ def _main():
     if not command:
         command = "help"
 
-    cluster_id = None
-    if dcoscli.version != 'SNAPSHOT' and command and \
-            command not in ["config", "help"]:
-        try:
-            cluster_id = mesos.DCOSClient().metadata().get('CLUSTER_ID')
-        except DCOSAuthenticationException:
-                raise
-        except:
-            msg = 'Unable to get the cluster_id of the cluster.'
-            logger.exception(msg)
+    if command in subcommand.default_subcommands():
+        sc = SubcommandMain(command, args['<args>'])
+    else:
+        executable = subcommand.command_executables(command)
+        sc = subcommand.SubcommandProcess(
+            executable, command, args['<args>'])
 
-    # send args call to segment.io
-    with ThreadPoolExecutor(max_workers=2) as reporting_executor:
-        analytics.segment_track_cli(reporting_executor, config, cluster_id)
-
-        # the call to retrieve cluster_id must happen before we run the
-        # subcommand so that if you have auth enabled we don't ask for
-        # user/pass multiple times (with the text being out of order)
-        # before we can cache the auth token
-        if command in subcommand.default_subcommands():
-            sc = SubcommandMain(command, args['<args>'])
-        else:
-            executable = subcommand.command_executables(command)
-            sc = subcommand.SubcommandProcess(
-                executable, command, args['<args>'])
-
-        exitcode, err = sc.run_and_capture()
-
-        if err:
-            analytics.track_err(
-                reporting_executor, exitcode, err, config, cluster_id)
-
-        return exitcode
+    exitcode, _ = sc.run_and_capture()
+    return exitcode
 
 
 def _config_log_level_environ(log_level):
