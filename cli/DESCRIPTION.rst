@@ -8,4 +8,4 @@ This project is open source. Please see GitHub_ to access source code and to con
 Full documentation is available for the DCOS CLI on the `Mesosphere docs website`_.
 
 .. _GitHub: https://github.com/mesosphere/dcos-cli
-.. _Mesosphere docs website: http://docs.mesosphere.com/using/cli/
+.. _Mesosphere docs website: https://docs.mesosphere.com/usage/cli/

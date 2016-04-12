@@ -167,9 +167,9 @@ These packages are now available to be installed by the DCOS CLI installation sc
 .. _dcos-helloworld: https://github.com/mesosphere/dcos-helloworld
 .. _jq: http://stedolan.github.io/jq/
 .. _git: http://git-scm.com
-.. _installation instructions: http://docs.mesosphere.com/install/cli/
+.. _installation instructions: https://docs.mesosphere.com/usage/cli/install/
 .. _Marathon: https://mesosphere.github.io/marathon/
-.. _Mesosphere docs: http://docs.mesosphere.com
+.. _Mesosphere docs: https://docs.mesosphere.com
 .. _mesosphere/install-scripts: https://github.com/mesosphere/install-scripts
 .. _packages: https://packaging.python.org/en/latest/installing.html#installing-requirements
 .. _PEP-440 version scheme: https://www.python.org/dev/peps/pep-0440/

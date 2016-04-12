@@ -114,9 +114,9 @@ if [[ $VIRTUAL_ENV_PATH =~ \  ]];
 fi
 DCOS_URL=${ARGS[1]}
 
-hash curl 2>/dev/null || { echo >&2 "Cannot find curl. You may need to install it by following the documentation at https://docs.mesosphere.com/install/cli/#linux. Aborting."; exit 1; }
+hash curl 2>/dev/null || { echo >&2 "Cannot find curl. You may need to install it by following the documentation at https://docs.mesosphere.com/usage/cli/install/. Aborting."; exit 1; }
 
-command -v virtualenv >/dev/null 2>&1 || { echo "Cannot find virtualenv. You may need to install it by following the documentation at https://docs.mesosphere.com/install/cli/#linux. Aborting."; exit 1; }
+command -v virtualenv >/dev/null 2>&1 || { echo "Cannot find virtualenv. You may need to install it by following the documentation at https://docs.mesosphere.com/usage/cli/install/. Aborting."; exit 1; }
 
 VIRTUALENV_VERSION=$(virtualenv --version)
 VERSION_REGEX="s#[^0-9]*\([0-9]*\)[.]\([0-9]*\)[.]\([0-9]*\)\([0-9A-Za-z-]*\)#\1#"
