@@ -456,7 +456,7 @@ def test_images_in_metadata():
     stderr = (b'Uninstalled package [cassandra] version [0.2.0-1]\n'
               b'The Apache Cassandra DCOS Service has been uninstalled and '
               b'will no longer run.\n'
-              b'Please follow the instructions at https://docs.mesosphere.com/'
+              b'Please follow the instructions at http://docs.mesosphere.com/'
               b'services/cassandra/#uninstall to clean up any persisted '
               b'state\n')
 
