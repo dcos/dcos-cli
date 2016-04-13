@@ -123,7 +123,7 @@ def app_task_table(tasks):
         ("APP", lambda t: t["appId"]),
         ("HEALTHY", lambda t:
          all(check['alive'] for check in t.get('healthCheckResults', []))),
-        ("STARTED", lambda t: t["startedAt"]),
+        ("STARTED", lambda t: t.get("startedAt", "N/A")),
         ("HOST", lambda t: t["host"]),
         ("ID", lambda t: t["id"])
     ])
