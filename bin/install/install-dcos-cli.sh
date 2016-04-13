@@ -179,8 +179,4 @@ case "$ADD_PATH" in
     * ) prompt_add_dcos_path_to_profile "$VIRTUAL_ENV_PATH/bin";;
 esac
 
-if [ -z "$RC_NAME" ]; then
-    post_install_message "$ENV_SETUP"
-else
-    post_install_message "~/$RC_NAME"
-fi
+post_install_message "$ENV_SETUP"
