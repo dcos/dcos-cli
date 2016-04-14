@@ -4,7 +4,7 @@ from dcos import constants
 
 import pytest
 
-from .common import config_set, config_unset, exec_command
+from .common import config_set, exec_command, update_config
 
 
 @pytest.fixture
@@ -12,11 +12,19 @@ def env():
     r = os.environ.copy()
     r.update({
         constants.PATH_ENV: os.environ[constants.PATH_ENV],
-        constants.DCOS_CONFIG_ENV: os.path.join("tests",
-                                                "data", "ssl", "ssl.toml"),
+        constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "dcos.toml"),
     })
 
     return r
+
+
+@pytest.yield_fixture(autouse=True)
+def setup_env(env):
+    config_set("core.dcos_url", "https://dcos.snakeoil.mesosphere.com", env)
+    try:
+        yield
+    finally:
+        config_set("core.dcos_url", "http://dcos.snakeoil.mesosphere.com", env)
 
 
 def test_dont_verify_ssl_with_env_var(env):
@@ -31,77 +39,68 @@ def test_dont_verify_ssl_with_env_var(env):
 
 
 def test_dont_verify_ssl_with_config(env):
-    config_set('core.ssl_verify', 'false', env)
-
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'list'], env)
-    assert returncode == 0
-    assert stderr == b''
-
-    config_unset('core.ssl_verify', env)
+    with update_config('core.ssl_verify', 'false', env):
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'app', 'list'], env)
+        assert returncode == 0
+        assert stderr == b''
 
 
 def test_verify_ssl_without_cert_env_var(env):
     env[constants.DCOS_SSL_VERIFY_ENV] = 'true'
-
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'list'], env)
-    assert returncode == 1
-    assert "certificate verify failed" in stderr.decode('utf-8')
+    with update_config('core.ssl_verify', None, env):
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'app', 'list'], env)
+        assert returncode == 1
+        assert "certificate verify failed" in stderr.decode('utf-8')
 
     env.pop(constants.DCOS_SSL_VERIFY_ENV)
 
 
 def test_verify_ssl_without_cert_config(env):
-    config_set('core.ssl_verify', 'true', env)
-
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'list'], env)
-    assert returncode == 1
-    assert "certificate verify failed" in stderr.decode('utf-8')
-
-    config_unset('core.ssl_verify', env)
+    with update_config('core.ssl_verify', 'true', env):
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'app', 'list'], env)
+        assert returncode == 1
+        assert "certificate verify failed" in stderr.decode('utf-8')
 
 
 def test_verify_ssl_with_bad_cert_env_var(env):
     env[constants.DCOS_SSL_VERIFY_ENV] = 'tests/data/ssl/fake.pem'
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'list'], env)
-    assert returncode == 1
-    assert "PEM lib" in stderr.decode('utf-8')  # wrong private key
+    with update_config('core.ssl_verify', None, env):
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'app', 'list'], env)
+        assert returncode == 1
+        assert "PEM lib" in stderr.decode('utf-8')  # wrong private key
 
     env.pop(constants.DCOS_SSL_VERIFY_ENV)
 
 
 def test_verify_ssl_with_bad_cert_config(env):
-    config_set('core.ssl_verify', 'tests/data/ssl/fake.pem', env)
-
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'list'], env)
-    assert returncode == 1
-    assert "PEM lib" in stderr.decode('utf-8')  # wrong private key
-
-    config_unset('core.ssl_verify', env)
+    with update_config('core.ssl_verify', 'tests/data/ssl/fake.pem', env):
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'app', 'list'], env)
+        assert returncode == 1
+        assert "PEM lib" in stderr.decode('utf-8')  # wrong private key
 
 
 def test_verify_ssl_with_good_cert_env_var(env):
     env[constants.DCOS_SSL_VERIFY_ENV] = '/dcos-cli/adminrouter/snakeoil.crt'
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'list'], env)
-    assert returncode == 0
-    assert stderr == b''
+    with update_config('core.ssl_verify', None, env):
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'app', 'list'], env)
+        assert returncode == 0
+        assert stderr == b''
 
     env.pop(constants.DCOS_SSL_VERIFY_ENV)
 
 
 def test_verify_ssl_with_good_cert_config(env):
-    config_set('core.ssl_verify', '/dcos-cli/adminrouter/snakeoil.crt', env)
-
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'list'], env)
-    assert returncode == 0
-    assert stderr == b''
-
-    config_unset('core.ssl_verify', env)
+    with update_config(
+            'core.ssl_verify', '/dcos-cli/adminrouter/snakeoil.crt', env):
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'app', 'list'], env)
+        assert returncode == 0
+        assert stderr == b''

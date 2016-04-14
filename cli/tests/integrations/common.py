@@ -398,6 +398,44 @@ def app(path, app_id, wait=True):
 
 
 @contextlib.contextmanager
+def update_config(name, value, env=None):
+    """ Context manager for altering config for tests
+
+    :param key: <key>
+    :type key: str
+    :param value: <value>
+    :type value: str
+    ;param env: env vars
+    :type env: dict
+    :rtype: None
+    """
+
+    returncode, stdout, _ = exec_command(
+        ['dcos', 'config', 'show', name], env)
+
+    result = None
+    # config param already exists
+    if returncode == 0:
+        result = json.loads('"' + stdout.decode('utf-8').strip() + '"')
+
+    # if we are setting a value
+    if value is not None:
+        config_set(name, value, env)
+    # only unset if the config param already exists
+    elif result is not None:
+        config_unset(name, env)
+
+    try:
+        yield
+    finally:
+        # return config to previous state
+        if result is not None:
+            config_set(name, result, env)
+        else:
+            exec_command(['dcos', 'config', 'unset', name], env)
+
+
+@contextlib.contextmanager
 def package(package_name, deploy=False, args=[]):
     """Context manager that deploys an app on entrance, and removes it on
     exit.

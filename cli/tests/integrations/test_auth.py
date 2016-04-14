@@ -4,7 +4,7 @@ from dcos import constants
 
 import pytest
 
-from .common import assert_command, config_set, exec_command
+from .common import assert_command, exec_command, update_config
 
 
 @pytest.fixture
@@ -31,23 +31,22 @@ def test_version():
 
 
 def test_logout_no_token(env):
-    exec_command(['dcos', 'config', 'unset', 'core.dcos_acs_token'], env=env)
-
-    returncode, _, stderr = exec_command(
-        ['dcos', 'config', 'show', 'core.dcos_acs_token'], env=env)
-    assert returncode == 1
-    assert stderr == b"Property 'core.dcos_acs_token' doesn't exist\n"
+    with update_config("core.dcos_acs_token", None, env):
+        returncode, _, stderr = exec_command(
+            ['dcos', 'config', 'show', 'core.dcos_acs_token'], env=env)
+        assert returncode == 1
+        assert stderr == b"Property 'core.dcos_acs_token' doesn't exist\n"
 
 
 def test_logout_with_token(env):
-    config_set('core.dcos_acs_token', "foobar", env=env)
-    stderr = b"[core.dcos_acs_token]: changed\n"
-    assert_command(
-        ['dcos', 'config', 'set', 'core.dcos_acs_token', 'faketoken'],
-        stderr=stderr,
-        env=env)
+    with update_config("core.dcos_acs_token", "foobar", env):
+        stderr = b"[core.dcos_acs_token]: changed\n"
+        assert_command(
+            ['dcos', 'config', 'set', 'core.dcos_acs_token', 'faketoken'],
+            stderr=stderr,
+            env=env)
 
-    stderr = b'Removed [core.dcos_acs_token]\n'
-    assert_command(['dcos', 'auth', 'logout'],
-                   stderr=stderr,
-                   env=env)
+        stderr = b'Removed [core.dcos_acs_token]\n'
+        assert_command(['dcos', 'auth', 'logout'],
+                       stderr=stderr,
+                       env=env)
