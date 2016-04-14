@@ -72,6 +72,11 @@ def _cmds():
             function=_task_list),
 
         cmds.Command(
+            hierarchy=['marathon', 'task', 'stop'],
+            arg_keys=['<task-id>', '--wipe'],
+            function=_task_stop),
+
+        cmds.Command(
             hierarchy=['marathon', 'task', 'show'],
             arg_keys=['<task-id>'],
             function=_task_show),
@@ -778,6 +783,27 @@ def _task_list(app_id, json_):
     tasks = client.get_tasks(app_id)
 
     emitting.publish_table(emitter, tasks, tables.app_task_table, json_)
+    return 0
+
+
+def _task_stop(task_id, wipe):
+    """Stop a Marathon task
+
+    :param task_id: the id of the task
+    :type task_id: str
+    :param wipe: whether to wipe persistent data and unreserve resources
+    :type wipe: bool
+    :returns: process return code
+    :rtype: int
+    """
+
+    client = marathon.create_client()
+    task = client.stop_task(task_id, wipe)
+
+    if task is None:
+        raise DCOSException("Task '{}' does not exist".format(task_id))
+
+    emitter.publish(task)
     return 0
 
 

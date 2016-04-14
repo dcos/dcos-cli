@@ -631,6 +631,44 @@ def test_show_task():
         assert stderr == b''
 
 
+def test_stop_task():
+    with _zero_instance_app():
+        _start_app('zero-instance-app', 1)
+        watch_all_deployments()
+        task_list = _list_tasks(1, 'zero-instance-app')
+        task_id = task_list[0]['id']
+
+        _stop_task(task_id)
+
+
+def test_stop_task_wipe():
+    with _zero_instance_app():
+        _start_app('zero-instance-app', 1)
+        watch_all_deployments()
+        task_list = _list_tasks(1, 'zero-instance-app')
+        task_id = task_list[0]['id']
+
+        _stop_task(task_id, '--wipe')
+
+
+def test_stop_unknown_task():
+    with _zero_instance_app():
+        _start_app('zero-instance-app')
+        watch_all_deployments()
+        task_id = 'unknown-task-id'
+
+        _stop_task(task_id, expect_success=False)
+
+
+def test_stop_unknown_task_wipe():
+    with _zero_instance_app():
+        _start_app('zero-instance-app')
+        watch_all_deployments()
+        task_id = 'unknown-task-id'
+
+        _stop_task(task_id, '--wipe', expect_success=False)
+
+
 def test_bad_configuration():
     config_set('marathon.url', 'http://localhost:88888')
 
@@ -743,6 +781,22 @@ def _list_tasks(expected_count=None, app_id=None):
     assert stderr == b''
 
     return result
+
+
+def _stop_task(task_id, wipe=None, expect_success=True):
+    cmd = ['dcos', 'marathon', 'task', 'stop', task_id]
+    if wipe is not None:
+        cmd.append('--wipe')
+
+    returncode, stdout, stderr = exec_command(cmd)
+
+    if expect_success:
+        assert returncode == 0
+        assert stderr == b''
+        result = json.loads(stdout.decode('utf-8'))
+        assert result['id'] == task_id
+    else:
+        assert returncode == 1
 
 
 @contextlib.contextmanager
