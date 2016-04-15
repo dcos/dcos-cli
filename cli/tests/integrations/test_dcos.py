@@ -14,8 +14,16 @@ def test_help():
 
 
 def test_version():
-    assert_command(['dcos', '--version'],
-                   stdout=b'dcos version SNAPSHOT\n')
+    returncode, stdout, stderr = exec_command(
+        ['dcos', '--version'])
+
+    assert returncode == 0
+    assert stderr == b''
+    versions = stdout.decode('utf-8').split("\n")
+    assert versions[0] == "dcoscli.version=SNAPSHOT"
+    assert versions[1].startswith("dcos.version")
+    assert versions[2].startswith("dcos.commit")
+    assert versions[3].startswith("dcos.bootstrap-id")
 
 
 def test_log_level_flag():
