@@ -1,7 +1,9 @@
+import collections
 import functools
 import json
 
 import pystache
+import six
 from dcos import emitting, http, util
 from dcos.errors import (DCOSAuthenticationException,
                          DCOSAuthorizationException, DCOSException,
@@ -566,5 +568,10 @@ def _format_marathon_bad_response_message(error):
     data = error.get("data")
     error_messages = [error.get("message")]
     if data is not None:
-        error_messages += [err.get("error") for err in data.get("errors")]
+        for err in data.get("errors"):
+            if err.get("error") and isinstance(err["error"], six.string_types):
+                error_messages += [err["error"]]
+            elif err.get("errors") and \
+                    isinstance(err["errors"], collections.Sequence):
+                error_messages += err["errors"]
     return "\n".join(error_messages)
