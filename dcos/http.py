@@ -161,9 +161,13 @@ def _request_with_auth(response,
             if creds not in AUTH_CREDS and response.status_code == 200:
                 AUTH_CREDS[creds] = auth
             # acs invalid token
-            elif response.status_code == 401 and auth_scheme == "acsjwt":
+            elif response.status_code == 401 and \
+                    auth_scheme in ["acsjwt", "oauthjwt"]:
+
                 if util.get_config().get("core.dcos_acs_token") is not None:
-                    config.unset("core.dcos_acs_token")
+                    msg = ("Your core.dcos_acs_token is invalid. "
+                           "Please run: `dcos auth login`")
+                    raise DCOSException(msg)
 
         i += 1
 
@@ -342,7 +346,7 @@ def _get_auth_credentials(username, hostname):
 
 def get_auth_scheme(response):
     """Return authentication scheme and realm requested by server for 'Basic'
-       or 'acsjwt' (DCOS acs auth) type or None
+       or 'acsjwt' (DCOS acs auth) or 'oauthjwt' (DCOS acs oauth) type or None
 
     :param response: requests.response
     :type response: requests.Response
@@ -354,7 +358,8 @@ def get_auth_scheme(response):
         auths = response.headers['www-authenticate'].split(',')
         scheme = next((auth_type.rstrip().lower() for auth_type in auths
                        if auth_type.rstrip().lower().startswith("basic") or
-                       auth_type.rstrip().lower().startswith("acsjwt")),
+                       auth_type.rstrip().lower().startswith("acsjwt") or
+                       auth_type.rstrip().lower().startswith("oauthjwt")),
                       None)
         if scheme:
             scheme_info = scheme.split("=")
@@ -385,7 +390,7 @@ def _get_http_auth(response, url, auth_scheme):
     password = url.password
 
     if 'www-authenticate' in response.headers:
-        if auth_scheme not in ['basic', 'acsjwt']:
+        if auth_scheme not in ['basic', 'acsjwt', 'oauthjwt']:
             msg = ("Server responded with an HTTP 'www-authenticate' field of "
                    "'{}', DCOS only supports 'Basic'".format(
                        response.headers['www-authenticate']))
@@ -396,17 +401,59 @@ def _get_http_auth(response, url, auth_scheme):
             # we'd already be authed by python requests module
             username, password = _get_auth_credentials(username, hostname)
             return HTTPBasicAuth(username, password)
+        # dcos auth (acs or oauth)
         else:
-            return _get_dcos_acs_auth(username, password, hostname)
+            return _get_dcos_auth(auth_scheme, username, password, hostname)
     else:
         msg = ("Invalid HTTP response: server returned an HTTP 401 response "
                "with no 'www-authenticate' field")
         raise DCOSException(msg)
 
 
-def _get_dcos_acs_auth(username, password, hostname):
-    """Get authentication flow for dcos acs auth
+def _get_dcos_oauth_creds(dcos_url):
+    """Get token credential for dcos oath
 
+    :param dcos_url: dcos cluster url
+    :type dcos_url: str
+    :returns: token from browser for oauth flow
+    :rtype: dict
+    """
+
+    oauth_login = 'login?redirect_uri=urn:ietf:wg:oauth:2.0:oob'
+    url = urllib.parse.urljoin(dcos_url, oauth_login)
+    msg = "\n{}\n\n    {}\n\n{} ".format(
+          "Please go to the following link in your browser:",
+          url,
+          "Enter authentication token:")
+    sys.stderr.write(msg)
+    sys.stderr.flush()
+    token = sys.stdin.readline().strip()
+    return {"token": token}
+
+
+def _get_dcos_acs_auth_creds(username, password, hostname):
+    """Get credentials for dcos acs auth
+
+    :param username: username user for authentication
+    :type username: str
+    :param password: password for authentication
+    :type password: str
+    :param hostname: hostname for credentials
+    :type hostname: str
+    :returns: username/password credentials
+    :rtype: dict
+    """
+
+    if password is None:
+        username, password = _get_auth_credentials(username, hostname)
+    return {"uid": username, "password": password}
+
+
+def _get_dcos_auth(auth_scheme, username, password, hostname):
+    """Get authentication flow for dcos acs auth and dcos oauth
+
+    :param auth_scheme: authentication_scheme
+    :type auth_scheme: str
     :param username: username user for authentication
     :type username: str
     :param password: password for authentication
@@ -421,16 +468,17 @@ def _get_dcos_acs_auth(username, password, hostname):
     token = toml_config.get("core.dcos_acs_token")
     if token is None:
         dcos_url = toml_config.get("core.dcos_url")
-        url = urllib.parse.urljoin(dcos_url, 'acs/api/v1/auth/login')
-        if password is None:
-            username, password = _get_auth_credentials(username, hostname)
-        creds = {"uid": username, "password": password}
+        if auth_scheme == "acsjwt":
+            creds = _get_dcos_acs_auth_creds(username, password, hostname)
+        else:
+            creds = _get_dcos_oauth_creds(dcos_url)
 
         verify = _verify_ssl()
         # Silence 'Unverified HTTPS request' and 'SecurityWarning' for bad cert
         if verify is not None:
             silence_requests_warnings()
 
+        url = urllib.parse.urljoin(dcos_url, 'acs/api/v1/auth/login')
         # using private method here, so we don't retry on this request
         # error here will be bubbled up to _request_with_auth
         response = _request('post', url, json=creds, verify=verify)

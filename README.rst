@@ -39,16 +39,6 @@ Note that the DCOS CLI has tight integration with DCOS and certain
 functionality may not work as expected or at all when using it directly with
 Mesos and Marathon.
 
-Controlling Analytics Reporting
--------------------------------
-
-The CLI reports usage and exception information to Segment.io for production
-usage.
-
-If you wish to turn reporting of analytics off entirely,
-you can set the :code:`core.reporting` property to false::
-    dcos config set core.reporting false
-
 Dependencies
 ------------
 

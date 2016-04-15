@@ -1,5 +1,0 @@
-[core]
-reporting = false
-email = "test@mail.com"
-[package]
-cosmos_url = "http://localhost:7070"

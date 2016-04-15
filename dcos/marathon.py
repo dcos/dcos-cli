@@ -669,6 +669,37 @@ class Client(object):
 
         return task
 
+    def stop_task(self, task_id, wipe=None):
+        """Stops a task.
+
+        :param task_id: the ID of the task
+        :type task_id: str
+        :param wipe: whether remove reservations and persistent volumes.
+        :type wipe: bool
+        :returns: a tasks
+        :rtype: dict
+        """
+
+        if not wipe:
+            params = None
+        else:
+            params = {'wipe': 'true'}
+
+        url = self._create_url('v2/tasks/delete')
+
+        response = _http_req(http.post,
+                             url,
+                             params=params,
+                             json={'ids': [task_id]},
+                             timeout=self._timeout)
+
+        task = next(
+            (task for task in response.json()['tasks']
+             if task_id == task['id']),
+            None)
+
+        return task
+
     def get_app_schema(self):
         """Returns app json schema
 

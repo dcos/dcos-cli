@@ -1,0 +1,21 @@
+Description:
+    Authenticate to DCOS cluster
+
+Usage:
+    dcos auth --info
+    dcos auth login
+    dcos auth logout
+
+Commands:
+    login
+        Login to your DCOS Cluster.
+    logout
+        Logout of your DCOS Cluster.
+
+Options:
+    -h, --help
+        Print usage.
+    --info
+        Print a short description of this subcommand.
+    --version
+        Print version information.

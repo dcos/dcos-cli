@@ -11,7 +11,8 @@ from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 from .common import (app, assert_command, assert_lines, config_set,
                      config_unset, exec_command, list_deployments, popen_tty,
-                     show_app, watch_all_deployments, watch_deployment)
+                     show_app, update_config, watch_all_deployments,
+                     watch_deployment)
 
 _ZERO_INSTANCE_APP_INSTANCES = 100
 
@@ -43,24 +44,24 @@ def test_about():
 
 
 @pytest.fixture
-def missing_env():
-    env = os.environ.copy()
-    env.update({
+def env():
+    r = os.environ.copy()
+    r.update({
         constants.PATH_ENV: os.environ[constants.PATH_ENV],
-        constants.DCOS_CONFIG_ENV:
-            os.path.join("tests", "data", "marathon",
-                         "missing_marathon_params.toml")
+        constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "dcos.toml"),
     })
-    return env
+
+    return r
 
 
-def test_missing_config(missing_env):
-    assert_command(
-        ['dcos', 'marathon', 'app', 'list'],
-        returncode=1,
-        stderr=(b'Missing required config parameter: "core.dcos_url".  '
-                b'Please run `dcos config set core.dcos_url <value>`.\n'),
-        env=missing_env)
+def test_missing_config(env):
+    with update_config("core.dcos_url", None, env):
+        assert_command(
+            ['dcos', 'marathon', 'app', 'list'],
+            returncode=1,
+            stderr=(b'Missing required config parameter: "core.dcos_url".  '
+                    b'Please run `dcos config set core.dcos_url <value>`.\n'),
+            env=env)
 
 
 def test_empty_list():
@@ -631,6 +632,44 @@ def test_show_task():
         assert stderr == b''
 
 
+def test_stop_task():
+    with _zero_instance_app():
+        _start_app('zero-instance-app', 1)
+        watch_all_deployments()
+        task_list = _list_tasks(1, 'zero-instance-app')
+        task_id = task_list[0]['id']
+
+        _stop_task(task_id)
+
+
+def test_stop_task_wipe():
+    with _zero_instance_app():
+        _start_app('zero-instance-app', 1)
+        watch_all_deployments()
+        task_list = _list_tasks(1, 'zero-instance-app')
+        task_id = task_list[0]['id']
+
+        _stop_task(task_id, '--wipe')
+
+
+def test_stop_unknown_task():
+    with _zero_instance_app():
+        _start_app('zero-instance-app')
+        watch_all_deployments()
+        task_id = 'unknown-task-id'
+
+        _stop_task(task_id, expect_success=False)
+
+
+def test_stop_unknown_task_wipe():
+    with _zero_instance_app():
+        _start_app('zero-instance-app')
+        watch_all_deployments()
+        task_id = 'unknown-task-id'
+
+        _stop_task(task_id, '--wipe', expect_success=False)
+
+
 def test_bad_configuration():
     config_set('marathon.url', 'http://localhost:88888')
 
@@ -743,6 +782,22 @@ def _list_tasks(expected_count=None, app_id=None):
     assert stderr == b''
 
     return result
+
+
+def _stop_task(task_id, wipe=None, expect_success=True):
+    cmd = ['dcos', 'marathon', 'task', 'stop', task_id]
+    if wipe is not None:
+        cmd.append('--wipe')
+
+    returncode, stdout, stderr = exec_command(cmd)
+
+    if expect_success:
+        assert returncode == 0
+        assert stderr == b''
+        result = json.loads(stdout.decode('utf-8'))
+        assert result['id'] == task_id
+    else:
+        assert returncode == 1
 
 
 @contextlib.contextmanager

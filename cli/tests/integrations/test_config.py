@@ -6,7 +6,8 @@ from dcos import constants
 
 import pytest
 
-from .common import assert_command, config_set, config_unset, exec_command
+from .common import (assert_command, config_set, config_unset,
+                     exec_command, update_config)
 
 
 @pytest.fixture
@@ -17,17 +18,6 @@ def env():
         constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "dcos.toml"),
     })
 
-    return r
-
-
-@pytest.fixture
-def missing_env():
-    r = os.environ.copy()
-    r.update({
-        constants.PATH_ENV: os.environ[constants.PATH_ENV],
-        constants.DCOS_CONFIG_ENV:
-            os.path.join("tests", "data", "config", "missing_params_dcos.toml")
-    })
     return r
 
 
@@ -51,7 +41,6 @@ def test_version():
 
 def _test_list_property(env):
     stdout = b"""core.dcos_url=http://dcos.snakeoil.mesosphere.com
-core.email=test@mail.com
 core.reporting=False
 core.ssl_verify=false
 core.timeout=5
@@ -81,15 +70,16 @@ def test_invalid_dcos_url(env):
     stderr = b'Please check url \'abc.com\'. Missing http(s)://\n'
     assert_command(['dcos', 'config', 'set', 'core.dcos_url', 'abc.com'],
                    stderr=stderr,
-                   returncode=1)
+                   returncode=1,
+                   env=env)
 
 
 def test_get_top_property(env):
     stderr = (
         b"Property 'core' doesn't fully specify a value - "
         b"possible properties are:\n"
+        b"core.dcos_acs_token\n"
         b"core.dcos_url\n"
-        b"core.email\n"
         b"core.reporting\n"
         b"core.ssl_verify\n"
         b"core.timeout\n"
@@ -97,13 +87,21 @@ def test_get_top_property(env):
 
     assert_command(['dcos', 'config', 'show', 'core'],
                    stderr=stderr,
-                   returncode=1)
+                   returncode=1,
+                   env=env)
 
 
-def test_set_package_sources_property(env):
+def test_set_package_sources_property():
     notice = (b"This config property has been deprecated. "
               b"Please add your repositories with `dcos package repo add`\n")
     assert_command(['dcos', 'config', 'set', 'package.sources', '[\"foo\"]'],
+                   stderr=notice,
+                   returncode=1)
+
+
+def test_set_core_email_property():
+    notice = (b"This config property has been deprecated.\n")
+    assert_command(['dcos', 'config', 'set', 'core.email', 'foo@bar.com'],
                    stderr=notice,
                    returncode=1)
 
@@ -175,7 +173,7 @@ def test_unset_missing_property(env):
 
 def test_unset_output(env):
     assert_command(['dcos', 'config', 'unset', 'core.reporting'],
-                   stdout=b'Removed [core.reporting]\n',
+                   stderr=b'Removed [core.reporting]\n',
                    env=env)
     config_set('core.reporting', 'false', env)
 
@@ -184,8 +182,8 @@ def test_unset_top_property(env):
     stderr = (
         b"Property 'core' doesn't fully specify a value - "
         b"possible properties are:\n"
+        b"core.dcos_acs_token\n"
         b"core.dcos_url\n"
-        b"core.email\n"
         b"core.reporting\n"
         b"core.ssl_verify\n"
         b"core.timeout\n"
@@ -212,10 +210,10 @@ def test_set_property_key(env):
         env=env)
 
 
-def test_set_missing_property(missing_env):
-    config_set('core.dcos_url', 'http://localhost:8080', missing_env)
-    _get_value('core.dcos_url', 'http://localhost:8080', missing_env)
-    config_unset('core.dcos_url', missing_env)
+def test_set_missing_property(env):
+    with update_config("core.dcos_url", None, env=env):
+        config_set('core.dcos_url', 'http://localhost:8080', env)
+        _get_value('core.dcos_url', 'http://localhost:8080', env)
 
 
 def test_set_core_property(env):
@@ -268,19 +266,15 @@ def test_bad_port_fail_url_validation(env):
                          'http://localhost:bad_port/', env)
 
 
-def test_timeout(missing_env):
-    config_set('marathon.url', 'http://1.2.3.4', missing_env)
-    config_set('core.timeout', '1', missing_env)
+def test_timeout(env):
+    with update_config('marathon.url', 'http://1.2.3.4', env):
+        with update_config('core.timeout', '1', env):
+            returncode, stdout, stderr = exec_command(
+                ['dcos', 'marathon', 'app', 'list'], env=env)
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'list'], env=missing_env)
-
-    assert returncode == 1
-    assert stdout == b''
-    assert "(connect timeout=1)".encode('utf-8') in stderr
-
-    config_unset('core.timeout', missing_env)
-    config_unset('marathon.url', missing_env)
+            assert returncode == 1
+            assert stdout == b''
+            assert "(connect timeout=1)".encode('utf-8') in stderr
 
 
 def test_parse_error():

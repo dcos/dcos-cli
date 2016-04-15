@@ -160,7 +160,6 @@ fi
 
 ENV_SETUP="$VIRTUAL_ENV_PATH/bin/env-setup"
 source "$ENV_SETUP"
-dcos config set core.email anonymous-optout
 dcos config set core.reporting false
 dcos config set core.dcos_url $DCOS_URL
 dcos config set core.ssl_verify false
@@ -180,8 +179,4 @@ case "$ADD_PATH" in
     * ) prompt_add_dcos_path_to_profile "$VIRTUAL_ENV_PATH/bin";;
 esac
 
-if [ -z "$RC_NAME" ]; then
-    post_install_message "$ENV_SETUP"
-else
-    post_install_message "~/$RC_NAME"
-fi
+post_install_message "$ENV_SETUP"

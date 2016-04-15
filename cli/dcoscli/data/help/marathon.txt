@@ -27,6 +27,7 @@ Usage:
     dcos marathon group remove [--force] <group-id>
     dcos marathon group update [--force] <group-id> [<properties>...]
     dcos marathon task list [--json <app-id>]
+    dcos marathon task stop [--wipe] <task-id>
     dcos marathon task show <task-id>
 
 Commands:
@@ -74,6 +75,8 @@ Commands:
         Update a group.
     task list
         List all tasks.
+    task stop
+        Stop a task. Wipe persistent data if `--wipe` is set.
     task show
         List a specific task.
 

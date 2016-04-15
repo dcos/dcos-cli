@@ -1,7 +1,0 @@
-[package]
-cosmos_url = "http://localhost:7070"
-[core]
-timeout = 5
-dcos_url = "https://dcos.snakeoil.mesosphere.com"
-email = "test@mail.com"
-reporting = false

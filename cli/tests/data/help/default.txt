@@ -5,6 +5,7 @@ for easy management of a DCOS installation.
 
 Available DCOS commands:
 
+	auth           	Authenticate to DCOS cluster
 	config         	Manage the DCOS configuration file
 	help           	Display help information about DCOS
 	marathon       	Deploy and manage applications to DCOS

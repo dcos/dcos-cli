@@ -778,7 +778,6 @@ def _get_package_manager():
     else:
         msg = ("This version of the DCOS CLI is not supported for your "
                "cluster. Please downgrade the CLI to an older version: "
-               "https://docs.mesosphere.com/administration/introcli/updatecli/"
-               "#scrollNav-2"
+               "https://docs.mesosphere.com/usage/cli/update/#downgrade"
                )
         raise DCOSException(msg)

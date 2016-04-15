@@ -4,7 +4,6 @@ import dcoscli
 import docopt
 from dcos import cmds, config, emitting, http, util
 from dcos.errors import DCOSException
-from dcoscli import analytics
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
 
@@ -88,9 +87,11 @@ def _set(name, value):
         notice = ("This config property has been deprecated. "
                   "Please add your repositories with `dcos package repo add`")
         return DCOSException(notice)
-    toml_config = config.set_val(name, value)
-    if (name == 'core.reporting' is True) or (name == 'core.email'):
-        analytics.segment_identify(toml_config)
+    if name == "core.email":
+        notice = "This config property has been deprecated."
+        return DCOSException(notice)
+
+    config.set_val(name, value)
 
     return 0
 
