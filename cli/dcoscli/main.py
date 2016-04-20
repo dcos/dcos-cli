@@ -8,6 +8,8 @@ from dcos import constants, emitting, errors, http, subcommand, util
 from dcos.errors import DCOSException
 from dcoscli.subcommand import SubcommandMain, default_doc
 
+from six.moves import urllib
+
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
 
@@ -20,13 +22,44 @@ def main():
         return 1
 
 
+def _get_versions(dcos_url):
+    """Print DCOS and DCOS-CLI versions
+
+    :param dcos_url: url to DCOS cluster
+    :type dcos_url: str
+    :returns: Process status
+    :rtype: int
+    """
+
+    dcos_info = {}
+    try:
+        url = urllib.parse.urljoin(
+            dcos_url, 'dcos-metadata/dcos-version.json')
+        res = http.get(url, timeout=1)
+        if res.status_code == 200:
+            dcos_info = res.json()
+    except Exception as e:
+        logger.exception(e)
+        pass
+
+    emitter.publish(
+        "dcoscli.version={}\n".format(dcoscli.version) +
+        "dcos.version={}\n".format(dcos_info.get("version", "N/A")) +
+        "dcos.commit={}\n".format(dcos_info.get(
+            "dcos-image-commit", "N/A")) +
+        "dcos.bootstrap-id={}".format(dcos_info.get("bootstrap-id", "N/A"))
+    )
+    return 0
+
+
 def _main():
     signal.signal(signal.SIGINT, signal_handler)
 
-    args = docopt.docopt(
-        default_doc("dcos"),
-        version='dcos version {}'.format(dcoscli.version),
-        options_first=True)
+    http.silence_requests_warnings()
+    config = util.get_config()
+    set_ssl_info_env_vars(config)
+
+    args = docopt.docopt(default_doc("dcos"), options_first=True)
 
     log_level = args['--log-level']
     if log_level and not _config_log_level_environ(log_level):
@@ -37,11 +70,10 @@ def _main():
 
     util.configure_process_from_environ()
 
-    config = util.get_config()
-    set_ssl_info_env_vars(config)
+    if args['--version']:
+        return _get_versions(config.get("core.dcos_url"))
 
     command = args['<command>']
-    http.silence_requests_warnings()
 
     if not command:
         command = "help"
