@@ -6,9 +6,8 @@ import pty
 import subprocess
 import time
 
-import requests
 import six
-from dcos import util
+from dcos import http, util
 
 from six.moves import urllib
 
@@ -326,7 +325,7 @@ def delete_zk_node(znode):
     znode_url = urllib.parse.urljoin(
         dcos_url,
         '/exhibitor/exhibitor/v1/explorer/znode/{}'.format(znode))
-    requests.delete(znode_url)
+    http.delete(znode_url)
 
 
 def assert_lines(cmd, num_lines):

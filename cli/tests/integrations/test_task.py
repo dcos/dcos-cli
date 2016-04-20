@@ -64,6 +64,7 @@ def test_task():
     assert len(tasks) == NUM_TASKS
 
     schema = create_schema(task_fixture().dict())
+    schema['additionalProperties'] = True
     schema['required'].remove('labels')
 
     for task in tasks:

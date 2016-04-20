@@ -16,6 +16,11 @@ from .common import (assert_command, assert_lines, delete_zk_node,
 
 
 def setup_module(module):
+    exec_command(['dcos', 'package', 'repo', 'remove', 'Universe-1.7'])
+    exec_command(
+        ['dcos', 'package', 'repo', 'remove', 'Universe'])
+    repo = "https://github.com/mesosphere/universe/archive/cli-test-4.zip"
+    assert_command(['dcos', 'package', 'repo', 'add', 'test4', repo])
     package_install('chronos', True)
 
 
@@ -28,6 +33,12 @@ def teardown_module(module):
                b'mesosphere.com/services/chronos/#uninstall to clean up any '
                b'persisted state\n')
     delete_zk_nodes()
+    assert_command(
+        ['dcos', 'package', 'repo', 'remove', 'test4'])
+    repo17 = "https://universe.mesosphere.com/repo-1.7"
+    assert_command(['dcos', 'package', 'repo', 'add', 'Universe-1.7', repo17])
+    repo = "https://universe.mesosphere.com/repo"
+    assert_command(['dcos', 'package', 'repo', 'add', 'Universe', repo])
 
 
 def test_help():
@@ -252,5 +263,6 @@ def _get_schema(service):
     schema['properties']['offered_resources']['required'].remove('ports')
     schema['properties']['resources']['required'].remove('ports')
     schema['properties']['used_resources']['required'].remove('ports')
+    schema['additionalProperties'] = True
 
     return schema

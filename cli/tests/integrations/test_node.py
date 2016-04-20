@@ -185,6 +185,7 @@ def _node_ssh(args):
 
 def _get_schema(slave):
     schema = create_schema(slave)
+    schema['additionalProperties'] = True
     schema['required'].remove('reregistered_time')
 
     schema['required'].remove('reserved_resources')
