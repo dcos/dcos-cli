@@ -16,6 +16,7 @@ def _default_modules():
     from dcoscli.help import main as help_main
     from dcoscli.marathon import main as marathon_main
     from dcoscli.node import main as node_main
+    from dcoscli.opendcre import main as opendcre_main
     from dcoscli.package import main as package_main
     from dcoscli.service import main as service_main
     from dcoscli.task import main as task_main
@@ -25,6 +26,7 @@ def _default_modules():
             'help': help_main,
             'marathon': marathon_main,
             'node': node_main,
+            'opendcre': opendcre_main,
             'package': package_main,
             'service': service_main,
             'task': task_main

@@ -1,0 +1,25 @@
+Description:
+    VaporIO OpenDCRE for device monitoring.
+
+Usage:
+    dcos opendcre --info
+    dcos opendcre scan
+    dcos opendcre read <device-type> <board-id> <device-id>
+
+Commands:
+    scan
+        Scan for all devices on all boards.
+    read
+        Read a sensor value from a specified device.
+
+Options:
+    --info
+        Print a short description of this subcommand.
+
+Positional Arguments:
+    <device-type>
+        The name of the device to read.
+    <board-id>
+        The board ID.
+    <device-id>
+        The device ID.
