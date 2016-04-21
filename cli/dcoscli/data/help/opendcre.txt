@@ -5,12 +5,15 @@ Usage:
     dcos opendcre --info
     dcos opendcre scan
     dcos opendcre read <device-type> <board-id> <device-id>
+    dcos opendcre asset <board-id> <device-id>
 
 Commands:
     scan
         Scan for all devices on all boards.
     read
         Read a sensor value from a specified device.
+    asset
+        Get asset information for a system.
 
 Options:
     --info

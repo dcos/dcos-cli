@@ -54,6 +54,11 @@ def _cmds():
             arg_keys=['<device-type>', '<board-id>', '<device-id>'],
             function=_read),
 
+        cmds.Command(
+            hierarchy=['opendcre', 'asset'],
+            arg_keys=['<board-id>', '<device-id>'],
+            function=_asset),
+
     ]
 
 
@@ -100,6 +105,24 @@ def _read(device_type, board_id, device_id):
         emitter.publish(r.text)
     else:
         raise DCOSException("Failed to perform scan\n: {}".format(r.text))
+    return 0
+
+
+def _asset(board_id, device_id):
+    """
+
+    :param board_id:
+    :param device_id:
+    :return:
+    """
+    # FIXME - for the purposes of proof-of-concept, the url is just hardcoded here, should be changed!
+    url = 'http://192.168.99.100:5000/vaporcore/1.0/asset/{}/{}'.format(board_id, device_id)
+    r = requests.get(url)
+
+    if r.status_code == 200:
+        emitter.publish(r.text)
+    else:
+        raise DCOSException("Failed to retrieve asset information\n: {}".format(r.text))
     return 0
 
 
