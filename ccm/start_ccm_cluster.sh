@@ -6,7 +6,6 @@
 #   DCOS_CHANNEL
 
 set -e
-set -x
 
 # create cluster
 CLUSTER_ID=$(http --ignore-stdin \https://ccm.mesosphere.com/api/cluster/ \
