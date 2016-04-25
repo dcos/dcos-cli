@@ -6,7 +6,6 @@
 
 set -e
 set -o pipefail
-set -x
 
 # wait for cluster to come up
 while true; do

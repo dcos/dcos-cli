@@ -6,6 +6,5 @@
 
 set -e
 set -o pipefail
-set -x
 
 http --ignore-stdin DELETE https://ccm.mesosphere.com/api/cluster/${CLUSTER_ID}/ Authorization:"Token ${CCM_AUTH_TOKEN}"
