@@ -37,6 +37,12 @@
             "default": "false",
             "title": "SSL Verification",
             "description": "Whether to verify SSL certs for HTTPS or path to certs"
+        },
+        "pagination": {
+            "type": "boolean",
+            "default": true,
+            "title": "Pagination",
+            "description": "Whether to paginate output"
         }
     },
     "type": "object"
