@@ -28,7 +28,7 @@ def setup_env(env):
 
 
 def test_dont_verify_ssl_with_env_var(env):
-    env[constants.DCOS_SSL_VERIFY_ENV] = 'false'
+    env[constants.DCOS_SSL_VERIFY_ENV] = 'true'
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'list'], env)
