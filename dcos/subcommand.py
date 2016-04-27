@@ -315,7 +315,11 @@ def _find_virtualenv(bin_directory):
         virtualenv_path = util.which('virtualenv')
 
     if virtualenv_path is None:
-        raise DCOSException('Unable to find the virtualenv program')
+        msg = ("Unable to install CLI subcommand. "
+               "Missing required program 'virtualenv'.\n"
+               "Please see installation instructions: "
+               "https://virtualenv.pypa.io/en/latest/installation.html")
+        raise DCOSException(msg)
 
     return virtualenv_path
 
