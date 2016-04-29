@@ -56,8 +56,7 @@ Options:
     --cli
         Command line only.
     --config
-        Print the the configurable properties for the `marathon.json` and
-        `command.json` files.
+        Print the the configurable properties for the `marathon.json` file.
     --index=<index>
         The numerical position in the package repository list. Package
         repositories are searched in descending order. By default the Universe
@@ -73,9 +72,8 @@ Options:
     --package-versions
         Print all versions for this package.
     --render
-        Collate the marathon.json or command.json package templates with the
-        values from config.json and --options. If not provided, print the raw
-        templates.
+        Collate the marathon.json package template with the values from
+        config.json and --options. If not provided, print the raw templates.
     --version
         Print version information.
     --yes

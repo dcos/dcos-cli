@@ -229,8 +229,7 @@ def _describe(package_name,
     :param options_path: Path to json file with options to override
                          config.json defaults.
     :type options_path: str
-    :param render: If True, marathon.json and/or command.json templates
-                   will be rendered
+    :param render: If True, marathon.json will be rendered
     :type render: boolean
     :param package_versions: If True, a list of all package versions will
                              be printed
@@ -273,11 +272,7 @@ def _describe(package_name,
         options = pkg.options(user_options)
 
         if cli:
-            if render:
-                cli_output = pkg.command_json(options)
-            else:
-                cli_output = pkg.command_template()
-            emitter.publish(cli_output)
+            emitter.publish(pkg.command_json())
         if app:
             if render:
                 app_output = pkg.marathon_json(options)
