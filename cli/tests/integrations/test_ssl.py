@@ -52,7 +52,7 @@ def test_verify_ssl_without_cert_env_var(env):
         returncode, stdout, stderr = exec_command(
             ['dcos', 'marathon', 'app', 'list'], env)
         assert returncode == 1
-        assert "certificate verify failed" in stderr.decode('utf-8')
+        assert stderr.decode('utf-8') == _ssl_error_msg()
 
     env.pop(constants.DCOS_SSL_VERIFY_ENV)
 
@@ -62,7 +62,7 @@ def test_verify_ssl_without_cert_config(env):
         returncode, stdout, stderr = exec_command(
             ['dcos', 'marathon', 'app', 'list'], env)
         assert returncode == 1
-        assert "certificate verify failed" in stderr.decode('utf-8')
+        assert stderr.decode('utf-8') == _ssl_error_msg()
 
 
 def test_verify_ssl_with_bad_cert_env_var(env):
@@ -72,7 +72,7 @@ def test_verify_ssl_with_bad_cert_env_var(env):
         returncode, stdout, stderr = exec_command(
             ['dcos', 'marathon', 'app', 'list'], env)
         assert returncode == 1
-        assert "PEM lib" in stderr.decode('utf-8')  # wrong private key
+        assert stderr.decode('utf-8') == _ssl_error_msg()
 
     env.pop(constants.DCOS_SSL_VERIFY_ENV)
 
@@ -82,7 +82,7 @@ def test_verify_ssl_with_bad_cert_config(env):
         returncode, stdout, stderr = exec_command(
             ['dcos', 'marathon', 'app', 'list'], env)
         assert returncode == 1
-        assert "PEM lib" in stderr.decode('utf-8')  # wrong private key
+        assert stderr.decode('utf-8') == _ssl_error_msg()
 
 
 def test_verify_ssl_with_good_cert_env_var(env):
@@ -104,3 +104,10 @@ def test_verify_ssl_with_good_cert_config(env):
             ['dcos', 'marathon', 'app', 'list'], env)
         assert returncode == 0
         assert stderr == b''
+
+
+def _ssl_error_msg():
+    return (
+        "An SSL error occurred. To configure your SSL settings, please run: "
+        "`dcos config set core.ssl_verify <value>`\n"
+        "<value>: Whether to verify SSL certs for HTTPS or path to certs\n")

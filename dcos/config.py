@@ -213,6 +213,25 @@ def get_config_schema(command):
     return subcommand.config_schema(executable, command)
 
 
+def get_property_description(section, subkey):
+    """
+    :param section: section of config paramater
+    :type section: str
+    :param subkey: property within 'section'
+    :type subkey: str
+    :returns: description of section.subkey or None if no description
+    :rtype: str | None
+    """
+
+    schema = get_config_schema(section)
+    property_info = schema["properties"].get(subkey)
+    if property_info is not None:
+        return property_info.get("description")
+    else:
+        raise DCOSException(
+            "No schema found found for {}.{}".format(section, subkey))
+
+
 def check_config(toml_config_pre, toml_config_post):
     """
     :param toml_config_pre: dictionary for the value before change
