@@ -302,7 +302,8 @@ def package_search_table(search_results):
         ('VERSION', lambda p: p['currentVersion']),
         ('SELECTED', lambda p: p.get("selected", False)),
         ('FRAMEWORK', lambda p: p['framework']),
-        ('DESCRIPTION', lambda p: p['description'])
+        ('DESCRIPTION', lambda p: p['description']
+            if len(p['description']) < 77 else p['description'][0:77] + "...")
     ])
 
     packages = []
