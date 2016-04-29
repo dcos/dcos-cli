@@ -231,7 +231,7 @@ def _install_env(pkg, options):
 
     pkg_dir = _package_dir(pkg.name())
 
-    install_operation = pkg.command_json(options)
+    install_operation = pkg.command_json()
 
     env_dir = os.path.join(pkg_dir,
                            constants.DCOS_SUBCOMMAND_VIRTUALENV_SUBDIR)

@@ -1,8 +1,6 @@
 import collections
 import functools
-import json
 
-import pystache
 import six
 from dcos import emitting, http, util
 from dcos.errors import (DCOSAuthenticationException,
@@ -365,14 +363,6 @@ class CosmosPackageVersion():
 
         return self._resource_json
 
-    def command_template(self):
-        """ Returns raw data from command.json
-
-        :returns: raw data from command.json
-        :rtype: str
-        """
-        return self._command_json
-
     def marathon_template(self):
         """Returns raw data from marathon.json
 
@@ -424,18 +414,14 @@ class CosmosPackageVersion():
 
         return self._command_json is not None
 
-    def command_json(self, options):
-        """Returns the JSON content of the command.json template, after
-        rendering it with options.
+    def command_json(self):
+        """Returns the JSON content of the command.json file.
 
-        :param options: the template options to use in rendering
-        :type options: dict
         :returns: Package data
         :rtype: dict
         """
 
-        rendered = pystache.render(json.dumps(self._command_json), options)
-        return util.load_jsons(rendered)
+        return self._command_json
 
     def package_versions(self):
         """Returns a list of available versions for this package
