@@ -311,7 +311,7 @@ def package_search_table(search_results):
         package_ = copy.deepcopy(package)
         packages.append(package_)
 
-    tb = table(fields, packages, sortby="NAME")
+    tb = table(fields, packages)
     tb.align['NAME'] = 'l'
     tb.align['VERSION'] = 'l'
     tb.align['SELECTED'] = 'l'
