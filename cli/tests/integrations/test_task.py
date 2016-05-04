@@ -257,6 +257,21 @@ def test_ls_bad_path():
         returncode=1)
 
 
+def test_ls_completed():
+    """ Test `dcos task ls --completed` """
+    assert_command(
+        ['dcos', 'task', 'ls', 'test-app-completed'],
+        stdout=b'',
+        stderr=b'Cannot find a task with ID containing "test-app-completed"\n',
+        returncode=1)
+
+    assert_command(
+        ['dcos', 'task', 'ls', '--completed', 'test-app-completed'],
+        stdout=b'stderr  stderr.logrotate.conf  stdout  stdout.logrotate.conf\n',
+        stderr=b'',
+        returncode=0)
+
+
 def _mark_non_blocking(file_):
     fcntl.fcntl(file_.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
 
