@@ -266,6 +266,8 @@ def test_bad_port_fail_url_validation(env):
                          'http://localhost:bad_port/', env)
 
 
+@pytest.mark.skipif(
+    True, reason='Network tests are unreliable')
 def test_timeout(env):
     with update_config('marathon.url', 'http://1.2.3.4', env):
         with update_config('core.timeout', '1', env):
