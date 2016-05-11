@@ -18,13 +18,6 @@ Commands:
         Establish an SSH connection to the master or agent nodes of your DCOS
         cluster.
 
-Commands:
-    log
-        Prints the Mesos logs for the leading master node, agent nodes, or both.
-    ssh
-        Establish an SSH connection to the master or agent nodes of your DCOS
-        cluster.
-
 Options:
     --config-file=<path>
         Path to SSH configuration file.
