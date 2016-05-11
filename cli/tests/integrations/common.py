@@ -84,7 +84,7 @@ def assert_command(
 
 
 def watch_deployment(deployment_id, count):
-    """ Wait for a deployment to complete.
+    """Wait for a deployment to complete.
 
     :param deployment_id: deployment id
     :type deployment_id: str
@@ -102,7 +102,7 @@ def watch_deployment(deployment_id, count):
 
 
 def watch_all_deployments(count=300):
-    """ Wait for all deployments to complete.
+    """Wait for all deployments to complete.
 
     :param count: max number of seconds to wait
     :type count: int

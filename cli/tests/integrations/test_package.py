@@ -859,6 +859,8 @@ def _uninstall_helloworld(
                    stderr=uninstalled+stderr,
                    returncode=returncode)
 
+    watch_all_deployments()
+
 
 def _uninstall_cli_helloworld(
         args=[],
