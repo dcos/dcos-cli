@@ -37,7 +37,7 @@ def test_get_auth_scheme_bad_request():
     with patch('requests.Response') as mock:
         mock.headers = {'www-authenticate': ''}
         res = http.get_auth_scheme(mock)
-        assert res is None
+        assert res == (None, None)
 
 
 @patch('requests.Response')

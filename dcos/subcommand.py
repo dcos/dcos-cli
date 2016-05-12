@@ -1,12 +1,17 @@
 from __future__ import print_function
 
+import hashlib
 import json
 import os
+import platform
 import shutil
+import stat
 import subprocess
 import sys
+import zipfile
 from subprocess import PIPE, Popen
 
+import requests
 from dcos import constants, emitting, util
 from dcos.errors import DCOSException
 
@@ -52,8 +57,9 @@ def get_package_commands(package_name):
     :returns: list of all the dcos program paths in package
     :rtype: [str]
     """
+
     bin_dir = os.path.join(_package_dir(package_name),
-                           constants.DCOS_SUBCOMMAND_VIRTUALENV_SUBDIR,
+                           constants.DCOS_SUBCOMMAND_ENV_SUBDIR,
                            BIN_DIRECTORY)
 
     executables = []
@@ -122,7 +128,7 @@ def distributions():
                 os.path.join(
                     subcommand_dir,
                     subdir,
-                    constants.DCOS_SUBCOMMAND_VIRTUALENV_SUBDIR))
+                    constants.DCOS_SUBCOMMAND_ENV_SUBDIR))
         ]
     else:
         return []
@@ -219,40 +225,124 @@ def _write_package_json(pkg):
         json.dump(package_json, package_file)
 
 
-def _install_env(pkg, options):
-    """ Install subcommand virtual env.
+def _hashfile(filename):
+    """Calculates the sha256 of a file
 
-    :param pkg: the package to install
-    :type pkg: PackageVersion
-    :param options: package parameters
-    :type options: dict
+    :param filename: path to the file to sum
+    :type filename: str
+    :returns: digest in hexadecimal
+    :rtype: str
+    """
+
+    hasher = hashlib.sha256()
+    with open(filename, 'rb') as f:
+        for chunk in iter(lambda: f.read(4096), b''):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def _check_hash(filename, content_hashes):
+    """Validates whether downloaded binary matches expected hash
+
+    :param filename: path to binary
+    :type filename: str
+    :param content_hashes: list of hash algorithms/value
+    :type content_hashes: [{"algo": <str>, "value": <str>}]
+    :returns: None if valid hash, else throws exception
     :rtype: None
     """
 
-    pkg_dir = _package_dir(pkg.name())
-
-    install_operation = pkg.command_json()
-
-    env_dir = os.path.join(pkg_dir,
-                           constants.DCOS_SUBCOMMAND_VIRTUALENV_SUBDIR)
-
-    if 'pip' in install_operation:
-        _install_with_pip(
-            pkg.name(),
-            env_dir,
-            install_operation['pip'])
+    content_hash = next((contents for contents in content_hashes
+                        if contents.get("algo") == "sha256"),
+                        None)
+    if content_hash:
+        expected_value = content_hash.get("value")
+        actual_value = _hashfile(filename)
+        if expected_value != actual_value:
+            raise DCOSException(
+                "The hash for the downloaded subcommand [{}] "
+                "does not match the expected value [{}]. Aborting...".format(
+                    actual_value, expected_value))
+        else:
+            return
     else:
-        raise DCOSException("Installation methods '{}' not supported".format(
-            install_operation.keys()))
+        raise DCOSException(
+            "Hash algorithm specified is unsupported. "
+            "Please contact the package maintainer. Aborting...")
 
 
-def install(pkg, options):
+def _get_cli_binary_info(cli_resources):
+    """Find compatible cli binary, if one exists
+
+    :param cli_resources: cli property of resource.json
+    :type resources: {}
+    :returns: {"url": <str>, "kind": <str>, "contentHash": [{}]}
+    :rtype: {} | None
+    """
+
+    if "binaries" in cli_resources:
+        binaries = cli_resources["binaries"]
+        arch = platform.architecture()[0]
+        if arch != "64bit":
+            raise DCOSException(
+                "There is no compatible subcommand for your architecture [{}] "
+                "We only support x86-64. Aborting...".format(arch))
+        system = platform.system().lower()
+        binary = binaries.get(system)
+        if binary is None:
+            raise DCOSException(
+                "There is not compatible subcommand for your system [{}] "
+                "Aborting...".format(system))
+        elif "x86-64" in binary:
+            return binary["x86-64"]
+
+    raise DCOSException(
+        "The CLI subcommand has unexpected format [{}]. "
+        "Please contact the package maintainer. Aborting...".format(
+            cli_resources))
+
+
+def _install_cli(pkg):
+    """Install subcommand cli
+
+    :param pkg: the package to install
+    :type pkg: PackageVersion
+    :rtype: None
+    """
+
+    with util.remove_path_on_error(_package_dir(pkg.name())) as pkg_dir:
+        env_dir = os.path.join(pkg_dir, constants.DCOS_SUBCOMMAND_ENV_SUBDIR)
+
+        resources = pkg.resource_json()
+
+        if resources and resources.get("cli") is not None:
+            binary = resources["cli"]
+            binary_cli = _get_cli_binary_info(binary)
+            _install_with_binary(
+                pkg.name(),
+                env_dir,
+                binary_cli)
+        elif pkg.command_json() is not None:
+            install_operation = pkg.command_json()
+            if 'pip' in install_operation:
+                _install_with_pip(
+                    pkg.name(),
+                    env_dir,
+                    install_operation['pip'])
+            else:
+                raise DCOSException(
+                    "Installation methods '{}' not supported".format(
+                        install_operation.keys()))
+        else:
+            raise DCOSException(
+                "Could not find a CLI subcommand for your platform")
+
+
+def install(pkg):
     """Installs the dcos cli subcommand
 
     :param pkg: the package to install
     :type pkg: Package
-    :param options: package parameters
-    :type options: dict
     :rtype: None
     """
 
@@ -261,7 +351,7 @@ def install(pkg, options):
 
     _write_package_json(pkg)
 
-    _install_env(pkg, options)
+    _install_cli(pkg)
 
 
 def _subcommand_dir():
@@ -322,6 +412,86 @@ def _find_virtualenv(bin_directory):
         raise DCOSException(msg)
 
     return virtualenv_path
+
+
+def _download_and_store(url, location):
+    """Download given url and store in location on disk
+
+    :param url: url to download
+    :type url: str
+    :param location: path to file to store url
+    :type location: str
+    :rtype: None
+    """
+
+    with open(location, 'wb') as f:
+        r = requests.get(url, stream=True)
+        for chunk in r.iter_content(1024):
+            f.write(chunk)
+
+
+def _install_with_binary(
+        package_name,
+        env_directory,
+        binary_cli):
+    """
+    :param package_name: the name of the package
+    :type package_name: str
+    :param env_directory: the path to the directory in which to install the
+                          package's binary_cli
+    :type env_directory: str
+    :param binary_cli: binary cli to install
+    :type binary_cli: str
+    :rtype: None
+    """
+
+    binary_url, kind = binary_cli.get("url"), binary_cli.get("kind")
+
+    try:
+        env_bin_dir = os.path.join(env_directory, BIN_DIRECTORY)
+
+        if kind in ["executable", "zip"]:
+            with util.temptext() as file_tmp:
+                _, binary_tmp = file_tmp
+                _download_and_store(binary_url, binary_tmp)
+                _check_hash(binary_tmp, binary_cli.get("contentHash"))
+
+                if kind == "executable":
+                    util.ensure_dir_exists(env_bin_dir)
+                    binary_name = "dcos-{}".format(package_name)
+                    binary_file = os.path.join(env_bin_dir, binary_name)
+                    shutil.move(binary_tmp, binary_file)
+                else:
+                    # kind == "zip"
+                    with zipfile.ZipFile(binary_tmp) as zf:
+                        zf.extractall(env_directory)
+
+            # check contents for package_name/env/bin folder structure
+            if not os.path.exists(env_bin_dir):
+                msg = (
+                    "CLI subcommand for [{}] has an unexpected format. "
+                    "Please contact the package maintainer".format(
+                        package_name))
+                raise DCOSException(msg)
+        else:
+            msg = ("CLI subcommand for [{}] is an unsupported type: {}"
+                   "Please contact the package maintainer".format(
+                       package_name, kind))
+            raise DCOSException(msg)
+
+        # make binar(ies) executable
+        for f in os.listdir(env_bin_dir):
+            binary = os.path.join(env_bin_dir, f)
+            if (f.startswith(constants.DCOS_COMMAND_PREFIX)):
+                st = os.stat(binary)
+                os.chmod(binary, st.st_mode | stat.S_IEXEC)
+    except DCOSException:
+        raise
+    except Exception as e:
+        logger.exception(e)
+        raise _generic_error(package_name)
+
+    return None
 
 
 def _install_with_pip(

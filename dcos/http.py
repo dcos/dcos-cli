@@ -354,12 +354,12 @@ def _get_auth_credentials(username, hostname):
 
 def get_auth_scheme(response):
     """Return authentication scheme and realm requested by server for 'Basic'
-       or 'acsjwt' (DCOS acs auth) or 'oauthjwt' (DCOS acs oauth) type or None
+       or 'acsjwt' (DCOS acs auth) or 'oauthjwt' (DCOS acs oauth) type
 
     :param response: requests.response
     :type response: requests.Response
     :returns: auth_scheme, realm
-    :rtype: (str, str) | None
+    :rtype: (str, str)
     """
 
     if 'www-authenticate' in response.headers:
@@ -375,9 +375,9 @@ def get_auth_scheme(response):
             realm = scheme_info[-1].strip(' \'\"').lower()
             return auth_scheme, realm
         else:
-            return None
+            return None, None
     else:
-        return None
+        return None, None
 
 
 def _get_http_auth(response, url, auth_scheme):

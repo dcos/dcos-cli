@@ -1,8 +1,8 @@
 DCOS_DIR = ".dcos"
 """DCOS data directory.  Can store subcommands and the config file."""
 
-DCOS_SUBCOMMAND_VIRTUALENV_SUBDIR = 'env'
-"""In a package's directory, this is the virtualenv subdirectory."""
+DCOS_SUBCOMMAND_ENV_SUBDIR = 'env'
+"""In a package's directory, this is the cli contents subdirectory."""
 
 DCOS_SUBCOMMAND_SUBDIR = 'subcommands'
 """Name of the subdirectory that contains all of the subcommands. This is

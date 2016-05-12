@@ -386,13 +386,13 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
             options,
             app_id)
 
-    if cli and pkg.has_command_definition():
+    if cli and pkg.has_cli_definition():
         # Install subcommand
         msg = 'Installing CLI subcommand for package [{}] version [{}]'.format(
             pkg.name(), pkg.version())
         emitter.publish(msg)
 
-        subcommand.install(pkg, pkg.options(user_options))
+        subcommand.install(pkg)
 
         subcommand_paths = subcommand.get_package_commands(package_name)
         new_commands = [os.path.basename(p).replace('-', ' ', 1)

@@ -77,6 +77,21 @@ def temptext():
         shutil.rmtree(path, ignore_errors=True)
 
 
+@contextlib.contextmanager
+def remove_path_on_error(path):
+    """A context manager for modifying a specific path
+    `path` and all subpaths will be removed on error
+
+    :rtype: None
+    """
+
+    try:
+        yield path
+    except:
+        shutil.rmtree(path, ignore_errors=True)
+        raise
+
+
 def sh_copy(src, dst):
     """Copy file src to the file or directory dst.
 
