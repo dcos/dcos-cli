@@ -383,7 +383,8 @@ class CosmosPackageVersion():
 
         params = {"packageName":  self._name}
         params["packageVersion"] = self._package_version
-        params["options"] = options
+        if options:
+            params["options"] = options
         response = Cosmos(self._cosmos_url).cosmos_post("render", params)
         return response.json().get("marathonJson")
 
