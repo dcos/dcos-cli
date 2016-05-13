@@ -368,10 +368,10 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
             emitter.publish('Exiting installation.')
             return 0
 
-    # render options before start installation
-    options = pkg.options(user_options)
-
     if app and pkg.has_mustache_definition():
+
+        # render options before start installation
+        options = pkg.options(user_options)
 
         # Install in Marathon
         msg = 'Installing Marathon app for package [{}] version [{}]'.format(
