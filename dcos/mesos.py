@@ -424,7 +424,7 @@ class Master(object):
 
         keys = ['tasks']
         if completed:
-            keys = ['completed_tasks']
+            keys.extend(['completed_tasks'])
 
         tasks = []
         for framework in self._framework_dicts(completed, completed):
