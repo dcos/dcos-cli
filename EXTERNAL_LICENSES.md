@@ -79,7 +79,7 @@ rollbar (0.12.1)
     License: UNKNOWN
 
 setuptools (21.0.0)
-    License: UNKNOWN
+    License: MIT
 
 six (1.10.0)
     License: MIT
