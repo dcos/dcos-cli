@@ -48,6 +48,9 @@ Dependencies
 #. virtualenv_ must be installed and on the system path in order to install
    subcommands.
 
+#. win_bash_ must be installed if you are running this in Windows
+   in order to run setup scripts from the Makefiles.
+
 Setup
 -----
 
@@ -166,3 +169,4 @@ These packages are now available to be installed by the DCOS CLI installation sc
 .. _publish_to_pypi.sh script: https://github.com/mesosphere/dcos-cli/blob/master/bin/publish_to_pypi.sh
 .. _setup: https://github.com/mesosphere/dcos-helloworld#setup
 .. _virtualenv: https://virtualenv.pypa.io/en/latest/
+.. _win-bash: https://sourceforge.net/projects/win-bash/files/shell-complete/latest
