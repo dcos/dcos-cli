@@ -1,17 +1,19 @@
 import collections
-import fcntl
 import json
 import os
 import re
 import subprocess
+import sys
 import time
 
 import dcos.util as util
 from dcos.util import create_schema
 
+import pytest
+
 from ..fixtures.task import task_fixture
-from .common import (add_app, app, assert_command, assert_lines,
-                     exec_command, remove_app, watch_all_deployments)
+from .common import (add_app, app, assert_command, assert_lines, exec_command,
+                     remove_app, watch_all_deployments)
 
 SLEEP_COMPLETED = 'tests/data/marathon/apps/sleep-completed.json'
 SLEEP_COMPLETED1 = 'tests/data/marathon/apps/sleep-completed1.json'
@@ -144,6 +146,8 @@ def test_log_lines_invalid():
                    returncode=1)
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason="Using Windows unsupported import (fcntl)")
 def test_log_follow():
     """ Test --follow """
     # verify output
@@ -180,6 +184,8 @@ def test_log_two_tasks():
     assert re.match('===>.*<===', lines[5])
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='Using Windows unsupported import (fcntl)')
 def test_log_two_tasks_follow():
     """ Test tailing a single file on two separate tasks with --follow """
     with app(TWO_TASKS_FOLLOW, 'two-tasks-follow'):
@@ -288,6 +294,7 @@ def test_ls_completed():
 
 
 def _mark_non_blocking(file_):
+    import fcntl
     fcntl.fcntl(file_.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
 
 

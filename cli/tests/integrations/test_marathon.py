@@ -2,6 +2,7 @@ import contextlib
 import json
 import os
 import re
+import sys
 import threading
 
 from dcos import constants
@@ -695,6 +696,8 @@ def test_app_locked_error():
                     b'Override with --force.\n'))
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason="No pseudo terminal on windows")
 def test_app_add_no_tty():
     proc, master = popen_tty('dcos marathon app add')
 

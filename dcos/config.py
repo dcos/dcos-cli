@@ -3,6 +3,7 @@ import copy
 import json
 import os
 import stat
+import sys
 
 import pkg_resources
 import toml
@@ -160,12 +161,19 @@ def _enforce_config_permissions(path):
     :type path: str
     :rtype: None
     """
-    permissions = oct(stat.S_IMODE(os.lstat(path).st_mode))
-    if permissions not in ['0o600', '0600']:
-        msg = ("Permissions '{}' for configuration file '{}' are too open. "
-               "File must only be accessible by owner. "
-               "Aborting...".format(permissions, path))
-        raise DCOSException(msg)
+
+    # Unix permissions are incompatible with windows
+    # TODO: https://github.com/dcos/dcos-cli/issues/662
+    if sys.platform == 'win32':
+        return
+    else:
+        permissions = oct(stat.S_IMODE(os.lstat(path).st_mode))
+        if permissions not in ['0o600', '0600']:
+            msg = (
+                "Permissions '{}' for configuration file '{}' are too open. "
+                "File must only be accessible by owner. "
+                "Aborting...".format(permissions, path))
+            raise DCOSException(msg)
 
 
 def load_from_path(path, mutable=False):

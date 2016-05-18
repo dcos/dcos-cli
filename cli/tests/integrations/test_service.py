@@ -1,5 +1,7 @@
 import os
+import signal
 import subprocess
+import sys
 import time
 
 import dcos.util as util
@@ -161,6 +163,8 @@ def test_log_marathon_file():
                    returncode=1)
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='No pseduo terminal on windows')
 def test_log_marathon_config():
     stdout, stderr, _ = ssh_output(
         'dcos service log marathon ' +
@@ -197,16 +201,33 @@ def test_log_config():
 
 def test_log_follow():
     wait_for_service('chronos')
-    proc = subprocess.Popen(['dcos', 'service', 'log', 'chronos', '--follow'],
-                            preexec_fn=os.setsid,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
+    args = ['dcos', 'service', 'log', 'chronos', '--follow']
+    if sys.platform == 'win32':
+        proc = subprocess.Popen(
+            args,
+            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+    else:
+        # os.setsid is only available for Unix:
+        # https://docs.python.org/2/library/os.html#os.setsid
+        proc = subprocess.Popen(
+            args,
+            preexec_fn=os.setsid,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
     time.sleep(10)
 
     proc.poll()
     assert proc.returncode is None
 
-    os.killpg(os.getpgid(proc.pid), 15)
+    if sys.platform == 'win32':
+        os.kill(proc.pid, signal.CTRL_BREAK_EVENT)
+    else:
+        # using Unix-only commands os.killpg + os.getgid
+        # https://docs.python.org/2/library/os.html#os.killpg
+        # https://docs.python.org/2/library/os.html#os.getpgid
+        os.killpg(os.getpgid(proc.pid), 15)
 
     stdout = proc.stdout.read()
     stderr = proc.stderr.read()

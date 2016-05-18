@@ -1,11 +1,14 @@
 import json
 import os
 import re
+import sys
 
 import dcos.util as util
 import six
 from dcos import mesos
 from dcos.util import create_schema
+
+import pytest
 
 from ..fixtures.node import slave_fixture
 from .common import assert_command, assert_lines, exec_command, ssh_output
@@ -91,15 +94,21 @@ def test_node_log_invalid_lines():
                    returncode=1)
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='No pseudo terminal on windows')
 def test_node_ssh_leader():
     _node_ssh(['--leader'])
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='No pseudo terminal on windows')
 def test_node_ssh_slave():
     slave_id = mesos.DCOSClient().get_state_summary()['slaves'][0]['id']
     _node_ssh(['--mesos-id={}'.format(slave_id), '--master-proxy'])
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='No pseudo terminal on windows')
 def test_node_ssh_option():
     stdout, stderr, _ = _node_ssh_output(
         ['--leader', '--option', 'Protocol=0'])
@@ -107,6 +116,8 @@ def test_node_ssh_option():
     assert b'ignoring bad proto spec' in stderr
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='No pseudo terminal on windows')
 def test_node_ssh_config_file():
     stdout, stderr, _ = _node_ssh_output(
         ['--leader', '--config-file', 'tests/data/node/ssh_config'])
@@ -114,6 +125,8 @@ def test_node_ssh_config_file():
     assert b'ignoring bad proto spec' in stderr
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='No pseudo terminal on windows')
 def test_node_ssh_user():
     stdout, stderr, _ = _node_ssh_output(
         ['--master-proxy', '--leader', '--user=bogus', '--option',
@@ -137,6 +150,8 @@ def test_node_ssh_master_proxy_no_agent():
                    env=env)
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='No pseudo terminal on windows')
 def test_node_ssh_master_proxy():
     _node_ssh(['--leader', '--master-proxy'])
 
