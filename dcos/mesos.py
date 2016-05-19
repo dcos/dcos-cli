@@ -358,17 +358,19 @@ class Master(object):
         else:
             return slaves[0]
 
-    def task(self, fltr):
+    def task(self, fltr, completed=False):
         """Returns the task with `fltr` in its ID.  Raises a DCOSException if
         there is not exactly one such task.
 
         :param fltr: filter string
         :type fltr: str
         :returns: the task that has `fltr` in its ID
+        :param completed: also include completed tasks
+        :type completed: bool
         :rtype: Task
         """
 
-        tasks = self.tasks(fltr)
+        tasks = self.tasks(fltr, completed)
 
         if len(tasks) == 0:
             raise DCOSException(
