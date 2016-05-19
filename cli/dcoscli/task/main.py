@@ -50,7 +50,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['task', 'ls'],
-            arg_keys=['<task>', '<path>', '--long'],
+            arg_keys=['<task>', '<path>', '--long', '--completed'],
             function=_ls),
 
         cmds.Command(
@@ -159,7 +159,7 @@ def _log(follow, completed, lines, task, file_):
     return 0
 
 
-def _ls(task, path, long_):
+def _ls(task, path, long_, completed):
     """ List files in a task's sandbox.
 
     :param task: task pattern to match
@@ -168,6 +168,8 @@ def _ls(task, path, long_):
     :type path: str
     :param long_: whether to use a long listing format
     :type long_: bool
+    :param completed: If True, include completed tasks
+    :type completed: bool
     :returns: process return code
     :rtype: int
     """
@@ -178,7 +180,8 @@ def _ls(task, path, long_):
         path = path[1:]
 
     dcos_client = mesos.DCOSClient()
-    task_obj = mesos.get_master(dcos_client).task(task)
+    task_obj = mesos.get_master(dcos_client).task(
+                   fltr=task, completed=completed)
     dir_ = posixpath.join(task_obj.directory(), path)
 
     try:
