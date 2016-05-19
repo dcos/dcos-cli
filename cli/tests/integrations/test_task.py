@@ -77,13 +77,13 @@ def test_task_table():
 
 def test_task_completed():
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'task', '--completed', '--json'])
+        ['dcos', 'task', '--completed', '--json', '*-app*'])
     assert returncode == 0
     assert stderr == b''
     assert len(json.loads(stdout.decode('utf-8'))) > NUM_TASKS
 
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'task', '--json'])
+        ['dcos', 'task', '--json', '*-app*'])
     assert returncode == 0
     assert stderr == b''
     assert len(json.loads(stdout.decode('utf-8'))) == NUM_TASKS
