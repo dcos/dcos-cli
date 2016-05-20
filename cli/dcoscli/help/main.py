@@ -76,7 +76,7 @@ def _help(command):
         results = [(c, default_command_info(c))
                    for c in subcommand.default_subcommands()]
         paths = subcommand.list_paths()
-        with ThreadPoolExecutor(max_workers=len(paths)) as executor:
+        with ThreadPoolExecutor(max_workers=max(len(paths), 1)) as executor:
             results += list(executor.map(subcommand.documentation, paths))
             commands_message = options\
                 .make_command_summary_string(sorted(results))
