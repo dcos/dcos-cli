@@ -416,6 +416,18 @@ class CosmosPackageVersion():
         return self._command_json is not None or (
             self._resource_json and self._resource_json.get("cli"))
 
+    def cli_definition(self):
+        """Returns the JSON content that defines a cli subcommand. Looks for
+        "cli" property in resource.json first and if that is None, checks for
+        command.json
+
+        :returns: Package data
+        :rtype: dict
+        """
+
+        return (self._resource_json and self._resource_json.get("cli")) or (
+            self._command_json)
+
     def command_json(self):
         """Returns the JSON content of the command.json file.
 

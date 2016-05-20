@@ -219,7 +219,8 @@ def _describe(package_name,
     :type package_name: str
     :param app: If True, marathon.json will be printed
     :type app: boolean
-    :param cli: If True, command.json should be printed
+    :param cli: If True, command.json | resource.json's cli property should
+                be printed
     :type cli: boolean
     :param options_path: Path to json file with options to override
                          config.json defaults.
@@ -267,7 +268,7 @@ def _describe(package_name,
         options = pkg.options(user_options)
 
         if cli:
-            emitter.publish(pkg.command_json())
+            emitter.publish(pkg.cli_definition())
         if app:
             if render:
                 app_output = pkg.marathon_json(options)
