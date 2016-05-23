@@ -92,7 +92,7 @@ def _service(inactive, completed, is_json):
         emitter.publish([service.dict() for service in services])
     else:
         table = tables.service_table(services)
-        output = str(table)
+        output = util.unicode_type(table)
         if output:
             emitter.publish(output)
 

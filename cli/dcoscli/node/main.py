@@ -97,7 +97,7 @@ def _list(json_):
         emitter.publish(slaves)
     else:
         table = tables.slave_table(slaves)
-        output = str(table)
+        output = util.unicode_type(table)
         if output:
             emitter.publish(output)
         else:

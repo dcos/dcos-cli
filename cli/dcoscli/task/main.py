@@ -94,7 +94,7 @@ def _task(fltr, completed, json_):
         emitter.publish([task.dict() for task in tasks])
     else:
         table = tables.task_table(tasks)
-        output = str(table)
+        output = util.unicode_type(table)
         if output:
             emitter.publish(output)
 

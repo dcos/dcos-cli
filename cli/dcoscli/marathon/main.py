@@ -297,7 +297,7 @@ def _list(json_):
     else:
         deployments = client.get_deployments()
         table = tables.app_table(apps, deployments)
-        output = str(table)
+        output = util.unicode_type(table)
         if output:
             emitter.publish(output)
 
