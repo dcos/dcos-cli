@@ -1,9 +1,7 @@
 Please answer the following questions before submitting your issue. Thanks!
 
-### What version of the DCOS CLI are you using (`dcos --version`)?
-
-
-### What version of DCOS are you using?
+### What version of DCOS + DCOS CLI are you using (`dcos --version`)?
+If DCOS CLI version < 0.4.5, DCOS version can be found at `http://dcos_url/dcos-metada/dcos-version.json`
 
 
 ### What operating system and version are you using?
