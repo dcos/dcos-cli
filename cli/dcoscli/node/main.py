@@ -3,6 +3,7 @@ import subprocess
 
 import dcoscli
 import docopt
+import six
 from dcos import cmds, emitting, errors, mesos, util
 from dcos.errors import DCOSException, DefaultError
 from dcoscli import log, tables
@@ -97,7 +98,7 @@ def _list(json_):
         emitter.publish(slaves)
     else:
         table = tables.slave_table(slaves)
-        output = util.unicode_type(table)
+        output = six.text_type(table)
         if output:
             emitter.publish(output)
         else:

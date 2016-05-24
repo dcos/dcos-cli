@@ -21,13 +21,6 @@ from dcos.errors import DCOSException
 
 from six.moves import urllib
 
-if six.PY3:
-    unicode_type = str
-    bytes_type = bytes
-else:
-    unicode_type = unicode  # noqa
-    bytes_type = str
-
 
 def get_logger(name):
     """Get a logger
@@ -439,7 +432,7 @@ def _format_validation_error(error):
         if len(error.absolute_path) > 0:
             message += 'Path: {}\n'.format(
                        '.'.join(
-                           [unicode_type(path)
+                           [six.text_type(path)
                             for path in error.absolute_path]))
         message += 'Value: {}'.format(json.dumps(error.instance))
 
@@ -487,7 +480,7 @@ def create_schema(obj):
     else:
         raise ValueError(
             'Cannot create schema with object {} of unrecognized type'
-            .format(unicode_type(obj)))
+            .format(six.text_type(obj)))
 
 
 def list_to_err(errs):

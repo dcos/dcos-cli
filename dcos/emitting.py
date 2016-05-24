@@ -111,7 +111,7 @@ def publish_table(emitter, objs, table_fn, json_):
         emitter.publish(objs)
     else:
         table = table_fn(objs)
-        output = util.unicode_type(table)
+        output = six.text_type(table)
         if output:
             emitter.publish(output)
 
@@ -160,7 +160,7 @@ def _page(output, pager_command=None):
     :type pager_command: str
     """
 
-    output = util.unicode_type(output)
+    output = six.text_type(output)
 
     if pager_command is None:
         pager_command = 'less -R'
