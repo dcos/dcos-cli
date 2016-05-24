@@ -2,6 +2,8 @@ import functools
 import sys
 import time
 
+import six
+
 from dcos import emitting, util
 from dcos.errors import DCOSException
 
@@ -89,7 +91,7 @@ def _stream_files(curr_header, fn, mesos_files):
         if lines:
             curr_header = _output(curr_header,
                                   len(reachable_files) > 1,
-                                  str(mesos_file),
+                                  six.text_type(mesos_file),
                                   lines)
 
     return curr_header, reachable_files

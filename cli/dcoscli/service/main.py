@@ -2,6 +2,7 @@ import subprocess
 
 import dcoscli
 import docopt
+import six
 from dcos import cmds, emitting, marathon, mesos, util
 from dcos.errors import DCOSException, DefaultError
 from dcoscli import log, tables
@@ -92,7 +93,7 @@ def _service(inactive, completed, is_json):
         emitter.publish([service.dict() for service in services])
     else:
         table = tables.service_table(services)
-        output = str(table)
+        output = six.text_type(table)
         if output:
             emitter.publish(output)
 

@@ -6,6 +6,7 @@ import time
 import dcoscli
 import docopt
 import pkg_resources
+import six
 from dcos import cmds, emitting, http, jsonitem, marathon, options, util
 from dcos.errors import DCOSException
 from dcoscli import tables
@@ -297,7 +298,7 @@ def _list(json_):
     else:
         deployments = client.get_deployments()
         table = tables.app_table(apps, deployments)
-        output = str(table)
+        output = six.text_type(table)
         if output:
             emitter.publish(output)
 

@@ -431,7 +431,9 @@ def _format_validation_error(error):
         message = 'Error: {}\n'.format(error_message)
         if len(error.absolute_path) > 0:
             message += 'Path: {}\n'.format(
-                       '.'.join([str(path) for path in error.absolute_path]))
+                       '.'.join(
+                           [six.text_type(path)
+                            for path in error.absolute_path]))
         message += 'Value: {}'.format(json.dumps(error.instance))
 
     return message
@@ -478,7 +480,7 @@ def create_schema(obj):
     else:
         raise ValueError(
             'Cannot create schema with object {} of unrecognized type'
-            .format(str(obj)))
+            .format(six.text_type(obj)))
 
 
 def list_to_err(errs):

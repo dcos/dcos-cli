@@ -2,6 +2,7 @@ import posixpath
 
 import dcoscli
 import docopt
+import six
 from dcos import cmds, emitting, mesos, util
 from dcos.errors import DCOSException, DCOSHTTPException, DefaultError
 from dcoscli import log, tables
@@ -94,7 +95,7 @@ def _task(fltr, completed, json_):
         emitter.publish([task.dict() for task in tasks])
     else:
         table = tables.task_table(tasks)
-        output = str(table)
+        output = six.text_type(table)
         if output:
             emitter.publish(output)
 
