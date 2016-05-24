@@ -25,7 +25,7 @@ if six.PY3:
     unicode_type = str
     bytes_type = bytes
 else:
-    unicode_type = unicode # noqa
+    unicode_type = unicode  # noqa
     bytes_type = str
 
 
