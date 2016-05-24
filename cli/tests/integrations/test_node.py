@@ -161,6 +161,18 @@ def test_slave_arg_deprecation_notice():
                    returncode=1)
 
 
+def test_node_ssh_with_command():
+    leader_hostname = mesos.DCOSClient().get_state_summary()['hostname']
+    _node_ssh(['--leader', '--master-proxy', '/opt/mesosphere/bin/detect_ip'],
+              0, leader_hostname)
+
+
+def test_node_ssh_slave_with_command():
+    slave = mesos.DCOSClient().get_state_summary()['slaves'][0]
+    _node_ssh(['--mesos-id={}'.format(slave['id']), '--master-proxy',
+              '/opt/mesosphere/bin/detect_ip'], 0, slave['hostname'])
+
+
 def _node_ssh_output(args):
     cli_test_ssh_key_path = os.environ['CLI_TEST_SSH_KEY_PATH']
 
@@ -172,14 +184,15 @@ def _node_ssh_output(args):
     return ssh_output(cmd)
 
 
-def _node_ssh(args):
+def _node_ssh(args, expected_returncode=None, expected_stdout=None):
     if os.environ.get('CLI_TEST_MASTER_PROXY') and \
             '--master-proxy' not in args:
         args.append('--master-proxy')
 
     stdout, stderr, returncode = _node_ssh_output(args)
-    assert returncode is None
-
+    assert returncode is expected_returncode
+    if expected_stdout is not None:
+        assert stdout.decode('utf-8').startswith(expected_stdout)
     assert b"Running `" in stderr
 
 

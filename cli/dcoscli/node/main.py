@@ -61,7 +61,7 @@ def _cmds():
         cmds.Command(
             hierarchy=['node', 'ssh'],
             arg_keys=['--leader', '--mesos-id', '--option', '--config-file',
-                      '--user', '--master-proxy'],
+                      '--user', '--master-proxy', '<command>'],
             function=_ssh),
 
         cmds.Command(
@@ -155,7 +155,7 @@ def _mesos_files(leader, slave_id):
     return files
 
 
-def _ssh(leader, slave, option, config_file, user, master_proxy):
+def _ssh(leader, slave, option, config_file, user, master_proxy, command):
     """SSH into a DCOS node using the IP addresses found in master's
        state.json
 
@@ -172,6 +172,8 @@ def _ssh(leader, slave, option, config_file, user, master_proxy):
     :type user: str | None
     :param master_proxy: If True, SSH-hop from a master
     :type master_proxy: bool | None
+    :param command: Command to run on the node
+    :type command: str | None
     :rtype: int
     :returns: process return code
     """
@@ -191,6 +193,9 @@ def _ssh(leader, slave, option, config_file, user, master_proxy):
         else:
             raise DCOSException('No slave found with ID [{}]'.format(slave))
 
+    if command is None:
+        command = ''
+
     master_public_ip = dcos_client.metadata().get('PUBLIC_IPV4')
     if master_proxy:
         if not os.environ.get('SSH_AUTH_SOCK'):
@@ -205,16 +210,18 @@ def _ssh(leader, slave, option, config_file, user, master_proxy):
                                  "'PUBLIC_IPV4' at {}").format(
                                      dcos_client.get_dcos_url('metadata')))
 
-        cmd = "ssh -A -t {0}{1}@{2} ssh -A -t {0}{1}@{3}".format(
+        cmd = "ssh -A -t {0}{1}@{2} ssh -A -t {0}{1}@{3} {4}".format(
             ssh_options,
             user,
             master_public_ip,
-            host)
+            host,
+            command)
     else:
-        cmd = "ssh -t {0}{1}@{2}".format(
+        cmd = "ssh -t {0}{1}@{2} {3}".format(
             ssh_options,
             user,
-            host)
+            host,
+            command)
 
     emitter.publish(DefaultError("Running `{}`".format(cmd)))
     if (not master_proxy) and master_public_ip:
