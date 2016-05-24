@@ -14,6 +14,7 @@ from .common import (add_app, app, assert_command, assert_lines,
                      exec_command, remove_app, watch_all_deployments)
 
 SLEEP_COMPLETED = 'tests/data/marathon/apps/sleep-completed.json'
+SLEEP_COMPLETED1 = 'tests/data/marathon/apps/sleep-completed1.json'
 SLEEP1 = 'tests/data/marathon/apps/sleep1.json'
 SLEEP2 = 'tests/data/marathon/apps/sleep2.json'
 FOLLOW = 'tests/data/file/follow.json'
@@ -77,13 +78,13 @@ def test_task_table():
 
 def test_task_completed():
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'task', '--completed', '--json'])
+        ['dcos', 'task', '--completed', '--json', '*-app*'])
     assert returncode == 0
     assert stderr == b''
     assert len(json.loads(stdout.decode('utf-8'))) > NUM_TASKS
 
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'task', '--json'])
+        ['dcos', 'task', '--json', '*-app*'])
     assert returncode == 0
     assert stderr == b''
     assert len(json.loads(stdout.decode('utf-8'))) == NUM_TASKS
@@ -257,6 +258,30 @@ def test_ls_bad_path():
         returncode=1)
 
 
+def test_ls_completed():
+    # create a completed task
+    with app(SLEEP_COMPLETED1, 'test-app-completed1'):
+        # get its task id
+        task_id_completed = _get_completed_task_id('test-app-completed1')
+
+    """ Test `dcos task ls --completed` """
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'task', 'ls', task_id_completed])
+
+    err = b'Cannot find a task with ID containing "test-app-completed1'
+    assert returncode == 1
+    assert stdout == b''
+    assert stderr.startswith(err)
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'task', 'ls', '--completed', task_id_completed])
+
+    out = b'stderr  stderr.logrotate.conf  stdout  stdout.logrotate.conf\n'
+    assert returncode == 0
+    assert stdout == out
+    assert stderr == b''
+
+
 def _mark_non_blocking(file_):
     fcntl.fcntl(file_.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
 
@@ -273,3 +298,13 @@ def _uninstall_helloworld(args=[]):
 
 def _uninstall_sleep(app_id='test-app'):
     assert_command(['dcos', 'marathon', 'app', 'remove', app_id])
+
+
+def _get_completed_task_id(app_id='test-app-completed'):
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'task', '--json', app_id])
+    assert returncode == 0
+    tasks = json.loads(stdout.decode('utf-8'))
+    assert len(tasks) == 1
+    task_id = tasks[0]['id']
+    return task_id
