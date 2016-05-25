@@ -205,7 +205,7 @@ def _ssh(leader, slave, option, config_file, user, master_proxy):
                                  "'PUBLIC_IPV4' at {}").format(
                                      dcos_client.get_dcos_url('metadata')))
 
-        cmd = "ssh -A -t {0}{1}@{2} ssh -A -t {1}@{3}".format(
+        cmd = "ssh -A -t {0}{1}@{2} ssh -A -t {0}{1}@{3}".format(
             ssh_options,
             user,
             master_public_ip,
