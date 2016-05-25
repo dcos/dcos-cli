@@ -18,7 +18,7 @@ Options:
         * info     Prints informational, warning, error, and critical messages.
         * warning  Prints warning, error, and critical messages.
         * error    Prints error and critical messages.
-         * critical Prints only critical messages to stderr.
+        * critical Prints only critical messages to stderr.
     --version
         Print version information
 
