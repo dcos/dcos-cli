@@ -1,5 +1,5 @@
 Description:
-    Deploy and manage applications to DCOS.
+    Deploy and manage applications to DC/OS.
 
 Usage:
     dcos marathon --config-schema
@@ -33,7 +33,7 @@ Usage:
 
 Commands:
     about
-        Print info.json for DCOS Marathon.
+        Print info.json for DC/OS Marathon.
     app add
         Add an application.
     app list

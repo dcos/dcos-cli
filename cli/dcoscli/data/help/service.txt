@@ -1,5 +1,5 @@
 Description:
-    Manage DCOS services.
+    Manage DC/OS services.
 
 Usage:
     dcos service --help
@@ -31,7 +31,7 @@ Options:
     --info
         Print a short description of this subcommand.
     --json
-        Print JSON-formatted list of DCOS services.
+        Print JSON-formatted list of DC/OS services.
     --lines=N
         Print the last N lines, where 10 is the default.
     --ssh-config-file=<path>
@@ -44,6 +44,6 @@ Positional Arguments:
     <file>
         The service log filename for the Mesos sandbox. The default is stdout.
     <service>
-        The DCOS Service name.
+        The DC/OS Service name.
     <service-id>
-        The DCOS Service ID.
+        The DC/OS Service ID.

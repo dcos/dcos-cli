@@ -1,5 +1,5 @@
 Description:
-    The Mesosphere Datacenter Operating System (DCOS) spans all of the machines in
+    The Mesosphere Datacenter Operating System (DC/OS) spans all of the machines in
 your datacenter or cloud and treats them as a single, shared set of resources.
 
 Usage:
@@ -24,7 +24,7 @@ Options:
 
 Environment Variables:
     DCOS_CONFIG
-        Set the path to the DCOS configuration file. By default, this variable
+        Set the path to the DC/OS configuration file. By default, this variable
         is set to ~/.dcos/dcos.toml.
     DCOS_DEBUG
         Indicates whether to print additional debug messages to stdout. By

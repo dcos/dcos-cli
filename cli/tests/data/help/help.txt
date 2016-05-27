@@ -1,5 +1,5 @@
 Description:
-    Display help information about DCOS.
+    Display help information about DC/OS.
 
 Usage:
     dcos help

@@ -1,5 +1,5 @@
 Description:
-    Manage the DCOS configuration file.
+    Manage the DC/OS configuration file.
 
 Usage:
     dcos config --help
@@ -11,9 +11,9 @@ Usage:
 
 Commands:
     set
-        Add or set a DCOS configuration property.
+        Add or set a DC/OS configuration property.
     show
-        Print the DCOS configuration file contents.
+        Print the DC/OS configuration file contents.
     unset
         Remove a property from the configuration file.
     validate

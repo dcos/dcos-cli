@@ -214,7 +214,7 @@ def _mesos_files(tasks, file_, client):
     :type tasks: [mesos.Task]
     :param file_: file path to read
     :type file_: str
-    :param client: DCOS client
+    :param client: DC/OS client
     :type client: mesos.DCOSClient
     :returns: MesosFile objects
     :rtype: [mesos.MesosFile]

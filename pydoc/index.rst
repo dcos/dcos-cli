@@ -1,4 +1,4 @@
-Welcome to DCOS Command Line Interface's documentation!
+Welcome to DC/OS Command Line Interface's documentation!
 =======================================================
 
 .. Figure out a way to import the README.rst

@@ -184,7 +184,7 @@ def deployment_table(deployments):
 
 
 def service_table(services):
-    """Returns a PrettyTable representation of the provided DCOS services.
+    """Returns a PrettyTable representation of the provided DC/OS services.
 
     :param services: services to render
     :type services: [Framework]
@@ -258,7 +258,7 @@ def group_table(groups):
 
 
 def package_table(packages):
-    """Returns a PrettyTable representation of the provided DCOS packages
+    """Returns a PrettyTable representation of the provided DC/OS packages
 
     :param packages: packages to render
     :type packages: [dict]
@@ -287,7 +287,7 @@ def package_table(packages):
 
 
 def package_search_table(search_results):
-    """Returns a PrettyTable representation of the provided DCOS package
+    """Returns a PrettyTable representation of the provided DC/OS package
     search results
 
     :param search_results: search_results, in the format of
@@ -322,7 +322,7 @@ def package_search_table(search_results):
 
 
 def slave_table(slaves):
-    """Returns a PrettyTable representation of the provided DCOS slaves
+    """Returns a PrettyTable representation of the provided DC/OS slaves
 
     :param slaves: slaves to render.  dicts from /mesos/state-summary
     :type slaves: [dict]

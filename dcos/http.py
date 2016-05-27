@@ -353,7 +353,7 @@ def _get_auth_credentials(username, hostname):
 
 def get_auth_scheme(response):
     """Return authentication scheme and realm requested by server for 'Basic'
-       or 'acsjwt' (DCOS acs auth) or 'oauthjwt' (DCOS acs oauth) type
+       or 'acsjwt' (DC/OS acs auth) or 'oauthjwt' (DC/OS acs oauth) type
 
     :param response: requests.response
     :type response: requests.Response
@@ -399,7 +399,7 @@ def _get_http_auth(response, url, auth_scheme):
     if 'www-authenticate' in response.headers:
         if auth_scheme not in ['basic', 'acsjwt', 'oauthjwt']:
             msg = ("Server responded with an HTTP 'www-authenticate' field of "
-                   "'{}', DCOS only supports 'Basic'".format(
+                   "'{}', DC/OS only supports 'Basic'".format(
                        response.headers['www-authenticate']))
             raise DCOSException(msg)
 

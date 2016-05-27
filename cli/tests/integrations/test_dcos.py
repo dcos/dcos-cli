@@ -31,7 +31,7 @@ def test_log_level_flag():
         ['dcos', '--log-level=info', 'config', '--info'])
 
     assert returncode == 0
-    assert stdout == b"Manage the DCOS configuration file\n"
+    assert stdout == b"Manage the DC/OS configuration file\n"
 
 
 def test_capital_log_level_flag():
@@ -39,7 +39,7 @@ def test_capital_log_level_flag():
         ['dcos', '--log-level=INFO', 'config', '--info'])
 
     assert returncode == 0
-    assert stdout == b"Manage the DCOS configuration file\n"
+    assert stdout == b"Manage the DC/OS configuration file\n"
 
 
 def test_invalid_log_level_flag():

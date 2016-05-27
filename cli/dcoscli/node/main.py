@@ -83,7 +83,7 @@ def _info():
 
 
 def _list(json_):
-    """List DCOS nodes
+    """List DC/OS nodes
 
     :param json_: If true, output json.
         Otherwise, output a human readable table.
@@ -156,7 +156,7 @@ def _mesos_files(leader, slave_id):
 
 
 def _ssh(leader, slave, option, config_file, user, master_proxy, command):
-    """SSH into a DCOS node using the IP addresses found in master's
+    """SSH into a DC/OS node using the IP addresses found in master's
        state.json
 
     :param leader: True if the user has opted to SSH into the leading
@@ -227,6 +227,6 @@ def _ssh(leader, slave, option, config_file, user, master_proxy, command):
     if (not master_proxy) and master_public_ip:
         emitter.publish(
             DefaultError("If you are running this command from a separate "
-                         "network than DCOS, consider using `--master-proxy`"))
+                         "network than DC/OS, consider using `--master-proxy`"))
 
     return subprocess.call(cmd, shell=True)

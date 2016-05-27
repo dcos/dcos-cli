@@ -545,7 +545,7 @@ def _get_package_manager():
     if cosmos_manager.enabled():
         return cosmos_manager
     else:
-        msg = ("This version of the DCOS CLI is not supported for your "
+        msg = ("This version of the DC/OS CLI is not supported for your "
                "cluster. Please downgrade the CLI to an older version: "
                "https://dcos.io/docs/usage/cli/update/#downgrade"
                )

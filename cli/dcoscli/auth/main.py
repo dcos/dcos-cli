@@ -77,7 +77,7 @@ def _login():
     _logout()
     dcos_url = config.get_config_val("core.dcos_url")
     if dcos_url is None:
-        msg = ("Please provide the url to your DCOS cluster: "
+        msg = ("Please provide the url to your DC/OS cluster: "
                "`dcos config set core.dcos_url`")
         raise DCOSException(msg)
 

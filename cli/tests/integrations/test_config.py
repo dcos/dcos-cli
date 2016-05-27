@@ -28,7 +28,7 @@ def test_help():
 
 
 def test_info():
-    stdout = b'Manage the DCOS configuration file\n'
+    stdout = b'Manage the DC/OS configuration file\n'
     assert_command(['dcos', 'config', '--info'],
                    stdout=stdout)
 

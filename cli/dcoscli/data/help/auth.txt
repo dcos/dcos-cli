@@ -1,5 +1,5 @@
 Description:
-    Authenticate to DCOS cluster
+    Authenticate to DC/OS cluster
 
 Usage:
     dcos auth --help
@@ -9,9 +9,9 @@ Usage:
 
 Commands:
     login
-        Login to your DCOS Cluster.
+        Login to your DC/OS Cluster.
     logout
-        Logout of your DCOS Cluster.
+        Logout of your DC/OS Cluster.
 
 Options:
     -h, --help

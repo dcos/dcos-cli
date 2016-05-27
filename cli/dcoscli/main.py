@@ -23,9 +23,9 @@ def main():
 
 
 def _get_versions(dcos_url):
-    """Print DCOS and DCOS-CLI versions
+    """Print DC/OS and DC/OS-CLI versions
 
-    :param dcos_url: url to DCOS cluster
+    :param dcos_url: url to DC/OS cluster
     :type dcos_url: str
     :returns: Process status
     :rtype: int

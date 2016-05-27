@@ -1,5 +1,5 @@
 def package_fixture():
-    """ DCOS package fixture.
+    """ DC/OS package fixture.
 
     :rtype: dict
     """
@@ -11,7 +11,7 @@ def package_fixture():
         "command": {
             "name": "helloworld"
         },
-        "description": "Example DCOS application package",
+        "description": "Example DC/OS application package",
         "maintainer": "support@mesosphere.io",
         "name": "helloworld",
         "packageSource":
@@ -30,7 +30,7 @@ def package_fixture():
 
 
 def search_result_fixture():
-    """ DCOS package search result fixture.
+    """ DC/OS package search result fixture.
 
     :rtype: dict
     """
@@ -81,7 +81,7 @@ def search_result_fixture():
         },
         {
             "currentVersion": "0.1.0",
-            "description": "Example DCOS application package",
+            "description": "Example DC/OS application package",
             "framework": False,
             "name": "helloworld",
             "tags": [
