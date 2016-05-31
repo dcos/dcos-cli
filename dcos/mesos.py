@@ -51,8 +51,11 @@ class DCOSClient(object):
         """
         if self._dcos_url:
             return urllib.parse.urljoin(self._dcos_url, path)
+        elif self._mesos_master_url:
+            mesos_master_url = ':'.join(self._mesos_master_url.split(':')[:2])
+            return urllib.parse.urljoin(mesos_master_url + '/', path)
         else:
-            raise util.missing_config_exception('core.dcos_url')
+            raise util.missing_config_exception(['core.dcos_url'])
 
     def master_url(self, path):
         """ Create a master URL
