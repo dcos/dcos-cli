@@ -342,12 +342,16 @@ def _get_auth_credentials(username, hostname):
     :rtype: str, str
     """
 
+    username = os.environ['DCOS_USERNAME']
+    password = os.environ['DCOS_PASSWORD']
+
     if username is None:
         sys.stdout.write("{}'s username: ".format(hostname))
         sys.stdout.flush()
         username = sys.stdin.readline().strip().lower()
 
-    password = getpass.getpass("{}@{}'s password: ".format(username, hostname))
+    if password is None:
+        password = getpass.getpass("{}@{}'s password: ".format(username, hostname))
 
     return username, password
 
