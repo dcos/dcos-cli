@@ -342,8 +342,14 @@ def _get_auth_credentials(username, hostname):
     :rtype: str, str
     """
 
-    username = os.environ['DCOS_USERNAME']
-    password = os.environ['DCOS_PASSWORD']
+    try:
+        username = os.environ['DCOS_USERNAME']
+    except KeyError:
+        username = None
+    try:
+        password = os.environ['DCOS_PASSWORD']
+    except KeyError:
+        password = None
 
     if username is None:
         sys.stdout.write("{}'s username: ".format(hostname))
