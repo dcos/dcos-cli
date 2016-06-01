@@ -1,4 +1,6 @@
-from dcos import mesos
+import os
+
+from dcos import constants, mesos
 from dcos.errors import DCOSException
 from dcoscli.log import log_files
 from dcoscli.task.main import main
@@ -8,6 +10,15 @@ from mock import MagicMock, patch
 
 from .common import assert_mock
 
+@pytest.fixture
+def env():
+    r = os.environ.copy()
+    r.update({
+        constants.PATH_ENV: os.environ[constants.PATH_ENV],
+        constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "dcos.toml"),
+    })
+
+    return r
 
 def test_log_master_unavailable():
     """ Test master's state.json being unavailable """
