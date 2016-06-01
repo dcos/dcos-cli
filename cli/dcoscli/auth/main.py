@@ -75,7 +75,7 @@ def _login():
 
     # every call to login will generate a new token if applicable
     _logout()
-    conf = util.get_config()
+    conf = config.get_config()
     dcos_url = conf.get("core.dcos_url")
     if dcos_url is None:
         msg = ("Please provide the url to your DCOS cluster: "
@@ -103,6 +103,6 @@ def _logout():
     :rtype: int
     """
 
-    if util.get_config().get("core.dcos_acs_token") is not None:
+    if config.get_config().get("core.dcos_acs_token") is not None:
         config.unset("core.dcos_acs_token")
     return 0

@@ -5,8 +5,8 @@ import sys
 import dcoscli
 import docopt
 import pkg_resources
-from dcos import (cmds, cosmospackage, emitting, http, options, package,
-                  subcommand, util)
+from dcos import (cmds, config, cosmospackage, emitting, http, options,
+                  package, subcommand, util)
 from dcos.errors import DCOSException
 from dcoscli import tables
 from dcoscli.subcommand import default_command_info, default_doc
@@ -524,10 +524,10 @@ def _get_cosmos_url():
     :returns: cosmos base url
     :rtype: str
     """
-    config = util.get_config()
-    cosmos_url = config.get("package.cosmos_url")
+    toml_config = config.get_config()
+    cosmos_url = toml_config.get("package.cosmos_url")
     if cosmos_url is None:
-        cosmos_url = util.get_config_vals(['core.dcos_url'], config)[0]
+        cosmos_url = config.get_config_vals(['core.dcos_url'], toml_config)[0]
     return cosmos_url
 
 

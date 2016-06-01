@@ -172,7 +172,7 @@ def _request_with_auth(response,
             elif response.status_code == 401 and \
                     auth_scheme in ["acsjwt", "oauthjwt"]:
 
-                if util.get_config().get("core.dcos_acs_token") is not None:
+                if config.get_config().get("core.dcos_acs_token") is not None:
                     msg = ("Your core.dcos_acs_token is invalid. "
                            "Please run: `dcos auth login`")
                     raise DCOSException(msg)
@@ -472,7 +472,7 @@ def _get_dcos_auth(auth_scheme, username, password, hostname):
     :rtype: AuthBase
     """
 
-    toml_config = util.get_config()
+    toml_config = config.get_config()
     token = toml_config.get("core.dcos_acs_token")
     if token is None:
         dcos_url = toml_config.get("core.dcos_url")
