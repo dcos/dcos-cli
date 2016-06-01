@@ -43,10 +43,8 @@ class DCOSClient(object):
         :returns: DCOS URL
         :rtype: str
         """
-        if self._dcos_url:
-            return urllib.parse.urljoin(self._dcos_url, path)
-        else:
-            raise util.missing_config_exception(['core.dcos_url'])
+
+        return urllib.parse.urljoin(self._dcos_url, path)
 
     def master_url(self, path):
         """ Create a master URL
@@ -77,11 +75,11 @@ class DCOSClient(object):
 
         """
 
-        if self._dcos_url:
+        if private_url:
+            return urllib.parse.urljoin(private_url, path)
+        else:
             return urllib.parse.urljoin(self._dcos_url,
                                         'slave/{}/{}'.format(slave_id, path))
-        else:
-            return urllib.parse.urljoin(private_url, path)
 
     def get_master_state(self):
         """Get the Mesos master state json object
