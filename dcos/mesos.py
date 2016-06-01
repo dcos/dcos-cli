@@ -30,7 +30,9 @@ class DCOSClient(object):
 
     def __init__(self):
         config = util.get_config()
-        self._dcos_url = util.get_config_vals(['core.dcos_url'], config)[0]
+        self._dcos_url = config.get("dcos_url")
+        if self._dcos_url is None:
+            raise config.missing_config_exception(['core.dcos_url'])
         self._mesos_master_url = config.get('core.mesos_master_url')
 
         self._timeout = config.get('core.timeout')
