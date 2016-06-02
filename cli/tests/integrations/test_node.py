@@ -4,23 +4,12 @@ import re
 
 import dcos.util as util
 import six
-from dcos import constants, mesos
+from dcos import mesos
 from dcos.util import create_schema
-
-import pytest
 
 from ..fixtures.node import slave_fixture
 from .common import assert_command, assert_lines, exec_command, ssh_output
 
-@pytest.fixture
-def env():
-    r = os.environ.copy()
-    r.update({
-        constants.PATH_ENV: os.environ[constants.PATH_ENV],
-        constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "dcos.toml"),
-    })
-
-    return r
 
 def test_help():
     with open('tests/data/help/node.txt') as content:
@@ -33,8 +22,8 @@ def test_info():
     assert_command(['dcos', 'node', '--info'], stdout=stdout)
 
 
-def test_node(env):
-    returncode, stdout, stderr = exec_command(['dcos', 'node', '--json'], env=env)
+def test_node():
+    returncode, stdout, stderr = exec_command(['dcos', 'node', '--json'])
 
     assert returncode == 0
     assert stderr == b''
@@ -45,8 +34,8 @@ def test_node(env):
         assert not util.validate_json(node, schema)
 
 
-def test_node_table(env):
-    returncode, stdout, stderr = exec_command(['dcos', 'node'], env=env)
+def test_node_table():
+    returncode, stdout, stderr = exec_command(['dcos', 'node'])
 
     assert returncode == 0
     assert stderr == b''
@@ -67,22 +56,20 @@ def test_node_log_slave():
     assert_lines(['dcos', 'node', 'log', '--mesos-id={}'.format(slave_id)], 10)
 
 
-def test_node_log_missing_slave(env):
+def test_node_log_missing_slave():
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'node', 'log', '--mesos-id=bogus'],
-        env=env)
+        ['dcos', 'node', 'log', '--mesos-id=bogus'])
 
     assert returncode == 1
     assert stdout == b''
     assert stderr == b'No slave found with ID "bogus".\n'
 
 
-def test_node_log_leader_slave(env):
+def test_node_log_leader_slave():
     slave_id = _node()[0]['id']
 
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'node', 'log', '--leader', '--mesos-id={}'.format(slave_id)],
-        env=env)
+        ['dcos', 'node', 'log', '--leader', '--mesos-id={}'.format(slave_id)])
 
     assert returncode == 0
     assert stderr == b''
@@ -136,8 +123,8 @@ def test_node_ssh_user():
 
 
 def test_node_ssh_master_proxy_no_agent():
-    os_env = os.environ.copy()
-    os_env.pop('SSH_AUTH_SOCK', None)
+    env = os.environ.copy()
+    env.pop('SSH_AUTH_SOCK', None)
     stderr = (b"There is no SSH_AUTH_SOCK env variable, which likely means "
               b"you aren't running `ssh-agent`.  `dcos node ssh "
               b"--master-proxy` depends on `ssh-agent` to safely use your "
@@ -147,7 +134,7 @@ def test_node_ssh_master_proxy_no_agent():
     assert_command(['dcos', 'node', 'ssh', '--master-proxy', '--leader'],
                    stderr=stderr,
                    returncode=1,
-                   env=os_env)
+                   env=env)
 
 
 def test_node_ssh_master_proxy():
