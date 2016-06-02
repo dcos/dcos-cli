@@ -25,7 +25,6 @@ def test_log_master_unavailable(config_mock):
 def test_log_no_tasks():
     """ Test slave's state.json being unavailable """
     with patch('dcos.mesos.DCOSClient.get_master_state', return_value={}), \
-            patch('dcos.mesos.DCOSClient.get_master_state', return_value={}), \
             patch('dcos.mesos.Master.tasks', return_value={}):
 
         stderr = b"""No matching tasks. Exiting.\n"""

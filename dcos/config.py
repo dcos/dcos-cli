@@ -2,6 +2,7 @@ import collections
 import copy
 import json
 import os
+import stat
 
 import pkg_resources
 import toml
@@ -152,6 +153,21 @@ def set_val(name, value):
     return toml_config, msg
 
 
+def _enforce_config_permissions(path):
+    """Enfore 600 permissions on config file
+
+    :param path: Path to the TOML file
+    :type path: str
+    :rtype: None
+    """
+    permissions = oct(stat.S_IMODE(os.lstat(path).st_mode))
+    if permissions not in ['0o600', '0600']:
+        msg = ("Permissions '{}' for configuration file '{}' are too open. "
+               "File must only be accessible by owner. "
+               "Aborting...".format(permissions, path))
+        raise DCOSException(msg)
+
+
 def load_from_path(path, mutable=False):
     """Loads a TOML file from the path
 
@@ -164,6 +180,7 @@ def load_from_path(path, mutable=False):
     """
 
     util.ensure_file_exists(path)
+    _enforce_config_permissions(path)
     with util.open_file(path, 'r') as config_file:
         try:
             toml_obj = toml.loads(config_file.read())
@@ -181,6 +198,7 @@ def save(toml_config):
 
     serial = toml.dumps(toml_config._dictionary)
     path = get_config_path()
+    _enforce_config_permissions(path)
     with util.open_file(path, 'w') as config_file:
         config_file.write(serial)
 
