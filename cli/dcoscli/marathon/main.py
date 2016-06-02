@@ -571,6 +571,10 @@ def _deploy(deploy_resource, properties, force):
     """
     :param deploy_resource: optional filename for the application/group resource
     :type deploy_resource: str
+    :param properties: json items used to update application/group
+    :type properties: [str]
+    :param force: whether to override running deployments
+    :type force: bool
     :returns: process return code
     :rtype: int
     """
