@@ -11,12 +11,7 @@ from .common import assert_mock
 
 @patch('dcos.util.get_config')
 def test_log_master_unavailable(config_mock):
-    config_mock.return_value = {
-        'core.dcos_url': 'http://dcos.snakeoil.mesosphere.com',
-        'timeout': 5,
-        'reporting': False,
-        'ssl_verify': "false"
-    }
+    config_mock.return_value = {'core.dcos_url': 'foo'}
 
     """ Test master's state.json being unavailable """
     client = mesos.DCOSClient()
