@@ -78,7 +78,7 @@ class DCOSClient(object):
 
         """
 
-        if private_url:
+        if self._mesos_master_url:
             return urllib.parse.urljoin(private_url, path)
         else:
             return urllib.parse.urljoin(self._dcos_url,
