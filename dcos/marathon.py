@@ -22,7 +22,7 @@ def create_client(toml_config=None):
         toml_config = config.get_config()
 
     marathon_url = _get_marathon_url(toml_config)
-    timeout = toml_config.get('core.timeout', http.DEFAULT_TIMEOUT)
+    timeout = config.get_config_val('core.timeout') or http.DEFAULT_TIMEOUT
 
     logger.info('Creating marathon client with: %r', marathon_url)
     return Client(marathon_url, timeout=timeout)
@@ -36,9 +36,11 @@ def _get_marathon_url(toml_config):
     :rtype: str
     """
 
-    marathon_url = toml_config.get('marathon.url')
+    marathon_url = config.get_config_val('marathon.url', toml_config)
     if marathon_url is None:
-        dcos_url = config.get_config_vals(['core.dcos_url'], toml_config)[0]
+        dcos_url = config.get_config_val('core.dcos_url', toml_config)
+        if dcos_url is None:
+            raise config.missing_config_exception(['core.dcos_url'])
         marathon_url = urllib.parse.urljoin(dcos_url, 'service/marathon/')
 
     return marathon_url

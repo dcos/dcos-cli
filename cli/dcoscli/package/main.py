@@ -525,9 +525,11 @@ def _get_cosmos_url():
     :rtype: str
     """
     toml_config = config.get_config()
-    cosmos_url = toml_config.get("package.cosmos_url")
+    cosmos_url = config.get_config_val("package.cosmos_url", toml_config)
     if cosmos_url is None:
-        cosmos_url = config.get_config_vals(['core.dcos_url'], toml_config)[0]
+        cosmos_url = config.get_config_val("core.dcos_url", toml_config)
+        if cosmos_url is None:
+            raise config.missing_config_exception(["core.dcos_url"])
     return cosmos_url
 
 

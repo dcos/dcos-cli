@@ -321,7 +321,7 @@ def delete_zk_node(znode):
     :rtype: None
     """
 
-    dcos_url = config.get_config_vals(['core.dcos_url'])[0]
+    dcos_url = config.get_config_val('core.dcos_url')
     znode_url = urllib.parse.urljoin(
         dcos_url,
         '/exhibitor/exhibitor/v1/explorer/znode/{}'.format(znode))

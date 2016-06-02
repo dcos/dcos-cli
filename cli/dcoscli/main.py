@@ -4,7 +4,6 @@ import sys
 
 import dcoscli
 import docopt
-import six
 from dcos import config, constants, emitting, errors, http, subcommand, util
 from dcos.errors import DCOSException
 from dcoscli.subcommand import SubcommandMain, default_doc
@@ -57,8 +56,6 @@ def _main():
     signal.signal(signal.SIGINT, signal_handler)
 
     http.silence_requests_warnings()
-    toml_config = config.get_config()
-    set_ssl_info_env_vars(toml_config)
 
     args = docopt.docopt(default_doc("dcos"), options_first=True)
 
@@ -72,7 +69,7 @@ def _main():
     util.configure_process_from_environ()
 
     if args['--version']:
-        return _get_versions(toml_config.get("core.dcos_url"))
+        return _get_versions(config.get_config_val("core.dcos_url"))
 
     command = args['<command>']
 
@@ -114,22 +111,6 @@ def signal_handler(signal, frame):
     emitter.publish(
         errors.DefaultError("User interrupted command with Ctrl-C"))
     sys.exit(0)
-
-
-def set_ssl_info_env_vars(toml_config):
-    """Set SSL info from toml_config to environment variable if enviornment
-       variable doesn't exist
-
-    :param toml_config: config
-    :type toml_config: Toml
-    :rtype: None
-    """
-
-    if 'core.ssl_verify' in toml_config and (
-            not os.environ.get(constants.DCOS_SSL_VERIFY_ENV)):
-
-        os.environ[constants.DCOS_SSL_VERIFY_ENV] = six.text_type(
-            toml_config['core.ssl_verify'])
 
 if __name__ == "__main__":
     main()

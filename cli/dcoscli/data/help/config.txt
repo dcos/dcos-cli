@@ -31,3 +31,12 @@ Positional Arguments:
         The name of the property.
     <value>
         The value of the property.
+
+Environment Variables:
+    Configuration properties all have corresponding environment variables. If a
+    property is in the "core" section (ex. "core.foo"), it corresponds to
+    environment variable DCOS_FOO. All other properties (ex "foo.bar")
+    correspond to enviroment variable DCOS_FOO_BAR.
+
+    Environment variables take precendence over corresponding configuration
+    property.
