@@ -603,7 +603,7 @@ def _deploy(deploy_resource, properties, force):
         logger.info("Group '{}' already exists, performing a rolling update".format(resource_id))
 
         properties = _parse_properties(properties)
-        deployment = client.update_app(resource_id, properties, force)
+        deployment = client.update_group(resource_id, properties, force)
 
         emitter.publish('Created deployment {}'.format(deployment))
         return 0
