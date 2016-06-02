@@ -32,6 +32,7 @@ Using the CLI without DCOS
 
 You may optionally configure the DCOS CLI to work with open source Mesos and
 Marathon_ by setting the following properties::
+
     dcos config set core.mesos_master_url http://<mesos-master-host>:5050
     dcos config set marathon.url http://<marathon-host>:8080
 
@@ -169,4 +170,4 @@ These packages are now available to be installed by the DCOS CLI installation sc
 .. _publish_to_pypi.sh script: https://github.com/mesosphere/dcos-cli/blob/master/bin/publish_to_pypi.sh
 .. _setup: https://github.com/mesosphere/dcos-helloworld#setup
 .. _virtualenv: https://virtualenv.pypa.io/en/latest/
-.. _win-bash: https://sourceforge.net/projects/win-bash/files/shell-complete/latest
+.. _win_bash: https://sourceforge.net/projects/win-bash/files/shell-complete/latest
