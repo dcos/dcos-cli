@@ -158,6 +158,11 @@ def _cmds():
             function=_group_scale),
 
         cmds.Command(
+            hierarchy=['marathon', 'deploy'],
+            arg_keys=['<deploy-resource>', '<properties>', '--force'],
+            function=_deploy),
+
+        cmds.Command(
             hierarchy=['marathon', 'about'],
             arg_keys=[],
             function=_about),
@@ -562,6 +567,58 @@ def _group_scale(group_id, scale_factor, force):
     emitter.publish('Created deployment {}'.format(deployment))
     return 0
 
+def _deploy(deploy_resource, properties, force):
+    """
+    :param deploy_resource: optional filename for the application/group resource
+    :type deploy_resource: str
+    :returns: process return code
+    :rtype: int
+    """
+    resource = _get_resource(deploy_resource)
+
+    # Add resource to marathon
+    client = marathon.create_client()
+
+    # Check that the resource doesn't exist
+    resource_id = client.normalize_app_id(resource['id'])
+
+    try:
+        client.get_app(resource_id)
+    except DCOSException as e:
+        logger.exception(e)
+    else:
+        logger.info("Application '{}' already exists, performing a rolling update".format(resource_id))
+
+        properties = _parse_properties(properties)
+        deployment = client.update_app(resource_id, properties, force)
+
+        emitter.publish('Created deployment {}'.format(deployment))
+        return 0
+
+    try:
+        client.get_group(resource_id)
+    except DCOSException as e:
+        logger.exception(e)
+    else:
+        logger.info("Group '{}' already exists, performing a rolling update".format(resource_id))
+
+        properties = _parse_properties(properties)
+        deployment = client.update_app(resource_id, properties, force)
+
+        emitter.publish('Created deployment {}'.format(deployment))
+        return 0
+
+    try:
+        client.add_app(resource)
+    except DCOSException as e:
+        logger.exception(e)
+
+    try:
+        client.create_group(resource)
+    except DCOSException as e:
+        logger.exception(e)
+
+    return 0
 
 def _parse_properties(properties):
     """
