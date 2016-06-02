@@ -266,6 +266,28 @@ def test_bad_port_fail_url_validation(env):
                          'http://localhost:bad_port/', env)
 
 
+def test_dcos_acs_token_env_var(env):
+    env['DCOS_ACS_TOKEN'] = 'foobar'
+    msg = (b'Your core.dcos_acs_token is invalid. '
+           b'Please run: `dcos auth login`\n')
+    assert_command(['dcos', 'package', 'list'],
+                   returncode=1,
+                   stderr=msg,
+                   env=env)
+    env.pop('DCOS_ACS_TOKEN')
+
+
+def test_dcos_dcos_acs_token_env_var(env):
+    env['DCOS_DCOS_ACS_TOKEN'] = 'foobar'
+    msg = (b'Your core.dcos_acs_token is invalid. '
+           b'Please run: `dcos auth login`\n')
+    assert_command(['dcos', 'package', 'list'],
+                   returncode=1,
+                   stderr=msg,
+                   env=env)
+    env.pop('DCOS_DCOS_ACS_TOKEN')
+
+
 @pytest.mark.skipif(
     True, reason='Network tests are unreliable')
 def test_timeout(env):

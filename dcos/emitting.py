@@ -172,7 +172,7 @@ def _page(output, pager_command=None):
     num_lines = output.count('\n')
     exceeds_tty_height = pager.getheight() - 1 < num_lines
 
-    paginate = config.get_config().get("core.pagination", True)
+    paginate = config.get_config_val("core.pagination") or True
     if exceeds_tty_height and paginate:
         pydoc.pipepager(output, cmd=pager_command)
     else:
