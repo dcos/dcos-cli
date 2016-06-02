@@ -32,8 +32,3 @@ Environment Variables:
     DCOS_LOG_LEVEL
         Prints log messages to stderr at or above the level indicated. This is
         equivalent to the --log-level command-line option.
-    DCOS_SSL_VERIFY
-        Indicates whether to verify SSL certificates for HTTPS (true) or set the
-        path to the SSL certificates (false). By default, this is variable is
-        set to true. This is equivalent to setting the `core.ssl_config` option
-        in the DCOS configuration file.
