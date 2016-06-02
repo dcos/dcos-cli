@@ -9,9 +9,14 @@ from mock import MagicMock, patch
 from .common import assert_mock
 
 
-def test_log_master_unavailable():
+@patch('dcos.mesos.DCOSClient')
+def test_log_master_unavailable(mock):
     """ Test master's state.json being unavailable """
-    client = mesos.DCOSClient()
+    mock._dcos_url = "http://dcos.snakeoil.mesosphere.com"
+    mock._mesos_master_url = None
+    mock._timeout = "5"
+
+    client = mock.return_value
     client.get_master_state = _mock_exception()
 
     with patch('dcos.mesos.DCOSClient', return_value=client):
