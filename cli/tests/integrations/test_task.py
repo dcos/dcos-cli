@@ -233,13 +233,18 @@ def test_ls():
 
 
 def test_ls_multiple_tasks():
+    ls_line = 'stderr  stderr.logrotate.conf  stdout  stdout.logrotate.conf'
     returncode, stdout, stderr = exec_command(
         ['dcos', 'task', 'ls', 'test-app'])
+    lines = stdout.decode('utf-8').split('\n')
+    assert len(lines) == 5
+    assert re.match('===>.*<===', lines[0])
+    assert re.match(ls_line, lines[1])
+    assert re.match('===>.*<===', lines[2])
+    assert re.match(ls_line, lines[3])
 
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr.startswith(b'There are multiple tasks with ID matching '
-                             b'[test-app]. Please choose one:\n\t')
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'task', 'ls', 'test-app'])
 
 
 def test_ls_long():

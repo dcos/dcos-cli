@@ -181,12 +181,20 @@ def _ls(task, path, long_, completed):
         path = path[1:]
 
     dcos_client = mesos.DCOSClient()
-    task_obj = mesos.get_master(dcos_client).task(
-                   fltr=task, completed=completed)
-    dir_ = posixpath.join(task_obj.directory(), path)
+    task_objects = mesos.get_master(dcos_client).tasks(
+        fltr=task,
+        completed=completed)
+
+    if len(task_objects) == 0:
+        raise DCOSException(
+            'Cannot find a task with ID containing "{}"'.format(task))
 
     try:
-        files = dcos_client.browse(task_obj.slave(), dir_)
+        all_files = []
+        for task_obj in task_objects:
+            dir_ = posixpath.join(task_obj.directory(), path)
+            all_files += [
+                (task_obj['id'], dcos_client.browse(task_obj.slave(), dir_))]
     except DCOSHTTPException as e:
         if e.response.status_code == 404:
             raise DCOSException(
@@ -194,7 +202,10 @@ def _ls(task, path, long_, completed):
         else:
             raise
 
-    if files:
+    add_header = len(all_files) > 1
+    for (task_id, files) in all_files:
+        if add_header:
+            emitter.publish('===> {} <==='.format(task_id))
         if long_:
             emitter.publish(tables.ls_long_table(files))
         else:
