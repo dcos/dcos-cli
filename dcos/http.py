@@ -43,8 +43,10 @@ def _verify_ssl(verify=None):
     :rtype: bool | str
     """
 
-    if verify is None and constants.DCOS_SSL_VERIFY_ENV in os.environ:
-        verify = os.environ[constants.DCOS_SSL_VERIFY_ENV]
+    ssl_verify_config = util.get_config().get("core.ssl_verify")
+    if verify is None and (constants.DCOS_SSL_VERIFY_ENV in os.environ or
+                           ssl_verify_config is not None):
+        verify = os.environ[constants.DCOS_SSL_VERIFY_ENV] or ssl_verify_config
         if verify.lower() == "true":
             verify = True
         elif verify.lower() == "false":
