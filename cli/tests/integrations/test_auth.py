@@ -46,7 +46,5 @@ def test_logout_with_token(env):
             stderr=stderr,
             env=env)
 
-        stderr = b'Removed [core.dcos_acs_token]\n'
         assert_command(['dcos', 'auth', 'logout'],
-                       stderr=stderr,
                        env=env)

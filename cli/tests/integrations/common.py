@@ -7,7 +7,7 @@ import subprocess
 import time
 
 import six
-from dcos import http, util
+from dcos import config, http
 
 from six.moves import urllib
 
@@ -321,7 +321,7 @@ def delete_zk_node(znode):
     :rtype: None
     """
 
-    dcos_url = util.get_config_vals(['core.dcos_url'])[0]
+    dcos_url = config.get_config_vals(['core.dcos_url'])[0]
     znode_url = urllib.parse.urljoin(
         dcos_url,
         '/exhibitor/exhibitor/v1/explorer/znode/{}'.format(znode))

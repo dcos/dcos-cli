@@ -12,11 +12,10 @@ import zipfile
 from subprocess import PIPE, Popen
 
 import requests
-from dcos import constants, emitting, util
+from dcos import constants, util
 from dcos.errors import DCOSException
 
 logger = util.get_logger(__name__)
-emitter = emitting.FlatEmitter()
 
 
 def command_executables(subcommand):

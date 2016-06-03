@@ -3,7 +3,7 @@ import collections
 import dcoscli
 import docopt
 from dcos import cmds, config, emitting, http, util
-from dcos.errors import DCOSException
+from dcos.errors import DCOSException, DefaultError
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
 
@@ -91,7 +91,8 @@ def _set(name, value):
         notice = "This config property has been deprecated."
         return DCOSException(notice)
 
-    config.set_val(name, value)
+    toml, msg = config.set_val(name, value)
+    emitter.publish(DefaultError(msg))
 
     return 0
 
@@ -102,7 +103,9 @@ def _unset(name):
     :rtype: int
     """
 
-    config.unset(name)
+    msg = config.unset(name)
+    emitter.publish(DefaultError(msg))
+
     return 0
 
 
@@ -112,7 +115,7 @@ def _show(name):
     :rtype: int
     """
 
-    toml_config = util.get_config(True)
+    toml_config = config.get_config(True)
 
     if name is not None:
         value = toml_config.get(name)
@@ -138,7 +141,7 @@ def _validate():
     :rtype: int
     """
 
-    toml_config = util.get_config(True)
+    toml_config = config.get_config(True)
 
     errs = util.validate_json(toml_config._dictionary,
                               config.generate_root_schema(toml_config))

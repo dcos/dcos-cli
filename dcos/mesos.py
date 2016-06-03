@@ -2,7 +2,7 @@ import fnmatch
 import itertools
 import os
 
-from dcos import http, util
+from dcos import config, http, util
 from dcos.errors import DCOSException, DCOSHTTPException
 
 from six.moves import urllib
@@ -29,14 +29,14 @@ class DCOSClient(object):
     """Client for communicating with DCOS"""
 
     def __init__(self):
-        config = util.get_config()
+        toml_config = config.get_config()
 
-        self._dcos_url = config.get("core.dcos_url")
+        self._dcos_url = toml_config.get("core.dcos_url")
         if self._dcos_url is None:
-            raise util.missing_config_exception(['core.dcos_url'])
-        self._mesos_master_url = config.get('core.mesos_master_url')
+            raise config.missing_config_exception(['core.dcos_url'])
+        self._mesos_master_url = toml_config.get('core.mesos_master_url')
 
-        self._timeout = config.get('core.timeout')
+        self._timeout = toml_config.get('core.timeout')
 
     def get_dcos_url(self, path):
         """ Create a DCOS URL
@@ -269,7 +269,7 @@ class MesosDNSClient(object):
     """
     def __init__(self, url=None):
         self.url = url or urllib.parse.urljoin(
-            util.get_config_vals(['core.dcos_url'])[0], '/mesos_dns/')
+            config.get_config_vals(['core.dcos_url'])[0], '/mesos_dns/')
 
     def _path(self, path):
         """ Construct a full path

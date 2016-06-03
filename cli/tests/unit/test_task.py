@@ -9,7 +9,7 @@ from mock import MagicMock, patch
 from .common import assert_mock
 
 
-@patch('dcos.util.get_config')
+@patch('dcos.config.get_config')
 def test_log_master_unavailable(config_mock):
     config_mock.return_value = {'core.dcos_url': 'foo'}
 

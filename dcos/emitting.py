@@ -11,7 +11,7 @@ import sys
 import pager
 import pygments
 import six
-from dcos import constants, errors, util
+from dcos import config, constants, errors, util
 from pygments.formatters import Terminal256Formatter
 from pygments.lexers import JsonLexer
 
@@ -172,7 +172,7 @@ def _page(output, pager_command=None):
     num_lines = output.count('\n')
     exceeds_tty_height = pager.getheight() - 1 < num_lines
 
-    paginate = util.get_config().get("core.pagination", True)
+    paginate = config.get_config().get("core.pagination", True)
     if exceeds_tty_height and paginate:
         pydoc.pipepager(output, cmd=pager_command)
     else:

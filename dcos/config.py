@@ -1,15 +1,91 @@
 import collections
 import copy
 import json
+import os
 
 import pkg_resources
 import toml
-from dcos import emitting, jsonitem, subcommand, util
-from dcos.errors import DCOSException, DefaultError
-
-emitter = emitting.FlatEmitter()
+from dcos import constants, jsonitem, subcommand, util
+from dcos.errors import DCOSException
 
 logger = util.get_logger(__name__)
+
+
+def get_config_path():
+    """ Returns the path to the DCOS config file.
+
+    :returns: path to the DCOS config file
+    :rtype: str
+    """
+
+    return os.environ.get(constants.DCOS_CONFIG_ENV, get_default_config_path())
+
+
+def get_default_config_path():
+    """Returns the default path to the DCOS config file.
+
+    :returns: path to the DCOS config file
+    :rtype: str
+    """
+
+    return os.path.expanduser(
+        os.path.join("~",
+                     constants.DCOS_DIR,
+                     'dcos.toml'))
+
+
+def get_config(mutable=False):
+    """Returns the DCOS configuration object and creates config file is none
+    found and `DCOS_CONFIG` set to default value
+
+    :param mutable: True if the returned Toml object should be mutable
+    :type mutable: boolean
+    :returns: Configuration object
+    :rtype: Toml | MutableToml
+    """
+
+    path = get_config_path()
+    default = get_default_config_path()
+
+    if path == default:
+        util.ensure_dir_exists(os.path.dirname(default))
+    return load_from_path(path, mutable)
+
+
+def get_config_vals(keys, config=None):
+    """Gets config values for each of the keys.  Raises a DCOSException if
+    any of the keys don't exist.
+
+    :param config: config
+    :type config: Toml
+    :param keys: keys in the config dict
+    :type keys: [str]
+    :returns: values for each of the keys
+    :rtype: [object]
+    """
+
+    config = config or get_config()
+    missing = [key for key in keys if key not in config]
+    if missing:
+        raise missing_config_exception(keys)
+
+    return [config[key] for key in keys]
+
+
+def missing_config_exception(keys):
+    """ DCOSException for a missing config value
+
+    :param keys: keys in the config dict
+    :type keys: [str]
+    :returns: DCOSException
+    :rtype: DCOSException
+    """
+
+    msg = '\n'.join(
+        'Missing required config parameter: "{0}".'.format(key) +
+        '  Please run `dcos config set {0} <value>`.'.format(key)
+        for key in keys)
+    return DCOSException(msg)
 
 
 def set_val(name, value):
@@ -18,11 +94,11 @@ def set_val(name, value):
     :type name: str
     :param value: value to set to paramater `name`
     :type param: str
-    :returns: Toml config
-    :rtype: Toml
+    :returns: Toml config, message of change
+    :rtype: Toml, str
     """
 
-    toml_config = util.get_config(True)
+    toml_config = get_config(True)
 
     section, subkey = split_key(name)
 
@@ -57,9 +133,8 @@ def set_val(name, value):
         msg += "already set to '{}'".format(old_value)
     else:
         msg += "changed from '{}' to '{}'".format(old_value, new_value)
-    emitter.publish(DefaultError(msg))
 
-    return toml_config
+    return toml_config, msg
 
 
 def load_from_path(path, mutable=False):
@@ -90,7 +165,7 @@ def save(toml_config):
     """
 
     serial = toml.dumps(toml_config._dictionary)
-    path = util.get_config_path()
+    path = get_config_path()
     with util.open_file(path, 'w') as config_file:
         config_file.write(serial)
 
@@ -115,11 +190,11 @@ def unset(name):
     """
     :param name: name of config value to unset
     :type name: str
-    :returns: process status
-    :rtype: None
+    :returns: message of property removed
+    :rtype: str
     """
 
-    toml_config = util.get_config(True)
+    toml_config = get_config(True)
     toml_config_pre = copy.deepcopy(toml_config)
     section = name.split(".", 1)[0]
     if section not in toml_config_pre._dictionary:
@@ -130,9 +205,8 @@ def unset(name):
     elif isinstance(value, collections.Mapping):
         raise DCOSException(_generate_choice_msg(name, value))
     else:
-        emitter.publish(DefaultError("Removed [{}]".format(name)))
         save(toml_config)
-        return
+        return "Removed [{}]".format(name)
 
 
 def _generate_choice_msg(name, value):

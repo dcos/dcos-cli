@@ -1,7 +1,7 @@
 import json
 from distutils.version import LooseVersion
 
-from dcos import http, util
+from dcos import config, http, util
 from dcos.errors import DCOSException, DCOSHTTPException
 
 from six.moves import urllib
@@ -9,36 +9,36 @@ from six.moves import urllib
 logger = util.get_logger(__name__)
 
 
-def create_client(config=None):
+def create_client(toml_config=None):
     """Creates a Marathon client with the supplied configuration.
 
-    :param config: configuration dictionary
-    :type config: config.Toml
+    :param toml_config: configuration dictionary
+    :type toml_config: config.Toml
     :returns: Marathon client
     :rtype: dcos.marathon.Client
     """
 
-    if config is None:
-        config = util.get_config()
+    if toml_config is None:
+        toml_config = config.get_config()
 
-    marathon_url = _get_marathon_url(config)
-    timeout = config.get('core.timeout', http.DEFAULT_TIMEOUT)
+    marathon_url = _get_marathon_url(toml_config)
+    timeout = toml_config.get('core.timeout', http.DEFAULT_TIMEOUT)
 
     logger.info('Creating marathon client with: %r', marathon_url)
     return Client(marathon_url, timeout=timeout)
 
 
-def _get_marathon_url(config):
+def _get_marathon_url(toml_config):
     """
-    :param config: configuration dictionary
-    :type config: config.Toml
+    :param toml_config: configuration dictionary
+    :type toml_config: config.Toml
     :returns: marathon base url
     :rtype: str
     """
 
-    marathon_url = config.get('marathon.url')
+    marathon_url = toml_config.get('marathon.url')
     if marathon_url is None:
-        dcos_url = util.get_config_vals(['core.dcos_url'], config)[0]
+        dcos_url = config.get_config_vals(['core.dcos_url'], toml_config)[0]
         marathon_url = urllib.parse.urljoin(dcos_url, 'service/marathon/')
 
     return marathon_url
