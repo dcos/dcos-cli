@@ -2,6 +2,7 @@ Description:
     Administer and manage DCOS cluster nodes.
 
 Usage:
+    dcos node --help
     dcos node --info
     dcos node [--json]
     dcos node log [--follow --lines=N --leader --master --mesos-id=<mesos-id> --slave=<slave-id>]

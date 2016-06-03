@@ -2,6 +2,7 @@ Description:
     Manage DCOS tasks.
 
 Usage:
+    dcos task --help
     dcos task --info
     dcos task [--completed --json <task>]
     dcos task log [--completed --follow --lines=N] <task> [<file>]

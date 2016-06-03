@@ -3,6 +3,7 @@ Description:
 
 Usage:
     dcos help
+    dcos help --help
     dcos help --info
     dcos help <subcommand>
 

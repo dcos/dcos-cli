@@ -3,6 +3,7 @@ Description:
 
 Usage:
     dcos package --config-schema
+    dcos package --help
     dcos package --info
     dcos package describe [--app --cli --config]
                           [--render]

@@ -3,6 +3,7 @@ Description:
 
 Usage:
     dcos marathon --config-schema
+    dcos marathon --help
     dcos marathon --info
     dcos marathon about
     dcos marathon app add [<app-resource>]
