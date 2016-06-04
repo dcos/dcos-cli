@@ -352,13 +352,13 @@ def test_install_specific_version():
               b'CPU\'s and 1GB of RAM available for the Marathon Service.\n'
               b'Installing Marathon app for package [marathon] '
               b'version [0.11.1]\n'
-              b'Marathon DC/OS Service has been successfully installed!\n\n'
+              b'Marathon DCOS Service has been successfully installed!\n\n'
               b'\tDocumentation: https://mesosphere.github.io/marathon\n'
               b'\tIssues: https:/github.com/mesosphere/marathon/issues\n\n')
 
     uninstall_stderr = (
         b'Uninstalled package [marathon] version [0.11.1]\n'
-        b'The Marathon DC/OS Service has been uninstalled and will no '
+        b'The Marathon DCOS Service has been uninstalled and will no '
         b'longer run.\nPlease follow the instructions at http://docs.'
         b'mesosphere.com/services/marathon/#uninstall to clean up any '
         b'persisted state\n'
@@ -425,7 +425,7 @@ cli-test-4.zip"""
 
     # test local package.json
     package = {
-        "description": "Example DC/OS application package",
+        "description": "Example DCOS application package",
         "maintainer": "support@mesosphere.io",
         "name": "helloworld",
         "packagingVersion": "2.0",
@@ -458,7 +458,7 @@ def test_images_in_metadata():
 
     # uninstall
     stderr = (b'Uninstalled package [cassandra] version [0.2.0-1]\n'
-              b'The Apache Cassandra DC/OS Service has been uninstalled and '
+              b'The Apache Cassandra DCOS Service has been uninstalled and '
               b'will no longer run.\n'
               b'Please follow the instructions at http://docs.mesosphere.com/'
               b'services/cassandra/#uninstall to clean up any persisted '
@@ -522,7 +522,7 @@ def test_uninstall_cli():
     "apps": [
       "/helloworld"
     ],
-    "description": "Example DC/OS application package",
+    "description": "Example DCOS application package",
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
     "packagingVersion": "2.0",
@@ -643,7 +643,7 @@ def test_list_cli():
     "command": {
       "name": "helloworld"
     },
-    "description": "Example DC/OS application package",
+    "description": "Example DCOS application package",
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
     "packagingVersion": "2.0",
@@ -672,7 +672,7 @@ def test_list_cli():
     "command": {
       "name": "helloworld"
     },
-    "description": "Example DC/OS application package",
+    "description": "Example DCOS application package",
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
     "packagingVersion": "2.0",
@@ -904,7 +904,7 @@ def _install_chronos(
         preInstallNotes=b'We recommend a minimum of one node with at least 1 '
                         b'CPU and 2GB of RAM available for the Chronos '
                         b'Service.\n',
-        postInstallNotes=b'Chronos DC/OS Service has been successfully '
+        postInstallNotes=b'Chronos DCOS Service has been successfully '
                          b'''installed!
 
 \tDocumentation: http://mesos.github.io/chronos

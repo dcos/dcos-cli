@@ -227,6 +227,7 @@ def _ssh(leader, slave, option, config_file, user, master_proxy, command):
     if (not master_proxy) and master_public_ip:
         emitter.publish(
             DefaultError("If you are running this command from a separate "
-                         "network than DC/OS, consider using `--master-proxy`"))
+                         "network than DC/OS, consider using "
+                         "`--master-proxy`"))
 
     return subprocess.call(cmd, shell=True)

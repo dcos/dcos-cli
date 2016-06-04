@@ -11,7 +11,7 @@ def package_fixture():
         "command": {
             "name": "helloworld"
         },
-        "description": "Example DC/OS application package",
+        "description": "Example DCOS application package",
         "maintainer": "support@mesosphere.io",
         "name": "helloworld",
         "packageSource":
@@ -81,7 +81,7 @@ def search_result_fixture():
         },
         {
             "currentVersion": "0.1.0",
-            "description": "Example DC/OS application package",
+            "description": "Example DCOS application package",
             "framework": False,
             "name": "helloworld",
             "tags": [
