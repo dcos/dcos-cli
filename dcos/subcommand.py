@@ -9,6 +9,7 @@ import stat
 import subprocess
 import sys
 import zipfile
+from distutils.version import LooseVersion
 from subprocess import PIPE, Popen
 
 import requests
@@ -513,9 +514,22 @@ def _install_with_pip(
 
     pip_path = os.path.join(env_directory, BIN_DIRECTORY, 'pip')
     if not os.path.exists(pip_path):
+        virtualenv_path = _find_virtualenv(bin_directory)
+
+        virtualenv_version = _execute_command(
+            [virtualenv_path, '--version'])[0].strip().decode('utf-8')
+        if LooseVersion("12") > LooseVersion(virtualenv_version):
+            msg = ("Unable to install CLI subcommand. "
+                   "Required program 'virtualenv' must be version 12+, "
+                   "currently version {}\n"
+                   "Please see installation instructions: "
+                   "https://virtualenv.pypa.io/en/latest/installation.html"
+                   "".format(virtualenv_version))
+            raise DCOSException(msg)
+
         cmd = [_find_virtualenv(bin_directory), env_directory]
 
-        if _execute_install(cmd) != 0:
+        if _execute_command(cmd)[2] != 0:
             raise _generic_error(package_name)
 
     # Do not replace util.temptext NamedTemporaryFile
@@ -535,7 +549,7 @@ def _install_with_pip(
             requirement_path,
         ]
 
-        if _execute_install(cmd) != 0:
+        if _execute_command(cmd)[2] != 0:
             # We should remove the directory that we just created
             if new_package_dir:
                 shutil.rmtree(env_directory)
@@ -545,12 +559,12 @@ def _install_with_pip(
     return None
 
 
-def _execute_install(command):
+def _execute_command(command):
     """
-    :param command: the install command to execute
+    :param command: a command to execute
     :type command: list of str
-    :returns: the process return code
-    :rtype: int
+    :returns: stdout, stderr, the process return code
+    :rtype: str, str, int
     """
 
     logger.info('Calling: %r', command)
@@ -563,13 +577,13 @@ def _execute_install(command):
     stdout, stderr = process.communicate()
 
     if process.returncode != 0:
-        logger.error("Install script's stdout: %s", stdout)
-        logger.error("Install script's stderr: %s", stderr)
+        logger.error("Command script's stdout: %s", stdout)
+        logger.error("Command script's stderr: %s", stderr)
     else:
-        logger.info("Install script's stdout: %s", stdout)
-        logger.info("Install script's stderr: %s", stderr)
+        logger.info("Command script's stdout: %s", stdout)
+        logger.info("Command script's stderr: %s", stderr)
 
-    return process.returncode
+    return stdout, stderr, process.returncode
 
 
 def _generic_error(package_name):
