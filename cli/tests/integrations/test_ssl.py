@@ -28,14 +28,14 @@ def setup_env(env):
 
 
 def test_dont_verify_ssl_with_env_var(env):
-    env[constants.DCOS_SSL_VERIFY_ENV] = 'false'
+    env['DCOS_SSL_VERIFY'] = 'false'
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'list'], env)
     assert returncode == 0
     assert stderr == b''
 
-    env.pop(constants.DCOS_SSL_VERIFY_ENV)
+    env.pop('DCOS_SSL_VERIFY')
 
 
 def test_dont_verify_ssl_with_config(env):
@@ -47,14 +47,14 @@ def test_dont_verify_ssl_with_config(env):
 
 
 def test_verify_ssl_without_cert_env_var(env):
-    env[constants.DCOS_SSL_VERIFY_ENV] = 'true'
+    env['DCOS_SSL_VERIFY'] = 'true'
     with update_config('core.ssl_verify', None, env):
         returncode, stdout, stderr = exec_command(
             ['dcos', 'marathon', 'app', 'list'], env)
         assert returncode == 1
         assert stderr.decode('utf-8') == _ssl_error_msg()
 
-    env.pop(constants.DCOS_SSL_VERIFY_ENV)
+    env.pop('DCOS_SSL_VERIFY')
 
 
 def test_verify_ssl_without_cert_config(env):
@@ -66,7 +66,7 @@ def test_verify_ssl_without_cert_config(env):
 
 
 def test_verify_ssl_with_bad_cert_env_var(env):
-    env[constants.DCOS_SSL_VERIFY_ENV] = 'tests/data/ssl/fake.pem'
+    env['DCOS_SSL_VERIFY'] = 'tests/data/ssl/fake.pem'
 
     with update_config('core.ssl_verify', None, env):
         returncode, stdout, stderr = exec_command(
@@ -74,7 +74,7 @@ def test_verify_ssl_with_bad_cert_env_var(env):
         assert returncode == 1
         assert stderr.decode('utf-8') == _ssl_error_msg()
 
-    env.pop(constants.DCOS_SSL_VERIFY_ENV)
+    env.pop('DCOS_SSL_VERIFY')
 
 
 def test_verify_ssl_with_bad_cert_config(env):
@@ -86,7 +86,7 @@ def test_verify_ssl_with_bad_cert_config(env):
 
 
 def test_verify_ssl_with_good_cert_env_var(env):
-    env[constants.DCOS_SSL_VERIFY_ENV] = '/dcos-cli/adminrouter/snakeoil.crt'
+    env['DCOS_SSL_VERIFY'] = '/dcos-cli/adminrouter/snakeoil.crt'
 
     with update_config('core.ssl_verify', None, env):
         returncode, stdout, stderr = exec_command(
@@ -94,7 +94,7 @@ def test_verify_ssl_with_good_cert_env_var(env):
         assert returncode == 0
         assert stderr == b''
 
-    env.pop(constants.DCOS_SSL_VERIFY_ENV)
+    env.pop('DCOS_SSL_VERIFY')
 
 
 def test_verify_ssl_with_good_cert_config(env):

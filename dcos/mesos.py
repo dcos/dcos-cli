@@ -31,12 +31,13 @@ class DCOSClient(object):
     def __init__(self):
         toml_config = config.get_config()
 
-        self._dcos_url = toml_config.get("core.dcos_url")
+        self._dcos_url = config.get_config_val("core.dcos_url", toml_config)
         if self._dcos_url is None:
             raise config.missing_config_exception(['core.dcos_url'])
-        self._mesos_master_url = toml_config.get('core.mesos_master_url')
+        self._mesos_master_url = config.get_config_val(
+            'core.mesos_master_url', toml_config)
 
-        self._timeout = toml_config.get('core.timeout')
+        self._timeout = config.get_config_val('core.timeout', toml_config)
 
     def get_dcos_url(self, path):
         """ Create a DCOS URL
@@ -269,7 +270,7 @@ class MesosDNSClient(object):
     """
     def __init__(self, url=None):
         self.url = url or urllib.parse.urljoin(
-            config.get_config_vals(['core.dcos_url'])[0], '/mesos_dns/')
+            config.get_config_val('core.dcos_url'), '/mesos_dns/')
 
     def _path(self, path):
         """ Construct a full path

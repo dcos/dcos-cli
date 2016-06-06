@@ -1,10 +1,9 @@
 import getpass
-import os
 import sys
 import threading
 
 import requests
-from dcos import config, constants, util
+from dcos import config, util
 from dcos.errors import (DCOSAuthenticationException,
                          DCOSAuthorizationException, DCOSException,
                          DCOSHTTPException)
@@ -43,8 +42,8 @@ def _verify_ssl(verify=None):
     :rtype: bool | str
     """
 
-    if verify is None and constants.DCOS_SSL_VERIFY_ENV in os.environ:
-        verify = os.environ[constants.DCOS_SSL_VERIFY_ENV]
+    if verify is None:
+        verify = config.get_config_val("core.ssl_verify")
         if verify.lower() == "true":
             verify = True
         elif verify.lower() == "false":
@@ -172,7 +171,7 @@ def _request_with_auth(response,
             elif response.status_code == 401 and \
                     auth_scheme in ["acsjwt", "oauthjwt"]:
 
-                if config.get_config().get("core.dcos_acs_token") is not None:
+                if config.get_config_val("core.dcos_acs_token") is not None:
                     msg = ("Your core.dcos_acs_token is invalid. "
                            "Please run: `dcos auth login`")
                     raise DCOSException(msg)
@@ -473,9 +472,9 @@ def _get_dcos_auth(auth_scheme, username, password, hostname):
     """
 
     toml_config = config.get_config()
-    token = toml_config.get("core.dcos_acs_token")
+    token = config.get_config_val("core.dcos_acs_token", toml_config)
     if token is None:
-        dcos_url = toml_config.get("core.dcos_url")
+        dcos_url = config.get_config_val("core.dcos_url", toml_config)
         if auth_scheme == "acsjwt":
             creds = _get_dcos_acs_auth_creds(username, password, hostname)
         else:

@@ -35,8 +35,10 @@ def get_default_config_path():
 
 
 def get_config(mutable=False):
-    """Returns the DCOS configuration object and creates config file is none
-    found and `DCOS_CONFIG` set to default value
+    """Returns the DCOS configuration object and creates config file is None
+    found and `DCOS_CONFIG` set to default value. Only use to get the config,
+    not to resolve a specific config parameter. This should be done with
+    `get_config_val`.
 
     :param mutable: True if the returned Toml object should be mutable
     :type mutable: boolean
@@ -52,24 +54,37 @@ def get_config(mutable=False):
     return load_from_path(path, mutable)
 
 
-def get_config_vals(keys, config=None):
-    """Gets config values for each of the keys.  Raises a DCOSException if
-    any of the keys don't exist.
+def get_config_val(name, config=None):
+    """Returns the config value for the specified key. Looks for corresponding
+    environment variable first, and if it doesn't exist, uses the config value.
+    - "core" properties get resolved to env variable DCOS_SUBKEY. With the
+    exception of subkeys that already start with DCOS, in which case we look
+    for SUBKEY first, and "DCOS_SUBKEY" second, and finally the config value.
+    - everything else gets resolved to DCOS_SECTION_SUBKEY
 
+    :param name: name of paramater
+    :type name: str
     :param config: config
     :type config: Toml
-    :param keys: keys in the config dict
-    :type keys: [str]
-    :returns: values for each of the keys
-    :rtype: [object]
+    :returns: value of 'name' parameter
+    :rtype: object | None
     """
 
-    config = config or get_config()
-    missing = [key for key in keys if key not in config]
-    if missing:
-        raise missing_config_exception(keys)
+    if config is None:
+        config = get_config()
 
-    return [config[key] for key in keys]
+    section, subkey = split_key(name.upper())
+
+    env_var = None
+    if section == "CORE":
+        if subkey.startswith("DCOS") and os.environ.get(subkey):
+                env_var = subkey
+        else:
+                env_var = "DCOS_{}".format(subkey)
+    else:
+        env_var = "DCOS_{}_{}".format(section, subkey)
+
+    return os.environ.get(env_var) or config.get(name)
 
 
 def missing_config_exception(keys):
