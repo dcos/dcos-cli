@@ -2,6 +2,7 @@ Description:
     Authenticate to DCOS cluster
 
 Usage:
+    dcos auth --help
     dcos auth --info
     dcos auth login
     dcos auth logout

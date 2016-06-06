@@ -2,6 +2,7 @@ Description:
     Manage DCOS services.
 
 Usage:
+    dcos service --help
     dcos service --info
     dcos service [--completed --inactive --json]
     dcos service log [--follow --lines=N --ssh-config-file=<path>]
