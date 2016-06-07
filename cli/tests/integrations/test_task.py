@@ -49,7 +49,7 @@ def test_help():
 
 
 def test_info():
-    stdout = b"Manage DCOS tasks\n"
+    stdout = b"Manage DC/OS tasks\n"
     assert_command(['dcos', 'task', '--info'], stdout=stdout)
 
 

@@ -9,7 +9,7 @@ usage()
 
 post_install_message()
 {
-    echo 'Finished installing and configuring DCOS CLI.'
+    echo 'Finished installing and configuring DC/OS CLI.'
     echo ''
     echo 'Run this command to set up your environment and to get started:'
     echo "source $1 && dcos help"
@@ -20,7 +20,7 @@ RC_NAME=""
 write_to_profile()
 {
     echo "" >> ~/"$2";
-    echo "# path to the DCOS CLI binary" >> ~/"$2";
+    echo "# path to the DC/OS CLI binary" >> ~/"$2";
     echo "if [[ \"\$PATH\" != *\"$1\"* ]];" >> ~/"$2";
     echo "  then export PATH=\$PATH:$1;" >> ~/"$2";
     echo "fi" >> ~/"$2";
@@ -43,7 +43,7 @@ prompt_add_dcos_path_to_profile()
 {
     while true; do
         echo ""
-        read -p "Modify your bash profile to add DCOS to your PATH? [yes/no] " ANSWER
+        read -p "Modify your bash profile to add DC/OS to your PATH? [yes/no] " ANSWER
         echo ""
         case "$ANSWER" in
             [Yy]* ) add_dcos_path_to_profile "$1"; break;;
@@ -109,14 +109,14 @@ if [ $MAJOR -lt 12 ];
 	exit 1;
 fi
 
-echo "Installing DCOS CLI from PyPI...";
+echo "Installing DC/OS CLI from PyPI...";
 echo "";
 
 # Let's first setup a virtualenv: we are assuming that the path is absolute
 mkdir -p "$VIRTUAL_ENV_PATH"
 virtualenv "$VIRTUAL_ENV_PATH"
 
-# Install the DCOS CLI package, using version if set
+# Install the DC/OS CLI package, using version if set
 if [ -z "$DCOS_CLI_VERSION" ]; then
     "$VIRTUAL_ENV_PATH/bin/pip" install --quiet "dcoscli<0.4.0"
 else

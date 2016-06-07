@@ -1,5 +1,5 @@
 Description:
-    Manage DCOS tasks.
+    Manage DC/OS tasks.
 
 Usage:
     dcos task --help

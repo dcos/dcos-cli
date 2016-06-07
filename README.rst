@@ -1,18 +1,18 @@
-DCOS Command Line Interface
+DC/OS Command Line Interface
 ===========================
-The DCOS Command Line Interface (CLI) is a cross-platform command line utility
-that provides a user-friendly yet powerful way to manage DCOS installations.
+The DC/OS Command Line Interface (CLI) is a cross-platform command line utility
+that provides a user-friendly yet powerful way to manage DC/OS installations.
 
 Installation and Usage
 ----------------------
 
-If you're a **user** of DCOS, please follow the `installation instructions`_.
+If you're a **user** of DC/OS, please follow the `installation instructions`_.
 Otherwise, follow the instructions below to set up your development environment.
 
 Detailed help and usage information is available through the :code:`dcos help`
 command and for specific subcommands through :code:`dcos <subcommand> --help`.
 
-Additional documentation for the CLI and for the DCOS in general is available
+Additional documentation for the CLI and for the DC/OS in general is available
 in the `Mesosphere docs`_.
 
 Parsing CLI Output
@@ -23,20 +23,20 @@ all of your favourite Unix/Linux tools like sed, awk and grep, or text formatted
 as JSON when using the :code:`--json` flag.
 
 If using JSON, you can combine it with the powerful jq_ utility.
-The example below installs every package available in the DCOS repository::
+The example below installs every package available in the DC/OS repository::
 
     dcos package search --json | jq '.[0].packages[].name' | xargs -L 1 dcos package install --yes
 
-Using the CLI without DCOS
+Using the CLI without DC/OS
 --------------------------
 
-You may optionally configure the DCOS CLI to work with open source Mesos and
+You may optionally configure the DC/OS CLI to work with open source Mesos and
 Marathon_ by setting the following properties::
 
     dcos config set core.mesos_master_url http://<mesos-master-host>:5050
     dcos config set marathon.url http://<marathon-host>:8080
 
-Note that the DCOS CLI has tight integration with DCOS and certain
+Note that the DC/OS CLI has tight integration with DC/OS and certain
 functionality may not work as expected or at all when using it directly with
 Mesos and Marathon.
 
@@ -87,11 +87,11 @@ Configure Environment and Run
     source bin/env-setup-dev
 
 #. Configure the CLI, changing the values below as appropriate for your local
-   installation of DCOS::
+   installation of DC/OS::
 
     dcos config set core.dcos_url http://dcos-ea-1234.us-west-2.elb.amazonaws.com
 
-#. Get started by calling the DCOS CLI help::
+#. Get started by calling the DC/OS CLI help::
 
     dcos help
 
@@ -110,7 +110,7 @@ Running
 Tox will run unit and integration tests in both Python environments using a
 temporarily created virtualenv.
 
-You can set :code:`DCOS_CONFIG` to a config file that points to a DCOS
+You can set :code:`DCOS_CONFIG` to a config file that points to a DC/OS
 cluster you want to use for integration tests.  This defaults to
 :code:`~/.dcos/dcos.toml`
 
@@ -142,7 +142,7 @@ Other Useful Commands
 Releasing
 #########
 
-Releasing a new version of the DCOS CLI is only possible through an `automated TeamCity build`_ which is triggered automatically when a new tag is added.
+Releasing a new version of the DC/OS CLI is only possible through an `automated TeamCity build`_ which is triggered automatically when a new tag is added.
 
 The tag is used as the version number and must adhere to the conventional `PEP-440 version scheme`_.
 
@@ -152,7 +152,7 @@ Once all tests pass successfully, the automated build publishes two packages to 
 
 #. dcoscli_
 
-These packages are now available to be installed by the DCOS CLI installation script in the `mesosphere/install-scripts`_ repository.
+These packages are now available to be installed by the DC/OS CLI installation script in the `mesosphere/install-scripts`_ repository.
 
 
 .. _automated TeamCity build: https://teamcity.mesosphere.io/viewType.html?buildTypeId=ClosedSource_DcosCli_PushToPyPI

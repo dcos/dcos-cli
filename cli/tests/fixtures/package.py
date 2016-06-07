@@ -1,5 +1,5 @@
 def package_fixture():
-    """ DCOS package fixture.
+    """ DC/OS package fixture.
 
     :rtype: dict
     """
@@ -30,7 +30,7 @@ def package_fixture():
 
 
 def search_result_fixture():
-    """ DCOS package search result fixture.
+    """ DC/OS package search result fixture.
 
     :rtype: dict
     """

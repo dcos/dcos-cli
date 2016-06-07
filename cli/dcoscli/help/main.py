@@ -83,10 +83,10 @@ def _help(command):
 
         emitter.publish(
             "Command line utility for the Mesosphere Datacenter Operating\n"
-            "System (DCOS). The Mesosphere DCOS is a distributed operating\n"
+            "System (DC/OS). The Mesosphere DC/OS is a distributed operating\n"
             "system built around Apache Mesos. This utility provides tools\n"
-            "for easy management of a DCOS installation.\n")
-        emitter.publish("Available DCOS commands:")
+            "for easy management of a DC/OS installation.\n")
+        emitter.publish("Available DC/OS commands:")
         emitter.publish(commands_message)
         emitter.publish(
             "\nGet detailed command description with 'dcos <command> --help'.")

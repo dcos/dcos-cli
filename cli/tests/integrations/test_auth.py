@@ -19,7 +19,7 @@ def env():
 
 
 def test_info():
-    stdout = b'Authenticate to DCOS cluster\n'
+    stdout = b'Authenticate to DC/OS cluster\n'
     assert_command(['dcos', 'auth', '--info'],
                    stdout=stdout)
 

@@ -18,7 +18,7 @@ setup(
     # https://packaging.python.org/en/latest/single_source_version.html
     version=dcoscli.version,
 
-    description='DCOS Command Line Interface',
+    description='DC/OS Command Line Interface',
     long_description=long_description,
 
     # The project's main homepage.

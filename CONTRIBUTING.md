@@ -1,4 +1,4 @@
-# Contribution Guide for the DCOS-CLI
+# Contribution Guide for the DC/OS CLI
 
 Thanks for contributing! Here are a few guidelines to get you started.
 
@@ -8,7 +8,7 @@ Please file feature requests and bugs through Github issues.
 
 If you are submitting a bug report, please include:
 - dcos cli version: `dcos --version`
-- DCOS version
+- DC/OS version
 - operating system
 - command that errored with `--log-level=debug --debug`
 
@@ -34,4 +34,4 @@ locally.
 
 ## Thanks!
 
-The DCOS-CLI Team
+The DC/OS CLI Team

@@ -26,7 +26,7 @@ def get_master(dcos_client=None):
 
 
 class DCOSClient(object):
-    """Client for communicating with DCOS"""
+    """Client for communicating with DC/OS"""
 
     def __init__(self):
         toml_config = config.get_config()
@@ -40,11 +40,11 @@ class DCOSClient(object):
         self._timeout = config.get_config_val('core.timeout', toml_config)
 
     def get_dcos_url(self, path):
-        """ Create a DCOS URL
+        """ Create a DC/OS URL
 
         :param path: the path suffix of the URL
         :type path: str
-        :returns: DCOS URL
+        :returns: DC/OS URL
         :rtype: str
         """
 
@@ -70,7 +70,7 @@ class DCOSClient(object):
         :type slave_id: str
         :param private_url: The slave's private URL derived from its
                             pid.  Used when we're accessing mesos
-                            directly, rather than through DCOS.
+                            directly, rather than through DC/OS.
         :type private_url: str
         :param path: the path suffix of the desired URL
         :type path: str
@@ -102,7 +102,7 @@ class DCOSClient(object):
         :type slave_id: str
         :param private_url: The slave's private URL derived from its
                             pid.  Used when we're accessing mesos
-                            directly, rather than through DCOS.
+                            directly, rather than through DC/OS.
         :type private_url: str
         :returns: Mesos' master state json object
         :rtype: dict
@@ -131,7 +131,7 @@ class DCOSClient(object):
         :type path: str
         :param private_url: The slave's private URL derived from its
                             pid.  Used when we're accessing mesos
-                            directly, rather than through DCOS.
+                            directly, rather than through DC/OS.
         :type private_url: str
         :param offset: start byte location, or -1.  -1 means read no data, and
                        is used to fetch the size of the file in the response's

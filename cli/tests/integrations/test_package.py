@@ -47,7 +47,7 @@ def test_package():
 
 
 def test_info():
-    info = b"Install and manage DCOS software packages\n"
+    info = b"Install and manage DC/OS software packages\n"
     assert_command(['dcos', 'package', '--info'],
                    stdout=info)
 

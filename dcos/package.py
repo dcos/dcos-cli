@@ -66,7 +66,7 @@ def uninstall_subcommand(distribution_name):
 
 
 class InstalledPackage(object):
-    """Represents an intalled DCOS package.  One of `app` and
+    """Represents an intalled DC/OS package.  One of `app` and
     `subcommand` must be supplied.
 
     :param apps: A dictionary representing a marathon app. Of the

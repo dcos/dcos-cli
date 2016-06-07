@@ -1,5 +1,5 @@
 Description:
-    Administer and manage DCOS cluster nodes.
+    Administer and manage DC/OS cluster nodes.
 
 Usage:
     dcos node --help
@@ -17,7 +17,7 @@ Commands:
     log
         Prints the Mesos logs for the leading master node, agent nodes, or both.
     ssh
-        Establish an SSH connection to the master or agent nodes of your DCOS
+        Establish an SSH connection to the master or agent nodes of your DC/OS
         cluster.
 
 Options:
@@ -39,7 +39,7 @@ Options:
         Deprecated. Please use --leader.
     --master-proxy
         Proxy the SSH connection through a master node. This can be useful when
-        accessing DCOS from a separate network. For example, in the default AWS
+        accessing DC/OS from a separate network. For example, in the default AWS
         configuration, the private slaves are unreachable from the public
         internet. You can access them using this option, which will first hop
         from the publicly available master.

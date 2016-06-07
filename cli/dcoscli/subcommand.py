@@ -34,7 +34,7 @@ def _default_modules():
 def default_doc(command):
     """Returns documentation of command
 
-    :param command: default DCOS-CLI command
+    :param command: default DC/OS CLI command
     :type command: str
     :returns: config schema of command
     :rtype: dict
@@ -47,7 +47,7 @@ def default_doc(command):
 
 
 def default_command_info(command):
-    """top level documentation of default DCOS-CLI command
+    """top level documentation of default DC/OS CLI command
 
     :param command: name of command
     :param type: str
@@ -60,7 +60,7 @@ def default_command_info(command):
 
 
 def default_command_documentation(command):
-    """documentation of default DCOS-CLI command
+    """documentation of default DC/OS CLI command
 
     :param command: name of command
     :param type: str

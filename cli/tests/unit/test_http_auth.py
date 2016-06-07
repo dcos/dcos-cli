@@ -48,7 +48,7 @@ def test_get_http_auth_not_supported(mock):
         http._get_http_auth(mock, url=urlparse(''), auth_scheme='foo')
 
     msg = ("Server responded with an HTTP 'www-authenticate' field of "
-           "'test', DCOS only supports 'Basic'")
+           "'test', DC/OS only supports 'Basic'")
     assert e.exconly().split(':')[1].strip() == msg
 
 

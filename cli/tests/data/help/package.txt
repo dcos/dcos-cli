@@ -1,5 +1,5 @@
 Description:
-    Install and manage DCOS software packages.
+    Install and manage DC/OS software packages.
 
 Usage:
     dcos package --config-schema
@@ -31,13 +31,13 @@ Commands:
     install
         Install a package.
     list
-        Print a list of the installed DCOS packages.
+        Print a list of the installed DC/OS packages.
     search
         Search the package repository.
     repo add
-        Add a package repository to DCOS.
+        Add a package repository to DC/OS.
     repo remove
-        Remove a package repository from DCOS.
+        Remove a package repository from DC/OS.
     repo list
         Print the package repository sources. Possible sources include a local
         file, HTTPS, and Git.
@@ -82,7 +82,7 @@ Options:
 
 Positional Arguments:
     <package-name>
-        Name of the DCOS package in the package repository.
+        Name of the DC/OS package in the package repository.
     <query>
         Pattern to use for searching the package repository.  You can use
         complete or partial values.
