@@ -1,6 +1,9 @@
 import traceback
+from importlib import import_module
 
 import pkg_resources
+
+from dcos import subcommand
 
 
 def _default_modules():
@@ -10,25 +13,8 @@ def _default_modules():
     :rtype: {}
     """
 
-    # avoid circular imports
-    from dcoscli.auth import main as auth_main
-    from dcoscli.config import main as config_main
-    from dcoscli.help import main as help_main
-    from dcoscli.marathon import main as marathon_main
-    from dcoscli.node import main as node_main
-    from dcoscli.package import main as package_main
-    from dcoscli.service import main as service_main
-    from dcoscli.task import main as task_main
-
-    return {'auth': auth_main,
-            'config': config_main,
-            'help': help_main,
-            'marathon': marathon_main,
-            'node': node_main,
-            'package': package_main,
-            'service': service_main,
-            'task': task_main
-            }
+    defaults = subcommand.default_subcommands()
+    return {s: import_module('dcoscli.{}.main'.format(s)) for s in defaults}
 
 
 def default_doc(command):
