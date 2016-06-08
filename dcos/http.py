@@ -44,9 +44,9 @@ def _verify_ssl(verify=None):
 
     if verify is None:
         verify = config.get_config_val("core.ssl_verify")
-        if verify.lower() == "true":
+        if verify and verify.lower() == "true":
             verify = True
-        elif verify.lower() == "false":
+        elif verify and verify.lower() == "false":
             verify = False
 
     return verify

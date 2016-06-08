@@ -67,7 +67,7 @@ def get_config_val(name, config=None):
     :param config: config
     :type config: Toml
     :returns: value of 'name' parameter
-    :rtype: object | None
+    :rtype: str | None
     """
 
     if config is None:
@@ -78,9 +78,9 @@ def get_config_val(name, config=None):
     env_var = None
     if section == "CORE":
         if subkey.startswith("DCOS") and os.environ.get(subkey):
-                env_var = subkey
+            env_var = subkey
         else:
-                env_var = "DCOS_{}".format(subkey)
+            env_var = "DCOS_{}".format(subkey)
     else:
         env_var = "DCOS_{}_{}".format(section, subkey)
 
