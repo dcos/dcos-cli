@@ -7,6 +7,7 @@ import os
 import pydoc
 import re
 import sys
+from distutils import spawn
 
 import pager
 import pygments
@@ -81,7 +82,7 @@ def print_handler(event):
           isinstance(event, collections.Sequence) or isinstance(event, bool) or
           isinstance(event, six.integer_types) or isinstance(event, float)):
         # These are all valid JSON types let's treat them different
-        processed_json = _process_json(event, pager_command)
+        processed_json = _process_json(event)
         _page(processed_json, pager_command)
 
     elif isinstance(event, errors.DCOSException):
@@ -116,7 +117,7 @@ def publish_table(emitter, objs, table_fn, json_):
             emitter.publish(output)
 
 
-def _process_json(event, pager_command):
+def _process_json(event):
     """Conditionally highlights the supplied JSON value.
 
     :param event: event to emit to stdout
@@ -131,21 +132,10 @@ def _process_json(event, pager_command):
     # Strip trailing whitespace
     json_output = re.sub(r'\s+$', '', json_output, 0, re.M)
 
-    force_colors = False  # TODO(CD): Introduce a --colors flag
-
     if not sys.stdout.isatty():
-        if force_colors:
-            return _highlight_json(json_output)
-        else:
-            return json_output
+        return json_output
 
-    supports_colors = not util.is_windows_platform()
-
-    pager_is_set = pager_command is not None
-
-    should_highlight = force_colors or supports_colors and not pager_is_set
-
-    if should_highlight:
+    if not util.is_windows_platform():
         json_output = _highlight_json(json_output)
 
     return json_output
@@ -162,9 +152,6 @@ def _page(output, pager_command=None):
 
     output = six.text_type(output)
 
-    if pager_command is None:
-        pager_command = 'less -R'
-
     if not sys.stdout.isatty() or util.is_windows_platform():
         print(output)
         return
@@ -172,8 +159,12 @@ def _page(output, pager_command=None):
     num_lines = output.count('\n')
     exceeds_tty_height = pager.getheight() - 1 < num_lines
 
+    if pager_command is None:
+        pager_command = 'less -R'
+
     paginate = config.get_config_val("core.pagination") or True
-    if exceeds_tty_height and paginate:
+    if exceeds_tty_height and paginate and \
+            spawn.find_executable(pager_command.split(' ')[0]) is not None:
         pydoc.pipepager(output, cmd=pager_command)
     else:
         print(output)
