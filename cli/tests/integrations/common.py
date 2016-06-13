@@ -479,7 +479,7 @@ def popen_tty(cmd):
     return (proc, master)
 
 
-def ssh_output(cmd):
+def ssh_output(cmd, timeout=3):
     """ Runs an SSH command and returns the stdout/stderr/returncode.
 
     :param cmd: command to run
@@ -493,7 +493,7 @@ def ssh_output(cmd):
     proc, master = popen_tty(cmd)
 
     # wait for the ssh connection
-    time.sleep(3)
+    time.sleep(timeout)
 
     proc.poll()
     returncode = proc.returncode
