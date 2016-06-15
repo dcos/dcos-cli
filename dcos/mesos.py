@@ -331,7 +331,8 @@ class Master(object):
                                         'slave/{}/'.format(slave['id']))
 
     def slave(self, fltr):
-        """Returns the slave that has `fltr` in its ID.  Raises a
+        """Returns the slave that has `fltr` in its ID. If any slaves
+        are an exact match, returns that task, id not raises a
         DCOSException if there is not exactly one such slave.
 
         :param fltr: filter string
@@ -346,10 +347,16 @@ class Master(object):
             raise DCOSException('No slave found with ID "{}".'.format(fltr))
 
         elif len(slaves) > 1:
-            matches = ['\t{0}'.format(slave['id']) for slave in slaves]
-            raise DCOSException(
-                "There are multiple slaves with that ID. " +
-                "Please choose one: {}".format('\n'.join(matches)))
+
+            exact_matches = [s for s in slaves if s['id'] == fltr]
+            if len(exact_matches) == 1:
+                return exact_matches[0]
+
+            else:
+                matches = ['\t{0}'.format(s['id']) for s in slaves]
+                raise DCOSException(
+                    "There are multiple slaves with that ID. " +
+                    "Please choose one:\n{}".format('\n'.join(matches)))
 
         else:
             return slaves[0]
