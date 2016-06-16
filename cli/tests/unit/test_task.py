@@ -33,6 +33,16 @@ def test_log_no_tasks():
         assert_mock(main, args, returncode=1, stderr=stderr)
 
 
+def test_task_exact_match():
+    """Test a task gets returned if it is an exact match, even if
+    it is a substring of another task.
+    """
+    with patch('dcos.mesos.Master.slaves',
+               return_value=[{"id": "foo"}, {"id": "foobar"}]):
+        master = mesos.Master(None)
+        assert master.slave("foo") == {"id": "foo"}
+
+
 def test_log_file_unavailable():
     """ Test a file's read.json being unavailable """
     files = [mesos.MesosFile('bogus')]
