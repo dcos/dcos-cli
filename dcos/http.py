@@ -5,8 +5,8 @@ import threading
 import requests
 from dcos import config, util
 from dcos.errors import (DCOSAuthenticationException,
-                         DCOSAuthorizationException, DCOSException,
-                         DCOSHTTPException)
+                         DCOSAuthorizationException, DCOSBadRequest,
+                         DCOSException, DCOSHTTPException)
 from requests.auth import AuthBase, HTTPBasicAuth
 
 from six.moves import urllib
@@ -229,6 +229,8 @@ def request(method,
         return response
     elif response.status_code == 403:
         raise DCOSAuthorizationException(response)
+    elif response.status_code == 400:
+        raise DCOSBadRequest(response)
     else:
         raise DCOSHTTPException(response)
 

@@ -50,6 +50,19 @@ class DCOSAuthorizationException(DCOSHTTPException):
         return "You are not authorized to perform this operation"
 
 
+class DCOSBadRequest(DCOSHTTPException):
+    """A wrapper around Response objects for HTTP Bad Request (400).
+
+    :param response: requests Response object
+    :type response: Response
+    """
+    def __init__(self, response):
+        self.response = response
+
+    def __str__(self):
+        return "Bad request"
+
+
 class Error(object):
     """Abstract class for describing errors."""
 
