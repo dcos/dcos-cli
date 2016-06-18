@@ -146,6 +146,7 @@ def ensure_file_exists(path):
     if not os.path.exists(path):
         try:
             open(path, 'w').close()
+            os.chmod(path, 0o600)
         except IOError as e:
             raise DCOSException(
                 'Cannot create file [{}]: {}'.format(path, e))
