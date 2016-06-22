@@ -301,7 +301,7 @@ def _user_options(path):
             return util.load_json(options_file)
 
 
-def _confirm(prompt, yes):
+def confirm(prompt, yes):
     """
     :param prompt: message to display to the terminal
     :type prompt: str
@@ -365,7 +365,7 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
     pre_install_notes = pkg_json.get('preInstallNotes')
     if app and pre_install_notes:
         emitter.publish(pre_install_notes)
-        if not _confirm('Continue installing?', yes):
+        if not confirm('Continue installing?', yes):
             emitter.publish('Exiting installation.')
             return 0
 
@@ -519,7 +519,7 @@ def _uninstall(package_name, remove_all, app_id, cli, app):
     return 0
 
 
-def _get_cosmos_url():
+def get_cosmos_url():
     """
     :returns: cosmos base url
     :rtype: str
@@ -540,7 +540,7 @@ def _get_package_manager():
     :rtype: PackageManager
     """
 
-    cosmos_url = _get_cosmos_url()
+    cosmos_url = get_cosmos_url()
     cosmos_manager = cosmospackage.Cosmos(cosmos_url)
     if cosmos_manager.enabled():
         return cosmos_manager

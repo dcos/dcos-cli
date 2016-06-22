@@ -12,6 +12,11 @@ Usage:
                   [--master-proxy]
                   (--leader | --master | --mesos-id=<mesos-id> | --slave=<slave-id>)
                   [<command>]
+    dcos node snapshot create (<nodes>)...
+    dcos node snapshot delete <snapshot>
+    dcos node snapshot download <snapshot> [--location=<location>]
+    dcos node snapshot (--list | --status | --cancel)
+                       [--json]
 
 Commands:
     log
@@ -19,6 +24,12 @@ Commands:
     ssh
         Establish an SSH connection to the master or agent nodes of your DC/OS
         cluster.
+    snapshot create
+        Create a snapshot. Nodes can be: ip address, hostname, mesos ID or key words "all", "masters", "agents".
+    snapshot download
+        Download a snapshot.
+    snapshot delete
+        Delete a snapshot.
 
 Options:
     --config-file=<path>
@@ -50,6 +61,14 @@ Options:
         Agent node with the provided ID.
     --user=<user>
         The SSH user, where the default user [default: core].
+    --list
+        List available snapshots.
+    --status
+        Print snapshot job status.
+    --cancel
+        Cancel a running snapshot job.
+    --location=<location>
+        Download a snapshot to a particular location. If not set default to present working directory.
     --version
         Print version information.
 
