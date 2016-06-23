@@ -102,7 +102,10 @@ Setup
 #####
 
 Tox, our test runner, tests against both Python 2.7 and Python 3.4
-environments.
+environments. We have a set of tests in the :code:`dcos` package (root
+directory) and in the :code:`dcoscli` package (:code:`cli` directory). When
+running the tests describe below change directory to one of those two and
+follow the instructions.
 
 Running
 #######
@@ -111,7 +114,7 @@ Tox will run unit and integration tests in both Python environments using a
 temporarily created virtualenv.
 
 You can set :code:`DCOS_CONFIG` to a config file that points to a DC/OS
-cluster you want to use for integration tests.  This defaults to
+cluster you want to use for integration tests. This defaults to
 :code:`~/.dcos/dcos.toml`
 
 There are two ways to run tests, you can either use the virtualenv created by
@@ -136,7 +139,7 @@ Other Useful Commands
 
 #. Run a specific integration test module::
 
-    tox -e py27-integration /cli/test_config.py
+    tox -e py34-integration /test_config.py
 
 
 Releasing
