@@ -388,13 +388,17 @@ def test_package_metadata():
     _install_helloworld()
 
     # test marathon labels
-    expected_metadata = b"""eyJ3ZWJzaXRlIjoiaHR0cHM6Ly9naXRodWIuY29tL21lc29zcG\
-hlcmUvZGNvcy1oZWxsb3dvcmxkIiwibmFtZSI6ImhlbGxvd29ybGQiLCJwb3N0SW5zdGFsbE5vdGVz\
-IjoiQSBzYW1wbGUgcG9zdC1pbnN0YWxsYXRpb24gbWVzc2FnZSIsImRlc2NyaXB0aW9uIjoiRXhhbX\
-BsZSBEQ09TIGFwcGxpY2F0aW9uIHBhY2thZ2UiLCJwYWNrYWdpbmdWZXJzaW9uIjoiMi4wIiwidGFn\
-cyI6WyJtZXNvc3BoZXJlIiwiZXhhbXBsZSIsInN1YmNvbW1hbmQiXSwibWFpbnRhaW5lciI6InN1cH\
-BvcnRAbWVzb3NwaGVyZS5pbyIsInZlcnNpb24iOiIwLjEuMCIsInByZUluc3RhbGxOb3RlcyI6IkEg\
-c2FtcGxlIHByZS1pbnN0YWxsYXRpb24gbWVzc2FnZSJ9"""
+    expected_metadata = (b'eyJ3ZWJzaXRlIjoiaHR0cHM6Ly9naXRodWIuY29tL21lc29zcG'
+                         b'hlcmUvZGNvcy1oZWxsb3dvcmxkIiwibmFtZSI6ImhlbGxvd29y'
+                         b'bGQiLCJwb3N0SW5zdGFsbE5vdGVzIjoiQSBzYW1wbGUgcG9zdC'
+                         b'1pbnN0YWxsYXRpb24gbWVzc2FnZSIsImRlc2NyaXB0aW9uIjoi'
+                         b'RXhhbXBsZSBEQ09TIGFwcGxpY2F0aW9uIHBhY2thZ2UiLCJwYW'
+                         b'NrYWdpbmdWZXJzaW9uIjoiMi4wIiwidGFncyI6WyJtZXNvc3Bo'
+                         b'ZXJlIiwiZXhhbXBsZSIsInN1YmNvbW1hbmQiXSwibWFpbnRhaW'
+                         b'5lciI6InN1cHBvcnRAbWVzb3NwaGVyZS5pbyIsInNlbGVjdGVk'
+                         b'IjpmYWxzZSwidmVyc2lvbiI6IjAuMS4wIiwicHJlSW5zdGFsbE'
+                         b'5vdGVzIjoiQSBzYW1wbGUgcHJlLWluc3RhbGxhdGlvbiBtZXNz'
+                         b'YWdlIn0=')
 
     expected_command = b"""eyJwaXAiOlsiZGNvczwxLjAiLCJnaXQraHR0cHM6Ly9naXRodWI\
 uY29tL21lc29zcGhlcmUvZGNvcy1oZWxsb3dvcmxkLmdpdCNkY29zLWhlbGxvd29ybGQ9MC4xLjAiX\
