@@ -117,7 +117,7 @@ def test_node_ssh_config_file():
 def test_node_ssh_user():
     stdout, stderr, _ = _node_ssh_output(
         ['--master-proxy', '--leader', '--user=bogus', '--option',
-         'PasswordAuthentication=no'])
+         'BatchMode=yes'])
     assert stdout == b''
     assert b'Permission denied' in stderr
 
