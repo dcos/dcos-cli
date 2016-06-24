@@ -12,6 +12,23 @@ Usage:
                   [--master-proxy]
                   (--leader | --master | --mesos-id=<mesos-id> | --slave=<slave-id>)
                   [<command>]
+    dcos node socks-proxy [--port=<local-port>]
+                          [--option SSHOPT=VAL ...]
+                          [--config-file=<path>]
+                          [--user=<user>]
+                          [--master-proxy]
+    dcos node http-proxy [--port=<local-port>]
+                         [--option SSHOPT=VAL ...]
+                         [--config-file=<path>]
+                         [--user=<user>]
+                         [--master-proxy]
+                         [--verbose]
+    dcos node vpn [--port=<local-port>]
+                  [--option SSHOPT=VAL ...]
+                  [--config-file=<path>]
+                  [--user=<user>]
+                  [--master-proxy]
+                  [--container=<container>]
 
 Commands:
     log
@@ -19,6 +36,14 @@ Commands:
     ssh
         Establish an SSH connection to the master or agent nodes of your DC/OS
         cluster.
+    socks-proxy
+        Establish a SOCKS proxy over SSH to the master node of your DCOS
+        cluster.
+    http-proxy
+        Establish a HTTP proxy over SSH to the master node of your DCOS
+        cluster.
+    vpn
+        Establish a VPN over SSH to the master node of your DCOS cluster.
 
 Options:
     --config-file=<path>
@@ -52,6 +77,14 @@ Options:
         The SSH user, where the default user [default: core].
     --version
         Print version information.
+    --verbose
+        Verbose output
+    --port=<local-port>
+        The port to listen on locally
+        Defaults to SOCKS:1080, HTTP:80, VPN:1194
+    --container=<container>
+        The OpenVPN container to run
+        [default: dcos/dcos-cli-vpn:1-1d6e59e4109beb78340304c0a24c7c0ced49c6c6]
 
 Positional Arguments:
     <command>
