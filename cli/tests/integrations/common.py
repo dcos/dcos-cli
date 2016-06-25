@@ -2,7 +2,6 @@ import collections
 import contextlib
 import json
 import os
-import pty
 import subprocess
 import time
 
@@ -466,6 +465,8 @@ def popen_tty(cmd):
     :rtype: (Popen, int)
 
     """
+
+    import pty
     master, slave = pty.openpty()
     proc = subprocess.Popen(cmd,
                             stdin=slave,

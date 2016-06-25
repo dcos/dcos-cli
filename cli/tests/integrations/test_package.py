@@ -1,8 +1,8 @@
 import base64
 import contextlib
 import json
+import sys
 
-import pkg_resources
 import six
 from dcos import subcommand
 
@@ -39,11 +39,9 @@ def zk_znode(request):
 
 
 def test_package():
-    stdout = pkg_resources.resource_string(
-        'tests',
-        'data/help/package.txt')
-    assert_command(['dcos', 'package', '--help'],
-                   stdout=stdout)
+    with open('tests/data/help/package.txt') as content:
+        assert_command(['dcos', 'package', '--help'],
+                       stdout=content.read().encode('utf-8'))
 
 
 def test_info():
@@ -316,8 +314,9 @@ def test_bad_install_marathon_msg():
               b'[0.1.0] with app id [/foo]\n'
               b'Installing CLI subcommand for package [helloworld] '
               b'version [0.1.0]\n'
-              b'New command available: dcos helloworld\n'
-              b'A sample post-installation message\n')
+              b'New command available: dcos ' +
+              _executable_name(b'helloworld') +
+              b'\nA sample post-installation message\n')
 
     _install_helloworld(['--yes', '--app-id=/foo'],
                         stdout=stdout)
@@ -552,8 +551,9 @@ def test_uninstall_multiple_apps():
               b'[0.1.0] with app id [/helloworld-1]\n'
               b'Installing CLI subcommand for package [helloworld] '
               b'version [0.1.0]\n'
-              b'New command available: dcos helloworld\n'
-              b'A sample post-installation message\n')
+              b'New command available: dcos ' +
+              _executable_name(b'helloworld') +
+              b'\nA sample post-installation message\n')
 
     _install_helloworld(['--yes', '--app-id=/helloworld-1'],
                         stdout=stdout)
@@ -563,8 +563,9 @@ def test_uninstall_multiple_apps():
               b'[0.1.0] with app id [/helloworld-2]\n'
               b'Installing CLI subcommand for package [helloworld] '
               b'version [0.1.0]\n'
-              b'New command available: dcos helloworld\n'
-              b'A sample post-installation message\n')
+              b'New command available: dcos ' +
+              _executable_name(b'helloworld') +
+              b'\nA sample post-installation message\n')
 
     _install_helloworld(['--yes', '--app-id=/helloworld-2'],
                         stdout=stdout)
@@ -620,8 +621,9 @@ def test_install_yes():
                    b'[0.1.0]\n'
                    b'Installing CLI subcommand for package [helloworld] '
                    b'version [0.1.0]\n'
-                   b'New command available: dcos helloworld\n'
-                   b'A sample post-installation message\n')
+                   b'New command available: dcos ' +
+                   _executable_name(b'helloworld') +
+                   b'\nA sample post-installation message\n')
         _uninstall_helloworld()
 
 
@@ -664,7 +666,9 @@ def test_list_cli():
 
     stdout = (b"Installing CLI subcommand for package [helloworld] " +
               b"version [0.1.0]\n"
-              b"New command available: dcos helloworld\n")
+              b"New command available: dcos " +
+              _executable_name(b'helloworld') +
+              b"\n")
     _install_helloworld(args=['--cli', '--yes'], stdout=stdout)
 
     stdout = b"""\
@@ -828,6 +832,13 @@ def _get_app_labels(app_id):
     return app_json.get('labels')
 
 
+def _executable_name(name):
+    if sys.platform == 'win32':
+        return name + b'.exe'
+    else:
+        return name
+
+
 def _install_helloworld(
         args=['--yes'],
         stdout=b'A sample pre-installation message\n'
@@ -835,8 +846,9 @@ def _install_helloworld(
                b'version [0.1.0]\n'
                b'Installing CLI subcommand for package [helloworld] '
                b'version [0.1.0]\n'
-               b'New command available: dcos helloworld\n'
-               b'A sample post-installation message\n',
+               b'New command available: dcos ' +
+               _executable_name(b'helloworld') +
+               b'\nA sample post-installation message\n',
         stderr=b'',
         returncode=0,
         stdin=None):
@@ -937,12 +949,14 @@ def _list_remove_nulls(args=['--json'], stdout=b'[]\n'):
 
 
 def _helloworld():
-    stdout = b'''A sample pre-installation message
-Installing Marathon app for package [helloworld] version [0.1.0]
-Installing CLI subcommand for package [helloworld] version [0.1.0]
-New command available: dcos helloworld
-A sample post-installation message
-'''
+    stdout = (b'A sample pre-installation message\n'
+              b'Installing Marathon app for package [helloworld] version '
+              b'[0.1.0]\n'
+              b'Installing CLI subcommand for package [helloworld] '
+              b'version [0.1.0]\n'
+              b'New command available: dcos ' +
+              _executable_name(b'helloworld') +
+              b'\nA sample post-installation message\n')
 
     stderr = b'Uninstalled package [helloworld] version [0.1.0]\n'
     return _package('helloworld',
