@@ -134,6 +134,7 @@ def distributions():
         return []
 
 
+# must also add subcommand name to dcoscli.subcommand._default_modules
 def default_subcommands():
     """List the default dcos cli subcommands
 
