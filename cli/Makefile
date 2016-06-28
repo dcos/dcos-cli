@@ -10,7 +10,7 @@ test: env
 	bin/test.sh
 
 binary: clean env packages
-	pyinstaller binary/binary.spec
+	bin/create-binary.sh
 
 test-binary: binary
 	bin/test-binary.sh
