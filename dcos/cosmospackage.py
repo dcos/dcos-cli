@@ -20,8 +20,37 @@ class Cosmos():
     def __init__(self, cosmos_url):
         self.cosmos_url = cosmos_url
 
+    def has_capability(self, capability):
+        """Check if cluster has a capability.
+
+        :param capability: capability name
+        :type capability: string
+        :return: does the cluster has capability
+        :rtype: bool
+        """
+
+        if not self.enabled():
+            return False
+
+        try:
+            url = urllib.parse.urljoin(self.cosmos_url, 'capabilities')
+            response = http.get(url,
+                                headers=_get_capabilities_header()).json()
+        except Exception as e:
+            logger.exception(e)
+            return False
+
+        if 'capabilities' not in response:
+            logger.error(
+                'Request to get cluster capabilities: {} '
+                'returned unexpected response: {}. '
+                'Missing "capabilities" field'.format(url, response))
+            return False
+
+        return {'name': capability} in response['capabilities']
+
     def enabled(self):
-        """Returns whether or not cosmos is enabled on specified dcos cluter
+        """Returns whether or not cosmos is enabled on specified dcos cluster
 
         :rtype: bool
         """
