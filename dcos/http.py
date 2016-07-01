@@ -159,6 +159,10 @@ def _request_with_auth(response,
             else:
                 auth = AUTH_CREDS[creds]
 
+        # if the data is a file buffer, seek to the beginning
+        if 'data' in kwargs and isinstance(kwargs['data'], file):
+            kwargs['data'].seek(0)
+
         # try request again, with auth
         response = _request(method, url, is_success, timeout, auth,
                             verify, **kwargs)
