@@ -1,5 +1,4 @@
 import json
-from distutils.version import LooseVersion
 
 from dcos import config, http, util
 from dcos.errors import DCOSException, DCOSHTTPException
@@ -134,16 +133,6 @@ class Client(object):
         self._base_url = marathon_url
         self._timeout = timeout
 
-        min_version = "0.8.1"
-        version = LooseVersion(self.get_about()["version"])
-        self._version = version
-        if version < LooseVersion(min_version):
-            msg = ("The configured Marathon with version {0} is outdated. " +
-                   "Please use version {1} or later.").format(
-                       version,
-                       min_version)
-            raise DCOSException(msg)
-
     def _create_url(self, path):
         """Creates the url from the provided path.
         :param path: url path
@@ -153,14 +142,6 @@ class Client(object):
         """
 
         return urllib.parse.urljoin(self._base_url, path)
-
-    def get_version(self):
-        """Get marathon version
-        :returns: marathon version
-        rtype: LooseVersion
-        """
-
-        return self._version
 
     def get_about(self):
         """Returns info about Marathon instance
@@ -701,23 +682,6 @@ class Client(object):
             None)
 
         return task
-
-    def get_app_schema(self):
-        """Returns app json schema
-
-        :returns: application json schema
-        :rtype: json schema or None if endpoint doesn't exist
-        """
-
-        version = self.get_version()
-        schema_version = LooseVersion("0.9.0")
-        if version < schema_version:
-            return None
-
-        url = self._create_url('v2/schemas/app')
-        response = _http_req(http.get, url, timeout=self._timeout)
-
-        return response.json()
 
     def normalize_app_id(self, app_id):
         """Normalizes the application id.

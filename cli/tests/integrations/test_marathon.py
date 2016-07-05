@@ -675,7 +675,7 @@ def test_bad_configuration():
     config_set('marathon.url', 'http://localhost:88888')
 
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'list'])
+        ['dcos', 'marathon', 'about'])
 
     assert returncode == 1
     assert stdout == b''
