@@ -17,8 +17,8 @@ def test_check_version_fail(mock_cosmos):
     with pytest.raises(DCOSException) as excinfo:
         main._check_3dt_version()
     assert str(excinfo.value) == (
-        'DC/OS backend does not support snapshot capabilities in this version.'
-        ' Must be DC/OS >= 1.8')
+        'DC/OS backend does not support diagnostics capabilities in this '
+        'version. Must be DC/OS >= 1.8')
 
 
 @mock.patch('dcos.cosmospackage.Cosmos')
@@ -39,10 +39,11 @@ def test_check_version_success(mock_get, mock_cosmos):
 
 @mock.patch('dcos.cosmospackage.Cosmos')
 @mock.patch('dcos.http.get')
-@mock.patch('dcoscli.node.main._do_snapshot_request')
-def test_node_snapshot_create(mock_do_snapshot_request, mock_get, mock_cosmos):
+@mock.patch('dcoscli.node.main._do_diagnostics_request')
+def test_node_diagnostics_create(mock_do_diagnostics_request, mock_get,
+                                 mock_cosmos):
     """
-    Test _snapshot_create(), should not fail.
+    Test _bundle_create(), should not fail.
     """
 
     mock_cosmos().enabled.return_value = True
@@ -51,25 +52,26 @@ def test_node_snapshot_create(mock_do_snapshot_request, mock_get, mock_cosmos):
         'capabilities': [{'name': 'SUPPORT_CLUSTER_REPORT'}]
     }
     mock_get.return_value = m
-    mock_do_snapshot_request.return_value = {
+    mock_do_diagnostics_request.return_value = {
         'status': 'OK',
         'extra': {
-            'snapshot_name': 'snapshot.zip'
+            'bundle_name': 'bundle.zip'
         }
     }
-    main._snapshot_create(['10.10.0.1'])
-    mock_do_snapshot_request.assert_called_once_with(
-        '/system/health/v1/report/snapshot/create',
+    main._bundle_create(['10.10.0.1'])
+    mock_do_diagnostics_request.assert_called_once_with(
+        '/system/health/v1/report/diagnostics/create',
         'POST',
         json={'nodes': ['10.10.0.1']})
 
 
 @mock.patch('dcos.cosmospackage.Cosmos')
 @mock.patch('dcos.http.get')
-@mock.patch('dcoscli.node.main._do_snapshot_request')
-def test_node_snapshot_delete(mock_do_snapshot_request, mock_get, mock_cosmos):
+@mock.patch('dcoscli.node.main._do_diagnostics_request')
+def test_node_diagnostics_delete(mock_do_diagnostics_request, mock_get,
+                                 mock_cosmos):
     """
-    Test _snapshot_delete(), should not fail
+    Test _bundle_delete(), should not fail
     """
 
     mock_cosmos().enabled.return_value = True
@@ -78,22 +80,23 @@ def test_node_snapshot_delete(mock_do_snapshot_request, mock_get, mock_cosmos):
         'capabilities': [{'name': 'SUPPORT_CLUSTER_REPORT'}]
     }
     mock_get.return_value = m
-    mock_do_snapshot_request.return_value = {
+    mock_do_diagnostics_request.return_value = {
         'status': 'OK'
     }
-    main._snapshot_delete('snapshot.zip')
-    mock_do_snapshot_request.assert_called_once_with(
-        '/system/health/v1/report/snapshot/delete/snapshot.zip',
+    main._bundle_delete('bundle.zip')
+    mock_do_diagnostics_request.assert_called_once_with(
+        '/system/health/v1/report/diagnostics/delete/bundle.zip',
         'POST'
     )
 
 
 @mock.patch('dcos.cosmospackage.Cosmos')
 @mock.patch('dcos.http.get')
-@mock.patch('dcoscli.node.main._do_snapshot_request')
-def test_node_snapshot_list(mock_do_snapshot_request, mock_get, mock_cosmos):
+@mock.patch('dcoscli.node.main._do_diagnostics_request')
+def test_node_diagnostics_list(mock_do_diagnostics_request, mock_get,
+                               mock_cosmos):
     """
-    Test _snapshot_manage(), should not fail
+    Test _bundle_manage(), should not fail
     """
 
     mock_cosmos().enabled.return_value = True
@@ -102,29 +105,30 @@ def test_node_snapshot_list(mock_do_snapshot_request, mock_get, mock_cosmos):
         'capabilities': [{'name': 'SUPPORT_CLUSTER_REPORT'}]
     }
     mock_get.return_value = m
-    mock_do_snapshot_request.return_value = {
+    mock_do_diagnostics_request.return_value = {
         '127.0.0.1': [
             {
-                'file_name': 'snapshot.zip',
+                'file_name': 'bundle.zip',
                 'file_size': 123
             }
         ]
     }
 
-    # _snapshot_manage(list_snapshots, status, cancel, json)
-    main._snapshot_manage(True, False, False, False)
-    mock_do_snapshot_request.assert_called_once_with(
-        '/system/health/v1/report/snapshot/list/all',
+    # _bundle_manage(list_bundles, status, cancel, json)
+    main._bundle_manage(True, False, False, False)
+    mock_do_diagnostics_request.assert_called_once_with(
+        '/system/health/v1/report/diagnostics/list/all',
         'GET'
     )
 
 
 @mock.patch('dcos.cosmospackage.Cosmos')
 @mock.patch('dcos.http.get')
-@mock.patch('dcoscli.node.main._do_snapshot_request')
-def test_node_snapshot_status(mock_do_snapshot_request, mock_get, mock_cosmos):
+@mock.patch('dcoscli.node.main._do_diagnostics_request')
+def test_node_diagnostics_status(mock_do_diagnostics_request, mock_get,
+                                 mock_cosmos):
     """
-    Test _snapshot_manage(), should not fail
+    Test _bundle_manage(), should not fail
     """
 
     mock_cosmos().enabled.return_value = True
@@ -133,26 +137,27 @@ def test_node_snapshot_status(mock_do_snapshot_request, mock_get, mock_cosmos):
         'capabilities': [{'name': 'SUPPORT_CLUSTER_REPORT'}]
     }
     mock_get.return_value = m
-    mock_do_snapshot_request.return_value = {
+    mock_do_diagnostics_request.return_value = {
         'host1': {
             'prop1': 'value1'
         }
     }
 
-    # _snapshot_manage(list_snapshots, status, cancel, json)
-    main._snapshot_manage(False, True, False, False)
-    mock_do_snapshot_request.assert_called_once_with(
-        '/system/health/v1/report/snapshot/status/all',
+    # _bundle_manage(list_bundles, status, cancel, json)
+    main._bundle_manage(False, True, False, False)
+    mock_do_diagnostics_request.assert_called_once_with(
+        '/system/health/v1/report/diagnostics/status/all',
         'GET'
     )
 
 
 @mock.patch('dcos.cosmospackage.Cosmos')
 @mock.patch('dcos.http.get')
-@mock.patch('dcoscli.node.main._do_snapshot_request')
-def test_node_snapshot_cancel(mock_do_snapshot_request, mock_get, mock_cosmos):
+@mock.patch('dcoscli.node.main._do_diagnostics_request')
+def test_node_diagnostics_cancel(mock_do_diagnostics_request, mock_get,
+                                 mock_cosmos):
     """
-    Test _snapshot_manage(), should not fail
+    Test _bundle_manage(), should not fail
     """
 
     mock_cosmos().enabled.return_value = True
@@ -161,26 +166,26 @@ def test_node_snapshot_cancel(mock_do_snapshot_request, mock_get, mock_cosmos):
         'capabilities': [{'name': 'SUPPORT_CLUSTER_REPORT'}]
     }
     mock_get.return_value = m
-    mock_do_snapshot_request.return_value = {
+    mock_do_diagnostics_request.return_value = {
         'status': 'success'
     }
 
-    # _snapshot_manage(list_snapshots, status, cancel, json)
-    main._snapshot_manage(False, False, True, False)
-    mock_do_snapshot_request.assert_called_once_with(
-        '/system/health/v1/report/snapshot/cancel',
+    # _bundle_manage(list_bundles, status, cancel, json)
+    main._bundle_manage(False, False, True, False)
+    mock_do_diagnostics_request.assert_called_once_with(
+        '/system/health/v1/report/diagnostics/cancel',
         'POST'
     )
 
 
 @mock.patch('dcos.cosmospackage.Cosmos')
 @mock.patch('dcoscli.node.main._do_request')
-@mock.patch('dcoscli.node.main._get_snapshots_list')
-def test_node_snapshot_download(mock_get_snapshot_list, mock_do_request,
-                                mock_cosmos):
+@mock.patch('dcoscli.node.main._get_bundle_list')
+def test_node_diagnostics_download(mock_get_diagnostics_list, mock_do_request,
+                                   mock_cosmos):
     mock_cosmos().enabled.return_value = True
-    mock_get_snapshot_list.return_value = [('snap.zip', 123)]
-    main._snapshot_download('snap.zip', None)
+    mock_get_diagnostics_list.return_value = [('bundle.zip', 123)]
+    main._bundle_download('bundle.zip', None)
     mock_do_request.assert_called_with(
-        '/system/health/v1/report/snapshot/serve/snap.zip', 'GET',
+        '/system/health/v1/report/diagnostics/serve/bundle.zip', 'GET',
         stream=True)
