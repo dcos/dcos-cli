@@ -12,10 +12,10 @@ Usage:
                   [--master-proxy]
                   (--leader | --master | --mesos-id=<mesos-id> | --slave=<slave-id>)
                   [<command>]
-    dcos node snapshot create (<nodes>)...
-    dcos node snapshot delete <snapshot>
-    dcos node snapshot download <snapshot> [--location=<location>]
-    dcos node snapshot (--list | --status | --cancel)
+    dcos node diagnostics create (<nodes>)...
+    dcos node diagnostics delete <bundle>
+    dcos node diagnostics download <bundle> [--location=<location>]
+    dcos node diagnostics (--list | --status | --cancel)
                        [--json]
 
 Commands:
@@ -24,12 +24,13 @@ Commands:
     ssh
         Establish an SSH connection to the master or agent nodes of your DC/OS
         cluster.
-    snapshot create
-        Create a snapshot. Nodes can be: ip address, hostname, mesos ID or key words "all", "masters", "agents".
-    snapshot download
-        Download a snapshot.
-    snapshot delete
-        Delete a snapshot.
+    diagnostics create
+        Create a diagnostics bundle. Nodes can be: ip address, hostname, mesos ID
+        or key words "all", "masters", "agents".
+    diagnostics download
+        Download a diagnostics bundle.
+    diagnostics delete
+        Delete a diagnostics bundle.
 
 Options:
     --config-file=<path>
@@ -62,13 +63,14 @@ Options:
     --user=<user>
         The SSH user, where the default user [default: core].
     --list
-        List available snapshots.
+        List available diagnostics bundles.
     --status
-        Print snapshot job status.
+        Print diagnostics job status.
     --cancel
-        Cancel a running snapshot job.
+        Cancel a running diagnostics job.
     --location=<location>
-        Download a snapshot to a particular location. If not set default to present working directory.
+        Download a diagnostics bundle to a particular location.
+        If not set, default to present working directory.
     --version
         Print version information.
 

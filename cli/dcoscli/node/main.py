@@ -18,10 +18,10 @@ from six.moves import urllib
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
 
-SNAPSHOT_BASE_URL = '/system/health/v1/report/snapshot/'
+DIAGNOSTICS_BASE_URL = '/system/health/v1/report/diagnostics/'
 
-# if snapshot size if more then 100Mb then warn user.
-SNAPSHOT_WARN_SIZE = 1000000
+# if a bundle size if more then 100Mb then warn user.
+BUNDLE_WARN_SIZE = 1000000
 
 
 def main(argv):
@@ -75,24 +75,24 @@ def _cmds():
             function=_ssh),
 
         cmds.Command(
-            hierarchy=['node', 'snapshot', 'create'],
+            hierarchy=['node', 'diagnostics', 'create'],
             arg_keys=['<nodes>'],
-            function=_snapshot_create),
+            function=_bundle_create),
 
         cmds.Command(
-            hierarchy=['node', 'snapshot', 'delete'],
-            arg_keys=['<snapshot>'],
-            function=_snapshot_delete),
+            hierarchy=['node', 'diagnostics', 'delete'],
+            arg_keys=['<bundle>'],
+            function=_bundle_delete),
 
         cmds.Command(
-            hierarchy=['node', 'snapshot', 'download'],
-            arg_keys=['<snapshot>', '--location'],
-            function=_snapshot_download),
+            hierarchy=['node', 'diagnostics', 'download'],
+            arg_keys=['<bundle>', '--location'],
+            function=_bundle_download),
 
         cmds.Command(
-            hierarchy=['node', 'snapshot'],
+            hierarchy=['node', 'diagnostics'],
             arg_keys=['--list', '--status', '--cancel', '--json'],
-            function=_snapshot_manage),
+            function=_bundle_manage),
 
         cmds.Command(
             hierarchy=['node'],
@@ -101,9 +101,9 @@ def _cmds():
     ]
 
 
-def snapshot_error(fn):
+def diagnostics_error(fn):
     @functools.wraps(fn)
-    def check_for_snapshot_error(*args, **kwargs):
+    def check_for_diagnostics_error(*args, **kwargs):
         response = fn(*args, **kwargs)
         if response.status_code != 200:
             err_msg = ('Error making {} request\nURL: '
@@ -115,20 +115,20 @@ def snapshot_error(fn):
                     err_msg = err_status
             raise DCOSException(err_msg)
         return response
-    return check_for_snapshot_error
+    return check_for_diagnostics_error
 
 
 def _check_3dt_version():
     """
-    The function checks if cluster has snapshot capability.
+    The function checks if cluster has diagnostics capability.
 
-    :raises: DCOSException if cluster does not have snapshot capability
+    :raises: DCOSException if cluster does not have diagnostics capability
     """
 
     cosmos = cosmospackage.Cosmos(get_cosmos_url())
     if not cosmos.has_capability('SUPPORT_CLUSTER_REPORT'):
         raise DCOSException(
-            'DC/OS backend does not support snapshot capabilities in this '
+            'DC/OS backend does not support diagnostics capabilities in this '
             'version. Must be DC/OS >= 1.8')
 
 
@@ -141,107 +141,107 @@ def sizeof_fmt(num, suffix='B'):
     return "%.1f%s%s" % (num, 'Yi', suffix)
 
 
-def _get_snapshots_json():
+def _get_bundles_json():
     """
-    Get a json with a list of snapshots
+    Get a json with a list of diagnostics bundles.
 
-    :return: available snapshots on a cluster.
+    :return: available diagnostics bundles on a cluster.
     :rtype: dict
     """
 
-    return _do_snapshot_request(
-        urllib.parse.urljoin(SNAPSHOT_BASE_URL, 'list/all'),
+    return _do_diagnostics_request(
+        urllib.parse.urljoin(DIAGNOSTICS_BASE_URL, 'list/all'),
         'GET')
 
 
-def _get_snapshots_list():
+def _get_bundle_list():
     """
-    Get a list of tuples (snapshot_file_name, file_size), ..
+    Get a list of tuples (bundle_file_name, file_size), ..
 
-    :return: list of snapshots
+    :return: list of diagnostic bundles
     :rtype: list of tuples
     """
 
-    available_snapshots = []
-    for _, snapshot_files in _get_snapshots_json().items():
-        if snapshot_files is None:
+    available_bundles = []
+    for _, bundle_files in _get_bundles_json().items():
+        if bundle_files is None:
             continue
-        for snapshot_file_obj in snapshot_files:
-            if ('file_name' not in snapshot_file_obj
-                    or 'file_size' not in snapshot_file_obj):
+        for bundle_file_obj in bundle_files:
+            if ('file_name' not in bundle_file_obj
+                    or 'file_size' not in bundle_file_obj):
                 raise DCOSException(
-                    'Request to get a list of available snapshot returned '
-                    'unexpected response {}'.format(snapshot_file_obj))
+                    'Request to get a list of available diagnostic bundles '
+                    'returned unexpected response {}'.format(bundle_file_obj))
 
-            available_snapshots.append(
-                (os.path.basename(snapshot_file_obj['file_name']),
-                 snapshot_file_obj['file_size']))
-    return available_snapshots
+            available_bundles.append(
+                (os.path.basename(bundle_file_obj['file_name']),
+                 bundle_file_obj['file_size']))
+    return available_bundles
 
 
-def _snapshot_manage(list_snapshots, status, cancel, json):
+def _bundle_manage(list_bundles, status, cancel, json):
     """
-    Manage snapshots
+    Manage diagnostic bundles
 
-    :param list_snapshots: a list of available snapshots
-    :type  list_snapshots: bool
-    :param status: show snapshot job status
+    :param list_bundles: a list of available bundles
+    :type  list_bundles: bool
+    :param status: show diagnostics job status
     :type  status: bool
-    :param cancel: cancel snapshot job
+    :param cancel: cancel diagnostics job
     :type  cancel: bool
     :return: process return code
     :rtype: int
     """
 
     _check_3dt_version()
-    if list_snapshots:
+    if list_bundles:
         if json:
-            emitter.publish(_get_snapshots_json())
+            emitter.publish(_get_bundles_json())
             return 0
 
-        available_snapshots = _get_snapshots_list()
-        if not available_snapshots:
-            emitter.publish("No snapshots")
+        available_bundles = _get_bundle_list()
+        if not available_bundles:
+            emitter.publish("No available diagnostic bundles")
             return 0
-        emitter.publish("Available snapshots:")
-        for available_snapshot in sorted(available_snapshots,
-                                         key=lambda t: t[0]):
-            emitter.publish('{} {}'.format(available_snapshot[0],
-                                           sizeof_fmt(available_snapshot[1])))
+        emitter.publish("Available diagnostic bundles:")
+        for available_bundle in sorted(available_bundles,
+                                       key=lambda t: t[0]):
+            emitter.publish('{} {}'.format(available_bundle[0],
+                                           sizeof_fmt(available_bundle[1])))
         return 0
     elif status:
-        url = urllib.parse.urljoin(SNAPSHOT_BASE_URL, 'status/all')
-        snapshot_response = _do_snapshot_request(url, 'GET')
+        url = urllib.parse.urljoin(DIAGNOSTICS_BASE_URL, 'status/all')
+        bundle_response = _do_diagnostics_request(url, 'GET')
         if json:
-            emitter.publish(snapshot_response)
+            emitter.publish(bundle_response)
             return 0
 
-        for host, props in sorted(snapshot_response.items()):
+        for host, props in sorted(bundle_response.items()):
             emitter.publish(host)
             for key, value in sorted(props.items()):
                 emitter.publish('  {}: {}'.format(key, value))
             emitter.publish('\n')
         return 0
     elif cancel:
-        url = urllib.parse.urljoin(SNAPSHOT_BASE_URL, 'cancel')
-        snapshot_response = _do_snapshot_request(url, 'POST')
+        url = urllib.parse.urljoin(DIAGNOSTICS_BASE_URL, 'cancel')
+        bundle_response = _do_diagnostics_request(url, 'POST')
         if json:
-            emitter.publish(snapshot_response)
+            emitter.publish(bundle_response)
             return 0
 
-        if 'status' not in snapshot_response:
+        if 'status' not in bundle_response:
             raise DCOSException(
-                'Request to cancel a snapshot job {} returned '
-                'an unexpected response {}'.format(url, snapshot_response))
+                'Request to cancel a diagnostics job {} returned '
+                'an unexpected response {}'.format(url, bundle_response))
 
-        emitter.publish(snapshot_response['status'])
+        emitter.publish(bundle_response['status'])
         return 0
     else:
         raise DCOSException(
-            'Must specify one of list_snapshots, status, cancel')
+            'Must specify one of list_bundles, status, cancel')
 
 
-@snapshot_error
+@diagnostics_error
 def _do_request(url, method, timeout=None, stream=False, **kwargs):
     """
     make HTTP request
@@ -272,7 +272,6 @@ def _do_request(url, method, timeout=None, stream=False, **kwargs):
         if not timeout:
             timeout = 180
 
-    # POST to snapshot api
     base_url = config.get_config_val("core.dcos_url")
     if not base_url:
         raise config.missing_config_exception(['core.dcos_url'])
@@ -289,7 +288,7 @@ def _do_request(url, method, timeout=None, stream=False, **kwargs):
     return http_response
 
 
-def _do_snapshot_request(url, method, **kwargs):
+def _do_diagnostics_request(url, method, **kwargs):
     """
     Make HTTP request and expect a JSON response.
 
@@ -297,7 +296,7 @@ def _do_snapshot_request(url, method, **kwargs):
     :type url: string
     :param method: HTTP method, GET or POST
     :type method: string
-    :return: snapshot JSON repsponse
+    :return: bundle JSON response
     :rtype: dict
     """
 
@@ -319,67 +318,69 @@ def _read_http_response_body(http_response):
     try:
         for chunk in http_response.iter_content(1024):
             data += chunk
-        snapshot_response = util.load_jsons(data.decode('utf-8'))
-        return snapshot_response
+        bundle_response = util.load_jsons(data.decode('utf-8'))
+        return bundle_response
     except DCOSException:
         raise
 
 
-def _snapshot_download(snapshot, location):
+def _bundle_download(bundle, location):
     """
-    Download snapshot and put in the the current directory.
+    Download diagnostics bundle.
 
-    :param snapshot: snapshot file name.
-    :type snapshot: string
+    :param bundle: bundle file name.
+    :type bundle: string
+    :param location: location on a local filesystem.
+    :type location: string
     :return: status code
     :rtype: int
     """
 
-    # make sure the requested snapshot exists
-    snapshot_size = 0
-    for available_snapshot in _get_snapshots_list():
-        # _get_snapshot_list must return a list of tuples
+    # make sure the requested bundle exists
+    bundle_size = 0
+    for available_bundle in _get_bundle_list():
+        # _get_bundle_list must return a list of tuples
         # where first element is file name and second is its size.
-        if len(available_snapshot) != 2:
+        if len(available_bundle) != 2:
             raise DCOSException(
-                'Request to get a list of snapshots returned an '
-                'unexpected response: {}'.format(available_snapshot))
+                'Request to get a list of diagnostic bundles returned an '
+                'unexpected response: {}'.format(available_bundle))
 
-        # available_snapshot[0] is a snapshot file name
-        # available_snapshot[1] is a snapshot file size
-        if available_snapshot[0] == snapshot:
-            snapshot_size = available_snapshot[1]
+        # available_bundle[0] is a file name
+        # available_bundle[1] is a file size
+        if available_bundle[0] == bundle:
+            bundle_size = available_bundle[1]
 
-    url = urllib.parse.urljoin(SNAPSHOT_BASE_URL, 'serve/' + snapshot)
-    snapshot_location = os.path.join(os.getcwd(), snapshot)
+    url = urllib.parse.urljoin(DIAGNOSTICS_BASE_URL, 'serve/' + bundle)
+    bundle_location = os.path.join(os.getcwd(), bundle)
     if location:
         if os.path.isdir(location):
-            snapshot_location = os.path.join(location, snapshot)
+            bundle_location = os.path.join(location, bundle)
         else:
-            snapshot_location = location
+            bundle_location = location
 
-    if snapshot_size > SNAPSHOT_WARN_SIZE:
-        if not confirm('Snapshot size is {}, are you sure you want '
-                       'to download it?'.format(sizeof_fmt(snapshot_size)),
+    if bundle_size > BUNDLE_WARN_SIZE:
+        if not confirm('Diagnostics bundle size is {}, are you sure you want '
+                       'to download it?'.format(sizeof_fmt(bundle_size)),
                        False):
             return 0
 
     r = _do_request(url, 'GET', stream=True)
     try:
-        with open(snapshot_location, 'wb') as f:
+        with open(bundle_location, 'wb') as f:
             for chunk in r.iter_content(1024):
                 f.write(chunk)
     except Exception as e:
         raise DCOSException(e)
-    emitter.publish('Snapshot downloaded to ' + snapshot_location)
+    emitter.publish('Diagnostics bundle downloaded to ' + bundle_location)
     return 0
 
 
-def _snapshot_delete(snapshot):
+def _bundle_delete(bundle):
     """
-    Delete a snapshot
+    Delete a bundle
 
-    :param snapshot: snapshot file name
+    :param bundle: file name
     :type: str
     :return: status code
     :rtype: int
@@ -387,21 +388,21 @@ def _snapshot_delete(snapshot):
 
     _check_3dt_version()
     url = urllib.parse.urljoin(
-        SNAPSHOT_BASE_URL, 'delete/' + snapshot)
-    response = _do_snapshot_request(url, 'POST')
+        DIAGNOSTICS_BASE_URL, 'delete/' + bundle)
+    response = _do_diagnostics_request(url, 'POST')
 
     if 'status' not in response:
         raise DCOSException(
-            'Request to delete the snapshot {} returned an '
+            'Request to delete the diagnostics bundle {} returned an '
             'unexpected response {}'.format(url, response))
 
     emitter.publish(response['status'])
     return 0
 
 
-def _snapshot_create(nodes):
+def _bundle_create(nodes):
     """
-    Create a snapshot.
+    Create a diagnostics bundle.
 
     :param nodes: a list of nodes to collect the logs from.
     :type nodes: list
@@ -410,19 +411,20 @@ def _snapshot_create(nodes):
     """
 
     _check_3dt_version()
-    url = urllib.parse.urljoin(SNAPSHOT_BASE_URL, 'create')
-    response = _do_snapshot_request(url,
-                                    'POST',
-                                    json={'nodes': nodes})
+    url = urllib.parse.urljoin(DIAGNOSTICS_BASE_URL, 'create')
+    response = _do_diagnostics_request(url,
+                                       'POST',
+                                       json={'nodes': nodes})
+
     if ('status' not in response or 'extra' not in response
-            or 'snapshot_name' not in response['extra']):
+            or 'bundle_name' not in response['extra']):
         raise DCOSException(
-            'Request to create snapshot {} returned an '
+            'Request to create a diagnostics bundle {} returned an '
             'unexpected response {}'.format(url, response))
 
-    emitter.publish('\n{}, available snapshot: {}'.format(
+    emitter.publish('\n{}, available bundle: {}'.format(
         response['status'],
-        response['extra']['snapshot_name']))
+        response['extra']['bundle_name']))
     return 0
 
 
