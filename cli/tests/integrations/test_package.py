@@ -396,9 +396,9 @@ def test_package_metadata():
                          b'NrYWdpbmdWZXJzaW9uIjoiMi4wIiwidGFncyI6WyJtZXNvc3Bo'
                          b'ZXJlIiwiZXhhbXBsZSIsInN1YmNvbW1hbmQiXSwibWFpbnRhaW'
                          b'5lciI6InN1cHBvcnRAbWVzb3NwaGVyZS5pbyIsInNlbGVjdGVk'
-                         b'IjpmYWxzZSwidmVyc2lvbiI6IjAuMS4wIiwicHJlSW5zdGFsbE'
-                         b'5vdGVzIjoiQSBzYW1wbGUgcHJlLWluc3RhbGxhdGlvbiBtZXNz'
-                         b'YWdlIn0=')
+                         b'IjpmYWxzZSwiZnJhbWV3b3JrIjpmYWxzZSwidmVyc2lvbiI6Ij'
+                         b'AuMS4wIiwicHJlSW5zdGFsbE5vdGVzIjoiQSBzYW1wbGUgcHJl'
+                         b'LWluc3RhbGxhdGlvbiBtZXNzYWdlIn0=')
 
     expected_command = b"""eyJwaXAiOlsiZGNvczwxLjAiLCJnaXQraHR0cHM6Ly9naXRodWI\
 uY29tL21lc29zcGhlcmUvZGNvcy1oZWxsb3dvcmxkLmdpdCNkY29zLWhlbGxvd29ybGQ9MC4xLjAiX\
