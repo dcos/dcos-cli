@@ -58,7 +58,7 @@ Setup
 #. Make sure you meet requirements for installing packages_
 #. Clone git repo for the dcos cli::
 
-    git clone git@github.com:mesosphere/dcos-cli.git
+    git clone git@github.com:dcos/dcos-cli.git
 
 #. Change directory to the repo directory::
 
