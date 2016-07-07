@@ -47,8 +47,6 @@ setup(
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.4',
     ],
@@ -65,7 +63,6 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
-        'futures>=3.0, <4.0',
         'gitpython>=1.0, <2.0',
         'jsonschema==2.4',  # pin the exact version, jsonschema 2.5 broke py3
         'pager>=3.3, <4.0',

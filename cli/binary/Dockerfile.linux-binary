@@ -11,10 +11,9 @@ RUN apt-get update && apt-get install -y \
   git \
   sudo \
 && sudo apt-get update --fix-missing \
-&& sudo apt-get install -y python-dev build-essential \
-&& sudo apt-get install -y python-pip python-virtualenv \
-&& pip install pip --upgrade \
-&& pip install pyinstaller
+&& sudo apt-get install -y python-dev build-essential python-virtualenv python3-pip python3-virtualenv \
+&& pip3 install pip --upgrade \
+&& python3 -m pip install pyinstaller==3.1.1
 
 ADD . /dcos-cli
 WORKDIR /dcos-cli

@@ -4,7 +4,7 @@ BASEDIR=`dirname $0`/..
 
 if [ ! -d "$BASEDIR/env" ]; then
 
-    virtualenv -q $BASEDIR/env --prompt='(dcoscli) '
+    virtualenv -p python3 -q $BASEDIR/env --prompt='(dcoscli) '
     echo "Virtualenv created."
 
     if [ -f "$BASEDIR/env/bin/activate" ]; then
