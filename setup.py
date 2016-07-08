@@ -63,7 +63,6 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
-        'futures>=3.0, <4.0',
         'gitpython>=1.0, <2.0',
         'jsonschema==2.4',  # pin the exact version, jsonschema 2.5 broke py3
         'pager>=3.3, <4.0',
