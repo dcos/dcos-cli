@@ -66,9 +66,9 @@ setup(
         'dcos=={}'.format(dcoscli.version),
         'docopt>=0.6, <1.0',
         'pkginfo==1.2.1',
+        'rollbar>=0.9, <1.0',
         'toml>=0.9, <1.0',
-        'virtualenv>=13.0, <14.0',
-        'rollbar>=0.9, <1.0'
+        'virtualenv>=13.0, <16.0',
     ],
 
     # If there are data files included in your packages that need to be
