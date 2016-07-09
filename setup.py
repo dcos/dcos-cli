@@ -1,3 +1,4 @@
+import sys
 from codecs import open
 from os import path
 
@@ -9,6 +10,24 @@ here = path.abspath(path.dirname(__file__))
 # Get the long description from the relevant file
 with open(path.join(here, 'DESCRIPTION.rst'), encoding='utf-8') as f:
     long_description = f.read()
+
+install_requires = [
+    'gitpython>=1.0, <2.0',
+    'jsonschema==2.4',  # pin the exact version, jsonschema 2.5 broke py3
+    'pager>=3.3, <4.0',
+    'portalocker>=0.5, <1.0',
+    'prettytable>=0.7, <1.0',
+    'pygments>=2.0, <3.0',
+    'pypng==0.0.18',
+    'pystache>=0.5, <1.0',
+    'requests>=2.6, <3.0',
+    'six>=1.9, <2.0',
+    'toml>=0.9, <1.0',
+]
+
+if sys.version_info[0] == 2:
+    install_requires.append('futures>=3.0, <4.0')
+
 
 setup(
     name='dcos',
@@ -62,20 +81,7 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=[
-        'futures>=3.0, <4.0',
-        'gitpython>=1.0, <2.0',
-        'jsonschema==2.4',  # pin the exact version, jsonschema 2.5 broke py3
-        'pager>=3.3, <4.0',
-        'portalocker>=0.5, <1.0',
-        'prettytable>=0.7, <1.0',
-        'pygments>=2.0, <3.0',
-        'pypng==0.0.18',
-        'pystache>=0.5, <1.0',
-        'requests>=2.6, <3.0',
-        'six>=1.9, <2.0',
-        'toml>=0.9, <1.0',
-    ],
+    install_requires=install_requires,
 
     package_data={
         'dcos': [
