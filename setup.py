@@ -58,10 +58,6 @@ setup(
     # simple. Or you can use find_packages().
     packages=find_packages(exclude=['pydoc', 'tests', 'cli', 'bin']),
 
-    # List run-time dependencies here.  These will be installed by pip when
-    # your project is installed. For an analysis of "install_requires" vs pip's
-    # requirements files see:
-    # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
         'gitpython>=1.0, <2.0',
         'jsonschema==2.4',  # pin the exact version, jsonschema 2.5 broke py3
@@ -75,6 +71,10 @@ setup(
         'six>=1.9, <2.0',
         'toml>=0.9, <1.0',
     ],
+
+    extras_require={
+        ':python_version=="2.7"': ['futures>=3.0, <4.0'],
+    },
 
     package_data={
         'dcos': [
