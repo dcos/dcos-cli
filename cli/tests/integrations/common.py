@@ -1,10 +1,11 @@
+import base64
 import collections
 import contextlib
 import json
 import os
 import subprocess
 import time
-import base64
+
 
 import six
 from dcos import config, http
