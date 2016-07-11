@@ -198,7 +198,8 @@ def test_describe_render():
     for label, value in expected_labels.items():
         if label == "DCOS_PACKAGE_METADATA":
             # We can covert the metadata into a dictionary
-            assert base64_to_dict(value) == base64_to_dict(actual_labels.get(label))
+            assert base64_to_dict(value) == \
+                   base64_to_dict(actual_labels.get(label))
         else:
             assert value == actual_labels.get(label)
 
@@ -263,7 +264,8 @@ def test_describe_options():
     for label, value in expected_labels.items():
         if label == "DCOS_PACKAGE_METADATA":
             # We can covert the metadata into a dictionary
-            assert base64_to_dict(value) == base64_to_dict(actual_labels.get(label))
+            assert base64_to_dict(value) == \
+                   base64_to_dict(actual_labels.get(label))
         else:
             assert value == actual_labels.get(label)
 
@@ -412,7 +414,8 @@ def test_package_metadata():
     expected_command = {
         "pip": [
             "dcos<1.0",
-            "git+https://github.com/mesosphere/dcos-helloworld.git#dcos-helloworld=0.1.0"
+            "git+https://github.com/mesosphere/" +
+            "dcos-helloworld.git#dcos-helloworld=0.1.0"
         ]
     }
 
