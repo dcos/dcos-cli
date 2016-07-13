@@ -8,10 +8,12 @@ from dcos import subcommand
 
 import pytest
 
-from .common import (assert_command, assert_lines, delete_zk_node,
-                     delete_zk_nodes, exec_command, file_bytes, file_json,
-                     get_services, package_install, package_uninstall,
-                     service_shutdown, wait_for_service, watch_all_deployments)
+from .common import (assert_command, assert_lines, base64_to_dict,
+                     delete_zk_node, delete_zk_nodes, exec_command,
+                     file_bytes, file_json,
+                     get_services, package_install,
+                     package_uninstall, service_shutdown,
+                     wait_for_service, watch_all_deployments)
 
 
 def setup_module(module):
@@ -195,7 +197,12 @@ def test_describe_render():
     actual_labels = stdout_.pop("labels", None)
 
     for label, value in expected_labels.items():
-        assert value == actual_labels.get(label)
+        if label == "DCOS_PACKAGE_METADATA":
+            # We can covert the metadata into a dictionary
+            assert base64_to_dict(value) == \
+                   base64_to_dict(actual_labels.get(label))
+        else:
+            assert value == actual_labels.get(label)
 
     assert stdout == stdout_
     assert stderr == b''
@@ -256,7 +263,12 @@ def test_describe_options():
     actual_labels = stdout_.pop("labels", None)
 
     for label, value in expected_labels.items():
-        assert value == actual_labels.get(label)
+        if label == "DCOS_PACKAGE_METADATA":
+            # We can covert the metadata into a dictionary
+            assert base64_to_dict(value) == \
+                   base64_to_dict(actual_labels.get(label))
+        else:
+            assert value == actual_labels.get(label)
 
     assert stdout == stdout_
     assert stderr == b''
@@ -388,17 +400,25 @@ def test_package_metadata():
     _install_helloworld()
 
     # test marathon labels
-    expected_metadata = b"""eyJ3ZWJzaXRlIjoiaHR0cHM6Ly9naXRodWIuY29tL21lc29zcG\
-hlcmUvZGNvcy1oZWxsb3dvcmxkIiwibmFtZSI6ImhlbGxvd29ybGQiLCJwb3N0SW5zdGFsbE5vdGVz\
-IjoiQSBzYW1wbGUgcG9zdC1pbnN0YWxsYXRpb24gbWVzc2FnZSIsImRlc2NyaXB0aW9uIjoiRXhhbX\
-BsZSBEQ09TIGFwcGxpY2F0aW9uIHBhY2thZ2UiLCJwYWNrYWdpbmdWZXJzaW9uIjoiMi4wIiwidGFn\
-cyI6WyJtZXNvc3BoZXJlIiwiZXhhbXBsZSIsInN1YmNvbW1hbmQiXSwibWFpbnRhaW5lciI6InN1cH\
-BvcnRAbWVzb3NwaGVyZS5pbyIsInZlcnNpb24iOiIwLjEuMCIsInByZUluc3RhbGxOb3RlcyI6IkEg\
-c2FtcGxlIHByZS1pbnN0YWxsYXRpb24gbWVzc2FnZSJ9"""
+    expected_metadata = {
+        "website": "https://github.com/mesosphere/dcos-helloworld",
+        "name": "helloworld",
+        "postInstallNotes": "A sample post-installation message",
+        "description": "Example DCOS application package",
+        "packagingVersion": "2.0",
+        "tags": ["mesosphere", "example", "subcommand"],
+        "maintainer": "support@mesosphere.io",
+        "version": "0.1.0",
+        "preInstallNotes": "A sample pre-installation message"
+    }
 
-    expected_command = b"""eyJwaXAiOlsiZGNvczwxLjAiLCJnaXQraHR0cHM6Ly9naXRodWI\
-uY29tL21lc29zcGhlcmUvZGNvcy1oZWxsb3dvcmxkLmdpdCNkY29zLWhlbGxvd29ybGQ9MC4xLjAiX\
-X0="""
+    expected_command = {
+        "pip": [
+            "dcos<1.0",
+            "git+https://github.com/mesosphere/" +
+            "dcos-helloworld.git#dcos-helloworld=0.1.0"
+        ]
+    }
 
     expected_source = b"""https://github.com/mesosphere/universe/archive/\
 cli-test-4.zip"""
@@ -417,10 +437,10 @@ cli-test-4.zip"""
 
     # these labels are different for cosmos b/c of null problem
     # we have cosmos tests for test, and will fix in issue 431
-    assert expected_metadata == six.b(
-        app_labels.get('DCOS_PACKAGE_METADATA'))
-    assert expected_command == six.b(
-        app_labels.get('DCOS_PACKAGE_COMMAND'))
+    assert expected_metadata == base64_to_dict(six.b(
+        app_labels.get('DCOS_PACKAGE_METADATA')))
+    assert expected_command == base64_to_dict(six.b(
+        app_labels.get('DCOS_PACKAGE_COMMAND')))
 
     # test local package.json
     package = {

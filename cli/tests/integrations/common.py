@@ -1,9 +1,11 @@
+import base64
 import collections
 import contextlib
 import json
 import os
 import subprocess
 import time
+
 
 import six
 from dcos import config, http
@@ -549,3 +551,7 @@ def config_unset(key, env=None):
 
     assert returncode == 0
     assert stdout == b''
+
+
+def base64_to_dict(byte_string):
+    return json.loads(base64.b64decode(byte_string).decode('utf-8'))
