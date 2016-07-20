@@ -141,7 +141,7 @@ def default_subcommands():
     :returns: list of all the default dcos cli subcommands
     :rtype: [str]
     """
-    return ["auth", "config", "help", "marathon",
+    return ["auth", "config", "help", "job", "marathon",
             "node", "package", "service", "task"]
 
 

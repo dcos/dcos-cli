@@ -15,6 +15,7 @@ def _default_modules():
     from dcoscli.auth import main as auth_main
     from dcoscli.config import main as config_main
     from dcoscli.help import main as help_main
+    from dcoscli.job import main as job_main
     from dcoscli.marathon import main as marathon_main
     from dcoscli.node import main as node_main
     from dcoscli.package import main as package_main
@@ -24,6 +25,7 @@ def _default_modules():
     return {'auth': auth_main,
             'config': config_main,
             'help': help_main,
+            'job': job_main,
             'marathon': marathon_main,
             'node': node_main,
             'package': package_main,
