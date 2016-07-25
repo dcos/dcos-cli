@@ -231,6 +231,24 @@ def test_log_completed():
     assert len(stdout.decode('utf-8').split('\n')) > 4
 
 
+def test_ls_no_params():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'task', 'ls'])
+
+    assert returncode == 0
+    assert stderr == b''
+
+    ls_line = 'stderr  stderr.logrotate.conf  stdout  stdout.logrotate.conf'
+    lines = stdout.decode('utf-8').split('\n')
+    assert len(lines) == 7
+    assert re.match('===>.*<===', lines[0])
+    assert re.match(ls_line, lines[1])
+    assert re.match('===>.*<===', lines[2])
+    assert re.match(ls_line, lines[3])
+    assert re.match('===>.*<===', lines[4])
+    assert re.match(ls_line, lines[5])
+
+
 def test_ls():
     stdout = b'stderr  stderr.logrotate.conf  stdout  stdout.logrotate.conf\n'
     assert_command(['dcos', 'task', 'ls', 'test-app1'],

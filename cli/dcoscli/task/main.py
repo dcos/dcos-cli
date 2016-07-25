@@ -72,11 +72,11 @@ def _info():
     return 0
 
 
-def _task(fltr, completed, json_):
+def _task(task, completed, json_):
     """List DCOS tasks
 
-    :param fltr: task id filter
-    :type fltr: str
+    :param task: task id filter
+    :type task: str
     :param completed: If True, include completed tasks
     :type completed: bool
     :param json_: If True, output json.  Otherwise, output a human
@@ -85,14 +85,14 @@ def _task(fltr, completed, json_):
     :returns: process return code
     """
 
-    if fltr is None:
-        fltr = ""
+    if task is None:
+        task = ""
 
-    tasks = sorted(mesos.get_master().tasks(completed=completed, fltr=fltr),
-                   key=lambda task: task['name'])
+    tasks = sorted(mesos.get_master().tasks(completed=completed, fltr=task),
+                   key=lambda t: t['name'])
 
     if json_:
-        emitter.publish([task.dict() for task in tasks])
+        emitter.publish([t.dict() for t in tasks])
     else:
         table = tables.task_table(tasks)
         output = six.text_type(table)
@@ -175,6 +175,8 @@ def _ls(task, path, long_, completed):
     :rtype: int
     """
 
+    if task is None:
+        task = ""
     if path is None:
         path = '.'
     if path.startswith('/'):
