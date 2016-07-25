@@ -49,10 +49,8 @@ def _cmds():
     """
 
     return [
-        # dcos job schedule add <job-id> <schedule-file>
-        # dcos job schedule show <job-id>
         # dcos job schedule show [--next <period-length> <time-unit>][--between <start> <end>]
-
+# dcos job schedule remove <job-id> <schedule-id>
         cmds.Command(
             hierarchy=['job', 'run'],
             arg_keys=['<job-id>'],
@@ -67,6 +65,11 @@ def _cmds():
             hierarchy=['job', 'schedule', 'show'],
             arg_keys=['<job-id>'],
             function=_show_schedule),
+
+        cmds.Command(
+            hierarchy=['job', 'schedule', 'remove'],
+            arg_keys=['<job-id>', '<schedule-id>'],
+            function=_remove_schedule),
 
         cmds.Command(
             hierarchy=['job', 'list'],
@@ -115,6 +118,32 @@ def _job(config_schema=False, info=False):
         emitter.publish(options.make_generic_usage_message(doc))
         return 1
 
+    return 0
+
+
+def _remove_schedule(job_id, schedule_id):
+    """
+    :param job_id: Id of the job
+    :type job_id: str
+    :param schedule_id: Id of the schedule
+    :type schedule_id: str
+    :returns: process return code
+    :rtype: int
+    """
+    response = None
+
+    try:
+     response = _do_request("{}/{}/{}/{}".format(METRONOME_JOB_URL,job_id,METRONOME_SCHEDULES,schedule_id),'DELETE')
+    except DCOSHTTPException as e:
+        if e.response.status_code == 404:
+            emitter.publish("Schedule or job ID does NOT exist.")
+        return 1
+    except DCOSException as e:
+        emitter.publish("Unable to remove schedule ID '{}' for job ID '{}'".format(schedule_id, job_id))
+        return 1
+
+    if response.status_code == 200:
+        emitter.publish("Schedule '{}' for job '{}' removed.".format(schedule_id, job_id))
     return 0
 
 

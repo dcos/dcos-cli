@@ -12,6 +12,7 @@ Description:
         dcos job list [--scheduled][--completed]
         dcos job schedule add <job-id> <schedule-file>
         dcos job schedule show <job-id>
+        dcos job schedule remove <job-id> <schedule-id>
         dcos job schedule show [--next <period-length> <time-unit>][--between <start> <end>]
         dcos job history [--last <period-length> <time-units>][--between <start> <end>][--job <job-id>]
 
