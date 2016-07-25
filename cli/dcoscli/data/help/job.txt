@@ -3,7 +3,6 @@ Description:
 
     Usage:
         dcos job [--help][--version][--config-schema][--info]
-        dcos job about
         dcos job add <job-file>
         dcos job remove <job-id> [--stopCurrentJobRuns]
         dcos job show <job-id>
@@ -11,7 +10,9 @@ Description:
         dcos job kill <job-id>
         dcos job run <job-id>
         dcos job list [--scheduled][--completed]
-        dcos job schedule <job-id> [--next <period-length> <time-unit>][--between <start> <end>]
+        dcos job schedule add <job-id> <schedule-file>
+        dcos job schedule show <job-id>
+        dcos job schedule show [--next <period-length> <time-unit>][--between <start> <end>]
         dcos job history [--last <period-length> <time-units>][--between <start> <end>][--job <job-id>]
 
 Commands:

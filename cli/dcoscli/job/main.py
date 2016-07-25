@@ -49,16 +49,24 @@ def _cmds():
     """
 
     return [
-# dcos job schedule
+        # dcos job schedule add <job-id> <schedule-file>
+        # dcos job schedule show <job-id>
+        # dcos job schedule show [--next <period-length> <time-unit>][--between <start> <end>]
+
         cmds.Command(
             hierarchy=['job', 'run'],
             arg_keys=['<job-id>'],
             function=_run),
 
         cmds.Command(
-            hierarchy=['job', 'schedule'],
+            hierarchy=['job', 'schedule', 'add'],
+            arg_keys=['<job-id>', '<schedule-file>'],
+            function=_add_schedule),
+
+        cmds.Command(
+            hierarchy=['job', 'schedule', 'show'],
             arg_keys=['<job-id>'],
-            function=_schedule),
+            function=_show_schedule),
 
         cmds.Command(
             hierarchy=['job', 'list'],
@@ -79,11 +87,6 @@ def _cmds():
             hierarchy=['job', 'show'],
             arg_keys=['<job-id>'],
             function=_show),
-
-        cmds.Command(
-            hierarchy=['job', 'about'],
-            arg_keys=[],
-            function=_about),
 
         cmds.Command(
             hierarchy=['job'],
@@ -206,7 +209,7 @@ def _run(job_id):
     return 0
 
 
-def _schedule(job_id):
+def _show_schedule(job_id):
     """
     :param job_id: Id of the job
     :type job_id: str
@@ -224,6 +227,48 @@ def _schedule(job_id):
     emitter.publish(json)
 
     return 0
+
+def _add_schedules(job_id, schedules_json):
+    """
+    :param job_id: Id of the job
+    :type job_id: str
+    :param schedules_json: json for the schedules
+    :type schedules_json: json
+    :returns: process return code
+    :rtype: int
+    """
+
+    if schedules_json is None:
+        return 1
+
+    for schedule in schedules_json:
+        try:
+            response = _post_schedule(job_id, schedule)
+            emitter.publish("Schedule ID `{}` for job ID `{}` added".format(schedule['id'],job_id))
+        except DCOSHTTPException as e:
+            if e.response.status_code == 404:
+                emitter.publish("Job ID: '{}' does NOT exist.".format(job_id))
+            elif e.response.status_code == 409:
+                emitter.publish("Schedule already exists.")
+            else:
+                return 1
+        except DCOSException as e:
+            return 1
+
+    return 0
+
+def _add_schedule(job_id, schedule_file):
+    """
+    :param job_id: Id of the job
+    :type job_id: str
+    :param schedule_file: filename for the schedule resource
+    :type schedule_file: str
+    :returns: process return code
+    :rtype: int
+    """
+
+    schedules = _get_resource(schedule_file)
+    return _add_schedules(job_id, schedules)
 
 
 def _get_schedule_url(job_id):
@@ -268,9 +313,7 @@ def _add_job(job_file):
             emitter.publish("Error running job: '{}'".format(job_id))
 
     if (schedules is not None and job_added):
-        for schedule in schedules:
-            response = _post_schedule(job_id, schedule)
-            print(response)
+        return _add_schedules(job_id, schedules)
 
     return 0
 
