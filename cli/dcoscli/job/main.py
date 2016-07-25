@@ -6,7 +6,7 @@ import dcoscli
 import docopt
 import pkg_resources
 from dcos import cmds, config, emitting, http, options, util
-from dcos.errors import DCOSException
+from dcos.errors import (DCOSException, DCOSHTTPException)
 # from dcoscli import tables
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
@@ -51,6 +51,11 @@ def _cmds():
     return [
 # dcos job schedule
         cmds.Command(
+            hierarchy=['job', 'run'],
+            arg_keys=['<job-id>'],
+            function=_run),
+
+        cmds.Command(
             hierarchy=['job', 'schedule'],
             arg_keys=['<job-id>'],
             function=_schedule),
@@ -62,13 +67,13 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['job', 'remove'],
-            arg_keys=['<job-id>'],
+            arg_keys=['<job-id>','--stopCurrentJobRuns'],
             function=_remove),
 
         cmds.Command(
             hierarchy=['job', 'add'],
             arg_keys=['<job-file>'],
-            function=_add),
+            function=_add_job),
 
         cmds.Command(
             hierarchy=['job', 'show'],
@@ -110,22 +115,28 @@ def _job(config_schema=False, info=False):
     return 0
 
 
-def _remove(job_id):
+def _remove(job_id, stop_current_job_runs=False):
     """
     :param job_id: Id of the job
     :type job_id: str
+    :param stop_current_job_runs: If job runs should be stop as part of the remove
+    :type stop_current_job_runs: boolean
     :returns: process return code
     :rtype: int
     """
     response = None
+
     try:
-     response = _do_request("{}/{}".format(METRONOME_JOB_URL,job_id),'DELETE')
+     response = _do_request("{}/{}?stopCurrentJobRuns={}".format(METRONOME_JOB_URL,job_id,str(stop_current_job_runs).lower()),'DELETE')
+    except DCOSHTTPException as e:
+        if(e.response.status_code == 500 and stop_current_job_runs):
+            return _remove(job_id, False)
     except DCOSException as e:
+        emitter.publish("Unable to remove '{}'.  It may be running.".format(job_id))
         return 1
 
     if response.status_code == 200:
         emitter.publish("{} removed.".format(job_id))
-
     return 0
 
 
@@ -166,6 +177,35 @@ def _show(job_id):
     return 0
 
 
+def _run(job_id):
+    """
+    :param job_id: Id of the job
+    :type job_id: str
+    :returns: process return code
+    :rtype: int
+    """
+
+    timeout = config.get_config_val('core.timeout')
+    if not timeout:
+        timeout = DEFAULT_TIMEOUT
+
+    base_url = config.get_config_val("core.dcos_url")
+    if not base_url:
+        raise config.missing_config_exception(['core.dcos_url'])
+
+    url = urllib.parse.urljoin(base_url, "{}/{}/runs".format(METRONOME_JOB_URL,job_id))
+
+    try:
+        response = http.post(url, timeout=timeout)
+    except DCOSHTTPException as e:
+        if(e.response.status_code == 404):
+            emitter.publish("Job ID: '{}' does not exist.".format(job_id))
+        else:
+            emitter.publish("Error running job: '{}'".format(job_id))
+
+    return 0
+
+
 def _schedule(job_id):
     """
     :param job_id: Id of the job
@@ -196,7 +236,7 @@ def _get_schedule_url(job_id):
     return "{}/{}/{}".format(METRONOME_JOB_URL, job_id, METRONOME_SCHEDULES)
 
 
-def _add(job_file):
+def _add_job(job_file):
     """
     :param job_file: optional filename for the application resource
     :type job_file: str
@@ -216,12 +256,20 @@ def _add(job_file):
         del full_json['schedules']
 
     # iterate and post each schedule
-    response = _add_job(full_json)
-    print(response)
+    job_added = False
+    try:
+        response = _post_job(full_json)
+        job_added = True
+        emitter.publish("Job ID: '{}' added.".format(job_id))
+    except DCOSHTTPException as e:
+        if(e.response.status_code == 409):
+            emitter.publish("Job ID: '{}' already exists".format(job_id))
+        else:
+            emitter.publish("Error running job: '{}'".format(job_id))
 
-    if schedules is not None:
+    if (schedules is not None and job_added):
         for schedule in schedules:
-            response = _add_schedule(job_id, schedule)
+            response = _post_schedule(job_id, schedule)
             print(response)
 
     return 0
@@ -257,7 +305,7 @@ def _cli_config_schema():
             'dcoscli',
             'data/config-schema/job.json').decode('utf-8'))
 
-def _add_job(job_json):
+def _post_job(job_json):
     """
     :param job_json: json object representing a job
     :type job_file: json
@@ -282,7 +330,7 @@ def _add_job(job_json):
     return response.json()
 
 
-def _add_schedule(job_id, schedule_json):
+def _post_schedule(job_id, schedule_json):
     """
     :param job_id: id of the job
     :type job_id: str

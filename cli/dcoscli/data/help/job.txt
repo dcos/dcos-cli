@@ -5,7 +5,7 @@ Description:
         dcos job [--help][--version][--config-schema][--info]
         dcos job about
         dcos job add <job-file>
-        dcos job remove <job-id>
+        dcos job remove <job-id> [--stopCurrentJobRuns]
         dcos job show <job-id>
         dcos job update <job-id> <properties>
         dcos job kill <job-id>
