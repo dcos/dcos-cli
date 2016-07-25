@@ -360,11 +360,13 @@ def _format_validation_error(error):
     return message
 
 
-def create_schema(obj):
+def create_schema(obj, add_properties=False):
     """ Creates a basic json schema derived from `obj`.
 
     :param obj: object for which to derive a schema
     :type obj: str | int | float | dict | list
+    :param add_properties: whether to allow additional properties
+    :type add_properties: bool
     :returns: json schema
     :rtype: dict
     """
@@ -384,18 +386,18 @@ def create_schema(obj):
     elif isinstance(obj, collections.Mapping):
         schema = {'type': 'object',
                   'properties': {},
-                  'additionalProperties': False,
+                  'additionalProperties': add_properties,
                   'required': list(obj.keys())}
 
         for key, val in obj.items():
-            schema['properties'][key] = create_schema(val)
+            schema['properties'][key] = create_schema(val, add_properties)
 
         return schema
 
     elif isinstance(obj, collections.Sequence):
         schema = {'type': 'array'}
         if obj:
-            schema['items'] = create_schema(obj[0])
+            schema['items'] = create_schema(obj[0], add_properties)
         return schema
 
     else:
