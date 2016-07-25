@@ -18,7 +18,6 @@ from .common import (assert_command, assert_lines, delete_zk_node,
 
 
 def setup_module(module):
-    exec_command(['dcos', 'package', 'repo', 'remove', 'Universe-1.7'])
     exec_command(
         ['dcos', 'package', 'repo', 'remove', 'Universe'])
     repo = "https://github.com/mesosphere/universe/archive/cli-test-4.zip"
@@ -37,8 +36,6 @@ def teardown_module(module):
     delete_zk_nodes()
     assert_command(
         ['dcos', 'package', 'repo', 'remove', 'test4'])
-    repo17 = "https://universe.mesosphere.com/repo-1.7"
-    assert_command(['dcos', 'package', 'repo', 'add', 'Universe-1.7', repo17])
     repo = "https://universe.mesosphere.com/repo"
     assert_command(['dcos', 'package', 'repo', 'add', 'Universe', repo])
 
@@ -277,13 +274,12 @@ def test_log_no_apps():
 
 
 def _get_schema(service):
-    schema = create_schema(service.dict())
+    schema = create_schema(service.dict(), True)
     schema['required'].remove('reregistered_time')
     schema['required'].remove('pid')
     schema['required'].remove('executors')
     schema['properties']['offered_resources']['required'].remove('ports')
     schema['properties']['resources']['required'].remove('ports')
     schema['properties']['used_resources']['required'].remove('ports')
-    schema['additionalProperties'] = True
 
     return schema

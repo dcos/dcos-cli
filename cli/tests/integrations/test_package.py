@@ -16,8 +16,6 @@ from .common import (assert_command, assert_lines, delete_zk_node,
 
 def setup_module(module):
     assert_command(
-        ['dcos', 'package', 'repo', 'remove', 'Universe-1.7'])
-    assert_command(
         ['dcos', 'package', 'repo', 'remove', 'Universe'])
     repo = "https://github.com/mesosphere/universe/archive/cli-test-4.zip"
     assert_command(['dcos', 'package', 'repo', 'add', 'test4', repo])
@@ -26,8 +24,6 @@ def setup_module(module):
 def teardown_module(module):
     assert_command(
         ['dcos', 'package', 'repo', 'remove', 'test4'])
-    repo17 = "https://universe.mesosphere.com/repo-1.7"
-    assert_command(['dcos', 'package', 'repo', 'add', 'Universe-1.7', repo17])
     repo = "https://universe.mesosphere.com/repo"
     assert_command(['dcos', 'package', 'repo', 'add', 'Universe', repo])
 
