@@ -50,11 +50,16 @@ def _cmds():
 
     return [
         # dcos job schedule show [--next <period-length> <time-unit>][--between <start> <end>]
-# dcos job schedule remove <job-id> <schedule-id>
+# dcos job kill <job-id> <run-id>
         cmds.Command(
             hierarchy=['job', 'run'],
             arg_keys=['<job-id>'],
             function=_run),
+
+        cmds.Command(
+            hierarchy=['job', 'kill'],
+            arg_keys=['<job-id>', '<run-id>'],
+            function=_kill),
 
         cmds.Command(
             hierarchy=['job', 'schedule', 'add'],
@@ -172,6 +177,30 @@ def _remove(job_id, stop_current_job_runs=False):
     return 0
 
 
+def _kill(job_id, run_id):
+    """
+    :param job_id: Id of the job
+    :type job_id: str
+    :returns: process return code
+    :rtype: int
+    """
+    response = None
+
+    try:
+     response = _do_request("{}/{}/runs/{}/actions/stop".format(METRONOME_JOB_URL,job_id,run_id),'POST')
+    except DCOSHTTPException as e:
+        if e.response.status_code == 404:
+            emitter.publish("Job ID or Run ID does NOT exist.")
+        return 1
+    except DCOSException as e:
+        emitter.publish("Unable stop run ID '{}' for job ID '{}'".format(run_id, job_id))
+        return 1
+
+    if response.status_code == 200:
+        emitter.publish("Run '{}' for job '{}' killed.".format(run_id, job_id))
+    return 0
+
+
 def _list():
     """
     :returns: process return code
@@ -234,7 +263,7 @@ def _run(job_id):
             emitter.publish("Job ID: '{}' does not exist.".format(job_id))
         else:
             emitter.publish("Error running job: '{}'".format(job_id))
-
+    emitter.publish(response)
     return 0
 
 
