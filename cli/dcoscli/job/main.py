@@ -50,7 +50,8 @@ def _cmds():
 
     return [
         # dcos job schedule show [--next <period-length> <time-unit>][--between <start> <end>]
-# dcos job kill <job-id> <run-id>
+#       dcos job update <job-id> <job-file>
+
         cmds.Command(
             hierarchy=['job', 'run'],
             arg_keys=['<job-id>'],
@@ -72,6 +73,11 @@ def _cmds():
             function=_show_schedule),
 
         cmds.Command(
+            hierarchy=['job', 'show', 'runs'],
+            arg_keys=['<job-id>', '<run-id>'],
+            function=_show_runs),
+
+        cmds.Command(
             hierarchy=['job', 'schedule', 'remove'],
             arg_keys=['<job-id>', '<schedule-id>'],
             function=_remove_schedule),
@@ -90,6 +96,11 @@ def _cmds():
             hierarchy=['job', 'add'],
             arg_keys=['<job-file>'],
             function=_add_job),
+
+        cmds.Command(
+            hierarchy=['job', 'update'],
+            arg_keys=['<job-id>', '<job-file>'],
+            function=_update_job),
 
         cmds.Command(
             hierarchy=['job', 'show'],
@@ -237,6 +248,29 @@ def _show(job_id):
 
     return 0
 
+def _show_runs(job_id, run_id=None):
+    """
+    :param job_id: Id of the job
+    :type job_id: str
+    :returns: process return code
+    :rtype: int
+    """
+
+    response = None
+    url = "{}/{}/runs".format(METRONOME_JOB_URL,job_id)
+    if run_id is not None:
+        url = "{}/{}/runs/{}".format(METRONOME_JOB_URL,job_id, run_id)
+    try:
+     response = _do_request(url,'GET')
+    except DCOSException as e:
+        return 1
+
+    json = _read_http_response_body(response)
+    emitter.publish(job_id)
+    emitter.publish(json)
+
+    return 0
+
 
 def _run(job_id):
     """
@@ -263,7 +297,7 @@ def _run(job_id):
             emitter.publish("Job ID: '{}' does not exist.".format(job_id))
         else:
             emitter.publish("Error running job: '{}'".format(job_id))
-    emitter.publish(response)
+
     return 0
 
 
@@ -376,12 +410,36 @@ def _add_job(job_file):
     return 0
 
 
-def _about():
+def _update_job(job_id, job_file):
     """
+    :param job_id: Id of the job
+    :type job_id: str
+    :param job_file: filename for the application resource
+    :type job_file: str
     :returns: process return code
     :rtype: int
     """
-    emitter.publish("Metronome Job CLI")
+    # only updates the job (does NOT update schedules)
+    full_json = _get_resource(job_file)
+    if full_json is None:
+        return 1
+
+    schedules = None
+
+    if 'schedules' in full_json:
+        schedules = full_json['schedules']
+        del full_json['schedules']
+
+    job_added = False
+    try:
+        response = _put_job(job_id, full_json)
+        job_added = True
+        emitter.publish("Job ID: '{}' updated.".format(job_id))
+    except DCOSHTTPException as e:
+        emitter.publish("Error updating job: '{}'".format(job_id))
+
+    # if (schedules is not None and job_added):
+    #     return _add_schedules(job_id, schedules)
 
     return 0
 
@@ -425,6 +483,32 @@ def _post_job(job_json):
     url = urllib.parse.urljoin(base_url, METRONOME_JOB_URL)
 
     response = http.post(url,
+                         json=job_json,
+                         timeout=timeout)
+
+    return response.json()
+
+def _put_job(job_id, job_json):
+    """
+    :param job_id: Id of the job
+    :type job_id: str
+    :param job_json: json object representing a job
+    :type job_file: json
+    :returns: response json
+    :rtype: json
+    """
+
+    timeout = config.get_config_val('core.timeout')
+    if not timeout:
+        timeout = DEFAULT_TIMEOUT
+
+    base_url = config.get_config_val("core.dcos_url")
+    if not base_url:
+        raise config.missing_config_exception(['core.dcos_url'])
+
+    url = urllib.parse.urljoin(base_url, "{}/{}".format(METRONOME_JOB_URL, job_id))
+
+    response = http.put(url,
                          json=job_json,
                          timeout=timeout)
 
