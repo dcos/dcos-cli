@@ -50,7 +50,6 @@ def _cmds():
 
     return [
         # dcos job schedule show [--next <period-length> <time-unit>][--between <start> <end>]
-#       dcos job update <job-id> <job-file>
 
         cmds.Command(
             hierarchy=['job', 'run'],
@@ -66,6 +65,11 @@ def _cmds():
             hierarchy=['job', 'schedule', 'add'],
             arg_keys=['<job-id>', '<schedule-file>'],
             function=_add_schedule),
+
+        cmds.Command(
+            hierarchy=['job', 'schedule', 'update'],
+            arg_keys=['<job-id>', '<schedule-id>', '<schedule-file>'],
+            function=_update_schedules),
 
         cmds.Command(
             hierarchy=['job', 'schedule', 'show'],
@@ -320,6 +324,7 @@ def _show_schedule(job_id):
 
     return 0
 
+
 def _add_schedules(job_id, schedules_json):
     """
     :param job_id: Id of the job
@@ -348,6 +353,47 @@ def _add_schedules(job_id, schedules_json):
             return 1
 
     return 0
+
+def _update_schedules(job_id, schedule_id, schedules_file):
+    """
+    :param job_id: Id of the job
+    :type job_id: str
+    :param schedule_id: Id of the schedule
+    :type schedule_id: str
+    :param schedule_file: filename for the schedule resource
+    :type schedule_file: str
+    :returns: process return code
+    :rtype: int
+    """
+    schedules = _get_resource(schedules_file)
+    schedule = schedules[0]  # 1 update
+
+    return _update_schedule(job_id, schedule_id, schedule)
+
+def _update_schedule(job_id, schedule_id, schedule_json):
+    """
+    :param job_id: Id of the job
+    :type job_id: str
+    :param schedule_id: Id of the schedule
+    :type schedule_id: str
+    :param schedules_json: json for the schedules
+    :type schedules_json: json
+    :returns: process return code
+    :rtype: int
+    """
+
+    if schedule_json is None:
+        return 1
+
+    try:
+        response = _put_schedule(job_id, schedule_id, schedule_json)
+        emitter.publish("Schedule ID `{}` for job ID `{}` updated.".format(schedule_id, job_id))
+    except DCOSException as e:
+        emitter.publish(e)
+        return 1
+
+    return 0
+
 
 def _add_schedule(job_id, schedule_file):
     """
@@ -488,6 +534,7 @@ def _post_job(job_json):
 
     return response.json()
 
+
 def _put_job(job_id, job_json):
     """
     :param job_id: Id of the job
@@ -510,6 +557,35 @@ def _put_job(job_id, job_json):
 
     response = http.put(url,
                          json=job_json,
+                         timeout=timeout)
+
+    return response.json()
+
+
+def _put_schedule(job_id, schedule_id, schedule_json):
+    """
+    :param job_id: Id of the job
+    :type job_id: str
+    :param schedule_id: Id of the schedule
+    :type schedule_id: str
+    :param schedule_json: json object representing a job
+    :type schedule_json: json
+    :returns: response json
+    :rtype: json
+    """
+
+    timeout = config.get_config_val('core.timeout')
+    if not timeout:
+        timeout = DEFAULT_TIMEOUT
+
+    base_url = config.get_config_val("core.dcos_url")
+    if not base_url:
+        raise config.missing_config_exception(['core.dcos_url'])
+
+    url = urllib.parse.urljoin(base_url, "{}/{}/{}/{}".format(METRONOME_JOB_URL, job_id, METRONOME_SCHEDULES, schedule_id))
+
+    response = http.put(url,
+                         json=schedule_json,
                          timeout=timeout)
 
     return response.json()
