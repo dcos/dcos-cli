@@ -208,12 +208,12 @@ def service_table(services):
 
     return tb
 
-# "Jobname | Status | Last run | Job ID”
+
 def job_table(job_list):
     """Returns a PrettyTable representation of the job list from Metronome.
 
-    :param services: jobs to render
-    :type services: [job]
+    :param job_list: jobs to render
+    :type job_list: [job]
     :rtype: PrettyTable
     """
 
@@ -223,22 +223,59 @@ def job_table(job_list):
         ('Status', lambda s: _job_status(s)),
         ('Last Succesful Run', lambda s: s['history']['lastSuccessAt']),
     ])
-    tb = table(fields, job_list)
+    tb = table(fields, job_list, sortby="ID")
     tb.align['ID'] = 'l'
     tb.align["DESCRIPTION"] = 'l'
     tb.align["STATUS"] = 'l'
 
     return tb
 
-def _truncate_desc(description):
 
-    if(len(description) > 35):
-        return description[:35] + '..'
+def schedule_table(schedule_list):
+    """Returns a PrettyTable representation of the schedule list of a job from Metronome.
+
+    :param schedule_list: schedules to render
+    :type schedule_list: [schedule]
+    :rtype: PrettyTable
+    """
+
+    fields = OrderedDict([
+        ('id', lambda s: s['id']),
+        ('cron', lambda s: s['cron']),
+        ('enabled', lambda s: s['enabled']),
+        ('next run', lambda s: s['nextRunAt']),
+        ('concurrency policy', lambda s: s['concurrencyPolicy']),
+    ])
+    tb = table(fields, schedule_list)
+    tb.align['ID'] = 'l'
+    tb.align['CRON'] = 'l'
+
+    return tb
+
+
+def _truncate_desc(description, truncation_size=35):
+    """Utility function that truncates a string for formatting.
+
+    :param description: description
+    :type description: str
+    :rtype: str
+
+    """
+
+    if(len(description) > truncation_size):
+        return description[:truncation_size] + '..'
     else:
         return description
 
 
 def _job_status(job):
+    """Utility function that returns the status of a job
+
+    :param job: job json
+    :type job: json
+    :rtype: str
+
+    """
 
     if 'activeRuns' in job:
         return "Running"

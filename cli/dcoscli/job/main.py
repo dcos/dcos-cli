@@ -69,7 +69,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['job', 'schedule', 'show'],
-            arg_keys=['<job-id>'],
+            arg_keys=['<job-id>', '--json'],
             function=_show_schedule),
 
         cmds.Command(
@@ -328,7 +328,7 @@ def _run(job_id):
     return 0
 
 
-def _show_schedule(job_id):
+def _show_schedule(job_id, json_flag=False):
     """
     :param job_id: Id of the job
     :type job_id: str
@@ -336,7 +336,6 @@ def _show_schedule(job_id):
     :rtype: int
     """
 
-    emitter.publish(q)
     response = None
     url = "{}/{}/schedules".format(_get_api_url('v1/jobs'), job_id)
     try:
@@ -345,7 +344,13 @@ def _show_schedule(job_id):
         return 1
 
     json = _read_http_response_body(response)
-    emitter.publish(json)
+    if json_flag:
+        emitter.publish(json)
+    else:
+        table = tables.schedule_table(json)
+        output = six.text_type(table)
+        if output:
+            emitter.publish(output)
 
     return 0
 
@@ -749,7 +754,7 @@ def _get_timeout():
     :returns: timout value for API calls
     :rtype: str
     """
-    
+
     # if timeout is not passed, try to read `core.timeout`
     # if `core.timeout` is not set, default to 3 min.
     timeout = config.get_config_val('core.timeout')
