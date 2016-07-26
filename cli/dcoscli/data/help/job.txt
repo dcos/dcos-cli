@@ -7,14 +7,14 @@ Description:
         dcos job remove <job-id> [--stopCurrentJobRuns]
         dcos job show <job-id>
         dcos job update [<job-id>] <job-file>
-        dcos job kill <job-id> <run-id>
+        dcos job kill <job-id> [run-id][--all]
         dcos job run <job-id>
         dcos job list [--scheduled][--completed]
         dcos job schedule add <job-id> <schedule-file>
         dcos job schedule show <job-id>
         dcos job schedule remove <job-id> <schedule-id>
         dcos job schedule update <job-id> <schedule-id> <schedule-file>
-        dcos job show runs <job-id> [--run-id <run-id>]
+        dcos job show runs <job-id> [--run-id <run-id>][--q]
         dcos job history [--last <period-length> <time-units>][--between <start> <end>][--job <job-id>]
         dcos job schedule show [--next <period-length> <time-unit>][--between <start> <end>]
 

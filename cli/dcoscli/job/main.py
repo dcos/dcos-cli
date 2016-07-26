@@ -58,7 +58,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['job', 'kill'],
-            arg_keys=['<job-id>', '<run-id>'],
+            arg_keys=['<job-id>', '<run-id>','--all'],
             function=_kill),
 
         cmds.Command(
@@ -78,7 +78,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['job', 'show', 'runs'],
-            arg_keys=['<job-id>', '<run-id>'],
+            arg_keys=['<job-id>', '<run-id>', '--q'],
             function=_show_runs),
 
         cmds.Command(
@@ -153,7 +153,8 @@ def _remove_schedule(job_id, schedule_id):
     response = None
 
     try:
-     response = _do_request("{}/{}/{}/{}".format(METRONOME_JOB_URL,job_id,METRONOME_SCHEDULES,schedule_id),'DELETE')
+     response = _do_request("{}/{}/{}/{}".format(_get_api_url('v1/jobs'),
+        job_id, METRONOME_SCHEDULES, schedule_id), 'DELETE')
     except DCOSHTTPException as e:
         if e.response.status_code == 404:
             emitter.publish("Schedule or job ID does NOT exist.")
@@ -179,20 +180,24 @@ def _remove(job_id, stop_current_job_runs=False):
     response = None
 
     try:
-     response = _do_request("{}/{}?stopCurrentJobRuns={}".format(METRONOME_JOB_URL,job_id,str(stop_current_job_runs).lower()),'DELETE')
+     response = _do_request("{}/{}?stopCurrentJobRuns={}".format(_get_api_url('v1/jobs'),
+        job_id, str(stop_current_job_runs).lower()), 'DELETE')
     except DCOSHTTPException as e:
         if(e.response.status_code == 500 and stop_current_job_runs):
             return _remove(job_id, False)
+        else:
+            emitter.publish("Unable to remove '{}'.  It may be running.".format(job_id))
+            return 1
     except DCOSException as e:
         emitter.publish("Unable to remove '{}'.  It may be running.".format(job_id))
         return 1
-
-    if response.status_code == 200:
-        emitter.publish("{} removed.".format(job_id))
+    else:
+        if response.status_code == 200:
+            emitter.publish("{} removed.".format(job_id))
     return 0
 
 
-def _kill(job_id, run_id):
+def _kill(job_id, run_id, all=False):
     """
     :param job_id: Id of the job
     :type job_id: str
@@ -200,19 +205,26 @@ def _kill(job_id, run_id):
     :rtype: int
     """
     response = None
+    if (run_id is None and all):
+        deadpool = _get_ids(_get_runs(job_id))
+    else:
+        deadpool = list()
+        deadpool.append(run_id)
 
-    try:
-     response = _do_request("{}/{}/runs/{}/actions/stop".format(METRONOME_JOB_URL,job_id,run_id),'POST')
-    except DCOSHTTPException as e:
-        if e.response.status_code == 404:
-            emitter.publish("Job ID or Run ID does NOT exist.")
-        return 1
-    except DCOSException as e:
-        emitter.publish("Unable stop run ID '{}' for job ID '{}'".format(run_id, job_id))
-        return 1
+    for dead in deadpool:
+        try:
+            response = _do_request("{}/{}/runs/{}/actions/stop".format(_get_api_url('v1/jobs'),
+                job_id, dead), 'POST')
+        except DCOSHTTPException as e:
+            if e.response.status_code == 404:
+                emitter.publish("Job ID or Run ID does NOT exist.")
+            return 1
+        except DCOSException as e:
+            emitter.publish("Unable stop run ID '{}' for job ID '{}'".format(dead, job_id))
+            return 1
 
-    if response.status_code == 200:
-        emitter.publish("Run '{}' for job '{}' killed.".format(run_id, job_id))
+        if response.status_code == 200:
+            emitter.publish("Run '{}' for job '{}' killed.".format(dead, job_id))
     return 0
 
 
@@ -223,7 +235,7 @@ def _list():
     """
     response = None
     try:
-     response = _do_request(METRONOME_JOB_URL,'GET')
+     response = _do_request(_get_api_url('v1/jobs'), 'GET')
     except DCOSException as e:
         return 1
 
@@ -242,7 +254,7 @@ def _show(job_id):
 
     response = None
     try:
-     response = _do_request("{}/{}".format(METRONOME_JOB_URL,job_id),'GET')
+     response = _do_request("{}/{}".format(_get_api_url('v1/jobs'), job_id), 'GET')
     except DCOSException as e:
         return 1
 
@@ -252,7 +264,7 @@ def _show(job_id):
 
     return 0
 
-def _show_runs(job_id, run_id=None):
+def _show_runs(job_id, run_id=None, q=False):
     """
     :param job_id: Id of the job
     :type job_id: str
@@ -260,21 +272,36 @@ def _show_runs(job_id, run_id=None):
     :rtype: int
     """
 
+    json = _get_runs(job_id, run_id)
+    if not q:
+        emitter.publish(job_id)
+        emitter.publish(json)
+    else:
+        emitter.publish(_get_ids(json))
+
+    return 0
+
+
+def _get_runs(job_id, run_id=None):
+    """
+    :param job_id: Id of the job
+    :type job_id: str
+    :returns: json of all running instance of a job_id
+    :rtype: json
+    """
+
     response = None
-    url = "{}/{}/runs".format(METRONOME_JOB_URL,job_id)
+    url = "{}/{}/runs".format(_get_api_url('v1/jobs'), job_id)
     if run_id is not None:
-        url = "{}/{}/runs/{}".format(METRONOME_JOB_URL,job_id, run_id)
+        url = "{}/{}/runs/{}".format(_get_api_url('v1/jobs'), job_id, run_id)
     try:
      response = _do_request(url,'GET')
     except DCOSException as e:
         return 1
 
     json = _read_http_response_body(response)
-    emitter.publish(job_id)
-    emitter.publish(json)
 
-    return 0
-
+    return json
 
 def _run(job_id):
     """
@@ -284,15 +311,8 @@ def _run(job_id):
     :rtype: int
     """
 
-    timeout = config.get_config_val('core.timeout')
-    if not timeout:
-        timeout = DEFAULT_TIMEOUT
-
-    base_url = config.get_config_val("core.dcos_url")
-    if not base_url:
-        raise config.missing_config_exception(['core.dcos_url'])
-
-    url = urllib.parse.urljoin(base_url, "{}/{}/runs".format(METRONOME_JOB_URL,job_id))
+    timeout = _get_timeout()
+    url = "{}/{}/runs".format(_get_api_url('v1/jobs'), job_id)
 
     try:
         response = http.post(url, timeout=timeout)
@@ -313,9 +333,11 @@ def _show_schedule(job_id):
     :rtype: int
     """
 
+    emitter.publish(q)
     response = None
+    url = "{}/{}/{}".format(_get_api_url('v1/jobs'), job_id, METRONOME_SCHEDULES)
     try:
-     response = _do_request(_get_schedule_url(job_id),'GET')
+     response = _do_request(url, 'GET')
     except DCOSException as e:
         return 1
 
@@ -409,16 +431,6 @@ def _add_schedule(job_id, schedule_file):
     return _add_schedules(job_id, schedules)
 
 
-def _get_schedule_url(job_id):
-    """
-    :param job_id: Id of the job
-    :type job_id: str
-    :returns: schedule url for job_id
-    :rtype: str
-    """
-    return "{}/{}/{}".format(METRONOME_JOB_URL, job_id, METRONOME_SCHEDULES)
-
-
 def _add_job(job_file):
     """
     :param job_file: optional filename for the application resource
@@ -502,7 +514,7 @@ def _info():
 
 def _cli_config_schema():
     """
-    :returns: schema for marathon cli config
+    :returns: schema for metronome cli config
     :rtype: dict
     """
     return json.loads(
@@ -518,15 +530,8 @@ def _post_job(job_json):
     :rtype: json
     """
 
-    timeout = config.get_config_val('core.timeout')
-    if not timeout:
-        timeout = DEFAULT_TIMEOUT
-
-    base_url = config.get_config_val("core.dcos_url")
-    if not base_url:
-        raise config.missing_config_exception(['core.dcos_url'])
-
-    url = urllib.parse.urljoin(base_url, METRONOME_JOB_URL)
+    timeout = _get_timeout()
+    url = _get_api_url('v1/jobs')
 
     response = http.post(url,
                          json=job_json,
@@ -545,15 +550,8 @@ def _put_job(job_id, job_json):
     :rtype: json
     """
 
-    timeout = config.get_config_val('core.timeout')
-    if not timeout:
-        timeout = DEFAULT_TIMEOUT
-
-    base_url = config.get_config_val("core.dcos_url")
-    if not base_url:
-        raise config.missing_config_exception(['core.dcos_url'])
-
-    url = urllib.parse.urljoin(base_url, "{}/{}".format(METRONOME_JOB_URL, job_id))
+    timeout = _get_timeout()
+    url = "{}/{}".format(_get_api_url('v1/jobs'), job_id)
 
     response = http.put(url,
                          json=job_json,
@@ -574,15 +572,8 @@ def _put_schedule(job_id, schedule_id, schedule_json):
     :rtype: json
     """
 
-    timeout = config.get_config_val('core.timeout')
-    if not timeout:
-        timeout = DEFAULT_TIMEOUT
-
-    base_url = config.get_config_val("core.dcos_url")
-    if not base_url:
-        raise config.missing_config_exception(['core.dcos_url'])
-
-    url = urllib.parse.urljoin(base_url, "{}/{}/{}/{}".format(METRONOME_JOB_URL, job_id, METRONOME_SCHEDULES, schedule_id))
+    timeout = _get_timeout()
+    url = "{}/{}/{}/{}".format(_get_api_url('v1/jobs'), job_id, METRONOME_SCHEDULES, schedule_id)
 
     response = http.put(url,
                          json=schedule_json,
@@ -601,15 +592,8 @@ def _post_schedule(job_id, schedule_json):
     :rtype: json
     """
 
-    timeout = config.get_config_val('core.timeout')
-    if not timeout:
-        timeout = DEFAULT_TIMEOUT
-
-    base_url = config.get_config_val("core.dcos_url")
-    if not base_url:
-        raise config.missing_config_exception(['core.dcos_url'])
-
-    url = urllib.parse.urljoin(base_url, _get_schedule_url(job_id))
+    timeout = _get_timeout()
+    url = "{}/{}/{}".format(_get_api_url('v1/jobs'), job_id, METRONOME_SCHEDULES)
 
     response = http.post(url,
                          json=schedule_json,
@@ -643,15 +627,9 @@ def _do_request(url, method, timeout=None, stream=False, **kwargs):
     # if timeout is not passed, try to read `core.timeout`
     # if `core.timeout` is not set, default to 3 min.
     if timeout is None:
-        timeout = config.get_config_val('core.timeout')
-        if not timeout:
-            timeout = DEFAULT_TIMEOUT
+        timeout = _get_timeout()
 
-    base_url = config.get_config_val("core.dcos_url")
-    if not base_url:
-        raise config.missing_config_exception(['core.dcos_url'])
-
-    url = urllib.parse.urljoin(base_url, url)
+    url = urllib.parse.urljoin(_get_metronome_url(), url)
     if method.lower() == 'get':
         http_response = http.get(url, is_success=_is_success, timeout=timeout,
                                  **kwargs)
@@ -683,6 +661,20 @@ def _read_http_response_body(http_response):
         return bundle_response
     except DCOSException:
         raise
+
+
+def _get_ids(json):
+    """
+    :param json: json array of elements with ids
+    :type json: json
+    :returns: set of ids
+    :rtype: set
+    """
+    ids = list()
+    for element in json:
+        ids.append(element['id'])
+
+    return ids
 
 
 def _get_resource(resource):
@@ -721,6 +713,47 @@ def _get_resource(resource):
         raise DCOSException(
             "We currently don't support reading from the TTY. Please "
             "specify an application JSON.\n"
-            "E.g.: dcos marathon app add < app_resource.json")
+            "E.g.: dcos job add < app_resource.json")
 
     return util.load_json(sys.stdin)
+
+def _get_metronome_url(toml_config=None):
+    """
+    :param toml_config: configuration dictionary
+    :type toml_config: config.Toml
+    :returns: metronome base url
+    :rtype: str
+    """
+    if toml_config is None:
+        toml_config = config.get_config()
+
+    metronome_url = config.get_config_val('metronome.url', toml_config)
+    if metronome_url is None:
+        dcos_url = config.get_config_val('core.dcos_url', toml_config)
+        if dcos_url is None:
+            raise config.missing_config_exception(['core.dcos_url'])
+        metronome_url = urllib.parse.urljoin(dcos_url, 'service/metronome/')
+
+    return metronome_url
+
+def _get_api_url(path):
+    """
+    :param path: service path
+    :type path: str
+    :returns: metronome base url
+    :rtype: str
+    """
+
+    return urllib.parse.urljoin(_get_metronome_url(), path)
+
+def _get_timeout():
+    """
+    :returns: timout value for API calls
+    :rtype: str
+    """
+
+    timeout = config.get_config_val('core.timeout')
+    if not timeout:
+        timeout = DEFAULT_TIMEOUT
+
+    return timeout
