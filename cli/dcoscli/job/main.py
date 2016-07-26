@@ -237,8 +237,6 @@ def _list(json_flag=False):
         return 1
 
     json = _read_http_response_body(response)
-    pik = json[1]
-    print(pik)
 
     if json_flag:
         emitter.publish(json)
