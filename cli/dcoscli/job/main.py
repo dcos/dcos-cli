@@ -1,13 +1,13 @@
 import json
 import os
 import sys
-import six
 
 import dcoscli
 import docopt
 import pkg_resources
+import six
 from dcos import cmds, config, emitting, http, options, util
-from dcos.errors import (DCOSException, DCOSHTTPException)
+from dcos.errors import DCOSException, DCOSHTTPException
 from dcoscli import tables
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
@@ -45,7 +45,6 @@ def _cmds():
     """
 
     return [
-        # dcos job schedule show [--next <period-length> <time-unit>][--between <start> <end>]
 
         cmds.Command(
             hierarchy=['job', 'run'],
@@ -253,7 +252,7 @@ def _list(json_flag=False):
 
     return 0
 
-# dcos job history <job-id>
+
 def _history(job_id, json_flag=False, show_failures=False):
     """
     :returns: process return code
@@ -423,6 +422,7 @@ def _add_schedules(job_id, schedules_json):
 
     return 0
 
+
 def _update_schedules(job_id, schedules_file):
     """
     :param job_id: Id of the job
@@ -439,6 +439,7 @@ def _update_schedules(job_id, schedules_file):
     schedule_id = schedule['id']
 
     return _update_schedule(job_id, schedule_id, schedule)
+
 
 def _update_schedule(job_id, schedule_id, schedule_json):
     """
@@ -566,6 +567,7 @@ def _cli_config_schema():
             'dcoscli',
             'data/config-schema/job.json').decode('utf-8'))
 
+
 def _post_job(job_json):
     """
     :param job_json: json object representing a job
@@ -645,6 +647,7 @@ def _post_schedule(job_id, schedule_json):
 
     return response.json()
 
+
 def _do_request(url, method, timeout=None, stream=False, **kwargs):
     """
     make HTTP request
@@ -684,6 +687,7 @@ def _do_request(url, method, timeout=None, stream=False, **kwargs):
     else:
         raise DCOSException('Unsupported HTTP method: ' + method)
     return http_response
+
 
 def _read_http_response_body(http_response):
     """
@@ -759,6 +763,7 @@ def _get_resource(resource):
 
     return util.load_json(sys.stdin)
 
+
 def _get_metronome_url(toml_config=None):
     """
     :param toml_config: configuration dictionary
@@ -778,6 +783,7 @@ def _get_metronome_url(toml_config=None):
 
     return metronome_url
 
+
 def _get_api_url(path):
     """
     :param path: service path
@@ -787,6 +793,7 @@ def _get_api_url(path):
     """
 
     return urllib.parse.urljoin(_get_metronome_url(), path)
+
 
 def _get_timeout():
     """
