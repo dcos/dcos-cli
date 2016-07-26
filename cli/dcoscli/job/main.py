@@ -1,27 +1,22 @@
 import json
 import os
 import sys
+import six
 
 import dcoscli
 import docopt
 import pkg_resources
 from dcos import cmds, config, emitting, http, options, util
 from dcos.errors import (DCOSException, DCOSHTTPException)
-# from dcoscli import tables
+from dcoscli import tables
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
 
 from six.moves import urllib
 
-# import time
-
-
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
 
-METRONOME_BASE_URL = 'service/metronome'
-METRONOME_JOB_URL = "{}/{}".format(METRONOME_BASE_URL,'v1/jobs')
-METRONOME_SCHEDULES = "schedules"
 DEFAULT_TIMEOUT = 180
 
 def main(argv):
@@ -88,7 +83,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['job', 'list'],
-            arg_keys=[],
+            arg_keys=['--json'],
             function=_list),
 
         cmds.Command(
@@ -153,8 +148,8 @@ def _remove_schedule(job_id, schedule_id):
     response = None
 
     try:
-     response = _do_request("{}/{}/{}/{}".format(_get_api_url('v1/jobs'),
-        job_id, METRONOME_SCHEDULES, schedule_id), 'DELETE')
+     response = _do_request("{}/{}/schedules/{}".format(_get_api_url('v1/jobs'),
+        job_id, schedule_id), 'DELETE')
     except DCOSHTTPException as e:
         if e.response.status_code == 404:
             emitter.publish("Schedule or job ID does NOT exist.")
@@ -228,19 +223,27 @@ def _kill(job_id, run_id, all=False):
     return 0
 
 
-def _list():
+def _list(json_flag=False):
     """
     :returns: process return code
     :rtype: int
     """
     response = None
+    url = _get_api_url('v1/jobs')
     try:
-     response = _do_request(_get_api_url('v1/jobs'), 'GET')
+     response = _do_request(url, 'GET')
     except DCOSException as e:
         return 1
 
     json = _read_http_response_body(response)
-    emitter.publish(json)
+
+    if json_flag:
+        emitter.publish(json)
+    else:
+        table = tables.job_table(json)
+        output = six.text_type(table)
+        if output:
+            emitter.publish(output)
 
     return 0
 
@@ -259,7 +262,6 @@ def _show(job_id):
         return 1
 
     json = _read_http_response_body(response)
-    emitter.publish(job_id)
     emitter.publish(json)
 
     return 0
@@ -335,7 +337,7 @@ def _show_schedule(job_id):
 
     emitter.publish(q)
     response = None
-    url = "{}/{}/{}".format(_get_api_url('v1/jobs'), job_id, METRONOME_SCHEDULES)
+    url = "{}/{}/schedules".format(_get_api_url('v1/jobs'), job_id)
     try:
      response = _do_request(url, 'GET')
     except DCOSException as e:
@@ -573,7 +575,7 @@ def _put_schedule(job_id, schedule_id, schedule_json):
     """
 
     timeout = _get_timeout()
-    url = "{}/{}/{}/{}".format(_get_api_url('v1/jobs'), job_id, METRONOME_SCHEDULES, schedule_id)
+    url = "{}/{}/schedules/{}".format(_get_api_url('v1/jobs'), job_id, schedule_id)
 
     response = http.put(url,
                          json=schedule_json,
@@ -593,7 +595,7 @@ def _post_schedule(job_id, schedule_json):
     """
 
     timeout = _get_timeout()
-    url = "{}/{}/{}".format(_get_api_url('v1/jobs'), job_id, METRONOME_SCHEDULES)
+    url = "{}/{}/schedules".format(_get_api_url('v1/jobs'), job_id)
 
     response = http.post(url,
                          json=schedule_json,

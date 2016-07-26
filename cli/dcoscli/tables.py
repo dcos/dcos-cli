@@ -208,6 +208,33 @@ def service_table(services):
 
     return tb
 
+# "Jobname | Status | Last run | Job ID”
+def job_table(job_list):
+    """Returns a PrettyTable representation of the job list from Metronome.
+
+    :param services: jobs to render
+    :type services: [job]
+    :rtype: PrettyTable
+    """
+
+    fields = OrderedDict([
+        ('id', lambda s: s['id']),
+        ('Description', lambda s: _truncate_desc(s['description'])),
+        ('Status', lambda s: "Blah"),
+        ('Last Run', lambda s: "N/A"),
+    ])
+    tb = table(fields, job_list)
+    tb.align['ID'] = 'l'
+    tb.align["DESCRIPTION"] = 'l'
+
+    return tb
+
+def _truncate_desc(description):
+
+    if(len(description) > 35):
+        return description[:35] + '..'
+    else:
+        return description
 
 def _count_apps(group, group_dict):
     """Counts how many apps are registered for each group.  Recursively
