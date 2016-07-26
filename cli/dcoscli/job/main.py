@@ -461,6 +461,9 @@ def _update_schedule(job_id, schedule_id, schedule_json):
     try:
         response = _put_schedule(job_id, schedule_id, schedule_json)
         emitter.publish("Schedule ID `{}` for job ID `{}` updated.".format(schedule_id, job_id))
+    except DCOSHTTPException as e:
+        if e.response.status_code == 404:
+            emitter.publish("Job ID: '{}' or schedule ID '{}' does NOT exist.".format(job_id, schedule_id))
     except DCOSException as e:
         emitter.publish(e)
         return 1
