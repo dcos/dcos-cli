@@ -64,7 +64,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['job', 'schedule', 'update'],
-            arg_keys=['<job-id>', '<schedule-id>', '<schedule-file>'],
+            arg_keys=['<job-id>', '<schedule-file>'],
             function=_update_schedules),
 
         cmds.Command(
@@ -99,7 +99,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['job', 'update'],
-            arg_keys=['<job-id>', '<job-file>'],
+            arg_keys=['<job-file>'],
             function=_update_job),
 
         cmds.Command(
@@ -379,7 +379,7 @@ def _add_schedules(job_id, schedules_json):
 
     return 0
 
-def _update_schedules(job_id, schedule_id, schedules_file):
+def _update_schedules(job_id, schedules_file):
     """
     :param job_id: Id of the job
     :type job_id: str
@@ -392,6 +392,7 @@ def _update_schedules(job_id, schedule_id, schedules_file):
     """
     schedules = _get_resource(schedules_file)
     schedule = schedules[0]  # 1 update
+    schedule_id = schedule['id']
 
     return _update_schedule(job_id, schedule_id, schedule)
 
@@ -471,10 +472,8 @@ def _add_job(job_file):
     return 0
 
 
-def _update_job(job_id, job_file):
+def _update_job(job_file):
     """
-    :param job_id: Id of the job
-    :type job_id: str
     :param job_file: filename for the application resource
     :type job_file: str
     :returns: process return code
@@ -485,6 +484,7 @@ def _update_job(job_id, job_file):
     if full_json is None:
         return 1
 
+    job_id = full_json['id']
     schedules = None
 
     if 'schedules' in full_json:
@@ -498,9 +498,6 @@ def _update_job(job_id, job_file):
         emitter.publish("Job ID: '{}' updated.".format(job_id))
     except DCOSHTTPException as e:
         emitter.publish("Error updating job: '{}'".format(job_id))
-
-    # if (schedules is not None and job_added):
-    #     return _add_schedules(job_id, schedules)
 
     return 0
 
@@ -627,8 +624,6 @@ def _do_request(url, method, timeout=None, stream=False, **kwargs):
             return True
         return False
 
-    # if timeout is not passed, try to read `core.timeout`
-    # if `core.timeout` is not set, default to 3 min.
     if timeout is None:
         timeout = _get_timeout()
 
@@ -754,7 +749,9 @@ def _get_timeout():
     :returns: timout value for API calls
     :rtype: str
     """
-
+    
+    # if timeout is not passed, try to read `core.timeout`
+    # if `core.timeout` is not set, default to 3 min.
     timeout = config.get_config_val('core.timeout')
     if not timeout:
         timeout = DEFAULT_TIMEOUT
