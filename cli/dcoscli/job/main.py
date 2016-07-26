@@ -676,14 +676,11 @@ def _do_request(url, method, timeout=None, stream=False, **kwargs):
 
     url = urllib.parse.urljoin(_get_metronome_url(), url)
     if method.lower() == 'get':
-        http_response = http.get(url, is_success=_is_success, timeout=timeout,
-                                 **kwargs)
+        http_response = http.get(url, is_success=_is_success, timeout=timeout, **kwargs)
     elif method.lower() == 'post':
-        http_response = http.post(url, is_success=_is_success, timeout=timeout,
-                                  stream=stream, **kwargs)
+        http_response = http.post(url, is_success=_is_success, timeout=timeout, stream=stream, **kwargs)
     elif method.lower() == 'delete':
-        http_response = http.delete(url, is_success=_is_success, timeout=timeout,
-                                  stream=stream, **kwargs)
+        http_response = http.delete(url, is_success=_is_success, timeout=timeout, stream=stream, **kwargs)
     else:
         raise DCOSException('Unsupported HTTP method: ' + method)
     return http_response
