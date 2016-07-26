@@ -66,8 +66,7 @@ def test_task():
     assert isinstance(tasks, collections.Sequence)
     assert len(tasks) == NUM_TASKS
 
-    schema = create_schema(task_fixture().dict())
-    schema['additionalProperties'] = True
+    schema = create_schema(task_fixture().dict(), True)
     schema['required'].remove('labels')
 
     for task in tasks:
@@ -120,7 +119,7 @@ def test_log_single_file():
 
     assert returncode == 0
     assert stderr == b''
-    assert len(stdout.decode('utf-8').split('\n')) == 5
+    assert len(stdout.decode('utf-8').split('\n')) == 7
 
 
 def test_log_missing_file():
@@ -179,9 +178,9 @@ def test_log_two_tasks():
     assert stderr == b''
 
     lines = stdout.decode('utf-8').split('\n')
-    assert len(lines) == 11
+    assert len(lines) == 15
     assert re.match('===>.*<===', lines[0])
-    assert re.match('===>.*<===', lines[5])
+    assert re.match('===>.*<===', lines[7])
 
 
 @pytest.mark.skipif(sys.platform == 'win32',
