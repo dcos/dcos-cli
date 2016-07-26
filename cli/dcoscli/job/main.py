@@ -18,6 +18,7 @@ logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
 
 DEFAULT_TIMEOUT = 180
+METRONOME_EMBEDDED='?embed=activeRuns&embed=schedules&embed=history'
 
 def main(argv):
     try:
@@ -229,13 +230,15 @@ def _list(json_flag=False):
     :rtype: int
     """
     response = None
-    url = _get_api_url('v1/jobs')
+    url = _get_api_url('v1/jobs' + METRONOME_EMBEDDED)
     try:
      response = _do_request(url, 'GET')
     except DCOSException as e:
         return 1
 
     json = _read_http_response_body(response)
+    pik = json[1]
+    print(pik)
 
     if json_flag:
         emitter.publish(json)
