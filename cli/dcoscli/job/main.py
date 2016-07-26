@@ -88,6 +88,11 @@ def _cmds():
             function=_list),
 
         cmds.Command(
+            hierarchy=['job', 'history'],
+            arg_keys=['<job-id>','--json','--show-failures'],
+            function=_history),
+
+        cmds.Command(
             hierarchy=['job', 'remove'],
             arg_keys=['<job-id>','--stopCurrentJobRuns'],
             function=_remove),
@@ -247,6 +252,40 @@ def _list(json_flag=False):
             emitter.publish(output)
 
     return 0
+
+# dcos job history <job-id>
+def _history(job_id, json_flag=False, show_failures=False):
+    """
+    :returns: process return code
+    :rtype: int
+    """
+    response = None
+    url = _get_api_url('v1/jobs/' + job_id + METRONOME_EMBEDDED)
+    try:
+     response = _do_request(url, 'GET')
+    except DCOSException as e:
+        return 1
+
+    json = _read_http_response_body(response)
+
+    if json_flag:
+        emitter.publish(json)
+    else:
+        emitter.publish("'{}'  Successful runs: {} Last Success: {}".format(job_id, json['history']['successCount'], json['history']['lastSuccessAt']))
+        table = tables.job_history_table(json['history']['successfulFinishedRuns'])
+        output = six.text_type(table)
+        if output:
+            emitter.publish(output)
+
+        if show_failures:
+            emitter.publish("'{}'  Failure runs: {} Last Failure: {}".format(job_id, json['history']['failureCount'], json['history']['lastFailureAt']))
+            table = tables.job_history_table(json['history']['failedFinishedRuns'])
+            output = six.text_type(table)
+            if output:
+                emitter.publish(output)
+
+    return 0
+
 
 def _show(job_id):
     """

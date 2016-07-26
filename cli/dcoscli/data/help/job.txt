@@ -15,8 +15,7 @@ Description:
         dcos job schedule remove <job-id> <schedule-id>
         dcos job schedule update <job-id> <schedule-file>
         dcos job show runs <job-id> [--run-id <run-id>][--q]
-        dcos job history <job-id>
-        dcos job schedule show [--next <period-length> <time-unit>][--between <start> <end>]
+        dcos job history <job-id> [--json][--show-failures]
 
 Commands:
     job add
@@ -32,34 +31,16 @@ Commands:
     job list
         Show all job definitions.
     job schedule
-        Provides a list of jobs scheduled to run based on a filter.
+        Provides ability to create, update and remove schedules for a job.
     job history
-        Provides a list of jobs that have completed based on a filter.
+        Provides a job run history.
 
 Options:
     -h, --help
         Print usage.
     --version
         Print version information.
-    --scheduled
-        Filter for job list.  Only show scheduled jobs.
-    --completed
-        Filter for job list.  Only show completed jobs.
-    --next
-        Specifies a filter such as 2 hours.
-    --between
-        Specifies a filter using ISO timestamps and friendly keywords.
-    --job
-        Specifies a filter using a job-id.
 
 Positional Arguments:
     <job-id>
         The job ID.
-    <period-length>
-        An integer such as 2 to be used with time-units.
-    <time-units>
-        A unit for period-length including: seconds, minutes, hours, days, weeks.
-    <start>
-        ISO timestamps or friendly keywords such as now, yesterday, tomorrow, monday..sunday.
-    <end>
-        ISO timestamps or friendly keywords such as now, yesterday, tomorrow, monday..sunday.

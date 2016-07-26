@@ -231,6 +231,25 @@ def job_table(job_list):
     return tb
 
 
+def job_history_table(schedule_list):
+    """Returns a PrettyTable representation of the job history from Metronome.
+
+    :param schedule_list: job schedule list to render
+    :type schedule_list: [history]
+    :rtype: PrettyTable
+    """
+
+    fields = OrderedDict([
+        ('id', lambda s: s['id']),
+        ('started', lambda s: s['createdAt']),
+        ('finished', lambda s: s['finishedAt']),
+    ])
+    tb = table(fields, schedule_list, sortby="STARTED")
+    tb.align['ID'] = 'l'
+
+    return tb
+
+
 def schedule_table(schedule_list):
     """Returns a PrettyTable representation of the schedule list of a job from Metronome.
 
