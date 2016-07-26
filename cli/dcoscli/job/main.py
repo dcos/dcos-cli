@@ -249,6 +249,8 @@ def _list(json_flag=False):
         output = six.text_type(table)
         if output:
             emitter.publish(output)
+        else:
+            emitter.publish("No jobs registered.")
 
     return 0
 
