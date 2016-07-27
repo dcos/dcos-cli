@@ -272,6 +272,25 @@ def schedule_table(schedule_list):
     return tb
 
 
+def job_runs_table(runs_list):
+    """Returns a PrettyTable representation of the runs list of a job from Metronome.
+
+    :param runs_list: current runs of a job to render
+    :type runs_list: [runs]
+    :rtype: PrettyTable
+    """
+    fields = OrderedDict([
+        ('job id', lambda s: s['jobId']),
+        ('id', lambda s: s['id']),
+        ('started at', lambda s: s['tasks'][0]['startedAt']),
+    ])
+    tb = table(fields, runs_list)
+    tb.align['ID'] = 'l'
+    tb.align['JOB ID'] = 'l'
+
+    return tb
+
+
 def _truncate_desc(description, truncation_size=35):
     """Utility function that truncates a string for formatting.
 
@@ -295,10 +314,11 @@ def _job_status(job):
     :rtype: str
 
     """
-
+    print(job)
     if 'activeRuns' in job:
         return "Running"
-    elif not job['schedules']:
+    # short circuit will prevent failure
+    elif 'schedules' not in job or not job['schedules']:
         return "Unscheduled"
     else:
         return "Scheduled"

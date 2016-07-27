@@ -135,8 +135,7 @@ def _job(config_schema=False, info=False):
         _info()
     else:
         doc = default_command_info("job")
-        emitter.publish(options.make_generic_usage_message(doc))
-        return 1
+        raise DCOSException(options.make_generic_usage_message(doc))
 
     return 0
 
@@ -157,14 +156,12 @@ def _remove_schedule(job_id, schedule_id):
         job_id, schedule_id), 'DELETE')
     except DCOSHTTPException as e:
         if e.response.status_code == 404:
-            emitter.publish("Schedule or job ID does NOT exist.")
-        return 1
+            raise DCOSException("Schedule or job ID does NOT exist.")
     except DCOSException as e:
-        emitter.publish("Unable to remove schedule ID '{}' for job ID '{}'".format(schedule_id, job_id))
-        return 1
-
-    if response.status_code == 200:
-        emitter.publish("Schedule '{}' for job '{}' removed.".format(schedule_id, job_id))
+        raise DCOSException("Unable to remove schedule ID '{}' for job ID '{}'".format(schedule_id, job_id))
+    else:
+        if response.status_code == 200:
+            emitter.publish("Schedule '{}' for job '{}' removed.".format(schedule_id, job_id))
     return 0
 
 
@@ -183,14 +180,12 @@ def _remove(job_id, stop_current_job_runs=False):
      response = _do_request("{}/{}?stopCurrentJobRuns={}".format(_get_api_url('v1/jobs'),
         job_id, str(stop_current_job_runs).lower()), 'DELETE')
     except DCOSHTTPException as e:
-        if(e.response.status_code == 500 and stop_current_job_runs):
+        if e.response.status_code == 500 and stop_current_job_runs:
             return _remove(job_id, False)
         else:
-            emitter.publish("Unable to remove '{}'.  It may be running.".format(job_id))
-            return 1
+            raise DCOSException("Unable to remove '{}'.  It may be running.".format(job_id))
     except DCOSException as e:
-        emitter.publish("Unable to remove '{}'.  It may be running.".format(job_id))
-        return 1
+        raise DCOSException("Unable to remove '{}'.  It may be running.".format(job_id))
     else:
         if response.status_code == 200:
             emitter.publish("{} removed.".format(job_id))
@@ -205,10 +200,10 @@ def _kill(job_id, run_id, all=False):
     :rtype: int
     """
     response = None
-    if (run_id is None and all):
+    deadpool = []
+    if run_id is None and all is True:
         deadpool = _get_ids(_get_runs(job_id))
     else:
-        deadpool = list()
         deadpool.append(run_id)
 
     for dead in deadpool:
@@ -217,14 +212,12 @@ def _kill(job_id, run_id, all=False):
                 job_id, dead), 'POST')
         except DCOSHTTPException as e:
             if e.response.status_code == 404:
-                emitter.publish("Job ID or Run ID does NOT exist.")
-            return 1
+                raise DCOSException("Job ID or Run ID does NOT exist.")
         except DCOSException as e:
-            emitter.publish("Unable stop run ID '{}' for job ID '{}'".format(dead, job_id))
-            return 1
-
-        if response.status_code == 200:
-            emitter.publish("Run '{}' for job '{}' killed.".format(dead, job_id))
+            raise DCOSException("Unable stop run ID '{}' for job ID '{}'".format(dead, job_id))
+        else:
+            if response.status_code == 200:
+                emitter.publish("Run '{}' for job '{}' killed.".format(dead, job_id))
     return 0
 
 
@@ -238,14 +231,14 @@ def _list(json_flag=False):
     try:
      response = _do_request(url, 'GET')
     except DCOSException as e:
-        return 1
+        raise DCOSException(e)
 
-    json = _read_http_response_body(response)
+    json_list = _read_http_response_body(response)
 
     if json_flag:
-        emitter.publish(json)
+        emitter.publish(json_list)
     else:
-        table = tables.job_table(json)
+        table = tables.job_table(json_list)
         output = six.text_type(table)
         if output:
             emitter.publish(output)
@@ -261,26 +254,26 @@ def _history(job_id, json_flag=False, show_failures=False):
     :rtype: int
     """
     response = None
-    url = _get_api_url('v1/jobs/' + job_id + METRONOME_EMBEDDED)
+    url = urllib.parse.urljoin(_get_api_url('v1/jobs/'), job_id + METRONOME_EMBEDDED)
     try:
      response = _do_request(url, 'GET')
     except DCOSException as e:
-        return 1
+        raise DCOSException(e)
 
-    json = _read_http_response_body(response)
+    json_history = _read_http_response_body(response)
 
     if json_flag:
-        emitter.publish(json)
+        emitter.publish(json_history)
     else:
-        emitter.publish("'{}'  Successful runs: {} Last Success: {}".format(job_id, json['history']['successCount'], json['history']['lastSuccessAt']))
-        table = tables.job_history_table(json['history']['successfulFinishedRuns'])
+        emitter.publish("'{}'  Successful runs: {} Last Success: {}".format(job_id, json_history['history']['successCount'], json_history['history']['lastSuccessAt']))
+        table = tables.job_history_table(json_history['history']['successfulFinishedRuns'])
         output = six.text_type(table)
         if output:
             emitter.publish(output)
 
         if show_failures:
-            emitter.publish("'{}'  Failure runs: {} Last Failure: {}".format(job_id, json['history']['failureCount'], json['history']['lastFailureAt']))
-            table = tables.job_history_table(json['history']['failedFinishedRuns'])
+            emitter.publish("'{}'  Failure runs: {} Last Failure: {}".format(job_id, json_history['history']['failureCount'], json_history['history']['lastFailureAt']))
+            table = tables.job_history_table(json_history['history']['failedFinishedRuns'])
             output = six.text_type(table)
             if output:
                 emitter.publish(output)
@@ -300,14 +293,14 @@ def _show(job_id):
     try:
      response = _do_request("{}/{}".format(_get_api_url('v1/jobs'), job_id), 'GET')
     except DCOSException as e:
-        return 1
+        raise DCOSException(e)
 
-    json = _read_http_response_body(response)
-    emitter.publish(json)
+    json_job = _read_http_response_body(response)
+    emitter.publish(json_job)
 
     return 0
 
-def _show_runs(job_id, run_id=None, q=False):
+def _show_runs(job_id, run_id=None, q=False, json_flag=False):
     """
     :param job_id: Id of the job
     :type job_id: str
@@ -315,15 +308,31 @@ def _show_runs(job_id, run_id=None, q=False):
     :rtype: int
     """
 
-    json = _get_runs(job_id, run_id)
-    if not q:
-        emitter.publish(job_id)
-        emitter.publish(json)
+    json_runs = _get_runs(job_id, run_id)
+    if q is True:
+        emitter.publish(json_runs)
     else:
-        emitter.publish(_get_ids(json))
+        if json_flag:
+            emitter.publish(json_runs)
+        else:
+            if _json_array_has_element(json_runs, 'id'):
+                table = tables.job_runs_table(json_runs)
+                output = six.text_type(table)
+                if output:
+                    emitter.publish(output)
+            else:
+                emitter.publish("Nothing running for '{}'".format(job_id))
 
     return 0
 
+
+def _json_array_has_element(json_object, field):
+    exists = False
+    for element in json_object:
+        if field in element:
+            exists = True
+            break
+    return exists
 
 def _get_runs(job_id, run_id=None):
     """
@@ -340,11 +349,11 @@ def _get_runs(job_id, run_id=None):
     try:
      response = _do_request(url,'GET')
     except DCOSException as e:
-        return 1
+        raise DCOSException(e)
 
-    json = _read_http_response_body(response)
+    json_runs = _read_http_response_body(response)
 
-    return json
+    return json_runs
 
 def _run(job_id):
     """
@@ -360,7 +369,7 @@ def _run(job_id):
     try:
         response = http.post(url, timeout=timeout)
     except DCOSHTTPException as e:
-        if(e.response.status_code == 404):
+        if e.response.status_code == 404:
             emitter.publish("Job ID: '{}' does not exist.".format(job_id))
         else:
             emitter.publish("Error running job: '{}'".format(job_id))
@@ -381,13 +390,13 @@ def _show_schedule(job_id, json_flag=False):
     try:
      response = _do_request(url, 'GET')
     except DCOSException as e:
-        return 1
+        raise DCOSException(e)
 
-    json = _read_http_response_body(response)
+    json_schedule = _read_http_response_body(response)
     if json_flag:
-        emitter.publish(json)
+        emitter.publish(json_schedule)
     else:
-        table = tables.schedule_table(json)
+        table = tables.schedule_table(json_schedule)
         output = six.text_type(table)
         if output:
             emitter.publish(output)
@@ -418,9 +427,9 @@ def _add_schedules(job_id, schedules_json):
             elif e.response.status_code == 409:
                 emitter.publish("Schedule already exists.")
             else:
-                return 1
+                raise DCOSException(e)
         except DCOSException as e:
-            return 1
+            raise DCOSException(e)
 
     return 0
 
@@ -456,7 +465,7 @@ def _update_schedule(job_id, schedule_id, schedule_json):
     """
 
     if schedule_json is None:
-        return 1
+        raise DCOSException("No schedule to update.")
 
     try:
         response = _put_schedule(job_id, schedule_id, schedule_json)
@@ -465,8 +474,7 @@ def _update_schedule(job_id, schedule_id, schedule_json):
         if e.response.status_code == 404:
             emitter.publish("Job ID: '{}' or schedule ID '{}' does NOT exist.".format(job_id, schedule_id))
     except DCOSException as e:
-        emitter.publish(e)
-        return 1
+        raise DCOSException(e)
 
     return 0
 
@@ -495,7 +503,7 @@ def _add_job(job_file):
 
     full_json = _get_resource(job_file)
     if full_json is None:
-        return 1
+        raise DCOSException("No JSON provided.")
 
     job_id = full_json['id']
     schedules = None
@@ -511,12 +519,12 @@ def _add_job(job_file):
         job_added = True
         emitter.publish("Job ID: '{}' added.".format(job_id))
     except DCOSHTTPException as e:
-        if(e.response.status_code == 409):
+        if e.response.status_code == 409:
             emitter.publish("Job ID: '{}' already exists".format(job_id))
         else:
             emitter.publish("Error running job: '{}'".format(job_id))
 
-    if (schedules is not None and job_added):
+    if schedules is not None and job_added:
         return _add_schedules(job_id, schedules)
 
     return 0
@@ -532,7 +540,7 @@ def _update_job(job_file):
     # only updates the job (does NOT update schedules)
     full_json = _get_resource(job_file)
     if full_json is None:
-        return 1
+        raise DCOSException("No JSON provided.")
 
     job_id = full_json['id']
     schedules = None
@@ -711,15 +719,15 @@ def _read_http_response_body(http_response):
         raise
 
 
-def _get_ids(json):
+def _get_ids(ids_json):
     """
-    :param json: json array of elements with ids
-    :type json: json
+    :param ids_json: json array of elements with ids
+    :type ids_json: json
     :returns: set of ids
     :rtype: set
     """
     ids = list()
-    for element in json:
+    for element in ids_json:
         ids.append(element['id'])
 
     return ids
@@ -747,7 +755,7 @@ def _get_resource(resource):
                         data += chunk
                     return util.load_jsons(data.decode('utf-8'))
                 else:
-                    raise Exception
+                    raise DCOSHTTPException("HTTP error code: {}".format(req.status_code))
             except Exception:
                 logger.exception('Cannot read from resource %s', resource)
                 raise DCOSException(
@@ -793,7 +801,6 @@ def _get_api_url(path):
     :returns: metronome base url
     :rtype: str
     """
-
     return urllib.parse.urljoin(_get_metronome_url(), path)
 
 
@@ -802,7 +809,6 @@ def _get_timeout():
     :returns: timout value for API calls
     :rtype: str
     """
-
     # if timeout is not passed, try to read `core.timeout`
     # if `core.timeout` is not set, default to 3 min.
     timeout = config.get_config_val('core.timeout')
