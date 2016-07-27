@@ -314,7 +314,7 @@ def _job_status(job):
     :rtype: str
 
     """
-    print(job)
+
     if 'activeRuns' in job:
         return "Running"
     # short circuit will prevent failure
