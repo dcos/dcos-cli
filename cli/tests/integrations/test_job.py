@@ -10,7 +10,7 @@ from dcos import constants
 import pytest
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
-from .common import (app, assert_command, assert_lines, config_set,
+from .common import (app, job, assert_command, assert_lines, config_set,
                      config_unset, exec_command, list_deployments, popen_tty,
                      show_app, update_config, watch_all_deployments,
                      watch_deployment)
@@ -52,10 +52,22 @@ def test_missing_config(env):
 
 
 def test_empty_list():
-    _list_apps()
+    _list_jobs()
 
 
-def _list_apps(app_id=None):
+def test_add_job():
+    with _no_schedule_instance_job():
+        _list_jobs('pikachu')
+
+
+@contextlib.contextmanager
+def _no_schedule_instance_job():
+    with job('tests/data/metronome/jobs/pikachu.json',
+             'pikachu'):
+        yield
+
+
+def _list_jobs(app_id=None):
     returncode, stdout, stderr = exec_command(
         ['dcos', 'job', 'list', '--json'])
 

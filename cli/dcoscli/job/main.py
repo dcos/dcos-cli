@@ -159,9 +159,7 @@ def _remove_schedule(job_id, schedule_id):
             raise DCOSException("Schedule or job ID does NOT exist.")
     except DCOSException as e:
         raise DCOSException("Unable to remove schedule ID '{}' for job ID '{}'".format(schedule_id, job_id))
-    else:
-        if response.status_code == 200:
-            emitter.publish("Schedule '{}' for job '{}' removed.".format(schedule_id, job_id))
+
     return 0
 
 
@@ -186,9 +184,7 @@ def _remove(job_id, stop_current_job_runs=False):
             raise DCOSException("Unable to remove '{}'.  It may be running.".format(job_id))
     except DCOSException as e:
         raise DCOSException("Unable to remove '{}'.  It may be running.".format(job_id))
-    else:
-        if response.status_code == 200:
-            emitter.publish("{} removed.".format(job_id))
+
     return 0
 
 
