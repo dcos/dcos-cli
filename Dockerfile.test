@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y \
   httpie \
   jq \
   make \
-  virtualenv \
+  python3-venv \
   openssh-client \
   git \
   sudo
