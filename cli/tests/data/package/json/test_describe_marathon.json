@@ -18,5 +18,5 @@
     "init",
     "long-running"
   ],
-  "versions": ["0.11.1"]
+  "version": "0.11.1"
 }
