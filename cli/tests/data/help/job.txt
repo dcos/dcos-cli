@@ -1,0 +1,49 @@
+Description:
+    Deploy and manage jobs in DC/OS.
+
+    Usage:
+        dcos job [--help]
+        dcos job [--version]
+        dcos job [--config-schema]
+        dcos job [--info]
+        dcos job add <job-file>
+        dcos job remove <job-id> [--stopCurrentJobRuns]
+        dcos job show <job-id>
+        dcos job update <job-file>
+        dcos job kill <job-id> [run-id][--all]
+        dcos job run <job-id>
+        dcos job list [--json]
+        dcos job schedule add <job-id> <schedule-file>
+        dcos job schedule show <job-id> [--json]
+        dcos job schedule remove <job-id> <schedule-id>
+        dcos job schedule update <job-id> <schedule-file>
+        dcos job show runs <job-id> [--run-id <run-id>][--q]
+        dcos job history <job-id> [--json][--show-failures]
+
+Commands:
+    job add
+        Add a job.
+    job remove
+        Remove a job.
+    job show
+        Show the job.
+    job kill
+        Show the job.
+    job run
+        Run a job now.
+    job list
+        Show all job definitions.
+    job schedule
+        Provides ability to create, update and remove schedules for a job.
+    job history
+        Provides a job run history.
+
+Options:
+    -h, --help
+        Print usage.
+    --version
+        Print version information.
+
+Positional Arguments:
+    <job-id>
+        The job ID.
