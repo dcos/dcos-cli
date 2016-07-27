@@ -16,8 +16,6 @@ from .common import (assert_command, assert_lines, delete_zk_node,
 
 def setup_module(module):
     assert_command(
-        ['dcos', 'package', 'repo', 'remove', 'Universe-1.7'])
-    assert_command(
         ['dcos', 'package', 'repo', 'remove', 'Universe'])
     repo = "https://github.com/mesosphere/universe/archive/cli-test-4.zip"
     assert_command(['dcos', 'package', 'repo', 'add', 'test4', repo])
@@ -26,8 +24,6 @@ def setup_module(module):
 def teardown_module(module):
     assert_command(
         ['dcos', 'package', 'repo', 'remove', 'test4'])
-    repo17 = "https://universe.mesosphere.com/repo-1.7"
-    assert_command(['dcos', 'package', 'repo', 'add', 'Universe-1.7', repo17])
     repo = "https://universe.mesosphere.com/repo"
     assert_command(['dcos', 'package', 'repo', 'add', 'Universe', repo])
 
@@ -388,13 +384,17 @@ def test_package_metadata():
     _install_helloworld()
 
     # test marathon labels
-    expected_metadata = b"""eyJ3ZWJzaXRlIjoiaHR0cHM6Ly9naXRodWIuY29tL21lc29zcG\
-hlcmUvZGNvcy1oZWxsb3dvcmxkIiwibmFtZSI6ImhlbGxvd29ybGQiLCJwb3N0SW5zdGFsbE5vdGVz\
-IjoiQSBzYW1wbGUgcG9zdC1pbnN0YWxsYXRpb24gbWVzc2FnZSIsImRlc2NyaXB0aW9uIjoiRXhhbX\
-BsZSBEQ09TIGFwcGxpY2F0aW9uIHBhY2thZ2UiLCJwYWNrYWdpbmdWZXJzaW9uIjoiMi4wIiwidGFn\
-cyI6WyJtZXNvc3BoZXJlIiwiZXhhbXBsZSIsInN1YmNvbW1hbmQiXSwibWFpbnRhaW5lciI6InN1cH\
-BvcnRAbWVzb3NwaGVyZS5pbyIsInZlcnNpb24iOiIwLjEuMCIsInByZUluc3RhbGxOb3RlcyI6IkEg\
-c2FtcGxlIHByZS1pbnN0YWxsYXRpb24gbWVzc2FnZSJ9"""
+    expected_metadata = (b'eyJ3ZWJzaXRlIjoiaHR0cHM6Ly9naXRodWIuY29tL21lc29zcG'
+                         b'hlcmUvZGNvcy1oZWxsb3dvcmxkIiwibmFtZSI6ImhlbGxvd29y'
+                         b'bGQiLCJwb3N0SW5zdGFsbE5vdGVzIjoiQSBzYW1wbGUgcG9zdC'
+                         b'1pbnN0YWxsYXRpb24gbWVzc2FnZSIsImRlc2NyaXB0aW9uIjoi'
+                         b'RXhhbXBsZSBEQ09TIGFwcGxpY2F0aW9uIHBhY2thZ2UiLCJwYW'
+                         b'NrYWdpbmdWZXJzaW9uIjoiMi4wIiwidGFncyI6WyJtZXNvc3Bo'
+                         b'ZXJlIiwiZXhhbXBsZSIsInN1YmNvbW1hbmQiXSwibWFpbnRhaW'
+                         b'5lciI6InN1cHBvcnRAbWVzb3NwaGVyZS5pbyIsInNlbGVjdGVk'
+                         b'IjpmYWxzZSwiZnJhbWV3b3JrIjpmYWxzZSwidmVyc2lvbiI6Ij'
+                         b'AuMS4wIiwicHJlSW5zdGFsbE5vdGVzIjoiQSBzYW1wbGUgcHJl'
+                         b'LWluc3RhbGxhdGlvbiBtZXNzYWdlIn0=')
 
     expected_command = b"""eyJwaXAiOlsiZGNvczwxLjAiLCJnaXQraHR0cHM6Ly9naXRodWI\
 uY29tL21lc29zcGhlcmUvZGNvcy1oZWxsb3dvcmxkLmdpdCNkY29zLWhlbGxvd29ybGQ9MC4xLjAiX\
