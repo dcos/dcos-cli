@@ -73,7 +73,7 @@ if (-Not( Test-Path $installation_path)) {
 }
 
 & virtualenv $installation_path
-& $installation_path\Scripts\activate
+& $installation_path\Scripts\activate.ps1
 
 [int]$PYTHON_ARCHITECTURE=(python -c 'import struct;print( 8 * struct.calcsize(\"P\"))')
 
