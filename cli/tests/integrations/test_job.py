@@ -92,6 +92,18 @@ def test_remove_job():
     _list_jobs()
 
 
+def test_update_job():
+    with _no_schedule_instance_job():
+
+        original = show_job('pikachu')
+        _update_job(
+            'pikachu',
+            'tests/data/metronome/jobs/update-pikachu.json')
+
+        result = show_job('pikachu')
+        assert original['run']['cmd'] !=  result['run']['cmd']
+
+
 @contextlib.contextmanager
 def _no_schedule_instance_job():
     with job('tests/data/metronome/jobs/pikachu.json',
@@ -104,6 +116,10 @@ def _schedule_instance_job():
     with job('tests/data/metronome/jobs/snorlax.json',
              'snorlax'):
         yield
+
+
+def _update_job(app_id, file_path):
+    assert_command(['dcos', 'job', 'update', file_path])
 
 
 def _list_jobs(app_id=None):

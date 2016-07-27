@@ -548,7 +548,6 @@ def _update_job(job_file):
     try:
         response = _put_job(job_id, full_json)
         job_added = True
-        emitter.publish("Job ID: '{}' updated.".format(job_id))
     except DCOSHTTPException as e:
         emitter.publish("Error updating job: '{}'".format(job_id))
 
