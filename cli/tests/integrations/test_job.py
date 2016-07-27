@@ -59,11 +59,21 @@ def test_add_job():
     with _no_schedule_instance_job():
         _list_jobs('pikachu')
 
+def test_add_job_with_schedule():
+    with _schedule_instance_job():
+        _list_jobs('snorlax')
+
 
 @contextlib.contextmanager
 def _no_schedule_instance_job():
     with job('tests/data/metronome/jobs/pikachu.json',
              'pikachu'):
+        yield
+
+@contextlib.contextmanager
+def _schedule_instance_job():
+    with job('tests/data/metronome/jobs/snorlax.json',
+             'snorlax'):
         yield
 
 
