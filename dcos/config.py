@@ -323,9 +323,14 @@ def get_config_schema(command):
             pkg_resources.resource_string(
                 'dcos',
                 'data/config-schema/core.json').decode('utf-8'))
-
-    executable = subcommand.command_executables(command)
-    return subcommand.config_schema(executable, command)
+    elif command in subcommand.default_subcommands():
+        return json.loads(
+            pkg_resources.resource_string(
+                'dcoscli',
+                'data/config-schema/{}.json'.format(command)).decode('utf-8'))
+    else:
+        executable = subcommand.command_executables(command)
+        return subcommand.config_schema(executable, command)
 
 
 def get_property_description(section, subkey):

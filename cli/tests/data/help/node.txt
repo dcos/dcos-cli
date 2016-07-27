@@ -15,8 +15,7 @@ Usage:
     dcos node diagnostics create (<nodes>)...
     dcos node diagnostics delete <bundle>
     dcos node diagnostics download <bundle> [--location=<location>]
-    dcos node diagnostics (--list | --status | --cancel)
-                       [--json]
+    dcos node diagnostics (--list | --status | --cancel) [--json]
 
 Commands:
     log

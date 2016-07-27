@@ -212,21 +212,17 @@ def _node_ssh(args, expected_returncode=None, expected_stdout=None):
 
 
 def _get_schema(slave):
-    schema = create_schema(slave)
-    schema['additionalProperties'] = True
+    schema = create_schema(slave, True)
     schema['required'].remove('reregistered_time')
 
     schema['required'].remove('reserved_resources')
     schema['properties']['reserved_resources']['required'] = []
-    schema['properties']['reserved_resources']['additionalProperties'] = True
 
     schema['required'].remove('unreserved_resources')
     schema['properties']['unreserved_resources']['required'] = []
-    schema['properties']['unreserved_resources']['additionalProperties'] = True
 
     schema['properties']['used_resources']['required'].remove('ports')
     schema['properties']['offered_resources']['required'].remove('ports')
-    schema['properties']['attributes']['additionalProperties'] = True
 
     schema['required'].remove('version')
     return schema
