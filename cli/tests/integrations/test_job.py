@@ -10,10 +10,9 @@ from dcos import constants
 import pytest
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
-from .common import (app, job, assert_command, assert_lines, config_set,
-                     config_unset, exec_command, list_deployments, popen_tty,
-                     show_app, update_config, watch_all_deployments,
-                     watch_deployment)
+from .common import (app, job, show_job, assert_command, assert_lines, config_set,
+                     config_unset, exec_command, popen_tty,
+                      update_config, watch_all_deployments)
 
 def test_help():
     with open('tests/data/help/job.txt') as content:
@@ -41,6 +40,7 @@ def env():
 
     return r
 
+
 def test_missing_config(env):
     with update_config("core.dcos_url", None, env):
         assert_command(
@@ -59,9 +59,11 @@ def test_add_job():
     with _no_schedule_instance_job():
         _list_jobs('pikachu')
 
+
 def test_add_job_with_schedule():
     with _schedule_instance_job():
         _list_jobs('snorlax')
+
 
 def test_add_job_bad_resource():
     stderr = (b'Can\'t read from resource: bad_resource.\n'
@@ -70,7 +72,8 @@ def test_add_job_bad_resource():
                    returncode=1,
                    stderr=stderr)
 
-def test_add_bad_json_app():
+
+def test_add_bad_json_job():
     returncode, stdout, stderr = exec_command(
         ['dcos', 'job', 'add', 'tests/data/metronome/jobs/bad.json'])
 
@@ -78,16 +81,23 @@ def test_add_bad_json_app():
     assert stderr.decode('utf-8').startswith('Error loading JSON: ')
 
 
-def test_remove_app():
+def test_show_job():
+    with _no_schedule_instance_job():
+        show_job('pikachu')
+
+
+def test_remove_job():
     with _no_schedule_instance_job():
         pass
     _list_jobs()
+
 
 @contextlib.contextmanager
 def _no_schedule_instance_job():
     with job('tests/data/metronome/jobs/pikachu.json',
              'pikachu'):
         yield
+
 
 @contextlib.contextmanager
 def _schedule_instance_job():

@@ -355,6 +355,28 @@ def show_app(app_id, version=None):
 
     return result
 
+def show_job(app_id):
+    """Show details of a Metronome job.
+
+    :param app_id: The id for the application
+    :type app_id: str
+    :returns: The requested Metronome job.
+    :rtype: dict
+    """
+
+    cmd = ['dcos', 'job','show', app_id]
+
+    returncode, stdout, stderr = exec_command(cmd)
+
+    assert returncode == 0
+    assert stderr == b''
+
+    result = json.loads(stdout.decode('utf-8'))
+    assert isinstance(result, dict)
+    assert result['id'] == app_id
+
+    return result
+
 
 def service_shutdown(service_id):
     """Shuts down a service using the command line program
