@@ -219,7 +219,7 @@ def job_table(job_list):
 
     fields = OrderedDict([
         ('id', lambda s: s['id']),
-        ('Description', lambda s: _truncate_desc(s['description'])),
+        ('Description', lambda s: _truncate_desc(s['description'] if 'description' in s else '')),
         ('Status', lambda s: _job_status(s)),
         ('Last Succesful Run', lambda s: s['history']['lastSuccessAt'] if 'history' in s else 'N/A'),
     ])

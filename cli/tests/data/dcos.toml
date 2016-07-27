@@ -1,5 +1,5 @@
 [core]
-reporting = false
 dcos_url = "http://dcos.snakeoil.mesosphere.com"
-timeout = 5
 ssl_verify = "false"
+timeout = 5
+reporting = false

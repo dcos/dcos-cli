@@ -70,6 +70,18 @@ def test_add_job_bad_resource():
                    returncode=1,
                    stderr=stderr)
 
+def test_add_bad_json_app():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'job', 'add', 'tests/data/metronome/jobs/bad.json'])
+
+    assert returncode == 1
+    assert stderr.decode('utf-8').startswith('Error loading JSON: ')
+
+
+def test_remove_app():
+    with _no_schedule_instance_job():
+        pass
+    _list_jobs()
 
 @contextlib.contextmanager
 def _no_schedule_instance_job():

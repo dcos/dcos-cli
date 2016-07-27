@@ -498,6 +498,9 @@ def _add_job(job_file):
     if full_json is None:
         raise DCOSException("No JSON provided.")
 
+    if 'id' not in full_json:
+        raise DCOSException("Jobs JSON requires an ID.")
+
     job_id = full_json['id']
     schedules = None
 
