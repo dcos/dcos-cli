@@ -63,6 +63,13 @@ def test_add_job_with_schedule():
     with _schedule_instance_job():
         _list_jobs('snorlax')
 
+def test_add_job_bad_resource():
+    stderr = (b'Can\'t read from resource: bad_resource.\n'
+              b'Please check that it exists.\n')
+    assert_command(['dcos', 'job', 'add', 'bad_resource'],
+                   returncode=1,
+                   stderr=stderr)
+
 
 @contextlib.contextmanager
 def _no_schedule_instance_job():
