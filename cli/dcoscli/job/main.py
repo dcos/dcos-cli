@@ -242,8 +242,6 @@ def _list(json_flag=False):
         output = six.text_type(table)
         if output:
             emitter.publish(output)
-        else:
-            emitter.publish("No jobs registered.")
 
     return 0
 
@@ -420,7 +418,6 @@ def _add_schedules(job_id, schedules_json):
     for schedule in schedules_json:
         try:
             response = _post_schedule(job_id, schedule)
-            emitter.publish("Schedule ID `{}` for job ID `{}` added".format(schedule['id'],job_id))
         except DCOSHTTPException as e:
             if e.response.status_code == 404:
                 emitter.publish("Job ID: '{}' does NOT exist.".format(job_id))
@@ -517,7 +514,6 @@ def _add_job(job_file):
     try:
         response = _post_job(full_json)
         job_added = True
-        emitter.publish("Job ID: '{}' added.".format(job_id))
     except DCOSHTTPException as e:
         if e.response.status_code == 409:
             emitter.publish("Job ID: '{}' already exists".format(job_id))

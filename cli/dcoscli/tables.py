@@ -221,7 +221,7 @@ def job_table(job_list):
         ('id', lambda s: s['id']),
         ('Description', lambda s: _truncate_desc(s['description'])),
         ('Status', lambda s: _job_status(s)),
-        ('Last Succesful Run', lambda s: s['history']['lastSuccessAt']),
+        ('Last Succesful Run', lambda s: s['history']['lastSuccessAt'] if 'history' in s else 'N/A'),
     ])
     tb = table(fields, job_list, sortby="ID")
     tb.align['ID'] = 'l'
