@@ -73,7 +73,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['job', 'show', 'runs'],
-            arg_keys=['<job-id>', '<run-id>', '--q'],
+            arg_keys=['<job-id>', '<run-id>', '--json', '--q'],
             function=_show_runs),
 
         cmds.Command(
@@ -251,26 +251,29 @@ def _history(job_id, json_flag=False, show_failures=False):
     url = urllib.parse.urljoin(_get_api_url('v1/jobs/'), job_id + METRONOME_EMBEDDED)
     try:
      response = _do_request(url, 'GET')
+    except DCOSHTTPException as e:
+        raise DCOSException("Job ID does NOT exist.")
     except DCOSException as e:
         raise DCOSException(e)
-
-    json_history = _read_http_response_body(response)
-
-    if json_flag:
-        emitter.publish(json_history)
     else:
-        emitter.publish("'{}'  Successful runs: {} Last Success: {}".format(job_id, json_history['history']['successCount'], json_history['history']['lastSuccessAt']))
-        table = tables.job_history_table(json_history['history']['successfulFinishedRuns'])
-        output = six.text_type(table)
-        if output:
-            emitter.publish(output)
 
-        if show_failures:
-            emitter.publish("'{}'  Failure runs: {} Last Failure: {}".format(job_id, json_history['history']['failureCount'], json_history['history']['lastFailureAt']))
-            table = tables.job_history_table(json_history['history']['failedFinishedRuns'])
+        json_history = _read_http_response_body(response)
+
+        if json_flag:
+            emitter.publish(json_history)
+        else:
+            emitter.publish("'{}'  Successful runs: {} Last Success: {}".format(job_id, json_history['history']['successCount'], json_history['history']['lastSuccessAt']))
+            table = tables.job_history_table(json_history['history']['successfulFinishedRuns'])
             output = six.text_type(table)
             if output:
                 emitter.publish(output)
+
+            if show_failures:
+                emitter.publish("'{}'  Failure runs: {} Last Failure: {}".format(job_id, json_history['history']['failureCount'], json_history['history']['lastFailureAt']))
+                table = tables.job_history_table(json_history['history']['failedFinishedRuns'])
+                output = six.text_type(table)
+                if output:
+                    emitter.publish(output)
 
     return 0
 
@@ -294,7 +297,7 @@ def _show(job_id):
 
     return 0
 
-def _show_runs(job_id, run_id=None, q=False, json_flag=False):
+def _show_runs(job_id, run_id=None, json_flag=False, q=False):
     """
     :param job_id: Id of the job
     :type job_id: str
@@ -304,6 +307,9 @@ def _show_runs(job_id, run_id=None, q=False, json_flag=False):
 
     json_runs = _get_runs(job_id, run_id)
     if q is True:
+        ids=_get_ids(json_runs)
+        emitter.publish(ids)
+    elif json_flag is True:
         emitter.publish(json_runs)
     else:
         if json_flag:

@@ -282,7 +282,7 @@ def job_runs_table(runs_list):
     fields = OrderedDict([
         ('job id', lambda s: s['jobId']),
         ('id', lambda s: s['id']),
-        ('started at', lambda s: s['tasks'][0]['startedAt']),
+        ('started at', lambda s: s['createdAt']),
     ])
     tb = table(fields, runs_list)
     tb.align['ID'] = 'l'

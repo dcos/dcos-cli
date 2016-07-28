@@ -17,7 +17,7 @@ Description:
         dcos job schedule show <job-id> [--json]
         dcos job schedule remove <job-id> <schedule-id>
         dcos job schedule update <job-id> <schedule-file>
-        dcos job show runs <job-id> [--run-id <run-id>][--q]
+        dcos job show runs <job-id> [--run-id <run-id>][--json][--q]
         dcos job history <job-id> [--json][--show-failures]
 
 Commands:

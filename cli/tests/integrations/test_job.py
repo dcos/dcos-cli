@@ -104,6 +104,37 @@ def test_update_job():
         assert original['run']['cmd'] !=  result['run']['cmd']
 
 
+def test_no_history():
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'job', 'history', 'BAD'])
+
+    assert returncode == 1
+
+def test_no_history_with_job():
+    with _no_schedule_instance_job():
+
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'job', 'history', 'pikachu'])
+
+        assert returncode == 0
+
+def test_show_runs():
+    with _no_schedule_instance_job():
+
+        _run_job('pikachu')
+
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'job', 'show', 'runs', 'pikachu'])
+
+        assert returncode == 0
+        assert 'JOB ID' in stdout.decode('utf-8')
+        assert 'pikachu' in stdout.decode('utf-8')
+
+def _run_job(job_id):
+    assert_command(['dcos', 'job', 'run', job_id])
+
+
 @contextlib.contextmanager
 def _no_schedule_instance_job():
     with job('tests/data/metronome/jobs/pikachu.json',
