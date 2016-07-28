@@ -256,11 +256,6 @@ def _describe(package_name,
 
     pkg_json = pkg.package_json()
 
-    if package_version is None:
-        pkg_versions = pkg.package_versions()
-        del pkg_json['version']
-        pkg_json['versions'] = pkg_versions
-
     if package_versions:
         emitter.publish(pkg.package_versions())
     elif cli or app or config:
