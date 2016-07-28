@@ -11,7 +11,7 @@ import pytest
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 from .common import (app, job, show_job, assert_command, assert_lines, config_set,
-                     config_unset, exec_command, popen_tty,
+                     config_unset, exec_command, popen_tty, show_job_schedule,
                       update_config, watch_all_deployments)
 
 def test_help():
@@ -63,6 +63,10 @@ def test_add_job():
 def test_add_job_with_schedule():
     with _schedule_instance_job():
         _list_jobs('snorlax')
+
+def test_show_job_schedule():
+    with _schedule_instance_job():
+        show_job_schedule('snorlax','snore-nightly')
 
 
 def test_add_job_bad_resource():

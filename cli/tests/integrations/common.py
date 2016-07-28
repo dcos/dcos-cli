@@ -377,6 +377,29 @@ def show_job(app_id):
 
     return result
 
+def show_job_schedule(app_id, schedule_id):
+    """Show details of a Metronome schedule.
+
+    :param app_id: The id for the job
+    :type app_id: str
+    :param schedule_id: The id for the schedule
+    :type schedule_id: str
+    :returns: The requested Metronome job.
+    :rtype: dict
+    """
+
+    cmd = ['dcos', 'job', 'schedule', 'show', app_id, '--json']
+
+    returncode, stdout, stderr = exec_command(cmd)
+
+    assert returncode == 0
+    assert stderr == b''
+
+    result = json.loads(stdout.decode('utf-8'))
+    assert isinstance(result[0], dict)
+    assert result[0]['id'] == schedule_id
+
+    return result[0]
 
 def service_shutdown(service_id):
     """Shuts down a service using the command line program
