@@ -523,7 +523,7 @@ def _add_job(job_file):
         if e.response.status_code == 409:
             emitter.publish("Job ID: '{}' already exists".format(job_id))
         else:
-            emitter.publish("Error running job: '{}'".format(job_id))
+            raise DCOSException(e)
 
     if schedules is not None and job_added:
         return _add_schedules(job_id, schedules)
