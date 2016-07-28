@@ -109,7 +109,7 @@ def _package(config_schema, info):
     if config_schema:
         schema = json.loads(
             pkg_resources.resource_string(
-                'dcoscli',
+                'dcos',
                 'data/config-schema/package.json').decode('utf-8'))
         emitter.publish(schema)
     elif info:

@@ -870,5 +870,5 @@ def _cli_config_schema():
     """
     return json.loads(
         pkg_resources.resource_string(
-            'dcoscli',
+            'dcos',
             'data/config-schema/marathon.json').decode('utf-8'))

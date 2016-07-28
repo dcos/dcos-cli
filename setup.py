@@ -78,7 +78,7 @@ setup(
 
     package_data={
         'dcos': [
-            'data/config-schema/core.json',
+            'data/config-schema/*.json',
         ],
     },
 )
