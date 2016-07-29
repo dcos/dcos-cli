@@ -14,6 +14,7 @@ from .common import (app, job, show_job, assert_command, assert_lines, config_se
                      config_unset, exec_command, popen_tty, show_job_schedule,
                       update_config, watch_all_deployments)
 
+
 def test_help():
     with open('tests/data/help/job.txt') as content:
         assert_command(['dcos', 'job', '--help'],
@@ -26,8 +27,8 @@ def test_version():
 
 
 def test_info():
-    assert_command(['dcos', 'marathon', '--info'],
-                   stdout=b'Deploy and manage applications to DC/OS\n')
+    assert_command(['dcos', 'job', '--info'],
+                   stdout=b'Deploy and manage jobs in DC/OS\n')
 
 
 @pytest.fixture
@@ -63,6 +64,7 @@ def test_add_job():
 def test_add_job_with_schedule():
     with _schedule_instance_job():
         _list_jobs('snorlax')
+
 
 def test_show_job_schedule():
     with _schedule_instance_job():
@@ -115,6 +117,7 @@ def test_no_history():
 
     assert returncode == 1
 
+
 def test_no_history_with_job():
     with _no_schedule_instance_job():
 
@@ -122,6 +125,7 @@ def test_no_history_with_job():
             ['dcos', 'job', 'history', 'pikachu'])
 
         assert returncode == 0
+
 
 def test_show_runs():
     with _no_schedule_instance_job():
@@ -134,6 +138,7 @@ def test_show_runs():
         assert returncode == 0
         assert 'JOB ID' in stdout.decode('utf-8')
         assert 'pikachu' in stdout.decode('utf-8')
+
 
 def _run_job(job_id):
     assert_command(['dcos', 'job', 'run', job_id])
