@@ -219,9 +219,11 @@ def job_table(job_list):
 
     fields = OrderedDict([
         ('id', lambda s: s['id']),
-        ('Description', lambda s: _truncate_desc(s['description'] if 'description' in s else '')),
+        ('Description', lambda s:
+            _truncate_desc(s['description'] if 'description' in s else '')),
         ('Status', lambda s: _job_status(s)),
-        ('Last Succesful Run', lambda s: s['history']['lastSuccessAt'] if 'history' in s else 'N/A'),
+        ('Last Succesful Run', lambda s: s['history']['lastSuccessAt']
+            if 'history' in s else 'N/A'),
     ])
     tb = table(fields, job_list, sortby="ID")
     tb.align['ID'] = 'l'
@@ -251,7 +253,8 @@ def job_history_table(schedule_list):
 
 
 def schedule_table(schedule_list):
-    """Returns a PrettyTable representation of the schedule list of a job from Metronome.
+    """Returns a PrettyTable representation of the schedule list of a job
+    from Metronome.
 
     :param schedule_list: schedules to render
     :type schedule_list: [schedule]
@@ -273,7 +276,8 @@ def schedule_table(schedule_list):
 
 
 def job_runs_table(runs_list):
-    """Returns a PrettyTable representation of the runs list of a job from Metronome.
+    """Returns a PrettyTable representation of the runs list of a job from
+    Metronome.
 
     :param runs_list: current runs of a job to render
     :type runs_list: [runs]
@@ -322,6 +326,7 @@ def _job_status(job):
         return "Unscheduled"
     else:
         return "Scheduled"
+
 
 def _count_apps(group, group_dict):
     """Counts how many apps are registered for each group.  Recursively

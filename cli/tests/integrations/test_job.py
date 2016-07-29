@@ -1,18 +1,13 @@
 import contextlib
 import json
 import os
-import re
-import sys
-import threading
 
 from dcos import constants
 
 import pytest
-from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
-from .common import (app, job, show_job, assert_command, assert_lines, config_set,
-                     config_unset, exec_command, popen_tty, show_job_schedule,
-                      update_config, watch_all_deployments)
+from .common import (assert_command, exec_command, job, show_job,
+                     show_job_schedule, update_config)
 
 
 def test_help():
@@ -68,7 +63,7 @@ def test_add_job_with_schedule():
 
 def test_show_job_schedule():
     with _schedule_instance_job():
-        show_job_schedule('snorlax','snore-nightly')
+        show_job_schedule('snorlax', 'snore-nightly')
 
 
 def test_add_job_bad_resource():
@@ -107,7 +102,7 @@ def test_update_job():
             'tests/data/metronome/jobs/update-pikachu.json')
 
         result = show_job('pikachu')
-        assert original['run']['cmd'] !=  result['run']['cmd']
+        assert original['run']['cmd'] != result['run']['cmd']
 
 
 def test_no_history():

@@ -356,6 +356,7 @@ def show_app(app_id, version=None):
 
     return result
 
+
 def show_job(app_id):
     """Show details of a Metronome job.
 
@@ -365,7 +366,7 @@ def show_job(app_id):
     :rtype: dict
     """
 
-    cmd = ['dcos', 'job','show', app_id]
+    cmd = ['dcos', 'job', 'show', app_id]
 
     returncode, stdout, stderr = exec_command(cmd)
 
@@ -377,6 +378,7 @@ def show_job(app_id):
     assert result['id'] == app_id
 
     return result
+
 
 def show_job_schedule(app_id, schedule_id):
     """Show details of a Metronome schedule.
@@ -401,6 +403,7 @@ def show_job_schedule(app_id, schedule_id):
     assert result[0]['id'] == schedule_id
 
     return result[0]
+
 
 def service_shutdown(service_id):
     """Shuts down a service using the command line program
@@ -504,6 +507,7 @@ def app(path, app_id, wait=True):
     finally:
         remove_app(app_id)
         watch_all_deployments()
+
 
 @contextlib.contextmanager
 def job(path, app_id):

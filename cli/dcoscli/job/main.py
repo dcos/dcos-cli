@@ -18,7 +18,8 @@ logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
 
 DEFAULT_TIMEOUT = 180
-METRONOME_EMBEDDED='?embed=activeRuns&embed=schedules&embed=history'
+METRONOME_EMBEDDED = '?embed=activeRuns&embed=schedules&embed=history'
+
 
 def main(argv):
     try:
@@ -53,7 +54,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['job', 'kill'],
-            arg_keys=['<job-id>', '<run-id>','--all'],
+            arg_keys=['<job-id>', '<run-id>', '--all'],
             function=_kill),
 
         cmds.Command(
@@ -88,12 +89,12 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['job', 'history'],
-            arg_keys=['<job-id>','--json','--show-failures'],
+            arg_keys=['<job-id>', '--json', '--show-failures'],
             function=_history),
 
         cmds.Command(
             hierarchy=['job', 'remove'],
-            arg_keys=['<job-id>','--stopCurrentJobRuns'],
+            arg_keys=['<job-id>', '--stopCurrentJobRuns'],
             function=_remove),
 
         cmds.Command(
@@ -149,16 +150,16 @@ def _remove_schedule(job_id, schedule_id):
     :returns: process return code
     :rtype: int
     """
-    response = None
 
     try:
-     response = _do_request("{}/{}/schedules/{}".format(_get_api_url('v1/jobs'),
-        job_id, schedule_id), 'DELETE')
+        _do_request("{}/{}/schedules/{}".format(_get_api_url('v1/jobs'),
+                    job_id, schedule_id), 'DELETE')
     except DCOSHTTPException as e:
         if e.response.status_code == 404:
             raise DCOSException("Schedule or job ID does NOT exist.")
     except DCOSException as e:
-        raise DCOSException("Unable to remove schedule ID '{}' for job ID '{}'".format(schedule_id, job_id))
+        raise DCOSException("Unable to remove schedule ID '{}' for job ID '{}'"
+                            .format(schedule_id, job_id))
 
     return 0
 
@@ -167,23 +168,28 @@ def _remove(job_id, stop_current_job_runs=False):
     """
     :param job_id: Id of the job
     :type job_id: str
-    :param stop_current_job_runs: If job runs should be stop as part of the remove
+    :param stop_current_job_runs: If job runs should be stop as
+    part of the remove
     :type stop_current_job_runs: boolean
     :returns: process return code
     :rtype: int
     """
-    response = None
 
     try:
-     response = _do_request("{}/{}?stopCurrentJobRuns={}".format(_get_api_url('v1/jobs'),
-        job_id, str(stop_current_job_runs).lower()), 'DELETE')
+        _do_request("{}/{}?stopCurrentJobRuns={}"
+                    .format(_get_api_url('v1/jobs'),
+                            job_id,
+                            str(stop_current_job_runs).lower()),
+                    'DELETE')
     except DCOSHTTPException as e:
         if e.response.status_code == 500 and stop_current_job_runs:
             return _remove(job_id, False)
         else:
-            raise DCOSException("Unable to remove '{}'.  It may be running.".format(job_id))
+            raise DCOSException("Unable to remove '{}'.  It may be running."
+                                .format(job_id))
     except DCOSException as e:
-        raise DCOSException("Unable to remove '{}'.  It may be running.".format(job_id))
+        raise DCOSException("Unable to remove '{}'.  It may be running."
+                            .format(job_id))
 
     return 0
 
@@ -204,16 +210,19 @@ def _kill(job_id, run_id, all=False):
 
     for dead in deadpool:
         try:
-            response = _do_request("{}/{}/runs/{}/actions/stop".format(_get_api_url('v1/jobs'),
-                job_id, dead), 'POST')
+            response = _do_request("{}/{}/runs/{}/actions/stop".format(
+                                    _get_api_url('v1/jobs'),
+                                    job_id, dead), 'POST')
         except DCOSHTTPException as e:
             if e.response.status_code == 404:
                 raise DCOSException("Job ID or Run ID does NOT exist.")
         except DCOSException as e:
-            raise DCOSException("Unable stop run ID '{}' for job ID '{}'".format(dead, job_id))
+            raise DCOSException("Unable stop run ID '{}' for job ID '{}'"
+                                .format(dead, job_id))
         else:
             if response.status_code == 200:
-                emitter.publish("Run '{}' for job '{}' killed.".format(dead, job_id))
+                emitter.publish("Run '{}' for job '{}' killed."
+                                .format(dead, job_id))
     return 0
 
 
@@ -225,7 +234,7 @@ def _list(json_flag=False):
     response = None
     url = _get_api_url('v1/jobs' + METRONOME_EMBEDDED)
     try:
-     response = _do_request(url, 'GET')
+        response = _do_request(url, 'GET')
     except DCOSException as e:
         raise DCOSException(e)
 
@@ -248,34 +257,63 @@ def _history(job_id, json_flag=False, show_failures=False):
     :rtype: int
     """
     response = None
-    url = urllib.parse.urljoin(_get_api_url('v1/jobs/'), job_id + METRONOME_EMBEDDED)
+    url = urllib.parse.urljoin(_get_api_url('v1/jobs/'),
+                               job_id + METRONOME_EMBEDDED)
     try:
-     response = _do_request(url, 'GET')
+        response = _do_request(url, 'GET')
     except DCOSHTTPException as e:
         raise DCOSException("Job ID does NOT exist.")
     except DCOSException as e:
         raise DCOSException(e)
     else:
 
+        if response.status_code is not 200:
+            raise DCOSException("Job ID does NOT exist.")
+
         json_history = _read_http_response_body(response)
+
+        if 'history' not in json_history:
+            return 0
 
         if json_flag:
             emitter.publish(json_history)
         else:
-            emitter.publish("'{}'  Successful runs: {} Last Success: {}".format(job_id, json_history['history']['successCount'], json_history['history']['lastSuccessAt']))
-            table = tables.job_history_table(json_history['history']['successfulFinishedRuns'])
+            emitter.publish(_get_history_message(json_history, job_id))
+            table = tables.job_history_table(
+                json_history['history']['successfulFinishedRuns'])
             output = six.text_type(table)
             if output:
                 emitter.publish(output)
 
             if show_failures:
-                emitter.publish("'{}'  Failure runs: {} Last Failure: {}".format(job_id, json_history['history']['failureCount'], json_history['history']['lastFailureAt']))
-                table = tables.job_history_table(json_history['history']['failedFinishedRuns'])
+                emitter.publish(_get_history_message(
+                                json_history, job_id, False))
+                table = tables.job_history_table(
+                    json_history['history']['failedFinishedRuns'])
                 output = six.text_type(table)
                 if output:
                     emitter.publish(output)
 
     return 0
+
+
+def _get_history_message(json_history, job_id, success=True):
+    """
+    :param json_history: json of history
+    :type json_history: json
+    :param job_id: Id of the job
+    :type job_id: str
+    :returns: history message
+    :rtype: str
+    """
+    if success is True:
+        return "'{}'  Successful runs: {} Last Success: {}".format(
+                job_id, json_history['history']['successCount'],
+                json_history['history']['lastSuccessAt'])
+    else:
+        return "'{}'  Failure runs: {} Last Failure: {}".format(
+                job_id, json_history['history']['failureCount'],
+                json_history['history']['lastFailureAt'])
 
 
 def _show(job_id):
@@ -288,7 +326,8 @@ def _show(job_id):
 
     response = None
     try:
-     response = _do_request("{}/{}".format(_get_api_url('v1/jobs'), job_id), 'GET')
+        response = _do_request("{}/{}".format(
+            _get_api_url('v1/jobs'), job_id), 'GET')
     except DCOSException as e:
         raise DCOSException(e)
 
@@ -296,6 +335,7 @@ def _show(job_id):
     emitter.publish(json_job)
 
     return 0
+
 
 def _show_runs(job_id, run_id=None, json_flag=False, q=False):
     """
@@ -307,7 +347,7 @@ def _show_runs(job_id, run_id=None, json_flag=False, q=False):
 
     json_runs = _get_runs(job_id, run_id)
     if q is True:
-        ids=_get_ids(json_runs)
+        ids = _get_ids(json_runs)
         emitter.publish(ids)
     elif json_flag is True:
         emitter.publish(json_runs)
@@ -334,6 +374,7 @@ def _json_array_has_element(json_object, field):
             break
     return exists
 
+
 def _get_runs(job_id, run_id=None):
     """
     :param job_id: Id of the job
@@ -347,13 +388,14 @@ def _get_runs(job_id, run_id=None):
     if run_id is not None:
         url = "{}/{}/runs/{}".format(_get_api_url('v1/jobs'), job_id, run_id)
     try:
-     response = _do_request(url,'GET')
+        response = _do_request(url, 'GET')
     except DCOSException as e:
         raise DCOSException(e)
 
     json_runs = _read_http_response_body(response)
 
     return json_runs
+
 
 def _run(job_id):
     """
@@ -367,7 +409,7 @@ def _run(job_id):
     url = "{}/{}/runs".format(_get_api_url('v1/jobs'), job_id)
 
     try:
-        response = http.post(url, timeout=timeout)
+        http.post(url, timeout=timeout)
     except DCOSHTTPException as e:
         if e.response.status_code == 404:
             emitter.publish("Job ID: '{}' does not exist.".format(job_id))
@@ -388,7 +430,7 @@ def _show_schedule(job_id, json_flag=False):
     response = None
     url = "{}/{}/schedules".format(_get_api_url('v1/jobs'), job_id)
     try:
-     response = _do_request(url, 'GET')
+        response = _do_request(url, 'GET')
     except DCOSException as e:
         raise DCOSException(e)
 
@@ -419,7 +461,7 @@ def _add_schedules(job_id, schedules_json):
 
     for schedule in schedules_json:
         try:
-            response = _post_schedule(job_id, schedule)
+            _post_schedule(job_id, schedule)
         except DCOSHTTPException as e:
             if e.response.status_code == 404:
                 emitter.publish("Job ID: '{}' does NOT exist.".format(job_id))
@@ -467,11 +509,13 @@ def _update_schedule(job_id, schedule_id, schedule_json):
         raise DCOSException("No schedule to update.")
 
     try:
-        response = _put_schedule(job_id, schedule_id, schedule_json)
-        emitter.publish("Schedule ID `{}` for job ID `{}` updated.".format(schedule_id, job_id))
+        _put_schedule(job_id, schedule_id, schedule_json)
+        emitter.publish("Schedule ID `{}` for job ID `{}` updated."
+                        .format(schedule_id, job_id))
     except DCOSHTTPException as e:
         if e.response.status_code == 404:
-            emitter.publish("Job ID: '{}' or schedule ID '{}' does NOT exist.".format(job_id, schedule_id))
+            emitter.publish("Job ID: '{}' or schedule ID '{}' does NOT exist."
+                            .format(job_id, schedule_id))
     except DCOSException as e:
         raise DCOSException(e)
 
@@ -517,7 +561,7 @@ def _add_job(job_file):
     # iterate and post each schedule
     job_added = False
     try:
-        response = _post_job(full_json)
+        _post_job(full_json)
         job_added = True
     except DCOSHTTPException as e:
         if e.response.status_code == 409:
@@ -525,7 +569,7 @@ def _add_job(job_file):
         else:
             raise DCOSException(e)
 
-    if schedules is not None and job_added:
+    if schedules is not None and job_added is True:
         return _add_schedules(job_id, schedules)
 
     return 0
@@ -544,16 +588,12 @@ def _update_job(job_file):
         raise DCOSException("No JSON provided.")
 
     job_id = full_json['id']
-    schedules = None
 
     if 'schedules' in full_json:
-        schedules = full_json['schedules']
         del full_json['schedules']
 
-    job_added = False
     try:
-        response = _put_job(job_id, full_json)
-        job_added = True
+        _put_job(job_id, full_json)
     except DCOSHTTPException as e:
         emitter.publish("Error updating job: '{}'".format(job_id))
 
@@ -612,9 +652,7 @@ def _put_job(job_id, job_json):
     timeout = _get_timeout()
     url = "{}/{}".format(_get_api_url('v1/jobs'), job_id)
 
-    response = http.put(url,
-                         json=job_json,
-                         timeout=timeout)
+    response = http.put(url, json=job_json, timeout=timeout)
 
     return response.json()
 
@@ -632,11 +670,10 @@ def _put_schedule(job_id, schedule_id, schedule_json):
     """
 
     timeout = _get_timeout()
-    url = "{}/{}/schedules/{}".format(_get_api_url('v1/jobs'), job_id, schedule_id)
+    url = "{}/{}/schedules/{}".format(_get_api_url('v1/jobs'),
+                                      job_id, schedule_id)
 
-    response = http.put(url,
-                         json=schedule_json,
-                         timeout=timeout)
+    response = http.put(url, json=schedule_json, timeout=timeout)
 
     return response.json()
 
@@ -654,9 +691,7 @@ def _post_schedule(job_id, schedule_json):
     timeout = _get_timeout()
     url = "{}/{}/schedules".format(_get_api_url('v1/jobs'), job_id)
 
-    response = http.post(url,
-                         json=schedule_json,
-                         timeout=timeout)
+    response = http.post(url, json=schedule_json, timeout=timeout)
 
     return response.json()
 
@@ -689,11 +724,14 @@ def _do_request(url, method, timeout=None, stream=False, **kwargs):
 
     url = urllib.parse.urljoin(_get_metronome_url(), url)
     if method.lower() == 'get':
-        http_response = http.get(url, is_success=_is_success, timeout=timeout, **kwargs)
+        http_response = http.get(url, is_success=_is_success,
+                                 timeout=timeout, **kwargs)
     elif method.lower() == 'post':
-        http_response = http.post(url, is_success=_is_success, timeout=timeout, stream=stream, **kwargs)
+        http_response = http.post(url, is_success=_is_success,
+                                  timeout=timeout, stream=stream, **kwargs)
     elif method.lower() == 'delete':
-        http_response = http.delete(url, is_success=_is_success, timeout=timeout, stream=stream, **kwargs)
+        http_response = http.delete(url, is_success=_is_success,
+                                    timeout=timeout, stream=stream, **kwargs)
     else:
         raise DCOSException('Unsupported HTTP method: ' + method)
     return http_response
@@ -755,7 +793,8 @@ def _get_resource(resource):
                         data += chunk
                     return util.load_jsons(data.decode('utf-8'))
                 else:
-                    raise DCOSHTTPException("HTTP error code: {}".format(req.status_code))
+                    raise DCOSHTTPException("HTTP error code: {}"
+                                            .format(req.status_code))
             except Exception:
                 logger.exception('Cannot read from resource %s', resource)
                 raise DCOSException(
