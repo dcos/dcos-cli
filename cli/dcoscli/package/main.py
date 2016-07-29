@@ -109,7 +109,7 @@ def _package(config_schema, info):
     if config_schema:
         schema = json.loads(
             pkg_resources.resource_string(
-                'dcoscli',
+                'dcos',
                 'data/config-schema/package.json').decode('utf-8'))
         emitter.publish(schema)
     elif info:
@@ -255,11 +255,6 @@ def _describe(package_name,
     pkg = package_manager.get_package_version(package_name, package_version)
 
     pkg_json = pkg.package_json()
-
-    if package_version is None:
-        pkg_versions = pkg.package_versions()
-        del pkg_json['version']
-        pkg_json['versions'] = pkg_versions
 
     if package_versions:
         emitter.publish(pkg.package_versions())

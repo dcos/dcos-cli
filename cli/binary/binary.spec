@@ -11,9 +11,8 @@ a = Analysis(['../dcoscli/main.py'],
                      ],
              binaries=None,
             datas=[('../dcoscli/data/help/*', 'dcoscli/data/help'),
-                    ('../../dcos/data/config-schema/*', 'dcos/data/config-schema'),
-                    ('../dcoscli/data/config-schema/*', 'dcoscli/data/config-schema')
-                    ],
+                   ('../../dcos/data/config-schema/*', 'dcos/data/config-schema')
+                  ],
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],

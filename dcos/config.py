@@ -326,7 +326,7 @@ def get_config_schema(command):
     elif command in subcommand.default_subcommands():
         return json.loads(
             pkg_resources.resource_string(
-                'dcoscli',
+                'dcos',
                 'data/config-schema/{}.json'.format(command)).decode('utf-8'))
     else:
         executable = subcommand.command_executables(command)

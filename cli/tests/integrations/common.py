@@ -1,3 +1,4 @@
+import base64
 import collections
 import contextlib
 import json
@@ -679,3 +680,13 @@ def config_unset(key, env=None):
 
     assert returncode == 0
     assert stdout == b''
+
+
+def base64_to_dict(byte_string):
+    """
+    :param byte_string: base64 encoded string
+    :type byte_string: str
+    :return: python dictionary decoding of byte_string
+    :rtype dict
+    """
+    return json.loads(base64.b64decode(byte_string).decode('utf-8'))
