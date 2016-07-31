@@ -21,6 +21,11 @@ Options:
         * critical Prints only critical messages to stderr.
     --version
         Print version information
+    --service-name=<service-name>
+        Sets the non-default name of the service to invoke request against.
+        For example if marathon is installed to invoke `dcos marathon`
+        commands with the default installation invoke
+        `dcos --service-name=marathon-user marathon`
 
 Environment Variables:
     DCOS_CONFIG
@@ -32,3 +37,6 @@ Environment Variables:
     DCOS_LOG_LEVEL
         Prints log messages to stderr at or above the level indicated. This is
         equivalent to the --log-level command-line option.
+    DCOS_SERVICE_NAME
+      Sets the service name to be used for commands that invoked against a
+      service endpoint.  Otherwise it has no effect.

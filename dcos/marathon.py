@@ -34,13 +34,19 @@ def _get_marathon_url(toml_config):
     :returns: marathon base url
     :rtype: str
     """
-
     marathon_url = config.get_config_val('marathon.url', toml_config)
     if marathon_url is None:
         dcos_url = config.get_config_val('core.dcos_url', toml_config)
         if dcos_url is None:
             raise config.missing_config_exception(['core.dcos_url'])
-        marathon_url = urllib.parse.urljoin(dcos_url, 'service/marathon/')
+
+        if util.get_nondefault_service_name() is None:
+            marathon_service_name = "marathon"
+        else:
+            marathon_service_name = util.get_nondefault_service_name()
+
+        marathon_service_url = 'service/{}/'.format(marathon_service_name)
+        marathon_url = urllib.parse.urljoin(dcos_url, marathon_service_url)
 
     return marathon_url
 
