@@ -152,7 +152,7 @@ if [ -z "$DCOS_CLI_VERSION" ]; then
     if $(compare_version 1.6.1); then
         "$VIRTUAL_ENV_PATH/bin/pip" install --quiet "dcoscli<0.4.0"
     else
-        "$VIRTUAL_ENV_PATH/bin/pip" install --quiet "dcoscli"
+        "$VIRTUAL_ENV_PATH/bin/pip" install --quiet "dcoscli==0.4.12"
     fi
 else
     "$VIRTUAL_ENV_PATH/bin/pip" install --quiet "dcoscli==$DCOS_CLI_VERSION"
