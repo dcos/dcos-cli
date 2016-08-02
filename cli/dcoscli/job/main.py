@@ -6,9 +6,10 @@ import dcoscli
 import docopt
 import pkg_resources
 import six
-from dcos import cmds, config, emitting, http, options, util
+from dcos import cmds, config, cosmospackage, emitting, http, options, util
 from dcos.errors import DCOSException, DCOSHTTPException
 from dcoscli import tables
+from dcoscli.package.main import get_cosmos_url
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
 
@@ -36,7 +37,23 @@ def _main(argv):
         argv=argv,
         version='dcos-job version {}'.format(dcoscli.version))
 
+    _check_capability()
     return cmds.execute(_cmds(), args)
+
+
+def _check_capability():
+    """
+    The function checks if cluster has metronome capability.
+
+    :raises: DCOSException if cluster does not have metronome capability
+    """
+
+    cosmos = cosmospackage.Cosmos(get_cosmos_url())
+    if not cosmos.has_capability('METRONOME') \
+            and 'METRONOME_CAPABLE' not in os.environ:
+        raise DCOSException(
+            'DC/OS backend does not support metronome capabilities in this '
+            'version. Must be DC/OS >= 1.8')
 
 
 def _cmds():
