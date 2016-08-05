@@ -101,17 +101,37 @@ Running Tests
 Setup
 #####
 
-Tox, our test runner, tests against both Python 2.7 and Python 3.4
-environments. We have a set of tests in the :code:`dcos` package (root
-directory) and in the :code:`dcoscli` package (:code:`cli` directory). When
-running the tests describe below change directory to one of those two and
-follow the instructions.
+Tox, our test runner, tests against Python 3.4. We have a set of tests in
+the :code:`dcos` package (root directory) and in the :code:`dcoscli` package
+(:code:`cli` directory). When running the tests describe below change
+directory to one of those two and follow the instructions.
+
+
+Initialization
+#######
+
+The `config` integration tests use static config files. To run these tests
+make sure you set owner only permissions on these files:
+
+:code:`chmod 600 cli/tests/data/dcos.toml`
+
+:code:`chmod 600 cli/tests/config/parse_error.toml`
+
+The :code:`node` integration tests use :code:`CLI_TEST_SSH_KEY_PATH` for ssh
+credentials to your cluster.
+
+The :code:`ssl` integration tests resolve :code:`dcos.snakeoil.mesosphere.com`
+to test SSL certs. To run this test suite be sure to add this resolution to your
+:code:`/etc/hosts` file:
+
+:code:`echo "dcos/cluster/url dcos.snakeoil.mesosphere.com" >> /etc/hosts`
+
 
 Running
 #######
 
-Tox will run unit and integration tests in both Python environments using a
-temporarily created virtualenv.
+Tox will run unit and integration tests in Python 3.4 using a temporarily
+created virtualenv.
 
 You can set :code:`DCOS_CONFIG` to a config file that points to a DC/OS
 cluster you want to use for integration tests. This defaults to
