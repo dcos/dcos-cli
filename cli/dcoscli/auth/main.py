@@ -1,9 +1,15 @@
+import os
+import shutil
+
 import dcoscli
 import docopt
-from dcos import cmds, config, emitting, http, util
-from dcos.errors import DCOSAuthorizationException, DCOSException
+from dcos import cmds, config, constants, emitting, http, util
+from dcos.errors import (DCOSAuthorizationException, DCOSException,
+                         DCOSExceptionSSL)
+from dcoscli.package.main import confirm
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
+from OpenSSL.crypto import FILETYPE_PEM, load_certificate
 
 from six.moves import urllib
 
@@ -40,7 +46,7 @@ def _cmds():
     return [
         cmds.Command(
             hierarchy=['auth', 'login'],
-            arg_keys=[],
+            arg_keys=['--yes'],
             function=_login),
 
         cmds.Command(
@@ -67,8 +73,84 @@ def _info(info):
     return 0
 
 
-def _login():
+def _verify_cert(cert, yes):
     """
+    User verification of cert
+
+    :param cert:
+    :returns: verification of cert
+    :rtype: bool
+    """
+
+    pem_cert = load_certificate(FILETYPE_PEM, cert)
+    fingerprint = pem_cert.digest("sha1")
+    msg = ("Correct sha1 fingerprint of cluster certificate?: "
+           "{}".format(fingerprint.decode('utf-8')))
+    return confirm(msg, yes=yes)
+
+
+def _add_cluster_cert(dcos_url, yes):
+    """
+    If the user allows, download the cluster CA and set `core.dcos_url`
+    to the path of the downloaded CA
+
+    :param dcos_url: cluster url
+    :type dcos_url: str
+    :param yes: whether or not to prompt user for confirmation
+    :type yes: bool
+    :returns: whether or not successfully added cert
+    :rtype: bool
+    """
+
+    msg = "An SSL error occured. Download the cluster CA cert?"
+    if not confirm(msg, yes=yes):
+        return False
+
+    with util.temptext() as file_tmp:
+        _, cert_tmp = file_tmp
+        ca_cert_url = urllib.parse.urljoin(dcos_url, "ca/api/v2/info")
+
+        with open(cert_tmp, 'wb') as f:
+            r = http.post(ca_cert_url, verify=False, json={})
+            cert = r.json()["result"].get("certificate").encode('utf-8')
+            if _verify_cert(cert, yes):
+                f.write(cert)
+            else:
+                return False
+
+            # store the cert in DCOS_DIR
+            dcos_dir = os.path.expanduser(
+                os.path.join("~", constants.DCOS_DIR))
+            util.ensure_dir_exists(dcos_dir)
+            cert_path = os.path.join(dcos_dir, "dcos-ca.pem")
+            shutil.move(cert_tmp, cert_path)
+            # add cert to config
+            config.set_val("core.ssl_verify", cert_path)
+            return True
+
+
+def _prompt_for_auth(dcos_url):
+    """
+    hit protected endpoint which will prompt for auth if cluster has auth
+
+    :param dcos_url: cluster url
+    :type dcos_url: str
+    :rtype: None
+    """
+
+    try:
+        url = urllib.parse.urljoin(dcos_url, 'exhibitor/')
+        http.get(url)
+    # if the user is authenticated, they have effectively "logged in" even if
+    # they are not authorized for this endpoint
+    except DCOSAuthorizationException:
+        pass
+
+
+def _login(yes):
+    """
+    :param yes: Whether to prompt for verfication of CA certificate
+    :type yes: boolean
     :returns: process status
     :rtype: int
     """
@@ -81,14 +163,15 @@ def _login():
                "`dcos config set core.dcos_url`")
         raise DCOSException(msg)
 
-    # hit protected endpoint which will prompt for auth if cluster has auth
     try:
-        url = urllib.parse.urljoin(dcos_url, 'exhibitor/')
-        http.get(url)
-    # if the user is authenticated, they have effectively "logged in" even if
-    # they are not authorized for this endpoint
-    except DCOSAuthorizationException:
-        pass
+        _prompt_for_auth(dcos_url)
+    except DCOSExceptionSSL:
+        verify = config.get_config_val("core.ssl_verify")
+        if verify is None and _add_cluster_cert(dcos_url, yes) is True:
+            # retry login with new certificate
+            _prompt_for_auth(dcos_url)
+        else:
+            raise DCOSExceptionSSL()
 
     emitter.publish("Login successful!")
     return 0

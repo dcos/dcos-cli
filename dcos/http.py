@@ -6,7 +6,7 @@ import requests
 from dcos import config, util
 from dcos.errors import (DCOSAuthenticationException,
                          DCOSAuthorizationException, DCOSBadRequest,
-                         DCOSException, DCOSHTTPException)
+                         DCOSException, DCOSExceptionSSL, DCOSHTTPException)
 from requests.auth import AuthBase, HTTPBasicAuth
 
 from six.moves import urllib
@@ -96,12 +96,11 @@ def _request(method,
             **kwargs)
     except requests.exceptions.SSLError as e:
         logger.exception("HTTP SSL Error")
-        msg = ("An SSL error occurred. To configure your SSL settings, "
-               "please run: `dcos config set core.ssl_verify <value>`")
         description = config.get_property_description("core", "ssl_verify")
         if description is not None:
-            msg += "\n<value>: {}".format(description)
-        raise DCOSException(msg)
+            raise DCOSExceptionSSL("<value>: {}".format(description))
+        else:
+            raise DCOSExceptionSSL()
     except requests.exceptions.ConnectionError as e:
         logger.exception("HTTP Connection Error")
         raise DCOSException('URL [{0}] is unreachable: {1}'.format(url, e))
