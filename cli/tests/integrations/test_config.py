@@ -75,20 +75,14 @@ def test_invalid_dcos_url(env):
 
 
 def test_get_top_property(env):
-    stderr = (
-        b"Property 'core' doesn't fully specify a value - "
-        b"possible properties are:\n"
-        b"core.dcos_acs_token\n"
-        b"core.dcos_url\n"
-        b"core.reporting\n"
-        b"core.ssl_verify\n"
-        b"core.timeout\n"
-    )
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'config', 'show', 'core'], env=env)
 
-    assert_command(['dcos', 'config', 'show', 'core'],
-                   stderr=stderr,
-                   returncode=1,
-                   env=env)
+    assert returncode == 1
+    assert stdout == b''
+    assert stderr.startswith(
+        b"Property 'core' doesn't fully specify a value - "
+        b"possible properties are:\n")
 
 
 def test_set_package_sources_property():
@@ -179,21 +173,14 @@ def test_unset_output(env):
 
 
 def test_unset_top_property(env):
-    stderr = (
-        b"Property 'core' doesn't fully specify a value - "
-        b"possible properties are:\n"
-        b"core.dcos_acs_token\n"
-        b"core.dcos_url\n"
-        b"core.reporting\n"
-        b"core.ssl_verify\n"
-        b"core.timeout\n"
-    )
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'config', 'unset', 'core'], env=env)
 
-    assert_command(
-        ['dcos', 'config', 'unset', 'core'],
-        returncode=1,
-        stderr=stderr,
-        env=env)
+    assert returncode == 1
+    assert stdout == b''
+    assert stderr.startswith(
+        b"Property 'core' doesn't fully specify a value - "
+        b"possible properties are:\n")
 
 
 def test_validate(env):
@@ -266,26 +253,30 @@ def test_bad_port_fail_url_validation(env):
                          'http://localhost:bad_port/', env)
 
 
-def test_dcos_acs_token_env_var(env):
-    env['DCOS_ACS_TOKEN'] = 'foobar'
-    msg = (b'Your core.dcos_acs_token is invalid. '
-           b'Please run: `dcos auth login`\n')
-    assert_command(['dcos', 'package', 'list'],
-                   returncode=1,
-                   stderr=msg,
-                   env=env)
-    env.pop('DCOS_ACS_TOKEN')
+def test_dcos_url_env_var(env):
+    env['DCOS_URL'] = 'http://foobar'
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'service'], env=env)
+    assert returncode == 1
+    assert stdout == b''
+    assert stderr.startswith(
+        b'URL [http://foobar/mesos/master/state.json] is unreachable')
+
+    env.pop('DCOS_URL')
 
 
-def test_dcos_dcos_acs_token_env_var(env):
-    env['DCOS_DCOS_ACS_TOKEN'] = 'foobar'
-    msg = (b'Your core.dcos_acs_token is invalid. '
-           b'Please run: `dcos auth login`\n')
-    assert_command(['dcos', 'package', 'list'],
-                   returncode=1,
-                   stderr=msg,
-                   env=env)
-    env.pop('DCOS_DCOS_ACS_TOKEN')
+def test_dcos_dcos_url_env_var(env):
+    env['DCOS_DCOS_URL'] = 'http://foobar'
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'service'], env=env)
+    assert returncode == 1
+    assert stdout == b''
+    assert stderr.startswith(
+        b'URL [http://foobar/mesos/master/state.json] is unreachable')
+
+    env.pop('DCOS_DCOS_URL')
 
 
 @pytest.mark.skipif(
