@@ -37,7 +37,6 @@ def _main(argv):
         argv=argv,
         version='dcos-job version {}'.format(dcoscli.version))
 
-    _check_capability()
     return cmds.execute(_cmds(), args)
 
 
@@ -49,8 +48,7 @@ def _check_capability():
     """
 
     cosmos = cosmospackage.Cosmos(get_cosmos_url())
-    if not cosmos.has_capability('METRONOME') \
-            and 'METRONOME_CAPABLE' not in os.environ:
+    if not cosmos.has_capability('METRONOME'):
         raise DCOSException(
             'DC/OS backend does not support metronome capabilities in this '
             'version. Must be DC/OS >= 1.8')
@@ -842,6 +840,8 @@ def _get_metronome_url(toml_config=None):
 
     metronome_url = config.get_config_val('metronome.url', toml_config)
     if metronome_url is None:
+        # dcos must be capable to use dcos_url
+        _check_capability()
         dcos_url = config.get_config_val('core.dcos_url', toml_config)
         if dcos_url is None:
             raise config.missing_config_exception(['core.dcos_url'])
