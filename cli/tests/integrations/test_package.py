@@ -24,6 +24,11 @@ def setup_module(module):
 
 
 def teardown_module(module):
+    services = get_services()
+    for framework in services:
+        if framework['name'] == 'chronos':
+            service_shutdown(framework['id'])
+
     assert_command(
         ['dcos', 'package', 'repo', 'remove', 'test4'])
     repo = "https://universe.mesosphere.com/repo"

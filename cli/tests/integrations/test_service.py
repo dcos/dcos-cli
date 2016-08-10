@@ -26,6 +26,11 @@ def setup_module(module):
 
 
 def teardown_module(module):
+    services = get_services()
+    for framework in services:
+        if framework['name'] == 'chronos':
+            service_shutdown(framework['id'])
+
     package_uninstall(
         'chronos',
         stderr=b'Uninstalled package [chronos] version [2.4.0]\n'
@@ -34,6 +39,7 @@ def teardown_module(module):
                b'mesosphere.com/services/chronos/#uninstall to clean up any '
                b'persisted state\n')
     delete_zk_nodes()
+
     assert_command(
         ['dcos', 'package', 'repo', 'remove', 'test4'])
     repo = "https://universe.mesosphere.com/repo"
