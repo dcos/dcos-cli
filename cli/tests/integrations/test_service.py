@@ -58,7 +58,7 @@ def test_info():
 
 
 def test_service():
-    services = get_services(2)
+    services = get_services()
 
     schema = _get_schema(framework_fixture())
     for srv in services:
@@ -66,7 +66,7 @@ def test_service():
 
 
 def test_service_table():
-    assert_lines(['dcos', 'service'], 3)
+    assert_lines(['dcos', 'service'], 4)
 
 
 def test_service_inactive():
@@ -75,8 +75,9 @@ def test_service_inactive():
     # wait long enough for it to register
     time.sleep(5)
 
-    # assert marathon, chronos, and cassandra are listed
-    get_services(3)
+    # assert cassandra is listed
+    assert any(
+        service['name'] == 'cassandra.dcos' for service in get_services())
 
     # uninstall cassandra using marathon. For now, need to explicitly remove
     # the group that is left by cassandra.  See MARATHON-144
@@ -88,20 +89,18 @@ def test_service_inactive():
     # only transitions to "inactive" after a few seconds.
     time.sleep(5)
 
-    # assert only marathon and chronos are active
-    get_services(2)
+    # assert cassandra is not listed
+    assert not any(
+        service['name'] == 'cassandra.dcos' for service in get_services())
 
-    # assert marathon, chronos, and cassandra are inactive
-    services = get_services(args=['--inactive'])
-    assert len(services) >= 3
+    # assert cassandra is inactive
+    inactive = get_services(args=['--inactive'])
+    assert any(service['name'] == 'cassandra.dcos' for service in inactive)
 
     # shutdown the cassandra framework
-    for framework in services:
+    for framework in inactive:
         if framework['name'] == 'cassandra.dcos':
             service_shutdown(framework['id'])
-
-    # assert marathon, chronos are only listed with --inactive
-    get_services(2, ['--inactive'])
 
     delete_zk_node('cassandra-mesos')
 
@@ -113,7 +112,7 @@ def test_service_completed():
 
     time.sleep(5)
 
-    services = get_services(3)
+    services = get_services()
 
     # get cassandra's framework ID
     cassandra_id = None
@@ -129,7 +128,7 @@ def test_service_completed():
     delete_zk_node('cassandra-mesos')
 
     # assert cassandra is not running
-    services = get_services(2)
+    services = get_services()
     assert not any(service['id'] == cassandra_id for service in services)
 
     # assert cassandra is completed
