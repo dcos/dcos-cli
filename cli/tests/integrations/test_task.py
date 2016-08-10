@@ -119,7 +119,7 @@ def test_log_single_file():
 
     assert returncode == 0
     assert stderr == b''
-    assert len(stdout.decode('utf-8').split('\n')) == 7
+    assert len(stdout.decode('utf-8').split('\n')) > 0
 
 
 def test_log_missing_file():
@@ -178,9 +178,9 @@ def test_log_two_tasks():
     assert stderr == b''
 
     lines = stdout.decode('utf-8').split('\n')
-    assert len(lines) == 15
+    assert len(lines) == 17
     assert re.match('===>.*<===', lines[0])
-    assert re.match('===>.*<===', lines[7])
+    assert re.match('===>.*<===', lines[8])
 
 
 @pytest.mark.skipif(sys.platform == 'win32',
