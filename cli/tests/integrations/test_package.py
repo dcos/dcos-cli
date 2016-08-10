@@ -165,8 +165,8 @@ def test_describe():
 
 def test_describe_cli():
     stdout = file_json(
-        'tests/data/package/json/test_describe_cli_cassandra.json')
-    assert_command(['dcos', 'package', 'describe', 'cassandra', '--cli'],
+        'tests/data/package/json/test_describe_cli_kafka.json')
+    assert_command(['dcos', 'package', 'describe', 'kafka', '--cli'],
                    stdout=stdout)
 
 
@@ -281,7 +281,7 @@ def test_describe_app_cli():
     stdout = file_bytes(
         'tests/data/package/json/test_describe_app_cli.json')
     assert_command(
-        ['dcos', 'package', 'describe', 'cassandra', '--app', '--cli'],
+        ['dcos', 'package', 'describe', 'kafka', '--app', '--cli'],
         stdout=stdout)
 
 
