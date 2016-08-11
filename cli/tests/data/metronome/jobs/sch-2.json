@@ -1,0 +1,14 @@
+[
+  {
+    "concurrencyPolicy": "ALLOW",
+    "cron": "20 0 * * *",
+    "enabled": true,
+    "id": "another"
+  },
+  {
+    "concurrencyPolicy": "ALLOW",
+    "cron": "10 0 * * *",
+    "enabled": true,
+    "id": "nightly"
+   }
+]

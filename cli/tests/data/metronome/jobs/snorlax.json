@@ -1,0 +1,18 @@
+{
+  "id": "snorlax",
+  "description": "Sleeping That is what I do",
+  "run": {
+    "cmd": "sleep 20000",
+    "cpus": 0.01,
+    "mem": 32,
+    "disk": 0
+  },
+  "schedules": [
+    {
+      "id": "snore-nightly",
+      "enabled": true,
+      "cron": "20 0 * * *",
+      "concurrencyPolicy": "ALLOW"
+    }
+  ]
+}

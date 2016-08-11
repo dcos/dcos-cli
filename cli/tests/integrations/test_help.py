@@ -29,6 +29,7 @@ Available DC/OS commands:
 \tauth           \tAuthenticate to DC/OS cluster
 \tconfig         \tManage the DC/OS configuration file
 \thelp           \tDisplay help information about DC/OS
+\tjob            \tDeploy and manage jobs in DC/OS
 \tmarathon       \tDeploy and manage applications to DC/OS
 \tnode           \tAdminister and manage DC/OS cluster nodes
 \tpackage        \tInstall and manage DC/OS software packages
@@ -45,6 +46,12 @@ Get detailed command description with 'dcos <command> --help'.
 def test_help_config():
     with open('tests/data/help/config.txt') as content:
         assert_command(['dcos', 'help', 'config'],
+                       stdout=content.read().encode('utf-8'))
+
+
+def test_help_job():
+    with open('tests/data/help/job.txt') as content:
+        assert_command(['dcos', 'help', 'job'],
                        stdout=content.read().encode('utf-8'))
 
 

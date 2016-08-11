@@ -101,6 +101,19 @@ def watch_deployment(deployment_id, count):
     assert stderr == b''
 
 
+def watch_job_deployments(count=300):
+    """Wait for all deployments to complete.
+
+    :param count: max number of seconds to wait
+    :type count: int
+    :rtype: None
+    """
+
+    deps = list_job_deployments()
+    for dep in deps:
+        watch_deployment(dep['id'], count)
+
+
 def watch_all_deployments(count=300):
     """Wait for all deployments to complete.
 
@@ -137,6 +150,19 @@ def wait_for_service(service_name, number_of_services=1, max_count=300):
         count += 1
 
 
+def add_job(app_path):
+    """ Add a job, and wait for it to deploy
+
+    :param app_path: path to job's json definition
+    :type app_path: str
+    :param wait: whether to wait for the deploy
+    :type wait: bool
+    :rtype: None
+    """
+
+    assert_command(['dcos', 'job', 'add', app_path])
+
+
 def add_app(app_path, wait=True):
     """ Add an app, and wait for it to deploy
 
@@ -168,6 +194,18 @@ def remove_app(app_id):
     """
 
     assert_command(['dcos', 'marathon', 'app', 'remove', '--force', app_id])
+
+
+def remove_job(app_id):
+    """ Remove a job
+
+    :param app_id: id of app to remove
+    :type app_id: str
+    :rtype: None
+    """
+
+    assert_command(['dcos', 'job', 'remove',
+                    '--stop-current-job-runs', app_id])
 
 
 def package_install(package, deploy=False, args=[]):
@@ -263,6 +301,34 @@ def list_deployments(expected_count=None, app_id=None):
     return result
 
 
+def list_job_deployments(expected_count=None, app_id=None):
+    """Get all active deployments.
+
+    :param expected_count: assert that number of active deployments
+    equals `expected_count`
+    :type expected_count: int
+    :param app_id: only get deployments for this app
+    :type app_id: str
+    :returns: active deployments
+    :rtype: [dict]
+    """
+
+    cmd = ['dcos', 'job', 'list', '--json']
+    if app_id is not None:
+        cmd.append(app_id)
+
+    returncode, stdout, stderr = exec_command(cmd)
+
+    result = json.loads(stdout.decode('utf-8'))
+
+    assert returncode == 0
+    if expected_count is not None:
+        assert len(result) == expected_count
+    assert stderr == b''
+
+    return result
+
+
 def show_app(app_id, version=None):
     """Show details of a Marathon application.
 
@@ -290,6 +356,54 @@ def show_app(app_id, version=None):
     assert result['id'] == '/' + app_id
 
     return result
+
+
+def show_job(app_id):
+    """Show details of a Metronome job.
+
+    :param app_id: The id for the application
+    :type app_id: str
+    :returns: The requested Metronome job.
+    :rtype: dict
+    """
+
+    cmd = ['dcos', 'job', 'show', app_id]
+
+    returncode, stdout, stderr = exec_command(cmd)
+
+    assert returncode == 0
+    assert stderr == b''
+
+    result = json.loads(stdout.decode('utf-8'))
+    assert isinstance(result, dict)
+    assert result['id'] == app_id
+
+    return result
+
+
+def show_job_schedule(app_id, schedule_id):
+    """Show details of a Metronome schedule.
+
+    :param app_id: The id for the job
+    :type app_id: str
+    :param schedule_id: The id for the schedule
+    :type schedule_id: str
+    :returns: The requested Metronome job.
+    :rtype: dict
+    """
+
+    cmd = ['dcos', 'job', 'schedule', 'show', app_id, '--json']
+
+    returncode, stdout, stderr = exec_command(cmd)
+
+    assert returncode == 0
+    assert stderr == b''
+
+    result = json.loads(stdout.decode('utf-8'))
+    assert isinstance(result[0], dict)
+    assert result[0]['id'] == schedule_id
+
+    return result[0]
 
 
 def service_shutdown(service_id):
@@ -394,6 +508,27 @@ def app(path, app_id, wait=True):
     finally:
         remove_app(app_id)
         watch_all_deployments()
+
+
+@contextlib.contextmanager
+def job(path, app_id):
+    """Context manager that deploys an app on entrance, and removes it on
+    exit.
+
+    :param path: path to app's json definition:
+    :type path: str
+    :param app_id: app id
+    :type app_id: str
+    :param wait: whether to wait for the deploy
+    :type wait: bool
+    :rtype: None
+    """
+
+    add_job(path)
+    try:
+        yield
+    finally:
+        remove_job(app_id)
 
 
 @contextlib.contextmanager
