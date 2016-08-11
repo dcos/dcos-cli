@@ -12,9 +12,8 @@ import pytest
 from ..fixtures.service import framework_fixture
 from .common import (assert_command, assert_lines, delete_zk_node,
                      delete_zk_nodes, exec_command, get_services,
-                     package_install, package_uninstall, remove_app,
-                     service_shutdown, ssh_output, wait_for_service,
-                     watch_all_deployments)
+                     package_install, remove_app, service_shutdown,
+                     ssh_output, wait_for_service)
 
 
 def setup_module(module):
@@ -22,18 +21,11 @@ def setup_module(module):
         ['dcos', 'package', 'repo', 'remove', 'Universe'])
     repo = "https://github.com/mesosphere/universe/archive/cli-test-4.zip"
     assert_command(['dcos', 'package', 'repo', 'add', 'test4', repo])
-    package_install('chronos', True)
 
 
 def teardown_module(module):
-    package_uninstall(
-        'chronos',
-        stderr=b'Uninstalled package [chronos] version [2.4.0]\n'
-               b'The Chronos DCOS Service has been uninstalled and will no '
-               b'longer run.\nPlease follow the instructions at http://docs.'
-               b'mesosphere.com/services/chronos/#uninstall to clean up any '
-               b'persisted state\n')
     delete_zk_nodes()
+
     assert_command(
         ['dcos', 'package', 'repo', 'remove', 'test4'])
     repo = "https://universe.mesosphere.com/repo"
@@ -52,7 +44,7 @@ def test_info():
 
 
 def test_service():
-    services = get_services(2)
+    services = get_services()
 
     schema = _get_schema(framework_fixture())
     for srv in services:
@@ -64,92 +56,79 @@ def test_service_table():
 
 
 def test_service_inactive():
-    package_install('cassandra', True, ['--package-version=0.2.0-1'])
+    package_install('kafka', True, ['--app'])
+    wait_for_service('kafka')
 
-    # wait long enough for it to register
+    # assert kafka is listed
+    services = get_services()
+    assert any(
+        service['name'] == 'kafka' for service in services)
+
+    # stop the kafka task
+    exec_command(['dcos', 'marathon', 'app', 'stop', '/kafka', '--force'])
+
     time.sleep(5)
+    # assert kafka is not listed
+    assert not any(
+        service['name'] == 'kafka' for service in get_services())
 
-    # assert marathon, chronos, and cassandra are listed
-    get_services(3)
+    # assert kafka is inactive
+    inactive = get_services(args=['--inactive'])
+    assert any(service['name'] == 'kafka' for service in inactive)
 
-    # uninstall cassandra using marathon. For now, need to explicitly remove
-    # the group that is left by cassandra.  See MARATHON-144
-    assert_command(['dcos', 'marathon', 'group', 'remove', '/cassandra'])
-
-    watch_all_deployments()
-
-    # I'm not quite sure why we have to sleep, but it seems cassandra
-    # only transitions to "inactive" after a few seconds.
-    time.sleep(5)
-
-    # assert only marathon and chronos are active
-    get_services(2)
-
-    # assert marathon, chronos, and cassandra are inactive
-    services = get_services(args=['--inactive'])
-    assert len(services) >= 3
-
-    # shutdown the cassandra framework
-    for framework in services:
-        if framework['name'] == 'cassandra.dcos':
-            service_shutdown(framework['id'])
-
-    # assert marathon, chronos are only listed with --inactive
-    get_services(2, ['--inactive'])
-
-    delete_zk_node('cassandra-mesos')
-
-    package_uninstall('cassandra')
+    delete_zk_node('kafka-mesos')
+    exec_command(['dcos', 'package', 'uninstall', 'kafka'])
 
 
 def test_service_completed():
-    package_install('cassandra', True, ['--package-version=0.2.0-1'])
+    package_install('kafka', True, ['--app'])
+    wait_for_service('kafka')
 
-    time.sleep(5)
+    services = get_services()
 
-    services = get_services(3)
-
-    # get cassandra's framework ID
-    cassandra_id = None
+    # get kafka's framework ID
+    kafka_id = None
     for service in services:
-        if service['name'] == 'cassandra.dcos':
-            cassandra_id = service['id']
+        if service['name'] == 'kafka':
+            kafka_id = service['id']
             break
 
-    assert cassandra_id is not None
+    assert kafka_id is not None
 
-    assert_command(['dcos', 'marathon', 'group', 'remove', '/cassandra'])
-    service_shutdown(cassandra_id)
-    delete_zk_node('cassandra-mesos')
+    service_shutdown(kafka_id)
+    delete_zk_node('kafka-mesos')
 
-    # assert cassandra is not running
-    services = get_services(2)
-    assert not any(service['id'] == cassandra_id for service in services)
+    # assert kafka is not running
+    services = get_services()
+    assert not any(service['id'] == kafka_id for service in services)
 
-    # assert cassandra is completed
+    # assert kafka is completed
     services = get_services(args=['--completed'])
     assert len(services) >= 3
-    assert any(service['id'] == cassandra_id for service in services)
+    assert any(service['id'] == kafka_id for service in services)
 
-    package_uninstall('cassandra')
+    delete_zk_node('kafka-mesos')
+    exec_command(['dcos', 'package', 'uninstall', 'kafka'])
 
 
 def test_log():
+    package_install('cassandra', args=['--package-version=0.2.0-1'])
+
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'service', 'log', 'chronos'])
+        ['dcos', 'service', 'log', 'cassandra.dcos'])
 
     assert returncode == 0
     assert len(stdout.decode('utf-8').split('\n')) > 1
     assert stderr == b''
 
-
-def test_log_file():
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'service', 'log', 'chronos', 'stderr'])
+        ['dcos', 'service', 'log', 'cassandra.dcos', 'stderr'])
 
     assert returncode == 0
     assert len(stdout.decode('utf-8').split('\n')) > 1
     assert stderr == b''
+    exec_command(['dcos', 'package', 'uninstall', 'cassandra'])
+    exec_command(['dcos', 'marathon', 'group', 'remove', 'cassandra'])
 
 
 def test_log_marathon_file():
@@ -197,8 +176,10 @@ def test_log_config():
 
 
 def test_log_follow():
-    wait_for_service('chronos')
+    package_install('chronos', deploy=True)
+
     args = ['dcos', 'service', 'log', 'chronos', '--follow']
+
     if sys.platform == 'win32':
         proc = subprocess.Popen(
             args,
@@ -213,6 +194,7 @@ def test_log_follow():
             preexec_fn=os.setsid,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
+
     time.sleep(10)
 
     proc.poll()
@@ -233,9 +215,9 @@ def test_log_follow():
     print('STDERR: {}'.format(stderr))
     assert len(stdout.decode('utf-8').split('\n')) > 3
 
-
-def test_log_lines():
     assert_lines(['dcos', 'service', 'log', 'chronos', '--lines=4'], 4)
+
+    exec_command(['dcos', 'package', 'uninstall', 'chronos'])
 
 
 @pytest.mark.skipif(True, reason='Broken Marathon but we need to release')
