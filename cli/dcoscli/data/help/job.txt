@@ -7,7 +7,7 @@ Description:
         dcos job [--config-schema]
         dcos job [--info]
         dcos job add <job-file>
-        dcos job remove <job-id> [--stopCurrentJobRuns]
+        dcos job remove <job-id> [--stop-current-job-runs]
         dcos job show <job-id>
         dcos job update <job-file>
         dcos job kill <job-id> [run-id][--all]
@@ -57,7 +57,7 @@ Options:
         Show the configuration schema for the Metronome subcommand.
     --info
         Print a short description of this subcommand.
-    --stopCurrentJobRuns
+    --stop-current-job-runs
         Indicates on a job removal that all current running jobs should be killed.
     --all
         Instead of specifying a run_id to kill, indicates all runs should be killed.

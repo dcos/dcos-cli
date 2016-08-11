@@ -109,7 +109,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['job', 'remove'],
-            arg_keys=['<job-id>', '--stopCurrentJobRuns'],
+            arg_keys=['<job-id>', '--stop-current-job-runs'],
             function=_remove),
 
         cmds.Command(

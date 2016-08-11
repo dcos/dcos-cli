@@ -204,7 +204,8 @@ def remove_job(app_id):
     :rtype: None
     """
 
-    assert_command(['dcos', 'job', 'remove', '--stopCurrentJobRuns', app_id])
+    assert_command(['dcos', 'job', 'remove',
+                    '--stop-current-job-runs', app_id])
 
 
 def package_install(package, deploy=False, args=[]):
