@@ -87,6 +87,7 @@ def test_verify_ssl_with_bad_cert_config(env):
         assert stderr.decode('utf-8') == _ssl_error_msg()
 
 
+@pytest.mark.skipif(True, reason='Need to resolve DCOS-9273 to validate certs')
 def test_verify_ssl_with_good_cert_env_var(env):
     env['DCOS_SSL_VERIFY'] = env['DCOS_SNAKEOIL_CRT_PATH']
 
@@ -99,6 +100,7 @@ def test_verify_ssl_with_good_cert_env_var(env):
     env.pop('DCOS_SSL_VERIFY')
 
 
+@pytest.mark.skipif(True, reason='Need to resolve DCOS-9273 to validate certs')
 def test_verify_ssl_with_good_cert_config(env):
     with update_config(
             'core.ssl_verify', env['DCOS_SNAKEOIL_CRT_PATH'], env):
