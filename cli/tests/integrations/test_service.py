@@ -67,6 +67,7 @@ def test_service_inactive():
     # stop the kafka task
     exec_command(['dcos', 'marathon', 'app', 'stop', '/kafka', '--force'])
 
+    time.sleep(5)
     # assert kafka is not listed
     assert not any(
         service['name'] == 'kafka' for service in get_services())
