@@ -573,25 +573,17 @@ def test_uninstall_multiple_apps():
     stdout = (b'A sample pre-installation message\n'
               b'Installing Marathon app for package [helloworld] version '
               b'[0.1.0] with app id [/helloworld-1]\n'
-              b'Installing CLI subcommand for package [helloworld] '
-              b'version [0.1.0]\n'
-              b'New command available: dcos ' +
-              _executable_name(b'helloworld') +
-              b'\nA sample post-installation message\n')
+              b'A sample post-installation message\n')
 
-    _install_helloworld(['--yes', '--app-id=/helloworld-1'],
+    _install_helloworld(['--yes', '--app-id=/helloworld-1', '--app'],
                         stdout=stdout)
 
     stdout = (b'A sample pre-installation message\n'
               b'Installing Marathon app for package [helloworld] version '
               b'[0.1.0] with app id [/helloworld-2]\n'
-              b'Installing CLI subcommand for package [helloworld] '
-              b'version [0.1.0]\n'
-              b'New command available: dcos ' +
-              _executable_name(b'helloworld') +
-              b'\nA sample post-installation message\n')
+              b'A sample post-installation message\n')
 
-    _install_helloworld(['--yes', '--app-id=/helloworld-2'],
+    _install_helloworld(['--yes', '--app-id=/helloworld-2', '--app'],
                         stdout=stdout)
 
     stderr = (b"Multiple apps named [helloworld] are installed: "
@@ -932,13 +924,13 @@ def _chronos_package(
         stdin=None):
 
     _install_chronos(
-            args,
-            returncode,
-            stdout,
-            stderr,
-            preInstallNotes,
-            postInstallNotes,
-            stdin)
+        args,
+        returncode,
+        stdout,
+        stderr,
+        preInstallNotes,
+        postInstallNotes,
+        stdin)
     try:
         yield
     finally:

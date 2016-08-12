@@ -176,12 +176,16 @@ def test_slave_arg_deprecation_notice():
                    returncode=1)
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='No pseudo terminal on windows')
 def test_node_ssh_with_command():
     leader_hostname = mesos.DCOSClient().get_state_summary()['hostname']
     _node_ssh(['--leader', '--master-proxy', '/opt/mesosphere/bin/detect_ip'],
               0, leader_hostname)
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='No pseudo terminal on windows')
 def test_node_ssh_slave_with_command():
     slave = mesos.DCOSClient().get_state_summary()['slaves'][0]
     _node_ssh(['--mesos-id={}'.format(slave['id']), '--master-proxy',
