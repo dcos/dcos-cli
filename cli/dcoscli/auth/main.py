@@ -1,5 +1,6 @@
 import os
 import shutil
+import ssl
 
 import dcoscli
 import docopt
@@ -12,6 +13,7 @@ from dcoscli.util import decorate_docopt_usage
 from OpenSSL.crypto import FILETYPE_PEM, load_certificate
 
 from six.moves import urllib
+from six.moves.urllib.parse import urlparse
 
 emitter = emitting.FlatEmitter()
 logger = util.get_logger(__name__)
@@ -108,11 +110,10 @@ def _add_cluster_cert(dcos_url, yes):
 
     with util.temptext() as file_tmp:
         _, cert_tmp = file_tmp
-        ca_cert_url = urllib.parse.urljoin(dcos_url, "ca/api/v2/info")
 
-        with open(cert_tmp, 'wb') as f:
-            r = http.post(ca_cert_url, verify=False, json={})
-            cert = r.json()["result"].get("certificate").encode('utf-8')
+        with open(cert_tmp, 'w') as f:
+            netloc = urlparse(dcos_url).netloc
+            cert = ssl.get_server_certificate((netloc, 443))
             if _verify_cert(cert, yes):
                 f.write(cert)
             else:
