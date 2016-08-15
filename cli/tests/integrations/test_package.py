@@ -324,13 +324,9 @@ def test_bad_install_marathon_msg():
     stdout = (b'A sample pre-installation message\n'
               b'Installing Marathon app for package [helloworld] version '
               b'[0.1.0] with app id [/foo]\n'
-              b'Installing CLI subcommand for package [helloworld] '
-              b'version [0.1.0]\n'
-              b'New command available: dcos ' +
-              _executable_name(b'helloworld') +
-              b'\nA sample post-installation message\n')
+              b'A sample post-installation message\n')
 
-    _install_helloworld(['--yes', '--app-id=/foo'],
+    _install_helloworld(['--yes', '--app', '--app-id=/foo'],
                         stdout=stdout)
 
     stdout2 = (b'A sample pre-installation message\n'
@@ -345,6 +341,7 @@ def test_bad_install_marathon_msg():
                         stdout=stdout2,
                         stderr=stderr,
                         returncode=1)
+
     _uninstall_helloworld()
 
 
