@@ -630,7 +630,7 @@ def ssh_output(cmd):
     proc, master = popen_tty(cmd)
 
     # wait for the ssh connection
-    time.sleep(3)
+    time.sleep(5)
 
     proc.poll()
     returncode = proc.returncode
