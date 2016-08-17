@@ -238,18 +238,19 @@ def _describe(package_name,
     :rtype: int
     """
 
-    # If the user supplied template options, they definitely want to
-    # render the template
-    if options_path:
-        render = True
-        # Expand ~ in the options file path
-        options_path = os.path.expanduser(options_path)
-
     if package_versions and \
        (app or cli or options_path or render or package_version or config):
         raise DCOSException(
             'If --package-versions is provided, no other option can be '
             'provided')
+
+    # If the user supplied template options, they definitely want to
+    # render the template
+    if options_path:
+        render = True
+
+    # Fail early if options file isn't valid
+    user_options = _user_options(options_path)
 
     package_manager = _get_package_manager()
     pkg = package_manager.get_package_version(package_name, package_version)
@@ -259,14 +260,11 @@ def _describe(package_name,
     if package_versions:
         emitter.publish(pkg.package_versions())
     elif cli or app or config:
-        user_options = _user_options(options_path)
-        options = pkg.options(user_options)
-
         if cli:
             emitter.publish(pkg.cli_definition())
         if app:
             if render:
-                app_output = pkg.marathon_json(options)
+                app_output = pkg.marathon_json(user_options)
             else:
                 app_output = pkg.marathon_template()
                 if app_output and app_output[-1] == '\n':
@@ -292,6 +290,9 @@ def _user_options(path):
     if path is None:
         return {}
     else:
+        # Expand ~ in the path
+        path = os.path.expanduser(path)
+
         with util.open_file(path) as options_file:
             return util.load_json(options_file)
 
@@ -348,9 +349,7 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
         # Install both if neither flag is specified
         cli = app = True
 
-    # Expand ~ in the options file path
-    if options_path:
-        options_path = os.path.expanduser(options_path)
+    # Fail early if options file isn't valid
     user_options = _user_options(options_path)
 
     package_manager = _get_package_manager()
@@ -366,8 +365,9 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
 
     if app and pkg.has_mustache_definition():
 
-        # render options before start installation
-        options = pkg.options(user_options)
+        # Even though package installation will check for template rendering
+        # errors, we want to fail early, before trying to install.
+        pkg.options(user_options)
 
         # Install in Marathon
         msg = 'Installing Marathon app for package [{}] version [{}]'.format(
@@ -377,10 +377,7 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
 
         emitter.publish(msg)
 
-        package_manager.install_app(
-            pkg,
-            options,
-            app_id)
+        package_manager.install_app(pkg, user_options, app_id)
 
     if cli and pkg.has_cli_definition():
         # Install subcommand
