@@ -1,0 +1,20 @@
+{
+  "command": {
+    "name": "helloworld"
+  },
+  "description": "Example DCOS application package",
+  "framework": false,
+  "maintainer": "support@mesosphere.io",
+  "name": "helloworld",
+  "packagingVersion": "2.0",
+  "postInstallNotes": "A sample post-installation message",
+  "preInstallNotes": "A sample pre-installation message",
+  "selected": false,
+  "tags": [
+    "mesosphere",
+    "example",
+    "subcommand"
+  ],
+  "version": "0.1.0",
+  "website": "https://github.com/mesosphere/dcos-helloworld"
+}

@@ -1,0 +1,34 @@
+{
+  "apps": [
+    "/kafka"
+  ],
+  "command": {
+    "name": "kafka"
+  },
+  "description": "Apache Kafka running on top of Apache Mesos",
+  "framework": true,
+  "licenses": [
+    {
+      "name": "Apache License Version 2.0",
+      "url": "https://github.com/mesos/kafka/blob/master/LICENSE"
+    },
+    {
+      "name": "Apache License Version 2.0",
+      "url": "https://github.com/mesosphere/dcos-kafka/blob/master/LICENSE"
+    }
+  ],
+  "maintainer": "support@mesosphere.io",
+  "name": "kafka",
+  "packagingVersion": "2.0",
+  "postInstallNotes": "The Apache Kafka DCOS Service is installed:\n  docs   - https://github.com/mesos/kafka\n  issues - https://github.com/mesos/kafka/issues",
+  "postUninstallNotes": "The Apache Kafka DCOS Service has been uninstalled and will no longer run.\nPlease follow the instructions at http://docs.mesosphere.com/services/kafka/#uninstall to clean up any persisted state",
+  "preInstallNotes": "This will install Apache Kafka DCOS Service.",
+  "scm": "https://github.com/mesos/kafka",
+  "selected": false,
+  "tags": [
+    "message",
+    "broker",
+    "messaging"
+  ],
+  "version": "0.9.4.0"
+}

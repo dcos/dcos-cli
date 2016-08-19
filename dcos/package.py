@@ -1,4 +1,4 @@
-import collections
+import itertools
 
 from dcos import emitting, subcommand, util
 from dcos.errors import DCOSException
@@ -28,7 +28,8 @@ def uninstall(pkg, package_name, remove_all, app_id, cli, app):
         cli = app = True
 
     uninstalled = False
-    installed = installed_packages(pkg, app_id, package_name)
+    installed = installed_packages(
+        pkg, app_id, package_name, cli_optional=True)
     installed_cli = next((True for installed_pkg in installed
                           if installed_pkg.get("command")), False)
     installed_app = next((True for installed_pkg in installed
@@ -65,57 +66,6 @@ def uninstall_subcommand(distribution_name):
     return subcommand.uninstall(distribution_name)
 
 
-class InstalledPackage(object):
-    """Represents an intalled DC/OS package.  One of `app` and
-    `subcommand` must be supplied.
-
-    :param apps: A dictionary representing a marathon app. Of the
-                format returned by `installed_apps()`
-    :type apps: [dict]
-    :param subcommand: Installed subcommand
-    :type subcommand: subcommand.InstalledSubcommand
-    """
-
-    def __init__(self, apps=[], subcommand=None):
-        assert apps or subcommand
-        self.apps = apps
-        self.subcommand = subcommand
-
-    def name(self):
-        """
-        :returns: The name of the package
-        :rtype: str
-        """
-        if self.subcommand:
-            return self.subcommand.name
-        else:
-            return self.apps[0]['name']
-
-    def dict(self):
-        """ A dictionary representation of the package.  Used by `dcos package
-        list`.
-
-        :returns: A dictionary representation of the package.
-        :rtype: dict
-        """
-        ret = {}
-
-        if self.subcommand:
-            ret['command'] = {'name': self.subcommand.name}
-
-        if self.apps:
-            ret['apps'] = sorted([app['appId'] for app in self.apps])
-
-        if self.subcommand:
-            package_json = self.subcommand.package_json()
-            ret.update(package_json)
-        else:
-            ret.update(self.apps[0])
-            ret.pop('appId')
-
-        return ret
-
-
 def _matches_package_name(name, command_name):
     """
     :param name: the name of the package
@@ -130,7 +80,7 @@ def _matches_package_name(name, command_name):
     return name is None or command_name == name
 
 
-def installed_packages(package_manager, app_id, package_name):
+def installed_packages(package_manager, app_id, package_name, cli_optional):
     """Returns all installed packages in the format:
 
     [{
@@ -147,27 +97,23 @@ def installed_packages(package_manager, app_id, package_name):
     :type app_id: str
     :param package_name: The package to show
     :type package_name: str
+    :param cli_optional: if False, returns only packages with installed
+        subcommands
+    :type cli_optional: bool
     :returns: A list of installed packages matching criteria
     :rtype: [dict]
     """
 
-    dicts = collections.defaultdict(lambda: {'apps': [], 'command': None})
-
     apps = package_manager.installed_apps(package_name, app_id)
-    for app in apps:
-        key = app['name']
-        dicts[key]['apps'].append(app)
 
-    subcommands = installed_subcommands()
-    for subcmd in subcommands:
+    subcommands = []
+    for subcmd in installed_subcommands():
         if _matches_package_name(package_name, subcmd.name):
-            dicts[subcmd.name]['command'] = subcmd
+            subcmd_dict = subcmd.package_json()
+            subcmd_dict['command'] = {'name': subcmd.name}
+            subcommands.append(subcmd_dict)
 
-    installed = [
-        InstalledPackage(pkg['apps'], pkg['command']) for pkg in dicts.values()
-    ]
-
-    return [pkg.dict() for pkg in installed]
+    return merge_installed(apps, subcommands, app_id is None, cli_optional)
 
 
 def installed_subcommands():
@@ -179,3 +125,45 @@ def installed_subcommands():
 
     return [subcommand.InstalledSubcommand(name) for name in
             subcommand.distributions()]
+
+
+def merge_installed(apps, subcommands, app_optional, cli_optional):
+    """Combines collections of installed apps and subcommands, merging
+    elements from the same package.
+
+    :param apps: information on each running app in the cluster; must have
+        'name' and 'appId' keys
+    :type apps: [dict]
+    :param subcommands: information on each subcommand installed locally; must
+        have a 'name' key
+    :type subcommands: [dict]
+    :param app_optional: if False, only returns elements that have an app
+    :type app_optional: bool
+    :param cli_optional: if False, only returns elements that have a subcommand
+    :type cli_optional: bool
+    :returns: the resulting merged collection, with one element per package
+    :rtype: [dict]
+    """
+
+    indexed_apps = {}
+    grouped_apps = itertools.groupby(apps, key=lambda app: app['name'])
+    for name, app_group in grouped_apps:
+        app_list = list(app_group)
+        pkg = app_list[0]
+        pkg['apps'] = [app['appId'] for app in app_list]
+        del pkg['appId']
+        indexed_apps[name] = pkg
+
+    indexed_subcommands = {subcmd['name']: subcmd for subcmd in subcommands}
+
+    merged = []
+    for name, app in indexed_apps.items():
+        subcmd = indexed_subcommands.pop(name, {})
+        if subcmd or cli_optional:
+            app.update(subcmd)
+            merged.append(app)
+
+    if app_optional:
+        merged.extend(indexed_subcommands.values())
+
+    return merged

@@ -10,11 +10,11 @@ from dcos import subcommand
 
 from .common import (assert_command, assert_lines, base64_to_dict,
                      delete_zk_node, delete_zk_nodes, exec_command,
-                     file_json,
+                     file_json, file_json_ast,
                      get_services, package_install,
                      package_uninstall, service_shutdown,
                      wait_for_service, watch_all_deployments)
-from ..common import file_bytes
+from ..common import (assert_same_elements, file_bytes)
 
 UNIVERSE_REPO = "https://universe.mesosphere.com/repo"
 UNIVERSE_TEST_REPO = "http://universe.marathon.mesos:8085/repo"
@@ -378,10 +378,10 @@ def test_install_specific_version():
         b'persisted state\n'
     )
 
-    with _package('marathon',
+    with _package(name='marathon',
+                  args=['--yes', '--package-version=0.11.1'],
                   stdout=stdout,
-                  uninstall_stderr=uninstall_stderr,
-                  args=['--yes', '--package-version=0.11.1']):
+                  uninstall_stderr=uninstall_stderr):
 
         returncode, stdout, stderr = exec_command(
             ['dcos', 'package', 'list', 'marathon', '--json'])
@@ -533,7 +533,7 @@ def test_uninstall_missing():
 def test_uninstall_subcommand():
     _install_helloworld()
     _uninstall_helloworld()
-    _list()
+    assert _list(args=['--json']) == b'[]\n'
 
 
 def test_uninstall_cli():
@@ -604,20 +604,23 @@ def test_uninstall_multiple_apps():
 
 
 def test_list(zk_znode):
-    _list()
-    _list(args=['xyzzy', '--json'])
-    _list(args=['--app-id=/xyzzy', '--json'])
+    empty = b'[]\n'
+
+    assert _list(args=['--json']) == empty
+    assert _list(args=['xyzzy', '--json']) == empty
+    assert _list(args=['--app-id=/xyzzy', '--json']) == empty
 
     with _chronos_package():
 
         expected_output = file_json(
             'tests/data/package/json/test_list_chronos.json')
-        _list(stdout=expected_output)
-        _list(args=['--json', 'chronos'], stdout=expected_output)
-        _list(args=['--json', '--app-id=/chronos'], stdout=expected_output)
+        assert _list(args=['--json']) == expected_output
+        assert _list(args=['--json', 'chronos']) == expected_output
+        assert _list(args=['--json', '--app-id=/chronos']) == expected_output
 
-    _list(args=['--json', 'ceci-nest-pas-une-package'])
-    _list(args=['--json', '--app-id=/ceci-nest-pas-une-package'])
+    le_package = 'ceci-nest-pas-une-package'
+    assert _list(args=['--json', le_package]) == empty
+    assert _list(args=['--json', '--app-id=/' + le_package]) == empty
 
 
 def test_list_table():
@@ -655,7 +658,7 @@ def test_list_cli():
     _install_helloworld()
     stdout = file_json(
         'tests/data/package/json/test_list_helloworld.json')
-    _list(stdout=stdout)
+    assert _list(args=['--json']) == stdout
     _uninstall_helloworld()
 
     stdout = (b"Installing CLI subcommand for package [helloworld] " +
@@ -667,9 +670,36 @@ def test_list_cli():
 
     stdout = file_json(
         'tests/data/package/json/test_list_helloworld_cli.json')
-    _list(stdout=stdout)
+    assert _list(args=['--json']) == stdout
 
     _uninstall_cli_helloworld()
+
+
+def test_list_cli_flag():
+    kafka_path = 'tests/data/package/json/test_list_kafka_entry.json'
+    kafka_json = file_json_ast(kafka_path)
+    helloworld_path = 'tests/data/package/json/test_list_helloworld_entry.json'
+    helloworld_json = file_json_ast(helloworld_path)
+
+    def assert_test_case(args, expected_packages):
+        stdout = _list(args=['--json', '--cli'] + args)
+        actual_packages = json.loads(stdout.decode('utf-8'))
+        assert_same_elements(expected_packages, actual_packages)
+
+    with _chronos_package():
+        with _kafka():
+            with _helloworld_cli():
+                assert_test_case(
+                    args=[],
+                    expected_packages=[kafka_json, helloworld_json])
+
+                assert_test_case(
+                    args=['--app-id=/helloworld'],
+                    expected_packages=[])
+
+                assert_test_case(
+                    args=['helloworld'],
+                    expected_packages=[helloworld_json])
 
 
 def test_uninstall_multiple_frameworknames(zk_znode):
@@ -683,15 +713,13 @@ def test_uninstall_multiple_frameworknames(zk_znode):
     expected_output = file_json(
         'tests/data/package/json/test_list_chronos_two_users.json')
 
-    _list(stdout=expected_output)
-    _list(args=['--json', 'chronos'], stdout=expected_output)
-    _list(args=['--json', '--app-id=/chronos-user-1'],
-          stdout=file_json(
-        'tests/data/package/json/test_list_chronos_user_1.json'))
+    assert _list(args=['--json']) == expected_output
+    assert _list(args=['--json', 'chronos']) == expected_output
+    assert _list(args=['--json', '--app-id=/chronos-user-1']) == file_json(
+        'tests/data/package/json/test_list_chronos_user_1.json')
 
-    _list(args=['--json', '--app-id=/chronos-user-2'],
-          stdout=file_json(
-        'tests/data/package/json/test_list_chronos_user_2.json'))
+    assert _list(args=['--json', '--app-id=/chronos-user-2']) == file_json(
+        'tests/data/package/json/test_list_chronos_user_2.json')
 
     _uninstall_chronos(
         args=['--app-id=chronos-user-1'],
@@ -941,44 +969,77 @@ def _chronos_package(
         watch_all_deployments()
 
 
-def _list(args=['--json'],
-          stdout=b'[]\n'):
-    assert_command(['dcos', 'package', 'list'] + args,
-                   stdout=stdout)
+def _list(args):
+    retcode, stdout, stderr = exec_command(['dcos', 'package', 'list'] + args)
+    assert retcode == 0
+    assert stderr == b''
+    return stdout
+
+
+HELLOWORLD_CLI_STDOUT = (b'Installing CLI subcommand for package [helloworld] '
+                         b'version [0.1.0]\n'
+                         b'New command available: dcos ' +
+                         _executable_name(b'helloworld') + b'\n')
 
 
 def _helloworld():
     stdout = (b'A sample pre-installation message\n'
               b'Installing Marathon app for package [helloworld] version '
-              b'[0.1.0]\n'
-              b'Installing CLI subcommand for package [helloworld] '
-              b'version [0.1.0]\n'
-              b'New command available: dcos ' +
-              _executable_name(b'helloworld') +
-              b'\nA sample post-installation message\n')
+              b'[0.1.0]\n' + HELLOWORLD_CLI_STDOUT +
+              b'A sample post-installation message\n')
 
     stderr = b'Uninstalled package [helloworld] version [0.1.0]\n'
-    return _package('helloworld',
+    return _package(name='helloworld',
+                    args=['--yes'],
+                    stdout=stdout,
+                    uninstall_stderr=stderr)
+
+
+def _helloworld_cli():
+    return _package(name='helloworld',
+                    args=['--yes', '--cli'],
+                    stdout=HELLOWORLD_CLI_STDOUT,
+                    uninstall_stderr=b'')
+
+
+def _kafka():
+    stdout = (b'This will install Apache Kafka DCOS Service.\n'
+              b'Installing Marathon app for package [kafka] version '
+              b'[0.9.4.0]\n'
+              b'Installing CLI subcommand for package [kafka] '
+              b'version [0.9.4.0]\n'
+              b'New command available: dcos kafka\n'
+              b'The Apache Kafka DCOS Service is installed:\n'
+              b'  docs   - https://github.com/mesos/kafka\n'
+              b'  issues - https://github.com/mesos/kafka/issues\n')
+    stderr = (b'Uninstalled package [kafka] version [0.9.4.0]\n'
+              b'The Apache Kafka DCOS Service has been uninstalled and will '
+              b'no longer run.\n'
+              b'Please follow the instructions at '
+              b'http://docs.mesosphere.com/services/kafka/#uninstall to '
+              b'clean up any persisted state\n')
+    return _package(name='kafka',
+                    args=['--yes'],
                     stdout=stdout,
                     uninstall_stderr=stderr)
 
 
 @contextlib.contextmanager
 def _package(name,
+             args,
              stdout=b'',
-             uninstall_stderr=b'',
-             args=['--yes']):
-    """Context manager that installs a package on entrace, and uninstalls it on
+             uninstall_stderr=b''):
+    """Context manager that installs a package on entrance, and uninstalls it on
     exit.
 
     :param name: package name
     :type name: str
-    :param stdout: Expected stdout
-    :type stdout: str
-    :param uninstall_stderr: Expected stderr
-    :type uninstall_stderr: str
     :param args: extra CLI args
     :type args: [str]
+    :param stdout: Expected stdout
+    :type stdout: bytes
+    :param uninstall_stderr: Expected stderr
+    :type uninstall_stderr: bytes
     :rtype: None
     """
 
