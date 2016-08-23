@@ -679,6 +679,19 @@ def validate_png(filename):
         raise DCOSException(
             'Unable to validate [{}] as a PNG file'.format(filename))
 
+def get_nondefault_service_name():
+    """
+
+    :rtype: str or None
+
+    """
+
+    if constants.DCOS_SERVICE_NAME_ENV in os.environ:
+        return os.environ[constants.DCOS_SERVICE_NAME_ENV]
+    else:
+        return None
+
+
 
 def normalize_app_id(app_id):
     """Normalizes the application id.

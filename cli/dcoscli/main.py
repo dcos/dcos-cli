@@ -66,6 +66,9 @@ def _main():
     if args['--debug']:
         os.environ[constants.DCOS_DEBUG_ENV] = 'true'
 
+    if args['--service-name']:
+        os.environ[constants.DCOS_SERVICE_NAME_ENV] = args['--service-name']
+
     util.configure_process_from_environ()
 
     if args['--version']:

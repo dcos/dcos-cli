@@ -17,6 +17,10 @@ DCOS_LOG_LEVEL_ENV = 'DCOS_LOG_LEVEL'
 DCOS_DEBUG_ENV = 'DCOS_DEBUG'
 """Name of the environment variable to enable DC/OS debug messages"""
 
+DCOS_SERVICE_NAME_ENV = 'DCOS_SERVICE_NAME'
+"""Name of the environment variable to invocation against a non-default
+DC/OS service"""
+
 DCOS_PAGER_COMMAND_ENV = 'PAGER'
 """Command to use to page long command output (e.g. 'less -R')"""
 
