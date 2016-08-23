@@ -3,9 +3,6 @@
 Babel (2.3.4)
     License: BSD
 
-GitPython (1.0.2)
-    License: BSD License
-
 Jinja2 (2.8)
     License: BSD
 
@@ -51,20 +48,11 @@ pkginfo (1.2.1)
 pluggy (0.3.1)
     License: MIT license
 
-portalocker (0.5.7)
-    License: PSF
-
 prettytable (0.7.2)
     License: BSD (3 clause)
 
 py (1.4.31)
     License: MIT license
-
-pypng (0.0.18)
-    License: UNKNOWN
-
-pystache (0.5.4)
-    License: MIT
 
 pytest (2.9.1)
     License: MIT license
@@ -74,9 +62,6 @@ pytz (2016.4)
 
 requests (2.10.0)
     License: Apache 2.0
-
-rollbar (0.12.1)
-    License: UNKNOWN
 
 setuptools (21.0.0)
     License: MIT
