@@ -543,20 +543,22 @@ def _install_with_pip(
             for line in requirements:
                 print(line, file=requirements_file)
 
-        cmd = [
-            os.path.join(env_directory, BIN_DIRECTORY, 'pip'),
-            'install',
-            '--requirement',
-            requirement_path,
-        ]
+        # override setuptools finding executable
+        # so we can specify different path
+        with util.set_env('__PYVENV_LAUNCHER__', None):
+            cmd = [
+                os.path.join(env_directory, BIN_DIRECTORY, 'pip'),
+                'install',
+                '--requirement',
+                requirement_path,
+            ]
 
-        if _execute_command(cmd)[2] != 0:
-            # We should remove the directory that we just created
-            if new_package_dir:
-                shutil.rmtree(env_directory)
+            if _execute_command(cmd)[2] != 0:
+                # We should remove the directory that we just created
+                if new_package_dir:
+                    shutil.rmtree(env_directory)
 
-            raise _generic_error(package_name)
-
+                raise _generic_error(package_name)
     return None
 
 
