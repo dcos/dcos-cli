@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import functools
 import hashlib
 import json
 import os
@@ -158,6 +159,36 @@ def documentation(executable_path):
     return (path_noun, info(executable_path, path_noun))
 
 
+def executable_env(fn):
+    """Decorator for environment fork/execs should run under
+
+    Setuptools overrides path to executable from virtualenv,
+    modify this so we can specify a different path
+
+    :param fn: function that fork/execs
+    :type fn: function
+    :rtype: Response
+    :returns: Response
+    """
+
+    @functools.wraps(fn)
+    def update_running_env(*args, **kwargs):
+        """Run fork/exec under modified environment
+
+        :param response: response from cosmos
+        :type response: Response
+        :returns: Response or raises Exception
+        :rtype: valid response
+        """
+
+        with util.set_env('__PYVENV_LAUNCHER__', None):
+            cmd = fn(*args, **kwargs)
+        return cmd
+
+    return update_running_env
+
+
+@executable_env
 def info(executable_path, path_noun):
     """Collects subcommand information
 
@@ -175,6 +206,7 @@ def info(executable_path, path_noun):
     return out.decode('utf-8').strip()
 
 
+@executable_env
 def config_schema(executable_path, noun=None):
     """Collects subcommand config schema
 
@@ -187,6 +219,7 @@ def config_schema(executable_path, noun=None):
     """
     if noun is None:
         noun = noun(executable_path)
+
     out = subprocess.check_output(
         [executable_path, noun, '--config-schema'])
 
@@ -543,25 +576,23 @@ def _install_with_pip(
             for line in requirements:
                 print(line, file=requirements_file)
 
-        # override setuptools finding executable
-        # so we can specify different path
-        with util.set_env('__PYVENV_LAUNCHER__', None):
-            cmd = [
-                os.path.join(env_directory, BIN_DIRECTORY, 'pip'),
-                'install',
-                '--requirement',
-                requirement_path,
-            ]
+        cmd = [
+            os.path.join(env_directory, BIN_DIRECTORY, 'pip'),
+            'install',
+            '--requirement',
+            requirement_path,
+        ]
 
-            if _execute_command(cmd)[2] != 0:
-                # We should remove the directory that we just created
-                if new_package_dir:
-                    shutil.rmtree(env_directory)
+        if _execute_command(cmd)[2] != 0:
+            # We should remove the directory that we just created
+            if new_package_dir:
+                shutil.rmtree(env_directory)
 
-                raise _generic_error(package_name)
+            raise _generic_error(package_name)
     return None
 
 
+@executable_env
 def _execute_command(command):
     """
     :param command: a command to execute
@@ -667,6 +698,7 @@ class SubcommandProcess():
         self._command = command
         self._args = args
 
+    @executable_env
     def run_and_capture(self):
         """
         Run a command and capture exceptions. This is a blocking call
@@ -676,6 +708,7 @@ class SubcommandProcess():
 
         subproc = Popen([self._executable,  self._command] + self._args,
                         stderr=PIPE)
+
         err = ''
         while subproc.poll() is None:
             line = subproc.stderr.readline().decode('utf-8')
