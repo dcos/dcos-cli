@@ -13,8 +13,6 @@ import tempfile
 import time
 
 import jsonschema
-import png
-import pystache
 import six
 from dcos import constants
 from dcos.errors import DCOSException
@@ -32,6 +30,31 @@ def get_logger(name):
     """
 
     return logging.getLogger(name)
+
+
+@contextlib.contextmanager
+def set_env(env_var, new_value):
+    """A context manager for temporary updating env vars
+
+    :param env_var: name of environment variable to alter, None to remove
+    :type env_var: str
+    :param new_val: new value to change env_var to
+    :type new_var: str | None
+    :rtype: str | None
+    """
+
+    old_value = os.environ.get(env_var)
+    if new_value is not None:
+        os.environ[env_var] = new_value
+    elif new_value is None and old_value is not None:
+        del os.environ[env_var]
+    try:
+        yield
+    finally:
+        if old_value is not None:
+            os.environ[env_var] = old_value
+        elif old_value is None and new_value is not None:
+            del os.environ[env_var]
 
 
 @contextlib.contextmanager
@@ -456,33 +479,6 @@ def parse_float(string):
         raise DCOSException('Error parsing string as float')
 
 
-def render_mustache_json(template, data):
-    """Render the supplied mustache template and data as a JSON value
-
-    :param template: the mustache template to render
-    :type template: str
-    :param data: the data to use as a rendering context
-    :type data: dict
-    :returns: the rendered template
-    :rtype: dict | list | str | int | float | bool
-    """
-
-    try:
-        r = CustomJsonRenderer()
-        rendered = r.render(template, data)
-    except Exception as e:
-        logger.exception(
-            'Error rendering mustache template [%r] [%r]',
-            template,
-            data)
-
-        raise DCOSException(e)
-
-    logger.debug('Rendered mustache template: %s', rendered)
-
-    return load_jsons(rendered)
-
-
 def is_windows_platform():
     """
     :returns: True is program is running on Windows platform, False
@@ -491,23 +487,6 @@ def is_windows_platform():
     """
 
     return platform.system() == "Windows"
-
-
-class CustomJsonRenderer(pystache.Renderer):
-    def str_coerce(self, val):
-        """
-        Coerce a non-string value to a string.
-        This method is called whenever a non-string is encountered during the
-        rendering process when a string is needed (e.g. if a context value
-        for string interpolation is not a string).
-
-        :param val: the mustache template to render
-        :type val: any
-        :returns: a string containing a JSON representation of the value
-        :rtype: str
-        """
-
-        return json.dumps(val)
 
 
 def duration(fn):
@@ -637,22 +616,6 @@ def get_ssh_options(config_file, options):
         ssh_options += ' '
 
     return ssh_options
-
-
-def validate_png(filename):
-    """Validate file as a png image. Throws a DCOSException if it is not an PNG
-
-    :param filename: path to the image
-    :type filename: str
-    :rtype: None
-    """
-
-    try:
-        png.Reader(filename=filename).validate_signature()
-    except Exception as e:
-        logger.exception(e)
-        raise DCOSException(
-            'Unable to validate [{}] as a PNG file'.format(filename))
 
 
 def normalize_app_id(app_id):

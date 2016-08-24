@@ -130,6 +130,8 @@ class Client(object):
     """
 
     def __init__(self, marathon_url, timeout=http.DEFAULT_TIMEOUT):
+        if not marathon_url.endswith('/'):
+            marathon_url += '/'
         self._base_url = marathon_url
         self._timeout = timeout
 
