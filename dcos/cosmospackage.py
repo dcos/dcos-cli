@@ -495,16 +495,15 @@ class CosmosPackageVersion():
         return self._marathon_template is not None
 
     def options(self, user_options):
-        """Makes sure user supplied options are valid, and returns valid options
+        """Makes sure user supplied options are valid
 
-        :param options: the template options to use in rendering
-        :type options: dict
-        :rtype: dict
+        :param user_options: the template options to use in rendering
+        :type user_options: dict
+        :rtype: None
         """
 
         self.marathon_json(user_options)
-
-        return user_options
+        return None
 
     def has_cli_definition(self):
         """Returns true if the package defines a command; false otherwise.
