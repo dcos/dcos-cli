@@ -29,7 +29,7 @@ def uninstall(pkg, package_name, remove_all, app_id, cli, app):
 
     uninstalled = False
     installed = installed_packages(
-        pkg, app_id, package_name, cli_required=False)
+        pkg, app_id, package_name, cli_only=False)
     installed_cli = next((True for installed_pkg in installed
                           if installed_pkg.get("command")), False)
     installed_app = next((True for installed_pkg in installed
@@ -80,7 +80,7 @@ def _matches_package_name(name, command_name):
     return name is None or command_name == name
 
 
-def installed_packages(package_manager, app_id, package_name, cli_required):
+def installed_packages(package_manager, app_id, package_name, cli_only):
     """Returns all installed packages in the format:
 
     [{
@@ -97,15 +97,15 @@ def installed_packages(package_manager, app_id, package_name, cli_required):
     :type app_id: str
     :param package_name: The package to show
     :type package_name: str
-    :param cli_required: if True, returns only packages with locally installed
+    :param cli_only: if True, returns only packages with locally installed
         subcommands, without retrieving the apps installed on the cluster
-    :type cli_required: bool
+    :type cli_only: bool
     :returns: A list of installed packages matching criteria
     :rtype: [dict]
     """
 
     apps = []
-    if not cli_required:
+    if not cli_only:
         apps = package_manager.installed_apps(package_name, app_id)
 
     subcommands = []
@@ -115,7 +115,7 @@ def installed_packages(package_manager, app_id, package_name, cli_required):
             subcmd_dict['command'] = {'name': subcmd.name}
             subcommands.append(subcmd_dict)
 
-    return merge_installed(apps, subcommands, app_id is not None, cli_required)
+    return merge_installed(apps, subcommands, app_id is not None, cli_only)
 
 
 def installed_subcommands():
@@ -129,7 +129,7 @@ def installed_subcommands():
             subcommand.distributions()]
 
 
-def merge_installed(apps, subcommands, app_required, cli_required):
+def merge_installed(apps, subcommands, app_only, cli_only):
     """Combines collections of installed apps and subcommands, merging
     elements from the same package.
 
@@ -139,12 +139,12 @@ def merge_installed(apps, subcommands, app_required, cli_required):
     :param subcommands: information on each subcommand installed locally; must
         have a 'name' key
     :type subcommands: [dict]
-    :param app_required: if True, only returns elements that have an app
-    :type app_required: bool
-    :param cli_required: if True, only returns elements that have a subcommand
-    :type cli_required: bool
+    :param app_only: if True, only returns elements that have an app
+    :type app_only: bool
+    :param cli_only: if True, only returns elements that have a subcommand
+    :type cli_only: bool
     :returns: the resulting merged collection, with one element per package
-    :rtype: [dict]
+    :rtype: [{}]
     """
 
     indexed_apps = {}
@@ -152,7 +152,7 @@ def merge_installed(apps, subcommands, app_required, cli_required):
     for name, app_group in grouped_apps:
         app_list = list(app_group)
         pkg = app_list[0]
-        pkg['apps'] = [app['appId'] for app in app_list]
+        pkg['apps'] = sorted(app['appId'] for app in app_list)
         del pkg['appId']
         indexed_apps[name] = pkg
 
@@ -161,11 +161,11 @@ def merge_installed(apps, subcommands, app_required, cli_required):
     merged = []
     for name, app in indexed_apps.items():
         subcmd = indexed_subcommands.pop(name, {})
-        if subcmd or not cli_required:
+        if subcmd or not cli_only:
             app.update(subcmd)
             merged.append(app)
 
-    if not app_required:
+    if not app_only:
         merged.extend(indexed_subcommands.values())
 
     return merged

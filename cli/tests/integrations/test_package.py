@@ -533,7 +533,7 @@ def test_uninstall_missing():
 def test_uninstall_subcommand():
     _install_helloworld()
     _uninstall_helloworld()
-    assert _list(args=['--json']) == b'[]\n'
+    _list(args=['--json'], stdout=b'[]\n')
 
 
 def test_uninstall_cli():
@@ -606,21 +606,21 @@ def test_uninstall_multiple_apps():
 def test_list(zk_znode):
     empty = b'[]\n'
 
-    assert _list(args=['--json']) == empty
-    assert _list(args=['xyzzy', '--json']) == empty
-    assert _list(args=['--app-id=/xyzzy', '--json']) == empty
+    _list(args=['--json'], stdout=empty)
+    _list(args=['xyzzy', '--json'], stdout=empty)
+    _list(args=['--app-id=/xyzzy', '--json'], stdout=empty)
 
     with _chronos_package():
 
         expected_output = file_json(
             'tests/data/package/json/test_list_chronos.json')
-        assert _list(args=['--json']) == expected_output
-        assert _list(args=['--json', 'chronos']) == expected_output
-        assert _list(args=['--json', '--app-id=/chronos']) == expected_output
+        _list(args=['--json'], stdout=expected_output)
+        _list(args=['--json', 'chronos'], stdout=expected_output)
+        _list(args=['--json', '--app-id=/chronos'], stdout=expected_output)
 
     le_package = 'ceci-nest-pas-une-package'
-    assert _list(args=['--json', le_package]) == empty
-    assert _list(args=['--json', '--app-id=/' + le_package]) == empty
+    _list(args=['--json', le_package], stdout=empty)
+    _list(args=['--json', '--app-id=/' + le_package], stdout=empty)
 
 
 def test_list_table():
@@ -658,7 +658,7 @@ def test_list_cli():
     _install_helloworld()
     stdout = file_json(
         'tests/data/package/json/test_list_helloworld.json')
-    assert _list(args=['--json']) == stdout
+    _list(args=['--json'], stdout=stdout)
     _uninstall_helloworld()
 
     stdout = (b"Installing CLI subcommand for package [helloworld] " +
@@ -670,7 +670,7 @@ def test_list_cli():
 
     stdout = file_json(
         'tests/data/package/json/test_list_helloworld_cli.json')
-    assert _list(args=['--json']) == stdout
+    _list(args=['--json'], stdout=stdout)
 
     _uninstall_cli_helloworld()
 
@@ -682,24 +682,23 @@ def test_list_cli_flag():
     helloworld_json = file_json_ast(helloworld_path)
 
     def assert_test_case(args, expected_packages):
-        stdout = _list(args=['--json', '--cli'] + args)
+        stdout = _list_stdout(args=['--json', '--cli'] + args)
         actual_packages = json.loads(stdout.decode('utf-8'))
         assert_same_elements(expected_packages, actual_packages)
 
-    with _chronos_package():
-        with _kafka():
-            with _helloworld_cli():
-                assert_test_case(
-                    args=[],
-                    expected_packages=[kafka_json, helloworld_json])
+    with _kafka():
+        with _helloworld_cli():
+            assert_test_case(
+                args=[],
+                expected_packages=[kafka_json, helloworld_json])
 
-                assert_test_case(
-                    args=['--app-id=/helloworld'],
-                    expected_packages=[])
+            assert_test_case(
+                args=['--app-id=/helloworld'],
+                expected_packages=[])
 
-                assert_test_case(
-                    args=['helloworld'],
-                    expected_packages=[helloworld_json])
+            assert_test_case(
+                args=['helloworld'],
+                expected_packages=[helloworld_json])
 
 
 def test_uninstall_multiple_frameworknames(zk_znode):
@@ -713,13 +712,13 @@ def test_uninstall_multiple_frameworknames(zk_znode):
     expected_output = file_json(
         'tests/data/package/json/test_list_chronos_two_users.json')
 
-    assert _list(args=['--json']) == expected_output
-    assert _list(args=['--json', 'chronos']) == expected_output
-    assert _list(args=['--json', '--app-id=/chronos-user-1']) == file_json(
-        'tests/data/package/json/test_list_chronos_user_1.json')
+    _list(args=['--json'], stdout=expected_output)
+    _list(args=['--json', 'chronos'], stdout=expected_output)
+    _list(args=['--json', '--app-id=/chronos-user-1'], stdout=file_json(
+        'tests/data/package/json/test_list_chronos_user_1.json'))
 
-    assert _list(args=['--json', '--app-id=/chronos-user-2']) == file_json(
-        'tests/data/package/json/test_list_chronos_user_2.json')
+    _list(args=['--json', '--app-id=/chronos-user-2'], stdout=file_json(
+        'tests/data/package/json/test_list_chronos_user_2.json'))
 
     _uninstall_chronos(
         args=['--app-id=chronos-user-1'],
@@ -969,11 +968,18 @@ def _chronos_package(
         watch_all_deployments()
 
 
-def _list(args):
-    retcode, stdout, stderr = exec_command(['dcos', 'package', 'list'] + args)
-    assert retcode == 0
-    assert stderr == b''
-    return stdout
+def _list(args, stdout):
+    assert_command(['dcos', 'package', 'list'] + args, stdout=stdout)
+
+
+def _list_stdout(args):
+    command = ['dcos', 'package', 'list'] + args
+    returncode_, stdout_, stderr_ = exec_command(command)
+
+    assert returncode_ == 0
+    assert stderr_ == b''
+
+    return stdout_
 
 
 HELLOWORLD_CLI_STDOUT = (b'Installing CLI subcommand for package [helloworld] '
@@ -1008,7 +1014,8 @@ def _kafka():
               b'[0.9.4.0]\n'
               b'Installing CLI subcommand for package [kafka] '
               b'version [0.9.4.0]\n'
-              b'New command available: dcos kafka\n'
+              b'New command available: dcos ' +
+              _executable_name(b'kafka') + b'\n'
               b'The Apache Kafka DCOS Service is installed:\n'
               b'  docs   - https://github.com/mesos/kafka\n'
               b'  issues - https://github.com/mesos/kafka/issues\n')
@@ -1048,7 +1055,7 @@ def _package(name,
     installed = False
     try:
         returncode_, stdout_, stderr_ = exec_command(command)
-        installed = returncode_ == 0
+        installed = (returncode_ == 0)
 
         assert installed
         assert stdout_ == stdout
