@@ -493,8 +493,13 @@ def _install_with_binary(
                 if kind == "executable":
                     util.ensure_dir_exists(env_bin_dir)
                     binary_name = "dcos-{}".format(package_name)
+                    if util.is_windows_platform():
+                        binary_name += '.exe'
                     binary_file = os.path.join(env_bin_dir, binary_name)
-                    shutil.move(binary_tmp, binary_file)
+
+                    # copy to avoid windows error of moving open file
+                    # binary_tmp will be removed by context manager
+                    shutil.copy(binary_tmp, binary_file)
                 else:
                     # kind == "zip"
                     with zipfile.ZipFile(binary_tmp) as zf:
