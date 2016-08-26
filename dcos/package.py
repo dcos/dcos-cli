@@ -97,14 +97,16 @@ def installed_packages(package_manager, app_id, package_name, cli_required):
     :type app_id: str
     :param package_name: The package to show
     :type package_name: str
-    :param cli_required: if True, returns only packages with installed
-        subcommands
+    :param cli_required: if True, returns only packages with locally installed
+        subcommands, without retrieving the apps installed on the cluster
     :type cli_required: bool
     :returns: A list of installed packages matching criteria
     :rtype: [dict]
     """
 
-    apps = package_manager.installed_apps(package_name, app_id)
+    apps = []
+    if not cli_required:
+        apps = package_manager.installed_apps(package_name, app_id)
 
     subcommands = []
     for subcmd in installed_subcommands():

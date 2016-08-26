@@ -1,7 +1,4 @@
 {
-  "apps": [
-    "/kafka"
-  ],
   "command": {
     "name": "kafka"
   },
