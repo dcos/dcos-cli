@@ -1043,15 +1043,23 @@ def _package(name,
     :rtype: None
     """
 
-    assert_command(['dcos', 'package', 'install', name] + args,
-                   stdout=stdout)
+    command = ['dcos', 'package', 'install', name] + args
+
+    installed = False
     try:
+        returncode_, stdout_, stderr_ = exec_command(command)
+        installed = returncode_ == 0
+
+        assert installed
+        assert stdout_ == stdout
+
         yield
     finally:
-        assert_command(
-            ['dcos', 'package', 'uninstall', name],
-            stderr=uninstall_stderr)
-        watch_all_deployments()
+        if installed:
+            assert_command(
+                ['dcos', 'package', 'uninstall', name],
+                stderr=uninstall_stderr)
+            watch_all_deployments()
 
 
 def _repo_add(args=[], repo_list=[]):
