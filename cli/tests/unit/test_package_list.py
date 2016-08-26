@@ -4,30 +4,31 @@ from ..common import assert_same_elements
 
 def test_merge_installed_app_req_cli_req():
     _assert_merged_installed(
-        merged_keys=['a', 'c'], app_optional=False, cli_optional=False)
+        merged_keys=['a', 'c'], app_required=True, cli_required=True)
 
 
 def test_merge_installed_app_req_cli_opt():
     _assert_merged_installed(
-        merged_keys=['a', 'b', 'c'], app_optional=False, cli_optional=True)
+        merged_keys=['a', 'b', 'c'], app_required=True, cli_required=False)
 
 
 def test_merged_installed_app_opt_cli_req():
     _assert_merged_installed(
-        merged_keys=['a', 'c', 'd'], app_optional=True, cli_optional=False)
+        merged_keys=['a', 'c', 'd'], app_required=False, cli_required=True)
 
 
 def test_merged_installed_app_opt_cli_opt():
+    merged_keys = ['a', 'b', 'c', 'd']
     _assert_merged_installed(
-        merged_keys=['a', 'b', 'c', 'd'], app_optional=True, cli_optional=True)
+        merged_keys, app_required=False, cli_required=False)
 
 
-def _assert_merged_installed(merged_keys, app_optional, cli_optional):
+def _assert_merged_installed(merged_keys, app_required, cli_required):
     merged = _merged()
     expected_merged = [merged[k] for k in merged_keys]
 
     actual_merged = package.merge_installed(
-        _apps(), _subs(), app_optional, cli_optional)
+        _apps(), _subs(), app_required, cli_required)
 
     assert_same_elements(expected_merged, actual_merged)
 

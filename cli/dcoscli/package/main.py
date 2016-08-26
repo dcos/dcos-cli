@@ -405,14 +405,14 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
     return 0
 
 
-def _list(json_, app_id, cli_only, package_name):
+def _list(json_, app_id, cli_required, package_name):
     """List installed apps
 
     :param json_: output json if True
     :type json_: bool
     :param app_id: App ID of app to show
     :type app_id: str
-    :param cli_only: only show installed subcommands if True
+    :param cli_required: if True, only show packages with installed subcommands
     :type cli: bool
     :param package_name: The package to show
     :type package_name: str
@@ -424,7 +424,7 @@ def _list(json_, app_id, cli_only, package_name):
     if app_id is not None:
         app_id = util.normalize_marathon_id_path(app_id)
     results = package.installed_packages(
-        package_manager, app_id, package_name, not cli_only)
+        package_manager, app_id, package_name, cli_required)
 
     # only emit those packages that match the provided package_name and app_id
     if results or json_:
