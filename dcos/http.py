@@ -346,7 +346,7 @@ def _get_auth_credentials(username, hostname):
     if username is None:
         sys.stdout.write("{}'s username: ".format(hostname))
         sys.stdout.flush()
-        username = sys.stdin.readline().strip().lower()
+        username = sys.stdin.readline().strip()
 
     password = getpass.getpass("{}@{}'s password: ".format(username, hostname))
 
