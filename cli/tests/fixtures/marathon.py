@@ -1,3 +1,21 @@
+import os
+
+from ..integrations.common import file_json_ast
+
+PODS_FILE_PATH_BASE = 'tests/data/marathon/pods'
+
+GOOD_POD_ID = 'good-pod'
+GOOD_POD_FILE_PATH = os.path.join(PODS_FILE_PATH_BASE, 'good.json')
+UPDATED_GOOD_POD_FILE_PATH = \
+    os.path.join(PODS_FILE_PATH_BASE, 'updated_good.json')
+
+DOUBLE_POD_ID = 'double-pod'
+DOUBLE_POD_FILE_PATH = os.path.join(PODS_FILE_PATH_BASE, 'double.json')
+
+TRIPLE_POD_ID = 'winston'
+TRIPLE_POD_FILE_PATH = os.path.join(PODS_FILE_PATH_BASE, 'doubleplusgood.json')
+
+
 def app_fixture():
     """ Marathon app fixture.
 
@@ -46,8 +64,8 @@ def app_fixture():
     }
 
 
-def deployment_fixture():
-    """ Marathon deployment fixture.
+def deployment_fixture_app_pre_pods():
+    """ Marathon app deployment fixture, for Marathon versions without pods.
 
     :rtype: dict
     """
@@ -75,6 +93,82 @@ def deployment_fixture():
                 {
                     "action": "ScaleApplication",
                     "app": "/cassandra/dcos"
+                }
+            ]
+        ],
+        "totalSteps": 2,
+        "version": "2015-05-29T01:13:47.694Z"
+    }
+
+
+def deployment_fixture_app_post_pods():
+    """ Marathon app deployment fixture, for Marathon versions with pods.
+
+    :rtype: dict
+    """
+
+    return {
+        "affectedApps": [
+            "/cassandra/dcos"
+        ],
+        "affectedPods": [],
+        "currentActions": [
+            {
+                "action": "ScaleApplication",
+                "app": "/cassandra/dcos"
+            }
+        ],
+        "currentStep": 2,
+        "id": "bebb8ffd-118e-4067-8fcb-d19e44126911",
+        "steps": [
+            [
+                {
+                    "action": "StartApplication",
+                    "app": "/cassandra/dcos"
+                }
+            ],
+            [
+                {
+                    "action": "ScaleApplication",
+                    "app": "/cassandra/dcos"
+                }
+            ]
+        ],
+        "totalSteps": 2,
+        "version": "2015-05-29T01:13:47.694Z"
+    }
+
+
+def deployment_fixture_pod():
+    """ Marathon pod deployment fixture.
+
+    :rtype: dict
+    """
+
+    return {
+        "affectedApps": [],
+        "affectedPods": [
+            "/cassandra/dcos"
+        ],
+        "currentActions": [
+            {
+                "action": "ScalePod",
+                "pod": "/cassandra/dcos"
+            }
+        ],
+        "currentStep": 2,
+        "id": "bebb8ffd-118e-4067-8fcb-d19e44126911",
+        "steps": [
+            [
+                {
+                    "action": "StartPod",
+                    "pod": "/cassandra/dcos"
+                }
+            ],
+            [
+                {
+                    "action": "ScalePod",
+                    "pod": "/cassandra/dcos"
                 }
             ]
         ],
@@ -159,3 +253,13 @@ def group_fixture():
         "id": "/test-group",
         "version": "2015-05-29T23:12:46.187Z"
     }
+
+
+def pod_fixture():
+    """Marathon pod fixture.
+
+    :rtype: [{}]
+    """
+
+    paths = [GOOD_POD_FILE_PATH, DOUBLE_POD_FILE_PATH, TRIPLE_POD_FILE_PATH]
+    return [file_json_ast(path) for path in paths]

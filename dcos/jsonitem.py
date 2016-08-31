@@ -14,7 +14,7 @@ def parse_json_item(json_item, schema):
     :param json_item: A JSON item in the form 'key=value'
     :type json_item: str
     :param schema: The JSON schema to use for parsing
-    :type schema: dict
+    :type schema: dict | None
     :returns: A tuple for the parsed JSON item
     :rtype: (str, any) where any is one of str, int, float, bool, list or dict
     """

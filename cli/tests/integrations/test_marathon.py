@@ -10,11 +10,12 @@ from dcos import constants
 import pytest
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
-from .common import (app, assert_command, assert_lines, config_set,
-                     config_unset, exec_command, list_deployments, popen_tty,
+from .common import (app, assert_command, assert_lines,
+                     exec_command, list_deployments, popen_tty,
                      show_app, update_config, watch_all_deployments,
                      watch_deployment)
 
+_ZERO_INSTANCE_APP_ID = 'zero-instance-app'
 _ZERO_INSTANCE_APP_INSTANCES = 100
 
 
@@ -144,16 +145,24 @@ def test_show_relative_app_version():
 
 
 def test_show_missing_relative_app_version():
+    app_id = _ZERO_INSTANCE_APP_ID
+
     with _zero_instance_app():
         _update_app(
-            'zero-instance-app',
+            app_id,
             'tests/data/marathon/apps/update_zero_instance_sleep.json')
 
-        stderr = b"Application 'zero-instance-app' only has 2 version(s).\n"
-        assert_command(['dcos', 'marathon', 'app', 'show',
-                        '--app-version=-2', 'zero-instance-app'],
-                       returncode=1,
-                       stderr=stderr)
+        # Marathon persists app versions indefinitely by ID, so pick a large
+        # index here in case the history is long
+        cmd = ['dcos', 'marathon', 'app', 'show', '--app-version=-200', app_id]
+        returncode, stdout, stderr = exec_command(cmd)
+
+        assert returncode == 1
+        assert stdout == b''
+
+        pattern = ("Application 'zero-instance-app' only has [1-9][0-9]* "
+                   "version\\(s\\)\\.\n")
+        assert re.fullmatch(pattern, stderr.decode('utf-8'), flags=re.DOTALL)
 
 
 def test_show_missing_absolute_app_version():
@@ -464,24 +473,28 @@ def test_list_version_negative_max_count():
 
 
 def test_list_version_app():
+    app_id = _ZERO_INSTANCE_APP_ID
+
     with _zero_instance_app():
-        _list_versions('zero-instance-app', 1)
+        _list_versions(app_id, 1)
 
         _update_app(
-            'zero-instance-app',
+            app_id,
             'tests/data/marathon/apps/update_zero_instance_sleep.json')
-        _list_versions('zero-instance-app', 2)
+        _list_versions(app_id, 2)
 
 
 def test_list_version_max_count():
+    app_id = _ZERO_INSTANCE_APP_ID
+
     with _zero_instance_app():
         _update_app(
-            'zero-instance-app',
+            app_id,
             'tests/data/marathon/apps/update_zero_instance_sleep.json')
 
-        _list_versions('zero-instance-app', 1, 1)
-        _list_versions('zero-instance-app', 2, 2)
-        _list_versions('zero-instance-app', 2, 3)
+        _list_versions(app_id, 1, 1)
+        _list_versions(app_id, 2, 2)
+        _list_versions(app_id, 2, 3)
 
 
 def test_list_empty_deployment():
@@ -671,29 +684,26 @@ def test_stop_unknown_task_wipe():
         _stop_task(task_id, '--wipe', expect_success=False)
 
 
-def test_bad_configuration():
-    config_set('marathon.url', 'http://localhost:88888')
+def test_bad_configuration(env):
+    with update_config('marathon.url', 'http://localhost:88888', env):
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'about'], env=env)
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'about'])
-
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr.startswith(
-        b"URL [http://localhost:88888/v2/info] is unreachable")
-
-    config_unset('marathon.url')
+        assert returncode == 1
+        assert stdout == b''
+        assert stderr.startswith(
+            b"URL [http://localhost:88888/v2/info] is unreachable")
 
 
 def test_app_locked_error():
     with app('tests/data/marathon/apps/sleep_many_instances.json',
              '/sleep-many-instances',
              wait=False):
+        stderr = b'Changes blocked: deployment already in progress for app.\n'
         assert_command(
             ['dcos', 'marathon', 'app', 'stop', 'sleep-many-instances'],
             returncode=1,
-            stderr=(b'App or group is locked by one or more deployments. '
-                    b'Override with --force.\n'))
+            stderr=stderr)
 
 
 @pytest.mark.skipif(sys.platform == 'win32',
@@ -755,7 +765,7 @@ def _update_app(app_id, file_path):
         assert stderr == b''
 
 
-def _list_versions(app_id, expected_count, max_count=None):
+def _list_versions(app_id, expected_min_count, max_count=None):
     cmd = ['dcos', 'marathon', 'app', 'version', 'list', app_id]
     if max_count is not None:
         cmd.append('--max-count={}'.format(max_count))
@@ -766,8 +776,13 @@ def _list_versions(app_id, expected_count, max_count=None):
 
     assert returncode == 0
     assert isinstance(result, list)
-    assert len(result) == expected_count
     assert stderr == b''
+
+    # Marathon persists app versions indefinitely by ID, so there may be extras
+    assert len(result) >= expected_min_count
+
+    if max_count is not None:
+        assert len(result) <= max_count
 
 
 def _list_tasks(expected_count=None, app_id=None):
