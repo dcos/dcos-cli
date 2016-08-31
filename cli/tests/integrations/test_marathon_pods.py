@@ -2,7 +2,7 @@ import contextlib
 import json
 import re
 
-from .common import (file_bytes, file_json, exec_command)
+from .common import exec_command, file_bytes, file_json
 
 FILE_PATH_BASE = 'tests/data/marathon/pods/'
 
@@ -38,8 +38,8 @@ def test_pod_list():
     expected_json = [file_json(path) for path in paths]
 
     with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH), \
-        _pod(DOUBLE_POD_ID, DOUBLE_POD_FILE_PATH), \
-        _pod(TRIPLE_POD_ID, TRIPLE_POD_FILE_PATH):
+            _pod(DOUBLE_POD_ID, DOUBLE_POD_FILE_PATH), \
+            _pod(TRIPLE_POD_ID, TRIPLE_POD_FILE_PATH):
 
         exit_status, stdout = _pod_list(json=True)
         assert exit_status == 0
