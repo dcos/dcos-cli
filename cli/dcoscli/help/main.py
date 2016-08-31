@@ -1,9 +1,8 @@
-import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
 import dcoscli
 import docopt
-from dcos import cmds, emitting, options, subcommand, util
+from dcos import cmds, emitting, options, subcommand, subprocess, util
 from dcos.errors import DCOSException
 from dcoscli.subcommand import (default_command_documentation,
                                 default_command_info, default_doc)
@@ -107,4 +106,4 @@ def _help_command(command):
         return 0
     else:
         executable = subcommand.command_executables(command)
-        return subprocess.call([executable, command, '--help'])
+        return subprocess.Subproc().call([executable, command, '--help'])

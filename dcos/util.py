@@ -33,31 +33,6 @@ def get_logger(name):
 
 
 @contextlib.contextmanager
-def set_env(env_var, new_value):
-    """A context manager for temporary updating env vars
-
-    :param env_var: name of environment variable to alter, None to remove
-    :type env_var: str
-    :param new_val: new value to change env_var to
-    :type new_var: str | None
-    :rtype: str | None
-    """
-
-    old_value = os.environ.get(env_var)
-    if new_value is not None:
-        os.environ[env_var] = new_value
-    elif new_value is None and old_value is not None:
-        del os.environ[env_var]
-    try:
-        yield
-    finally:
-        if old_value is not None:
-            os.environ[env_var] = old_value
-        elif old_value is None and new_value is not None:
-            del os.environ[env_var]
-
-
-@contextlib.contextmanager
 def tempdir():
     """A context manager for temporary directories.
 
