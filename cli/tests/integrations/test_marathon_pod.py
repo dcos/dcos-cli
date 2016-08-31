@@ -3,6 +3,7 @@ import json
 import os
 import re
 
+from ..common import assert_same_elements
 from .common import assert_command, exec_command, file_bytes, file_json
 
 FILE_PATH_BASE = 'tests/data/marathon/pods'
@@ -24,10 +25,12 @@ def test_pod_add_from_file_then_remove():
     assert stdout == b''
     assert stderr == b''
 
+    # Explicitly testing non-forced-removal; can't use the context manager
     _assert_pod_remove(GOOD_POD_ID, extra_args=[])
 
 
 def test_pod_add_from_stdin_then_force_remove():
+    # Explicitly testing adding from stdin; can't use the context manager
     _assert_pod_add_from_stdin(GOOD_POD_FILE_PATH)
     _assert_pod_remove(GOOD_POD_ID, extra_args=['--force'])
 
@@ -35,7 +38,7 @@ def test_pod_add_from_stdin_then_force_remove():
 def test_pod_list():
     paths = [GOOD_POD_FILE_PATH, DOUBLE_POD_FILE_PATH, TRIPLE_POD_FILE_PATH]
     expected_json = [file_json(path) for path in paths]
-    expected_table = file_bytes('cli/tests/unit/data/pod.txt')
+    expected_table = file_bytes('tests/unit/data/pod.txt')
 
     with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH), \
             _pod(DOUBLE_POD_ID, DOUBLE_POD_FILE_PATH), \
@@ -98,7 +101,7 @@ def _assert_pod_list_json(expected_json):
     assert stderr
 
     parsed_stdout = json.loads(stdout.decode('utf-8'))
-    _assert_same_elements(parsed_stdout, expected_json)
+    assert_same_elements(parsed_stdout, expected_json)
 
 
 def _assert_pod_list_table(stdout):
@@ -132,13 +135,6 @@ def _assert_pod_update_from_stdin(pod_id, file_path, extra_args):
     assert returncode == 0
     assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
     assert stderr == b''
-
-
-# TODO cruhland: Replace when PR #743 is merged
-def _assert_same_elements(list1, list2):
-    for element in list1:
-        list2.remove(element)
-    assert not list2
 
 
 @contextlib.contextmanager
