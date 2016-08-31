@@ -1,0 +1,19 @@
+{
+  "id": "double-pod",
+  "containers": [
+    {
+      "name": "thing-1",
+      "resources": {
+        "cpus": 0.1,
+        "mem": 16.0
+      }
+    },
+    {
+      "name": "thing-2",
+      "resources": {
+        "cpus": 0.1,
+        "mem": 16.0
+      }
+    }
+  ]
+}
