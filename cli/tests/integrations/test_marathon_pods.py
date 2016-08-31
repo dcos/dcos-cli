@@ -35,7 +35,7 @@ def test_pod_list_table():
 
 
 def test_pod_show():
-    with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH, add_fn=_pod_add_from_file):
+    with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH):
         exit_status, stdout = _pod_show(GOOD_POD_ID)
         assert exit_status == 0
 
@@ -44,7 +44,7 @@ def test_pod_show():
 
 
 def test_pod_update_from_file():
-    with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH, add_fn=_pod_add_from_file):
+    with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH):
         exit_status, stdout = _pod_update_from_file(GOOD_POD_ID,
                                                     UPDATED_GOOD_POD_FILE_PATH,
                                                     force=False)
@@ -59,10 +59,11 @@ def test_pod_update_from_file():
 
 
 def test_pod_update_from_stdin_force_true():
-    with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH, add_fn=_pod_add_from_stdin):
-        exit_status, stdout = _pod_update_from_file(GOOD_POD_ID,
-                                                    UPDATED_GOOD_POD_FILE_PATH,
-                                                    force=True)
+    with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH):
+        exit_status, stdout = \
+            _pod_update_from_stdin(GOOD_POD_ID,
+                                   UPDATED_GOOD_POD_FILE_PATH,
+                                   force=True)
         assert exit_status == 0
         assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
 
@@ -88,8 +89,7 @@ def _pod_add_from_file(file_path):
 
 def _pod_add_from_stdin(file_path):
     cmd = _POD_ADD_CMD
-    with open(file_path) as fd:
-        exit_status, stdout, stderr = exec_command(cmd, stdin=fd)
+    exit_status, stdout, stderr = _exec_command_with_stdin(cmd, file_path)
     return exit_status
 
 
@@ -111,6 +111,12 @@ def _pod_update_from_file(pod_id, file_path, force):
     return exit_status, stdout
 
 
+def _pod_update_from_stdin(pod_id, file_path, force):
+    cmd = _POD_UPDATE_CMD + _force_args(force) + [pod_id, file_path]
+    exit_status, stdout, stderr = _exec_command_with_stdin(cmd, file_path)
+    return exit_status, stdout
+
+
 def _read_file(file_path):
     with open(file_path) as fd:
         return fd.read()
@@ -120,9 +126,14 @@ def _force_args(force):
     return ['--force'] if force else []
 
 
+def _exec_command_with_stdin(cmd, file_path):
+    with open(file_path) as fd:
+        return exec_command(cmd, stdin=fd)
+
+
 @contextlib.contextmanager
-def _pod(pod_id, file_path, add_fn):
-    exit_status = add_fn(file_path)
+def _pod(pod_id, file_path):
+    exit_status = _pod_add_from_file(file_path)
     pod_added = (exit_status == 0)
 
     try:
