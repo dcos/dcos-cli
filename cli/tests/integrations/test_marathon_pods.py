@@ -33,25 +33,24 @@ def test_pod_add_from_stdin_then_force_remove():
     assert exit_status == 0
 
 
-def test_pod_list_json():
-    with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH):
-        with _pod(DOUBLE_POD_ID, DOUBLE_POD_FILE_PATH):
-            with _pod(TRIPLE_POD_ID, TRIPLE_POD_FILE_PATH):
-                exit_status, stdout = _pod_list(json=True)
-                assert exit_status == 0
+def test_pod_list():
+    paths = [GOOD_POD_FILE_PATH, DOUBLE_POD_FILE_PATH, TRIPLE_POD_FILE_PATH]
+    expected_json = [file_json(path) for path in paths]
 
-                parsed_stdout = json.loads(stdout.decode('utf-8'))
-                parsed_good = file_json(GOOD_POD_FILE_PATH)
-                parsed_double = file_json(DOUBLE_POD_FILE_PATH)
-                parsed_triple = file_json(TRIPLE_POD_FILE_PATH)
-                expected_stdout = [parsed_good, parsed_double, parsed_triple]
+    with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH), \
+        _pod(DOUBLE_POD_ID, DOUBLE_POD_FILE_PATH), \
+        _pod(TRIPLE_POD_ID, TRIPLE_POD_FILE_PATH):
 
-                _assert_same_elements(parsed_stdout, expected_stdout)
+        exit_status, stdout = _pod_list(json=True)
+        assert exit_status == 0
 
+        parsed_stdout = json.loads(stdout.decode('utf-8'))
+        _assert_same_elements(parsed_stdout, expected_json)
 
-def test_pod_list_table():
-    # Add several pods, verify that the table view is correct
-    pass
+        exit_status, stdout = _pod_list(json=False)
+        assert exit_status == 0
+
+        assert stdout == file_bytes('cli/tests/unit/data/pod.txt')
 
 
 def test_pod_show():
