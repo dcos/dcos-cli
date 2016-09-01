@@ -728,6 +728,9 @@ class Client(object):
         response = _http_req(http.get, url, timeout=self._timeout)
         return response.json()['leader']
 
+    def add_pod(self, pod_json):
+        pass
+
 
 def _default_marathon_error(message=""):
     """

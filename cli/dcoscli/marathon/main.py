@@ -872,3 +872,14 @@ def _cli_config_schema():
         pkg_resources.resource_string(
             'dcos',
             'data/config-schema/marathon.json').decode('utf-8'))
+
+
+class MarathonPodSubcommand(object):
+
+    def __init__(self, resource_reader, marathon_client):
+        self._marathon_client = marathon_client
+        pass
+
+    def add(self, pod_resource_path):
+        self._marathon_client.add_pod({"arbitrary": "json"})
+        return 0
