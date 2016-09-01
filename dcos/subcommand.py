@@ -6,7 +6,6 @@ import os
 import platform
 import shutil
 import stat
-import subprocess
 import sys
 import zipfile
 from distutils.version import LooseVersion
@@ -578,8 +577,8 @@ def _execute_command(command):
 
     process = Subproc().Popen(
         command,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
+        stdout=PIPE,
+        stderr=PIPE)
 
     stdout, stderr = process.communicate()
 
@@ -678,7 +677,7 @@ class SubcommandProcess():
         :rtype: int, str | None
         """
 
-        subproc = subprocess.Subproc().Popen(
+        subproc = Subproc().Popen(
             [self._executable,  self._command] + self._args,
             stderr=PIPE)
 
