@@ -1,9 +1,7 @@
-import subprocess
-
 import dcoscli
 import docopt
 import six
-from dcos import cmds, emitting, marathon, mesos, util
+from dcos import cmds, emitting, marathon, mesos, subprocess, util
 from dcos.errors import DCOSException, DefaultError
 from dcoscli import log, tables
 from dcoscli.subcommand import default_command_info, default_doc
@@ -277,4 +275,4 @@ def _log_marathon(follow, lines, ssh_config_file):
 
     emitter.publish(DefaultError("Running `{}`".format(cmd)))
 
-    return subprocess.call(cmd, shell=True)
+    return subprocess.Subproc().call(cmd, shell=True)

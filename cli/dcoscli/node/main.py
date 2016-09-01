@@ -1,12 +1,11 @@
 import functools
 import os
-import subprocess
 
 import dcoscli
 import docopt
 import six
 from dcos import (cmds, config, cosmospackage, emitting, errors, http, mesos,
-                  util)
+                  subprocess, util)
 from dcos.errors import DCOSException, DefaultError
 from dcoscli import log, tables
 from dcoscli.package.main import confirm, get_cosmos_url
@@ -587,4 +586,4 @@ def _ssh(leader, slave, option, config_file, user, master_proxy, command):
                          "network than DC/OS, consider using "
                          "`--master-proxy`"))
 
-    return subprocess.call(cmd, shell=True)
+    return subprocess.Subproc().call(cmd, shell=True)
