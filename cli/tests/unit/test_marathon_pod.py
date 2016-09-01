@@ -11,19 +11,20 @@ import dcoscli.marathon.main as main
 #   - Send HTTP request with contents of file, and some other stuff
 
 
-# TODO: Another test to ensure data can't be hardcoded
 def test_add_invoked_successfully():
-    pod_file_path = "some/path/to/pod.json"
-    pod_file_json = {"arbitrary": "json"}
+    _assert_add_invoked_successfully(pod_file_json={"arbitrary": "json"})
+    _assert_add_invoked_successfully(pod_file_json=["more", "json"])
 
-    resource_reader = Mock(return_value=pod_file_json)
+
+def _assert_add_invoked_successfully(pod_file_json):
+    pod_file_path = "some/path/to/pod.json"
+    resource_reader = {pod_file_path: pod_file_json}.__getitem__
     marathon_client = create_autospec(marathon.Client)
 
     pod = main.MarathonPodSubcommand(resource_reader, marathon_client)
-    exit_code = pod.add(pod_file_path)
+    returncode = pod.add(pod_file_path)
 
-    assert exit_code == 0
-    resource_reader.assert_called_with(pod_file_path)
+    assert returncode == 0
     marathon_client.add_pod.assert_called_with(pod_file_json)
 
 
