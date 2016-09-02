@@ -22,9 +22,10 @@ def create_client(toml_config=None):
 
     marathon_url = _get_marathon_url(toml_config)
     timeout = config.get_config_val('core.timeout') or http.DEFAULT_TIMEOUT
+    rpc_client = RpcClient(marathon_url, timeout)
 
     logger.info('Creating marathon client with: %r', marathon_url)
-    return Client(marathon_url, timeout=timeout)
+    return Client(rpc_client)
 
 
 def _get_marathon_url(toml_config):
@@ -102,48 +103,58 @@ def _to_exception(response):
     return DCOSException('Error: {}'.format(message))
 
 
-def _http_req(fn, *args, **kwargs):
-    """Make an HTTP request, and raise a marathon-specific exception for
-    HTTP error codes.
+class RpcClient(object):
+    """Convenience class for making requests against a common RPC API.
 
-    :param fn: function to call
-    :type fn: function
-    :param args: args to pass to `fn`
-    :type args: [object]
-    :param kwargs: kwargs to pass to `fn`
-    :type kwargs: dict
-    :returns: `fn` return value
-    :rtype: object
+    For example, it ensures the same base URL is used for all requests. This
+    class is also useful as as target for mocks in unit tests, because it
+    presents a minimal, application-focused interface.
 
+    :param base_url: the URL prefix to use for all requests
+    :type base_url: str
+    :param timeout: number of seconds to wait for a response
+    :type timeout: float
     """
-    try:
-        return fn(*args, **kwargs)
-    except DCOSHTTPException as e:
-        raise _to_exception(e.response)
+
+    def __init__(self, base_url, timeout=http.DEFAULT_TIMEOUT):
+        self._base_url = base_url
+        self._timeout = timeout
+
+    def http_req(self, method_fn, path, *args, **kwargs):
+        """Make an HTTP request, and raise a marathon-specific exception for
+        HTTP error codes.
+
+        :param method_fn: function to call that invokes a specific HTTP method
+        :type method_fn: function
+        :param path: the endpoint path to append to this object's base URL
+        :type path: str
+        :param args: additional args to pass to `method_fn`
+        :type args: [object]
+        :param kwargs: kwargs to pass to `method_fn`
+        :type kwargs: dict
+        :returns: `method_fn` return value
+        :rtype: object
+        """
+        url = urllib.parse.urljoin(self._base_url, path)
+
+        if 'timeout' not in kwargs:
+            kwargs['timeout'] = self._timeout
+
+        try:
+            return method_fn(url, *args, **kwargs)
+        except DCOSHTTPException as e:
+            raise _to_exception(e.response)
 
 
 class Client(object):
     """Class for talking to the Marathon server.
 
-    :param marathon_url: the base URL for the Marathon server
-    :type marathon_url: str
+    :param rpc_client: provides a method for making HTTP requests
+    :type rpc_client: _RpcClient
     """
 
-    def __init__(self, marathon_url, timeout=http.DEFAULT_TIMEOUT):
-        if not marathon_url.endswith('/'):
-            marathon_url += '/'
-        self._base_url = marathon_url
-        self._timeout = timeout
-
-    def _create_url(self, path):
-        """Creates the url from the provided path.
-        :param path: url path
-        :type path: str
-        :returns: constructed url
-        :rtype: str
-        """
-
-        return urllib.parse.urljoin(self._base_url, path)
+    def __init__(self, rpc_client):
+        self._rpc = rpc_client
 
     def get_about(self):
         """Returns info about Marathon instance
@@ -152,8 +163,7 @@ class Client(object):
         :rtype: dict
         """
 
-        url = self._create_url('v2/info')
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.get, 'v2/info')
 
         return response.json()
 
@@ -171,12 +181,11 @@ class Client(object):
 
         app_id = self.normalize_app_id(app_id)
         if version is None:
-            url = self._create_url('v2/apps{}'.format(app_id))
+            path = 'v2/apps{}'.format(app_id)
         else:
-            url = self._create_url(
-                'v2/apps{}/versions/{}'.format(app_id, version))
+            path = 'v2/apps{}/versions/{}'.format(app_id, version)
 
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.get, path)
 
         # Looks like Marathon return different JSON for versions
         if version is None:
@@ -191,8 +200,7 @@ class Client(object):
         :rtype: list of dict
         """
 
-        url = self._create_url('v2/groups')
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.get, 'v2/groups')
         return response.json()['groups']
 
     def get_group(self, group_id, version=None):
@@ -209,12 +217,11 @@ class Client(object):
 
         group_id = self.normalize_app_id(group_id)
         if version is None:
-            url = self._create_url('v2/groups{}'.format(group_id))
+            path = 'v2/groups{}'.format(group_id)
         else:
-            url = self._create_url(
-                'v2/groups{}/versions/{}'.format(group_id, version))
+            path = 'v2/groups{}/versions/{}'.format(group_id, version)
 
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.get, path)
         return response.json()
 
     def get_app_versions(self, app_id, max_count=None):
@@ -222,8 +229,6 @@ class Client(object):
         maximum count.
 
         :param app_id: the ID of the application or group
-        :type app_id: str
-        :param id_type: type of the id ("apps" or "groups")
         :type app_id: str
         :param max_count: the maximum number of version to fetch
         :type max_count: int
@@ -238,9 +243,9 @@ class Client(object):
 
         app_id = self.normalize_app_id(app_id)
 
-        url = self._create_url('v2/apps{}/versions'.format(app_id))
+        path = 'v2/apps{}/versions'.format(app_id)
 
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.get, path)
 
         if max_count is None:
             return response.json()['versions']
@@ -254,8 +259,7 @@ class Client(object):
         :rtype: [dict]
         """
 
-        url = self._create_url('v2/apps')
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.get, 'v2/apps')
         return response.json()['apps']
 
     def get_apps_for_framework(self, framework_name):
@@ -279,17 +283,13 @@ class Client(object):
         :rtype: dict
         """
 
-        url = self._create_url('v2/apps')
-
         # The file type exists only in Python 2, preventing type(...) is file.
         if hasattr(app_resource, 'read'):
             app_json = json.load(app_resource)
         else:
             app_json = app_resource
 
-        response = _http_req(http.post, url,
-                             json=app_json,
-                             timeout=self._timeout)
+        response = self._rpc.http_req(http.post, 'v2/apps', json=app_json)
 
         return response.json()
 
@@ -315,12 +315,12 @@ class Client(object):
         else:
             params = {'force': 'true'}
 
-        url = self._create_url('v2/{}{}'.format(url_endpoint, resource_id))
+        path = 'v2/{}{}'.format(url_endpoint, resource_id)
 
-        response = _http_req(http.put, url,
-                             params=params,
-                             json=payload,
-                             timeout=self._timeout)
+        response = self._rpc.http_req(http.put,
+                                      path,
+                                      params=params,
+                                      json=payload)
 
         return response.json().get('deploymentId')
 
@@ -374,13 +374,12 @@ class Client(object):
         else:
             params = {'force': 'true'}
 
-        url = self._create_url('v2/apps{}'.format(app_id))
+        path = 'v2/apps{}'.format(app_id)
 
-        response = _http_req(http.put,
-                             url,
-                             params=params,
-                             json={'instances': int(instances)},
-                             timeout=self._timeout)
+        response = self._rpc.http_req(http.put,
+                                      path,
+                                      params=params,
+                                      json={'instances': int(instances)})
 
         deployment = response.json()['deploymentId']
         return deployment
@@ -404,12 +403,12 @@ class Client(object):
         else:
             params = {'force': 'true'}
 
-        url = self._create_url('v2/groups{}'.format(group_id))
+        path = 'v2/groups{}'.format(group_id)
 
-        response = http.put(url,
-                            params=params,
-                            json={'scaleBy': scale_factor},
-                            timeout=self._timeout)
+        response = self._rpc.http_req(http.put,
+                                      path,
+                                      params=params,
+                                      json={'scaleBy': scale_factor})
 
         deployment = response.json()['deploymentId']
         return deployment
@@ -444,8 +443,8 @@ class Client(object):
         else:
             params = {'force': 'true'}
 
-        url = self._create_url('v2/apps{}'.format(app_id))
-        _http_req(http.delete, url, params=params, timeout=self._timeout)
+        path = 'v2/apps{}'.format(app_id)
+        self._rpc.http_req(http.delete, path, params=params)
 
     def remove_group(self, group_id, force=None):
         """Completely removes the requested application.
@@ -464,9 +463,9 @@ class Client(object):
         else:
             params = {'force': 'true'}
 
-        url = self._create_url('v2/groups{}'.format(group_id))
+        path = 'v2/groups{}'.format(group_id)
 
-        _http_req(http.delete, url, params=params, timeout=self._timeout)
+        self._rpc.http_req(http.delete, path, params=params)
 
     def kill_tasks(self, app_id, scale=None, host=None):
         """Kills the tasks for a given application,
@@ -485,10 +484,8 @@ class Client(object):
             params['host'] = host
         if scale:
             params['scale'] = scale
-        url = self._create_url('v2/apps{}/tasks'.format(app_id))
-        response = _http_req(http.delete, url,
-                             params=params,
-                             timeout=self._timeout)
+        path = 'v2/apps{}/tasks'.format(app_id)
+        response = self._rpc.http_req(http.delete, path, params=params)
         return response.json()
 
     def restart_app(self, app_id, force=None):
@@ -509,11 +506,9 @@ class Client(object):
         else:
             params = {'force': 'true'}
 
-        url = self._create_url('v2/apps{}/restart'.format(app_id))
+        path = 'v2/apps{}/restart'.format(app_id)
 
-        response = _http_req(http.post, url,
-                             params=params,
-                             timeout=self._timeout)
+        response = self._rpc.http_req(http.post, path, params=params)
         return response.json()
 
     def get_deployment(self, deployment_id):
@@ -525,9 +520,7 @@ class Client(object):
         :rtype: dict
         """
 
-        url = self._create_url('v2/deployments')
-
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.get, 'v2/deployments')
         deployment = next(
             (deployment for deployment in response.json()
              if deployment_id == deployment['id']),
@@ -544,9 +537,7 @@ class Client(object):
         :rtype: list of dict
         """
 
-        url = self._create_url('v2/deployments')
-
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.get, 'v2/deployments')
 
         if app_id is not None:
             app_id = self.normalize_app_id(app_id)
@@ -578,11 +569,9 @@ class Client(object):
         else:
             params = {'force': 'true'}
 
-        url = self._create_url('v2/deployments/{}'.format(deployment_id))
+        path = 'v2/deployments/{}'.format(deployment_id)
 
-        response = _http_req(http.delete, url,
-                             params=params,
-                             timeout=self._timeout)
+        response = self._rpc.http_req(http.delete, path, params=params)
 
         if force:
             return None
@@ -619,9 +608,7 @@ class Client(object):
         :rtype: [dict]
         """
 
-        url = self._create_url('v2/tasks')
-
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.get, 'v2/tasks')
 
         if app_id is not None:
             app_id = self.normalize_app_id(app_id)
@@ -643,9 +630,7 @@ class Client(object):
         :rtype: dict
         """
 
-        url = self._create_url('v2/tasks')
-
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.get, 'v2/tasks')
 
         task = next(
             (task for task in response.json()['tasks']
@@ -670,13 +655,10 @@ class Client(object):
         else:
             params = {'wipe': 'true'}
 
-        url = self._create_url('v2/tasks/delete')
-
-        response = _http_req(http.post,
-                             url,
-                             params=params,
-                             json={'ids': [task_id]},
-                             timeout=self._timeout)
+        response = self._rpc.http_req(http.post,
+                                      'v2/tasks/delete',
+                                      params=params,
+                                      json={'ids': [task_id]})
 
         task = next(
             (task for task in response.json()['tasks']
@@ -704,7 +686,6 @@ class Client(object):
         :returns: the group description
         :rtype: dict
         """
-        url = self._create_url('v2/groups')
 
         # The file type exists only in Python 2, preventing type(...) is file.
         if hasattr(group_resource, 'read'):
@@ -712,9 +693,7 @@ class Client(object):
         else:
             group_json = group_resource
 
-        response = _http_req(http.post, url,
-                             json=group_json,
-                             timeout=self._timeout)
+        response = self._rpc.http_req(http.post, 'v2/groups', json=group_json)
         return response.json()
 
     def get_leader(self):
@@ -724,12 +703,11 @@ class Client(object):
         :rtype: str
         """
 
-        url = self._create_url('v2/leader')
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.get, 'v2/leader')
         return response.json()['leader']
 
     def add_pod(self, pod_json):
-        pass
+        self._rpc.http_req(http.post, 'v2/pods', json={'some': 'json'})
 
 
 def _default_marathon_error(message=""):
