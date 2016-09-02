@@ -21,7 +21,7 @@ Usage:
     dcos package repo add [--index=<index>] <repo-name> <repo-url>
     dcos package repo remove <repo-name>
     dcos package repo list [--json]
-    dcos package uninstall [--cli | [--app --app-id=<app-id> --all]]
+    dcos package uninstall [--cli | [--app --app-id=<app-id> --all --force]]
                            <package-name>
     dcos package update
 
