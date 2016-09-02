@@ -707,7 +707,7 @@ class Client(object):
         return response.json()['leader']
 
     def add_pod(self, pod_json):
-        self._rpc.http_req(http.post, 'v2/pods', json={'some': 'json'})
+        return self._rpc.http_req(http.post, 'v2/pods', json=pod_json)
 
 
 def _default_marathon_error(message=""):
