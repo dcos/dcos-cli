@@ -151,6 +151,25 @@ def test_set_new_output(env):
     config_set('core.dcos_url', 'http://dcos.snakeoil.mesosphere.com', env)
 
 
+def test_set_nonexistent_subcommand(env):
+    assert_command(
+        ['dcos', 'config', 'set', 'foo.bar', 'baz'],
+        stdout=b'',
+        stderr=b"'foo' is not a dcos command.\n",
+        returncode=1,
+        env=env)
+
+
+def test_set_when_extra_section():
+    env = os.environ.copy()
+    path = os.path.join('tests', 'data', 'config', 'invalid_section.toml')
+    env['DCOS_CONFIG'] = path
+    os.chmod(path, 0o600)
+
+    config_set('core.dcos_url', 'http://dcos.snakeoil.mesosphere.com', env)
+    config_unset('core.dcos_url', env)
+
+
 def test_unset_property(env):
     config_unset('core.reporting', env)
     _get_missing_value('core.reporting', env)
@@ -295,6 +314,7 @@ def test_timeout(env):
 def test_parse_error():
     env = os.environ.copy()
     path = os.path.join('tests', 'data', 'config', 'parse_error.toml')
+    os.chmod(path, 0o600)
     env['DCOS_CONFIG'] = path
 
     assert_command(['dcos', 'config', 'show'],
