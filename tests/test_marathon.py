@@ -1,3 +1,5 @@
+import re
+
 import requests
 from dcos import http, marathon
 from dcos.errors import DCOSException, DCOSHTTPException
@@ -18,11 +20,24 @@ def test_add_pod_returns_parsed_response_body():
 
 
 def test_rpc_client_http_req_converts_exception_for_400_status():
-    request = requests.Request(method='FOO', url='http://request/url')
+    _assert_rpc_client_http_req_converts_exception_for_400_status(
+        method='FOO',
+        url='http://request/url',
+        reason='Something Bad')
+
+    _assert_rpc_client_http_req_converts_exception_for_400_status(
+        method='BAR',
+        url='https://another/url',
+        reason='Another Reason')
+
+
+def _assert_rpc_client_http_req_converts_exception_for_400_status(
+        method, url, reason):
+    request = requests.Request(method, url)
     response = requests.Response()
     response.request = request.prepare()
     response.status_code = 400
-    response.reason = 'Something Bad'
+    response.reason = reason
 
     def bad_method(*args, **kwargs):
         raise DCOSHTTPException(response)
@@ -31,8 +46,9 @@ def test_rpc_client_http_req_converts_exception_for_400_status():
     with pytest.raises(DCOSException) as exception_info:
         rpc_client.http_req(method_fn=bad_method, path='arbitrary/path')
 
-    msg = 'Error on request [FOO http://request/url]: HTTP 400: Something Bad'
-    assert str(exception_info.value) == msg
+    pattern = r'Error on request \[(.*) (.*)\]: HTTP 400: (.*)'
+    match = re.fullmatch(pattern, str(exception_info.value))
+    assert (method, url, reason) == match.groups()
 
 
 def _assert_add_pod_puts_json_in_request_body(pod_json):

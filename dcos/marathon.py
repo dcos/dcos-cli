@@ -143,7 +143,31 @@ class RpcClient(object):
         try:
             return method_fn(url, *args, **kwargs)
         except DCOSHTTPException as e:
-            raise _to_exception(e.response)
+            # raise _to_exception(e.response)
+            raise convert_exception(e)
+
+
+def convert_exception(dcos_http_exception):
+    """Converts the given DCOSHTTPException to a more human-readable
+    DCOSException, to provide better error messages for failed requests to
+    Marathon.
+
+    :param dcos_http_exception: the exception to convert
+    :type dcos_http_exception: DCOSHTTPException
+    :return: the conversion result
+    :rtype: DCOSException
+    """
+    response = dcos_http_exception.response
+
+    if response.status_code == 400:
+        template = 'Error on request [{} {}]: HTTP 400: {}'
+        message = template.format(response.request.method,
+                                  response.request.url,
+                                  response.reason)
+
+        return DCOSException(message)
+    else:
+        return dcos_http_exception
 
 
 class Client(object):
