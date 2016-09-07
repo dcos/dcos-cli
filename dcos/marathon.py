@@ -178,7 +178,9 @@ def convert_exception(dcos_http_exception):
 
         return DCOSException(message)
     else:
-        return dcos_http_exception
+        template = 'Error decoding response from [{}]: HTTP 401: {}'
+        message = template.format(response.request.url, response.reason)
+        return DCOSException(message)
 
 
 def _response_json(response):

@@ -57,11 +57,39 @@ def test_rpc_client_http_req_converts_exception_for_400_status_with_json():
         printed_json=printed_json2)
 
 
+def test_rpc_client_http_req_converts_401_status_exception():
+    _assert_rpc_client_http_req_converts_401_status_exception(
+        request_url='http://request/url',
+        status_reason='Something Bad')
+
+    _assert_rpc_client_http_req_converts_401_status_exception(
+        request_url='https://another/url',
+        status_reason='Another Reason')
+
+
+def _assert_rpc_client_http_req_converts_401_status_exception(
+        request_url, status_reason):
+    response = _mock_response(
+        request_method='ANY',
+        request_url=request_url,
+        status_code=401,
+        status_reason=status_reason)
+    response.json.side_effect = ValueError()
+
+    exception = _assert_rpc_client_raises_exception_from_response(response)
+
+    pattern = r'Error decoding response from \[(.*)\]: HTTP 401: (.*)'
+    match = re.fullmatch(pattern, str(exception))
+    assert match
+    assert match.groups() == (request_url, status_reason)
+
+
 def _assert_rpc_client_http_req_converts_400_status_exception_with_json(
         response_json, printed_json):
     response = _mock_response(
         request_method='POST',
         request_url='http://some/url',
+        status_code=400,
         status_reason='Some Reason')
     response.json.return_value = response_json
 
@@ -79,7 +107,7 @@ def _assert_rpc_client_http_req_converts_400_status_exception_with_json(
 
 def _assert_rpc_client_http_req_converts_exception_for_400_status_non_json(
         method, url, reason):
-    response = _mock_response(method, url, reason)
+    response = _mock_response(method, url, 400, reason)
     response.json.side_effect = ValueError()
 
     exception = _assert_rpc_client_raises_exception_from_response(response)
@@ -117,10 +145,10 @@ def _assert_rpc_client_raises_exception_from_response(response):
     return exception_info.value
 
 
-def _mock_response(request_method, request_url, status_reason):
+def _mock_response(request_method, request_url, status_code, status_reason):
     request = requests.Request(request_method, request_url)
     response = mock.create_autospec(requests.Response)
     response.request = request.prepare()
-    response.status_code = 400
+    response.status_code = status_code
     response.reason = status_reason
     return response
