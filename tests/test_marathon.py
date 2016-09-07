@@ -20,35 +20,73 @@ def test_add_pod_returns_parsed_response_body():
 
 
 def test_rpc_client_http_req_converts_exception_for_400_status():
-    _assert_rpc_client_http_req_converts_exception_for_400_status(
+    _assert_rpc_client_http_req_converts_exception_for_400_status_non_json(
         method='FOO',
         url='http://request/url',
         reason='Something Bad')
 
-    _assert_rpc_client_http_req_converts_exception_for_400_status(
+    _assert_rpc_client_http_req_converts_exception_for_400_status_non_json(
         method='BAR',
         url='https://another/url',
         reason='Another Reason')
 
 
-def _assert_rpc_client_http_req_converts_exception_for_400_status(
+def test_rpc_client_http_req_converts_exception_for_400_status_with_json():
+    printed_json1 = (
+        '{\n'
+        '  "x": "err",\n'
+        '  "y": 3.14,\n'
+        '  "z": [\n'
+        '    1,\n'
+        '    2,\n'
+        '    3\n'
+        '  ]\n'
+        '}')
+    _assert_rpc_client_http_req_converts_400_status_exception_with_json(
+        response_json={"z": [1, 2, 3], "y": 3.14, "x": "err"},
+        printed_json=printed_json1)
+
+    printed_json2 = (
+        '[\n'
+        '  "something",\n'
+        '  "completely",\n'
+        '  "different"\n'
+        ']')
+    _assert_rpc_client_http_req_converts_400_status_exception_with_json(
+        response_json=["something", "completely", "different"],
+        printed_json=printed_json2)
+
+
+def _assert_rpc_client_http_req_converts_400_status_exception_with_json(
+        response_json, printed_json):
+    response = _mock_response(
+        request_method='POST',
+        request_url='http://some/url',
+        status_reason='Some Reason')
+    response.json.return_value = response_json
+
+    exception = _assert_rpc_client_raises_exception_from_response(response)
+
+    message = str(exception)
+    error_line, json_lines = message.split('\n', 1)
+
+    pattern = r'Error on request \[(.*) (.*)\]: HTTP 400: (.*):'
+    match = re.fullmatch(pattern, error_line)
+    assert match.groups() == ('POST', 'http://some/url', 'Some Reason')
+
+    assert json_lines == printed_json
+
+
+def _assert_rpc_client_http_req_converts_exception_for_400_status_non_json(
         method, url, reason):
-    request = requests.Request(method, url)
-    response = requests.Response()
-    response.request = request.prepare()
-    response.status_code = 400
-    response.reason = reason
+    response = _mock_response(method, url, reason)
+    response.json.side_effect = ValueError()
 
-    def bad_method(*args, **kwargs):
-        raise DCOSHTTPException(response)
-
-    rpc_client = marathon.RpcClient('http://does/not/matter')
-    with pytest.raises(DCOSException) as exception_info:
-        rpc_client.http_req(method_fn=bad_method, path='arbitrary/path')
+    exception = _assert_rpc_client_raises_exception_from_response(response)
 
     pattern = r'Error on request \[(.*) (.*)\]: HTTP 400: (.*)'
-    match = re.fullmatch(pattern, str(exception_info.value))
-    assert (method, url, reason) == match.groups()
+    match = re.fullmatch(pattern, str(exception))
+    assert match.groups() == (method, url, reason)
 
 
 def _assert_add_pod_puts_json_in_request_body(pod_json):
@@ -66,3 +104,23 @@ def _assert_add_pod_returns_parsed_response_body(response_json):
 
     client = marathon.Client(rpc_client)
     assert client.add_pod("arbitrary") == response_json
+
+
+def _assert_rpc_client_raises_exception_from_response(response):
+    def bad_method(*args, **kwargs):
+        raise DCOSHTTPException(response)
+
+    rpc_client = marathon.RpcClient('http://does/not/matter')
+    with pytest.raises(DCOSException) as exception_info:
+        rpc_client.http_req(method_fn=bad_method, path='arbitrary/path')
+
+    return exception_info.value
+
+
+def _mock_response(request_method, request_url, status_reason):
+    request = requests.Request(request_method, request_url)
+    response = mock.create_autospec(requests.Response)
+    response.request = request.prepare()
+    response.status_code = 400
+    response.reason = status_reason
+    return response

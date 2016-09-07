@@ -160,14 +160,39 @@ def convert_exception(dcos_http_exception):
     response = dcos_http_exception.response
 
     if response.status_code == 400:
-        template = 'Error on request [{} {}]: HTTP 400: {}'
+        # Marathon is buggy and sometimes returns JSON, and sometimes
+        # HTML. We only include the body in the error message if it's JSON.
+        res_json = _response_json(response)
+        json_message = ''
+        if res_json is not None:
+            json_message = ':\n' + json.dumps(res_json,
+                                              indent=2,
+                                              sort_keys=True,
+                                              separators=(',', ': '))
+
+        template = 'Error on request [{} {}]: HTTP 400: {}{}'
         message = template.format(response.request.method,
                                   response.request.url,
-                                  response.reason)
+                                  response.reason,
+                                  json_message)
 
         return DCOSException(message)
     else:
         return dcos_http_exception
+
+
+def _response_json(response):
+    """Attempts to parse the body of the given response as JSON.
+
+    :param response: the response to extract JSON from
+    :type response: requests.Response
+    :return: the parsed JSON, or None if the body could not be parsed
+    :rtype: dict | list | str | int | float | bool | None
+    """
+    try:
+        return response.json()
+    except ValueError:
+        pass
 
 
 class Client(object):
