@@ -147,6 +147,26 @@ class RpcClient(object):
             raise convert_exception(e)
 
 
+def response_error_message(
+        status_code, reason, request_method, request_url, json_body):
+    """Renders a human-readable error message from the given response data.
+
+    :param status_code: the integer status code from an HTTP response
+    :type status_code: int
+    :param reason: textual (human-readable) representation of the status code
+    :type reason: str
+    :param request_method: the HTTP method used for the request
+    :type request_method: str
+    :param request_url: the URL the request was sent to
+    :type request_url: str
+    :param json_body: the response body, parsed as JSON, or None if parsing
+                      failed
+    :type json_body: dict | list | str | int | bool | None
+    """
+    template = 'Error on request [{} {}]: HTTP 400: {}'
+    return template.format(request_method, request_url, reason)
+
+
 def convert_exception(dcos_http_exception):
     """Converts the given DCOSHTTPException to a more human-readable
     DCOSException, to provide better error messages for failed requests to

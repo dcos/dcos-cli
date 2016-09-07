@@ -19,16 +19,16 @@ def test_add_pod_returns_parsed_response_body():
     _assert_add_pod_returns_parsed_response_body(["another", "pod", "json"])
 
 
-def test_rpc_client_http_req_converts_exception_for_400_status():
-    _assert_rpc_client_http_req_converts_exception_for_400_status_non_json(
-        method='FOO',
-        url='http://request/url',
-        reason='Something Bad')
+def test_response_error_message_with_400_status_no_json():
+    _assert_response_error_message_with_400_status_no_json(
+        reason='Something Bad',
+        request_method='FOO',
+        request_url='http://request/url')
 
-    _assert_rpc_client_http_req_converts_exception_for_400_status_non_json(
-        method='BAR',
-        url='https://another/url',
-        reason='Another Reason')
+    _assert_response_error_message_with_400_status_no_json(
+        reason='Another Reason',
+        request_method='BAR',
+        request_url='https://another/url')
 
 
 def test_rpc_client_http_req_converts_exception_for_400_status_with_json():
@@ -67,6 +67,20 @@ def test_rpc_client_http_req_converts_401_status_exception():
         status_reason='Another Reason')
 
 
+def _assert_response_error_message_with_400_status_no_json(
+        reason, request_method, request_url):
+    message = marathon.response_error_message(400,
+                                              reason,
+                                              request_method,
+                                              request_url,
+                                              json_body=None)
+
+    pattern = r'Error on request \[(.*) (.*)\]: HTTP 400: (.*)'
+    match = re.fullmatch(pattern, message)
+    assert match
+    assert match.groups() == (request_method, request_url, reason)
+
+
 def _assert_rpc_client_http_req_converts_401_status_exception(
         request_url, status_reason):
     response = _mock_response(
@@ -103,18 +117,6 @@ def _assert_rpc_client_http_req_converts_400_status_exception_with_json(
     assert match.groups() == ('POST', 'http://some/url', 'Some Reason')
 
     assert json_lines == printed_json
-
-
-def _assert_rpc_client_http_req_converts_exception_for_400_status_non_json(
-        method, url, reason):
-    response = _mock_response(method, url, 400, reason)
-    response.json.side_effect = ValueError()
-
-    exception = _assert_rpc_client_raises_exception_from_response(response)
-
-    pattern = r'Error on request \[(.*) (.*)\]: HTTP 400: (.*)'
-    match = re.fullmatch(pattern, str(exception))
-    assert match.groups() == (method, url, reason)
 
 
 def _assert_add_pod_puts_json_in_request_body(pod_json):
