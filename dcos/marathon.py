@@ -163,8 +163,11 @@ def response_error_message(
                       failed
     :type json_body: dict | list | str | int | bool | None
     """
-    template = 'Error on request [{} {}]: HTTP 400: {}'
-    return template.format(request_method, request_url, reason)
+    template = 'Error on request [{} {}]: HTTP 400: {}{}'
+    json_suffix = ''
+    if json_body is not None:
+        json_suffix = ':\n' + json.dumps(json_body, indent=2, sort_keys=True)
+    return template.format(request_method, request_url, reason, json_suffix)
 
 
 def convert_exception(dcos_http_exception):
