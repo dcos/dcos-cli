@@ -163,6 +163,10 @@ def response_error_message(
                       failed
     :type json_body: dict | list | str | int | bool | None
     """
+    if status_code == 401:
+        template = 'Error decoding response from [{}]: HTTP 401: {}'
+        return template.format(request_url, reason)
+
     template = 'Error on request [{} {}]: HTTP 400: {}{}'
     json_suffix = ''
     if json_body is not None:
