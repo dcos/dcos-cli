@@ -132,7 +132,7 @@ def set_val(name, value):
 
     toml_config[name] = new_value
 
-    check_config(toml_config_pre, toml_config)
+    check_config(toml_config_pre, toml_config, section)
 
     save(toml_config)
 
@@ -352,20 +352,22 @@ def get_property_description(section, subkey):
             "No schema found found for {}.{}".format(section, subkey))
 
 
-def check_config(toml_config_pre, toml_config_post):
+def check_config(toml_config_pre, toml_config_post, section):
     """
     :param toml_config_pre: dictionary for the value before change
     :type toml_config_pre: dcos.api.config.Toml
     :param toml_config_post: dictionary for the value with change
     :type toml_config_post: dcos.api.config.Toml
+    :param section: section of the config to check
+    :type section: str
     :returns: process status
     :rtype: int
     """
 
-    errors_pre = util.validate_json(toml_config_pre._dictionary,
-                                    generate_root_schema(toml_config_pre))
-    errors_post = util.validate_json(toml_config_post._dictionary,
-                                     generate_root_schema(toml_config_post))
+    errors_pre = util.validate_json(toml_config_pre._dictionary[section],
+                                    get_config_schema(section))
+    errors_post = util.validate_json(toml_config_post._dictionary[section],
+                                     get_config_schema(section))
 
     logger.info('Comparing changes in the configuration...')
     logger.info('Errors before the config command: %r', errors_pre)
