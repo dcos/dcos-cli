@@ -206,6 +206,10 @@ def response_error_message(
         template = 'Error decoding response from [{}]: HTTP 401: {}'
         return template.format(request_url, reason)
 
+    if status_code == 409:
+        return ('App, group, or pod is locked by one or more deployments. '
+                'Override with --force.')
+
     template = 'Error on request [{} {}]: HTTP 400: {}{}'
     json_suffix = ''
     if json_body is not None:

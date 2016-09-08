@@ -95,6 +95,19 @@ def test_res_err_msg_with_401_status_invalid_error_json():
         {'errors': [{'error': 'BOOM!'}, {'error': 42}]})
 
 
+def test_res_err_msg_with_409_status():
+    actual = marathon.response_error_message(
+        status_code=409,
+        reason=_REASON_X,
+        request_method=_METHOD_X,
+        request_url=_URL_X,
+        json_body=None)
+
+    expected = ('App, group, or pod is locked by one or more deployments. '
+                'Override with --force.')
+    assert actual == expected
+
+
 def _assert_add_pod_puts_json_in_request_body(pod_json):
     rpc_client = mock.create_autospec(marathon.RpcClient)
 
