@@ -1,4 +1,5 @@
 import json
+import jsonschema
 
 from dcos import config, http, util
 from dcos.errors import DCOSException, DCOSHTTPException
@@ -146,6 +147,33 @@ class RpcClient(object):
             # raise _to_exception(e.response)
             raise convert_exception(e)
 
+ERROR_JSON_SCHEMA = {
+    'type': 'object',
+    'properties': {
+        'errors': {
+            'type': 'array',
+            'items': {
+                'type': 'object',
+                'properties': {
+                    'error': {
+                        'type': 'string'
+                    }
+                },
+                'required': ['error']
+            }
+        },
+        'message': {
+            'type': 'string'
+        }
+    },
+    'anyOf': [
+        {'required': ['errors']},
+        {'required': ['message']}
+    ]
+}
+
+_ERROR_JSON_VALIDATOR = jsonschema.Draft4Validator(ERROR_JSON_SCHEMA)
+
 
 def response_error_message(
         status_code, reason, request_method, request_url, json_body):
@@ -165,6 +193,9 @@ def response_error_message(
     """
     if status_code == 401:
         if json_body is not None:
+            if not _ERROR_JSON_VALIDATOR.is_valid(json_body):
+                return _default_marathon_error()
+
             message = json_body.get('message')
             if message is not None:
                 return 'Error: {}'.format(message)

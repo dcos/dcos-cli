@@ -1,5 +1,7 @@
 import re
 
+import jsonschema
+
 from dcos import http, marathon
 
 import mock
@@ -62,6 +64,35 @@ def test_res_err_msg_with_401_status_json_no_message_has_valid_errors():
     _assert_res_err_msg_with_401_status_json_no_message_has_valid_errors(
         errors_json=[{'error': 'foo'}, {'error': 'bar'}, {'error': 'baz'}],
         errors_str='foo\nbar\nbaz')
+
+
+def test_error_json_schema_is_valid():
+    jsonschema.Draft4Validator.check_schema(marathon.ERROR_JSON_SCHEMA)
+
+
+def test_res_err_msg_with_401_status_invalid_error_json():
+    # Is not an object
+    _assert_res_err_msg_with_401_status_invalid_json('Error!')
+    _assert_res_err_msg_with_401_status_invalid_json(['Error!'])
+    # Missing both message and errors fields
+    _assert_res_err_msg_with_401_status_invalid_json({})
+    _assert_res_err_msg_with_401_status_invalid_json({'foo': 5, 'bar': 'x'})
+    # Has non-str message
+    _assert_res_err_msg_with_401_status_invalid_json({'message': 42})
+    _assert_res_err_msg_with_401_status_invalid_json({'message': ['Oops!']})
+    # Has non-array errors
+    _assert_res_err_msg_with_401_status_invalid_json({'errors': 42})
+    _assert_res_err_msg_with_401_status_invalid_json({'errors': {'error': 5}})
+    # Errors array has non-object elements
+    _assert_res_err_msg_with_401_status_invalid_json({'errors': [42, True]})
+    _assert_res_err_msg_with_401_status_invalid_json(
+        {'errors': [{'error': 'BOOM!'}, 'not_an_error']})
+    # Errors array has objects without `error` field
+    _assert_res_err_msg_with_401_status_invalid_json(
+        {'errors': [{'error': 'BOOM!'}, {'foo': 'bar'}]})
+    # Errors array has objects with non-str `error` field
+    _assert_res_err_msg_with_401_status_invalid_json(
+        {'errors': [{'error': 'BOOM!'}, {'error': 42}]})
 
 
 def _assert_add_pod_puts_json_in_request_body(pod_json):
@@ -150,6 +181,19 @@ def _assert_res_err_msg_with_401_status_json_no_message_has_valid_errors(
     pattern = (r'Marathon likely misconfigured\. Please check your proxy or '
                r'Marathon URL settings\. See dcos config --help\. (.*)')
     _assert_matches_with_groups(pattern, message, (errors_str,))
+
+
+def _assert_res_err_msg_with_401_status_invalid_json(json_body):
+    actual = marathon.response_error_message(
+        status_code=401,
+        reason=_REASON_X,
+        request_method=_METHOD_X,
+        request_url=_URL_X,
+        json_body=json_body)
+
+    expected = ('Marathon likely misconfigured. Please check your proxy or '
+                'Marathon URL settings. See dcos config --help. ')
+    assert actual == expected
 
 
 def _assert_matches_with_groups(pattern, text, groups):
