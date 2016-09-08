@@ -35,6 +35,11 @@ def test_rpc_client_http_req_calls_method_fn():
         full_url='gopher://different/thing/some/path')
 
 
+def test_rpc_client_http_req_returns_method_fn_result():
+    _assert_rpc_client_http_req_returns_method_fn_result(['the', 'result'])
+    _assert_rpc_client_http_req_returns_method_fn_result({'another': 'result'})
+
+
 def test_error_json_schema_is_valid():
     jsonschema.Draft4Validator.check_schema(marathon.ERROR_JSON_SCHEMA)
 
@@ -193,6 +198,17 @@ def _assert_rpc_client_http_req_calls_method_fn(base_url, path, full_url):
 
     method_fn.assert_called_with(full_url,
                                  timeout=http.DEFAULT_TIMEOUT)
+
+
+def _assert_rpc_client_http_req_returns_method_fn_result(expected):
+
+    def method_fn(*args, **kwargs):
+        return expected
+
+    rpc_client = marathon.RpcClient('http://base/url')
+    actual = rpc_client.http_req(method_fn, 'some/path')
+
+    assert actual == expected
 
 
 def _assert_response_error_message_with_400_status_no_json(

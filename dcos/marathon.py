@@ -133,10 +133,10 @@ class RpcClient(object):
         :param kwargs: kwargs to pass to `method_fn`
         :type kwargs: dict
         :returns: `method_fn` return value
-        :rtype: object
+        :rtype: requests.Response
         """
         url = self._base_url + '/' + path
-        method_fn(url, timeout=http.DEFAULT_TIMEOUT)
+        return method_fn(url, timeout=http.DEFAULT_TIMEOUT)
 
         # url = urllib.parse.urljoin(self._base_url, path)
         #
