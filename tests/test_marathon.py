@@ -1,13 +1,13 @@
 import re
-import requests
 
 import jsonschema
-import pytest
+import requests
 
 from dcos import http, marathon
 from dcos.errors import DCOSException, DCOSHTTPException
 
 import mock
+import pytest
 
 
 def test_add_pod_puts_json_in_request_body():

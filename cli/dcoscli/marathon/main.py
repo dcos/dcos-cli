@@ -158,6 +158,11 @@ def _cmds():
             function=_group_scale),
 
         cmds.Command(
+            hierarchy=['marathon', 'pod', 'add'],
+            arg_keys=['<pod-resource>'],
+            function=pod_subcommand.add),
+
+        cmds.Command(
             hierarchy=['marathon', 'about'],
             arg_keys=[],
             function=_about),
@@ -884,3 +889,7 @@ class MarathonPodSubcommand(object):
         pod_json = self._resource_reader(pod_resource_path)
         self._marathon_client.add_pod(pod_json)
         return 0
+
+
+pod_subcommand = MarathonPodSubcommand(
+    resource_reader=_get_resource, marathon_client=marathon.create_client())

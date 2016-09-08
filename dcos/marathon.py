@@ -47,63 +47,6 @@ def _get_marathon_url(toml_config):
     return marathon_url
 
 
-def _to_exception(response):
-    """
-    :param response: HTTP response object or Exception
-    :type response: requests.Response | Exception
-    :returns: An exception with the message from the response JSON
-    :rtype: Exception
-    """
-
-    if response.status_code == 400:
-        msg = 'Error on request [{0} {1}]: HTTP {2}: {3}'.format(
-            response.request.method,
-            response.request.url,
-            response.status_code,
-            response.reason)
-
-        # Marathon is buggy and sometimes return JSON, and sometimes
-        # HTML.  We only include the error message if it's JSON.
-        try:
-            json_msg = response.json()
-            msg += ':\n' + json.dumps(json_msg,
-                                      indent=2,
-                                      sort_keys=True,
-                                      separators=(',', ': '))
-        except ValueError:
-            pass
-
-        return DCOSException(msg)
-    elif response.status_code == 409:
-        return DCOSException(
-            'App or group is locked by one or more deployments. '
-            'Override with --force.')
-
-    try:
-        response_json = response.json()
-    except Exception:
-        logger.exception(
-            'Unable to decode response body as a JSON value: %r',
-            response)
-
-        return DCOSException(
-            'Error decoding response from [{0}]: HTTP {1}: {2}'.format(
-                response.request.url, response.status_code, response.reason))
-    message = response_json.get('message')
-    if message is None:
-        errs = response_json.get('errors')
-        if errs is None:
-            logger.error(
-                'Marathon server did not return a message: %s',
-                response_json)
-            return DCOSException(_default_marathon_error())
-
-        msg = '\n'.join(error['error'] for error in errs)
-        return DCOSException(_default_marathon_error(msg))
-
-    return DCOSException('Error: {}'.format(message))
-
-
 class RpcClient(object):
     """Convenience class for making requests against a common RPC API.
 
@@ -146,9 +89,15 @@ class RpcClient(object):
         try:
             return method_fn(url, *args, **kwargs)
         except DCOSHTTPException as e:
+            # Marathon is buggy and sometimes returns JSON, sometimes returns
+            # HTML. We only include the body in the error message if it's JSON.
             try:
                 json_body = e.response.json()
             except:
+                logger.exception(
+                    'Unable to decode response body as a JSON value: %r',
+                    e.response)
+
                 json_body = None
 
             message = response_error_message(
@@ -221,6 +170,9 @@ def response_error_message(
 
     if json_body is not None:
         if not _ERROR_JSON_VALIDATOR.is_valid(json_body):
+            logger.error('Marathon server did not return a message: %s',
+                         json_body)
+
             return _default_marathon_error()
 
         message = json_body.get('message')
