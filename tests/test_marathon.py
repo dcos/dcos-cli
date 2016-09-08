@@ -46,6 +46,14 @@ def test_response_error_message_with_401_status_no_json():
         request_url=_URL_2)
 
 
+def test_response_error_message_with_401_status_json_has_message():
+    _assert_response_error_message_with_401_status_json_has_message(
+        json_message=_MESSAGE_1)
+
+    _assert_response_error_message_with_401_status_json_has_message(
+        json_message=_MESSAGE_2)
+
+
 def _assert_add_pod_puts_json_in_request_body(pod_json):
     rpc_client = mock.create_autospec(marathon.RpcClient)
 
@@ -81,14 +89,14 @@ def _assert_response_error_message_with_400_status_json(
         response_json, printed_json):
     message = marathon.response_error_message(
         status_code=400,
-        reason=_REASON_1,
-        request_method=_METHOD_1,
-        request_url=_URL_1,
+        reason=_REASON_X,
+        request_method=_METHOD_X,
+        request_url=_URL_X,
         json_body=response_json)
 
     error_line, json_lines = message.split('\n', 1)
     pattern = r'Error on request \[(.*) (.*)\]: HTTP 400: (.*):'
-    groups = (_METHOD_1, _URL_1, _REASON_1)
+    groups = (_METHOD_X, _URL_X, _REASON_X)
 
     _assert_matches_with_groups(pattern, error_line, groups)
     assert json_lines == printed_json
@@ -99,12 +107,25 @@ def _assert_response_error_message_with_401_status_no_json(
     message = marathon.response_error_message(
         status_code=401,
         reason=reason,
-        request_method='ANY',
+        request_method=_METHOD_X,
         request_url=request_url,
         json_body=None)
 
     pattern = r'Error decoding response from \[(.*)\]: HTTP 401: (.*)'
     _assert_matches_with_groups(pattern, message, (request_url, reason))
+
+
+def _assert_response_error_message_with_401_status_json_has_message(
+        json_message):
+    error_message = marathon.response_error_message(
+        status_code=401,
+        reason=_REASON_X,
+        request_method=_METHOD_X,
+        request_url=_URL_X,
+        json_body={'message': json_message})
+
+    pattern = r'Error: (.*)'
+    _assert_matches_with_groups(pattern, error_message, (json_message,))
 
 
 def _assert_matches_with_groups(pattern, text, groups):
@@ -115,17 +136,12 @@ def _assert_matches_with_groups(pattern, text, groups):
 
 _BASE_TEMPLATE_400 = r'Error on request \[(.*) (.*)\]: HTTP 400: (.*)'
 
-_REASON_1 = 'Something Bad'
-_REASON_2 = 'Another Reason'
+_MESSAGE_1 = 'Oops!'
+_MESSAGE_2 = 'Uh oh!'
 
 _METHOD_1 = 'FOO'
 _METHOD_2 = 'BAR'
-
-_URL_1 = 'http://request/url'
-_URL_2 = 'https://another/url'
-
-_RESPONSE_JSON_1 = {"z": [1, 2, 3], "y": 3.14, "x": "err"}
-_RESPONSE_JSON_2 = ["something", "completely", "different"]
+_METHOD_X = 'ANY'
 
 _PRINTED_JSON_1 = (
     '{\n'
@@ -143,3 +159,14 @@ _PRINTED_JSON_2 = (
     '  "completely",\n'
     '  "different"\n'
     ']')
+
+_REASON_1 = 'Something Bad'
+_REASON_2 = 'Another Reason'
+_REASON_X = 'Arbitrary Reason'
+
+_RESPONSE_JSON_1 = {"z": [1, 2, 3], "y": 3.14, "x": "err"}
+_RESPONSE_JSON_2 = ["something", "completely", "different"]
+
+_URL_1 = 'http://request/url'
+_URL_2 = 'https://another/url'
+_URL_X = 'http://does/not/matter'

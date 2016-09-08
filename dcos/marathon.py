@@ -164,6 +164,11 @@ def response_error_message(
     :type json_body: dict | list | str | int | bool | None
     """
     if status_code == 401:
+        if json_body is not None:
+            message = json_body.get('message')
+            if message is not None:
+                return 'Error: {}'.format(message)
+
         template = 'Error decoding response from [{}]: HTTP 401: {}'
         return template.format(request_url, reason)
 
