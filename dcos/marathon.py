@@ -143,18 +143,22 @@ class RpcClient(object):
         if 'timeout' not in kwargs:
             kwargs['timeout'] = self._timeout
 
-        return method_fn(url, *args, **kwargs)
+        try:
+            return method_fn(url, *args, **kwargs)
+        except DCOSHTTPException as e:
+            try:
+                json_body = e.response.json()
+            except:
+                json_body = None
 
-        # url = urllib.parse.urljoin(self._base_url, path)
-        #
-        # if 'timeout' not in kwargs:
-        #     kwargs['timeout'] = self._timeout
-        #
-        # try:
-        #     return method_fn(url, *args, **kwargs)
-        # except DCOSHTTPException as e:
-        #     # raise _to_exception(e.response)
-        #     raise e
+            message = response_error_message(
+                status_code=e.response.status_code,
+                reason=e.response.reason,
+                request_method=e.response.request.method,
+                request_url=e.response.request.url,
+                json_body=json_body)
+            raise DCOSException(message)
+
 
 ERROR_JSON_SCHEMA = {
     'type': 'object',

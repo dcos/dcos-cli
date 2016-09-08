@@ -1,8 +1,11 @@
 import re
+import requests
 
 import jsonschema
+import pytest
 
 from dcos import http, marathon
+from dcos.errors import DCOSException, DCOSHTTPException
 
 import mock
 
@@ -97,6 +100,54 @@ def test_rpc_client_http_req_extra_path_slashes():
 def test_rpc_client_http_req_returns_method_fn_result():
     _assert_rpc_client_http_req_returns_method_fn_result(['the', 'result'])
     _assert_rpc_client_http_req_returns_method_fn_result({'another': 'result'})
+
+
+def test_rpc_client_http_req_propagates_method_fn_exception_1():
+    request = requests.Request(method='ANY', url='http://arbitrary/url')
+    response = requests.Response()
+    response.status_code = 403
+    response.reason = 'Forbidden'
+    response.request = request
+
+    def method_fn(*args, **kwargs):
+        raise DCOSHTTPException(response)
+
+    rpc_client = marathon.RpcClient('http://base/url')
+    with pytest.raises(DCOSException) as e:
+        rpc_client.http_req(method_fn, 'some/path')
+
+    expected_message = marathon.response_error_message(
+        status_code=403,
+        reason='Forbidden',
+        request_method='ANY',
+        request_url='http://arbitrary/url',
+        json_body=None)
+    assert str(e).endswith(expected_message)
+
+
+def test_rpc_client_http_req_propagates_method_fn_exception_2():
+    request = requests.Request(method='NONE', url='http://host/path')
+    # Need the mock so that the json() method can be overridden
+    response = mock.create_autospec(requests.Response)
+    response.status_code = 422
+    response.reason = 'Something Bad'
+    response.request = request
+    response.json.return_value = {'message': 'BOOM!'}
+
+    def method_fn(*args, **kwargs):
+        raise DCOSHTTPException(response)
+
+    rpc_client = marathon.RpcClient('http://base/url')
+    with pytest.raises(DCOSException) as e:
+        rpc_client.http_req(method_fn, 'some/path')
+
+    expected_message = marathon.response_error_message(
+        status_code=422,
+        reason='Something Bad',
+        request_method='None',
+        request_url='http://host/path',
+        json_body={'message': 'BOOM!'})
+    assert str(e).endswith(expected_message)
 
 
 def test_error_json_schema_is_valid():
