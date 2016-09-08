@@ -68,6 +68,15 @@ def test_rpc_client_http_req_kwarg_timeout_overrides_default():
     method_fn.assert_called_with('http://base/url/some/path', timeout=42)
 
 
+def test_rpc_client_http_req_set_timeout_in_constructor():
+    method_fn = mock.Mock()
+
+    rpc_client = marathon.RpcClient('http://base/url', 24)
+    rpc_client.http_req(method_fn, 'some/path')
+
+    method_fn.assert_called_with('http://base/url/some/path', timeout=24)
+
+
 def test_rpc_client_http_req_returns_method_fn_result():
     _assert_rpc_client_http_req_returns_method_fn_result(['the', 'result'])
     _assert_rpc_client_http_req_returns_method_fn_result({'another': 'result'})

@@ -117,8 +117,9 @@ class RpcClient(object):
     :type timeout: float
     """
 
-    def __init__(self, base_url):
+    def __init__(self, base_url, timeout=http.DEFAULT_TIMEOUT):
         self._base_url = base_url
+        self._timeout = timeout
 
     def http_req(self, method_fn, path, *args, **kwargs):
         """Make an HTTP request, and raise a marathon-specific exception for
@@ -137,7 +138,7 @@ class RpcClient(object):
         """
         url = self._base_url + '/' + path
         if 'timeout' not in kwargs:
-            kwargs['timeout'] = 5
+            kwargs['timeout'] = self._timeout
         return method_fn(url, *args, **kwargs)
 
         # url = urllib.parse.urljoin(self._base_url, path)
