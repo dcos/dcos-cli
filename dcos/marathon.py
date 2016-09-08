@@ -120,7 +120,7 @@ class RpcClient(object):
     def __init__(self, base_url):
         self._base_url = base_url
 
-    def http_req(self, method_fn, path, *args):
+    def http_req(self, method_fn, path, *args, **kwargs):
         """Make an HTTP request, and raise a marathon-specific exception for
         HTTP error codes.
 
@@ -136,7 +136,7 @@ class RpcClient(object):
         :rtype: requests.Response
         """
         url = self._base_url + '/' + path
-        return method_fn(url, *args, timeout=http.DEFAULT_TIMEOUT)
+        return method_fn(url, *args, timeout=http.DEFAULT_TIMEOUT, **kwargs)
 
         # url = urllib.parse.urljoin(self._base_url, path)
         #

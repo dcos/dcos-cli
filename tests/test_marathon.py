@@ -47,6 +47,18 @@ def test_rpc_client_http_req_passes_args_to_method_fn():
                                  timeout=http.DEFAULT_TIMEOUT)
 
 
+def test_rpc_client_http_req_passes_kwargs_to_method_fn():
+    method_fn = mock.Mock()
+
+    rpc_client = marathon.RpcClient('http://base/url')
+    rpc_client.http_req(method_fn, 'some/path', foo='bar', baz=42)
+
+    method_fn.assert_called_with('http://base/url/some/path',
+                                 foo='bar',
+                                 baz=42,
+                                 timeout=http.DEFAULT_TIMEOUT)
+
+
 def test_rpc_client_http_req_returns_method_fn_result():
     _assert_rpc_client_http_req_returns_method_fn_result(['the', 'result'])
     _assert_rpc_client_http_req_returns_method_fn_result({'another': 'result'})
