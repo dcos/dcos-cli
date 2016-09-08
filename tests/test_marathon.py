@@ -35,6 +35,18 @@ def test_rpc_client_http_req_calls_method_fn():
         full_url='gopher://different/thing/some/path')
 
 
+def test_rpc_client_http_req_passes_args_to_method_fn():
+    method_fn = mock.Mock()
+
+    rpc_client = marathon.RpcClient('http://base/url')
+    rpc_client.http_req(method_fn, 'some/path', 'foo', 42)
+
+    method_fn.assert_called_with('http://base/url/some/path',
+                                 'foo',
+                                 42,
+                                 timeout=http.DEFAULT_TIMEOUT)
+
+
 def test_rpc_client_http_req_returns_method_fn_result():
     _assert_rpc_client_http_req_returns_method_fn_result(['the', 'result'])
     _assert_rpc_client_http_req_returns_method_fn_result({'another': 'result'})
