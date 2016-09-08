@@ -169,6 +169,9 @@ def response_error_message(
             if message is not None:
                 return 'Error: {}'.format(message)
 
+            message = '\n'.join(err['error'] for err in json_body['errors'])
+            return _default_marathon_error(message)
+
         template = 'Error decoding response from [{}]: HTTP 401: {}'
         return template.format(request_url, reason)
 

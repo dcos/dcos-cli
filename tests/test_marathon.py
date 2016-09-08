@@ -54,6 +54,16 @@ def test_response_error_message_with_401_status_json_has_message():
         json_message=_MESSAGE_2)
 
 
+def test_res_err_msg_with_401_status_json_no_message_has_valid_errors():
+    _assert_res_err_msg_with_401_status_json_no_message_has_valid_errors(
+        errors_json=[{'error': 'err1'}, {'error': 'err2'}],
+        errors_str='err1\nerr2')
+
+    _assert_res_err_msg_with_401_status_json_no_message_has_valid_errors(
+        errors_json=[{'error': 'foo'}, {'error': 'bar'}, {'error': 'baz'}],
+        errors_str='foo\nbar\nbaz')
+
+
 def _assert_add_pod_puts_json_in_request_body(pod_json):
     rpc_client = mock.create_autospec(marathon.RpcClient)
 
@@ -128,8 +138,22 @@ def _assert_response_error_message_with_401_status_json_has_message(
     _assert_matches_with_groups(pattern, error_message, (json_message,))
 
 
+def _assert_res_err_msg_with_401_status_json_no_message_has_valid_errors(
+        errors_json, errors_str):
+    message = marathon.response_error_message(
+        status_code=401,
+        reason=_REASON_X,
+        request_method=_METHOD_X,
+        request_url=_URL_X,
+        json_body={'errors': errors_json})
+
+    pattern = (r'Marathon likely misconfigured\. Please check your proxy or '
+               r'Marathon URL settings\. See dcos config --help\. (.*)')
+    _assert_matches_with_groups(pattern, message, (errors_str,))
+
+
 def _assert_matches_with_groups(pattern, text, groups):
-    match = re.fullmatch(pattern, text)
+    match = re.fullmatch(pattern, text, flags=re.DOTALL)
     assert match
     assert match.groups() == groups
 
