@@ -136,7 +136,9 @@ class RpcClient(object):
         :rtype: requests.Response
         """
         url = self._base_url + '/' + path
-        return method_fn(url, *args, timeout=http.DEFAULT_TIMEOUT, **kwargs)
+        if 'timeout' not in kwargs:
+            kwargs['timeout'] = 5
+        return method_fn(url, *args, **kwargs)
 
         # url = urllib.parse.urljoin(self._base_url, path)
         #
