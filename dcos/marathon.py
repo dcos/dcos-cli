@@ -190,31 +190,35 @@ def response_error_message(
     :param json_body: the response body, parsed as JSON, or None if parsing
                       failed
     :type json_body: dict | list | str | int | bool | None
+    :return: the rendered error message
+    :rtype: str
     """
-    if status_code == 401:
+
+    if status_code == 400:
+        template = 'Error on request [{} {}]: HTTP 400: {}{}'
+        suffix = ''
         if json_body is not None:
-            if not _ERROR_JSON_VALIDATOR.is_valid(json_body):
-                return _default_marathon_error()
-
-            message = json_body.get('message')
-            if message is not None:
-                return 'Error: {}'.format(message)
-
-            message = '\n'.join(err['error'] for err in json_body['errors'])
-            return _default_marathon_error(message)
-
-        template = 'Error decoding response from [{}]: HTTP 401: {}'
-        return template.format(request_url, reason)
+            json_str = json.dumps(json_body, indent=2, sort_keys=True)
+            suffix = ':\n' + json_str
+        return template.format(request_method, request_url, reason, suffix)
 
     if status_code == 409:
         return ('App, group, or pod is locked by one or more deployments. '
                 'Override with --force.')
 
-    template = 'Error on request [{} {}]: HTTP 400: {}{}'
-    json_suffix = ''
     if json_body is not None:
-        json_suffix = ':\n' + json.dumps(json_body, indent=2, sort_keys=True)
-    return template.format(request_method, request_url, reason, json_suffix)
+        if not _ERROR_JSON_VALIDATOR.is_valid(json_body):
+            return _default_marathon_error()
+
+        message = json_body.get('message')
+        if message is not None:
+            return 'Error: {}'.format(message)
+
+        message = '\n'.join(err['error'] for err in json_body['errors'])
+        return _default_marathon_error(message)
+
+    template = 'Error decoding response from [{}]: HTTP {}: {}'
+    return template.format(request_url, status_code, reason)
 
 
 def convert_exception(dcos_http_exception):

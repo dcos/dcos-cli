@@ -18,6 +18,10 @@ def test_add_pod_returns_parsed_response_body():
     _assert_add_pod_returns_parsed_response_body(["another", "pod", "json"])
 
 
+def test_error_json_schema_is_valid():
+    jsonschema.Draft4Validator.check_schema(marathon.ERROR_JSON_SCHEMA)
+
+
 def test_response_error_message_with_400_status_no_json():
     _assert_response_error_message_with_400_status_no_json(
         reason=_REASON_1,
@@ -38,63 +42,6 @@ def test_response_error_message_with_400_status_json():
         _RESPONSE_JSON_2, _PRINTED_JSON_2)
 
 
-def test_response_error_message_with_401_status_no_json():
-    _assert_response_error_message_with_401_status_no_json(
-        reason=_REASON_1,
-        request_url=_URL_1)
-
-    _assert_response_error_message_with_401_status_no_json(
-        reason=_REASON_2,
-        request_url=_URL_2)
-
-
-def test_response_error_message_with_401_status_json_has_message():
-    _assert_response_error_message_with_401_status_json_has_message(
-        json_message=_MESSAGE_1)
-
-    _assert_response_error_message_with_401_status_json_has_message(
-        json_message=_MESSAGE_2)
-
-
-def test_res_err_msg_with_401_status_json_no_message_has_valid_errors():
-    _assert_res_err_msg_with_401_status_json_no_message_has_valid_errors(
-        errors_json=[{'error': 'err1'}, {'error': 'err2'}],
-        errors_str='err1\nerr2')
-
-    _assert_res_err_msg_with_401_status_json_no_message_has_valid_errors(
-        errors_json=[{'error': 'foo'}, {'error': 'bar'}, {'error': 'baz'}],
-        errors_str='foo\nbar\nbaz')
-
-
-def test_error_json_schema_is_valid():
-    jsonschema.Draft4Validator.check_schema(marathon.ERROR_JSON_SCHEMA)
-
-
-def test_res_err_msg_with_401_status_invalid_error_json():
-    # Is not an object
-    _assert_res_err_msg_with_401_status_invalid_json('Error!')
-    _assert_res_err_msg_with_401_status_invalid_json(['Error!'])
-    # Missing both message and errors fields
-    _assert_res_err_msg_with_401_status_invalid_json({})
-    _assert_res_err_msg_with_401_status_invalid_json({'foo': 5, 'bar': 'x'})
-    # Has non-str message
-    _assert_res_err_msg_with_401_status_invalid_json({'message': 42})
-    _assert_res_err_msg_with_401_status_invalid_json({'message': ['Oops!']})
-    # Has non-array errors
-    _assert_res_err_msg_with_401_status_invalid_json({'errors': 42})
-    _assert_res_err_msg_with_401_status_invalid_json({'errors': {'error': 5}})
-    # Errors array has non-object elements
-    _assert_res_err_msg_with_401_status_invalid_json({'errors': [42, True]})
-    _assert_res_err_msg_with_401_status_invalid_json(
-        {'errors': [{'error': 'BOOM!'}, 'not_an_error']})
-    # Errors array has objects without `error` field
-    _assert_res_err_msg_with_401_status_invalid_json(
-        {'errors': [{'error': 'BOOM!'}, {'foo': 'bar'}]})
-    # Errors array has objects with non-str `error` field
-    _assert_res_err_msg_with_401_status_invalid_json(
-        {'errors': [{'error': 'BOOM!'}, {'error': 42}]})
-
-
 def test_res_err_msg_with_409_status():
     actual = marathon.response_error_message(
         status_code=409,
@@ -106,6 +53,102 @@ def test_res_err_msg_with_409_status():
     expected = ('App, group, or pod is locked by one or more deployments. '
                 'Override with --force.')
     assert actual == expected
+
+
+def test_response_error_message_with_other_status_no_json():
+    _assert_response_error_message_with_other_status_no_json(
+        status_code=401,
+        reason=_REASON_1,
+        request_url=_URL_1)
+
+    _assert_response_error_message_with_other_status_no_json(
+        status_code=401,
+        reason=_REASON_2,
+        request_url=_URL_2)
+
+    _assert_response_error_message_with_other_status_no_json(
+        status_code=403,
+        reason=_REASON_X,
+        request_url=_URL_X)
+
+    _assert_response_error_message_with_other_status_no_json(
+        status_code=422,
+        reason=_REASON_X,
+        request_url=_URL_X)
+
+
+def test_response_error_message_with_other_status_json_has_message():
+    _assert_response_error_message_with_other_status_json_has_message(
+        status_code=401,
+        json_message=_MESSAGE_1)
+
+    _assert_response_error_message_with_other_status_json_has_message(
+        status_code=401,
+        json_message=_MESSAGE_2)
+
+    _assert_response_error_message_with_other_status_json_has_message(
+        status_code=403,
+        json_message=_MESSAGE_X)
+
+    _assert_response_error_message_with_other_status_json_has_message(
+        status_code=422,
+        json_message=_MESSAGE_X)
+
+
+def test_res_err_msg_with_other_status_json_no_message_has_valid_errors():
+    _assert_res_err_msg_with_other_status_json_no_message_has_valid_errors(
+        status_code=401,
+        errors_json=[{'error': 'err1'}, {'error': 'err2'}],
+        errors_str='err1\nerr2')
+
+    _assert_res_err_msg_with_other_status_json_no_message_has_valid_errors(
+        status_code=401,
+        errors_json=[{'error': 'foo'}, {'error': 'bar'}, {'error': 'baz'}],
+        errors_str='foo\nbar\nbaz')
+
+    _assert_res_err_msg_with_other_status_json_no_message_has_valid_errors(
+        status_code=403,
+        errors_json=[{'error': 'foo'}, {'error': 'bar'}, {'error': 'baz'}],
+        errors_str='foo\nbar\nbaz')
+
+    _assert_res_err_msg_with_other_status_json_no_message_has_valid_errors(
+        status_code=422,
+        errors_json=[{'error': 'foo'}, {'error': 'bar'}, {'error': 'baz'}],
+        errors_str='foo\nbar\nbaz')
+
+
+def test_res_err_msg_with_other_status_invalid_error_json():
+    # Is not an object
+    _assert_res_err_msg_with_other_status_invalid_json(401, 'Error!')
+    _assert_res_err_msg_with_other_status_invalid_json(401, ['Error!'])
+    # Missing both message and errors fields
+    _assert_res_err_msg_with_other_status_invalid_json(401, {})
+    _assert_res_err_msg_with_other_status_invalid_json(
+        401, {'foo': 5, 'bar': 'x'})
+    # Has non-str message
+    _assert_res_err_msg_with_other_status_invalid_json(401, {'message': 42})
+    _assert_res_err_msg_with_other_status_invalid_json(
+        401, {'message': ['Oops!']})
+    # Has non-array errors
+    _assert_res_err_msg_with_other_status_invalid_json(401, {'errors': 42})
+    _assert_res_err_msg_with_other_status_invalid_json(
+        401, {'errors': {'error': 5}})
+    # Errors array has non-object elements
+    _assert_res_err_msg_with_other_status_invalid_json(
+        401, {'errors': [42, True]})
+    _assert_res_err_msg_with_other_status_invalid_json(
+        401, {'errors': [{'error': 'BOOM!'}, 'not_an_error']})
+    # Errors array has objects without `error` field
+    _assert_res_err_msg_with_other_status_invalid_json(
+        401, {'errors': [{'error': 'BOOM!'}, {'foo': 'bar'}]})
+    # Errors array has objects with non-str `error` field
+    _assert_res_err_msg_with_other_status_invalid_json(
+        401, {'errors': [{'error': 'BOOM!'}, {'error': 42}]})
+    # Other status codes
+    _assert_res_err_msg_with_other_status_invalid_json(
+        403, {'errors': [{'error': 'BOOM!'}, {'error': 42}]})
+    _assert_res_err_msg_with_other_status_invalid_json(
+        422, {'errors': [{'error': 'BOOM!'}, {'error': 42}]})
 
 
 def _assert_add_pod_puts_json_in_request_body(pod_json):
@@ -156,23 +199,24 @@ def _assert_response_error_message_with_400_status_json(
     assert json_lines == printed_json
 
 
-def _assert_response_error_message_with_401_status_no_json(
-        reason, request_url):
+def _assert_response_error_message_with_other_status_no_json(
+        status_code, reason, request_url):
     message = marathon.response_error_message(
-        status_code=401,
+        status_code=status_code,
         reason=reason,
         request_method=_METHOD_X,
         request_url=request_url,
         json_body=None)
 
-    pattern = r'Error decoding response from \[(.*)\]: HTTP 401: (.*)'
-    _assert_matches_with_groups(pattern, message, (request_url, reason))
+    pattern = r'Error decoding response from \[(.*)\]: HTTP (.*): (.*)'
+    groups = (request_url, str(status_code), reason)
+    _assert_matches_with_groups(pattern, message, groups)
 
 
-def _assert_response_error_message_with_401_status_json_has_message(
-        json_message):
+def _assert_response_error_message_with_other_status_json_has_message(
+        status_code, json_message):
     error_message = marathon.response_error_message(
-        status_code=401,
+        status_code=status_code,
         reason=_REASON_X,
         request_method=_METHOD_X,
         request_url=_URL_X,
@@ -182,10 +226,10 @@ def _assert_response_error_message_with_401_status_json_has_message(
     _assert_matches_with_groups(pattern, error_message, (json_message,))
 
 
-def _assert_res_err_msg_with_401_status_json_no_message_has_valid_errors(
-        errors_json, errors_str):
+def _assert_res_err_msg_with_other_status_json_no_message_has_valid_errors(
+        status_code, errors_json, errors_str):
     message = marathon.response_error_message(
-        status_code=401,
+        status_code=status_code,
         reason=_REASON_X,
         request_method=_METHOD_X,
         request_url=_URL_X,
@@ -196,9 +240,9 @@ def _assert_res_err_msg_with_401_status_json_no_message_has_valid_errors(
     _assert_matches_with_groups(pattern, message, (errors_str,))
 
 
-def _assert_res_err_msg_with_401_status_invalid_json(json_body):
+def _assert_res_err_msg_with_other_status_invalid_json(status_code, json_body):
     actual = marathon.response_error_message(
-        status_code=401,
+        status_code=status_code,
         reason=_REASON_X,
         request_method=_METHOD_X,
         request_url=_URL_X,
@@ -215,10 +259,9 @@ def _assert_matches_with_groups(pattern, text, groups):
     assert match.groups() == groups
 
 
-_BASE_TEMPLATE_400 = r'Error on request \[(.*) (.*)\]: HTTP 400: (.*)'
-
 _MESSAGE_1 = 'Oops!'
 _MESSAGE_2 = 'Uh oh!'
+_MESSAGE_X = "D'oh!"
 
 _METHOD_1 = 'FOO'
 _METHOD_2 = 'BAR'
