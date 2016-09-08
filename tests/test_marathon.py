@@ -18,6 +18,23 @@ def test_add_pod_returns_parsed_response_body():
     _assert_add_pod_returns_parsed_response_body(["another", "pod", "json"])
 
 
+def test_rpc_client_http_req_calls_method_fn():
+    _assert_rpc_client_http_req_calls_method_fn(
+        base_url='http://base/url',
+        path='some/path',
+        full_url='http://base/url/some/path')
+
+    _assert_rpc_client_http_req_calls_method_fn(
+        base_url='http://base/url',
+        path='different/thing',
+        full_url='http://base/url/different/thing')
+
+    _assert_rpc_client_http_req_calls_method_fn(
+        base_url='gopher://different/thing',
+        path='some/path',
+        full_url='gopher://different/thing/some/path')
+
+
 def test_error_json_schema_is_valid():
     jsonschema.Draft4Validator.check_schema(marathon.ERROR_JSON_SCHEMA)
 
@@ -166,6 +183,16 @@ def _assert_add_pod_returns_parsed_response_body(response_json):
 
     client = marathon.Client(rpc_client)
     assert client.add_pod("arbitrary") == response_json
+
+
+def _assert_rpc_client_http_req_calls_method_fn(base_url, path, full_url):
+    method_fn = mock.Mock()
+
+    rpc_client = marathon.RpcClient(base_url)
+    rpc_client.http_req(method_fn, path)
+
+    method_fn.assert_called_with(full_url,
+                                 timeout=http.DEFAULT_TIMEOUT)
 
 
 def _assert_response_error_message_with_400_status_no_json(

@@ -117,11 +117,10 @@ class RpcClient(object):
     :type timeout: float
     """
 
-    def __init__(self, base_url, timeout=http.DEFAULT_TIMEOUT):
+    def __init__(self, base_url):
         self._base_url = base_url
-        self._timeout = timeout
 
-    def http_req(self, method_fn, path, *args, **kwargs):
+    def http_req(self, method_fn, path):
         """Make an HTTP request, and raise a marathon-specific exception for
         HTTP error codes.
 
@@ -136,16 +135,19 @@ class RpcClient(object):
         :returns: `method_fn` return value
         :rtype: object
         """
-        url = urllib.parse.urljoin(self._base_url, path)
+        url = self._base_url + '/' + path
+        method_fn(url, timeout=http.DEFAULT_TIMEOUT)
 
-        if 'timeout' not in kwargs:
-            kwargs['timeout'] = self._timeout
-
-        try:
-            return method_fn(url, *args, **kwargs)
-        except DCOSHTTPException as e:
-            # raise _to_exception(e.response)
-            raise convert_exception(e)
+        # url = urllib.parse.urljoin(self._base_url, path)
+        #
+        # if 'timeout' not in kwargs:
+        #     kwargs['timeout'] = self._timeout
+        #
+        # try:
+        #     return method_fn(url, *args, **kwargs)
+        # except DCOSHTTPException as e:
+        #     # raise _to_exception(e.response)
+        #     raise e
 
 ERROR_JSON_SCHEMA = {
     'type': 'object',
@@ -219,56 +221,6 @@ def response_error_message(
 
     template = 'Error decoding response from [{}]: HTTP {}: {}'
     return template.format(request_url, status_code, reason)
-
-
-def convert_exception(dcos_http_exception):
-    """Converts the given DCOSHTTPException to a more human-readable
-    DCOSException, to provide better error messages for failed requests to
-    Marathon.
-
-    :param dcos_http_exception: the exception to convert
-    :type dcos_http_exception: DCOSHTTPException
-    :return: the conversion result
-    :rtype: DCOSException
-    """
-    response = dcos_http_exception.response
-
-    if response.status_code == 400:
-        # Marathon is buggy and sometimes returns JSON, and sometimes
-        # HTML. We only include the body in the error message if it's JSON.
-        res_json = _response_json(response)
-        json_message = ''
-        if res_json is not None:
-            json_message = ':\n' + json.dumps(res_json,
-                                              indent=2,
-                                              sort_keys=True,
-                                              separators=(',', ': '))
-
-        template = 'Error on request [{} {}]: HTTP 400: {}{}'
-        message = template.format(response.request.method,
-                                  response.request.url,
-                                  response.reason,
-                                  json_message)
-
-        return DCOSException(message)
-    else:
-        template = 'Error decoding response from [{}]: HTTP 401: {}'
-        message = template.format(response.request.url, response.reason)
-        return DCOSException(message)
-
-
-def _response_json(response):
-    """Attempts to parse the body of the given response as JSON.
-
-    :param response: the response to extract JSON from
-    :type response: requests.Response
-    :return: the parsed JSON, or None if the body could not be parsed
-    :rtype: dict | list | str | int | float | bool | None
-    """
-    try:
-        return response.json()
-    except ValueError:
-        pass
 
 
 class Client(object):
