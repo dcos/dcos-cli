@@ -77,6 +77,23 @@ def test_rpc_client_http_req_set_timeout_in_constructor():
     method_fn.assert_called_with('http://base/url/some/path', timeout=24)
 
 
+def test_rpc_client_http_req_extra_path_slashes():
+    _assert_rpc_client_http_req_calls_method_fn(
+        base_url='http://base/without/slash',
+        path='/path/with/slash',
+        full_url='http://base/without/slash/path/with/slash')
+
+    _assert_rpc_client_http_req_calls_method_fn(
+        base_url='http://base/with/slash/',
+        path='path/without/slash',
+        full_url='http://base/with/slash/path/without/slash')
+
+    _assert_rpc_client_http_req_calls_method_fn(
+        base_url='http://base/with/slash/',
+        path='/path/with/slash',
+        full_url='http://base/with/slash/path/with/slash')
+
+
 def test_rpc_client_http_req_returns_method_fn_result():
     _assert_rpc_client_http_req_returns_method_fn_result(['the', 'result'])
     _assert_rpc_client_http_req_returns_method_fn_result({'another': 'result'})

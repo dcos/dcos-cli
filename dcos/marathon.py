@@ -118,6 +118,8 @@ class RpcClient(object):
     """
 
     def __init__(self, base_url, timeout=http.DEFAULT_TIMEOUT):
+        if not base_url.endswith('/'):
+            base_url += '/'
         self._base_url = base_url
         self._timeout = timeout
 
@@ -136,9 +138,11 @@ class RpcClient(object):
         :returns: `method_fn` return value
         :rtype: requests.Response
         """
-        url = self._base_url + '/' + path
+        url = self._base_url + path.lstrip('/')
+
         if 'timeout' not in kwargs:
             kwargs['timeout'] = self._timeout
+
         return method_fn(url, *args, **kwargs)
 
         # url = urllib.parse.urljoin(self._base_url, path)
