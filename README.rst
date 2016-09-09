@@ -1,7 +1,7 @@
 DC/OS Command Line Interface
 ===========================
 The DC/OS Command Line Interface (CLI) is a cross-platform command line utility
-that provides a user-friendly yet powerful way to manage DC/OS installations.
+that provides a user-friendly yet powerful way to manage DC/OS clusters.
 
 Installation and Usage
 ----------------------
@@ -27,27 +27,16 @@ The example below installs every package available in the DC/OS repository::
 
     dcos package search --json | jq '.[0].packages[].name' | xargs -L 1 dcos package install --yes
 
-Using the CLI without DC/OS
---------------------------
+Developement Dependencies
+-------------------------
 
-You may optionally configure the DC/OS CLI to work with open source Mesos and
-Marathon_ by setting the following properties::
+#. git_ must be installed to download the source code for the DC/OS CLI.
 
-    dcos config set core.mesos_master_url http://<mesos-master-host>:5050
-    dcos config set marathon.url http://<marathon-host>:8080
-
-Note that the DC/OS CLI has tight integration with DC/OS and certain
-functionality may not work as expected or at all when using it directly with
-Mesos and Marathon.
-
-Dependencies
-------------
-
-#. git_ must be installed and on the system path in order to fetch
-   packages from :code:`git` sources.
+#. python_ version 3.4.x must be installed.
 
 #. virtualenv_ must be installed and on the system path in order to install
-   subcommands.
+   legacy subcommands. New subcommands are packaged as platform specific
+   executable or platform specific Zip archives.
 
 #. win_bash_ must be installed if you are running this in Windows
    in order to run setup scripts from the Makefiles.
@@ -64,14 +53,9 @@ Setup
 
     cd dcos-cli
 
-#. Make sure that you have virtualenv installed. If not type::
-
-    sudo pip install virtualenv
-
-#. Create a virtualenv and packages for the dcos project::
+#. Create a python virtual env for the dcos project::
 
     make env
-    make packages
 
 #. Create a virtualenv for the dcoscli project::
 
@@ -165,17 +149,22 @@ Other Useful Commands
 Releasing
 #########
 
-Releasing a new version of the DC/OS CLI is only possible through an `automated TeamCity build`_ which is triggered automatically when a new tag is added.
+Releasing a new version of the DC/OS CLI is only possible through an
+`automated TeamCity build`_ which is triggered automatically when a new tag is
+added.
 
-The tag is used as the version number and must adhere to the conventional `PEP-440 version scheme`_.
+The tag is used as the version number and must adhere to the conventional
+`PEP-440 version scheme`_.
 
-Once all tests pass successfully, the automated build publishes two packages to PyPI using the `publish_to_pypi.sh script`_:
+Once all tests pass successfully, the automated build publishes two packages to
+PyPI using the `publish_to_pypi.sh script`_:
 
 #. dcos_
 
 #. dcoscli_
 
-These packages are now available to be installed by the DC/OS CLI installation script in the `mesosphere/install-scripts`_ repository.
+These packages are now available to be installed by the DC/OS CLI installation
+script in the `mesosphere/install-scripts`_ repository.
 
 
 .. _automated TeamCity build: https://teamcity.mesosphere.io/viewType.html?buildTypeId=ClosedSource_DcosCli_PushToPyPI
@@ -185,12 +174,11 @@ These packages are now available to be installed by the DC/OS CLI installation s
 .. _jq: http://stedolan.github.io/jq/
 .. _git: http://git-scm.com
 .. _installation instructions: https://dcos.io/docs/usage/cli/install/
-.. _Marathon: https://mesosphere.github.io/marathon/
 .. _Mesosphere docs: https://docs.mesosphere.com
 .. _mesosphere/install-scripts: https://github.com/mesosphere/install-scripts
 .. _packages: https://packaging.python.org/en/latest/installing.html#installing-requirements
 .. _PEP-440 version scheme: https://www.python.org/dev/peps/pep-0440/
 .. _publish_to_pypi.sh script: https://github.com/mesosphere/dcos-cli/blob/master/bin/publish_to_pypi.sh
-.. _setup: https://github.com/mesosphere/dcos-helloworld#setup
 .. _virtualenv: https://virtualenv.pypa.io/en/latest/
 .. _win_bash: https://sourceforge.net/projects/win-bash/files/shell-complete/latest
+.. _python: https://www.python.org/
