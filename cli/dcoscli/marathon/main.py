@@ -32,11 +32,17 @@ def _main(argv):
         argv=argv,
         version='dcos-marathon version {}'.format(dcoscli.version))
 
-    return cmds.execute(_cmds(), args)
+    marathon_client = marathon.create_client()
+    pod_subcommand = MarathonPodSubcommand(resource_reader=_get_resource,
+                                           marathon_client=marathon_client)
+
+    return cmds.execute(_cmds(pod_subcommand), args)
 
 
-def _cmds():
+def _cmds(pod_subcommand):
     """
+    :param pod_subcommand: object implementing all `marathon pod` subcommands
+    :type pod_subcommand: MarathonPodSubcommand
     :returns: all the supported commands
     :rtype: dcos.cmds.Command
     """
@@ -889,7 +895,3 @@ class MarathonPodSubcommand(object):
         pod_json = self._resource_reader(pod_resource_path)
         self._marathon_client.add_pod(pod_json)
         return 0
-
-
-pod_subcommand = MarathonPodSubcommand(
-    resource_reader=_get_resource, marathon_client=marathon.create_client())
