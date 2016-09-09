@@ -156,21 +156,23 @@ added.
 The tag is used as the version number and must adhere to the conventional
 `PEP-440 version scheme`_.
 
-Once all tests pass successfully, the automated build publishes two packages to
-PyPI using the `publish_to_pypi.sh script`_:
+The automated build starts up three jobs to build the platform dependent executables
+(in Windows, OS X, and Linux).
+
+The executables are pushed to s3 and available at https://downloads.dcos.io/binaries/cli/<platform>/x86-64/<tag>/dcos.
+The links to each of the platform executables and the release notes are published at: https://github.com/dcos/dcos-cli/releases/tag/<tag>
+
+The automated build also publishes two packages to PyPI using the `publish_to_pypi.sh script`_:
 
 #. dcos_
 
 #. dcoscli_
 
-These packages are now available to be installed by the DC/OS CLI installation
-script in the `mesosphere/install-scripts`_ repository.
+These packages are available to be installed by the DC/OS CLI installation script in the `mesosphere/install-scripts`_ repository.
 
-
-.. _automated TeamCity build: https://teamcity.mesosphere.io/viewType.html?buildTypeId=ClosedSource_DcosCli_PushToPyPI
+.. _automated TeamCity build: https://teamcity.mesosphere.io/viewType.html?buildTypeId=DcosIo_DcosCli_Release
 .. _dcos: https://pypi.python.org/pypi/dcos
 .. _dcoscli: https://pypi.python.org/pypi/dcoscli
-.. _dcos-helloworld: https://github.com/mesosphere/dcos-helloworld
 .. _jq: http://stedolan.github.io/jq/
 .. _git: http://git-scm.com
 .. _installation instructions: https://dcos.io/docs/usage/cli/install/
