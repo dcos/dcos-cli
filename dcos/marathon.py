@@ -51,7 +51,7 @@ class RpcClient(object):
     """Convenience class for making requests against a common RPC API.
 
     For example, it ensures the same base URL is used for all requests. This
-    class is also useful as as target for mocks in unit tests, because it
+    class is also useful as a target for mocks in unit tests, because it
     presents a minimal, application-focused interface.
 
     :param base_url: the URL prefix to use for all requests
