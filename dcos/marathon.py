@@ -1,5 +1,6 @@
 import json
 import jsonschema
+import pkg_resources
 
 from dcos import config, http, util
 from dcos.errors import DCOSException, DCOSHTTPException
@@ -47,6 +48,17 @@ def _get_marathon_url(toml_config):
     return marathon_url
 
 
+def load_error_json_schema():
+    """Reads and parses Marathon error response JSON schema from file
+
+    :returns: the parsed JSON schema
+    :rtype: dict
+    """
+    schema_path = 'data/marathon/error.schema.json'
+    schema_bytes = pkg_resources.resource_string('dcos', schema_path)
+    return json.loads(schema_bytes.decode('utf-8'))
+
+
 class RpcClient(object):
     """Convenience class for making requests against a common RPC API.
 
@@ -65,6 +77,57 @@ class RpcClient(object):
             base_url += '/'
         self._base_url = base_url
         self._timeout = timeout
+
+    ERROR_JSON_VALIDATOR = jsonschema.Draft4Validator(load_error_json_schema())
+
+    @classmethod
+    def response_error_message(
+            cls, status_code, reason, request_method, request_url, json_body):
+        """Renders a human-readable error message from the given response data.
+
+        :param status_code: the integer status code from an HTTP response
+        :type status_code: int
+        :param reason: human-readable text representation of the status code
+        :type reason: str
+        :param request_method: the HTTP method used for the request
+        :type request_method: str
+        :param request_url: the URL the request was sent to
+        :type request_url: str
+        :param json_body: the response body, parsed as JSON, or None if
+                          parsing failed
+        :type json_body: dict | list | str | int | bool | None
+        :return: the rendered error message
+        :rtype: str
+        """
+
+        if status_code == 400:
+            template = 'Error on request [{} {}]: HTTP 400: {}{}'
+            suffix = ''
+            if json_body is not None:
+                json_str = json.dumps(json_body, indent=2, sort_keys=True)
+                suffix = ':\n' + json_str
+            return template.format(request_method, request_url, reason, suffix)
+
+        if status_code == 409:
+            return ('App, group, or pod is locked by one or more deployments. '
+                    'Override with --force.')
+
+        if json_body is None:
+            template = 'Error decoding response from [{}]: HTTP {}: {}'
+            return template.format(request_url, status_code, reason)
+
+        if not cls.ERROR_JSON_VALIDATOR.is_valid(json_body):
+            log_str = 'Marathon server did not return a message: %s'
+            logger.error(log_str, json_body)
+
+            return _default_marathon_error()
+
+        message = json_body.get('message')
+        if message is None:
+            message = '\n'.join(err['error'] for err in json_body['errors'])
+            return _default_marathon_error(message)
+
+        return 'Error: {}'.format(message)
 
     def http_req(self, method_fn, path, *args, **kwargs):
         """Make an HTTP request, and raise a marathon-specific exception for
@@ -100,90 +163,13 @@ class RpcClient(object):
 
                 json_body = None
 
-            message = response_error_message(
+            message = RpcClient.response_error_message(
                 status_code=e.response.status_code,
                 reason=e.response.reason,
                 request_method=e.response.request.method,
                 request_url=e.response.request.url,
                 json_body=json_body)
             raise DCOSException(message)
-
-
-ERROR_JSON_SCHEMA = {
-    'type': 'object',
-    'properties': {
-        'errors': {
-            'type': 'array',
-            'items': {
-                'type': 'object',
-                'properties': {
-                    'error': {
-                        'type': 'string'
-                    }
-                },
-                'required': ['error']
-            }
-        },
-        'message': {
-            'type': 'string'
-        }
-    },
-    'anyOf': [
-        {'required': ['errors']},
-        {'required': ['message']}
-    ]
-}
-
-_ERROR_JSON_VALIDATOR = jsonschema.Draft4Validator(ERROR_JSON_SCHEMA)
-
-
-def response_error_message(
-        status_code, reason, request_method, request_url, json_body):
-    """Renders a human-readable error message from the given response data.
-
-    :param status_code: the integer status code from an HTTP response
-    :type status_code: int
-    :param reason: textual (human-readable) representation of the status code
-    :type reason: str
-    :param request_method: the HTTP method used for the request
-    :type request_method: str
-    :param request_url: the URL the request was sent to
-    :type request_url: str
-    :param json_body: the response body, parsed as JSON, or None if parsing
-                      failed
-    :type json_body: dict | list | str | int | bool | None
-    :return: the rendered error message
-    :rtype: str
-    """
-
-    if status_code == 400:
-        template = 'Error on request [{} {}]: HTTP 400: {}{}'
-        suffix = ''
-        if json_body is not None:
-            json_str = json.dumps(json_body, indent=2, sort_keys=True)
-            suffix = ':\n' + json_str
-        return template.format(request_method, request_url, reason, suffix)
-
-    if status_code == 409:
-        return ('App, group, or pod is locked by one or more deployments. '
-                'Override with --force.')
-
-    if json_body is not None:
-        if not _ERROR_JSON_VALIDATOR.is_valid(json_body):
-            logger.error('Marathon server did not return a message: %s',
-                         json_body)
-
-            return _default_marathon_error()
-
-        message = json_body.get('message')
-        if message is not None:
-            return 'Error: {}'.format(message)
-
-        message = '\n'.join(err['error'] for err in json_body['errors'])
-        return _default_marathon_error(message)
-
-    template = 'Error decoding response from [{}]: HTTP {}: {}'
-    return template.format(request_url, status_code, reason)
 
 
 class Client(object):

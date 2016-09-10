@@ -116,7 +116,7 @@ def test_rpc_client_http_req_propagates_method_fn_exception_1():
     with pytest.raises(DCOSException) as e:
         rpc_client.http_req(method_fn, 'some/path')
 
-    expected_message = marathon.response_error_message(
+    expected_message = marathon.RpcClient.response_error_message(
         status_code=403,
         reason='Forbidden',
         request_method='ANY',
@@ -141,7 +141,7 @@ def test_rpc_client_http_req_propagates_method_fn_exception_2():
     with pytest.raises(DCOSException) as e:
         rpc_client.http_req(method_fn, 'some/path')
 
-    expected_message = marathon.response_error_message(
+    expected_message = marathon.RpcClient.response_error_message(
         status_code=422,
         reason='Something Bad',
         request_method='None',
@@ -151,7 +151,8 @@ def test_rpc_client_http_req_propagates_method_fn_exception_2():
 
 
 def test_error_json_schema_is_valid():
-    jsonschema.Draft4Validator.check_schema(marathon.ERROR_JSON_SCHEMA)
+    error_json_schema = marathon.load_error_json_schema()
+    jsonschema.Draft4Validator.check_schema(error_json_schema)
 
 
 def test_response_error_message_with_400_status_no_json():
@@ -175,7 +176,7 @@ def test_response_error_message_with_400_status_json():
 
 
 def test_res_err_msg_with_409_status():
-    actual = marathon.response_error_message(
+    actual = marathon.RpcClient.response_error_message(
         status_code=409,
         reason=_REASON_X,
         request_method=_METHOD_X,
@@ -323,7 +324,7 @@ def _assert_rpc_client_http_req_returns_method_fn_result(expected):
 
 def _assert_response_error_message_with_400_status_no_json(
         reason, request_method, request_url):
-    message = marathon.response_error_message(
+    message = marathon.RpcClient.response_error_message(
         status_code=400,
         reason=reason,
         request_method=request_method,
@@ -337,7 +338,7 @@ def _assert_response_error_message_with_400_status_no_json(
 
 def _assert_response_error_message_with_400_status_json(
         response_json, printed_json):
-    message = marathon.response_error_message(
+    message = marathon.RpcClient.response_error_message(
         status_code=400,
         reason=_REASON_X,
         request_method=_METHOD_X,
@@ -354,7 +355,7 @@ def _assert_response_error_message_with_400_status_json(
 
 def _assert_response_error_message_with_other_status_no_json(
         status_code, reason, request_url):
-    message = marathon.response_error_message(
+    message = marathon.RpcClient.response_error_message(
         status_code=status_code,
         reason=reason,
         request_method=_METHOD_X,
@@ -368,7 +369,7 @@ def _assert_response_error_message_with_other_status_no_json(
 
 def _assert_response_error_message_with_other_status_json_has_message(
         status_code, json_message):
-    error_message = marathon.response_error_message(
+    error_message = marathon.RpcClient.response_error_message(
         status_code=status_code,
         reason=_REASON_X,
         request_method=_METHOD_X,
@@ -381,7 +382,7 @@ def _assert_response_error_message_with_other_status_json_has_message(
 
 def _assert_res_err_msg_with_other_status_json_no_message_has_valid_errors(
         status_code, errors_json, errors_str):
-    message = marathon.response_error_message(
+    message = marathon.RpcClient.response_error_message(
         status_code=status_code,
         reason=_REASON_X,
         request_method=_METHOD_X,
@@ -394,7 +395,7 @@ def _assert_res_err_msg_with_other_status_json_no_message_has_valid_errors(
 
 
 def _assert_res_err_msg_with_other_status_invalid_json(status_code, json_body):
-    actual = marathon.response_error_message(
+    actual = marathon.RpcClient.response_error_message(
         status_code=status_code,
         reason=_REASON_X,
         request_method=_METHOD_X,
