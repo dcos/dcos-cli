@@ -1,5 +1,5 @@
 {
-  "id": "good-pod",
+  "id": "/good-pod",
   "containers": [
     {
       "name": "good-container",

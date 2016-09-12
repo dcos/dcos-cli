@@ -1,5 +1,5 @@
 {
-  "id": "winston",
+  "id": "/winston",
   "containers": [
     {
       "name": "thing-1",

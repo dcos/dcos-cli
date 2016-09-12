@@ -165,6 +165,26 @@ def _cmds():
             function=subcommand.pod_add),
 
         cmds.Command(
+            hierarchy=['marathon', 'pod', 'remove'],
+            arg_keys=['<pod-id>', '--force'],
+            function=subcommand.pod_remove),
+
+        cmds.Command(
+            hierarchy=['marathon', 'pod', 'list'],
+            arg_keys=['--json'],
+            function=subcommand.pod_list),
+
+        cmds.Command(
+            hierarchy=['marathon', 'pod', 'show'],
+            arg_keys=['<pod-id>'],
+            function=subcommand.pod_show),
+
+        cmds.Command(
+            hierarchy=['marathon', 'pod', 'update'],
+            arg_keys=['<pod-id>', '<properties>', '--force'],
+            function=subcommand.pod_update),
+
+        cmds.Command(
             hierarchy=['marathon', 'about'],
             arg_keys=[],
             function=subcommand.about),
@@ -808,6 +828,48 @@ class MarathonSubcommand(object):
         pod_json = self._resource_reader(pod_resource_path)
         marathon_client.add_pod(pod_json)
         return 0
+
+    def pod_remove(self, pod_id, force):
+        """
+        :param pod_id: the Marathon ID of the pod to remove
+        :type pod_id: str
+        :param force: whether to override running deployments
+        :type force: bool
+        :returns: process return code
+        :rtype: int
+        """
+        raise DCOSException('Not implemented')
+
+    def pod_list(self, json_):
+        """
+        :param json_: output JSON if true
+        :type json_: bool
+        :returns: process return code
+        :rtype: int
+        """
+        raise DCOSException('Not implemented')
+
+    def pod_show(self, pod_id):
+        """
+        :param pod_id: the Marathon ID of the pod to remove
+        :type pod_id: str
+        :returns: process return code
+        :rtype: int
+        """
+        raise DCOSException('Not implemented')
+
+    def pod_update(self, pod_id, properties, force):
+        """
+        :param pod_id: the Marathon ID of the pod to update
+        :type pod_id: str
+        :param properties: JSON items to update in pod definition
+        :type properties: [str]
+        :param force: whether to override running deployments
+        :type force: bool
+        :returns: process return code
+        :rtype: int
+        """
+        raise DCOSException('Not implemented')
 
 
 def _parse_properties(properties):
