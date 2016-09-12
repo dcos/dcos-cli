@@ -752,7 +752,8 @@ class Client(object):
         :rtype: None
         """
 
-        self._rpc.http_req(http.delete, 'v2/pods/foo', params={})
+        params = {'force': 'true'} if force else {}
+        self._rpc.http_req(http.delete, 'v2/pods/foo', params=params)
 
 
 def _default_marathon_error(message=""):
