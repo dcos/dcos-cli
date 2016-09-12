@@ -22,6 +22,13 @@ def test_pod_remove_invoked_successfully():
     _assert_pod_remove_invoked_successfully(pod_id='b-pod', force=False)
 
 
+def test_pod_remove_propagates_exceptions_from_remove_pod():
+    _assert_pod_remove_propagates_exceptions_from_remove_pod(
+        DCOSException('BOOM!'))
+    _assert_pod_remove_propagates_exceptions_from_remove_pod(
+        Exception('Oops!'))
+
+
 def _assert_pod_add_invoked_successfully(pod_file_json):
     pod_file_path = "some/path/to/pod.json"
     resource_reader = {pod_file_path: pod_file_json}.__getitem__
@@ -58,3 +65,16 @@ def _assert_pod_remove_invoked_successfully(pod_id, force):
 
     assert returncode == 0
     marathon_client.remove_pod.assert_called_with(pod_id, force)
+
+
+def _assert_pod_remove_propagates_exceptions_from_remove_pod(exception):
+    def resource_reader(path):
+        pass
+    marathon_client = create_autospec(marathon.Client)
+    marathon_client.remove_pod.side_effect = exception
+
+    subcmd = main.MarathonSubcommand(resource_reader, lambda: marathon_client)
+    with pytest.raises(exception.__class__) as exception_info:
+        subcmd.pod_remove('does/not/matter', force=False)
+
+    assert exception_info.value == exception
