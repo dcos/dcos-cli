@@ -752,8 +752,8 @@ class Client(object):
         :rtype: None
         """
 
-        path = 'v2/pods/' + pod_id
-        params = {'force': 'true'} if force else {}
+        path = 'v2/pods/' + pod_id.lstrip('/')
+        params = {'force': 'true'} if force else None
         self._rpc.http_req(http.delete, path, params=params)
 
 
