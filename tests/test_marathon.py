@@ -70,6 +70,16 @@ def test_remove_pod_builds_rpc_correctly_7():
         http.delete, 'v2/pods/foo%20bar', params=None)
 
 
+def test_remove_pod_propagates_DCOSException():
+    marathon_client, rpc_client = _create_fixtures()
+    rpc_client.http_req.side_effect = DCOSException('BOOM!')
+
+    with pytest.raises(DCOSException) as exception_info:
+        marathon_client.remove_pod('bad')
+
+    assert str(exception_info.value) == 'BOOM!'
+
+
 def test_rpc_client_http_req_calls_method_fn():
     _assert_rpc_client_http_req_calls_method_fn(
         base_url='http://base/url',
