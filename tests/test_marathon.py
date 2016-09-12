@@ -24,7 +24,15 @@ def test_add_pod_returns_parsed_response_body():
 def test_remove_pod_builds_rpc_correctly_1():
     marathon_client, rpc_client = _create_fixtures()
     marathon_client.remove_pod('foo')
-    rpc_client.http_req.assert_called_with(http.delete, 'v2/pods/foo')
+    rpc_client.http_req.assert_called_with(
+        http.delete, 'v2/pods/foo', params={})
+
+
+def test_remove_pod_builds_rpc_correctly_2():
+    marathon_client, rpc_client = _create_fixtures()
+    marathon_client.remove_pod('foo', force=False)
+    rpc_client.http_req.assert_called_with(
+        http.delete, 'v2/pods/foo', params={})
 
 
 def test_rpc_client_http_req_calls_method_fn():

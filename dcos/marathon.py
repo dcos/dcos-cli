@@ -742,7 +742,7 @@ class Client(object):
         """
         return self._rpc.http_req(http.post, 'v2/pods', json=pod_json)
 
-    def remove_pod(self, pod_id):
+    def remove_pod(self, pod_id, force=False):
         """Completely removes the requested pod.
 
         :param pod_id: the ID of the pod to remove
@@ -752,7 +752,7 @@ class Client(object):
         :rtype: None
         """
 
-        self._rpc.http_req(http.delete, 'v2/pods/foo')
+        self._rpc.http_req(http.delete, 'v2/pods/foo', params={})
 
 
 def _default_marathon_error(message=""):
