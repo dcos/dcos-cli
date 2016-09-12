@@ -838,7 +838,9 @@ class MarathonSubcommand(object):
         :returns: process return code
         :rtype: int
         """
-        raise DCOSException('Not implemented')
+        marathon_client = self._create_marathon_client()
+        marathon_client.remove_pod(pod_id, force)
+        return 0
 
     def pod_list(self, json_):
         """
