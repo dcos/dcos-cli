@@ -21,6 +21,12 @@ def test_add_pod_returns_parsed_response_body():
     _assert_add_pod_returns_parsed_response_body(["another", "pod", "json"])
 
 
+def test_remove_pod_builds_rpc_correctly_1():
+    marathon_client, rpc_client = _create_fixtures()
+    marathon_client.remove_pod('foo')
+    rpc_client.http_req.assert_called_with(http.delete, 'v2/pods/foo')
+
+
 def test_rpc_client_http_req_calls_method_fn():
     _assert_rpc_client_http_req_calls_method_fn(
         base_url='http://base/url',
@@ -411,6 +417,13 @@ def _assert_matches_with_groups(pattern, text, groups):
     match = re.fullmatch(pattern, text, flags=re.DOTALL)
     assert match
     assert match.groups() == groups
+
+
+def _create_fixtures():
+    rpc_client = mock.create_autospec(marathon.RpcClient)
+    marathon_client = marathon.Client(rpc_client)
+
+    return marathon_client, rpc_client
 
 
 _MESSAGE_1 = 'Oops!'

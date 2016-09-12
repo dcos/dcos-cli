@@ -733,7 +733,26 @@ class Client(object):
         return response.json()['leader']
 
     def add_pod(self, pod_json):
+        """Add a new pod.
+
+        :param pod_json: JSON pod definition
+        :type pod_json: dict
+        :returns: description of created pod
+        :rtype: dict
+        """
         return self._rpc.http_req(http.post, 'v2/pods', json=pod_json)
+
+    def remove_pod(self, pod_id):
+        """Completely removes the requested pod.
+
+        :param pod_id: the ID of the pod to remove
+        :type pod_id: str
+        :param force: whether to override running deployments
+        :type force: bool
+        :rtype: None
+        """
+
+        self._rpc.http_req(http.delete, 'v2/pods/foo')
 
 
 def _default_marathon_error(message=""):
