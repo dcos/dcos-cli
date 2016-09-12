@@ -27,6 +27,7 @@ Usage:
     dcos marathon group show [--group-version=<group-version>] <group-id>
     dcos marathon group remove [--force] <group-id>
     dcos marathon group update [--force] <group-id> [<properties>...]
+    dcos marathon pod add [<pod-resource>]
     dcos marathon task list [--json <app-id>]
     dcos marathon task stop [--wipe] <task-id>
     dcos marathon task show <task-id>
@@ -74,6 +75,8 @@ Commands:
         Remove a group.
     group update
         Update a group.
+    pod add
+        Create a new pod.
     task list
         List all tasks.
     task stop
@@ -132,6 +135,9 @@ Positional Arguments:
         https://mesosphere.github.io/marathon/docs/rest-api.html#post-v2-groups.
     <instances>
         The number of instances.
+    <pod-resource>
+        Path to a file or HTTP(S) URL that contains the pod's JSON definition.
+        If omitted, the definition is read from stdin.
     <properties>
         List of space-separated config.json properties to update.  The list must
         be formatted as <key>=<value>. For example, `cpus=2.0 mem=308`. If

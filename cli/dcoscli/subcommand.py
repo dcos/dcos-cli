@@ -40,7 +40,7 @@ def default_doc(command):
     :param command: default DC/OS CLI command
     :type command: str
     :returns: config schema of command
-    :rtype: dict
+    :rtype: str
     """
 
     resource = "data/help/{}.txt".format(command)
