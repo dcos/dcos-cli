@@ -3,6 +3,8 @@ import json
 import os
 import re
 
+import pytest
+
 from ..common import assert_same_elements
 from .common import assert_command, exec_command, file_bytes, file_json
 
@@ -19,6 +21,7 @@ TRIPLE_POD_ID = 'winston'
 TRIPLE_POD_FILE_PATH = os.path.join(FILE_PATH_BASE, 'doubleplusgood.json')
 
 
+@pytest.mark.skip(reason="Pods support in Marathon not released yet")
 def test_pod_add_from_file_then_remove():
     returncode, stdout, stderr = _pod_add_from_file(GOOD_POD_FILE_PATH)
     assert returncode == 0
@@ -29,12 +32,14 @@ def test_pod_add_from_file_then_remove():
     _assert_pod_remove(GOOD_POD_ID, extra_args=[])
 
 
+@pytest.mark.skip(reason="Pods support in Marathon not released yet")
 def test_pod_add_from_stdin_then_force_remove():
     # Explicitly testing adding from stdin; can't use the context manager
     _assert_pod_add_from_stdin(GOOD_POD_FILE_PATH)
     _assert_pod_remove(GOOD_POD_ID, extra_args=['--force'])
 
 
+@pytest.mark.skip(reason="Pods support in Marathon not released yet")
 def test_pod_list():
     paths = [GOOD_POD_FILE_PATH, DOUBLE_POD_FILE_PATH, TRIPLE_POD_FILE_PATH]
     expected_json = [file_json(path) for path in paths]
@@ -48,6 +53,7 @@ def test_pod_list():
         _assert_pod_list_table(stdout=expected_table)
 
 
+@pytest.mark.skip(reason="Pods support in Marathon not released yet")
 def test_pod_show():
     expected_stdout = file_bytes(GOOD_POD_FILE_PATH)
 
@@ -55,6 +61,7 @@ def test_pod_show():
         _assert_pod_show(GOOD_POD_ID, expected_stdout)
 
 
+@pytest.mark.skip(reason="Pods support in Marathon not released yet")
 def test_pod_update_from_file():
     expected_show_stdout = file_bytes(UPDATED_GOOD_POD_FILE_PATH)
 
@@ -65,6 +72,7 @@ def test_pod_update_from_file():
         _assert_pod_show(GOOD_POD_ID, expected_show_stdout)
 
 
+@pytest.mark.skip(reason="Pods support in Marathon not released yet")
 def test_pod_update_from_stdin_force_true():
     expected_show_stdout = file_bytes(UPDATED_GOOD_POD_FILE_PATH)
 

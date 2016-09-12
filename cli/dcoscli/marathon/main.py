@@ -40,6 +40,7 @@ def _cmds():
     :returns: all the supported commands
     :rtype: dcos.cmds.Command
     """
+
     subcommand = MarathonSubcommand()
 
     return [
@@ -251,10 +252,6 @@ def _get_resource(resource):
 
 class MarathonSubcommand(object):
     """Defines a method for each operation of the `dcos marathon` subcommand.
-
-    Having the operations as methods on this class improves modularity and
-    allows common dependencies to be provided to the class constructor. It
-    also makes it much easier to mock dependencies in unit tests.
 
     :param resource_reader: a callable that takes a resource file path as an
                             argument and returns the file contents, as JSON

@@ -81,8 +81,8 @@ class RpcClient(object):
     ERROR_JSON_VALIDATOR = jsonschema.Draft4Validator(load_error_json_schema())
 
     @classmethod
-    def response_error_message(
-            cls, status_code, reason, request_method, request_url, json_body):
+    def response_error_message(cls, status_code, reason, request_method,
+                               request_url, json_body):
         """Renders a human-readable error message from the given response data.
 
         :param status_code: the integer status code from an HTTP response
