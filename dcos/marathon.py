@@ -205,7 +205,7 @@ class Client(object):
         :rtype: dict
         """
 
-        app_id = self.normalize_app_id(app_id)
+        app_id = _normalize_marathon_id_path(app_id)
         if version is None:
             path = 'v2/apps{}'.format(app_id)
         else:
@@ -241,7 +241,7 @@ class Client(object):
         :rtype: dict
         """
 
-        group_id = self.normalize_app_id(group_id)
+        group_id = _normalize_marathon_id_path(group_id)
         if version is None:
             path = 'v2/groups{}'.format(group_id)
         else:
@@ -267,7 +267,7 @@ class Client(object):
                 'Maximum count must be a positive number: {}'.format(max_count)
             )
 
-        app_id = self.normalize_app_id(app_id)
+        app_id = _normalize_marathon_id_path(app_id)
 
         path = 'v2/apps{}/versions'.format(app_id)
 
@@ -334,7 +334,7 @@ class Client(object):
         :rtype: str
         """
 
-        resource_id = self.normalize_app_id(resource_id)
+        resource_id = _normalize_marathon_id_path(resource_id)
 
         if not force:
             params = None
@@ -393,7 +393,7 @@ class Client(object):
         :rtype: str
         """
 
-        app_id = self.normalize_app_id(app_id)
+        app_id = _normalize_marathon_id_path(app_id)
 
         if not force:
             params = None
@@ -422,7 +422,7 @@ class Client(object):
         :rtype: bool
         """
 
-        group_id = self.normalize_app_id(group_id)
+        group_id = _normalize_marathon_id_path(group_id)
 
         if not force:
             params = None
@@ -462,7 +462,7 @@ class Client(object):
         :rtype: None
         """
 
-        app_id = self.normalize_app_id(app_id)
+        app_id = _normalize_marathon_id_path(app_id)
 
         if not force:
             params = None
@@ -482,7 +482,7 @@ class Client(object):
         :rtype: None
         """
 
-        group_id = self.normalize_app_id(group_id)
+        group_id = _normalize_marathon_id_path(group_id)
 
         if not force:
             params = None
@@ -505,7 +505,7 @@ class Client(object):
         :type host: string
         """
         params = {}
-        app_id = self.normalize_app_id(app_id)
+        app_id = _normalize_marathon_id_path(app_id)
         if host:
             params['host'] = host
         if scale:
@@ -525,7 +525,7 @@ class Client(object):
         :rtype: dict
         """
 
-        app_id = self.normalize_app_id(app_id)
+        app_id = _normalize_marathon_id_path(app_id)
 
         if not force:
             params = None
@@ -566,7 +566,7 @@ class Client(object):
         response = self._rpc.http_req(http.get, 'v2/deployments')
 
         if app_id is not None:
-            app_id = self.normalize_app_id(app_id)
+            app_id = _normalize_marathon_id_path(app_id)
             deployments = [
                 deployment for deployment in response.json()
                 if app_id in deployment['affectedApps']
@@ -637,7 +637,7 @@ class Client(object):
         response = self._rpc.http_req(http.get, 'v2/tasks')
 
         if app_id is not None:
-            app_id = self.normalize_app_id(app_id)
+            app_id = _normalize_marathon_id_path(app_id)
             tasks = [
                 task for task in response.json()['tasks']
                 if app_id == task['appId']
@@ -693,17 +693,6 @@ class Client(object):
 
         return task
 
-    def normalize_app_id(self, app_id):
-        """Normalizes the application id.
-
-        :param app_id: raw application ID
-        :type app_id: str
-        :returns: normalized application ID
-        :rtype: str
-        """
-
-        return urllib.parse.quote('/' + app_id.strip('/'))
-
     def create_group(self, group_resource):
         """Add a new group.
 
@@ -752,7 +741,7 @@ class Client(object):
         :rtype: None
         """
 
-        path = 'v2/pods/' + pod_id.strip('/')
+        path = 'v2/pods' + _normalize_marathon_id_path(pod_id)
         params = {'force': 'true'} if force else None
         self._rpc.http_req(http.delete, path, params=params)
 
@@ -768,3 +757,19 @@ def _default_marathon_error(message=""):
     return ("Marathon likely misconfigured. Please check your proxy or "
             "Marathon URL settings. See dcos config --help. {}").format(
                 message)
+
+
+def _normalize_marathon_id_path(id_path):
+    """Normalizes a Marathon "ID path", such as an app ID, group ID, or pod ID.
+
+    A normalized path has a single leading forward slash (/), no trailing
+    forward slashes, and has all URL-unsafe characters escaped, as if by
+    urllib.parse.quote().
+
+    :param id_path
+    :type id_path: str
+    :returns: normalized path
+    :rtype: str
+    """
+
+    return urllib.parse.quote('/' + id_path.strip('/'))
