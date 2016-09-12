@@ -56,6 +56,13 @@ def test_remove_pod_builds_rpc_correctly_5():
         http.delete, 'v2/pods/bar', params=None)
 
 
+def test_remove_pod_builds_rpc_correctly_6():
+    marathon_client, rpc_client = _create_fixtures()
+    marathon_client.remove_pod('bar/')
+    rpc_client.http_req.assert_called_with(
+        http.delete, 'v2/pods/bar', params=None)
+
+
 def test_rpc_client_http_req_calls_method_fn():
     _assert_rpc_client_http_req_calls_method_fn(
         base_url='http://base/url',
