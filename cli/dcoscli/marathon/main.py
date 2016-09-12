@@ -838,7 +838,7 @@ class MarathonSubcommand(object):
         :returns: process return code
         :rtype: int
         """
-        return 0
+        raise DCOSException('Not implemented')
 
     def pod_list(self, json_):
         """
@@ -847,7 +847,7 @@ class MarathonSubcommand(object):
         :returns: process return code
         :rtype: int
         """
-        return 0
+        raise DCOSException('Not implemented')
 
     def pod_show(self, pod_id):
         """
@@ -856,7 +856,7 @@ class MarathonSubcommand(object):
         :returns: process return code
         :rtype: int
         """
-        return 0
+        raise DCOSException('Not implemented')
 
     def pod_update(self, pod_id, properties, force):
         """
@@ -869,7 +869,7 @@ class MarathonSubcommand(object):
         :returns: process return code
         :rtype: int
         """
-        return 0
+        raise DCOSException('Not implemented')
 
 
 def _parse_properties(properties):
