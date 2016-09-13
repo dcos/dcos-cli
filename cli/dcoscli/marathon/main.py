@@ -823,8 +823,8 @@ class MarathonSubcommand(object):
         :returns: process return code
         :rtype: int
         """
-        marathon_client = self._create_marathon_client()
 
+        marathon_client = self._create_marathon_client()
         pod_json = self._resource_reader(pod_resource_path)
         marathon_client.add_pod(pod_json)
         return 0
@@ -838,6 +838,7 @@ class MarathonSubcommand(object):
         :returns: process return code
         :rtype: int
         """
+
         marathon_client = self._create_marathon_client()
         marathon_client.remove_pod(pod_id, force)
         return 0
@@ -849,6 +850,7 @@ class MarathonSubcommand(object):
         :returns: process return code
         :rtype: int
         """
+
         raise DCOSException('Not implemented')
 
     def pod_show(self, pod_id):
@@ -858,6 +860,7 @@ class MarathonSubcommand(object):
         :returns: process return code
         :rtype: int
         """
+
         raise DCOSException('Not implemented')
 
     def pod_update(self, pod_id, properties, force):
@@ -871,6 +874,7 @@ class MarathonSubcommand(object):
         :returns: process return code
         :rtype: int
         """
+
         raise DCOSException('Not implemented')
 
 

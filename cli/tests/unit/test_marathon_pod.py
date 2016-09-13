@@ -57,7 +57,7 @@ def _assert_pod_add_propagates_exceptions_from_add_pod(exception):
 
 def _assert_pod_remove_invoked_successfully(pod_id, force):
     def resource_reader(path):
-        pass
+        assert False, "should not be called"
     marathon_client = create_autospec(marathon.Client)
 
     subcmd = main.MarathonSubcommand(resource_reader, lambda: marathon_client)
@@ -69,7 +69,7 @@ def _assert_pod_remove_invoked_successfully(pod_id, force):
 
 def _assert_pod_remove_propagates_exceptions_from_remove_pod(exception):
     def resource_reader(path):
-        pass
+        assert False, "should not be called"
     marathon_client = create_autospec(marathon.Client)
     marathon_client.remove_pod.side_effect = exception
 
