@@ -279,13 +279,17 @@ class MarathonSubcommand(object):
     :param create_marathon_client: a callable that returns an instance of
                                    marathon.Client
     :type create_marathon_client: collections.abc.Callable
+    :param event_emitter: sink for output events, e.g. messages to the console
+    :type event_emitter: emitting.Emitter
     """
 
     def __init__(self,
                  resource_reader=_get_resource,
-                 create_marathon_client=marathon.create_client):
+                 create_marathon_client=marathon.create_client,
+                 event_emitter=emitter):
         self._resource_reader = resource_reader
         self._create_marathon_client = create_marathon_client
+        self._emitter = event_emitter
 
     def about(self):
         """
@@ -295,7 +299,7 @@ class MarathonSubcommand(object):
 
         client = self._create_marathon_client()
 
-        emitter.publish(client.get_about())
+        self._emitter.publish(client.get_about())
         return 0
 
     def add(self, app_resource):
@@ -337,13 +341,13 @@ class MarathonSubcommand(object):
         apps = client.get_apps()
 
         if json_:
-            emitter.publish(apps)
+            self._emitter.publish(apps)
         else:
             deployments = client.get_deployments()
             table = tables.app_table(apps, deployments)
             output = six.text_type(table)
             if output:
-                emitter.publish(output)
+                self._emitter.publish(output)
 
         return 0
 
@@ -433,7 +437,7 @@ class MarathonSubcommand(object):
 
         app = client.get_app(app_id, version=version)
 
-        emitter.publish(app)
+        self._emitter.publish(app)
         return 0
 
     def group_show(self, group_id, version=None):
@@ -451,7 +455,7 @@ class MarathonSubcommand(object):
 
         app = client.get_group(group_id, version=version)
 
-        emitter.publish(app)
+        self._emitter.publish(app)
         return 0
 
     def group_update(self, group_id, properties, force):
@@ -474,7 +478,7 @@ class MarathonSubcommand(object):
         properties = _parse_properties(properties)
         deployment = client.update_group(group_id, properties, force)
 
-        emitter.publish('Created deployment {}'.format(deployment))
+        self._emitter.publish('Created deployment {}'.format(deployment))
         return 0
 
     def start(self, app_id, instances, force):
@@ -496,7 +500,7 @@ class MarathonSubcommand(object):
         desc = client.get_app(app_id)
 
         if desc['instances'] > 0:
-            emitter.publish(
+            self._emitter.publish(
                 'Application {!r} already started: {!r} instances.'.format(
                     app_id,
                     desc['instances']))
@@ -511,7 +515,7 @@ class MarathonSubcommand(object):
         else:
             instances = util.parse_int(instances)
             if instances <= 0:
-                emitter.publish(
+                self._emitter.publish(
                     'The number of instances must be positive: {!r}.'.format(
                         instances))
                 return 1
@@ -520,7 +524,7 @@ class MarathonSubcommand(object):
 
         deployment = client.update_app(app_id, app_json, force)
 
-        emitter.publish('Created deployment {}'.format(deployment))
+        self._emitter.publish('Created deployment {}'.format(deployment))
 
         return 0
 
@@ -541,7 +545,7 @@ class MarathonSubcommand(object):
         desc = client.get_app(app_id)
 
         if desc['instances'] <= 0:
-            emitter.publish(
+            self._emitter.publish(
                 'Application {!r} already stopped: {!r} instances.'.format(
                     app_id,
                     desc['instances']))
@@ -551,7 +555,7 @@ class MarathonSubcommand(object):
 
         deployment = client.update_app(app_id, app_json, force)
 
-        emitter.publish('Created deployment {}'.format(deployment))
+        self._emitter.publish('Created deployment {}'.format(deployment))
 
     def update(self, app_id, properties, force):
         """
@@ -573,7 +577,7 @@ class MarathonSubcommand(object):
         properties = _parse_properties(properties)
         deployment = client.update_app(app_id, properties, force)
 
-        emitter.publish('Created deployment {}'.format(deployment))
+        self._emitter.publish('Created deployment {}'.format(deployment))
         return 0
 
     def group_scale(self, group_id, scale_factor, force):
@@ -591,7 +595,7 @@ class MarathonSubcommand(object):
         client = self._create_marathon_client()
         scale_factor = util.parse_float(scale_factor)
         deployment = client.scale_group(group_id, scale_factor, force)
-        emitter.publish('Created deployment {}'.format(deployment))
+        self._emitter.publish('Created deployment {}'.format(deployment))
         return 0
 
     def restart(self, app_id, force):
@@ -610,7 +614,7 @@ class MarathonSubcommand(object):
 
         if desc['instances'] <= 0:
             app_id = util.normalize_marathon_id_path(app_id)
-            emitter.publish(
+            self._emitter.publish(
                 'Unable to perform rolling restart of application {!r} '
                 'because it has no running tasks'.format(
                     app_id,
@@ -620,7 +624,7 @@ class MarathonSubcommand(object):
         payload = client.restart_app(app_id, force)
 
         message = 'Created deployment {}'.format(payload['deploymentId'])
-        emitter.publish(message)
+        self._emitter.publish(message)
         return 0
 
     def kill(self, app_id, scale, host):
@@ -640,14 +644,15 @@ class MarathonSubcommand(object):
         # If scale is provided, the API return a "deploymentResult"
         # https://github.com/mesosphere/marathon/blob/50366c8/src/main/scala/mesosphere/marathon/api/RestResource.scala#L34-L36
         if scale:
-            emitter.publish("Started deployment: {}".format(payload))
+            self._emitter.publish("Started deployment: {}".format(payload))
         else:
             if 'tasks' in payload:
-                emitter.publish('Killed tasks: {}'.format(payload['tasks']))
+                message = 'Killed tasks: {}'.format(payload['tasks'])
+                self._emitter.publish(message)
                 if len(payload['tasks']) == 0:
                     return 1
             else:
-                emitter.publish('Killed tasks: []')
+                self._emitter.publish('Killed tasks: []')
                 return 1
         return 0
 
@@ -668,7 +673,7 @@ class MarathonSubcommand(object):
 
         versions = client.get_app_versions(app_id, max_count)
 
-        emitter.publish(versions)
+        self._emitter.publish(versions)
         return 0
 
     def deployment_list(self, app_id, json_):
@@ -721,7 +726,7 @@ class MarathonSubcommand(object):
         client = self._create_marathon_client()
         deployment = client.rollback_deployment(deployment_id)
 
-        emitter.publish(deployment)
+        self._emitter.publish(deployment)
         return 0
 
     def deployment_watch(self, deployment_id, max_count, interval):
@@ -754,10 +759,10 @@ class MarathonSubcommand(object):
             else:
                 if 'TERM' in os.environ:
                     os.system('clear')
-            emitter.publish('Deployment update time: '
-                            '{} \n'.format(time.strftime("%Y-%m-%d %H:%M:%S",
-                                                         time.gmtime())))
-            emitter.publish(deployment)
+            formatted_time = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
+            self._emitter.publish('Deployment update time: '
+                                  '{} \n'.format(formatted_time))
+            self._emitter.publish(deployment)
             time.sleep(interval)
             count += 1
 
@@ -796,7 +801,7 @@ class MarathonSubcommand(object):
         if task is None:
             raise DCOSException("Task '{}' does not exist".format(task_id))
 
-        emitter.publish(task)
+        self._emitter.publish(task)
         return 0
 
     def task_show(self, task_id):
@@ -813,7 +818,7 @@ class MarathonSubcommand(object):
         if task is None:
             raise DCOSException("Task '{}' does not exist".format(task_id))
 
-        emitter.publish(task)
+        self._emitter.publish(task)
         return 0
 
     def pod_add(self, pod_resource_path):
@@ -862,7 +867,10 @@ class MarathonSubcommand(object):
         :rtype: int
         """
 
-        raise DCOSException('Not implemented')
+        marathon_client = self._create_marathon_client()
+        marathon_client.show_pod('a-pod')
+        self._emitter.publish({'id': 'a-pod'})
+        return 0
 
     def pod_update(self, pod_id, properties, force):
         """
