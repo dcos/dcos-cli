@@ -34,6 +34,13 @@ def test_pod_show_invoked_successfully():
     _assert_pod_show_invoked_successfully(pod_json={'id': 'b-pod', 'bar': 2})
 
 
+def test_pod_show_propagates_exceptions_from_show_pod():
+    _assert_pod_show_propagates_exceptions_from_show_pod(
+        DCOSException('BOOM!'))
+    _assert_pod_show_propagates_exceptions_from_show_pod(
+        Exception('Oops!'))
+
+
 def _assert_pod_add_invoked_successfully(pod_file_json):
     pod_file_path = "some/path/to/pod.json"
     resource_reader = {pod_file_path: pod_file_json}.__getitem__
@@ -100,6 +107,19 @@ def _assert_pod_show_invoked_successfully(pod_json):
     assert returncode == 0
     marathon_client.show_pod.assert_called_with(pod_json['id'])
     emitter.publish.assert_called_with(pod_json)
+
+
+def _assert_pod_show_propagates_exceptions_from_show_pod(exception):
+    marathon_client = create_autospec(marathon.Client)
+    marathon_client.show_pod.side_effect = exception
+
+    subcmd = main.MarathonSubcommand(
+        resource_reader=_unused_resource_reader,
+        create_marathon_client=lambda: marathon_client)
+    with pytest.raises(exception.__class__) as exception_info:
+        subcmd.pod_show('does/not/matter')
+
+    assert exception_info.value == exception
 
 
 def _unused_resource_reader(path):
