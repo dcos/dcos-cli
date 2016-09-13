@@ -745,6 +745,17 @@ class Client(object):
         params = {'force': 'true'} if force else None
         self._rpc.http_req(http.delete, path, params=params)
 
+    def show_pod(self, pod_id):
+        """Returns a representation of the requested pod.
+
+        :param pod_id: the ID of the pod
+        :type pod_id: str
+        :returns: the requested Marathon pod
+        :rtype: dict
+        """
+
+        self._rpc.http_req(http.get, 'v2/pods/foo')
+
     @staticmethod
     def _marathon_id_path_join(url_path, id_path):
         """Concatenates a URL path with a Marathon "ID path", ensuring the

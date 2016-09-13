@@ -854,8 +854,9 @@ class MarathonSubcommand(object):
         raise DCOSException('Not implemented')
 
     def pod_show(self, pod_id):
-        """
-        :param pod_id: the Marathon ID of the pod to remove
+        """Show details of a Marathon pod.
+
+        :param pod_id: the Marathon ID of the pod to show
         :type pod_id: str
         :returns: process return code
         :rtype: int
