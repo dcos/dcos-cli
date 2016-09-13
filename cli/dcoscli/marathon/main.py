@@ -868,8 +868,8 @@ class MarathonSubcommand(object):
         """
 
         marathon_client = self._create_marathon_client()
-        marathon_client.show_pod('a-pod')
-        self._emitter.publish({'id': 'a-pod'})
+        pod_json = marathon_client.show_pod(pod_id)
+        self._emitter.publish(pod_json)
         return 0
 
     def pod_update(self, pod_id, properties, force):

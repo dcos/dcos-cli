@@ -30,22 +30,8 @@ def test_pod_remove_propagates_exceptions_from_remove_pod():
 
 
 def test_pod_show_invoked_successfully():
-    pod_json = {'id': 'a-pod'}
-
-    marathon_client = create_autospec(marathon.Client)
-    marathon_client.show_pod.return_value = pod_json
-    emitter = create_autospec(emitting.FlatEmitter)
-
-    subcmd = main.MarathonSubcommand(
-        resource_reader=_unused_resource_reader,
-        create_marathon_client=lambda: marathon_client,
-        event_emitter=emitter)
-
-    returncode = subcmd.pod_show('a-pod')
-
-    assert returncode == 0
-    marathon_client.show_pod.assert_called_with('a-pod')
-    emitter.publish.assert_called_with(pod_json)
+    _assert_pod_show_invoked_successfully(pod_json={'id': 'a-pod', 'foo': 1})
+    _assert_pod_show_invoked_successfully(pod_json={'id': 'b-pod', 'bar': 2})
 
 
 def _assert_pod_add_invoked_successfully(pod_file_json):
@@ -97,6 +83,23 @@ def _assert_pod_remove_propagates_exceptions_from_remove_pod(exception):
         subcmd.pod_remove('does/not/matter', force=False)
 
     assert exception_info.value == exception
+
+
+def _assert_pod_show_invoked_successfully(pod_json):
+    marathon_client = create_autospec(marathon.Client)
+    marathon_client.show_pod.return_value = pod_json
+    emitter = create_autospec(emitting.FlatEmitter)
+
+    subcmd = main.MarathonSubcommand(
+        resource_reader=_unused_resource_reader,
+        create_marathon_client=lambda: marathon_client,
+        event_emitter=emitter)
+
+    returncode = subcmd.pod_show(pod_json['id'])
+
+    assert returncode == 0
+    marathon_client.show_pod.assert_called_with(pod_json['id'])
+    emitter.publish.assert_called_with(pod_json)
 
 
 def _unused_resource_reader(path):
