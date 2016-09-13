@@ -311,7 +311,7 @@ class MarathonSubcommand(object):
         client = self._create_marathon_client()
 
         # Check that the application doesn't exist
-        app_id = client.normalize_app_id(application_resource['id'])
+        app_id = util.normalize_marathon_id_path(application_resource['id'])
 
         try:
             client.get_app(app_id)
@@ -374,7 +374,7 @@ class MarathonSubcommand(object):
         client = self._create_marathon_client()
 
         # Check that the group doesn't exist
-        group_id = client.normalize_app_id(group_resource['id'])
+        group_id = util.normalize_marathon_id_path(group_resource['id'])
 
         try:
             client.get_group(group_id)
@@ -609,7 +609,7 @@ class MarathonSubcommand(object):
         desc = client.get_app(app_id)
 
         if desc['instances'] <= 0:
-            app_id = client.normalize_app_id(app_id)
+            app_id = util.normalize_marathon_id_path(app_id)
             emitter.publish(
                 'Unable to perform rolling restart of application {!r} '
                 'because it has no running tasks'.format(
@@ -823,8 +823,8 @@ class MarathonSubcommand(object):
         :returns: process return code
         :rtype: int
         """
-        marathon_client = self._create_marathon_client()
 
+        marathon_client = self._create_marathon_client()
         pod_json = self._resource_reader(pod_resource_path)
         marathon_client.add_pod(pod_json)
         return 0
@@ -838,7 +838,10 @@ class MarathonSubcommand(object):
         :returns: process return code
         :rtype: int
         """
-        raise DCOSException('Not implemented')
+
+        marathon_client = self._create_marathon_client()
+        marathon_client.remove_pod(pod_id, force)
+        return 0
 
     def pod_list(self, json_):
         """
@@ -847,6 +850,7 @@ class MarathonSubcommand(object):
         :returns: process return code
         :rtype: int
         """
+
         raise DCOSException('Not implemented')
 
     def pod_show(self, pod_id):
@@ -856,6 +860,7 @@ class MarathonSubcommand(object):
         :returns: process return code
         :rtype: int
         """
+
         raise DCOSException('Not implemented')
 
     def pod_update(self, pod_id, properties, force):
@@ -869,6 +874,7 @@ class MarathonSubcommand(object):
         :returns: process return code
         :rtype: int
         """
+
         raise DCOSException('Not implemented')
 
 

@@ -21,6 +21,65 @@ def test_add_pod_returns_parsed_response_body():
     _assert_add_pod_returns_parsed_response_body(["another", "pod", "json"])
 
 
+def test_remove_pod_builds_rpc_correctly_1():
+    marathon_client, rpc_client = _create_fixtures()
+    marathon_client.remove_pod('foo')
+    rpc_client.http_req.assert_called_with(
+        http.delete, 'v2/pods/foo', params=None)
+
+
+def test_remove_pod_builds_rpc_correctly_2():
+    marathon_client, rpc_client = _create_fixtures()
+    marathon_client.remove_pod('foo', force=False)
+    rpc_client.http_req.assert_called_with(
+        http.delete, 'v2/pods/foo', params=None)
+
+
+def test_remove_pod_builds_rpc_correctly_3():
+    marathon_client, rpc_client = _create_fixtures()
+    marathon_client.remove_pod('foo', force=True)
+    rpc_client.http_req.assert_called_with(
+        http.delete, 'v2/pods/foo', params={'force': 'true'})
+
+
+def test_remove_pod_builds_rpc_correctly_4():
+    marathon_client, rpc_client = _create_fixtures()
+    marathon_client.remove_pod('bar')
+    rpc_client.http_req.assert_called_with(
+        http.delete, 'v2/pods/bar', params=None)
+
+
+def test_remove_pod_builds_rpc_correctly_5():
+    marathon_client, rpc_client = _create_fixtures()
+    marathon_client.remove_pod('/bar')
+    rpc_client.http_req.assert_called_with(
+        http.delete, 'v2/pods/bar', params=None)
+
+
+def test_remove_pod_builds_rpc_correctly_6():
+    marathon_client, rpc_client = _create_fixtures()
+    marathon_client.remove_pod('bar/')
+    rpc_client.http_req.assert_called_with(
+        http.delete, 'v2/pods/bar', params=None)
+
+
+def test_remove_pod_builds_rpc_correctly_7():
+    marathon_client, rpc_client = _create_fixtures()
+    marathon_client.remove_pod('foo bar')
+    rpc_client.http_req.assert_called_with(
+        http.delete, 'v2/pods/foo%20bar', params=None)
+
+
+def test_remove_pod_propagates_DCOSException():
+    marathon_client, rpc_client = _create_fixtures()
+    rpc_client.http_req.side_effect = DCOSException('BOOM!')
+
+    with pytest.raises(DCOSException) as exception_info:
+        marathon_client.remove_pod('bad')
+
+    assert str(exception_info.value) == 'BOOM!'
+
+
 def test_rpc_client_http_req_calls_method_fn():
     _assert_rpc_client_http_req_calls_method_fn(
         base_url='http://base/url',
@@ -205,6 +264,11 @@ def test_response_error_message_with_other_status_no_json():
         request_url=_URL_X)
 
     _assert_response_error_message_with_other_status_no_json(
+        status_code=404,
+        reason=_REASON_X,
+        request_url=_URL_X)
+
+    _assert_response_error_message_with_other_status_no_json(
         status_code=422,
         reason=_REASON_X,
         request_url=_URL_X)
@@ -221,6 +285,10 @@ def test_response_error_message_with_other_status_json_has_message():
 
     _assert_response_error_message_with_other_status_json_has_message(
         status_code=403,
+        json_message=_MESSAGE_X)
+
+    _assert_response_error_message_with_other_status_json_has_message(
+        status_code=404,
         json_message=_MESSAGE_X)
 
     _assert_response_error_message_with_other_status_json_has_message(
@@ -241,6 +309,11 @@ def test_res_err_msg_with_other_status_json_no_message_has_valid_errors():
 
     _assert_res_err_msg_with_other_status_json_no_message_has_valid_errors(
         status_code=403,
+        errors_json=[{'error': 'foo'}, {'error': 'bar'}, {'error': 'baz'}],
+        errors_str='foo\nbar\nbaz')
+
+    _assert_res_err_msg_with_other_status_json_no_message_has_valid_errors(
+        status_code=404,
         errors_json=[{'error': 'foo'}, {'error': 'bar'}, {'error': 'baz'}],
         errors_str='foo\nbar\nbaz')
 
@@ -280,6 +353,8 @@ def test_res_err_msg_with_other_status_invalid_error_json():
     # Other status codes
     _assert_res_err_msg_with_other_status_invalid_json(
         403, {'errors': [{'error': 'BOOM!'}, {'error': 42}]})
+    _assert_res_err_msg_with_other_status_invalid_json(
+        404, {'errors': [{'error': 'BOOM!'}, {'error': 42}]})
     _assert_res_err_msg_with_other_status_invalid_json(
         422, {'errors': [{'error': 'BOOM!'}, {'error': 42}]})
 
@@ -411,6 +486,13 @@ def _assert_matches_with_groups(pattern, text, groups):
     match = re.fullmatch(pattern, text, flags=re.DOTALL)
     assert match
     assert match.groups() == groups
+
+
+def _create_fixtures():
+    rpc_client = mock.create_autospec(marathon.RpcClient)
+    marathon_client = marathon.Client(rpc_client)
+
+    return marathon_client, rpc_client
 
 
 _MESSAGE_1 = 'Oops!'
