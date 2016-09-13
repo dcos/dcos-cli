@@ -120,9 +120,21 @@ def test_show_pod_propagates_dcos_exception():
     rpc_client.http_req.side_effect = DCOSException('BOOM!')
 
     with pytest.raises(DCOSException) as exception_info:
-        marathon_client.show_pod('bad')
+        marathon_client.show_pod('bad-req')
 
     assert str(exception_info.value) == 'BOOM!'
+
+
+def test_show_pod_propagates_json_parsing_exception():
+    marathon_client, rpc_client = _create_fixtures()
+    mock_response = mock.create_autospec(requests.Response)
+    mock_response.json.side_effect = Exception('Bad parse')
+    rpc_client.http_req.return_value = mock_response
+
+    with pytest.raises(Exception) as exception_info:
+        marathon_client.show_pod('bad-json')
+
+    assert str(exception_info.value) == 'Bad parse'
 
 
 def test_rpc_client_http_req_calls_method_fn():
