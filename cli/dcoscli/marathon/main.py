@@ -311,7 +311,7 @@ class MarathonSubcommand(object):
         client = self._create_marathon_client()
 
         # Check that the application doesn't exist
-        app_id = client.normalize_app_id(application_resource['id'])
+        app_id = util.normalize_marathon_id_path(application_resource['id'])
 
         try:
             client.get_app(app_id)
@@ -374,7 +374,7 @@ class MarathonSubcommand(object):
         client = self._create_marathon_client()
 
         # Check that the group doesn't exist
-        group_id = client.normalize_app_id(group_resource['id'])
+        group_id = util.normalize_marathon_id_path(group_resource['id'])
 
         try:
             client.get_group(group_id)
@@ -609,7 +609,7 @@ class MarathonSubcommand(object):
         desc = client.get_app(app_id)
 
         if desc['instances'] <= 0:
-            app_id = client.normalize_app_id(app_id)
+            app_id = util.normalize_marathon_id_path(app_id)
             emitter.publish(
                 'Unable to perform rolling restart of application {!r} '
                 'because it has no running tasks'.format(

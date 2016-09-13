@@ -264,6 +264,11 @@ def test_response_error_message_with_other_status_no_json():
         request_url=_URL_X)
 
     _assert_response_error_message_with_other_status_no_json(
+        status_code=404,
+        reason=_REASON_X,
+        request_url=_URL_X)
+
+    _assert_response_error_message_with_other_status_no_json(
         status_code=422,
         reason=_REASON_X,
         request_url=_URL_X)
@@ -280,6 +285,10 @@ def test_response_error_message_with_other_status_json_has_message():
 
     _assert_response_error_message_with_other_status_json_has_message(
         status_code=403,
+        json_message=_MESSAGE_X)
+
+    _assert_response_error_message_with_other_status_json_has_message(
+        status_code=404,
         json_message=_MESSAGE_X)
 
     _assert_response_error_message_with_other_status_json_has_message(
@@ -300,6 +309,11 @@ def test_res_err_msg_with_other_status_json_no_message_has_valid_errors():
 
     _assert_res_err_msg_with_other_status_json_no_message_has_valid_errors(
         status_code=403,
+        errors_json=[{'error': 'foo'}, {'error': 'bar'}, {'error': 'baz'}],
+        errors_str='foo\nbar\nbaz')
+
+    _assert_res_err_msg_with_other_status_json_no_message_has_valid_errors(
+        status_code=404,
         errors_json=[{'error': 'foo'}, {'error': 'bar'}, {'error': 'baz'}],
         errors_str='foo\nbar\nbaz')
 
@@ -339,6 +353,8 @@ def test_res_err_msg_with_other_status_invalid_error_json():
     # Other status codes
     _assert_res_err_msg_with_other_status_invalid_json(
         403, {'errors': [{'error': 'BOOM!'}, {'error': 42}]})
+    _assert_res_err_msg_with_other_status_invalid_json(
+        404, {'errors': [{'error': 'BOOM!'}, {'error': 42}]})
     _assert_res_err_msg_with_other_status_invalid_json(
         422, {'errors': [{'error': 'BOOM!'}, {'error': 42}]})
 

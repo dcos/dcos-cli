@@ -618,16 +618,20 @@ def get_ssh_options(config_file, options):
     return ssh_options
 
 
-def normalize_app_id(app_id):
-    """Normalizes the application id.
+def normalize_marathon_id_path(id_path):
+    """Normalizes a Marathon "ID path", such as an app ID, group ID, or pod ID.
 
-    :param app_id: raw application ID
-    :type app_id: str
-    :returns: normalized application ID
+    A normalized path has a single leading forward slash (/), no trailing
+    forward slashes, and has all URL-unsafe characters escaped, as if by
+    urllib.parse.quote().
+
+    :param id_path
+    :type id_path: str
+    :returns: normalized path
     :rtype: str
     """
 
-    return urllib.parse.quote('/' + app_id.strip('/'))
+    return urllib.parse.quote('/' + id_path.strip('/'))
 
 
 logger = get_logger(__name__)

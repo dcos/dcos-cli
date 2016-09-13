@@ -47,7 +47,7 @@ def uninstall(pkg, package_name, remove_all, app_id, cli, app):
     else:
         msg = 'Package [{}]'.format(package_name)
         if app_id is not None:
-            app_id = util.normalize_app_id(app_id)
+            app_id = util.normalize_marathon_id_path(app_id)
             msg += " with id [{}]".format(app_id)
         msg += " is not installed"
         raise DCOSException(msg)
