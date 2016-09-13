@@ -754,7 +754,8 @@ class Client(object):
         :rtype: dict
         """
 
-        self._rpc.http_req(http.get, 'v2/pods/{}'.format(pod_id.strip('/')))
+        path = self._marathon_id_path_join('v2/pods', pod_id)
+        self._rpc.http_req(http.get, path)
 
     @staticmethod
     def _marathon_id_path_join(url_path, id_path):
