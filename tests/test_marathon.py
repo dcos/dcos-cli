@@ -110,6 +110,17 @@ def test_show_pod_builds_rpc_correctly_5():
     rpc_client.http_req.assert_called_with(http.get, 'v2/pods/foo%20bar')
 
 
+def test_show_pod_returns_response_json_1():
+    marathon_client, rpc_client = _create_fixtures()
+    mock_response = mock.create_autospec(requests.Response)
+    expected = {'some': 'json'}
+    mock_response.json.return_value = expected
+
+    response_json = marathon_client.show_pod('arbitrary-id')
+
+    assert response_json == expected
+
+
 def test_rpc_client_http_req_calls_method_fn():
     _assert_rpc_client_http_req_calls_method_fn(
         base_url='http://base/url',
