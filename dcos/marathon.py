@@ -1,6 +1,4 @@
 import json
-import posixpath
-
 import jsonschema
 import pkg_resources
 
@@ -765,7 +763,7 @@ class Client(object):
         """
 
         normalized_id_path = urllib.parse.quote(id_path.strip('/'))
-        return posixpath.join(url_path, normalized_id_path)
+        return url_path.rstrip('/') + '/' + normalized_id_path
 
 
 def _default_marathon_error(message=""):
