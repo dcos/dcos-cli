@@ -98,6 +98,12 @@ def test_show_pod_builds_rpc_correctly_3():
     rpc_client.http_req.assert_called_with(http.get, 'v2/pods/bar')
 
 
+def test_show_pod_builds_rpc_correctly_4():
+    marathon_client, rpc_client = _create_fixtures()
+    marathon_client.show_pod('bar/')
+    rpc_client.http_req.assert_called_with(http.get, 'v2/pods/bar')
+
+
 def test_rpc_client_http_req_calls_method_fn():
     _assert_rpc_client_http_req_calls_method_fn(
         base_url='http://base/url',
