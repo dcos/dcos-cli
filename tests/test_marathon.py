@@ -115,6 +115,12 @@ def test_show_pod_propagates_json_parsing_exception():
     assert str(exception_info.value) == 'Bad parse'
 
 
+def test_list_pod_builds_rpc_correctly():
+    marathon_client, rpc_client = _create_fixtures()
+    marathon_client.list_pod()
+    rpc_client.http_req.assert_called_with(http.get, 'v2/pods')
+
+
 def test_rpc_client_http_req_calls_method_fn():
     _assert_rpc_client_http_req_calls_method_fn(
         base_url='http://base/url',
