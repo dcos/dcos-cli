@@ -41,6 +41,16 @@ def test_pod_show_propagates_exceptions_from_show_pod():
         Exception('Oops!'))
 
 
+def test_pod_list_calls_marathon_list_pod():
+    marathon_client = create_autospec(marathon.Client)
+
+    subcmd = main.MarathonSubcommand(_unused_resource_reader,
+                                     lambda: marathon_client)
+    subcmd.pod_list(json_=False)
+
+    marathon_client.list_pod.assert_called_with()
+
+
 def _assert_pod_add_invoked_successfully(pod_file_json):
     pod_file_path = "some/path/to/pod.json"
     resource_reader = {pod_file_path: pod_file_json}.__getitem__
