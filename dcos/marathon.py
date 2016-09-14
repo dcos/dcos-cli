@@ -766,7 +766,10 @@ class Client(object):
         """
 
         response = self._rpc.http_req(http.get, 'v2/pods')
-        return response.json()
+        try:
+            return response.json()
+        except:
+            pass
 
     @staticmethod
     def _marathon_id_path_join(url_path, id_path):
