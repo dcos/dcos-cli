@@ -1,9 +1,9 @@
 import dcoscli.marathon.main as main
-from dcos import emitting, marathon
+from dcos import marathon
 from dcos.errors import DCOSException
 
 import pytest
-from mock import create_autospec
+from mock import create_autospec, patch
 
 
 def test_pod_add_invoked_successfully():
@@ -92,15 +92,14 @@ def _assert_pod_remove_propagates_exceptions_from_remove_pod(exception):
     assert exception_info.value == exception
 
 
-def _assert_pod_show_invoked_successfully(pod_json):
+@patch('dcoscli.marathon.main.emitter', autospec=True)
+def _assert_pod_show_invoked_successfully(emitter, pod_json):
     marathon_client = create_autospec(marathon.Client)
     marathon_client.show_pod.return_value = pod_json
-    emitter = create_autospec(emitting.FlatEmitter)
 
     subcmd = main.MarathonSubcommand(
         resource_reader=_unused_resource_reader,
-        create_marathon_client=lambda: marathon_client,
-        event_emitter=emitter)
+        create_marathon_client=lambda: marathon_client)
 
     returncode = subcmd.pod_show(pod_json['id'])
 
