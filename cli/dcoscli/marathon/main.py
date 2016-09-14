@@ -852,7 +852,8 @@ class MarathonSubcommand(object):
         """
 
         marathon_client = self._create_marathon_client()
-        marathon_client.list_pod()
+        pods = marathon_client.list_pod()
+        emitter.publish(pods)
         return 0
 
     def pod_show(self, pod_id):
