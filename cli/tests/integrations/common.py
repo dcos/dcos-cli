@@ -18,7 +18,7 @@ def exec_command(cmd, env=None, stdin=None):
     :param cmd: Program and arguments
     :type cmd: [str]
     :param env: Environment variables
-    :type env: dict
+    :type env: dict | None
     :param stdin: File to use for stdin
     :type stdin: file
     :returns: A tuple with the returncode, stdout and stderr

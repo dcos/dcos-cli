@@ -3,6 +3,8 @@ import json
 import os
 import re
 
+from dcos import util
+
 import pytest
 
 from ..common import assert_same_elements
@@ -19,6 +21,13 @@ DOUBLE_POD_FILE_PATH = os.path.join(FILE_PATH_BASE, 'double.json')
 
 TRIPLE_POD_ID = 'winston'
 TRIPLE_POD_FILE_PATH = os.path.join(FILE_PATH_BASE, 'doubleplusgood.json')
+
+_POD_BASE_CMD = ['dcos', 'marathon', 'pod']
+_POD_ADD_CMD = _POD_BASE_CMD + ['add']
+_POD_LIST_CMD = _POD_BASE_CMD + ['list']
+_POD_REMOVE_CMD = _POD_BASE_CMD + ['remove']
+_POD_SHOW_CMD = _POD_BASE_CMD + ['show']
+_POD_UPDATE_CMD = _POD_BASE_CMD + ['update']
 
 
 @pytest.mark.skip(reason="Pods support in Marathon not released yet")
@@ -55,10 +64,8 @@ def test_pod_list():
 
 @pytest.mark.skip(reason="Pods support in Marathon not released yet")
 def test_pod_show():
-    expected_stdout = file_bytes(GOOD_POD_FILE_PATH)
-
     with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH):
-        _assert_pod_show(GOOD_POD_ID, expected_stdout)
+        _assert_pod_show(GOOD_POD_ID)
 
 
 @pytest.mark.skip(reason="Pods support in Marathon not released yet")
@@ -81,14 +88,6 @@ def test_pod_update_from_stdin_force_true():
                                       UPDATED_GOOD_POD_FILE_PATH,
                                       extra_args=['--force'])
         _assert_pod_show(GOOD_POD_ID, expected_show_stdout)
-
-
-_POD_BASE_CMD = ['dcos', 'marathon', 'pod']
-_POD_ADD_CMD = _POD_BASE_CMD + ['add']
-_POD_LIST_CMD = _POD_BASE_CMD + ['list']
-_POD_REMOVE_CMD = _POD_BASE_CMD + ['remove']
-_POD_SHOW_CMD = _POD_BASE_CMD + ['show']
-_POD_UPDATE_CMD = _POD_BASE_CMD + ['update']
 
 
 def _pod_add_from_file(file_path):
@@ -121,9 +120,15 @@ def _assert_pod_remove(pod_id, extra_args):
     assert_command(cmd, returncode=0, stdout=b'', stderr=b'')
 
 
-def _assert_pod_show(pod_id, stdout):
+def _assert_pod_show(pod_id):
     cmd = _POD_SHOW_CMD + [pod_id]
-    assert_command(cmd, returncode=0, stdout=stdout, stderr=b'')
+    returncode, stdout, stderr = exec_command(cmd)
+
+    assert returncode == 0
+    assert stderr == b''
+
+    pod_json = json.loads(stdout.decode('utf-8'))
+    assert pod_json['id'] == util.normalize_marathon_id_path(pod_id)
 
 
 def _assert_pod_update_from_file(pod_id, file_path, extra_args):
