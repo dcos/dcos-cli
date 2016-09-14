@@ -754,9 +754,9 @@ class MarathonSubcommand(object):
             else:
                 if 'TERM' in os.environ:
                     os.system('clear')
-            formatted_time = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-            message = 'Deployment update time: {} \n'.format(formatted_time)
-            emitter.publish(message)
+            emitter.publish('Deployment update time: '
+                            '{} \n'.format(time.strftime("%Y-%m-%d %H:%M:%S",
+                                                         time.gmtime())))
             emitter.publish(deployment)
             time.sleep(interval)
             count += 1

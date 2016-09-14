@@ -22,6 +22,13 @@ DOUBLE_POD_FILE_PATH = os.path.join(FILE_PATH_BASE, 'double.json')
 TRIPLE_POD_ID = 'winston'
 TRIPLE_POD_FILE_PATH = os.path.join(FILE_PATH_BASE, 'doubleplusgood.json')
 
+_POD_BASE_CMD = ['dcos', 'marathon', 'pod']
+_POD_ADD_CMD = _POD_BASE_CMD + ['add']
+_POD_LIST_CMD = _POD_BASE_CMD + ['list']
+_POD_REMOVE_CMD = _POD_BASE_CMD + ['remove']
+_POD_SHOW_CMD = _POD_BASE_CMD + ['show']
+_POD_UPDATE_CMD = _POD_BASE_CMD + ['update']
+
 
 @pytest.mark.skip(reason="Pods support in Marathon not released yet")
 def test_pod_add_from_file_then_remove():
@@ -83,14 +90,6 @@ def test_pod_update_from_stdin_force_true():
         _assert_pod_show(GOOD_POD_ID, expected_show_stdout)
 
 
-_POD_BASE_CMD = ['dcos', 'marathon', 'pod']
-_POD_ADD_CMD = _POD_BASE_CMD + ['add']
-_POD_LIST_CMD = _POD_BASE_CMD + ['list']
-_POD_REMOVE_CMD = _POD_BASE_CMD + ['remove']
-_POD_SHOW_CMD = _POD_BASE_CMD + ['show']
-_POD_UPDATE_CMD = _POD_BASE_CMD + ['update']
-
-
 def _pod_add_from_file(file_path):
     cmd = _POD_ADD_CMD + [file_path]
     return exec_command(cmd)
@@ -123,7 +122,7 @@ def _assert_pod_remove(pod_id, extra_args):
 
 def _assert_pod_show(pod_id):
     cmd = _POD_SHOW_CMD + [pod_id]
-    returncode, stdout, stderr = exec_command(cmd, env=None, stdin=None)
+    returncode, stdout, stderr = exec_command(cmd)
 
     assert returncode == 0
     assert stderr == b''

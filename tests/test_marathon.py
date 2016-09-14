@@ -81,33 +81,11 @@ def test_remove_pod_propagates_dcos_exception():
 
 
 def test_show_pod_builds_rpc_correctly_1():
-    marathon_client, rpc_client = _create_fixtures()
-    marathon_client.show_pod('foo')
-    rpc_client.http_req.assert_called_with(http.get, 'v2/pods/foo')
-
-
-def test_show_pod_builds_rpc_correctly_2():
-    marathon_client, rpc_client = _create_fixtures()
-    marathon_client.show_pod('bar')
-    rpc_client.http_req.assert_called_with(http.get, 'v2/pods/bar')
-
-
-def test_show_pod_builds_rpc_correctly_3():
-    marathon_client, rpc_client = _create_fixtures()
-    marathon_client.show_pod('/bar')
-    rpc_client.http_req.assert_called_with(http.get, 'v2/pods/bar')
-
-
-def test_show_pod_builds_rpc_correctly_4():
-    marathon_client, rpc_client = _create_fixtures()
-    marathon_client.show_pod('bar/')
-    rpc_client.http_req.assert_called_with(http.get, 'v2/pods/bar')
-
-
-def test_show_pod_builds_rpc_correctly_5():
-    marathon_client, rpc_client = _create_fixtures()
-    marathon_client.show_pod('foo bar')
-    rpc_client.http_req.assert_called_with(http.get, 'v2/pods/foo%20bar')
+    _assert_show_pod_builds_rpc_correctly(pod_id='foo', path='v2/pods/foo')
+    _assert_show_pod_builds_rpc_correctly(pod_id='/bar', path='v2/pods/bar')
+    _assert_show_pod_builds_rpc_correctly(pod_id='baz/', path='v2/pods/baz')
+    _assert_show_pod_builds_rpc_correctly(pod_id='foo bar',
+                                          path='v2/pods/foo%20bar')
 
 
 def test_show_pod_returns_response_json():
@@ -431,6 +409,12 @@ def _assert_add_pod_returns_parsed_response_body(response_json):
 
     client = marathon.Client(rpc_client)
     assert client.add_pod("arbitrary") == response_json
+
+
+def _assert_show_pod_builds_rpc_correctly(pod_id, path):
+    marathon_client, rpc_client = _create_fixtures()
+    marathon_client.show_pod(pod_id)
+    rpc_client.http_req.assert_called_with(http.get, path)
 
 
 def _assert_show_pod_returns_response_json(expected):
