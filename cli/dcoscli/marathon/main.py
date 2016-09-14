@@ -853,6 +853,7 @@ class MarathonSubcommand(object):
 
         marathon_client = self._create_marathon_client()
         marathon_client.list_pod()
+        return 0
 
     def pod_show(self, pod_id):
         """Show details of a Marathon pod.
