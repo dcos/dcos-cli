@@ -55,6 +55,13 @@ def test_pod_list_with_json():
     _assert_pod_list_with_json(pod_list_json=[{'id': 'a'}, {'id': 'b'}])
 
 
+def test_pod_list_propagates_exceptions_from_list_pod():
+    _assert_pod_list_propagates_exceptions_from_list_pod(
+        DCOSException('BOOM!'))
+    _assert_pod_list_propagates_exceptions_from_list_pod(
+        Exception('Oops!'))
+
+
 def _assert_pod_add_invoked_successfully(pod_file_json):
     pod_file_path = "some/path/to/pod.json"
     resource_reader = {pod_file_path: pod_file_json}.__getitem__
@@ -130,6 +137,16 @@ def _assert_pod_list_with_json(emitter, pod_list_json):
     subcmd.pod_list(json_=True)
 
     emitter.publish.assert_called_with(pod_list_json)
+
+
+def _assert_pod_list_propagates_exceptions_from_list_pod(exception):
+    subcmd, marathon_client = _create_fixtures_with_unused_reader()
+    marathon_client.list_pod.side_effect = exception
+
+    with pytest.raises(exception.__class__) as exception_info:
+        subcmd.pod_list(json_=False)
+
+    assert exception_info.value == exception
 
 
 def _create_fixtures_with_unused_reader():
