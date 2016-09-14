@@ -80,7 +80,7 @@ def test_remove_pod_propagates_dcos_exception():
     assert str(exception_info.value) == 'BOOM!'
 
 
-def test_show_pod_builds_rpc_correctly_1():
+def test_show_pod_builds_rpc_correctly():
     _assert_show_pod_builds_rpc_correctly(pod_id='foo', path='v2/pods/foo')
     _assert_show_pod_builds_rpc_correctly(pod_id='/bar', path='v2/pods/bar')
     _assert_show_pod_builds_rpc_correctly(pod_id='baz/', path='v2/pods/baz')
