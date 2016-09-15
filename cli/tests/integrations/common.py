@@ -459,17 +459,14 @@ def assert_lines(cmd, num_lines):
     assert len(stdout.decode('utf-8').split('\n')) - 1 == num_lines
 
 
-def file_bytes(path):
-    """ Read all bytes from a file
-
+def file_json_ast(path):
+    """Returns the JSON AST parsed from file
     :param path: path to file
     :type path: str
-    :rtype: bytes
-    :returns: bytes from the file
+    :returns: parsed JSON AST
     """
-
     with open(path) as f:
-        return six.b(f.read())
+        return json.load(f)
 
 
 def file_json(path):

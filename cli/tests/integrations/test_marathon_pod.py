@@ -1,26 +1,17 @@
 import contextlib
 import json
-import os
 import re
 
 from dcos import util
 
 import pytest
 
-from ..common import assert_same_elements
-from .common import assert_command, exec_command, file_bytes, file_json
-
-FILE_PATH_BASE = 'tests/data/marathon/pods'
-
-GOOD_POD_ID = 'good-pod'
-GOOD_POD_FILE_PATH = os.path.join(FILE_PATH_BASE, 'good.json')
-UPDATED_GOOD_POD_FILE_PATH = os.path.join(FILE_PATH_BASE, 'updated_good.json')
-
-DOUBLE_POD_ID = 'double-pod'
-DOUBLE_POD_FILE_PATH = os.path.join(FILE_PATH_BASE, 'double.json')
-
-TRIPLE_POD_ID = 'winston'
-TRIPLE_POD_FILE_PATH = os.path.join(FILE_PATH_BASE, 'doubleplusgood.json')
+from ..fixtures.marathon import (DOUBLE_POD_FILE_PATH, DOUBLE_POD_ID,
+                                 GOOD_POD_FILE_PATH, GOOD_POD_ID,
+                                 TRIPLE_POD_FILE_PATH, TRIPLE_POD_ID,
+                                 UPDATED_GOOD_POD_FILE_PATH, pod_fixture)
+from ..common import assert_same_elements, file_bytes
+from .common import assert_command, exec_command
 
 _POD_BASE_CMD = ['dcos', 'marathon', 'pod']
 _POD_ADD_CMD = _POD_BASE_CMD + ['add']
@@ -50,8 +41,7 @@ def test_pod_add_from_stdin_then_force_remove():
 
 @pytest.mark.skip(reason="Pods support in Marathon not released yet")
 def test_pod_list():
-    paths = [GOOD_POD_FILE_PATH, DOUBLE_POD_FILE_PATH, TRIPLE_POD_FILE_PATH]
-    expected_json = [file_json(path) for path in paths]
+    expected_json = pod_fixture()
     expected_table = file_bytes('tests/unit/data/pod.txt')
 
     with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH), \

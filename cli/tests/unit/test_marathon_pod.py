@@ -4,6 +4,8 @@ from dcos.errors import DCOSException
 
 import pytest
 from mock import create_autospec, patch
+from ..common import file_bytes
+from ..fixtures import marathon as marathon_fixtures
 
 
 def test_pod_add_invoked_successfully():
@@ -53,6 +55,17 @@ def test_pod_list_success_case():
 def test_pod_list_with_json():
     _assert_pod_list_with_json(pod_list_json=['one', 'two', 'three'])
     _assert_pod_list_with_json(pod_list_json=[{'id': 'a'}, {'id': 'b'}])
+
+
+@patch('dcoscli.marathon.main.emitter', autospec=True)
+def test_pod_list_without_json(emitter):
+    subcmd, marathon_client = _create_fixtures_with_unused_reader()
+    marathon_client.list_pod.return_value = marathon_fixtures.pod_fixture()
+
+    subcmd.pod_list(json_=False)
+
+    expected_table = file_bytes('tests/unit/data/pod.txt')
+    emitter.publish(expected_table)
 
 
 def test_pod_list_propagates_exceptions_from_list_pod():
