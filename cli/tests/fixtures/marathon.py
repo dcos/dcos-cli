@@ -182,7 +182,7 @@ def group_fixture():
 def pod_fixture():
     """Marathon pod fixture.
 
-    :rtype: [dict]
+    :rtype: [{}]
     """
 
     paths = [GOOD_POD_FILE_PATH, DOUBLE_POD_FILE_PATH, TRIPLE_POD_FILE_PATH]
