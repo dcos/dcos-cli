@@ -6,11 +6,11 @@ from dcos import util
 
 import pytest
 
-from ..common import assert_same_elements, file_bytes
+from ..common import file_bytes
 from ..fixtures.marathon import (DOUBLE_POD_FILE_PATH, DOUBLE_POD_ID,
                                  GOOD_POD_FILE_PATH, GOOD_POD_ID,
                                  TRIPLE_POD_FILE_PATH, TRIPLE_POD_ID,
-                                 UPDATED_GOOD_POD_FILE_PATH)
+                                 UPDATED_GOOD_POD_FILE_PATH, pod_fixture)
 from .common import assert_command, exec_command
 
 _POD_BASE_CMD = ['dcos', 'marathon', 'pod']
@@ -41,14 +41,12 @@ def test_pod_add_from_stdin_then_force_remove():
 
 @pytest.mark.skip(reason="Pods support in Marathon not released yet")
 def test_pod_list():
+    expected_json = pod_fixture()
     expected_table = file_bytes('tests/unit/data/pod.txt')
 
     with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH), \
             _pod(DOUBLE_POD_ID, DOUBLE_POD_FILE_PATH), \
             _pod(TRIPLE_POD_ID, TRIPLE_POD_FILE_PATH):
-
-        pod_ids = [GOOD_POD_ID, DOUBLE_POD_ID, TRIPLE_POD_ID]
-        expected_json = [_assert_pod_show(pod_id) for pod_id in pod_ids]
 
         _assert_pod_list_json(expected_json)
         _assert_pod_list_table(stdout=expected_table + b'\n')
@@ -99,8 +97,28 @@ def _assert_pod_list_json(expected_json):
     assert returncode == 0
     assert stderr == b''
 
+    # The below comparison assumes the expected JSON has a specific structure
     parsed_stdout = json.loads(stdout.decode('utf-8'))
-    assert_same_elements(parsed_stdout, expected_json)
+    pods_by_id = {pod['id']: pod for pod in parsed_stdout}
+
+    for expected_pod in expected_json:
+        pod_id = expected_pod['id']
+        actual_pod = pods_by_id.pop(pod_id)
+
+        expected_containers = expected_pod['containers']
+        actual_containers = actual_pod['containers']
+        containers_by_name = {c['name']: c for c in actual_containers}
+
+        for expected_container in expected_containers:
+            container_name = expected_container['name']
+            actual_container = containers_by_name.pop(container_name)
+
+            for k, v in expected_container['resources'].items():
+                assert actual_container['resources'][k] == v
+
+        assert len(containers_by_name) == 0
+
+    assert len(pods_by_id) == 0
 
 
 def _assert_pod_list_table(stdout):
@@ -121,7 +139,6 @@ def _assert_pod_show(pod_id):
 
     pod_json = json.loads(stdout.decode('utf-8'))
     assert pod_json['id'] == util.normalize_marathon_id_path(pod_id)
-    return pod_json
 
 
 def _assert_pod_update_from_file(pod_id, file_path, extra_args):
