@@ -97,28 +97,31 @@ def _assert_pod_list_json(expected_json):
     assert returncode == 0
     assert stderr == b''
 
-    # The below comparison assumes the expected JSON has a specific structure
-    parsed_stdout = json.loads(stdout.decode('utf-8'))
-    pods_by_id = {pod['id']: pod for pod in parsed_stdout}
+    actual_json = json.loads(stdout.decode('utf-8'))
+    _assert_pod_list_json_subset(expected_json, actual_json)
+
+
+def _assert_pod_list_json_subset(expected_json, actual_json):
+    actual_pods_by_id = {pod['id']: pod for pod in actual_json}
 
     for expected_pod in expected_json:
         pod_id = expected_pod['id']
-        actual_pod = pods_by_id.pop(pod_id)
+        actual_pod = actual_pods_by_id[pod_id]
 
         expected_containers = expected_pod['containers']
         actual_containers = actual_pod['containers']
-        containers_by_name = {c['name']: c for c in actual_containers}
+        actual_containers_by_name = {c['name']: c for c in actual_containers}
 
         for expected_container in expected_containers:
             container_name = expected_container['name']
-            actual_container = containers_by_name.pop(container_name)
+            actual_container = actual_containers_by_name[container_name]
 
             for k, v in expected_container['resources'].items():
                 assert actual_container['resources'][k] == v
 
-        assert len(containers_by_name) == 0
+        assert len(actual_containers) == len(expected_containers)
 
-    assert len(pods_by_id) == 0
+    assert len(actual_json) == len(expected_json)
 
 
 def _assert_pod_list_table(stdout):
