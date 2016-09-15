@@ -6,11 +6,11 @@ from dcos import util
 
 import pytest
 
+from ..common import assert_same_elements, file_bytes
 from ..fixtures.marathon import (DOUBLE_POD_FILE_PATH, DOUBLE_POD_ID,
                                  GOOD_POD_FILE_PATH, GOOD_POD_ID,
                                  TRIPLE_POD_FILE_PATH, TRIPLE_POD_ID,
                                  UPDATED_GOOD_POD_FILE_PATH, pod_fixture)
-from ..common import assert_same_elements, file_bytes
 from .common import assert_command, exec_command
 
 _POD_BASE_CMD = ['dcos', 'marathon', 'pod']

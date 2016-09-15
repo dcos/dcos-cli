@@ -65,7 +65,7 @@ def test_pod_list_without_json(emitter):
     subcmd.pod_list(json_=False)
 
     expected_table = file_bytes('tests/unit/data/pod.txt')
-    emitter.publish(expected_table)
+    emitter.publish.assert_called_with(expected_table.decode('utf-8'))
 
 
 def test_pod_list_propagates_exceptions_from_list_pod():
