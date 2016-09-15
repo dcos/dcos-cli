@@ -66,9 +66,9 @@ def assert_command(
     :param returncode: Expected return code
     :type returncode: int
     :param stdout: Expected stdout
-    :type stdout: str
+    :type stdout: bytes
     :param stderr: Expected stderr
-    :type stderr: str
+    :type stderr: bytes
     :param env: Environment variables
     :type env: dict of str to str
     :param stdin: File to use for stdin
