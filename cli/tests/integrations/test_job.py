@@ -87,6 +87,46 @@ def test_show_job():
         show_job('pikachu')
 
 
+def test_show_job_with_blank_jobname():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'job', 'show'])
+
+    assert returncode == 1
+    assert "Command not recognized" in stdout.decode('utf-8')
+
+
+def test_show_job_with_invalid_jobname():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'job', 'show', 'invalid'])
+
+    assert returncode == 1
+    assert "does NOT exist" in stderr.decode('utf-8')
+
+
+def test_show_job_runs_blank_jobname():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'job', 'show', 'runs'])
+
+    assert returncode == 1
+    assert "does NOT exist" in stderr.decode('utf-8')
+
+
+def test_show_schedule_blank_jobname():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'job', 'schedule', 'show'])
+
+    assert returncode == 1
+    assert stdout.decode('utf-8').startswith('Command not recognized')
+
+
+def test_show_schedule_invalid_jobname():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'job', 'schedule', 'show', 'invalid'])
+
+    assert returncode == 1
+    assert "does NOT exist" in stderr.decode('utf-8')
+
+
 def test_remove_job():
     with _no_schedule_instance_job():
         pass
