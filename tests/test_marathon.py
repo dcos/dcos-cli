@@ -121,7 +121,8 @@ def test_list_pod_propagates_json_parsing_exception():
 
 def test_update_pod_includes_id_in_path_correctly():
     _assert_update_pod_includes_id_in_path_correctly('foo', 'v2/pods/foo')
-    _assert_update_pod_includes_id_in_path_correctly('bar', 'v2/pods/bar')
+    _assert_update_pod_includes_id_in_path_correctly('/foo bar/',
+                                                     'v2/pods/foo%20bar')
 
 
 def test_rpc_client_http_req_calls_method_fn():
