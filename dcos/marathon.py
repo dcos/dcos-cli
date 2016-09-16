@@ -748,7 +748,9 @@ class Client(object):
 
         path = self._marathon_id_path_join('v2/pods', pod_id)
         params = self._force_params(force)
-        self._rpc.http_req(http.put, path, params=params, json=pod_json)
+        response = self._rpc.http_req(
+            http.put, path, params=params, json=pod_json)
+        return response.json()['deploymentId']
 
     @staticmethod
     def _marathon_id_path_join(url_path, id_path):

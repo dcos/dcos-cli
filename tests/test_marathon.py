@@ -119,31 +119,17 @@ def test_list_pod_propagates_json_parsing_exception():
         lambda marathon_client: marathon_client.list_pod())
 
 
-def test_update_pod_builds_rpc_correctly():
-    _assert_update_pod_builds_rpc_correctly(
-        pod_id='foo',
-        pod_json={'some': 'json'},
-        force=False,
-        path='v2/pods/foo',
-        params=None)
-    _assert_update_pod_builds_rpc_correctly(
-        pod_id='/foo bar/',
-        pod_json={'some': 'json'},
-        force=False,
-        path='v2/pods/foo%20bar',
-        params=None)
-    _assert_update_pod_builds_rpc_correctly(
-        pod_id='foo',
-        pod_json={'some': 'json'},
-        force=True,
-        path='v2/pods/foo',
-        params={'force': 'true'})
-    _assert_update_pod_builds_rpc_correctly(
-        pod_id='foo',
-        pod_json={'something': 'different'},
-        force=False,
-        path='v2/pods/foo',
-        params=None)
+def test_update_pod_executes_successfully():
+    _assert_update_pod_executes_successfully()
+    _assert_update_pod_executes_successfully(
+        pod_id='/foo bar/', path='v2/pods/foo%20bar')
+    _assert_update_pod_executes_successfully(
+        force=True, params={'force': 'true'})
+    _assert_update_pod_executes_successfully(
+        pod_json={'something': 'different'})
+    _assert_update_pod_executes_successfully(
+        response_body={'deploymentId': 'an-arbitrary-value'},
+        expected_return='an-arbitrary-value')
 
 
 def test_update_pod_has_default_force_value():
@@ -475,12 +461,23 @@ def _assert_list_pod_returns_success_response_json(body_json):
     assert marathon_client.list_pod() == body_json
 
 
-def _assert_update_pod_builds_rpc_correctly(
-        pod_id, pod_json, force, path, params):
+def _assert_update_pod_executes_successfully(
+        pod_id='foo', pod_json=None, force=False, response_body=None,
+        path='v2/pods/foo', params=None, expected_return='pod-deployment-id'):
+    pod_json = _default_if_none(pod_json, {'some': 'json'})
+    response_body = _default_if_none(
+        response_body, {'deploymentId': expected_return})
+
     marathon_client, rpc_client = _create_fixtures()
-    marathon_client.update_pod(pod_id, pod_json, force)
+    mock_response = mock.create_autospec(requests.Response)
+    mock_response.json.return_value = response_body
+    rpc_client.http_req.return_value = mock_response
+
+    actual_return = marathon_client.update_pod(pod_id, pod_json, force)
+
     rpc_client.http_req.assert_called_with(
         http.put, path, params=params, json=pod_json)
+    assert actual_return == expected_return
 
 
 def _assert_method_propagates_rpc_dcos_exception(invoke_method):
@@ -622,6 +619,10 @@ def _create_fixtures():
     marathon_client = marathon.Client(rpc_client)
 
     return marathon_client, rpc_client
+
+
+def _default_if_none(value, default):
+    return value if value is not None else default
 
 
 _MESSAGE_1 = 'Oops!'
