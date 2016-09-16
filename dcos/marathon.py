@@ -768,6 +768,16 @@ class Client(object):
         response = self._rpc.http_req(http.get, 'v2/pods')
         return response.json()
 
+    def update_pod(self, pod_id):
+        """Update a pod.
+
+        :param pod_id: the pod ID
+        :type pod_id: str
+        :rtype: None
+        """
+
+        self._rpc.http_req(http.put, 'v2/pods/{}'.format(pod_id))
+
     @staticmethod
     def _marathon_id_path_join(url_path, id_path):
         """Concatenates a URL path with a Marathon "ID path", ensuring the
