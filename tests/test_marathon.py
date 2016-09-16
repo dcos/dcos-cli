@@ -121,18 +121,36 @@ def test_list_pod_propagates_json_parsing_exception():
 
 def test_update_pod_builds_rpc_correctly():
     _assert_update_pod_builds_rpc_correctly(
-        pod_id='foo', force=False, path='v2/pods/foo', params=None)
+        pod_id='foo',
+        pod_json={'some': 'json'},
+        force=False,
+        path='v2/pods/foo',
+        params=None)
     _assert_update_pod_builds_rpc_correctly(
-        pod_id='/foo bar/', force=False, path='v2/pods/foo%20bar', params=None)
+        pod_id='/foo bar/',
+        pod_json={'some': 'json'},
+        force=False,
+        path='v2/pods/foo%20bar',
+        params=None)
     _assert_update_pod_builds_rpc_correctly(
-        pod_id='foo', force=True, path='v2/pods/foo', params={'force': 'true'})
+        pod_id='foo',
+        pod_json={'some': 'json'},
+        force=True,
+        path='v2/pods/foo',
+        params={'force': 'true'})
+    _assert_update_pod_builds_rpc_correctly(
+        pod_id='foo',
+        pod_json={'something': 'different'},
+        force=False,
+        path='v2/pods/foo',
+        params=None)
 
 
 def test_update_pod_has_default_force_value():
     marathon_client, rpc_client = _create_fixtures()
-    marathon_client.update_pod('foo')
+    marathon_client.update_pod('foo', {'some': 'json'})
     rpc_client.http_req.assert_called_with(
-        http.put, 'v2/pods/foo', params=None)
+        http.put, 'v2/pods/foo', params=None, json={'some': 'json'})
 
 
 def test_rpc_client_http_req_calls_method_fn():
@@ -457,10 +475,12 @@ def _assert_list_pod_returns_success_response_json(body_json):
     assert marathon_client.list_pod() == body_json
 
 
-def _assert_update_pod_builds_rpc_correctly(pod_id, force, path, params):
+def _assert_update_pod_builds_rpc_correctly(
+        pod_id, pod_json, force, path, params):
     marathon_client, rpc_client = _create_fixtures()
-    marathon_client.update_pod(pod_id, force)
-    rpc_client.http_req.assert_called_with(http.put, path, params=params)
+    marathon_client.update_pod(pod_id, pod_json, force)
+    rpc_client.http_req.assert_called_with(
+        http.put, path, params=params, json=pod_json)
 
 
 def _assert_method_propagates_rpc_dcos_exception(invoke_method):

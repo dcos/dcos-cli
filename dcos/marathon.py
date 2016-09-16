@@ -734,11 +734,13 @@ class Client(object):
         response = self._rpc.http_req(http.get, 'v2/pods')
         return response.json()
 
-    def update_pod(self, pod_id, force=False):
+    def update_pod(self, pod_id, pod_json, force=False):
         """Update a pod.
 
         :param pod_id: the pod ID
         :type pod_id: str
+        :param pod_json: JSON pod definition
+        :type pod_json: {}
         :param force: whether to override running deployments
         :type force: bool
         :rtype: None
@@ -746,7 +748,7 @@ class Client(object):
 
         path = self._marathon_id_path_join('v2/pods', pod_id)
         params = self._force_params(force)
-        self._rpc.http_req(http.put, path, params=params)
+        self._rpc.http_req(http.put, path, params=params, json=pod_json)
 
     @staticmethod
     def _marathon_id_path_join(url_path, id_path):
