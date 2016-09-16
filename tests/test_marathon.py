@@ -119,15 +119,18 @@ def test_list_pod_propagates_json_parsing_exception():
         lambda marathon_client: marathon_client.list_pod())
 
 
-def test_update_pod_includes_id_in_path_correctly():
-    _assert_update_pod_includes_id_in_path_correctly('foo', 'v2/pods/foo')
-    _assert_update_pod_includes_id_in_path_correctly('/foo bar/',
-                                                     'v2/pods/foo%20bar')
+def test_update_pod_builds_rpc_correctly():
+    _assert_update_pod_builds_rpc_correctly(
+        pod_id='foo', force=False, path='v2/pods/foo', params=None)
+    _assert_update_pod_builds_rpc_correctly(
+        pod_id='/foo bar/', force=False, path='v2/pods/foo%20bar', params=None)
+    _assert_update_pod_builds_rpc_correctly(
+        pod_id='foo', force=True, path='v2/pods/foo', params={'force': 'true'})
 
 
-def test_update_pod_handles_force_argument_correctly():
+def test_update_pod_has_default_force_value():
     marathon_client, rpc_client = _create_fixtures()
-    marathon_client.update_pod('foo', force=False)
+    marathon_client.update_pod('foo')
     rpc_client.http_req.assert_called_with(
         http.put, 'v2/pods/foo', params=None)
 
@@ -454,10 +457,10 @@ def _assert_list_pod_returns_success_response_json(body_json):
     assert marathon_client.list_pod() == body_json
 
 
-def _assert_update_pod_includes_id_in_path_correctly(pod_id, path):
+def _assert_update_pod_builds_rpc_correctly(pod_id, force, path, params):
     marathon_client, rpc_client = _create_fixtures()
-    marathon_client.update_pod(pod_id)
-    rpc_client.http_req.assert_called_with(http.put, path, params=None)
+    marathon_client.update_pod(pod_id, force)
+    rpc_client.http_req.assert_called_with(http.put, path, params=params)
 
 
 def _assert_method_propagates_rpc_dcos_exception(invoke_method):

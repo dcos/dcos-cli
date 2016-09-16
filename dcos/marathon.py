@@ -319,7 +319,7 @@ class Client(object):
 
         return response.json()
 
-    def _update(self, resource_id, payload, force=None, url_endpoint="apps"):
+    def _update(self, resource_id, payload, force=False, url_endpoint="apps"):
         """Update an application or group.
 
         :param resource_id: the app or group id
@@ -335,12 +335,7 @@ class Client(object):
         """
 
         resource_id = util.normalize_marathon_id_path(resource_id)
-
-        if not force:
-            params = None
-        else:
-            params = {'force': 'true'}
-
+        params = self._force_params(force)
         path = 'v2/{}{}'.format(url_endpoint, resource_id)
 
         response = self._rpc.http_req(http.put,
@@ -350,7 +345,7 @@ class Client(object):
 
         return response.json().get('deploymentId')
 
-    def update_app(self, app_id, payload, force=None):
+    def update_app(self, app_id, payload, force=False):
         """Update an application.
 
         :param app_id: the application id
@@ -365,7 +360,7 @@ class Client(object):
 
         return self._update(app_id, payload, force)
 
-    def update_group(self, group_id, payload, force=None):
+    def update_group(self, group_id, payload, force=False):
         """Update a group.
 
         :param group_id: the group id
@@ -380,7 +375,7 @@ class Client(object):
 
         return self._update(group_id, payload, force, "groups")
 
-    def scale_app(self, app_id, instances, force=None):
+    def scale_app(self, app_id, instances, force=False):
         """Scales an application to the requested number of instances.
 
         :param app_id: the ID of the application to scale
@@ -394,12 +389,7 @@ class Client(object):
         """
 
         app_id = util.normalize_marathon_id_path(app_id)
-
-        if not force:
-            params = None
-        else:
-            params = {'force': 'true'}
-
+        params = self._force_params(force)
         path = 'v2/apps{}'.format(app_id)
 
         response = self._rpc.http_req(http.put,
@@ -410,7 +400,7 @@ class Client(object):
         deployment = response.json()['deploymentId']
         return deployment
 
-    def scale_group(self, group_id, scale_factor, force=None):
+    def scale_group(self, group_id, scale_factor, force=False):
         """Scales a group with the requested scale-factor.
         :param group_id: the ID of the group to scale
         :type group_id: str
@@ -423,12 +413,7 @@ class Client(object):
         """
 
         group_id = util.normalize_marathon_id_path(group_id)
-
-        if not force:
-            params = None
-        else:
-            params = {'force': 'true'}
-
+        params = self._force_params(force)
         path = 'v2/groups{}'.format(group_id)
 
         response = self._rpc.http_req(http.put,
@@ -439,7 +424,7 @@ class Client(object):
         deployment = response.json()['deploymentId']
         return deployment
 
-    def stop_app(self, app_id, force=None):
+    def stop_app(self, app_id, force=False):
         """Scales an application to zero instances.
 
         :param app_id: the ID of the application to stop
@@ -452,7 +437,7 @@ class Client(object):
 
         return self.scale_app(app_id, 0, force)
 
-    def remove_app(self, app_id, force=None):
+    def remove_app(self, app_id, force=False):
         """Completely removes the requested application.
 
         :param app_id: the ID of the application to remove
@@ -463,16 +448,11 @@ class Client(object):
         """
 
         app_id = util.normalize_marathon_id_path(app_id)
-
-        if not force:
-            params = None
-        else:
-            params = {'force': 'true'}
-
+        params = self._force_params(force)
         path = 'v2/apps{}'.format(app_id)
         self._rpc.http_req(http.delete, path, params=params)
 
-    def remove_group(self, group_id, force=None):
+    def remove_group(self, group_id, force=False):
         """Completely removes the requested application.
 
         :param group_id: the ID of the application to remove
@@ -483,12 +463,7 @@ class Client(object):
         """
 
         group_id = util.normalize_marathon_id_path(group_id)
-
-        if not force:
-            params = None
-        else:
-            params = {'force': 'true'}
-
+        params = self._force_params(force)
         path = 'v2/groups{}'.format(group_id)
 
         self._rpc.http_req(http.delete, path, params=params)
@@ -514,7 +489,7 @@ class Client(object):
         response = self._rpc.http_req(http.delete, path, params=params)
         return response.json()
 
-    def restart_app(self, app_id, force=None):
+    def restart_app(self, app_id, force=False):
         """Performs a rolling restart of all of the tasks.
 
         :param app_id: the id of the application to restart
@@ -526,12 +501,7 @@ class Client(object):
         """
 
         app_id = util.normalize_marathon_id_path(app_id)
-
-        if not force:
-            params = None
-        else:
-            params = {'force': 'true'}
-
+        params = self._force_params(force)
         path = 'v2/apps{}/restart'.format(app_id)
 
         response = self._rpc.http_req(http.post, path, params=params)
@@ -590,11 +560,7 @@ class Client(object):
         :rtype: dict
         """
 
-        if not force:
-            params = None
-        else:
-            params = {'force': 'true'}
-
+        params = self._force_params(force)
         path = 'v2/deployments/{}'.format(deployment_id)
 
         response = self._rpc.http_req(http.delete, path, params=params)
@@ -742,7 +708,7 @@ class Client(object):
         """
 
         path = self._marathon_id_path_join('v2/pods', pod_id)
-        params = {'force': 'true'} if force else None
+        params = self._force_params(force)
         self._rpc.http_req(http.delete, path, params=params)
 
     def show_pod(self, pod_id):
@@ -779,7 +745,8 @@ class Client(object):
         """
 
         path = self._marathon_id_path_join('v2/pods', pod_id)
-        self._rpc.http_req(http.put, path, params=None)
+        params = self._force_params(force)
+        self._rpc.http_req(http.put, path, params=params)
 
     @staticmethod
     def _marathon_id_path_join(url_path, id_path):
@@ -800,6 +767,17 @@ class Client(object):
 
         normalized_id_path = urllib.parse.quote(id_path.strip('/'))
         return url_path.rstrip('/') + '/' + normalized_id_path
+
+    @staticmethod
+    def _force_params(force):
+        """Returns the query parameters that signify the provided force value.
+
+        :param force: whether to override running deployments
+        :type force: bool
+        :rtype: {} | None
+        """
+
+        return {'force': 'true'} if force else None
 
 
 def _default_marathon_error(message=""):
