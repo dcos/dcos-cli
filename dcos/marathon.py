@@ -753,7 +753,9 @@ class Client(object):
         try:
             return response.json()['deploymentId']
         except:
-            pass
+            template = ('Error: the following response from Marathon was not '
+                        'in JSON format:\n{}')
+            raise DCOSException(template.format(response.text))
 
     @staticmethod
     def _marathon_id_path_join(url_path, id_path):

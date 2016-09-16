@@ -145,6 +145,11 @@ def test_update_pod_propagates_rpc_dcos_exception():
             marathon_client.update_pod('foo', {'some': 'json'}))
 
 
+def test_update_pod_raises_dcos_exception_for_json_parse_errors():
+    _assert_update_pod_raises_dcos_exception_for_json_parse_errors('not-json')
+    _assert_update_pod_raises_dcos_exception_for_json_parse_errors('{"oops"}')
+
+
 def test_rpc_client_http_req_calls_method_fn():
     _assert_rpc_client_http_req_calls_method_fn(
         base_url='http://base/url',
@@ -484,6 +489,23 @@ def _assert_update_pod_executes_successfully(
     rpc_client.http_req.assert_called_with(
         http.put, path, params=params, json=pod_json)
     assert actual_return == expected_return
+
+
+def _assert_update_pod_raises_dcos_exception_for_json_parse_errors(non_json):
+    mock_response = mock.create_autospec(requests.Response)
+    mock_response.json.side_effect = Exception()
+    mock_response.text = non_json
+
+    marathon_client, rpc_client = _create_fixtures()
+    rpc_client.http_req.return_value = mock_response
+
+    with pytest.raises(DCOSException) as exception_info:
+        marathon_client.update_pod('foo', {'some': 'json'})
+
+    pattern = ('Error: the following response from Marathon was not in JSON '
+               'format:\n(.*)')
+    actual_error = str(exception_info.value)
+    _assert_matches_with_groups(pattern, actual_error, (non_json,))
 
 
 def _assert_method_propagates_rpc_dcos_exception(invoke_method):
