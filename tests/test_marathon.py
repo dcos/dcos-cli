@@ -450,11 +450,13 @@ def _assert_add_pod_puts_json_in_request_body(pod_json):
 
 
 def _assert_add_pod_returns_parsed_response_body(response_json):
-    rpc_client = mock.create_autospec(marathon.RpcClient)
-    rpc_client.http_req.return_value = response_json
+    mock_response = mock.create_autospec(requests.Response)
+    mock_response.json.return_value = response_json
 
-    client = marathon.Client(rpc_client)
-    assert client.add_pod("arbitrary") == response_json
+    marathon_client, rpc_client = _create_fixtures()
+    rpc_client.http_req.return_value = mock_response
+
+    assert marathon_client.add_pod({'some': 'json'}) == response_json
 
 
 def _assert_show_pod_builds_rpc_correctly(pod_id, path):

@@ -695,7 +695,9 @@ class Client(object):
         :returns: description of created pod
         :rtype: dict
         """
-        return self._rpc.http_req(http.post, 'v2/pods', json=pod_json)
+
+        response = self._rpc.http_req(http.post, 'v2/pods', json=pod_json)
+        return response.json()
 
     def remove_pod(self, pod_id, force=False):
         """Completely removes the requested pod.
