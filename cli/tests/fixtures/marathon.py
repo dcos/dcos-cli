@@ -1,3 +1,21 @@
+import os
+
+from ..integrations.common import file_json_ast
+
+PODS_FILE_PATH_BASE = 'tests/data/marathon/pods'
+
+GOOD_POD_ID = 'good-pod'
+GOOD_POD_FILE_PATH = os.path.join(PODS_FILE_PATH_BASE, 'good.json')
+UPDATED_GOOD_POD_FILE_PATH = \
+    os.path.join(PODS_FILE_PATH_BASE, 'updated_good.json')
+
+DOUBLE_POD_ID = 'double-pod'
+DOUBLE_POD_FILE_PATH = os.path.join(PODS_FILE_PATH_BASE, 'double.json')
+
+TRIPLE_POD_ID = 'winston'
+TRIPLE_POD_FILE_PATH = os.path.join(PODS_FILE_PATH_BASE, 'doubleplusgood.json')
+
+
 def app_fixture():
     """ Marathon app fixture.
 
@@ -159,3 +177,13 @@ def group_fixture():
         "id": "/test-group",
         "version": "2015-05-29T23:12:46.187Z"
     }
+
+
+def pod_fixture():
+    """Marathon pod fixture.
+
+    :rtype: [{}]
+    """
+
+    paths = [GOOD_POD_FILE_PATH, DOUBLE_POD_FILE_PATH, TRIPLE_POD_FILE_PATH]
+    return [file_json_ast(path) for path in paths]

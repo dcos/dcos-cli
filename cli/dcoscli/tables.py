@@ -376,6 +376,25 @@ def group_table(groups):
     return tb
 
 
+def pod_table(pods):
+    """Returns a PrettyTable representation of the provided Marathon pods.
+
+    :param pods: pods to render
+    :type pods: [dict]
+    :rtype: PrettyTable
+    """
+
+    fields = OrderedDict([
+        ('ID', lambda pod: pod['id']),
+        ('CONTAINERS', lambda pod: len(pod['containers'])),
+    ])
+
+    tb = table(fields, pods, sortby='ID')
+    tb.align['ID'] = 'l'
+
+    return tb
+
+
 def package_table(packages):
     """Returns a PrettyTable representation of the provided DC/OS packages
 

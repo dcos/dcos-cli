@@ -851,7 +851,10 @@ class MarathonSubcommand(object):
         :rtype: int
         """
 
-        raise DCOSException('Not implemented')
+        marathon_client = self._create_marathon_client()
+        pods = marathon_client.list_pod()
+        emitting.publish_table(emitter, pods, tables.pod_table, json_)
+        return 0
 
     def pod_show(self, pod_id):
         """Show details of a Marathon pod.

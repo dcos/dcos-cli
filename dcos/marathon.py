@@ -758,6 +758,16 @@ class Client(object):
         response = self._rpc.http_req(http.get, path)
         return response.json()
 
+    def list_pod(self):
+        """Get a list of known pods.
+
+        :returns: list of known pods
+        :rtype: [dict]
+        """
+
+        response = self._rpc.http_req(http.get, 'v2/pods')
+        return response.json()
+
     @staticmethod
     def _marathon_id_path_join(url_path, id_path):
         """Concatenates a URL path with a Marathon "ID path", ensuring the

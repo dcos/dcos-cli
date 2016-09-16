@@ -71,13 +71,8 @@ def test_remove_pod_builds_rpc_correctly_7():
 
 
 def test_remove_pod_propagates_dcos_exception():
-    marathon_client, rpc_client = _create_fixtures()
-    rpc_client.http_req.side_effect = DCOSException('BOOM!')
-
-    with pytest.raises(DCOSException) as exception_info:
-        marathon_client.remove_pod('bad')
-
-    assert str(exception_info.value) == 'BOOM!'
+    _assert_method_propagates_rpc_dcos_exception(
+        lambda marathon_client: marathon_client.remove_pod('bad'))
 
 
 def test_show_pod_builds_rpc_correctly():
@@ -94,25 +89,34 @@ def test_show_pod_returns_response_json():
 
 
 def test_show_pod_propagates_dcos_exception():
-    marathon_client, rpc_client = _create_fixtures()
-    rpc_client.http_req.side_effect = DCOSException('BOOM!')
-
-    with pytest.raises(DCOSException) as exception_info:
-        marathon_client.show_pod('bad-req')
-
-    assert str(exception_info.value) == 'BOOM!'
+    _assert_method_propagates_rpc_dcos_exception(
+        lambda marathon_client: marathon_client.show_pod('bad-req'))
 
 
 def test_show_pod_propagates_json_parsing_exception():
+    _assert_method_propagates_json_parsing_exception(
+        lambda marathon_client: marathon_client.show_pod('bad-json'))
+
+
+def test_list_pod_builds_rpc_correctly():
     marathon_client, rpc_client = _create_fixtures()
-    mock_response = mock.create_autospec(requests.Response)
-    mock_response.json.side_effect = Exception('Bad parse')
-    rpc_client.http_req.return_value = mock_response
+    marathon_client.list_pod()
+    rpc_client.http_req.assert_called_with(http.get, 'v2/pods')
 
-    with pytest.raises(Exception) as exception_info:
-        marathon_client.show_pod('bad-json')
 
-    assert str(exception_info.value) == 'Bad parse'
+def test_list_pod_returns_success_response_json():
+    _assert_list_pod_returns_success_response_json(body_json={'some': 'json'})
+    _assert_list_pod_returns_success_response_json(body_json=['a', 'b', 'c'])
+
+
+def test_list_pod_propagates_dcos_exception():
+    _assert_method_propagates_rpc_dcos_exception(
+        lambda marathon_client: marathon_client.list_pod())
+
+
+def test_list_pod_propagates_json_parsing_exception():
+    _assert_method_propagates_json_parsing_exception(
+        lambda marathon_client: marathon_client.list_pod())
 
 
 def test_rpc_client_http_req_calls_method_fn():
@@ -426,6 +430,37 @@ def _assert_show_pod_returns_response_json(expected):
     response_json = marathon_client.show_pod('arbitrary-id')
 
     assert response_json == expected
+
+
+def _assert_list_pod_returns_success_response_json(body_json):
+    marathon_client, rpc_client = _create_fixtures()
+    mock_response = mock.create_autospec(requests.Response)
+    mock_response.json.return_value = body_json
+    rpc_client.http_req.return_value = mock_response
+
+    assert marathon_client.list_pod() == body_json
+
+
+def _assert_method_propagates_rpc_dcos_exception(invoke_method):
+    marathon_client, rpc_client = _create_fixtures()
+    rpc_client.http_req.side_effect = DCOSException('BOOM!')
+
+    with pytest.raises(DCOSException) as exception_info:
+        invoke_method(marathon_client)
+
+    assert str(exception_info.value) == 'BOOM!'
+
+
+def _assert_method_propagates_json_parsing_exception(invoke_method):
+    marathon_client, rpc_client = _create_fixtures()
+    mock_response = mock.create_autospec(requests.Response)
+    mock_response.json.side_effect = Exception('Bad parse')
+    rpc_client.http_req.return_value = mock_response
+
+    with pytest.raises(Exception) as exception_info:
+        invoke_method(marathon_client)
+
+    assert str(exception_info.value) == 'Bad parse'
 
 
 def _assert_rpc_client_http_req_calls_method_fn(base_url, path, full_url):

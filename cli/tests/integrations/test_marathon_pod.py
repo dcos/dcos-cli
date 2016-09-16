@@ -1,26 +1,17 @@
 import contextlib
 import json
-import os
 import re
 
 from dcos import util
 
 import pytest
 
-from ..common import assert_same_elements
-from .common import assert_command, exec_command, file_bytes, file_json
-
-FILE_PATH_BASE = 'tests/data/marathon/pods'
-
-GOOD_POD_ID = 'good-pod'
-GOOD_POD_FILE_PATH = os.path.join(FILE_PATH_BASE, 'good.json')
-UPDATED_GOOD_POD_FILE_PATH = os.path.join(FILE_PATH_BASE, 'updated_good.json')
-
-DOUBLE_POD_ID = 'double-pod'
-DOUBLE_POD_FILE_PATH = os.path.join(FILE_PATH_BASE, 'double.json')
-
-TRIPLE_POD_ID = 'winston'
-TRIPLE_POD_FILE_PATH = os.path.join(FILE_PATH_BASE, 'doubleplusgood.json')
+from ..common import file_bytes
+from ..fixtures.marathon import (DOUBLE_POD_FILE_PATH, DOUBLE_POD_ID,
+                                 GOOD_POD_FILE_PATH, GOOD_POD_ID,
+                                 TRIPLE_POD_FILE_PATH, TRIPLE_POD_ID,
+                                 UPDATED_GOOD_POD_FILE_PATH, pod_fixture)
+from .common import assert_command, exec_command
 
 _POD_BASE_CMD = ['dcos', 'marathon', 'pod']
 _POD_ADD_CMD = _POD_BASE_CMD + ['add']
@@ -50,8 +41,7 @@ def test_pod_add_from_stdin_then_force_remove():
 
 @pytest.mark.skip(reason="Pods support in Marathon not released yet")
 def test_pod_list():
-    paths = [GOOD_POD_FILE_PATH, DOUBLE_POD_FILE_PATH, TRIPLE_POD_FILE_PATH]
-    expected_json = [file_json(path) for path in paths]
+    expected_json = pod_fixture()
     expected_table = file_bytes('tests/unit/data/pod.txt')
 
     with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH), \
@@ -59,7 +49,7 @@ def test_pod_list():
             _pod(TRIPLE_POD_ID, TRIPLE_POD_FILE_PATH):
 
         _assert_pod_list_json(expected_json)
-        _assert_pod_list_table(stdout=expected_table)
+        _assert_pod_list_table(stdout=expected_table + b'\n')
 
 
 @pytest.mark.skip(reason="Pods support in Marathon not released yet")
@@ -105,10 +95,33 @@ def _assert_pod_list_json(expected_json):
     cmd = _POD_LIST_CMD + ['--json']
     returncode, stdout, stderr = exec_command(cmd)
     assert returncode == 0
-    assert stderr
+    assert stderr == b''
 
-    parsed_stdout = json.loads(stdout.decode('utf-8'))
-    assert_same_elements(parsed_stdout, expected_json)
+    actual_json = json.loads(stdout.decode('utf-8'))
+    _assert_pod_list_json_subset(expected_json, actual_json)
+
+
+def _assert_pod_list_json_subset(expected_json, actual_json):
+    actual_pods_by_id = {pod['id']: pod for pod in actual_json}
+
+    for expected_pod in expected_json:
+        pod_id = expected_pod['id']
+        actual_pod = actual_pods_by_id[pod_id]
+
+        expected_containers = expected_pod['containers']
+        actual_containers = actual_pod['containers']
+        actual_containers_by_name = {c['name']: c for c in actual_containers}
+
+        for expected_container in expected_containers:
+            container_name = expected_container['name']
+            actual_container = actual_containers_by_name[container_name]
+
+            for k, v in expected_container['resources'].items():
+                assert actual_container['resources'][k] == v
+
+        assert len(actual_containers) == len(expected_containers)
+
+    assert len(actual_json) == len(expected_json)
 
 
 def _assert_pod_list_table(stdout):
