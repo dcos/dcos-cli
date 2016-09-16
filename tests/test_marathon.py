@@ -150,6 +150,17 @@ def test_update_pod_raises_dcos_exception_for_json_parse_errors():
     _assert_update_pod_raises_dcos_exception_for_json_parse_errors('{"oops"}')
 
 
+def test_update_pod_raises_dcos_exception_if_deployment_id_missing():
+    _assert_update_pod_raises_dcos_exception_if_deployment_id_missing(
+        bad_json={"foo": "bar"}, rendered_bad_json='{\n  "foo": "bar"\n}')
+    _assert_update_pod_raises_dcos_exception_if_deployment_id_missing(
+        bad_json={"deployment_ID": "misspelled-field", "zzz": "aaa"},
+        rendered_bad_json=('{\n'
+                           '  "deployment_ID": "misspelled-field",\n'
+                           '  "zzz": "aaa"\n'
+                           '}'))
+
+
 def test_rpc_client_http_req_calls_method_fn():
     _assert_rpc_client_http_req_calls_method_fn(
         base_url='http://base/url',
@@ -506,6 +517,23 @@ def _assert_update_pod_raises_dcos_exception_for_json_parse_errors(non_json):
                'format:\n(.*)')
     actual_error = str(exception_info.value)
     _assert_matches_with_groups(pattern, actual_error, (non_json,))
+
+
+def _assert_update_pod_raises_dcos_exception_if_deployment_id_missing(
+        bad_json, rendered_bad_json):
+    mock_response = mock.create_autospec(requests.Response)
+    mock_response.json.return_value = bad_json
+
+    marathon_client, rpc_client = _create_fixtures()
+    rpc_client.http_req.return_value = mock_response
+
+    with pytest.raises(DCOSException) as exception_info:
+        marathon_client.update_pod('foo', {'some': 'json'})
+
+    pattern = ('Error: missing "deploymentId" field in the following JSON '
+               'response from\nMarathon:\n(.*)')
+    actual_error = str(exception_info.value)
+    _assert_matches_with_groups(pattern, actual_error, (rendered_bad_json,))
 
 
 def _assert_method_propagates_rpc_dcos_exception(invoke_method):

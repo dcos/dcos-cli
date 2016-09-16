@@ -750,12 +750,21 @@ class Client(object):
         params = self._force_params(force)
         response = self._rpc.http_req(
             http.put, path, params=params, json=pod_json)
+
         try:
-            return response.json()['deploymentId']
+            body_json = response.json()
         except:
             template = ('Error: the following response from Marathon was not '
                         'in JSON format:\n{}')
             raise DCOSException(template.format(response.text))
+
+        try:
+            return body_json['deploymentId']
+        except KeyError:
+            template = ('Error: missing "deploymentId" field in the following '
+                        'JSON response from\nMarathon:\n{}')
+            rendered_json = json.dumps(body_json, indent=2, sort_keys=True)
+            raise DCOSException(template.format(rendered_json))
 
     @staticmethod
     def _marathon_id_path_join(url_path, id_path):
