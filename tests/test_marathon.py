@@ -109,7 +109,7 @@ def test_list_pod_returns_success_response_json():
     _assert_list_pod_returns_success_response_json(body_json=['a', 'b', 'c'])
 
 
-def test_list_pod_propagates_dcos_exception():
+def test_list_pod_propagates_rpc_dcos_exception():
     _assert_method_propagates_rpc_dcos_exception(
         lambda marathon_client: marathon_client.list_pod())
 
@@ -137,6 +137,12 @@ def test_update_pod_has_default_force_value():
     marathon_client.update_pod('foo', {'some': 'json'})
     rpc_client.http_req.assert_called_with(
         http.put, 'v2/pods/foo', params=None, json={'some': 'json'})
+
+
+def test_update_pod_propagates_rpc_dcos_exception():
+    _assert_method_propagates_rpc_dcos_exception(
+        lambda marathon_client:
+            marathon_client.update_pod('foo', {'some': 'json'}))
 
 
 def test_rpc_client_http_req_calls_method_fn():

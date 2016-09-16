@@ -750,7 +750,10 @@ class Client(object):
         params = self._force_params(force)
         response = self._rpc.http_req(
             http.put, path, params=params, json=pod_json)
-        return response.json()['deploymentId']
+        try:
+            return response.json()['deploymentId']
+        except:
+            pass
 
     @staticmethod
     def _marathon_id_path_join(url_path, id_path):
