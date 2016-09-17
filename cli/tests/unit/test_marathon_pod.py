@@ -75,19 +75,23 @@ def test_pod_update_invoked_successfully():
 
 def _assert_pod_add_invoked_successfully(pod_file_json):
     pod_file_path = "some/path/to/pod.json"
-    resource_reader = {pod_file_path: pod_file_json}.__getitem__
+    resource_reader = create_autospec(main.ResourceReader)
+    resource_reader.from_filename_or_url_or_stdin.return_value = pod_file_json
     marathon_client = create_autospec(marathon.Client)
 
     subcmd = main.MarathonSubcommand(resource_reader, lambda: marathon_client)
     returncode = subcmd.pod_add(pod_file_path)
 
     assert returncode == 0
+    resource_reader.from_filename_or_url_or_stdin.\
+        assert_called_with(pod_file_path)
     marathon_client.add_pod.assert_called_with(pod_file_json)
 
 
 def _assert_pod_add_propagates_exceptions_from_add_pod(exception):
-    def resource_reader(path):
-        return {"some": "json"}
+    resource_reader = create_autospec(main.ResourceReader)
+    resource_reader.from_filename_or_url_or_stdin.\
+        return_value = {'some': 'json'}
 
     marathon_client = create_autospec(marathon.Client)
     marathon_client.add_pod.side_effect = exception
@@ -161,21 +165,28 @@ def _assert_pod_list_propagates_exceptions_from_list_pod(exception):
 
 
 def _assert_pod_update_invoked_successfully(pod_id):
-    subcmd, marathon_client = _unused_reader_fixture()
+    resource_reader = create_autospec(main.ResourceReader)
+    marathon_client = create_autospec(marathon.Client)
+    subcmd = main.MarathonSubcommand(resource_reader, lambda: marathon_client)
 
     returncode = subcmd.pod_update(pod_id, properties=[], force=False)
 
     assert returncode == 0
     marathon_client.show_pod.assert_called_with(pod_id)
+    resource_reader.from_properties_or_stdin.assert_called_with([])
 
 
 def _unused_reader_fixture():
     marathon_client = create_autospec(marathon.Client)
-    subcmd = main.MarathonSubcommand(_unused_resource_reader,
+    subcmd = main.MarathonSubcommand(_unused_resource_reader(),
                                      lambda: marathon_client)
 
     return subcmd, marathon_client
 
 
-def _unused_resource_reader(path):
-    assert False, "should not be called"
+def _unused_resource_reader():
+    resource_reader = create_autospec(main.ResourceReader)
+    error = AssertionError("should not be called")
+    resource_reader.from_filename_or_url_or_stdin.side_effect = error
+    resource_reader.from_properties_or_stdin.side_effect = error
+    return resource_reader
