@@ -21,6 +21,11 @@ def test_add_pod_returns_parsed_response_body():
     _assert_add_pod_returns_parsed_response_body(["another", "pod", "json"])
 
 
+def test_add_pod_raises_dcos_exception_for_json_parse_errors():
+    _assert_method_raises_dcos_exception_for_json_parse_errors(
+        lambda marathon_client: marathon_client.add_pod({'some': 'json'}))
+
+
 def test_remove_pod_builds_rpc_correctly_1():
     marathon_client, rpc_client = _create_fixtures()
     marathon_client.remove_pod('foo')
@@ -93,8 +98,8 @@ def test_show_pod_propagates_dcos_exception():
         lambda marathon_client: marathon_client.show_pod('bad-req'))
 
 
-def test_show_pod_propagates_json_parsing_exception():
-    _assert_method_propagates_json_parsing_exception(
+def test_show_pod_raises_dcos_exception_for_json_parse_errors():
+    _assert_method_raises_dcos_exception_for_json_parse_errors(
         lambda marathon_client: marathon_client.show_pod('bad-json'))
 
 
@@ -114,8 +119,8 @@ def test_list_pod_propagates_rpc_dcos_exception():
         lambda marathon_client: marathon_client.list_pod())
 
 
-def test_list_pod_propagates_json_parsing_exception():
-    _assert_method_propagates_json_parsing_exception(
+def test_list_pod_raises_dcos_exception_for_json_parse_errors():
+    _assert_method_raises_dcos_exception_for_json_parse_errors(
         lambda marathon_client: marathon_client.list_pod())
 
 
@@ -146,8 +151,9 @@ def test_update_pod_propagates_rpc_dcos_exception():
 
 
 def test_update_pod_raises_dcos_exception_for_json_parse_errors():
-    _assert_update_pod_raises_dcos_exception_for_json_parse_errors('not-json')
-    _assert_update_pod_raises_dcos_exception_for_json_parse_errors('{"oops"}')
+    _assert_method_raises_dcos_exception_for_json_parse_errors(
+        lambda marathon_client:
+            marathon_client.update_pod('foo', {'some': 'json'}))
 
 
 def test_update_pod_raises_dcos_exception_if_deployment_id_missing():
@@ -504,21 +510,25 @@ def _assert_update_pod_executes_successfully(
     assert actual_return == expected_return
 
 
-def _assert_update_pod_raises_dcos_exception_for_json_parse_errors(non_json):
-    mock_response = mock.create_autospec(requests.Response)
-    mock_response.json.side_effect = Exception()
-    mock_response.text = non_json
+def _assert_method_raises_dcos_exception_for_json_parse_errors(invoke_method):
+    def assert_test_case(non_json):
+        mock_response = mock.create_autospec(requests.Response)
+        mock_response.json.side_effect = Exception()
+        mock_response.text = non_json
 
-    marathon_client, rpc_client = _create_fixtures()
-    rpc_client.http_req.return_value = mock_response
+        marathon_client, rpc_client = _create_fixtures()
+        rpc_client.http_req.return_value = mock_response
 
-    with pytest.raises(DCOSException) as exception_info:
-        marathon_client.update_pod('foo', {'some': 'json'})
+        with pytest.raises(DCOSException) as exception_info:
+            invoke_method(marathon_client)
 
-    pattern = ('Error: the following response from Marathon was not in JSON '
-               'format:\n(.*)')
-    actual_error = str(exception_info.value)
-    _assert_matches_with_groups(pattern, actual_error, (non_json,))
+        pattern = ('Error: the following response from Marathon was not in '
+                   'JSON format:\n(.*)')
+        actual_error = str(exception_info.value)
+        _assert_matches_with_groups(pattern, actual_error, (non_json,))
+
+    assert_test_case('not-json')
+    assert_test_case('{"oops"}')
 
 
 def _assert_update_pod_raises_dcos_exception_if_deployment_id_missing(
@@ -546,18 +556,6 @@ def _assert_method_propagates_rpc_dcos_exception(invoke_method):
         invoke_method(marathon_client)
 
     assert str(exception_info.value) == 'BOOM!'
-
-
-def _assert_method_propagates_json_parsing_exception(invoke_method):
-    marathon_client, rpc_client = _create_fixtures()
-    mock_response = mock.create_autospec(requests.Response)
-    mock_response.json.side_effect = Exception('Bad parse')
-    rpc_client.http_req.return_value = mock_response
-
-    with pytest.raises(Exception) as exception_info:
-        invoke_method(marathon_client)
-
-    assert str(exception_info.value) == 'Bad parse'
 
 
 def _assert_rpc_client_http_req_calls_method_fn(base_url, path, full_url):

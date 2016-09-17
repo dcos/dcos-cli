@@ -697,7 +697,7 @@ class Client(object):
         """
 
         response = self._rpc.http_req(http.post, 'v2/pods', json=pod_json)
-        return response.json()
+        return self._parse_json(response)
 
     def remove_pod(self, pod_id, force=False):
         """Completely removes the requested pod.
@@ -724,7 +724,7 @@ class Client(object):
 
         path = self._marathon_id_path_join('v2/pods', pod_id)
         response = self._rpc.http_req(http.get, path)
-        return response.json()
+        return self._parse_json(response)
 
     def list_pod(self):
         """Get a list of known pods.
@@ -734,7 +734,7 @@ class Client(object):
         """
 
         response = self._rpc.http_req(http.get, 'v2/pods')
-        return response.json()
+        return self._parse_json(response)
 
     def update_pod(self, pod_id, pod_json, force=False):
         """Update a pod.
@@ -752,13 +752,7 @@ class Client(object):
         params = self._force_params(force)
         response = self._rpc.http_req(
             http.put, path, params=params, json=pod_json)
-
-        try:
-            body_json = response.json()
-        except:
-            template = ('Error: the following response from Marathon was not '
-                        'in JSON format:\n{}')
-            raise DCOSException(template.format(response.text))
+        body_json = self._parse_json(response)
 
         try:
             return body_json['deploymentId']
@@ -798,6 +792,25 @@ class Client(object):
         """
 
         return {'force': 'true'} if force else None
+
+    @staticmethod
+    def _parse_json(response):
+        """Attempts to parse the body of the given response as JSON.
+
+        Raises DCOSException if parsing fails.
+
+        :param response: the response containing the body to parse
+        :type response: requests.Response
+        :return: the parsed JSON
+        :rtype: {} | [] | str | int | float | bool | None
+        """
+
+        try:
+            return response.json()
+        except:
+            template = ('Error: the following response from Marathon was not '
+                        'in JSON format:\n{}')
+            raise DCOSException(template.format(response.text))
 
 
 def _default_marathon_error(message=""):
