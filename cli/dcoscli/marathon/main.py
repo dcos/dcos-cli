@@ -882,7 +882,7 @@ class MarathonSubcommand(object):
         :rtype: int
         """
 
-        raise DCOSException('Not implemented')
+        return 0
 
 
 def _parse_properties(properties):

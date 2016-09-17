@@ -68,6 +68,14 @@ def test_pod_list_propagates_exceptions_from_list_pod():
         Exception('Oops!'))
 
 
+def test_pod_update_invoked_successfully():
+    subcmd, marathon_client = _unused_reader_fixture()
+
+    returncode = subcmd.pod_update(pod_id='foo', properties=[], force=False)
+
+    assert returncode == 0
+
+
 def _assert_pod_add_invoked_successfully(pod_file_json):
     pod_file_path = "some/path/to/pod.json"
     resource_reader = {pod_file_path: pod_file_json}.__getitem__
