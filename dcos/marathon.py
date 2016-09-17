@@ -319,31 +319,35 @@ class Client(object):
 
         return response.json()
 
-    def _update(self, resource_id, payload, force=False, url_endpoint="apps"):
-        """Update an application or group.
+    def _update(self, resource_type, resource_id, resource_json, force=False):
+        """Update an application, group, or pod.
 
-        :param resource_id: the app or group id
+        :param resource_type: one of 'apps', 'groups', or 'pods'
+        :type resource_type: str
+        :param resource_id: the app, group, or pod ID
         :type resource_id: str
-        :param payload: the json payload
-        :type payload: dict
+        :param resource_json: the json payload
+        :type resource_json: {}
         :param force: whether to override running deployments
         :type force: bool
-        :param url_endpoint: resource type to update ("apps" or "groups")
-        :type url_endpoint: str
         :returns: the resulting deployment ID
         :rtype: str
         """
 
-        resource_id = util.normalize_marathon_id_path(resource_id)
+        path_prefix = 'v2/{}'.format(resource_type)
+        path = self._marathon_id_path_join(path_prefix, resource_id)
         params = self._force_params(force)
-        path = 'v2/{}{}'.format(url_endpoint, resource_id)
+        response = self._rpc.http_req(
+            http.put, path, params=params, json=resource_json)
+        body_json = self._parse_json(response)
 
-        response = self._rpc.http_req(http.put,
-                                      path,
-                                      params=params,
-                                      json=payload)
-
-        return response.json().get('deploymentId')
+        try:
+            return body_json['deploymentId']
+        except KeyError:
+            template = ('Error: missing "deploymentId" field in the following '
+                        'JSON response from\nMarathon:\n{}')
+            rendered_json = json.dumps(body_json, indent=2, sort_keys=True)
+            raise DCOSException(template.format(rendered_json))
 
     def update_app(self, app_id, payload, force=False):
         """Update an application.
@@ -358,7 +362,7 @@ class Client(object):
         :rtype: str
         """
 
-        return self._update(app_id, payload, force)
+        return self._update('apps', app_id, payload, force)
 
     def update_group(self, group_id, payload, force=False):
         """Update a group.
@@ -373,7 +377,7 @@ class Client(object):
         :rtype: str
         """
 
-        return self._update(group_id, payload, force, "groups")
+        return self._update('groups', group_id, payload, force)
 
     def scale_app(self, app_id, instances, force=False):
         """Scales an application to the requested number of instances.
@@ -748,19 +752,7 @@ class Client(object):
         :rtype: None
         """
 
-        path = self._marathon_id_path_join('v2/pods', pod_id)
-        params = self._force_params(force)
-        response = self._rpc.http_req(
-            http.put, path, params=params, json=pod_json)
-        body_json = self._parse_json(response)
-
-        try:
-            return body_json['deploymentId']
-        except KeyError:
-            template = ('Error: missing "deploymentId" field in the following '
-                        'JSON response from\nMarathon:\n{}')
-            rendered_json = json.dumps(body_json, indent=2, sort_keys=True)
-            raise DCOSException(template.format(rendered_json))
+        return self._update('pods', pod_id, pod_json, force)
 
     @staticmethod
     def _marathon_id_path_join(url_path, id_path):
