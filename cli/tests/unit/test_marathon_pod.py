@@ -69,8 +69,10 @@ def test_pod_list_propagates_exceptions_from_list_pod():
 
 
 def test_pod_update_invoked_successfully():
-    _assert_pod_update_invoked_successfully(pod_id='foo')
-    _assert_pod_update_invoked_successfully(pod_id='bar')
+    _assert_pod_update_invoked_successfully(pod_id='foo', properties=[])
+    _assert_pod_update_invoked_successfully(pod_id='bar', properties=[])
+    _assert_pod_update_invoked_successfully(pod_id='foo',
+                                            properties=['bar=baz'])
 
 
 def _assert_pod_add_invoked_successfully(pod_file_json):
@@ -164,16 +166,16 @@ def _assert_pod_list_propagates_exceptions_from_list_pod(exception):
     assert exception_info.value == exception
 
 
-def _assert_pod_update_invoked_successfully(pod_id):
+def _assert_pod_update_invoked_successfully(pod_id, properties):
     resource_reader = create_autospec(main.ResourceReader)
     marathon_client = create_autospec(marathon.Client)
     subcmd = main.MarathonSubcommand(resource_reader, lambda: marathon_client)
 
-    returncode = subcmd.pod_update(pod_id, properties=[], force=False)
+    returncode = subcmd.pod_update(pod_id, properties, force=False)
 
     assert returncode == 0
     marathon_client.show_pod.assert_called_with(pod_id)
-    resource_reader.from_properties_or_stdin.assert_called_with([])
+    resource_reader.from_properties_or_stdin.assert_called_with(properties)
 
 
 def _unused_reader_fixture():
