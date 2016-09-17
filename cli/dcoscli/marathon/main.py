@@ -926,8 +926,8 @@ class MarathonSubcommand(object):
         # Ensure that the pod exists
         marathon_client.show_pod(pod_id)
 
-        self._resource_reader.from_properties_or_stdin(properties)
-
+        resource = self._resource_reader.from_properties_or_stdin(properties)
+        marathon_client.update_pod(pod_id, pod_json=resource, force=force)
         return 0
 
 
