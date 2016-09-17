@@ -927,7 +927,10 @@ class MarathonSubcommand(object):
         marathon_client.show_pod(pod_id)
 
         resource = self._resource_reader.from_properties_or_stdin(properties)
-        marathon_client.update_pod(pod_id, pod_json=resource, force=force)
+        deployment_id = marathon_client.update_pod(
+            pod_id, pod_json=resource, force=force)
+
+        emitter.publish('Created deployment {}'.format(deployment_id))
         return 0
 
 

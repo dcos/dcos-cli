@@ -70,16 +70,33 @@ def test_pod_list_propagates_exceptions_from_list_pod():
 
 def test_pod_update_invoked_successfully():
     _assert_pod_update_invoked_successfully(
-        pod_id='foo', properties=[], resource={'from': 'stdin'}, force=False)
+        pod_id='foo',
+        properties=[],
+        force=False,
+        resource={'from': 'stdin'},
+        deployment_id='a-deployment-id',
+        emitted='Created deployment a-deployment-id')
     _assert_pod_update_invoked_successfully(
-        pod_id='bar', properties=[], resource={'from': 'stdin'}, force=False)
+        pod_id='bar',
+        properties=[],
+        force=False,
+        resource={'from': 'stdin'},
+        deployment_id='a-deployment-id',
+        emitted='Created deployment a-deployment-id')
     _assert_pod_update_invoked_successfully(
         pod_id='foo',
         properties=['bar=baz'],
+        force=False,
         resource={'bar': 'baz'},
-        force=False)
+        deployment_id='a-deployment-id',
+        emitted='Created deployment a-deployment-id')
     _assert_pod_update_invoked_successfully(
-        pod_id='foo', properties=[], resource={'from': 'stdin'}, force=True)
+        pod_id='foo',
+        properties=[],
+        force=True,
+        resource={'from': 'stdin'},
+        deployment_id='some-arbitrary-value',
+        emitted='Created deployment some-arbitrary-value')
 
 
 def _assert_pod_add_invoked_successfully(pod_file_json):
@@ -173,11 +190,13 @@ def _assert_pod_list_propagates_exceptions_from_list_pod(exception):
     assert exception_info.value == exception
 
 
+@patch('dcoscli.marathon.main.emitter', autospec=True)
 def _assert_pod_update_invoked_successfully(
-        pod_id, properties, resource, force):
+        emitter, pod_id, properties, force, resource, deployment_id, emitted):
     resource_reader = create_autospec(main.ResourceReader)
     resource_reader.from_properties_or_stdin.return_value = resource
     marathon_client = create_autospec(marathon.Client)
+    marathon_client.update_pod.return_value = deployment_id
     subcmd = main.MarathonSubcommand(resource_reader, lambda: marathon_client)
 
     returncode = subcmd.pod_update(pod_id, properties, force)
@@ -187,6 +206,7 @@ def _assert_pod_update_invoked_successfully(
     resource_reader.from_properties_or_stdin.assert_called_with(properties)
     marathon_client.update_pod.assert_called_with(
         pod_id, pod_json=resource, force=force)
+    emitter.publish.assert_called_with(emitted)
 
 
 def _unused_reader_fixture():
