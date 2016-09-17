@@ -882,6 +882,11 @@ class MarathonSubcommand(object):
         :rtype: int
         """
 
+        marathon_client = self._create_marathon_client()
+
+        # Ensure that the pod exists
+        marathon_client.show_pod(pod_id)
+
         return 0
 
 

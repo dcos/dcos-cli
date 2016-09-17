@@ -69,11 +69,8 @@ def test_pod_list_propagates_exceptions_from_list_pod():
 
 
 def test_pod_update_invoked_successfully():
-    subcmd, marathon_client = _unused_reader_fixture()
-
-    returncode = subcmd.pod_update(pod_id='foo', properties=[], force=False)
-
-    assert returncode == 0
+    _assert_pod_update_invoked_successfully(pod_id='foo')
+    _assert_pod_update_invoked_successfully(pod_id='bar')
 
 
 def _assert_pod_add_invoked_successfully(pod_file_json):
@@ -161,6 +158,15 @@ def _assert_pod_list_propagates_exceptions_from_list_pod(exception):
         subcmd.pod_list(json_=False)
 
     assert exception_info.value == exception
+
+
+def _assert_pod_update_invoked_successfully(pod_id):
+    subcmd, marathon_client = _unused_reader_fixture()
+
+    returncode = subcmd.pod_update(pod_id, properties=[], force=False)
+
+    assert returncode == 0
+    marathon_client.show_pod.assert_called_with(pod_id)
 
 
 def _unused_reader_fixture():
