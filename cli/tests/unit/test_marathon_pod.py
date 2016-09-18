@@ -125,6 +125,18 @@ def test_pod_update_propagates_dcos_exception_from_resource_reader():
     assert str(exception_info.value) == 'properties error'
 
 
+def test_pod_update_propagates_dcos_exception_from_update_pod():
+    resource_reader = create_autospec(main.ResourceReader)
+    marathon_client = create_autospec(marathon.Client)
+    marathon_client.update_pod.side_effect = DCOSException('update error')
+    subcmd = main.MarathonSubcommand(resource_reader, lambda: marathon_client)
+
+    with pytest.raises(DCOSException) as exception_info:
+        subcmd.pod_update(pod_id='foo', properties=[], force=False)
+
+    assert str(exception_info.value) == 'update error'
+
+
 def _assert_pod_add_invoked_successfully(pod_file_json):
     pod_file_path = "some/path/to/pod.json"
     resource_reader = create_autospec(main.ResourceReader)
