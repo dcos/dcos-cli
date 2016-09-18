@@ -99,6 +99,19 @@ def test_pod_update_invoked_successfully():
         emitted='Created deployment some-arbitrary-value')
 
 
+def test_pod_update_propagates_exceptions_from_show_pod():
+    resource_reader = create_autospec(main.ResourceReader)
+    marathon_client = create_autospec(marathon.Client)
+    marathon_client.show_pod.side_effect = DCOSException('show error')
+    marathon_client.update_pod.side_effect = DCOSException('update error')
+    subcmd = main.MarathonSubcommand(resource_reader, lambda: marathon_client)
+
+    with pytest.raises(DCOSException) as exception_info:
+        subcmd.pod_update(pod_id='foo', properties=[], force=False)
+
+    assert str(exception_info.value) == 'show error'
+
+
 def _assert_pod_add_invoked_successfully(pod_file_json):
     pod_file_path = "some/path/to/pod.json"
     resource_reader = create_autospec(main.ResourceReader)
