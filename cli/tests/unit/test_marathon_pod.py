@@ -111,7 +111,7 @@ def test_pod_update_propagates_exceptions_from_show_pod():
 
 def test_pod_update_propagates_dcos_exception_from_resource_reader():
     resource_reader = create_autospec(main.ResourceReader)
-    resource_reader.from_properties_or_stdin.side_effect = \
+    resource_reader.get_resource_from_properties.side_effect = \
         DCOSException('properties error')
     marathon_client = create_autospec(marathon.Client)
 
@@ -131,22 +131,20 @@ def test_pod_update_propagates_dcos_exception_from_update_pod():
 def _assert_pod_add_invoked_successfully(pod_file_json):
     pod_file_path = "some/path/to/pod.json"
     resource_reader = create_autospec(main.ResourceReader)
-    resource_reader.from_filename_or_url_or_stdin.return_value = pod_file_json
+    resource_reader.get_resource.return_value = pod_file_json
     marathon_client = create_autospec(marathon.Client)
 
     subcmd = main.MarathonSubcommand(resource_reader, lambda: marathon_client)
     returncode = subcmd.pod_add(pod_file_path)
 
     assert returncode == 0
-    resource_reader.from_filename_or_url_or_stdin.\
-        assert_called_with(pod_file_path)
+    resource_reader.get_resource.assert_called_with(pod_file_path)
     marathon_client.add_pod.assert_called_with(pod_file_json)
 
 
 def _assert_pod_add_propagates_exceptions_from_add_pod(exception):
     resource_reader = create_autospec(main.ResourceReader)
-    resource_reader.from_filename_or_url_or_stdin.\
-        return_value = {'some': 'json'}
+    resource_reader.get_resource.return_value = {'some': 'json'}
 
     marathon_client = create_autospec(marathon.Client)
     marathon_client.add_pod.side_effect = exception
@@ -223,16 +221,17 @@ def _assert_pod_list_propagates_exceptions_from_list_pod(exception):
 def _assert_pod_update_invoked_successfully(
         emitter, pod_id, properties, force, resource, deployment_id, emitted):
     resource_reader = create_autospec(main.ResourceReader)
-    resource_reader.from_properties_or_stdin.return_value = resource
+    resource_reader.get_resource_from_properties.return_value = resource
+
     marathon_client = create_autospec(marathon.Client)
     marathon_client.update_pod.return_value = deployment_id
-    subcmd = main.MarathonSubcommand(resource_reader, lambda: marathon_client)
 
+    subcmd = main.MarathonSubcommand(resource_reader, lambda: marathon_client)
     returncode = subcmd.pod_update(pod_id, properties, force)
 
     assert returncode == 0
     marathon_client.show_pod.assert_called_with(pod_id)
-    resource_reader.from_properties_or_stdin.assert_called_with(properties)
+    resource_reader.get_resource_from_properties.assert_called_with(properties)
     marathon_client.update_pod.assert_called_with(
         pod_id, pod_json=resource, force=force)
     emitter.publish.assert_called_with(emitted)
@@ -259,6 +258,6 @@ def _unused_reader_fixture():
 def _unused_resource_reader():
     resource_reader = create_autospec(main.ResourceReader)
     error = AssertionError("should not be called")
-    resource_reader.from_filename_or_url_or_stdin.side_effect = error
-    resource_reader.from_properties_or_stdin.side_effect = error
+    resource_reader.get_resource.side_effect = error
+    resource_reader.get_resource_from_properties.side_effect = error
     return resource_reader

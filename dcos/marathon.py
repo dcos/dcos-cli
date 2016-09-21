@@ -345,7 +345,7 @@ class Client(object):
             return body_json['deploymentId']
         except KeyError:
             template = ('Error: missing "deploymentId" field in the following '
-                        'JSON response from\nMarathon:\n{}')
+                        'JSON response from Marathon:\n{}')
             rendered_json = json.dumps(body_json, indent=2, sort_keys=True)
             raise DCOSException(template.format(rendered_json))
 
@@ -800,8 +800,8 @@ class Client(object):
         try:
             return response.json()
         except:
-            template = ('Error: the following response from Marathon was not '
-                        'in JSON format:\n{}')
+            template = ('Error: Response from Marathon was not in expected '
+                        'JSON format:\n{}')
             raise DCOSException(template.format(response.text))
 
 

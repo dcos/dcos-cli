@@ -233,22 +233,22 @@ class ResourceReader(object):
     """Encapsulates side-effecting methods for loading Marathon resources."""
 
     @staticmethod
-    def from_filename_or_url_or_stdin(resource):
+    def get_resource(name):
         """
-        :param resource: optional filename or http(s) url
+        :param name: optional filename or http(s) url
         for the application or group resource
-        :type resource: str
+        :type name: str
         :returns: resource
         :rtype: dict
         """
-        if resource is not None:
-            if os.path.isfile(resource):
-                with util.open_file(resource) as resource_file:
+        if name is not None:
+            if os.path.isfile(name):
+                with util.open_file(name) as resource_file:
                     return util.load_json(resource_file)
             else:
                 try:
                     http.silence_requests_warnings()
-                    req = http.get(resource)
+                    req = http.get(name)
                     if req.status_code == 200:
                         data = b''
                         for chunk in req.iter_content(1024):
@@ -257,24 +257,18 @@ class ResourceReader(object):
                     else:
                         raise Exception
                 except Exception:
-                    logger.exception('Cannot read from resource %s', resource)
+                    logger.exception('Cannot read from resource %s', name)
                     raise DCOSException(
                         "Can't read from resource: {0}.\n"
-                        "Please check that it exists.".format(resource))
+                        "Please check that it exists.".format(name))
 
-        # Check that stdin is not tty
-        if sys.stdin.isatty():
-            # We don't support TTY right now. In the future we will start an
-            # editor
-            raise DCOSException(
-                "We currently don't support reading from the TTY. Please "
-                "specify an application JSON.\n"
-                "E.g.: dcos marathon app add < app_resource.json")
+        example = "E.g.: dcos marathon app add < app_resource.json"
+        ResourceReader._assert_no_tty(example)
 
         return util.load_json(sys.stdin)
 
     @staticmethod
-    def from_properties_or_stdin(properties):
+    def get_resource_from_properties(properties):
         """
         :param properties: JSON items in the form key=value
         :type properties: [str]
@@ -283,16 +277,11 @@ class ResourceReader(object):
         """
 
         if len(properties) == 0:
-            if sys.stdin.isatty():
-                # We don't support TTY right now.
-                # In the future we will start an editor
-                raise DCOSException(
-                    "We currently don't support reading from the TTY. Please "
-                    "specify an application JSON.\n"
-                    "E.g. dcos marathon app update your-app-id "
-                    "< app_update.json")
-            else:
-                return util.load_jsons(sys.stdin.read())
+            example =\
+                "E.g. dcos marathon app update your-app-id < app_update.json"
+            ResourceReader._assert_no_tty(example)
+
+            return util.load_jsons(sys.stdin.read())
 
         resource_json = {}
         for prop in properties:
@@ -305,6 +294,15 @@ class ResourceReader(object):
 
             resource_json[key] = value
         return resource_json
+
+    @staticmethod
+    def _assert_no_tty(command_example):
+        if sys.stdin.isatty():
+            # We don't support TTY right now.
+            # In the future we will start an editor
+            template = ("We currently don't support reading from the TTY. "
+                        "Please specify an application JSON.\n{}")
+            raise DCOSException(template.format(command_example))
 
 
 class MarathonSubcommand(object):
@@ -341,8 +339,7 @@ class MarathonSubcommand(object):
         :returns: process return code
         :rtype: int
         """
-        application_resource = self._resource_reader.\
-            from_filename_or_url_or_stdin(app_resource)
+        application_resource = self._resource_reader.get_resource(app_resource)
 
         # Add application to marathon
         client = self._create_marathon_client()
@@ -406,8 +403,7 @@ class MarathonSubcommand(object):
         :rtype: int
         """
 
-        group_resource = self._resource_reader.\
-            from_filename_or_url_or_stdin(group_resource)
+        group_resource = self._resource_reader.get_resource(group_resource)
 
         client = self._create_marathon_client()
 
@@ -509,7 +505,8 @@ class MarathonSubcommand(object):
         # Ensure that the group exists
         client.get_group(group_id)
 
-        resource = self._resource_reader.from_properties_or_stdin(properties)
+        resource = self._resource_reader.\
+            get_resource_from_properties(properties)
         deployment = client.update_group(group_id, resource, force)
 
         emitter.publish('Created deployment {}'.format(deployment))
@@ -608,7 +605,8 @@ class MarathonSubcommand(object):
         # Ensure that the application exists
         client.get_app(app_id)
 
-        resource = self._resource_reader.from_properties_or_stdin(properties)
+        resource = self._resource_reader.\
+            get_resource_from_properties(properties)
         deployment = client.update_app(app_id, resource, force)
 
         emitter.publish('Created deployment {}'.format(deployment))
@@ -863,8 +861,7 @@ class MarathonSubcommand(object):
         """
 
         marathon_client = self._create_marathon_client()
-        pod_json = self._resource_reader.\
-            from_filename_or_url_or_stdin(pod_resource_path)
+        pod_json = self._resource_reader.get_resource(pod_resource_path)
         marathon_client.add_pod(pod_json)
         return 0
 
@@ -926,7 +923,8 @@ class MarathonSubcommand(object):
         # Ensure that the pod exists
         marathon_client.show_pod(pod_id)
 
-        resource = self._resource_reader.from_properties_or_stdin(properties)
+        resource = self._resource_reader.\
+            get_resource_from_properties(properties)
         deployment_id = marathon_client.update_pod(
             pod_id, pod_json=resource, force=force)
 

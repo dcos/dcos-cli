@@ -61,8 +61,9 @@ def test_pod_show():
 @pytest.mark.skip(reason="Pods support in Marathon not released yet")
 def test_pod_update_from_properties():
     expected_json = file_json_ast(UPDATED_GOOD_POD_FILE_PATH)
-    properties = ['id=/' + GOOD_POD_ID,
-                  'containers=' + json.dumps(expected_json['containers'])]
+    containers_json_str = json.dumps(expected_json['containers'])
+    properties = ['id=/{}'.format(GOOD_POD_ID),
+                  'containers={}'.format(containers_json_str)]
 
     with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH):
         _assert_pod_update_from_properties(GOOD_POD_ID,
@@ -109,12 +110,24 @@ def _assert_pod_list_json_subset(expected_json, actual_json):
     for expected_pod in expected_json:
         pod_id = expected_pod['id']
         actual_pod = actual_pods_by_id[pod_id]
-        _assert_pod_json_subset(expected_pod, actual_pod)
+        _assert_pod_json(expected_pod, actual_pod)
 
     assert len(actual_json) == len(expected_json)
 
 
-def _assert_pod_json_subset(expected_pod, actual_pod):
+def _assert_pod_json(expected_pod, actual_pod):
+    """Checks that the "actual" pod JSON matches the "expected" pod JSON.
+
+    The comparison only looks at specific fields that are present in the
+    test data used by this module.
+
+    :param expected_pod: contains the baseline values for the comparison
+    :type expected_pod: {}
+    :param actual_pod: has its fields checked against the expected fields
+    :type actual_pod: {}
+    :rtype: None
+    """
+
     expected_containers = expected_pod['containers']
     actual_containers = actual_pod['containers']
     actual_containers_by_name = {c['name']: c for c in actual_containers}
@@ -146,7 +159,7 @@ def _assert_pod_show(pod_id, expected_json):
     assert stderr == b''
 
     pod_json = json.loads(stdout.decode('utf-8'))
-    _assert_pod_json_subset(expected_json, pod_json)
+    _assert_pod_json(expected_json, pod_json)
 
 
 def _assert_pod_update_from_properties(pod_id, properties, extra_args):

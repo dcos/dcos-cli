@@ -522,8 +522,8 @@ def _assert_method_raises_dcos_exception_for_json_parse_errors(invoke_method):
         with pytest.raises(DCOSException) as exception_info:
             invoke_method(marathon_client)
 
-        pattern = ('Error: the following response from Marathon was not in '
-                   'JSON format:\n(.*)')
+        pattern = ('Error: Response from Marathon was not in expected JSON '
+                   'format:\n(.*)')
         actual_error = str(exception_info.value)
         _assert_matches_with_groups(pattern, actual_error, (non_json,))
 
@@ -543,7 +543,7 @@ def _assert_update_pod_raises_dcos_exception_if_deployment_id_missing(
         marathon_client.update_pod('foo', {'some': 'json'})
 
     pattern = ('Error: missing "deploymentId" field in the following JSON '
-               'response from\nMarathon:\n(.*)')
+               'response from Marathon:\n(.*)')
     actual_error = str(exception_info.value)
     _assert_matches_with_groups(pattern, actual_error, (rendered_bad_json,))
 
