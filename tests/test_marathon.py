@@ -172,84 +172,52 @@ def test_pod_feature_supported():
 
 
 def test_rpc_client_http_req_calls_method_fn():
-    _assert_rpc_client_http_req_calls_method_fn(
-        base_url='http://base/url',
-        path='some/path',
-        full_url='http://base/url/some/path')
+    _assert_rpc_client_method_calls_method_fn(_http_req_method)
 
-    _assert_rpc_client_http_req_calls_method_fn(
-        base_url='http://base/url',
-        path='different/thing',
-        full_url='http://base/url/different/thing')
 
-    _assert_rpc_client_http_req_calls_method_fn(
-        base_url='gopher://different/thing',
-        path='some/path',
-        full_url='gopher://different/thing/some/path')
+def test_rpc_client_raw_http_req_calls_method_fn():
+    _assert_rpc_client_method_calls_method_fn(_raw_http_req_method)
 
 
 def test_rpc_client_http_req_passes_args_to_method_fn():
-    method_fn = mock.Mock()
+    _assert_rpc_client_method_passes_args_to_method_fn(_http_req_method)
 
-    rpc_client = marathon.RpcClient('http://base/url')
-    rpc_client.http_req(method_fn, 'some/path', 'foo', 42)
 
-    method_fn.assert_called_with('http://base/url/some/path',
-                                 'foo',
-                                 42,
-                                 timeout=http.DEFAULT_TIMEOUT)
+def test_rpc_client_raw_http_req_passes_args_to_method_fn():
+    _assert_rpc_client_method_passes_args_to_method_fn(_raw_http_req_method)
 
 
 def test_rpc_client_http_req_passes_kwargs_to_method_fn():
-    method_fn = mock.Mock()
+    _assert_rpc_client_method_passes_kwargs_to_method_fn(_http_req_method)
 
-    rpc_client = marathon.RpcClient('http://base/url')
-    rpc_client.http_req(method_fn, 'some/path', foo='bar', baz=42)
 
-    method_fn.assert_called_with('http://base/url/some/path',
-                                 foo='bar',
-                                 baz=42,
-                                 timeout=http.DEFAULT_TIMEOUT)
+def test_rpc_client_raw_http_req_passes_kwargs_to_method_fn():
+    _assert_rpc_client_method_passes_kwargs_to_method_fn(_raw_http_req_method)
 
 
 def test_rpc_client_http_req_kwarg_timeout_overrides_default():
-    method_fn = mock.Mock()
+    _assert_rpc_client_method_kwarg_timeout_overrides_default(_http_req_method)
 
-    rpc_client = marathon.RpcClient('http://base/url')
-    rpc_client.http_req(method_fn, 'some/path', timeout=42)
 
-    method_fn.assert_called_with('http://base/url/some/path', timeout=42)
+def test_rpc_client_raw_http_req_kwarg_timeout_overrides_default():
+    _assert_rpc_client_method_kwarg_timeout_overrides_default(
+        _raw_http_req_method)
 
 
 def test_rpc_client_http_req_set_timeout_in_constructor():
-    method_fn = mock.Mock()
-
-    rpc_client = marathon.RpcClient('http://base/url', 24)
-    rpc_client.http_req(method_fn, 'some/path')
-
-    method_fn.assert_called_with('http://base/url/some/path', timeout=24)
+    _assert_rpc_client_method_set_timeout_in_constructor(_http_req_method)
 
 
-def test_rpc_client_http_req_extra_path_slashes():
-    _assert_rpc_client_http_req_calls_method_fn(
-        base_url='http://base/without/slash',
-        path='/path/with/slash',
-        full_url='http://base/without/slash/path/with/slash')
-
-    _assert_rpc_client_http_req_calls_method_fn(
-        base_url='http://base/with/slash/',
-        path='path/without/slash',
-        full_url='http://base/with/slash/path/without/slash')
-
-    _assert_rpc_client_http_req_calls_method_fn(
-        base_url='http://base/with/slash/',
-        path='/path/with/slash',
-        full_url='http://base/with/slash/path/with/slash')
+def test_rpc_client_raw_http_req_set_timeout_in_constructor():
+    _assert_rpc_client_method_set_timeout_in_constructor(_raw_http_req_method)
 
 
 def test_rpc_client_http_req_returns_method_fn_result():
-    _assert_rpc_client_http_req_returns_method_fn_result(['the', 'result'])
-    _assert_rpc_client_http_req_returns_method_fn_result({'another': 'result'})
+    _assert_rpc_client_method_returns_method_fn_result(_http_req_method)
+
+
+def test_rpc_client_raw_http_req_returns_method_fn_result():
+    _assert_rpc_client_method_returns_method_fn_result(_raw_http_req_method)
 
 
 def test_rpc_client_http_req_propagates_method_fn_exception_1():
@@ -563,35 +531,112 @@ def _assert_method_propagates_rpc_dcos_exception(invoke_method):
     assert str(exception_info.value) == 'BOOM!'
 
 
-@mock.patch('dcos.http.head')
-def _invoke_pod_feature_supported(head_fn, status_code):
+def _invoke_pod_feature_supported(status_code):
     mock_response = mock.create_autospec(requests.Response)
     mock_response.status_code = status_code
-    head_fn.return_value = mock_response
 
     marathon_client, rpc_client = _create_fixtures()
-    return marathon_client.pod_feature_supported()
+    rpc_client.raw_http_req.return_value = mock_response
+
+    is_supported = marathon_client.pod_feature_supported()
+
+    rpc_client.raw_http_req.assert_called_with(http.head, 'v2/pods')
+
+    return is_supported
 
 
-def _assert_rpc_client_http_req_calls_method_fn(base_url, path, full_url):
+def _assert_rpc_client_method_calls_method_fn(get_method):
+    def test_case(base_url, path, full_url, *args):
+        method_fn = mock.Mock()
+
+        rpc_client = marathon.RpcClient(base_url)
+        get_method(rpc_client)(method_fn, path, *args)
+
+        method_fn.assert_called_with(full_url,
+                                     *args,
+                                     timeout=http.DEFAULT_TIMEOUT)
+
+    test_case(
+        base_url='http://base/url',
+        path='some/path',
+        full_url='http://base/url/some/path')
+    test_case(
+        base_url='http://base/url',
+        path='different/thing',
+        full_url='http://base/url/different/thing')
+    test_case(
+        base_url='gopher://different/thing',
+        path='some/path',
+        full_url='gopher://different/thing/some/path')
+    test_case(
+        base_url='http://base/without/slash',
+        path='/path/with/slash',
+        full_url='http://base/without/slash/path/with/slash')
+    test_case(
+        base_url='http://base/with/slash/',
+        path='path/without/slash',
+        full_url='http://base/with/slash/path/without/slash')
+    test_case(
+        base_url='http://base/with/slash/',
+        path='/path/with/slash',
+        full_url='http://base/with/slash/path/with/slash')
+
+
+def _assert_rpc_client_method_passes_args_to_method_fn(get_method):
     method_fn = mock.Mock()
 
-    rpc_client = marathon.RpcClient(base_url)
-    rpc_client.http_req(method_fn, path)
+    rpc_client = marathon.RpcClient('http://base/url')
+    get_method(rpc_client)(method_fn, 'some/path', 'foo', 42)
 
-    method_fn.assert_called_with(full_url,
+    method_fn.assert_called_with('http://base/url/some/path',
+                                 'foo',
+                                 42,
                                  timeout=http.DEFAULT_TIMEOUT)
 
 
-def _assert_rpc_client_http_req_returns_method_fn_result(expected):
-
-    def method_fn(*args, **kwargs):
-        return expected
+def _assert_rpc_client_method_passes_kwargs_to_method_fn(get_method):
+    method_fn = mock.Mock()
 
     rpc_client = marathon.RpcClient('http://base/url')
-    actual = rpc_client.http_req(method_fn, 'some/path')
+    get_method(rpc_client)(method_fn, 'some/path', foo='bar', baz=42)
 
-    assert actual == expected
+    method_fn.assert_called_with('http://base/url/some/path',
+                                 foo='bar',
+                                 baz=42,
+                                 timeout=http.DEFAULT_TIMEOUT)
+
+
+def _assert_rpc_client_method_kwarg_timeout_overrides_default(get_method):
+    method_fn = mock.Mock()
+
+    rpc_client = marathon.RpcClient('http://base/url')
+    get_method(rpc_client)(method_fn, 'some/path', timeout=42)
+
+    method_fn.assert_called_with('http://base/url/some/path', timeout=42)
+
+
+def _assert_rpc_client_method_set_timeout_in_constructor(get_method):
+    method_fn = mock.Mock()
+
+    rpc_client = marathon.RpcClient('http://base/url', 24)
+    get_method(rpc_client)(method_fn, 'some/path')
+
+    method_fn.assert_called_with('http://base/url/some/path', timeout=24)
+
+
+def _assert_rpc_client_method_returns_method_fn_result(get_method):
+    def test_case(expected):
+
+        def method_fn(*args, **kwargs):
+            return expected
+
+        rpc_client = marathon.RpcClient('http://base/url')
+        actual = get_method(rpc_client)(method_fn, 'some/path')
+
+        assert actual == expected
+
+    test_case(['the', 'result'])
+    test_case({'another': 'result'})
 
 
 def _assert_response_error_message_with_400_status_no_json(
@@ -690,6 +735,14 @@ def _create_fixtures():
     marathon_client = marathon.Client(rpc_client)
 
     return marathon_client, rpc_client
+
+
+def _http_req_method(rpc_client):
+    return rpc_client.http_req
+
+
+def _raw_http_req_method(rpc_client):
+    return rpc_client.raw_http_req
 
 
 _MESSAGE_1 = 'Oops!'

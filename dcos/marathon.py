@@ -129,6 +129,29 @@ class RpcClient(object):
 
         return 'Error: {}'.format(message)
 
+    def raw_http_req(self, method_fn, path, *args, **kwargs):
+        """Make an HTTP request, letting any exceptions generated propagate to
+        the caller.
+
+        :param method_fn: function to call that invokes a specific HTTP method
+        :type method_fn: function
+        :param path: the endpoint path to append to this object's base URL
+        :type path: str
+        :param args: additional args to pass to `method_fn`
+        :type args: [object]
+        :param kwargs: kwargs to pass to `method_fn`
+        :type kwargs: dict
+        :returns: `method_fn` return value
+        :rtype: requests.Response
+        """
+
+        url = self._base_url + path.lstrip('/')
+
+        if 'timeout' not in kwargs:
+            kwargs['timeout'] = self._timeout
+
+        return method_fn(url, *args, **kwargs)
+
     def http_req(self, method_fn, path, *args, **kwargs):
         """Make an HTTP request, and raise a marathon-specific exception for
         HTTP error codes.
@@ -144,13 +167,9 @@ class RpcClient(object):
         :returns: `method_fn` return value
         :rtype: requests.Response
         """
-        url = self._base_url + path.lstrip('/')
-
-        if 'timeout' not in kwargs:
-            kwargs['timeout'] = self._timeout
 
         try:
-            return method_fn(url, *args, **kwargs)
+            return self.raw_http_req(method_fn, path, *args, **kwargs)
         except DCOSHTTPException as e:
             # Marathon is buggy and sometimes returns JSON, sometimes returns
             # HTML. We only include the body in the error message if it's JSON.
@@ -761,7 +780,7 @@ class Client(object):
         :rtype: bool
         """
 
-        response = http.head('whatever')
+        response = self._rpc.raw_http_req(http.head, 'v2/pods')
         return response.status_code // 100 == 2
 
     @staticmethod
