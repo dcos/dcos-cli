@@ -164,11 +164,56 @@ def test_update_pod_raises_dcos_exception_if_deployment_id_missing():
                            '}'))
 
 
-def test_pod_feature_supported():
-    assert _invoke_pod_feature_supported(status_code=200)
-    assert _invoke_pod_feature_supported(status_code=204)
+def test_pod_feature_supported_gets_success_response():
+    def invoke_test_case(status_code):
+        mock_response = mock.create_autospec(requests.Response)
+        mock_response.status_code = status_code
 
-    assert not _invoke_pod_feature_supported(status_code=404)
+        marathon_client, rpc_client = _create_fixtures()
+        rpc_client.raw_http_req.return_value = mock_response
+
+        is_supported = marathon_client.pod_feature_supported()
+
+        rpc_client.raw_http_req.assert_called_with(http.head, 'v2/pods')
+
+        return is_supported
+
+    assert invoke_test_case(status_code=200)
+    assert invoke_test_case(status_code=204)
+
+    assert not invoke_test_case(status_code=100)
+    assert not invoke_test_case(status_code=302)
+
+
+def test_pod_feature_supported_gets_404_response():
+    mock_response = mock.create_autospec(requests.Response)
+    mock_response.status_code = 404
+
+    marathon_client, rpc_client = _create_fixtures()
+    rpc_client.raw_http_req.side_effect = DCOSHTTPException(mock_response)
+
+    assert not marathon_client.pod_feature_supported()
+
+
+def test_pod_feature_supported_propagates_dcos_http_exceptions():
+    def test_case(status_code):
+        mock_response = mock.create_autospec(requests.Response)
+        mock_response.status_code = status_code
+        expected_exception = DCOSHTTPException(mock_response)
+
+        _assert_pod_feature_supported_raises_exception(expected_exception)
+
+    test_case(status_code=400)
+    test_case(status_code=401)
+    test_case(status_code=403)
+    test_case(status_code=409)
+    test_case(status_code=422)
+    test_case(status_code=500)
+
+
+def test_pod_feature_supported_propagates_other_exceptions():
+    _assert_pod_feature_supported_raises_exception(DCOSException("BOOM!"))
+    _assert_pod_feature_supported_raises_exception(Exception("Uh oh"))
 
 
 def test_rpc_client_http_req_calls_method_fn():
@@ -531,18 +576,14 @@ def _assert_method_propagates_rpc_dcos_exception(invoke_method):
     assert str(exception_info.value) == 'BOOM!'
 
 
-def _invoke_pod_feature_supported(status_code):
-    mock_response = mock.create_autospec(requests.Response)
-    mock_response.status_code = status_code
-
+def _assert_pod_feature_supported_raises_exception(expected_exception):
     marathon_client, rpc_client = _create_fixtures()
-    rpc_client.raw_http_req.return_value = mock_response
+    rpc_client.raw_http_req.side_effect = expected_exception
 
-    is_supported = marathon_client.pod_feature_supported()
+    with pytest.raises(expected_exception.__class__) as exception_info:
+        marathon_client.pod_feature_supported()
 
-    rpc_client.raw_http_req.assert_called_with(http.head, 'v2/pods')
-
-    return is_supported
+    assert exception_info.value == expected_exception
 
 
 def _assert_rpc_client_method_calls_method_fn(get_method):
