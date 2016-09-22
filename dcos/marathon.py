@@ -780,13 +780,18 @@ class Client(object):
         :rtype: bool
         """
 
-        try:
-            response = self._rpc.raw_http_req(http.head, 'v2/pods')
-            return response.status_code // 100 == 2
-        except DCOSHTTPException as e:
-            if e.response.status_code == 404:
-                return False
-            raise
+        # Allow response objects to be returned from `http_req` on status 404,
+        # while handling all other exceptions as usual
+        def head_404(url, **kwargs):
+            try:
+                return http.head(url, **kwargs)
+            except DCOSHTTPException as e:
+                if e.status() == 404:
+                    return e.response
+                raise
+
+        response = self._rpc.http_req(head_404, 'v2/pods')
+        return response.status_code // 100 == 2
 
     @staticmethod
     def _marathon_id_path_join(url_path, id_path):

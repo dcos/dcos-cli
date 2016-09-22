@@ -164,17 +164,18 @@ def test_update_pod_raises_dcos_exception_if_deployment_id_missing():
                            '}'))
 
 
-def test_pod_feature_supported_gets_success_response():
+@mock.patch('dcos.http.head')
+def test_pod_feature_supported_gets_success_response(head_fn):
     def invoke_test_case(status_code):
         mock_response = mock.create_autospec(requests.Response)
         mock_response.status_code = status_code
+        head_fn.return_value = mock_response
 
-        marathon_client, rpc_client = _create_fixtures()
-        rpc_client.raw_http_req.return_value = mock_response
-
+        rpc_client = marathon.RpcClient('http://base/url', timeout=42)
+        marathon_client = marathon.Client(rpc_client)
         is_supported = marathon_client.pod_feature_supported()
 
-        rpc_client.raw_http_req.assert_called_with(http.head, 'v2/pods')
+        head_fn.assert_called_with('http://base/url/v2/pods', timeout=42)
 
         return is_supported
 
@@ -185,23 +186,43 @@ def test_pod_feature_supported_gets_success_response():
     assert not invoke_test_case(status_code=302)
 
 
-def test_pod_feature_supported_gets_404_response():
+@mock.patch('dcos.http.head')
+def test_pod_feature_supported_gets_404_response(head_fn):
     mock_response = mock.create_autospec(requests.Response)
     mock_response.status_code = 404
+    head_fn.side_effect = DCOSHTTPException(mock_response)
 
-    marathon_client, rpc_client = _create_fixtures()
-    rpc_client.raw_http_req.side_effect = DCOSHTTPException(mock_response)
+    rpc_client = marathon.RpcClient('http://base/url', timeout=24)
+    marathon_client = marathon.Client(rpc_client)
 
     assert not marathon_client.pod_feature_supported()
+    head_fn.assert_called_with('http://base/url/v2/pods', timeout=24)
 
 
-def test_pod_feature_supported_propagates_dcos_http_exceptions():
-    def test_case(status_code):
+def test_pod_feature_supported_converts_http_exceptions_to_dcos_exceptions():
+    @mock.patch('dcos.http.head')
+    def test_case(head_fn, status_code):
+        request = requests.Request(method='ANY', url='http://arbitrary/url')
         mock_response = mock.create_autospec(requests.Response)
         mock_response.status_code = status_code
-        expected_exception = DCOSHTTPException(mock_response)
+        mock_response.reason = 'Arbitrary Reason'
+        mock_response.request = request
+        mock_response.json.side_effect = ValueError('empty body')
+        head_fn.side_effect = DCOSHTTPException(mock_response)
 
-        _assert_pod_feature_supported_raises_exception(expected_exception)
+        rpc_client = marathon.RpcClient('http://does/not/matter')
+        marathon_client = marathon.Client(rpc_client)
+
+        with pytest.raises(DCOSException) as exception_info:
+            marathon_client.pod_feature_supported()
+
+        message = marathon.RpcClient.response_error_message(
+            status_code,
+            reason='Arbitrary Reason',
+            request_method='ANY',
+            request_url='http://arbitrary/url',
+            json_body=None)
+        assert str(exception_info.value).endswith(message)
 
     test_case(status_code=400)
     test_case(status_code=401)
@@ -212,8 +233,10 @@ def test_pod_feature_supported_propagates_dcos_http_exceptions():
 
 
 def test_pod_feature_supported_propagates_other_exceptions():
-    _assert_pod_feature_supported_raises_exception(DCOSException("BOOM!"))
-    _assert_pod_feature_supported_raises_exception(Exception("Uh oh"))
+    _assert_pod_feature_supported_raises_exception(
+        exception=DCOSException("BOOM!"))
+    _assert_pod_feature_supported_raises_exception(
+        exception=Exception("Uh oh"))
 
 
 def test_rpc_client_http_req_calls_method_fn():
@@ -576,14 +599,16 @@ def _assert_method_propagates_rpc_dcos_exception(invoke_method):
     assert str(exception_info.value) == 'BOOM!'
 
 
-def _assert_pod_feature_supported_raises_exception(expected_exception):
-    marathon_client, rpc_client = _create_fixtures()
-    rpc_client.raw_http_req.side_effect = expected_exception
+@mock.patch('dcos.http.head')
+def _assert_pod_feature_supported_raises_exception(head_fn, exception):
+    rpc_client = marathon.RpcClient('http://base/url', timeout=22)
+    marathon_client = marathon.Client(rpc_client)
+    head_fn.side_effect = exception
 
-    with pytest.raises(expected_exception.__class__) as exception_info:
+    with pytest.raises(exception.__class__) as exception_info:
         marathon_client.pod_feature_supported()
 
-    assert exception_info.value == expected_exception
+    assert exception_info.value == exception
 
 
 def _assert_rpc_client_method_calls_method_fn(get_method):
