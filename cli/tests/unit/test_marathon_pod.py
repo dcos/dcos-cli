@@ -18,17 +18,6 @@ def test_pod_add_propagates_exceptions_from_add_pod():
     _assert_pod_add_propagates_exceptions_from_add_pod(Exception('Oops!'))
 
 
-def test_pod_add_fails_if_not_supported():
-    subcmd, marathon_client = _failing_reader_fixture()
-    marathon_client.pod_feature_supported.return_value = False
-
-    with pytest.raises(DCOSException) as exception_info:
-        subcmd.pod_add('not/used')
-
-    message = 'This command is not supported by Marathon'
-    assert str(exception_info.value) == message
-
-
 def test_pod_remove_invoked_successfully():
     _assert_pod_remove_invoked_successfully(pod_id='a-pod', force=False)
     _assert_pod_remove_invoked_successfully(pod_id='a-pod', force=True)
@@ -137,6 +126,25 @@ def test_pod_update_propagates_dcos_exception_from_update_pod():
 
     _assert_pod_update_propagates_exception(
         resource_reader, marathon_client, 'update error')
+
+
+def test_pod_command_fails_if_not_supported():
+    def test_case(invoke_command):
+        subcmd, marathon_client = _failing_reader_fixture()
+        marathon_client.pod_feature_supported.return_value = False
+
+        with pytest.raises(DCOSException) as exception_info:
+            invoke_command(subcmd)
+
+        message = 'This command is not supported by Marathon'
+        assert str(exception_info.value) == message
+
+    test_case(lambda subcmd: subcmd.pod_add(pod_resource_path='not/used'))
+    test_case(lambda subcmd: subcmd.pod_remove(pod_id='some-id', force=False))
+    test_case(lambda subcmd: subcmd.pod_list(json_=False))
+    test_case(lambda subcmd: subcmd.pod_show(pod_id='some-id'))
+    test_case(lambda subcmd: subcmd.pod_update(
+        pod_id='some-id', properties=[], force=False))
 
 
 def _assert_pod_add_invoked_successfully(pod_file_json):
