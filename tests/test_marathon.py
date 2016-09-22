@@ -125,15 +125,45 @@ def test_list_pod_raises_dcos_exception_for_json_parse_errors():
 
 
 def test_update_pod_executes_successfully():
-    _assert_update_pod_executes_successfully()
     _assert_update_pod_executes_successfully(
-        pod_id='/foo bar/', path='v2/pods/foo%20bar')
+        pod_id='foo',
+        pod_json={'some', 'json'},
+        force=False,
+        response_body={'deploymentId': 'pod-deployment-id'},
+        path='v2/pods/foo',
+        params=None,
+        expected_return='pod-deployment-id')
     _assert_update_pod_executes_successfully(
-        force=True, params={'force': 'true'})
+        pod_id='/foo bar/',
+        pod_json={'some', 'json'},
+        force=False,
+        response_body={'deploymentId': 'pod-deployment-id'},
+        path='v2/pods/foo%20bar',
+        params=None,
+        expected_return='pod-deployment-id')
     _assert_update_pod_executes_successfully(
-        pod_json={'something': 'different'})
+        pod_id='foo',
+        pod_json={'some', 'json'},
+        force=True,
+        response_body={'deploymentId': 'pod-deployment-id'},
+        path='v2/pods/foo',
+        params={'force': 'true'},
+        expected_return='pod-deployment-id')
     _assert_update_pod_executes_successfully(
+        pod_id='foo',
+        pod_json={'something', 'different'},
+        force=False,
+        response_body={'deploymentId': 'pod-deployment-id'},
+        path='v2/pods/foo',
+        params=None,
+        expected_return='pod-deployment-id')
+    _assert_update_pod_executes_successfully(
+        pod_id='foo',
+        pod_json={'some', 'json'},
+        force=False,
         response_body={'deploymentId': 'an-arbitrary-value'},
+        path='v2/pods/foo',
+        params=None,
         expected_return='an-arbitrary-value')
 
 
@@ -492,12 +522,7 @@ def _assert_list_pod_returns_success_response_json(body_json):
 
 
 def _assert_update_pod_executes_successfully(
-        pod_id='foo', pod_json=None, force=False, response_body=None,
-        path='v2/pods/foo', params=None, expected_return='pod-deployment-id'):
-    pod_json = _default_if_none(pod_json, {'some': 'json'})
-    response_body = _default_if_none(
-        response_body, {'deploymentId': expected_return})
-
+        pod_id, pod_json, force, response_body, path, params, expected_return):
     marathon_client, rpc_client = _create_fixtures()
     mock_response = mock.create_autospec(requests.Response)
     mock_response.json.return_value = response_body
@@ -675,10 +700,6 @@ def _create_fixtures():
     marathon_client = marathon.Client(rpc_client)
 
     return marathon_client, rpc_client
-
-
-def _default_if_none(value, default):
-    return value if value is not None else default
 
 
 _MESSAGE_1 = 'Oops!'

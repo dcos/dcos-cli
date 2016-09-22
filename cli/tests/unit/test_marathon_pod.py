@@ -50,7 +50,7 @@ def test_pod_list_with_json():
 
 @patch('dcoscli.marathon.main.emitter', autospec=True)
 def test_pod_list_table(emitter):
-    subcmd, marathon_client = _unused_reader_fixture()
+    subcmd, marathon_client = _failing_reader_fixture()
     marathon_client.list_pod.return_value = marathon_fixtures.pod_fixture()
 
     returncode = subcmd.pod_list(json_=False)
@@ -157,7 +157,7 @@ def _assert_pod_add_propagates_exceptions_from_add_pod(exception):
 
 
 def _assert_pod_remove_invoked_successfully(pod_id, force):
-    subcmd, marathon_client = _unused_reader_fixture()
+    subcmd, marathon_client = _failing_reader_fixture()
 
     returncode = subcmd.pod_remove(pod_id, force)
 
@@ -166,7 +166,7 @@ def _assert_pod_remove_invoked_successfully(pod_id, force):
 
 
 def _assert_pod_remove_propagates_exceptions_from_remove_pod(exception):
-    subcmd, marathon_client = _unused_reader_fixture()
+    subcmd, marathon_client = _failing_reader_fixture()
     marathon_client.remove_pod.side_effect = exception
 
     with pytest.raises(exception.__class__) as exception_info:
@@ -177,7 +177,7 @@ def _assert_pod_remove_propagates_exceptions_from_remove_pod(exception):
 
 @patch('dcoscli.marathon.main.emitter', autospec=True)
 def _assert_pod_show_invoked_successfully(emitter, pod_json):
-    subcmd, marathon_client = _unused_reader_fixture()
+    subcmd, marathon_client = _failing_reader_fixture()
     marathon_client.show_pod.return_value = pod_json
 
     returncode = subcmd.pod_show(pod_json['id'])
@@ -188,7 +188,7 @@ def _assert_pod_show_invoked_successfully(emitter, pod_json):
 
 
 def _assert_pod_show_propagates_exceptions_from_show_pod(exception):
-    subcmd, marathon_client = _unused_reader_fixture()
+    subcmd, marathon_client = _failing_reader_fixture()
     marathon_client.show_pod.side_effect = exception
 
     with pytest.raises(exception.__class__) as exception_info:
@@ -199,7 +199,7 @@ def _assert_pod_show_propagates_exceptions_from_show_pod(exception):
 
 @patch('dcoscli.marathon.main.emitter', autospec=True)
 def _assert_pod_list_with_json(emitter, pod_list_json):
-    subcmd, marathon_client = _unused_reader_fixture()
+    subcmd, marathon_client = _failing_reader_fixture()
     marathon_client.list_pod.return_value = pod_list_json
 
     subcmd.pod_list(json_=True)
@@ -208,7 +208,7 @@ def _assert_pod_list_with_json(emitter, pod_list_json):
 
 
 def _assert_pod_list_propagates_exceptions_from_list_pod(exception):
-    subcmd, marathon_client = _unused_reader_fixture()
+    subcmd, marathon_client = _failing_reader_fixture()
     marathon_client.list_pod.side_effect = exception
 
     with pytest.raises(exception.__class__) as exception_info:
@@ -247,15 +247,15 @@ def _assert_pod_update_propagates_exception(
     assert str(exception_info.value) == error_message
 
 
-def _unused_reader_fixture():
+def _failing_reader_fixture():
     marathon_client = create_autospec(marathon.Client)
-    subcmd = main.MarathonSubcommand(_unused_resource_reader(),
+    subcmd = main.MarathonSubcommand(_failing_resource_reader(),
                                      lambda: marathon_client)
 
     return subcmd, marathon_client
 
 
-def _unused_resource_reader():
+def _failing_resource_reader():
     resource_reader = create_autospec(main.ResourceReader)
     error = AssertionError("should not be called")
     resource_reader.get_resource.side_effect = error
