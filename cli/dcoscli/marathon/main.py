@@ -861,6 +861,8 @@ class MarathonSubcommand(object):
         """
 
         marathon_client = self._create_marathon_client()
+        if not marathon_client.pod_feature_supported():
+            raise DCOSException('This command is not supported by Marathon')
         pod_json = self._resource_reader.get_resource(pod_resource_path)
         marathon_client.add_pod(pod_json)
         return 0

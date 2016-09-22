@@ -18,6 +18,17 @@ def test_pod_add_propagates_exceptions_from_add_pod():
     _assert_pod_add_propagates_exceptions_from_add_pod(Exception('Oops!'))
 
 
+def test_pod_add_fails_if_not_supported():
+    subcmd, marathon_client = _failing_reader_fixture()
+    marathon_client.pod_feature_supported.return_value = False
+
+    with pytest.raises(DCOSException) as exception_info:
+        subcmd.pod_add('not/used')
+
+    message = 'This command is not supported by Marathon'
+    assert str(exception_info.value) == message
+
+
 def test_pod_remove_invoked_successfully():
     _assert_pod_remove_invoked_successfully(pod_id='a-pod', force=False)
     _assert_pod_remove_invoked_successfully(pod_id='a-pod', force=True)
