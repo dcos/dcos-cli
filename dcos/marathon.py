@@ -762,7 +762,7 @@ class Client(object):
         """
 
         response = http.head('whatever')
-        return response.status_code == 200
+        return response.status_code // 100 == 2
 
     @staticmethod
     def _marathon_id_path_join(url_path, id_path):

@@ -166,6 +166,8 @@ def test_update_pod_raises_dcos_exception_if_deployment_id_missing():
 
 def test_pod_feature_supported():
     assert _invoke_pod_feature_supported(status_code=200)
+    assert _invoke_pod_feature_supported(status_code=204)
+
     assert not _invoke_pod_feature_supported(status_code=404)
 
 
