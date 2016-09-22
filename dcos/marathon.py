@@ -754,6 +754,15 @@ class Client(object):
 
         return self._update('pods', pod_id, pod_json, force)
 
+    def pod_feature_supported(self):
+        """Return whether or not this client is communicating with a server
+        that supports pod operations.
+
+        :rtype: bool
+        """
+
+        return True
+
     @staticmethod
     def _marathon_id_path_join(url_path, id_path):
         """Concatenates a URL path with a Marathon "ID path", ensuring the

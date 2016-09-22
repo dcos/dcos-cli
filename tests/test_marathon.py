@@ -164,6 +164,16 @@ def test_update_pod_raises_dcos_exception_if_deployment_id_missing():
                            '}'))
 
 
+@mock.patch('dcos.http.head')
+def test_pod_feature_supported_returns_true(head_fn):
+    mock_response = mock.create_autospec(requests.Response)
+    mock_response.status_code = 200
+    head_fn.return_value = mock_response
+
+    marathon_client, rpc_client = _create_fixtures()
+    assert marathon_client.pod_feature_supported()
+
+
 def test_rpc_client_http_req_calls_method_fn():
     _assert_rpc_client_http_req_calls_method_fn(
         base_url='http://base/url',
