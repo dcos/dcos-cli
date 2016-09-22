@@ -164,14 +164,9 @@ def test_update_pod_raises_dcos_exception_if_deployment_id_missing():
                            '}'))
 
 
-@mock.patch('dcos.http.head')
-def test_pod_feature_supported_returns_true(head_fn):
-    mock_response = mock.create_autospec(requests.Response)
-    mock_response.status_code = 200
-    head_fn.return_value = mock_response
-
-    marathon_client, rpc_client = _create_fixtures()
-    assert marathon_client.pod_feature_supported()
+def test_pod_feature_supported():
+    assert _invoke_pod_feature_supported(status_code=200)
+    assert not _invoke_pod_feature_supported(status_code=404)
 
 
 def test_rpc_client_http_req_calls_method_fn():
@@ -564,6 +559,16 @@ def _assert_method_propagates_rpc_dcos_exception(invoke_method):
         invoke_method(marathon_client)
 
     assert str(exception_info.value) == 'BOOM!'
+
+
+@mock.patch('dcos.http.head')
+def _invoke_pod_feature_supported(head_fn, status_code):
+    mock_response = mock.create_autospec(requests.Response)
+    mock_response.status_code = status_code
+    head_fn.return_value = mock_response
+
+    marathon_client, rpc_client = _create_fixtures()
+    return marathon_client.pod_feature_supported()
 
 
 def _assert_rpc_client_http_req_calls_method_fn(base_url, path, full_url):

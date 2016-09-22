@@ -761,7 +761,8 @@ class Client(object):
         :rtype: bool
         """
 
-        return True
+        response = http.head('whatever')
+        return response.status_code == 200
 
     @staticmethod
     def _marathon_id_path_join(url_path, id_path):
