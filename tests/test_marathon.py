@@ -26,53 +26,20 @@ def test_add_pod_raises_dcos_exception_for_json_parse_errors():
         lambda marathon_client: marathon_client.add_pod({'some': 'json'}))
 
 
-def test_remove_pod_builds_rpc_correctly_1():
+def test_remove_pod_has_default_force_value():
     marathon_client, rpc_client = _create_fixtures()
     marathon_client.remove_pod('foo')
     rpc_client.http_req.assert_called_with(
         http.delete, 'v2/pods/foo', params=None)
 
 
-def test_remove_pod_builds_rpc_correctly_2():
-    marathon_client, rpc_client = _create_fixtures()
-    marathon_client.remove_pod('foo', force=False)
-    rpc_client.http_req.assert_called_with(
-        http.delete, 'v2/pods/foo', params=None)
-
-
-def test_remove_pod_builds_rpc_correctly_3():
-    marathon_client, rpc_client = _create_fixtures()
-    marathon_client.remove_pod('foo', force=True)
-    rpc_client.http_req.assert_called_with(
-        http.delete, 'v2/pods/foo', params={'force': 'true'})
-
-
-def test_remove_pod_builds_rpc_correctly_4():
-    marathon_client, rpc_client = _create_fixtures()
-    marathon_client.remove_pod('bar')
-    rpc_client.http_req.assert_called_with(
-        http.delete, 'v2/pods/bar', params=None)
-
-
-def test_remove_pod_builds_rpc_correctly_5():
-    marathon_client, rpc_client = _create_fixtures()
-    marathon_client.remove_pod('/bar')
-    rpc_client.http_req.assert_called_with(
-        http.delete, 'v2/pods/bar', params=None)
-
-
-def test_remove_pod_builds_rpc_correctly_6():
-    marathon_client, rpc_client = _create_fixtures()
-    marathon_client.remove_pod('bar/')
-    rpc_client.http_req.assert_called_with(
-        http.delete, 'v2/pods/bar', params=None)
-
-
-def test_remove_pod_builds_rpc_correctly_7():
-    marathon_client, rpc_client = _create_fixtures()
-    marathon_client.remove_pod('foo bar')
-    rpc_client.http_req.assert_called_with(
-        http.delete, 'v2/pods/foo%20bar', params=None)
+def test_remove_pod_builds_rpc_correctly():
+    _assert_remove_pod_builds_rpc_correctly(
+        pod_id='foo', force=False, path='v2/pods/foo', params=None)
+    _assert_remove_pod_builds_rpc_correctly(
+        pod_id='foo', force=True, path='v2/pods/foo', params={'force': 'true'})
+    _assert_remove_pod_builds_rpc_correctly(
+        pod_id='/foo bar/', force=False, path='v2/pods/foo%20bar', params=None)
 
 
 def test_remove_pod_propagates_dcos_exception():
@@ -493,6 +460,12 @@ def _assert_add_pod_returns_parsed_response_body(response_json):
     rpc_client.http_req.return_value = mock_response
 
     assert marathon_client.add_pod({'some': 'json'}) == response_json
+
+
+def _assert_remove_pod_builds_rpc_correctly(pod_id, force, path, params):
+    marathon_client, rpc_client = _create_fixtures()
+    marathon_client.remove_pod(pod_id, force)
+    rpc_client.http_req.assert_called_with(http.delete, path, params=params)
 
 
 def _assert_show_pod_builds_rpc_correctly(pod_id, path):
