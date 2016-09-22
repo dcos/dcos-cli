@@ -1,6 +1,6 @@
 import dcoscli.marathon.main as main
 from dcos import marathon
-from dcos.errors import DCOSException
+from dcos.errors import DCOSException, DCOSHTTPException
 
 import pytest
 from mock import create_autospec, patch
@@ -139,12 +139,28 @@ def test_pod_command_fails_if_not_supported():
         message = 'This command is not supported by Marathon'
         assert str(exception_info.value) == message
 
-    test_case(lambda subcmd: subcmd.pod_add(pod_resource_path='not/used'))
-    test_case(lambda subcmd: subcmd.pod_remove(pod_id='some-id', force=False))
-    test_case(lambda subcmd: subcmd.pod_list(json_=False))
-    test_case(lambda subcmd: subcmd.pod_show(pod_id='some-id'))
-    test_case(lambda subcmd: subcmd.pod_update(
-        pod_id='some-id', properties=[], force=False))
+    test_case(_default_pod_add)
+    test_case(_default_pod_remove)
+    test_case(_default_pod_list)
+    test_case(_default_pod_show)
+    test_case(_default_pod_update)
+
+
+def test_pod_command_propagates_exceptions_from_support_check():
+    def test_case(invoke_command, exception):
+        subcmd, marathon_client = _failing_reader_fixture()
+        marathon_client.pod_feature_supported.side_effect = exception
+
+        with pytest.raises(exception.__class__) as exception_info:
+            invoke_command(subcmd)
+
+        assert exception_info.value == exception
+
+    test_case(_default_pod_add, DCOSException('BOOM!'))
+    test_case(_default_pod_remove, DCOSHTTPException(None))
+    test_case(_default_pod_list, ValueError('Oops'))
+    test_case(_default_pod_show, IOError('Bad stuff'))
+    test_case(_default_pod_update, Exception('uh oh'))
 
 
 def _assert_pod_add_invoked_successfully(pod_file_json):
@@ -280,3 +296,23 @@ def _failing_resource_reader():
     resource_reader.get_resource.side_effect = error
     resource_reader.get_resource_from_properties.side_effect = error
     return resource_reader
+
+
+def _default_pod_add(subcmd):
+    return subcmd.pod_add(pod_resource_path='not/used')
+
+
+def _default_pod_remove(subcmd):
+    return subcmd.pod_remove(pod_id='some-id', force=False)
+
+
+def _default_pod_list(subcmd):
+    return subcmd.pod_list(json_=False)
+
+
+def _default_pod_show(subcmd):
+    return subcmd.pod_show(pod_id='some-id')
+
+
+def _default_pod_update(subcmd):
+    return subcmd.pod_update(pod_id='some-id', properties=[], force=False)
