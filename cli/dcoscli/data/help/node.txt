@@ -25,7 +25,7 @@ Commands:
         cluster.
     diagnostics create
         Create a diagnostics bundle. Nodes can be: ip address, hostname, mesos ID
-        or key words "all", "masters", "agents".
+        or keywords "all", "masters", "agents" (notice the quotes around the keywords).
     diagnostics download
         Download a diagnostics bundle.
     diagnostics delete
