@@ -860,7 +860,9 @@ class MarathonSubcommand(object):
         :rtype: int
         """
 
-        marathon_client = self._marathon_client_with_pods()
+        marathon_client = self._create_marathon_client()
+        self._ensure_pods_support(marathon_client)
+
         pod_json = self._resource_reader.get_resource(pod_resource_path)
         marathon_client.add_pod(pod_json)
         return 0
@@ -875,7 +877,9 @@ class MarathonSubcommand(object):
         :rtype: int
         """
 
-        marathon_client = self._marathon_client_with_pods()
+        marathon_client = self._create_marathon_client()
+        self._ensure_pods_support(marathon_client)
+
         marathon_client.remove_pod(pod_id, force)
         return 0
 
@@ -887,7 +891,9 @@ class MarathonSubcommand(object):
         :rtype: int
         """
 
-        marathon_client = self._marathon_client_with_pods()
+        marathon_client = self._create_marathon_client()
+        self._ensure_pods_support(marathon_client)
+
         pods = marathon_client.list_pod()
         emitting.publish_table(emitter, pods, tables.pod_table, json_)
         return 0
@@ -901,7 +907,9 @@ class MarathonSubcommand(object):
         :rtype: int
         """
 
-        marathon_client = self._marathon_client_with_pods()
+        marathon_client = self._create_marathon_client()
+        self._ensure_pods_support(marathon_client)
+
         pod_json = marathon_client.show_pod(pod_id)
         emitter.publish(pod_json)
         return 0
@@ -918,7 +926,8 @@ class MarathonSubcommand(object):
         :rtype: int
         """
 
-        marathon_client = self._marathon_client_with_pods()
+        marathon_client = self._create_marathon_client()
+        self._ensure_pods_support(marathon_client)
 
         # Ensure that the pod exists
         marathon_client.show_pod(pod_id)
@@ -931,19 +940,19 @@ class MarathonSubcommand(object):
         emitter.publish('Created deployment {}'.format(deployment_id))
         return 0
 
-    def _marathon_client_with_pods(self):
-        """Creates and returns a Marathon client, but raises an exception if
-        it does not support the pod API.
+    @staticmethod
+    def _ensure_pods_support(marathon_client):
+        """Raises an exception if the given client is communicating with a
+        version of Marathon that doesn't support pods.
 
-        :rtype: dcos.marathon.Client
+        :param marathon_client: the Marathon client to check
+        :type marathon_client: dcos.marathon.Client
+        :rtype: None
         """
 
-        marathon_client = self._create_marathon_client()
-
         if not marathon_client.pod_feature_supported():
-            raise DCOSException('This command is not supported by Marathon')
-
-        return marathon_client
+            msg = 'This command is not supported by your version of Marathon'
+            raise DCOSException(msg)
 
 
 def _calculate_version(client, app_id, version):

@@ -136,7 +136,7 @@ def test_pod_command_fails_if_not_supported():
         with pytest.raises(DCOSException) as exception_info:
             invoke_command(subcmd)
 
-        message = 'This command is not supported by Marathon'
+        message = 'This command is not supported by your version of Marathon'
         assert str(exception_info.value) == message
 
     test_case(_default_pod_add)

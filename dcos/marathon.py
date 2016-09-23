@@ -756,15 +756,15 @@ class Client(object):
         return self._update('pods', pod_id, pod_json, force)
 
     def pod_feature_supported(self):
-        """Return whether or not this client is communicating with a server
-        that supports pod operations.
+        """Return whether or not this client is communicating with a version
+        of Marathon that supports pod operations.
 
         :rtype: bool
         """
 
         # Allow response objects to be returned from `http_req` on status 404,
         # while handling all other exceptions as usual
-        def head_404(url, **kwargs):
+        def test_for_pods(url, **kwargs):
             try:
                 return http.head(url, **kwargs)
             except DCOSHTTPException as e:
@@ -772,7 +772,7 @@ class Client(object):
                     return e.response
                 raise
 
-        response = self._rpc.http_req(head_404, 'v2/pods')
+        response = self._rpc.http_req(test_for_pods, 'v2/pods')
         return response.status_code // 100 == 2
 
     @staticmethod
