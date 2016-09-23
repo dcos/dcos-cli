@@ -26,53 +26,20 @@ def test_add_pod_raises_dcos_exception_for_json_parse_errors():
         lambda marathon_client: marathon_client.add_pod({'some': 'json'}))
 
 
-def test_remove_pod_builds_rpc_correctly_1():
+def test_remove_pod_has_default_force_value():
     marathon_client, rpc_client = _create_fixtures()
     marathon_client.remove_pod('foo')
     rpc_client.http_req.assert_called_with(
         http.delete, 'v2/pods/foo', params=None)
 
 
-def test_remove_pod_builds_rpc_correctly_2():
-    marathon_client, rpc_client = _create_fixtures()
-    marathon_client.remove_pod('foo', force=False)
-    rpc_client.http_req.assert_called_with(
-        http.delete, 'v2/pods/foo', params=None)
-
-
-def test_remove_pod_builds_rpc_correctly_3():
-    marathon_client, rpc_client = _create_fixtures()
-    marathon_client.remove_pod('foo', force=True)
-    rpc_client.http_req.assert_called_with(
-        http.delete, 'v2/pods/foo', params={'force': 'true'})
-
-
-def test_remove_pod_builds_rpc_correctly_4():
-    marathon_client, rpc_client = _create_fixtures()
-    marathon_client.remove_pod('bar')
-    rpc_client.http_req.assert_called_with(
-        http.delete, 'v2/pods/bar', params=None)
-
-
-def test_remove_pod_builds_rpc_correctly_5():
-    marathon_client, rpc_client = _create_fixtures()
-    marathon_client.remove_pod('/bar')
-    rpc_client.http_req.assert_called_with(
-        http.delete, 'v2/pods/bar', params=None)
-
-
-def test_remove_pod_builds_rpc_correctly_6():
-    marathon_client, rpc_client = _create_fixtures()
-    marathon_client.remove_pod('bar/')
-    rpc_client.http_req.assert_called_with(
-        http.delete, 'v2/pods/bar', params=None)
-
-
-def test_remove_pod_builds_rpc_correctly_7():
-    marathon_client, rpc_client = _create_fixtures()
-    marathon_client.remove_pod('foo bar')
-    rpc_client.http_req.assert_called_with(
-        http.delete, 'v2/pods/foo%20bar', params=None)
+def test_remove_pod_builds_rpc_correctly():
+    _assert_remove_pod_builds_rpc_correctly(
+        pod_id='foo', force=False, path='v2/pods/foo', params=None)
+    _assert_remove_pod_builds_rpc_correctly(
+        pod_id='foo', force=True, path='v2/pods/foo', params={'force': 'true'})
+    _assert_remove_pod_builds_rpc_correctly(
+        pod_id='/foo bar/', force=False, path='v2/pods/foo%20bar', params=None)
 
 
 def test_remove_pod_propagates_dcos_exception():
@@ -197,21 +164,115 @@ def test_update_pod_raises_dcos_exception_if_deployment_id_missing():
                            '}'))
 
 
+@mock.patch('dcos.http.head')
+def test_pod_feature_supported_gets_success_response(head_fn):
+    def invoke_test_case(status_code):
+        mock_response = mock.create_autospec(requests.Response)
+        mock_response.status_code = status_code
+        head_fn.return_value = mock_response
+
+        rpc_client = marathon.RpcClient('http://base/url', timeout=42)
+        marathon_client = marathon.Client(rpc_client)
+        is_supported = marathon_client.pod_feature_supported()
+
+        head_fn.assert_called_with('http://base/url/v2/pods', timeout=42)
+
+        return is_supported
+
+    assert invoke_test_case(status_code=200)
+    assert invoke_test_case(status_code=204)
+
+    assert not invoke_test_case(status_code=100)
+    assert not invoke_test_case(status_code=302)
+
+
+@mock.patch('dcos.http.head')
+def test_pod_feature_supported_gets_404_response(head_fn):
+    mock_response = mock.create_autospec(requests.Response)
+    mock_response.status_code = 404
+    head_fn.side_effect = DCOSHTTPException(mock_response)
+
+    rpc_client = marathon.RpcClient('http://base/url', timeout=24)
+    marathon_client = marathon.Client(rpc_client)
+
+    assert not marathon_client.pod_feature_supported()
+    head_fn.assert_called_with('http://base/url/v2/pods', timeout=24)
+
+
+def test_pod_feature_supported_converts_http_exceptions_to_dcos_exceptions():
+    @mock.patch('dcos.http.head')
+    def test_case(head_fn, status_code):
+        request = requests.Request(method='ANY', url='http://arbitrary/url')
+        mock_response = mock.create_autospec(requests.Response)
+        mock_response.status_code = status_code
+        mock_response.reason = 'Arbitrary Reason'
+        mock_response.request = request
+        mock_response.json.side_effect = ValueError('empty body')
+        head_fn.side_effect = DCOSHTTPException(mock_response)
+
+        rpc_client = marathon.RpcClient('http://does/not/matter')
+        marathon_client = marathon.Client(rpc_client)
+
+        with pytest.raises(DCOSException) as exception_info:
+            marathon_client.pod_feature_supported()
+
+        message = marathon.RpcClient.response_error_message(
+            status_code,
+            reason='Arbitrary Reason',
+            request_method='ANY',
+            request_url='http://arbitrary/url',
+            json_body=None)
+        assert str(exception_info.value).endswith(message)
+
+    test_case(status_code=400)
+    test_case(status_code=401)
+    test_case(status_code=403)
+    test_case(status_code=409)
+    test_case(status_code=422)
+    test_case(status_code=500)
+
+
+def test_pod_feature_supported_propagates_other_exceptions():
+    _assert_pod_feature_supported_raises_exception(
+        exception=DCOSException("BOOM!"))
+    _assert_pod_feature_supported_raises_exception(
+        exception=Exception("Uh oh"))
+
+
 def test_rpc_client_http_req_calls_method_fn():
-    _assert_rpc_client_http_req_calls_method_fn(
+    def test_case(base_url, path, full_url):
+        method_fn = mock.Mock()
+
+        rpc_client = marathon.RpcClient(base_url)
+        rpc_client.http_req(method_fn, path)
+
+        method_fn.assert_called_with(full_url,
+                                     timeout=http.DEFAULT_TIMEOUT)
+
+    test_case(
         base_url='http://base/url',
         path='some/path',
         full_url='http://base/url/some/path')
-
-    _assert_rpc_client_http_req_calls_method_fn(
+    test_case(
         base_url='http://base/url',
         path='different/thing',
         full_url='http://base/url/different/thing')
-
-    _assert_rpc_client_http_req_calls_method_fn(
+    test_case(
         base_url='gopher://different/thing',
         path='some/path',
         full_url='gopher://different/thing/some/path')
+    test_case(
+        base_url='http://base/without/slash',
+        path='/path/with/slash',
+        full_url='http://base/without/slash/path/with/slash')
+    test_case(
+        base_url='http://base/with/slash/',
+        path='path/without/slash',
+        full_url='http://base/with/slash/path/without/slash')
+    test_case(
+        base_url='http://base/with/slash/',
+        path='/path/with/slash',
+        full_url='http://base/with/slash/path/with/slash')
 
 
 def test_rpc_client_http_req_passes_args_to_method_fn():
@@ -256,26 +317,19 @@ def test_rpc_client_http_req_set_timeout_in_constructor():
     method_fn.assert_called_with('http://base/url/some/path', timeout=24)
 
 
-def test_rpc_client_http_req_extra_path_slashes():
-    _assert_rpc_client_http_req_calls_method_fn(
-        base_url='http://base/without/slash',
-        path='/path/with/slash',
-        full_url='http://base/without/slash/path/with/slash')
-
-    _assert_rpc_client_http_req_calls_method_fn(
-        base_url='http://base/with/slash/',
-        path='path/without/slash',
-        full_url='http://base/with/slash/path/without/slash')
-
-    _assert_rpc_client_http_req_calls_method_fn(
-        base_url='http://base/with/slash/',
-        path='/path/with/slash',
-        full_url='http://base/with/slash/path/with/slash')
-
-
 def test_rpc_client_http_req_returns_method_fn_result():
-    _assert_rpc_client_http_req_returns_method_fn_result(['the', 'result'])
-    _assert_rpc_client_http_req_returns_method_fn_result({'another': 'result'})
+    def test_case(expected):
+
+        def method_fn(*args, **kwargs):
+            return expected
+
+        rpc_client = marathon.RpcClient('http://base/url')
+        actual = rpc_client.http_req(method_fn, 'some/path')
+
+        assert actual == expected
+
+    test_case(['the', 'result'])
+    test_case({'another': 'result'})
 
 
 def test_rpc_client_http_req_propagates_method_fn_exception_1():
@@ -495,6 +549,12 @@ def _assert_add_pod_returns_parsed_response_body(response_json):
     assert marathon_client.add_pod({'some': 'json'}) == response_json
 
 
+def _assert_remove_pod_builds_rpc_correctly(pod_id, force, path, params):
+    marathon_client, rpc_client = _create_fixtures()
+    marathon_client.remove_pod(pod_id, force)
+    rpc_client.http_req.assert_called_with(http.delete, path, params=params)
+
+
 def _assert_show_pod_builds_rpc_correctly(pod_id, path):
     marathon_client, rpc_client = _create_fixtures()
     marathon_client.show_pod(pod_id)
@@ -583,25 +643,16 @@ def _assert_method_propagates_rpc_dcos_exception(invoke_method):
     assert str(exception_info.value) == 'BOOM!'
 
 
-def _assert_rpc_client_http_req_calls_method_fn(base_url, path, full_url):
-    method_fn = mock.Mock()
+@mock.patch('dcos.http.head')
+def _assert_pod_feature_supported_raises_exception(head_fn, exception):
+    rpc_client = marathon.RpcClient('http://base/url', timeout=22)
+    marathon_client = marathon.Client(rpc_client)
+    head_fn.side_effect = exception
 
-    rpc_client = marathon.RpcClient(base_url)
-    rpc_client.http_req(method_fn, path)
+    with pytest.raises(exception.__class__) as exception_info:
+        marathon_client.pod_feature_supported()
 
-    method_fn.assert_called_with(full_url,
-                                 timeout=http.DEFAULT_TIMEOUT)
-
-
-def _assert_rpc_client_http_req_returns_method_fn_result(expected):
-
-    def method_fn(*args, **kwargs):
-        return expected
-
-    rpc_client = marathon.RpcClient('http://base/url')
-    actual = rpc_client.http_req(method_fn, 'some/path')
-
-    assert actual == expected
+    assert exception_info.value == exception
 
 
 def _assert_response_error_message_with_400_status_no_json(

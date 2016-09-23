@@ -144,6 +144,7 @@ class RpcClient(object):
         :returns: `method_fn` return value
         :rtype: requests.Response
         """
+
         url = self._base_url + path.lstrip('/')
 
         if 'timeout' not in kwargs:
@@ -753,6 +754,26 @@ class Client(object):
         """
 
         return self._update('pods', pod_id, pod_json, force)
+
+    def pod_feature_supported(self):
+        """Return whether or not this client is communicating with a version
+        of Marathon that supports pod operations.
+
+        :rtype: bool
+        """
+
+        # Allow response objects to be returned from `http_req` on status 404,
+        # while handling all other exceptions as usual
+        def test_for_pods(url, **kwargs):
+            try:
+                return http.head(url, **kwargs)
+            except DCOSHTTPException as e:
+                if e.status() == 404:
+                    return e.response
+                raise
+
+        response = self._rpc.http_req(test_for_pods, 'v2/pods')
+        return response.status_code // 100 == 2
 
     @staticmethod
     def _marathon_id_path_join(url_path, id_path):
