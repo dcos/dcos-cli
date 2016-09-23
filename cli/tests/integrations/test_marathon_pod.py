@@ -2,8 +2,6 @@ import contextlib
 import json
 import re
 
-from dcos import util
-
 import pytest
 
 from ..common import file_bytes
@@ -11,7 +9,7 @@ from ..fixtures.marathon import (DOUBLE_POD_FILE_PATH, DOUBLE_POD_ID,
                                  GOOD_POD_FILE_PATH, GOOD_POD_ID,
                                  TRIPLE_POD_FILE_PATH, TRIPLE_POD_ID,
                                  UPDATED_GOOD_POD_FILE_PATH, pod_fixture)
-from .common import assert_command, exec_command
+from .common import assert_command, exec_command, file_json_ast
 
 _POD_BASE_CMD = ['dcos', 'marathon', 'pod']
 _POD_ADD_CMD = _POD_BASE_CMD + ['add']
@@ -54,30 +52,35 @@ def test_pod_list():
 
 @pytest.mark.skip(reason="Pods support in Marathon not released yet")
 def test_pod_show():
+    expected_json = file_json_ast(GOOD_POD_FILE_PATH)
+
     with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH):
-        _assert_pod_show(GOOD_POD_ID)
+        _assert_pod_show(GOOD_POD_ID, expected_json)
 
 
 @pytest.mark.skip(reason="Pods support in Marathon not released yet")
-def test_pod_update_from_file():
-    expected_show_stdout = file_bytes(UPDATED_GOOD_POD_FILE_PATH)
+def test_pod_update_from_properties():
+    expected_json = file_json_ast(UPDATED_GOOD_POD_FILE_PATH)
+    containers_json_str = json.dumps(expected_json['containers'])
+    properties = ['id=/{}'.format(GOOD_POD_ID),
+                  'containers={}'.format(containers_json_str)]
 
     with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH):
-        _assert_pod_update_from_file(GOOD_POD_ID,
-                                     UPDATED_GOOD_POD_FILE_PATH,
-                                     extra_args=[])
-        _assert_pod_show(GOOD_POD_ID, expected_show_stdout)
+        _assert_pod_update_from_properties(GOOD_POD_ID,
+                                           properties,
+                                           extra_args=[])
+        _assert_pod_show(GOOD_POD_ID, expected_json)
 
 
 @pytest.mark.skip(reason="Pods support in Marathon not released yet")
 def test_pod_update_from_stdin_force_true():
-    expected_show_stdout = file_bytes(UPDATED_GOOD_POD_FILE_PATH)
+    expected_json = file_json_ast(UPDATED_GOOD_POD_FILE_PATH)
 
     with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH):
         _assert_pod_update_from_stdin(GOOD_POD_ID,
                                       UPDATED_GOOD_POD_FILE_PATH,
                                       extra_args=['--force'])
-        _assert_pod_show(GOOD_POD_ID, expected_show_stdout)
+        _assert_pod_show(GOOD_POD_ID, expected_json)
 
 
 def _pod_add_from_file(file_path):
@@ -107,21 +110,36 @@ def _assert_pod_list_json_subset(expected_json, actual_json):
     for expected_pod in expected_json:
         pod_id = expected_pod['id']
         actual_pod = actual_pods_by_id[pod_id]
-
-        expected_containers = expected_pod['containers']
-        actual_containers = actual_pod['containers']
-        actual_containers_by_name = {c['name']: c for c in actual_containers}
-
-        for expected_container in expected_containers:
-            container_name = expected_container['name']
-            actual_container = actual_containers_by_name[container_name]
-
-            for k, v in expected_container['resources'].items():
-                assert actual_container['resources'][k] == v
-
-        assert len(actual_containers) == len(expected_containers)
+        _assert_pod_json(expected_pod, actual_pod)
 
     assert len(actual_json) == len(expected_json)
+
+
+def _assert_pod_json(expected_pod, actual_pod):
+    """Checks that the "actual" pod JSON matches the "expected" pod JSON.
+
+    The comparison only looks at specific fields that are present in the
+    test data used by this module.
+
+    :param expected_pod: contains the baseline values for the comparison
+    :type expected_pod: {}
+    :param actual_pod: has its fields checked against the expected fields
+    :type actual_pod: {}
+    :rtype: None
+    """
+
+    expected_containers = expected_pod['containers']
+    actual_containers = actual_pod['containers']
+    actual_containers_by_name = {c['name']: c for c in actual_containers}
+
+    for expected_container in expected_containers:
+        container_name = expected_container['name']
+        actual_container = actual_containers_by_name[container_name]
+
+        for k, v in expected_container['resources'].items():
+            assert actual_container['resources'][k] == v
+
+    assert len(actual_containers) == len(expected_containers)
 
 
 def _assert_pod_list_table(stdout):
@@ -133,7 +151,7 @@ def _assert_pod_remove(pod_id, extra_args):
     assert_command(cmd, returncode=0, stdout=b'', stderr=b'')
 
 
-def _assert_pod_show(pod_id):
+def _assert_pod_show(pod_id, expected_json):
     cmd = _POD_SHOW_CMD + [pod_id]
     returncode, stdout, stderr = exec_command(cmd)
 
@@ -141,11 +159,11 @@ def _assert_pod_show(pod_id):
     assert stderr == b''
 
     pod_json = json.loads(stdout.decode('utf-8'))
-    assert pod_json['id'] == util.normalize_marathon_id_path(pod_id)
+    _assert_pod_json(expected_json, pod_json)
 
 
-def _assert_pod_update_from_file(pod_id, file_path, extra_args):
-    cmd = _POD_UPDATE_CMD + [pod_id, file_path] + extra_args
+def _assert_pod_update_from_properties(pod_id, properties, extra_args):
+    cmd = _POD_UPDATE_CMD + [pod_id] + properties + extra_args
     returncode, stdout, stderr = exec_command(cmd)
 
     assert returncode == 0
@@ -154,7 +172,7 @@ def _assert_pod_update_from_file(pod_id, file_path, extra_args):
 
 
 def _assert_pod_update_from_stdin(pod_id, file_path, extra_args):
-    cmd = _POD_UPDATE_CMD + [pod_id, file_path] + extra_args
+    cmd = _POD_UPDATE_CMD + [pod_id] + extra_args
     with open(file_path) as fd:
         returncode, stdout, stderr = exec_command(cmd, stdin=fd)
 

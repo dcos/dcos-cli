@@ -21,6 +21,11 @@ def test_add_pod_returns_parsed_response_body():
     _assert_add_pod_returns_parsed_response_body(["another", "pod", "json"])
 
 
+def test_add_pod_raises_dcos_exception_for_json_parse_errors():
+    _assert_method_raises_dcos_exception_for_json_parse_errors(
+        lambda marathon_client: marathon_client.add_pod({'some': 'json'}))
+
+
 def test_remove_pod_builds_rpc_correctly_1():
     marathon_client, rpc_client = _create_fixtures()
     marathon_client.remove_pod('foo')
@@ -93,8 +98,8 @@ def test_show_pod_propagates_dcos_exception():
         lambda marathon_client: marathon_client.show_pod('bad-req'))
 
 
-def test_show_pod_propagates_json_parsing_exception():
-    _assert_method_propagates_json_parsing_exception(
+def test_show_pod_raises_dcos_exception_for_json_parse_errors():
+    _assert_method_raises_dcos_exception_for_json_parse_errors(
         lambda marathon_client: marathon_client.show_pod('bad-json'))
 
 
@@ -109,14 +114,87 @@ def test_list_pod_returns_success_response_json():
     _assert_list_pod_returns_success_response_json(body_json=['a', 'b', 'c'])
 
 
-def test_list_pod_propagates_dcos_exception():
+def test_list_pod_propagates_rpc_dcos_exception():
     _assert_method_propagates_rpc_dcos_exception(
         lambda marathon_client: marathon_client.list_pod())
 
 
-def test_list_pod_propagates_json_parsing_exception():
-    _assert_method_propagates_json_parsing_exception(
+def test_list_pod_raises_dcos_exception_for_json_parse_errors():
+    _assert_method_raises_dcos_exception_for_json_parse_errors(
         lambda marathon_client: marathon_client.list_pod())
+
+
+def test_update_pod_executes_successfully():
+    _assert_update_pod_executes_successfully(
+        pod_id='foo',
+        pod_json={'some', 'json'},
+        force=False,
+        response_body={'deploymentId': 'pod-deployment-id'},
+        path='v2/pods/foo',
+        params=None,
+        expected_return='pod-deployment-id')
+    _assert_update_pod_executes_successfully(
+        pod_id='/foo bar/',
+        pod_json={'some', 'json'},
+        force=False,
+        response_body={'deploymentId': 'pod-deployment-id'},
+        path='v2/pods/foo%20bar',
+        params=None,
+        expected_return='pod-deployment-id')
+    _assert_update_pod_executes_successfully(
+        pod_id='foo',
+        pod_json={'some', 'json'},
+        force=True,
+        response_body={'deploymentId': 'pod-deployment-id'},
+        path='v2/pods/foo',
+        params={'force': 'true'},
+        expected_return='pod-deployment-id')
+    _assert_update_pod_executes_successfully(
+        pod_id='foo',
+        pod_json={'something', 'different'},
+        force=False,
+        response_body={'deploymentId': 'pod-deployment-id'},
+        path='v2/pods/foo',
+        params=None,
+        expected_return='pod-deployment-id')
+    _assert_update_pod_executes_successfully(
+        pod_id='foo',
+        pod_json={'some', 'json'},
+        force=False,
+        response_body={'deploymentId': 'an-arbitrary-value'},
+        path='v2/pods/foo',
+        params=None,
+        expected_return='an-arbitrary-value')
+
+
+def test_update_pod_has_default_force_value():
+    marathon_client, rpc_client = _create_fixtures()
+    marathon_client.update_pod('foo', {'some': 'json'})
+    rpc_client.http_req.assert_called_with(
+        http.put, 'v2/pods/foo', params=None, json={'some': 'json'})
+
+
+def test_update_pod_propagates_rpc_dcos_exception():
+    _assert_method_propagates_rpc_dcos_exception(
+        lambda marathon_client:
+            marathon_client.update_pod('foo', {'some': 'json'}))
+
+
+def test_update_pod_raises_dcos_exception_for_json_parse_errors():
+    _assert_method_raises_dcos_exception_for_json_parse_errors(
+        lambda marathon_client:
+            marathon_client.update_pod('foo', {'some': 'json'}))
+
+
+def test_update_pod_raises_dcos_exception_if_deployment_id_missing():
+    _assert_update_pod_raises_dcos_exception_if_deployment_id_missing(
+        bad_json={"foo": "bar"}, rendered_bad_json='{\n  "foo": "bar"\n}')
+    _assert_update_pod_raises_dcos_exception_if_deployment_id_missing(
+        bad_json={"deployment_ID": "misspelled-field", "zzz": "aaa"},
+        rendered_bad_json=('{\n'
+                           '  "deployment_ID": "misspelled-field",\n'
+                           '  "zzz": "aaa"\n'
+                           '}'))
 
 
 def test_rpc_client_http_req_calls_method_fn():
@@ -408,11 +486,13 @@ def _assert_add_pod_puts_json_in_request_body(pod_json):
 
 
 def _assert_add_pod_returns_parsed_response_body(response_json):
-    rpc_client = mock.create_autospec(marathon.RpcClient)
-    rpc_client.http_req.return_value = response_json
+    mock_response = mock.create_autospec(requests.Response)
+    mock_response.json.return_value = response_json
 
-    client = marathon.Client(rpc_client)
-    assert client.add_pod("arbitrary") == response_json
+    marathon_client, rpc_client = _create_fixtures()
+    rpc_client.http_req.return_value = mock_response
+
+    assert marathon_client.add_pod({'some': 'json'}) == response_json
 
 
 def _assert_show_pod_builds_rpc_correctly(pod_id, path):
@@ -441,6 +521,58 @@ def _assert_list_pod_returns_success_response_json(body_json):
     assert marathon_client.list_pod() == body_json
 
 
+def _assert_update_pod_executes_successfully(
+        pod_id, pod_json, force, response_body, path, params, expected_return):
+    marathon_client, rpc_client = _create_fixtures()
+    mock_response = mock.create_autospec(requests.Response)
+    mock_response.json.return_value = response_body
+    rpc_client.http_req.return_value = mock_response
+
+    actual_return = marathon_client.update_pod(pod_id, pod_json, force)
+
+    rpc_client.http_req.assert_called_with(
+        http.put, path, params=params, json=pod_json)
+    assert actual_return == expected_return
+
+
+def _assert_method_raises_dcos_exception_for_json_parse_errors(invoke_method):
+    def assert_test_case(non_json):
+        mock_response = mock.create_autospec(requests.Response)
+        mock_response.json.side_effect = Exception()
+        mock_response.text = non_json
+
+        marathon_client, rpc_client = _create_fixtures()
+        rpc_client.http_req.return_value = mock_response
+
+        with pytest.raises(DCOSException) as exception_info:
+            invoke_method(marathon_client)
+
+        pattern = ('Error: Response from Marathon was not in expected JSON '
+                   'format:\n(.*)')
+        actual_error = str(exception_info.value)
+        _assert_matches_with_groups(pattern, actual_error, (non_json,))
+
+    assert_test_case('not-json')
+    assert_test_case('{"oops"}')
+
+
+def _assert_update_pod_raises_dcos_exception_if_deployment_id_missing(
+        bad_json, rendered_bad_json):
+    mock_response = mock.create_autospec(requests.Response)
+    mock_response.json.return_value = bad_json
+
+    marathon_client, rpc_client = _create_fixtures()
+    rpc_client.http_req.return_value = mock_response
+
+    with pytest.raises(DCOSException) as exception_info:
+        marathon_client.update_pod('foo', {'some': 'json'})
+
+    pattern = ('Error: missing "deploymentId" field in the following JSON '
+               'response from Marathon:\n(.*)')
+    actual_error = str(exception_info.value)
+    _assert_matches_with_groups(pattern, actual_error, (rendered_bad_json,))
+
+
 def _assert_method_propagates_rpc_dcos_exception(invoke_method):
     marathon_client, rpc_client = _create_fixtures()
     rpc_client.http_req.side_effect = DCOSException('BOOM!')
@@ -449,18 +581,6 @@ def _assert_method_propagates_rpc_dcos_exception(invoke_method):
         invoke_method(marathon_client)
 
     assert str(exception_info.value) == 'BOOM!'
-
-
-def _assert_method_propagates_json_parsing_exception(invoke_method):
-    marathon_client, rpc_client = _create_fixtures()
-    mock_response = mock.create_autospec(requests.Response)
-    mock_response.json.side_effect = Exception('Bad parse')
-    rpc_client.http_req.return_value = mock_response
-
-    with pytest.raises(Exception) as exception_info:
-        invoke_method(marathon_client)
-
-    assert str(exception_info.value) == 'Bad parse'
 
 
 def _assert_rpc_client_http_req_calls_method_fn(base_url, path, full_url):
