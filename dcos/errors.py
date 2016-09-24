@@ -63,6 +63,23 @@ class DCOSBadRequest(DCOSHTTPException):
         return "Bad request"
 
 
+class DCOSExceptionSSL(DCOSHTTPException):
+    """A wrapper around Response objects for requests.exceptions.SSLError
+
+    :param message: Extra information for error message
+    :type message: str
+    """
+    def __init__(self, message=None):
+        self._message = message
+
+    def __str__(self):
+        msg = ("An SSL error occurred. To configure your SSL settings, "
+               "please run: `dcos config set core.ssl_verify <value>`")
+        if self._message is not None:
+            msg += "\n{}".format(self._message)
+        return msg
+
+
 class Error(object):
     """Abstract class for describing errors."""
 

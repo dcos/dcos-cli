@@ -4,7 +4,7 @@ Description:
 Usage:
     dcos auth --help
     dcos auth --info
-    dcos auth login
+    dcos auth login [--yes]
     dcos auth logout
 
 Commands:
@@ -18,5 +18,7 @@ Options:
         Print usage.
     --info
         Print a short description of this subcommand.
+    --yes
+        Turn off interactive mode and assume "yes" is the answer to all prompts.
     --version
         Print version information.
