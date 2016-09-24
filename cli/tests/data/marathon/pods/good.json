@@ -8,5 +8,10 @@
         "mem": 16.0
       }
     }
+  ],
+  "networks": [
+    {
+      "mode": "host"
+    }
   ]
 }

@@ -62,8 +62,10 @@ def test_pod_show():
 def test_pod_update_from_properties():
     expected_json = file_json_ast(UPDATED_GOOD_POD_FILE_PATH)
     containers_json_str = json.dumps(expected_json['containers'])
+    networks_json_str = json.dumps(expected_json['networks'])
     properties = ['id=/{}'.format(GOOD_POD_ID),
-                  'containers={}'.format(containers_json_str)]
+                  'containers={}'.format(containers_json_str),
+                  'networks={}'.format(networks_json_str)]
 
     with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH):
         _assert_pod_update_from_properties(GOOD_POD_ID,
