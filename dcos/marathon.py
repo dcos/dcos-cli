@@ -320,8 +320,9 @@ class Client(object):
 
         return response.json()
 
-    def _update(self, resource_type, resource_id, resource_json, force=False):
-        """Update an application, group, or pod.
+    def _update_req(
+            self, resource_type, resource_id, resource_json, force=False):
+        """Send an HTTP request to update an application, group, or pod.
 
         :param resource_type: one of 'apps', 'groups', or 'pods'
         :type resource_type: str
@@ -331,15 +332,35 @@ class Client(object):
         :type resource_json: {}
         :param force: whether to override running deployments
         :type force: bool
-        :returns: the resulting deployment ID
-        :rtype: str
+        :returns: the response from Marathon
+        :rtype: requests.Response
         """
 
         path_prefix = 'v2/{}'.format(resource_type)
         path = self._marathon_id_path_join(path_prefix, resource_id)
         params = self._force_params(force)
-        response = self._rpc.http_req(
+        return self._rpc.http_req(
             http.put, path, params=params, json=resource_json)
+
+    def _update(self, resource_type, resource_id, resource_json, force=False):
+        """Update an application or group.
+
+        The HTTP response is handled differently for pods; see `update_pod`.
+
+        :param resource_type: either 'apps' or 'groups'
+        :type resource_type: str
+        :param resource_id: the app or group ID
+        :type resource_id: str
+        :param resource_json: the json payload
+        :type resource_json: {}
+        :param force: whether to override running deployments
+        :type force: bool
+        :returns: the resulting deployment ID
+        :rtype: str
+        """
+
+        response = self._update_req(
+            resource_type, resource_id, resource_json, force)
         body_json = self._parse_json(response)
 
         try:
@@ -753,7 +774,14 @@ class Client(object):
         :rtype: None
         """
 
-        return self._update('pods', pod_id, pod_json, force)
+        response = self._update_req('pods', pod_id, pod_json, force)
+        header_name = 'Marathon-Deployment-Id'
+
+        try:
+            return response.headers[header_name]
+        except KeyError:
+            template = 'Error: missing "{}" header from Marathon response'
+            raise DCOSException(template.format(header_name))
 
     def pod_feature_supported(self):
         """Return whether or not this client is communicating with a version
