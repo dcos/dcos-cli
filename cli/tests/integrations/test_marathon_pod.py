@@ -9,7 +9,8 @@ from ..fixtures.marathon import (DOUBLE_POD_FILE_PATH, DOUBLE_POD_ID,
                                  GOOD_POD_FILE_PATH, GOOD_POD_ID,
                                  TRIPLE_POD_FILE_PATH, TRIPLE_POD_ID,
                                  UPDATED_GOOD_POD_FILE_PATH, pod_fixture)
-from .common import assert_command, exec_command, file_json_ast
+from .common import (assert_command, exec_command, file_json_ast,
+                     watch_all_deployments)
 
 _POD_BASE_CMD = ['dcos', 'marathon', 'pod']
 _POD_ADD_CMD = _POD_BASE_CMD + ['add']
@@ -87,13 +88,18 @@ def test_pod_update_from_stdin_force_true():
 
 def _pod_add_from_file(file_path):
     cmd = _POD_ADD_CMD + [file_path]
-    return exec_command(cmd)
+    outputs = exec_command(cmd)
+
+    watch_all_deployments()
+    return outputs
 
 
 def _assert_pod_add_from_stdin(file_path):
     cmd = _POD_ADD_CMD
     with open(file_path) as fd:
         assert_command(cmd, returncode=0, stdout=b'', stderr=b'', stdin=fd)
+
+    watch_all_deployments()
 
 
 def _assert_pod_list_json(expected_json):
@@ -152,6 +158,8 @@ def _assert_pod_remove(pod_id, extra_args):
     cmd = _POD_REMOVE_CMD + [pod_id] + extra_args
     assert_command(cmd, returncode=0, stdout=b'', stderr=b'')
 
+    watch_all_deployments()
+
 
 def _assert_pod_show(pod_id, expected_json):
     cmd = _POD_SHOW_CMD + [pod_id]
@@ -172,6 +180,8 @@ def _assert_pod_update_from_properties(pod_id, properties, extra_args):
     assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
     assert stderr == b''
 
+    watch_all_deployments()
+
 
 def _assert_pod_update_from_stdin(pod_id, file_path, extra_args):
     cmd = _POD_UPDATE_CMD + [pod_id] + extra_args
@@ -181,6 +191,8 @@ def _assert_pod_update_from_stdin(pod_id, file_path, extra_args):
     assert returncode == 0
     assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
     assert stderr == b''
+
+    watch_all_deployments()
 
 
 @contextlib.contextmanager
