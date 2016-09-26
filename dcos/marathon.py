@@ -109,8 +109,9 @@ class RpcClient(object):
             return template.format(request_method, request_url, reason, suffix)
 
         if status_code == 409:
-            return ('App, group, or pod is locked by one or more deployments. '
-                    'Override with --force.')
+            return ('App, group, or pod already exists and cannot be changed '
+                    'at this time. Try again later or use --force if it is'
+                    'available for your command.')
 
         if json_body is None:
             template = 'Error decoding response from [{}]: HTTP {}: {}'

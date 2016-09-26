@@ -413,8 +413,9 @@ def test_res_err_msg_with_409_status():
         request_url=_URL_X,
         json_body=None)
 
-    expected = ('App, group, or pod is locked by one or more deployments. '
-                'Override with --force.')
+    expected = ('App, group, or pod already exists and cannot be changed '
+                'at this time. Try again later or use --force if it is'
+                'available for your command.')
     assert actual == expected
 
 
