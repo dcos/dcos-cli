@@ -689,13 +689,10 @@ def test_app_locked_error():
     with app('tests/data/marathon/apps/sleep_many_instances.json',
              '/sleep-many-instances',
              wait=False):
-        stderr = (b'App, group, or pod already exists and cannot be changed '
-                  b'at this time. Try again later or use --force if it is'
-                  b'available for your command.\n')
         assert_command(
             ['dcos', 'marathon', 'app', 'stop', 'sleep-many-instances'],
             returncode=1,
-            stderr=stderr)
+            stderr=b'App already exists.\n')
 
 
 @pytest.mark.skipif(sys.platform == 'win32',

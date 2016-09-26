@@ -109,9 +109,14 @@ class RpcClient(object):
             return template.format(request_method, request_url, reason, suffix)
 
         if status_code == 409:
-            return ('App, group, or pod already exists and cannot be changed '
-                    'at this time. Try again later or use --force if it is'
-                    'available for your command.')
+            _, _, path, _, _, _ = urllib.parse.urlparse(request_url)
+            for resource_name in ['app', 'group', 'pod']:
+                if '/v2/{}s'.format(resource_name) in path:
+                    break
+            else:
+                resource_name = 'resource'
+
+            return '{} already exists.'.format(resource_name.capitalize())
 
         if json_body is None:
             template = 'Error decoding response from [{}]: HTTP {}: {}'
