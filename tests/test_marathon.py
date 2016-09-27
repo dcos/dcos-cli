@@ -406,16 +406,23 @@ def test_response_error_message_with_400_status_json():
 
 
 def test_res_err_msg_with_409_status():
-    actual = marathon.RpcClient.response_error_message(
-        status_code=409,
-        reason=_REASON_X,
-        request_method=_METHOD_X,
-        request_url=_URL_X,
-        json_body=None)
+    def test_case(request_url, expected_resource):
+        actual = marathon.RpcClient.response_error_message(
+            status_code=409,
+            reason=_REASON_X,
+            request_method=_METHOD_X,
+            request_url=request_url,
+            json_body=None)
 
-    expected = ('App, group, or pod is locked by one or more deployments. '
-                'Override with --force.')
-    assert actual == expected
+        pattern = r'(.*) already exists\.'
+        _assert_matches_with_groups(pattern, actual, (expected_resource,))
+
+    test_case('http://marathon/v2/apps', 'App')
+    test_case('http://marathon/v2/groups/group-id', 'Group')
+    test_case('http://marathon/v2/pods/', 'Pod')
+    test_case('http://marathon/v2/thingies/foo', 'Resource')
+    test_case('http://dcos/service/marathon/v2/apps/bar', 'App')
+    test_case('http://pods-app.com/service/marathon/v2/groups/baz', 'Group')
 
 
 def test_response_error_message_with_other_status_no_json():
