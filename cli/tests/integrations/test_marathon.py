@@ -287,11 +287,7 @@ def test_update_invalid_request():
         ['dcos', 'marathon', 'app', 'update', '{', 'instances'])
     assert returncode == 1
     assert stdout == b''
-    stderr = stderr.decode()
-    # TODO (tamar): this becomes 'Error: App '/{' does not exist\n"'
-    # in Marathon 0.11.0
-    assert stderr.startswith('Error on request')
-    assert stderr.endswith('HTTP 400: Bad Request\n')
+    assert stderr == b"Error: App '/{' does not exist\n"
 
 
 def test_app_add_invalid_request():
@@ -671,18 +667,15 @@ def test_stop_unknown_task_wipe():
         _stop_task(task_id, '--wipe', expect_success=False)
 
 
-def test_bad_configuration():
-    config_set('marathon.url', 'http://localhost:88888')
+def test_bad_configuration(env):
+    with update_config('marathon.url', 'http://localhost:88888', env):
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'about'])
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'about'])
-
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr.startswith(
-        b"URL [http://localhost:88888/v2/info] is unreachable")
-
-    config_unset('marathon.url')
+        assert returncode == 1
+        assert stdout == b''
+        assert stderr.startswith(
+            b"URL [http://localhost:88888/v2/info] is unreachable")
 
 
 def test_app_locked_error():

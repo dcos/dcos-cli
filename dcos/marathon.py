@@ -775,13 +775,14 @@ class Client(object):
         """
 
         response = self._update_req('pods', pod_id, pod_json, force)
-        header_name = 'Marathon-Deployment-Id'
+        deployment_id_header_name = 'Marathon-Deployment-Id'
+        deployment_id = response.headers.get(deployment_id_header_name)
 
-        try:
-            return response.headers[header_name]
-        except KeyError:
+        if deployment_id is None:
             template = 'Error: missing "{}" header from Marathon response'
-            raise DCOSException(template.format(header_name))
+            raise DCOSException(template.format(deployment_id_header_name))
+
+        return deployment_id
 
     def pod_feature_supported(self):
         """Return whether or not this client is communicating with a version
