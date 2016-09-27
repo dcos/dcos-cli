@@ -79,7 +79,7 @@ class RpcClient(object):
         self._timeout = timeout
 
     ERROR_JSON_VALIDATOR = jsonschema.Draft4Validator(load_error_json_schema())
-    RESOURCE_NAMES = ['app', 'group', 'pod']
+    RESOURCE_TYPES = ['app', 'group', 'pod']
 
     @classmethod
     def response_error_message(cls, status_code, reason, request_method,
@@ -111,7 +111,7 @@ class RpcClient(object):
 
         if status_code == 409:
             path = urllib.parse.urlparse(request_url).path
-            path_name = (name for name in cls.RESOURCE_NAMES if name in path)
+            path_name = (name for name in cls.RESOURCE_TYPES if name in path)
             resource_name = next(path_name, 'resource')
 
             return '{} already exists.'.format(resource_name.capitalize())
