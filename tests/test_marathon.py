@@ -422,6 +422,7 @@ def test_res_err_msg_with_409_status():
     test_case('http://marathon/v2/pods/', 'Pod')
     test_case('http://marathon/v2/thingies/foo', 'Resource')
     test_case('http://dcos/service/marathon/v2/apps/bar', 'App')
+    test_case('http://pods-app.com/service/marathon/v2/groups/baz', 'Group')
 
 
 def test_response_error_message_with_other_status_no_json():
