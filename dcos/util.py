@@ -14,10 +14,10 @@ import time
 
 import jsonschema
 import six
+from six.moves import urllib
+
 from dcos import constants
 from dcos.errors import DCOSException
-
-from six.moves import urllib
 
 
 def get_logger(name):
