@@ -287,7 +287,11 @@ def test_update_invalid_request():
         ['dcos', 'marathon', 'app', 'update', '{', 'instances'])
     assert returncode == 1
     assert stdout == b''
-    assert stderr == b"Error: App '/{' does not exist\n"
+    stderr = stderr.decode()
+    # TODO (tamar): this becomes 'Error: App '/{' does not exist\n"'
+    # in Marathon 0.11.0
+    assert stderr.startswith('Error on request')
+    assert stderr.endswith('HTTP 400: Bad Request\n')
 
 
 def test_app_add_invalid_request():
@@ -670,7 +674,7 @@ def test_stop_unknown_task_wipe():
 def test_bad_configuration(env):
     with update_config('marathon.url', 'http://localhost:88888', env):
         returncode, stdout, stderr = exec_command(
-            ['dcos', 'marathon', 'about'])
+            ['dcos', 'marathon', 'about'], env=env)
 
         assert returncode == 1
         assert stdout == b''
