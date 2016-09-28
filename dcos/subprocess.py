@@ -37,7 +37,7 @@ class Subproc():
             shell=shell,
             env=self._env)
 
-    def Popen(self, args, stdin=None, stdout=None, stderr=None, shell=False):
+    def popen(self, args, stdin=None, stdout=None, stderr=None, shell=False):
         """
         call subprocess.Popen with modified environment
         """
