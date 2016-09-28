@@ -10,8 +10,8 @@ from dcos import constants
 import pytest
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
-from .common import (app, assert_command, assert_lines, config_set,
-                     config_unset, exec_command, list_deployments, popen_tty,
+from .common import (app, assert_command, assert_lines,
+                     exec_command, list_deployments, popen_tty,
                      show_app, update_config, watch_all_deployments,
                      watch_deployment)
 

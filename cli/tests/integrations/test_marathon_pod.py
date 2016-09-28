@@ -2,8 +2,6 @@ import contextlib
 import json
 import re
 
-import pytest
-
 from ..common import file_bytes
 from ..fixtures.marathon import (DOUBLE_POD_FILE_PATH, DOUBLE_POD_ID,
                                  GOOD_POD_FILE_PATH, GOOD_POD_ID,
