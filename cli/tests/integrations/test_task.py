@@ -6,14 +6,14 @@ import subprocess
 import sys
 import time
 
+import pytest
+
 import dcos.util as util
 from dcos.util import create_schema
 
-import pytest
-
-from ..fixtures.task import task_fixture
 from .common import (add_app, app, assert_command, assert_lines, exec_command,
                      remove_app, watch_all_deployments)
+from ..fixtures.task import task_fixture
 
 SLEEP_COMPLETED = 'tests/data/marathon/apps/sleep-completed.json'
 SLEEP_COMPLETED1 = 'tests/data/marathon/apps/sleep-completed1.json'

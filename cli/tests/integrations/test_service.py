@@ -4,16 +4,16 @@ import subprocess
 import sys
 import time
 
+import pytest
+
 import dcos.util as util
 from dcos.util import create_schema
 
-import pytest
-
-from ..fixtures.service import framework_fixture
 from .common import (assert_command, assert_lines, delete_zk_node,
                      delete_zk_nodes, exec_command, get_services,
                      package_install, remove_app, service_shutdown,
                      ssh_output, wait_for_service)
+from ..fixtures.service import framework_fixture
 
 
 def setup_module(module):

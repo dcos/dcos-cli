@@ -1,6 +1,7 @@
-import dcoscli
 import docopt
 import six
+
+import dcoscli
 from dcos import cmds, emitting, marathon, mesos, subprocess, util
 from dcos.errors import DCOSException, DefaultError
 from dcoscli import log, tables

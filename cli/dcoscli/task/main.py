@@ -1,8 +1,9 @@
 import posixpath
 
-import dcoscli
 import docopt
 import six
+
+import dcoscli
 from dcos import cmds, emitting, mesos, util
 from dcos.errors import DCOSException, DCOSHTTPException, DefaultError
 from dcoscli import log, tables

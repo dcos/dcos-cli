@@ -3,12 +3,13 @@ import collections
 import functools
 
 import six
+from six.moves import urllib
+
 from dcos import emitting, http, util
 from dcos.errors import (DCOSAuthenticationException,
                          DCOSAuthorizationException, DCOSBadRequest,
                          DCOSException, DCOSHTTPException, DefaultError)
 
-from six.moves import urllib
 
 logger = util.get_logger(__name__)
 

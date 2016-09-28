@@ -2,13 +2,14 @@ import os
 import signal
 import sys
 
-import dcoscli
 import docopt
+from six.moves import urllib
+
+import dcoscli
 from dcos import config, constants, emitting, errors, http, subcommand, util
 from dcos.errors import DCOSException
-from dcoscli.subcommand import SubcommandMain, default_doc
+from dcoscli.subcommand import default_doc, SubcommandMain
 
-from six.moves import urllib
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()

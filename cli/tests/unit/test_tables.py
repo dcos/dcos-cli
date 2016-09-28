@@ -1,10 +1,10 @@
 import datetime
 
-from dcos.mesos import Slave
-from dcoscli import tables
-
 import mock
 import pytz
+
+from dcos.mesos import Slave
+from dcoscli import tables
 
 from ..fixtures.marathon import (app_fixture, app_task_fixture,
                                  deployment_fixture_app_post_pods,

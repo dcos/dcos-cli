@@ -1,10 +1,10 @@
+import pytest
+from mock import MagicMock, patch
+
 from dcos import mesos
 from dcos.errors import DCOSException
 from dcoscli.log import log_files
 from dcoscli.task.main import main
-
-import pytest
-from mock import MagicMock, patch
 
 from .common import assert_mock
 

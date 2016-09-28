@@ -1,9 +1,11 @@
 import functools
 import os
 
-import dcoscli
 import docopt
 import six
+from six.moves import urllib
+
+import dcoscli
 from dcos import (cmds, config, cosmospackage, emitting, errors, http, mesos,
                   subprocess, util)
 from dcos.errors import DCOSException, DefaultError
@@ -12,7 +14,6 @@ from dcoscli.package.main import confirm, get_cosmos_url
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
 
-from six.moves import urllib
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()

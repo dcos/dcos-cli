@@ -1,8 +1,8 @@
-import dcoscli.node.main as main
-from dcos.errors import DCOSException
-
 import mock
 import pytest
+
+import dcoscli.node.main as main
+from dcos.errors import DCOSException
 
 
 @mock.patch('dcos.cosmospackage.Cosmos')

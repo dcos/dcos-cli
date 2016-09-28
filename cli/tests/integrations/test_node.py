@@ -3,15 +3,15 @@ import os
 import re
 import sys
 
-import dcos.util as util
+import pytest
 import six
+
+import dcos.util as util
 from dcos import mesos
 from dcos.util import create_schema
 
-import pytest
-
-from ..fixtures.node import slave_fixture
 from .common import assert_command, assert_lines, exec_command, ssh_output
+from ..fixtures.node import slave_fixture
 
 
 def test_help():

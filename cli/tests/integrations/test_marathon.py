@@ -5,10 +5,10 @@ import re
 import sys
 import threading
 
-from dcos import constants
-
 import pytest
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+
+from dcos import constants
 
 from .common import (app, assert_command, assert_lines,
                      exec_command, list_deployments, popen_tty,

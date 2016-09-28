@@ -1,9 +1,8 @@
 import contextlib
 import sys
 
-import six
-
 import mock
+import six
 
 
 @contextlib.contextmanager

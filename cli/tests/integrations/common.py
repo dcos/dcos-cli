@@ -7,9 +7,9 @@ import subprocess
 import time
 
 import six
-from dcos import config, http
-
 from six.moves import urllib
+
+from dcos import config, http
 
 
 def exec_command(cmd, env=None, stdin=None):

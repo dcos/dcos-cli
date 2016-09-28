@@ -1,8 +1,9 @@
 from codecs import open
 from os import path
 
-import dcoscli
 from setuptools import find_packages, setup
+
+import dcoscli
 
 here = path.abspath(path.dirname(__file__))
 

@@ -1,8 +1,8 @@
 import os
 
-from dcos import constants
-
 import pytest
+
+from dcos import constants
 
 from .common import assert_command, exec_command, update_config
 

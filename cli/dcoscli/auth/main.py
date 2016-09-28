@@ -1,11 +1,12 @@
-import dcoscli
 import docopt
+from six.moves import urllib
+
+import dcoscli
 from dcos import cmds, config, emitting, http, util
 from dcos.errors import DCOSAuthorizationException, DCOSException
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
 
-from six.moves import urllib
 
 emitter = emitting.FlatEmitter()
 logger = util.get_logger(__name__)
