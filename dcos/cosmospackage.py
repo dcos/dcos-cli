@@ -16,6 +16,38 @@ logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
 
 
+def cosmos_error(fn):
+    """Decorator for errors returned from cosmos
+
+    :param fn: function to check for errors from cosmos
+    :type fn: function
+    :rtype: Response
+    :returns: Response
+    """
+
+    @functools.wraps(fn)
+    def check_for_cosmos_error(*args, **kwargs):
+        """Returns response from cosmos or raises exception
+
+        :param response: response from cosmos
+        :type response: Response
+        :returns: Response or raises Exception
+        :rtype: valid response
+        """
+
+        response = fn(*args, **kwargs)
+        content_type = response.headers.get('Content-Type')
+        if content_type is None:
+            raise DCOSHTTPException(response)
+        elif _get_header("error", "v1") in content_type:
+            logger.debug("Error: {}".format(response.json()))
+            error_msg = _format_error_message(response.json())
+            raise DCOSException(error_msg)
+        return response
+
+    return check_for_cosmos_error
+
+
 class Cosmos():
     """Implementation of Package Manager using Cosmos"""
 
@@ -263,37 +295,6 @@ class Cosmos():
         params = {"name": name}
         response = self.cosmos_post("repository/delete", params=params)
         return response.json()
-
-    def cosmos_error(fn):
-        """Decorator for errors returned from cosmos
-
-        :param fn: function to check for errors from cosmos
-        :type fn: function
-        :rtype: Response
-        :returns: Response
-        """
-
-        @functools.wraps(fn)
-        def check_for_cosmos_error(*args, **kwargs):
-            """Returns response from cosmos or raises exception
-
-            :param response: response from cosmos
-            :type response: Response
-            :returns: Response or raises Exception
-            :rtype: valid response
-            """
-
-            response = fn(*args, **kwargs)
-            content_type = response.headers.get('Content-Type')
-            if content_type is None:
-                raise DCOSHTTPException(response)
-            elif _get_header("error", "v1") in content_type:
-                logger.debug("Error: {}".format(response.json()))
-                error_msg = _format_error_message(response.json())
-                raise DCOSException(error_msg)
-            return response
-
-        return check_for_cosmos_error
 
     @cosmos_error
     def _post(self, request, params, headers=None):
