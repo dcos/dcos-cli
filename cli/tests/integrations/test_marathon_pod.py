@@ -1,5 +1,6 @@
 import contextlib
 import json
+import os
 import re
 
 import pytest
@@ -9,7 +10,10 @@ from ..fixtures.marathon import (DOUBLE_POD_FILE_PATH, DOUBLE_POD_ID,
                                  GOOD_POD_FILE_PATH, GOOD_POD_ID,
                                  TRIPLE_POD_FILE_PATH, TRIPLE_POD_ID,
                                  UPDATED_GOOD_POD_FILE_PATH, pod_fixture)
-from .common import assert_command, exec_command, file_json_ast
+from .common import (assert_command, exec_command, file_json_ast,
+                     watch_all_deployments)
+
+_PODS_ENABLED = 'PODS_ENABLED' in os.environ
 
 _POD_BASE_CMD = ['dcos', 'marathon', 'pod']
 _POD_ADD_CMD = _POD_BASE_CMD + ['add']
@@ -19,25 +23,27 @@ _POD_SHOW_CMD = _POD_BASE_CMD + ['show']
 _POD_UPDATE_CMD = _POD_BASE_CMD + ['update']
 
 
-@pytest.mark.skip(reason="Pods support in Marathon not released yet")
+@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_add_from_file_then_remove():
     returncode, stdout, stderr = _pod_add_from_file(GOOD_POD_FILE_PATH)
     assert returncode == 0
     assert stdout == b''
     assert stderr == b''
 
+    watch_all_deployments()
+
     # Explicitly testing non-forced-removal; can't use the context manager
     _assert_pod_remove(GOOD_POD_ID, extra_args=[])
 
 
-@pytest.mark.skip(reason="Pods support in Marathon not released yet")
+@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_add_from_stdin_then_force_remove():
     # Explicitly testing adding from stdin; can't use the context manager
     _assert_pod_add_from_stdin(GOOD_POD_FILE_PATH)
     _assert_pod_remove(GOOD_POD_ID, extra_args=['--force'])
 
 
-@pytest.mark.skip(reason="Pods support in Marathon not released yet")
+@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_list():
     expected_json = pod_fixture()
     expected_table = file_bytes('tests/unit/data/pod.txt')
@@ -50,7 +56,7 @@ def test_pod_list():
         _assert_pod_list_table(stdout=expected_table + b'\n')
 
 
-@pytest.mark.skip(reason="Pods support in Marathon not released yet")
+@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_show():
     expected_json = file_json_ast(GOOD_POD_FILE_PATH)
 
@@ -58,12 +64,14 @@ def test_pod_show():
         _assert_pod_show(GOOD_POD_ID, expected_json)
 
 
-@pytest.mark.skip(reason="Pods support in Marathon not released yet")
+@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_update_from_properties():
     expected_json = file_json_ast(UPDATED_GOOD_POD_FILE_PATH)
     containers_json_str = json.dumps(expected_json['containers'])
+    networks_json_str = json.dumps(expected_json['networks'])
     properties = ['id=/{}'.format(GOOD_POD_ID),
-                  'containers={}'.format(containers_json_str)]
+                  'containers={}'.format(containers_json_str),
+                  'networks={}'.format(networks_json_str)]
 
     with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH):
         _assert_pod_update_from_properties(GOOD_POD_ID,
@@ -72,7 +80,7 @@ def test_pod_update_from_properties():
         _assert_pod_show(GOOD_POD_ID, expected_json)
 
 
-@pytest.mark.skip(reason="Pods support in Marathon not released yet")
+@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_update_from_stdin_force_true():
     expected_json = file_json_ast(UPDATED_GOOD_POD_FILE_PATH)
 
@@ -92,6 +100,8 @@ def _assert_pod_add_from_stdin(file_path):
     cmd = _POD_ADD_CMD
     with open(file_path) as fd:
         assert_command(cmd, returncode=0, stdout=b'', stderr=b'', stdin=fd)
+
+    watch_all_deployments()
 
 
 def _assert_pod_list_json(expected_json):
@@ -150,6 +160,8 @@ def _assert_pod_remove(pod_id, extra_args):
     cmd = _POD_REMOVE_CMD + [pod_id] + extra_args
     assert_command(cmd, returncode=0, stdout=b'', stderr=b'')
 
+    watch_all_deployments()
+
 
 def _assert_pod_show(pod_id, expected_json):
     cmd = _POD_SHOW_CMD + [pod_id]
@@ -170,6 +182,8 @@ def _assert_pod_update_from_properties(pod_id, properties, extra_args):
     assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
     assert stderr == b''
 
+    watch_all_deployments()
+
 
 def _assert_pod_update_from_stdin(pod_id, file_path, extra_args):
     cmd = _POD_UPDATE_CMD + [pod_id] + extra_args
@@ -179,6 +193,8 @@ def _assert_pod_update_from_stdin(pod_id, file_path, extra_args):
     assert returncode == 0
     assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
     assert stderr == b''
+
+    watch_all_deployments()
 
 
 @contextlib.contextmanager
@@ -191,6 +207,7 @@ def _pod(pod_id, file_path):
         assert stdout == b''
         assert stderr == b''
 
+        watch_all_deployments()
         yield
     finally:
         if pod_added:
