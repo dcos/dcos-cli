@@ -13,6 +13,10 @@ DEPLOYMENT_DISPLAY = {'ResolveArtifacts': 'artifacts',
                       'StartApplication': 'start',
                       'StopApplication': 'stop',
                       'RestartApplication': 'restart',
+                      'ScalePod': 'scale',
+                      'StartPod': 'start',
+                      'StopPod': 'stop',
+                      'RestartPod': 'restart',
                       'KillAllOldTasksOf': 'kill-tasks'}
 
 logger = util.get_logger(__name__)
@@ -145,9 +149,20 @@ def deployment_table(deployments):
 
     """
 
+    def resource_path_id(action):
+        path_id = action.get('app') or action.get('pod')
+
+        if path_id is None:
+            logger.exception('Missing app or pod entry')
+
+            template = 'Expected "app" or "pod" field in action: {}'
+            raise ValueError(template.format(action))
+
+        return path_id
+
     def get_action(deployment):
 
-        multiple_apps = len({action['app']
+        multiple_apps = len({resource_path_id(action)
                              for action in deployment['currentActions']}) > 1
 
         ret = []
@@ -161,7 +176,8 @@ def deployment_table(deployments):
                     'Unknown Marathon action: {}'.format(action['action']))
 
             if multiple_apps:
-                ret.append('{0} {1}'.format(action_display, action['app']))
+                path_id = resource_path_id(action)
+                ret.append('{0} {1}'.format(action_display, path_id))
             else:
                 ret.append(action_display)
 
@@ -169,6 +185,7 @@ def deployment_table(deployments):
 
     fields = OrderedDict([
         ('APP', lambda d: '\n'.join(d['affectedApps'])),
+        ('POD', lambda d: '\n'.join(d['affectedPods'])),
         ('ACTION', get_action),
         ('PROGRESS', lambda d: '{0}/{1}'.format(d['currentStep']-1,
                                                 d['totalSteps'])),
@@ -177,6 +194,7 @@ def deployment_table(deployments):
 
     tb = table(fields, deployments, sortby="APP")
     tb.align['APP'] = 'l'
+    tb.align['POD'] = 'l'
     tb.align['ACTION'] = 'l'
     tb.align['ID'] = 'l'
 

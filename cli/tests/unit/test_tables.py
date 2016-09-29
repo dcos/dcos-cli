@@ -7,8 +7,9 @@ import mock
 import pytz
 
 from ..fixtures.marathon import (app_fixture, app_task_fixture,
-                                 deployment_fixture, group_fixture,
-                                 pod_fixture)
+                                 deployment_fixture_app,
+                                 deployment_fixture_pod,
+                                 group_fixture, pod_fixture)
 from ..fixtures.node import slave_fixture
 from ..fixtures.package import package_fixture, search_result_fixture
 from ..fixtures.service import framework_fixture
@@ -33,10 +34,16 @@ def test_app_table():
         assert str(table) == f.read()
 
 
-def test_deployment_table():
+def test_deployment_table_app():
     _test_table(tables.deployment_table,
-                [deployment_fixture()],
-                'tests/unit/data/deployment.txt')
+                [deployment_fixture_app()],
+                'tests/unit/data/deployment/app.txt')
+
+
+def test_deployment_table_pod():
+    _test_table(tables.deployment_table,
+                [deployment_fixture_pod()],
+                'tests/unit/data/deployment/pod.txt')
 
 
 def test_app_task_table():
