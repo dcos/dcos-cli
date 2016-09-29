@@ -1,6 +1,9 @@
 import contextlib
 import json
+import os
 import re
+
+import pytest
 
 from ..common import file_bytes
 from ..fixtures.marathon import (DOUBLE_POD_FILE_PATH, DOUBLE_POD_ID,
@@ -10,6 +13,8 @@ from ..fixtures.marathon import (DOUBLE_POD_FILE_PATH, DOUBLE_POD_ID,
 from .common import (assert_command, exec_command, file_json_ast,
                      watch_all_deployments)
 
+_PODS_ENABLED = 'PODS_ENABLED' in os.environ
+
 _POD_BASE_CMD = ['dcos', 'marathon', 'pod']
 _POD_ADD_CMD = _POD_BASE_CMD + ['add']
 _POD_LIST_CMD = _POD_BASE_CMD + ['list']
@@ -18,6 +23,7 @@ _POD_SHOW_CMD = _POD_BASE_CMD + ['show']
 _POD_UPDATE_CMD = _POD_BASE_CMD + ['update']
 
 
+@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_add_from_file_then_remove():
     returncode, stdout, stderr = _pod_add_from_file(GOOD_POD_FILE_PATH)
     assert returncode == 0
@@ -30,12 +36,14 @@ def test_pod_add_from_file_then_remove():
     _assert_pod_remove(GOOD_POD_ID, extra_args=[])
 
 
+@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_add_from_stdin_then_force_remove():
     # Explicitly testing adding from stdin; can't use the context manager
     _assert_pod_add_from_stdin(GOOD_POD_FILE_PATH)
     _assert_pod_remove(GOOD_POD_ID, extra_args=['--force'])
 
 
+@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_list():
     expected_json = pod_fixture()
     expected_table = file_bytes('tests/unit/data/pod.txt')
@@ -48,6 +56,7 @@ def test_pod_list():
         _assert_pod_list_table(stdout=expected_table + b'\n')
 
 
+@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_show():
     expected_json = file_json_ast(GOOD_POD_FILE_PATH)
 
@@ -55,6 +64,7 @@ def test_pod_show():
         _assert_pod_show(GOOD_POD_ID, expected_json)
 
 
+@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_update_from_properties():
     expected_json = file_json_ast(UPDATED_GOOD_POD_FILE_PATH)
     containers_json_str = json.dumps(expected_json['containers'])
@@ -70,6 +80,7 @@ def test_pod_update_from_properties():
         _assert_pod_show(GOOD_POD_ID, expected_json)
 
 
+@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_update_from_stdin_force_true():
     expected_json = file_json_ast(UPDATED_GOOD_POD_FILE_PATH)
 
