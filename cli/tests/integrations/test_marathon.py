@@ -15,6 +15,7 @@ from .common import (app, assert_command, assert_lines,
                      show_app, update_config, watch_all_deployments,
                      watch_deployment)
 
+_ZERO_INSTANCE_APP_ID = 'zero-instance-app'
 _ZERO_INSTANCE_APP_INSTANCES = 100
 
 
@@ -144,7 +145,7 @@ def test_show_relative_app_version():
 
 
 def test_show_missing_relative_app_version():
-    app_id = 'zero-instance-app'
+    app_id = _ZERO_INSTANCE_APP_ID
 
     with _zero_instance_app():
         _update_app(
@@ -159,9 +160,9 @@ def test_show_missing_relative_app_version():
         assert returncode == 1
         assert stdout == b''
 
-        pattern = ("Application '(.*)' only has [1-9][0-9]* "
+        pattern = ("Application 'zero-instance-app' only has [1-9][0-9]* "
                    "version\\(s\\)\\.\n")
-        _assert_matches_with_groups(pattern, stderr.decode('utf-8'), (app_id,))
+        assert re.fullmatch(pattern, stderr.decode('utf-8'), flags=re.DOTALL)
 
 
 def test_show_missing_absolute_app_version():
@@ -472,7 +473,7 @@ def test_list_version_negative_max_count():
 
 
 def test_list_version_app():
-    app_id = 'zero-instance-app'
+    app_id = _ZERO_INSTANCE_APP_ID
 
     with _zero_instance_app():
         _list_versions(app_id, 1)
@@ -484,7 +485,7 @@ def test_list_version_app():
 
 
 def test_list_version_max_count():
-    app_id = 'zero-instance-app'
+    app_id = _ZERO_INSTANCE_APP_ID
 
     with _zero_instance_app():
         _update_app(
@@ -783,12 +784,6 @@ def _list_versions(app_id, expected_min_count, max_count=None):
 
     if max_count is not None:
         assert len(result) <= max_count
-
-
-def _assert_matches_with_groups(pattern, text, groups):
-    match = re.fullmatch(pattern, text, flags=re.DOTALL)
-    assert match
-    assert match.groups() == groups
 
 
 def _list_tasks(expected_count=None, app_id=None):
