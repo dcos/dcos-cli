@@ -10,10 +10,9 @@ from dcos import constants
 import pytest
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
-from .common import (app, assert_command, assert_lines,
-                     exec_command, list_deployments, popen_tty,
-                     show_app, update_config, watch_all_deployments,
-                     watch_deployment)
+from .common import (add_app, app, assert_command, assert_lines, exec_command,
+                     list_deployments, popen_tty, remove_app, show_app,
+                     update_config, watch_all_deployments, watch_deployment)
 
 _ZERO_INSTANCE_APP_INSTANCES = 100
 
@@ -144,14 +143,15 @@ def test_show_relative_app_version():
 
 
 def test_show_missing_relative_app_version():
-    with _zero_instance_app():
+    with _unique_zero_instance_app('relative-app-version') as app_id:
         _update_app(
-            'zero-instance-app',
+            app_id,
             'tests/data/marathon/apps/update_zero_instance_sleep.json')
 
-        stderr = b"Application 'zero-instance-app' only has 2 version(s).\n"
+        template = "Application '{}' only has 2 version(s).\n"
+        stderr = template.format(app_id).encode('utf-8')
         assert_command(['dcos', 'marathon', 'app', 'show',
-                        '--app-version=-2', 'zero-instance-app'],
+                        '--app-version=-2', app_id],
                        returncode=1,
                        stderr=stderr)
 
@@ -464,24 +464,24 @@ def test_list_version_negative_max_count():
 
 
 def test_list_version_app():
-    with _zero_instance_app():
-        _list_versions('zero-instance-app', 1)
+    with _unique_zero_instance_app('list-version-app') as app_id:
+        _list_versions(app_id, 1)
 
         _update_app(
-            'zero-instance-app',
+            app_id,
             'tests/data/marathon/apps/update_zero_instance_sleep.json')
-        _list_versions('zero-instance-app', 2)
+        _list_versions(app_id, 2)
 
 
 def test_list_version_max_count():
-    with _zero_instance_app():
+    with _unique_zero_instance_app('list-version-max-count') as app_id:
         _update_app(
-            'zero-instance-app',
+            app_id,
             'tests/data/marathon/apps/update_zero_instance_sleep.json')
 
-        _list_versions('zero-instance-app', 1, 1)
-        _list_versions('zero-instance-app', 2, 2)
-        _list_versions('zero-instance-app', 2, 3)
+        _list_versions(app_id, 1, 1)
+        _list_versions(app_id, 2, 2)
+        _list_versions(app_id, 2, 3)
 
 
 def test_list_empty_deployment():
@@ -806,6 +806,20 @@ def _zero_instance_app():
     with app('tests/data/marathon/apps/zero_instance_sleep.json',
              'zero-instance-app'):
         yield
+
+
+@contextlib.contextmanager
+def _unique_zero_instance_app(unique_app_id_suffix):
+    path_template = 'tests/data/marathon/apps/zero_instance_sleep-{}.json'
+    path = path_template.format(unique_app_id_suffix)
+    app_id = 'zero-instance-app-{}'.format(unique_app_id_suffix)
+
+    add_app(path)
+    try:
+        yield app_id
+    finally:
+        remove_app(app_id)
+        watch_all_deployments()
 
 
 @contextlib.contextmanager
