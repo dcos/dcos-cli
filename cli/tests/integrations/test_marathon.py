@@ -10,9 +10,10 @@ from dcos import constants
 import pytest
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
-from .common import (add_app, app, assert_command, assert_lines, exec_command,
-                     list_deployments, popen_tty, remove_app, show_app,
-                     update_config, watch_all_deployments, watch_deployment)
+from .common import (app, assert_command, assert_lines,
+                     exec_command, list_deployments, popen_tty,
+                     show_app, update_config, watch_all_deployments,
+                     watch_deployment)
 
 _ZERO_INSTANCE_APP_INSTANCES = 100
 
@@ -143,17 +144,24 @@ def test_show_relative_app_version():
 
 
 def test_show_missing_relative_app_version():
-    with _unique_zero_instance_app('relative-app-version') as app_id:
+    app_id = 'zero-instance-app'
+
+    with _zero_instance_app():
         _update_app(
             app_id,
             'tests/data/marathon/apps/update_zero_instance_sleep.json')
 
-        template = "Application '{}' only has 2 version(s).\n"
-        stderr = template.format(app_id).encode('utf-8')
-        assert_command(['dcos', 'marathon', 'app', 'show',
-                        '--app-version=-2', app_id],
-                       returncode=1,
-                       stderr=stderr)
+        # Marathon persists app versions indefinitely by ID, so pick a large
+        # index here in case the history is long
+        cmd = ['dcos', 'marathon', 'app', 'show', '--app-version=-200', app_id]
+        returncode, stdout, stderr = exec_command(cmd)
+
+        assert returncode == 1
+        assert stdout == b''
+
+        pattern = ("Application '(.*)' only has [1-9][0-9]* "
+                   "version\\(s\\)\\.\n")
+        _assert_matches_with_groups(pattern, stderr.decode('utf-8'), (app_id,))
 
 
 def test_show_missing_absolute_app_version():
@@ -464,7 +472,9 @@ def test_list_version_negative_max_count():
 
 
 def test_list_version_app():
-    with _unique_zero_instance_app('list-version-app') as app_id:
+    app_id = 'zero-instance-app'
+
+    with _zero_instance_app():
         _list_versions(app_id, 1)
 
         _update_app(
@@ -474,7 +484,9 @@ def test_list_version_app():
 
 
 def test_list_version_max_count():
-    with _unique_zero_instance_app('list-version-max-count') as app_id:
+    app_id = 'zero-instance-app'
+
+    with _zero_instance_app():
         _update_app(
             app_id,
             'tests/data/marathon/apps/update_zero_instance_sleep.json')
@@ -753,7 +765,7 @@ def _update_app(app_id, file_path):
         assert stderr == b''
 
 
-def _list_versions(app_id, expected_count, max_count=None):
+def _list_versions(app_id, expected_min_count, max_count=None):
     cmd = ['dcos', 'marathon', 'app', 'version', 'list', app_id]
     if max_count is not None:
         cmd.append('--max-count={}'.format(max_count))
@@ -764,8 +776,19 @@ def _list_versions(app_id, expected_count, max_count=None):
 
     assert returncode == 0
     assert isinstance(result, list)
-    assert len(result) == expected_count
     assert stderr == b''
+
+    # Marathon persists app versions indefinitely by ID, so there may be extras
+    assert len(result) >= expected_min_count
+
+    if max_count is not None:
+        assert len(result) <= max_count
+
+
+def _assert_matches_with_groups(pattern, text, groups):
+    match = re.fullmatch(pattern, text, flags=re.DOTALL)
+    assert match
+    assert match.groups() == groups
 
 
 def _list_tasks(expected_count=None, app_id=None):
@@ -806,20 +829,6 @@ def _zero_instance_app():
     with app('tests/data/marathon/apps/zero_instance_sleep.json',
              'zero-instance-app'):
         yield
-
-
-@contextlib.contextmanager
-def _unique_zero_instance_app(unique_app_id_suffix):
-    path_template = 'tests/data/marathon/apps/zero_instance_sleep-{}.json'
-    path = path_template.format(unique_app_id_suffix)
-    app_id = 'zero-instance-app-{}'.format(unique_app_id_suffix)
-
-    add_app(path)
-    try:
-        yield app_id
-    finally:
-        remove_app(app_id)
-        watch_all_deployments()
 
 
 @contextlib.contextmanager
