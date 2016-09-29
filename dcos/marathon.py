@@ -114,7 +114,9 @@ class RpcClient(object):
             path_name = (name for name in cls.RESOURCE_TYPES if name in path)
             resource_name = next(path_name, 'resource')
 
-            return '{} already exists.'.format(resource_name.capitalize())
+            template = ('Changes blocked: '
+                        'deployment already in progress for {}.')
+            return template.format(resource_name)
 
         if json_body is None:
             template = 'Error decoding response from [{}]: HTTP {}: {}'
