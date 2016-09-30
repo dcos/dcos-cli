@@ -149,6 +149,9 @@ def deployment_table(deployments):
 
     """
 
+    def join_path_ids(path_ids):
+        return '\n'.join(path_ids) if path_ids else '-'
+
     def resource_path_id(action):
         path_id = action.get('app') or action.get('pod')
 
@@ -184,8 +187,8 @@ def deployment_table(deployments):
         return '\n'.join(ret)
 
     fields = OrderedDict([
-        ('APP', lambda d: '\n'.join(d['affectedApps'])),
-        ('POD', lambda d: '\n'.join(d['affectedPods'])),
+        ('APP', lambda d: join_path_ids(d['affectedApps'])),
+        ('POD', lambda d: join_path_ids(d['affectedPods'])),
         ('ACTION', get_action),
         ('PROGRESS', lambda d: '{0}/{1}'.format(d['currentStep']-1,
                                                 d['totalSteps'])),
