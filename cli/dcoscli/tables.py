@@ -156,10 +156,9 @@ def deployment_table(deployments):
         path_id = action.get('app') or action.get('pod')
 
         if path_id is None:
-            logger.exception('Missing app or pod entry')
-
-            template = 'Expected "app" or "pod" field in action: {}'
-            raise ValueError(template.format(action))
+            msg = 'Expected "app" or "pod" field in action: {}'.format(action)
+            logger.exception(msg)
+            raise ValueError(msg)
 
         return path_id
 
