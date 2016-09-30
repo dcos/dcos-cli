@@ -156,9 +156,8 @@ def deployment_table(deployments):
         path_id = action.get('app') or action.get('pod')
 
         if path_id is None:
-            msg = 'Expected "app" or "pod" field in action: {}'.format(action)
-            logger.exception(msg)
-            raise ValueError(msg)
+            template = 'Expected "app" or "pod" field in action: %s'
+            logger.exception(template, action)
 
         return path_id
 
@@ -177,7 +176,9 @@ def deployment_table(deployments):
                 raise ValueError(
                     'Unknown Marathon action: {}'.format(action['action']))
 
-            if multiple_apps:
+            if None in multiple_apps:
+                ret.append('N/A')
+            elif multiple_apps:
                 path_id = resource_path_id(action)
                 ret.append('{0} {1}'.format(action_display, path_id))
             else:
