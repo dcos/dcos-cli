@@ -71,28 +71,18 @@ def test_pod_list_propagates_exceptions_from_list_pod():
 def test_pod_update_invoked_successfully():
     _assert_pod_update_invoked_successfully(
         pod_id='foo',
-        properties=[],
         force=False,
         resource={'from': 'stdin'},
         deployment_id='a-deployment-id',
         emitted='Created deployment a-deployment-id')
     _assert_pod_update_invoked_successfully(
         pod_id='bar',
-        properties=[],
         force=False,
         resource={'from': 'stdin'},
         deployment_id='a-deployment-id',
         emitted='Created deployment a-deployment-id')
     _assert_pod_update_invoked_successfully(
         pod_id='foo',
-        properties=['bar=baz'],
-        force=False,
-        resource={'bar': 'baz'},
-        deployment_id='a-deployment-id',
-        emitted='Created deployment a-deployment-id')
-    _assert_pod_update_invoked_successfully(
-        pod_id='foo',
-        properties=[],
         force=True,
         resource={'from': 'stdin'},
         deployment_id='some-arbitrary-value',
@@ -111,12 +101,11 @@ def test_pod_update_propagates_exceptions_from_show_pod():
 
 def test_pod_update_propagates_dcos_exception_from_resource_reader():
     resource_reader = create_autospec(main.ResourceReader)
-    resource_reader.get_resource_from_properties.side_effect = \
-        DCOSException('properties error')
+    resource_reader.get_resource.side_effect = DCOSException('IO error')
     marathon_client = _marathon_client_fixture()
 
     _assert_pod_update_propagates_exception(
-        resource_reader, marathon_client, 'properties error')
+        resource_reader, marathon_client, 'IO error')
 
 
 def test_pod_update_propagates_dcos_exception_from_update_pod():
@@ -254,19 +243,19 @@ def _assert_pod_list_propagates_exceptions_from_list_pod(exception):
 
 @patch('dcoscli.marathon.main.emitter', autospec=True)
 def _assert_pod_update_invoked_successfully(
-        emitter, pod_id, properties, force, resource, deployment_id, emitted):
+        emitter, pod_id, force, resource, deployment_id, emitted):
     resource_reader = create_autospec(main.ResourceReader)
-    resource_reader.get_resource_from_properties.return_value = resource
+    resource_reader.get_resource.return_value = resource
 
     marathon_client = _marathon_client_fixture()
     marathon_client.update_pod.return_value = deployment_id
 
     subcmd = main.MarathonSubcommand(resource_reader, lambda: marathon_client)
-    returncode = subcmd.pod_update(pod_id, properties, force)
+    returncode = subcmd.pod_update(pod_id, force)
 
     assert returncode == 0
     marathon_client.show_pod.assert_called_with(pod_id)
-    resource_reader.get_resource_from_properties.assert_called_with(properties)
+    resource_reader.get_resource.assert_called_with(name=None)
     marathon_client.update_pod.assert_called_with(
         pod_id, pod_json=resource, force=force)
     emitter.publish.assert_called_with(emitted)
@@ -277,7 +266,7 @@ def _assert_pod_update_propagates_exception(
     subcmd = main.MarathonSubcommand(resource_reader, lambda: marathon_client)
 
     with pytest.raises(DCOSException) as exception_info:
-        subcmd.pod_update(pod_id='foo', properties=[], force=False)
+        subcmd.pod_update(pod_id='foo', force=False)
 
     assert str(exception_info.value) == error_message
 
@@ -321,4 +310,4 @@ def _default_pod_show(subcmd):
 
 
 def _default_pod_update(subcmd):
-    return subcmd.pod_update(pod_id='some-id', properties=[], force=False)
+    return subcmd.pod_update(pod_id='some-id', force=False)

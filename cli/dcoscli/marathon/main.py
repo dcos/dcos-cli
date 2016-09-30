@@ -181,7 +181,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['marathon', 'pod', 'update'],
-            arg_keys=['<pod-id>', '<properties>', '--force'],
+            arg_keys=['<pod-id>', '--force'],
             function=subcommand.pod_update),
 
         cmds.Command(
@@ -237,7 +237,7 @@ class ResourceReader(object):
         """
         :param name: optional filename or http(s) url
         for the application or group resource
-        :type name: str
+        :type name: str | None
         :returns: resource
         :rtype: dict
         """
@@ -914,12 +914,10 @@ class MarathonSubcommand(object):
         emitter.publish(pod_json)
         return 0
 
-    def pod_update(self, pod_id, properties, force):
+    def pod_update(self, pod_id, force):
         """
         :param pod_id: the Marathon ID of the pod to update
         :type pod_id: str
-        :param properties: JSON items to update in pod definition
-        :type properties: [str]
         :param force: whether to override running deployments
         :type force: bool
         :returns: process return code
@@ -932,8 +930,7 @@ class MarathonSubcommand(object):
         # Ensure that the pod exists
         marathon_client.show_pod(pod_id)
 
-        resource = self._resource_reader.\
-            get_resource_from_properties(properties)
+        resource = self._resource_reader.get_resource(name=None)
         deployment_id = marathon_client.update_pod(
             pod_id, pod_json=resource, force=force)
 

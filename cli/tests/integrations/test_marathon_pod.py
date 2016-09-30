@@ -64,31 +64,23 @@ def test_pod_show():
         _assert_pod_show(GOOD_POD_ID, expected_json)
 
 
-@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
-def test_pod_update_from_properties():
-    expected_json = file_json_ast(UPDATED_GOOD_POD_FILE_PATH)
-    containers_json_str = json.dumps(expected_json['containers'])
-    networks_json_str = json.dumps(expected_json['networks'])
-    properties = ['id=/{}'.format(GOOD_POD_ID),
-                  'containers={}'.format(containers_json_str),
-                  'networks={}'.format(networks_json_str)]
+def test_pod_update_does_not_support_properties():
+    cmd = _POD_UPDATE_CMD + ['any-pod', 'foo=bar']
+    returncode, stdout, stderr = exec_command(cmd)
 
-    with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH):
-        _assert_pod_update_from_properties(GOOD_POD_ID,
-                                           properties,
-                                           extra_args=[])
-        _assert_pod_show(GOOD_POD_ID, expected_json)
+    assert returncode == 1
+    assert stdout.startswith(b'Command not recognized\n')
+    assert stderr == b''
 
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
-def test_pod_update_from_stdin_force_true():
-    expected_json = file_json_ast(UPDATED_GOOD_POD_FILE_PATH)
+def test_pod_update_from_stdin():
+    _assert_pod_update_from_stdin(extra_args=[])
 
-    with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH):
-        _assert_pod_update_from_stdin(GOOD_POD_ID,
-                                      UPDATED_GOOD_POD_FILE_PATH,
-                                      extra_args=['--force'])
-        _assert_pod_show(GOOD_POD_ID, expected_json)
+
+@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
+def test_pod_update_from_stdin_force():
+    _assert_pod_update_from_stdin(extra_args=['--force'])
 
 
 def _pod_add_from_file(file_path):
@@ -174,27 +166,20 @@ def _assert_pod_show(pod_id, expected_json):
     _assert_pod_json(expected_json, pod_json)
 
 
-def _assert_pod_update_from_properties(pod_id, properties, extra_args):
-    cmd = _POD_UPDATE_CMD + [pod_id] + properties + extra_args
-    returncode, stdout, stderr = exec_command(cmd)
+def _assert_pod_update_from_stdin(extra_args):
+    expected_json = file_json_ast(UPDATED_GOOD_POD_FILE_PATH)
 
-    assert returncode == 0
-    assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
-    assert stderr == b''
+    with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH):
+        cmd = _POD_UPDATE_CMD + [GOOD_POD_ID] + extra_args
+        with open(UPDATED_GOOD_POD_FILE_PATH) as fd:
+            returncode, stdout, stderr = exec_command(cmd, stdin=fd)
 
-    watch_all_deployments()
+        assert returncode == 0
+        assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
+        assert stderr == b''
 
-
-def _assert_pod_update_from_stdin(pod_id, file_path, extra_args):
-    cmd = _POD_UPDATE_CMD + [pod_id] + extra_args
-    with open(file_path) as fd:
-        returncode, stdout, stderr = exec_command(cmd, stdin=fd)
-
-    assert returncode == 0
-    assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
-    assert stderr == b''
-
-    watch_all_deployments()
+        watch_all_deployments()
+        _assert_pod_show(GOOD_POD_ID, expected_json)
 
 
 @contextlib.contextmanager

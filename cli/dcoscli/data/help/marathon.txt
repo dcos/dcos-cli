@@ -31,7 +31,7 @@ Usage:
     dcos marathon pod list [--json]
     dcos marathon pod remove [--force] <pod-id>
     dcos marathon pod show <pod-id>
-    dcos marathon pod update [--force] <pod-id> [<properties>...]
+    dcos marathon pod update [--force] <pod-id>
     dcos marathon task list [--json <app-id>]
     dcos marathon task stop [--wipe] <task-id>
     dcos marathon task show <task-id>
@@ -155,7 +155,7 @@ Positional Arguments:
     <properties>
         List of space-separated JSON object properties to update.  The list
         must be formatted as <key>=<value>. For example, `cpus=2.0 mem=308`.
-        If omitted, properties are read from stdin.
+        If omitted, properties are read from a JSON object provided on stdin.
     <task-id>
         The task ID.
     <scale-factor>
