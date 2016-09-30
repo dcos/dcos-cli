@@ -399,15 +399,15 @@ def test_res_err_msg_with_409_status():
             request_url=request_url,
             json_body=None)
 
-        pattern = r'(.*) already exists\.'
+        pattern = r'Changes blocked: deployment already in progress for (.*)\.'
         _assert_matches_with_groups(pattern, actual, (expected_resource,))
 
-    test_case('http://marathon/v2/apps', 'App')
-    test_case('http://marathon/v2/groups/group-id', 'Group')
-    test_case('http://marathon/v2/pods/', 'Pod')
-    test_case('http://marathon/v2/thingies/foo', 'Resource')
-    test_case('http://dcos/service/marathon/v2/apps/bar', 'App')
-    test_case('http://pods-app.com/service/marathon/v2/groups/baz', 'Group')
+    test_case('http://marathon/v2/apps', 'app')
+    test_case('http://marathon/v2/groups/group-id', 'group')
+    test_case('http://marathon/v2/pods/', 'pod')
+    test_case('http://marathon/v2/thingies/foo', 'resource')
+    test_case('http://dcos/service/marathon/v2/apps/bar', 'app')
+    test_case('http://pods-app.com/service/marathon/v2/groups/baz', 'group')
 
 
 def test_response_error_message_with_other_status_no_json():

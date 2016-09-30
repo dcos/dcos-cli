@@ -699,10 +699,11 @@ def test_app_locked_error():
     with app('tests/data/marathon/apps/sleep_many_instances.json',
              '/sleep-many-instances',
              wait=False):
+        stderr = b'Changes blocked: deployment already in progress for app.\n'
         assert_command(
             ['dcos', 'marathon', 'app', 'stop', 'sleep-many-instances'],
             returncode=1,
-            stderr=b'App already exists.\n')
+            stderr=stderr)
 
 
 @pytest.mark.skipif(sys.platform == 'win32',
