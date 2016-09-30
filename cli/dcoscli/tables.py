@@ -150,10 +150,29 @@ def deployment_table(deployments):
     """
 
     def join_path_ids(deployment, affected_resources_key):
+        """Create table cell for "affectedApps"/"affectedPods" in deployment.
+
+        :param deployment: the deployment JSON to read
+        :type deployment: {}
+        :param affected_resources_key: either "affectedApps" or "affectedPods"
+        :type affected_resources_key: str
+        :returns: newline-separated path IDs if they exist, otherwise an empty
+                  cell indicator
+        :rtype: str
+        """
+
         path_ids = deployment.get(affected_resources_key)
         return '\n'.join(path_ids) if path_ids else '-'
 
     def resource_path_id(action):
+        """Get the path ID of the app or pod represented by the given action.
+
+        :param action: the Marathon deployment action JSON object to read
+        :type action: {}
+        :returns: the value of the "app" or "pod" field if it exists, else None
+        :rtype: str
+        """
+
         path_id = action.get('app') or action.get('pod')
 
         if path_id is None:
@@ -164,8 +183,8 @@ def deployment_table(deployments):
 
     def get_action(deployment):
 
-        action_path_ids = {resource_path_id(action)
-                           for action in deployment['currentActions']}
+        multiple_resources = len({resource_path_id(action) for action in
+                                  deployment['currentActions']}) > 1
 
         ret = []
         for action in deployment['currentActions']:
@@ -177,9 +196,9 @@ def deployment_table(deployments):
                 raise ValueError(
                     'Unknown Marathon action: {}'.format(action['action']))
 
-            if None in action_path_ids:
+            if resource_path_id(action) is None:
                 ret.append('N/A')
-            elif len(action_path_ids) > 1:
+            elif multiple_resources:
                 path_id = resource_path_id(action)
                 ret.append('{0} {1}'.format(action_display, path_id))
             else:
