@@ -1,2 +1,0 @@
-APP              ACTION  PROGRESS  ID                                    
-/cassandra/dcos  scale     1/2     bebb8ffd-118e-4067-8fcb-d19e44126911  

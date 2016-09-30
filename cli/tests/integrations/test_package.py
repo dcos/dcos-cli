@@ -8,9 +8,10 @@ from dcos import subcommand
 
 import pytest
 
+from ..common import file_bytes
 from .common import (assert_command, assert_lines, base64_to_dict,
                      delete_zk_node, delete_zk_nodes, exec_command,
-                     file_bytes, file_json,
+                     file_json,
                      get_services, package_install,
                      package_uninstall, service_shutdown,
                      wait_for_service, watch_all_deployments)

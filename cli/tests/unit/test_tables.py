@@ -7,7 +7,10 @@ import mock
 import pytz
 
 from ..fixtures.marathon import (app_fixture, app_task_fixture,
-                                 deployment_fixture, group_fixture)
+                                 deployment_fixture_app_post_pods,
+                                 deployment_fixture_app_pre_pods,
+                                 deployment_fixture_pod,
+                                 group_fixture, pod_fixture)
 from ..fixtures.node import slave_fixture
 from ..fixtures.package import package_fixture, search_result_fixture
 from ..fixtures.service import framework_fixture
@@ -32,10 +35,22 @@ def test_app_table():
         assert str(table) == f.read()
 
 
-def test_deployment_table():
+def test_deployment_table_app_pre_pods():
     _test_table(tables.deployment_table,
-                [deployment_fixture()],
-                'tests/unit/data/deployment.txt')
+                [deployment_fixture_app_pre_pods()],
+                'tests/unit/data/deployment/app.txt')
+
+
+def test_deployment_table_app_post_pods():
+    _test_table(tables.deployment_table,
+                [deployment_fixture_app_post_pods()],
+                'tests/unit/data/deployment/app.txt')
+
+
+def test_deployment_table_pod():
+    _test_table(tables.deployment_table,
+                [deployment_fixture_pod()],
+                'tests/unit/data/deployment/pod.txt')
 
 
 def test_app_task_table():
@@ -54,6 +69,10 @@ def test_group_table():
     _test_table(tables.group_table,
                 [group_fixture()],
                 'tests/unit/data/group.txt')
+
+
+def test_pod_table():
+    _test_table(tables.pod_table, pod_fixture(), 'tests/unit/data/pod.txt')
 
 
 def test_package_table():

@@ -1,0 +1,24 @@
+{
+  "id": "/good-pod",
+  "containers": [
+    {
+      "name": "good-container",
+      "resources": {
+        "cpus": 0.2,
+        "mem": 32.0
+      }
+    },
+    {
+      "name": "another-good-container",
+      "resources": {
+        "cpus": 0.1,
+        "mem": 16.0
+      }
+    }
+  ],
+  "networks": [
+    {
+      "mode": "host"
+    }
+  ]
+}

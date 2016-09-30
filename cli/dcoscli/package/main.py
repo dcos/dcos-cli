@@ -419,7 +419,7 @@ def _list(json_, app_id, package_name):
 
     package_manager = _get_package_manager()
     if app_id is not None:
-        app_id = util.normalize_app_id(app_id)
+        app_id = util.normalize_marathon_id_path(app_id)
     results = package.installed_packages(
         package_manager, app_id, package_name)
 

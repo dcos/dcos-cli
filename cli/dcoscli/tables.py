@@ -13,6 +13,10 @@ DEPLOYMENT_DISPLAY = {'ResolveArtifacts': 'artifacts',
                       'StartApplication': 'start',
                       'StopApplication': 'stop',
                       'RestartApplication': 'restart',
+                      'ScalePod': 'scale',
+                      'StartPod': 'start',
+                      'StopPod': 'stop',
+                      'RestartPod': 'restart',
                       'KillAllOldTasksOf': 'kill-tasks'}
 
 logger = util.get_logger(__name__)
@@ -145,10 +149,42 @@ def deployment_table(deployments):
 
     """
 
+    def join_path_ids(deployment, affected_resources_key):
+        """Create table cell for "affectedApps"/"affectedPods" in deployment.
+
+        :param deployment: the deployment JSON to read
+        :type deployment: {}
+        :param affected_resources_key: either "affectedApps" or "affectedPods"
+        :type affected_resources_key: str
+        :returns: newline-separated path IDs if they exist, otherwise an empty
+                  cell indicator
+        :rtype: str
+        """
+
+        path_ids = deployment.get(affected_resources_key)
+        return '\n'.join(path_ids) if path_ids else '-'
+
+    def resource_path_id(action):
+        """Get the path ID of the app or pod represented by the given action.
+
+        :param action: the Marathon deployment action JSON object to read
+        :type action: {}
+        :returns: the value of the "app" or "pod" field if it exists, else None
+        :rtype: str
+        """
+
+        path_id = action.get('app') or action.get('pod')
+
+        if path_id is None:
+            template = 'Expected "app" or "pod" field in action: %s'
+            logger.exception(template, action)
+
+        return path_id
+
     def get_action(deployment):
 
-        multiple_apps = len({action['app']
-                             for action in deployment['currentActions']}) > 1
+        multiple_resources = len({resource_path_id(action) for action in
+                                  deployment['currentActions']}) > 1
 
         ret = []
         for action in deployment['currentActions']:
@@ -160,15 +196,19 @@ def deployment_table(deployments):
                 raise ValueError(
                     'Unknown Marathon action: {}'.format(action['action']))
 
-            if multiple_apps:
-                ret.append('{0} {1}'.format(action_display, action['app']))
+            if resource_path_id(action) is None:
+                ret.append('N/A')
+            elif multiple_resources:
+                path_id = resource_path_id(action)
+                ret.append('{0} {1}'.format(action_display, path_id))
             else:
                 ret.append(action_display)
 
         return '\n'.join(ret)
 
     fields = OrderedDict([
-        ('APP', lambda d: '\n'.join(d['affectedApps'])),
+        ('APP', lambda d: join_path_ids(d, 'affectedApps')),
+        ('POD', lambda d: join_path_ids(d, 'affectedPods')),
         ('ACTION', get_action),
         ('PROGRESS', lambda d: '{0}/{1}'.format(d['currentStep']-1,
                                                 d['totalSteps'])),
@@ -177,6 +217,7 @@ def deployment_table(deployments):
 
     tb = table(fields, deployments, sortby="APP")
     tb.align['APP'] = 'l'
+    tb.align['POD'] = 'l'
     tb.align['ACTION'] = 'l'
     tb.align['ID'] = 'l'
 
@@ -371,6 +412,25 @@ def group_table(groups):
     ])
 
     tb = table(fields, group_dict.values(), sortby="ID")
+    tb.align['ID'] = 'l'
+
+    return tb
+
+
+def pod_table(pods):
+    """Returns a PrettyTable representation of the provided Marathon pods.
+
+    :param pods: pods to render
+    :type pods: [dict]
+    :rtype: PrettyTable
+    """
+
+    fields = OrderedDict([
+        ('ID', lambda pod: pod['id']),
+        ('CONTAINERS', lambda pod: len(pod['containers'])),
+    ])
+
+    tb = table(fields, pods, sortby='ID')
     tb.align['ID'] = 'l'
 
     return tb
