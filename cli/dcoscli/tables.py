@@ -149,7 +149,8 @@ def deployment_table(deployments):
 
     """
 
-    def join_path_ids(path_ids):
+    def join_path_ids(deployment, affected_resources_key):
+        path_ids = deployment.get(affected_resources_key)
         return '\n'.join(path_ids) if path_ids else '-'
 
     def resource_path_id(action):
@@ -163,8 +164,8 @@ def deployment_table(deployments):
 
     def get_action(deployment):
 
-        multiple_apps = len({resource_path_id(action)
-                             for action in deployment['currentActions']}) > 1
+        action_path_ids = {resource_path_id(action)
+                           for action in deployment['currentActions']}
 
         ret = []
         for action in deployment['currentActions']:
@@ -176,9 +177,9 @@ def deployment_table(deployments):
                 raise ValueError(
                     'Unknown Marathon action: {}'.format(action['action']))
 
-            if None in multiple_apps:
+            if None in action_path_ids:
                 ret.append('N/A')
-            elif multiple_apps:
+            elif len(action_path_ids) > 1:
                 path_id = resource_path_id(action)
                 ret.append('{0} {1}'.format(action_display, path_id))
             else:
@@ -187,8 +188,8 @@ def deployment_table(deployments):
         return '\n'.join(ret)
 
     fields = OrderedDict([
-        ('APP', lambda d: join_path_ids(d['affectedApps'])),
-        ('POD', lambda d: join_path_ids(d['affectedPods'])),
+        ('APP', lambda d: join_path_ids(d, 'affectedApps')),
+        ('POD', lambda d: join_path_ids(d, 'affectedPods')),
         ('ACTION', get_action),
         ('PROGRESS', lambda d: '{0}/{1}'.format(d['currentStep']-1,
                                                 d['totalSteps'])),

@@ -64,8 +64,45 @@ def app_fixture():
     }
 
 
-def deployment_fixture_app():
-    """ Marathon app deployment fixture.
+def deployment_fixture_app_pre_pods():
+    """ Marathon app deployment fixture, for Marathon versions without pods.
+
+    :rtype: dict
+    """
+
+    return {
+        "affectedApps": [
+            "/cassandra/dcos"
+        ],
+        "currentActions": [
+            {
+                "action": "ScaleApplication",
+                "app": "/cassandra/dcos"
+            }
+        ],
+        "currentStep": 2,
+        "id": "bebb8ffd-118e-4067-8fcb-d19e44126911",
+        "steps": [
+            [
+                {
+                    "action": "StartApplication",
+                    "app": "/cassandra/dcos"
+                }
+            ],
+            [
+                {
+                    "action": "ScaleApplication",
+                    "app": "/cassandra/dcos"
+                }
+            ]
+        ],
+        "totalSteps": 2,
+        "version": "2015-05-29T01:13:47.694Z"
+    }
+
+
+def deployment_fixture_app_post_pods():
+    """ Marathon app deployment fixture, for Marathon versions with pods.
 
     :rtype: dict
     """
