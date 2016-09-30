@@ -159,6 +159,10 @@ class RpcClient(object):
         try:
             return method_fn(url, *args, **kwargs)
         except DCOSHTTPException as e:
+
+            logger.error('Marathon Error: %s\n%s',
+                         e.response.reason, e.response.text)
+
             # Marathon is buggy and sometimes returns JSON, sometimes returns
             # HTML. We only include the body in the error message if it's JSON.
             try:
