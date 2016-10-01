@@ -575,7 +575,7 @@ def _execute_command(command):
 
     logger.info('Calling: %r', command)
 
-    process = Subproc().Popen(
+    process = Subproc().popen(
         command,
         stdout=PIPE,
         stderr=PIPE)
