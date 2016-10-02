@@ -3,14 +3,14 @@ import sys
 import threading
 
 import requests
+from requests.auth import AuthBase, HTTPBasicAuth
+from six.moves import urllib
+from six.moves.urllib.parse import urlparse
+
 from dcos import config, util
 from dcos.errors import (DCOSAuthenticationException,
                          DCOSAuthorizationException, DCOSBadRequest,
                          DCOSException, DCOSHTTPException)
-from requests.auth import AuthBase, HTTPBasicAuth
-
-from six.moves import urllib
-from six.moves.urllib.parse import urlparse
 
 logger = util.get_logger(__name__)
 lock = threading.Lock()

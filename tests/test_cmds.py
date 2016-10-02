@@ -1,6 +1,6 @@
-from dcos import cmds
-
 import pytest
+
+from dcos import cmds
 
 
 @pytest.fixture

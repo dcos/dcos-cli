@@ -12,9 +12,10 @@ from distutils import spawn
 import pager
 import pygments
 import six
-from dcos import config, constants, errors, util
 from pygments.formatters import Terminal256Formatter
 from pygments.lexers import JsonLexer
+
+from dcos import config, constants, errors, util
 
 logger = util.get_logger(__name__)
 

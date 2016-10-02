@@ -1,7 +1,7 @@
+import pytest
+
 from dcos import jsonitem
 from dcos.errors import DCOSException
-
-import pytest
 
 
 @pytest.fixture(params=range(6))
