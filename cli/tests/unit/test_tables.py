@@ -1,12 +1,16 @@
 import datetime
 
+from dcos.mesos import Slave
 from dcoscli import tables
 
 import mock
 import pytz
 
 from ..fixtures.marathon import (app_fixture, app_task_fixture,
-                                 deployment_fixture, group_fixture)
+                                 deployment_fixture_app_post_pods,
+                                 deployment_fixture_app_pre_pods,
+                                 deployment_fixture_pod,
+                                 group_fixture, pod_fixture)
 from ..fixtures.node import slave_fixture
 from ..fixtures.package import package_fixture, search_result_fixture
 from ..fixtures.service import framework_fixture
@@ -14,8 +18,12 @@ from ..fixtures.task import browse_fixture, task_fixture
 
 
 def test_task_table():
+    task = task_fixture()
+    task.user = mock.Mock(return_value='root')
+    slave = Slave({"hostname": "mock-hostname"}, None, None)
+    task.slave = mock.Mock(return_value=slave)
     _test_table(tables.task_table,
-                [task_fixture()],
+                [task],
                 'tests/unit/data/task.txt')
 
 
@@ -27,10 +35,22 @@ def test_app_table():
         assert str(table) == f.read()
 
 
-def test_deployment_table():
+def test_deployment_table_app_pre_pods():
     _test_table(tables.deployment_table,
-                [deployment_fixture()],
-                'tests/unit/data/deployment.txt')
+                [deployment_fixture_app_pre_pods()],
+                'tests/unit/data/deployment/app.txt')
+
+
+def test_deployment_table_app_post_pods():
+    _test_table(tables.deployment_table,
+                [deployment_fixture_app_post_pods()],
+                'tests/unit/data/deployment/app.txt')
+
+
+def test_deployment_table_pod():
+    _test_table(tables.deployment_table,
+                [deployment_fixture_pod()],
+                'tests/unit/data/deployment/pod.txt')
 
 
 def test_app_task_table():
@@ -51,6 +71,10 @@ def test_group_table():
                 'tests/unit/data/group.txt')
 
 
+def test_pod_table():
+    _test_table(tables.pod_table, pod_fixture(), 'tests/unit/data/pod.txt')
+
+
 def test_package_table():
     _test_table(tables.package_table,
                 [package_fixture()],
@@ -59,7 +83,7 @@ def test_package_table():
 
 def test_package_search_table():
     _test_table(tables.package_search_table,
-                [search_result_fixture()],
+                search_result_fixture(),
                 'tests/unit/data/package_search.txt')
 
 

@@ -17,3 +17,4 @@ if [ ! -f "$DCOS_CONFIG" ]; then
     mkdir -p $(dirname "$DCOS_CONFIG")
     touch "$DCOS_CONFIG"
 fi
+chmod 0600 "$DCOS_CONFIG"

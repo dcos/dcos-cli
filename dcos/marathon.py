@@ -1,7 +1,8 @@
 import json
-from distutils.version import LooseVersion
+import jsonschema
+import pkg_resources
 
-from dcos import http, util
+from dcos import config, http, util
 from dcos.errors import DCOSException, DCOSHTTPException
 
 from six.moves import urllib
@@ -9,156 +10,188 @@ from six.moves import urllib
 logger = util.get_logger(__name__)
 
 
-def create_client(config=None):
+def create_client(toml_config=None):
     """Creates a Marathon client with the supplied configuration.
 
-    :param config: configuration dictionary
-    :type config: config.Toml
+    :param toml_config: configuration dictionary
+    :type toml_config: config.Toml
     :returns: Marathon client
     :rtype: dcos.marathon.Client
     """
 
-    if config is None:
-        config = util.get_config()
+    if toml_config is None:
+        toml_config = config.get_config()
 
-    marathon_url = _get_marathon_url(config)
-    timeout = config.get('core.timeout', http.DEFAULT_TIMEOUT)
+    marathon_url = _get_marathon_url(toml_config)
+    timeout = config.get_config_val('core.timeout') or http.DEFAULT_TIMEOUT
+    rpc_client = RpcClient(marathon_url, timeout)
 
     logger.info('Creating marathon client with: %r', marathon_url)
-    return Client(marathon_url, timeout=timeout)
+    return Client(rpc_client)
 
 
-def _get_marathon_url(config):
+def _get_marathon_url(toml_config):
     """
-    :param config: configuration dictionary
-    :type config: config.Toml
+    :param toml_config: configuration dictionary
+    :type toml_config: config.Toml
     :returns: marathon base url
     :rtype: str
     """
 
-    marathon_url = config.get('marathon.url')
+    marathon_url = config.get_config_val('marathon.url', toml_config)
     if marathon_url is None:
-        dcos_url = util.get_config_vals(['core.dcos_url'], config)[0]
-        marathon_url = urllib.parse.urljoin(dcos_url, 'marathon/')
+        dcos_url = config.get_config_val('core.dcos_url', toml_config)
+        if dcos_url is None:
+            raise config.missing_config_exception(['core.dcos_url'])
+        marathon_url = urllib.parse.urljoin(dcos_url, 'service/marathon/')
 
     return marathon_url
 
 
-def _to_exception(response):
+def load_error_json_schema():
+    """Reads and parses Marathon error response JSON schema from file
+
+    :returns: the parsed JSON schema
+    :rtype: dict
     """
-    :param response: HTTP response object or Exception
-    :type response: requests.Response | Exception
-    :returns: An exception with the message from the response JSON
-    :rtype: Exception
+    schema_path = 'data/marathon/error.schema.json'
+    schema_bytes = pkg_resources.resource_string('dcos', schema_path)
+    return json.loads(schema_bytes.decode('utf-8'))
+
+
+class RpcClient(object):
+    """Convenience class for making requests against a common RPC API.
+
+    For example, it ensures the same base URL is used for all requests. This
+    class is also useful as a target for mocks in unit tests, because it
+    presents a minimal, application-focused interface.
+
+    :param base_url: the URL prefix to use for all requests
+    :type base_url: str
+    :param timeout: number of seconds to wait for a response
+    :type timeout: float
     """
 
-    if response.status_code == 400:
-        msg = 'Error on request [{0} {1}]: HTTP {2}: {3}'.format(
-            response.request.method,
-            response.request.url,
-            response.status_code,
-            response.reason)
+    def __init__(self, base_url, timeout=http.DEFAULT_TIMEOUT):
+        if not base_url.endswith('/'):
+            base_url += '/'
+        self._base_url = base_url
+        self._timeout = timeout
 
-        # Marathon is buggy and sometimes return JSON, and sometimes
-        # HTML.  We only include the error message if it's JSON.
+    ERROR_JSON_VALIDATOR = jsonschema.Draft4Validator(load_error_json_schema())
+    RESOURCE_TYPES = ['app', 'group', 'pod']
+
+    @classmethod
+    def response_error_message(cls, status_code, reason, request_method,
+                               request_url, json_body):
+        """Renders a human-readable error message from the given response data.
+
+        :param status_code: the integer status code from an HTTP response
+        :type status_code: int
+        :param reason: human-readable text representation of the status code
+        :type reason: str
+        :param request_method: the HTTP method used for the request
+        :type request_method: str
+        :param request_url: the URL the request was sent to
+        :type request_url: str
+        :param json_body: the response body, parsed as JSON, or None if
+                          parsing failed
+        :type json_body: dict | list | str | int | bool | None
+        :return: the rendered error message
+        :rtype: str
+        """
+
+        if status_code == 400:
+            template = 'Error on request [{} {}]: HTTP 400: {}{}'
+            suffix = ''
+            if json_body is not None:
+                json_str = json.dumps(json_body, indent=2, sort_keys=True)
+                suffix = ':\n' + json_str
+            return template.format(request_method, request_url, reason, suffix)
+
+        if status_code == 409:
+            path = urllib.parse.urlparse(request_url).path
+            path_name = (name for name in cls.RESOURCE_TYPES if name in path)
+            resource_name = next(path_name, 'resource')
+
+            template = ('Changes blocked: '
+                        'deployment already in progress for {}.')
+            return template.format(resource_name)
+
+        if json_body is None:
+            template = 'Error decoding response from [{}]: HTTP {}: {}'
+            return template.format(request_url, status_code, reason)
+
+        if not cls.ERROR_JSON_VALIDATOR.is_valid(json_body):
+            log_str = 'Marathon server did not return a message: %s'
+            logger.error(log_str, json_body)
+
+            return _default_marathon_error()
+
+        message = json_body.get('message')
+        if message is None:
+            message = '\n'.join(err['error'] for err in json_body['errors'])
+            return _default_marathon_error(message)
+
+        return 'Error: {}'.format(message)
+
+    def http_req(self, method_fn, path, *args, **kwargs):
+        """Make an HTTP request, and raise a marathon-specific exception for
+        HTTP error codes.
+
+        :param method_fn: function to call that invokes a specific HTTP method
+        :type method_fn: function
+        :param path: the endpoint path to append to this object's base URL
+        :type path: str
+        :param args: additional args to pass to `method_fn`
+        :type args: [object]
+        :param kwargs: kwargs to pass to `method_fn`
+        :type kwargs: dict
+        :returns: `method_fn` return value
+        :rtype: requests.Response
+        """
+
+        url = self._base_url + path.lstrip('/')
+
+        if 'timeout' not in kwargs:
+            kwargs['timeout'] = self._timeout
+
         try:
-            json_msg = response.json()
-            msg += ':\n' + json.dumps(json_msg,
-                                      indent=2,
-                                      sort_keys=True,
-                                      separators=(',', ': '))
-        except ValueError:
-            pass
+            return method_fn(url, *args, **kwargs)
+        except DCOSHTTPException as e:
 
-        return DCOSException(msg)
-    elif response.status_code == 409:
-        return DCOSException(
-            'App or group is locked by one or more deployments. '
-            'Override with --force.')
+            logger.error('Marathon Error: %s\n%s',
+                         e.response.reason, e.response.text)
 
-    try:
-        response_json = response.json()
-    except Exception:
-        logger.exception(
-            'Unable to decode response body as a JSON value: %r',
-            response)
+            # Marathon is buggy and sometimes returns JSON, sometimes returns
+            # HTML. We only include the body in the error message if it's JSON.
+            try:
+                json_body = e.response.json()
+            except:
+                logger.exception(
+                    'Unable to decode response body as a JSON value: %r',
+                    e.response)
 
-        return DCOSException(
-            'Error decoding response from [{0}]: HTTP {1}: {2}'.format(
-                response.request.url, response.status_code, response.reason))
-    message = response_json.get('message')
-    if message is None:
-        errs = response_json.get('errors')
-        if errs is None:
-            logger.error(
-                'Marathon server did not return a message: %s',
-                response_json)
-            return DCOSException(_default_marathon_error())
+                json_body = None
 
-        msg = '\n'.join(error['error'] for error in errs)
-        return DCOSException(_default_marathon_error(msg))
-
-    return DCOSException('Error: {}'.format(message))
-
-
-def _http_req(fn, *args, **kwargs):
-    """Make an HTTP request, and raise a marathon-specific exception for
-    HTTP error codes.
-
-    :param fn: function to call
-    :type fn: function
-    :param args: args to pass to `fn`
-    :type args: [object]
-    :param kwargs: kwargs to pass to `fn`
-    :type kwargs: dict
-    :returns: `fn` return value
-    :rtype: object
-
-    """
-    try:
-        return fn(*args, **kwargs)
-    except DCOSHTTPException as e:
-        raise _to_exception(e.response)
+            message = RpcClient.response_error_message(
+                status_code=e.response.status_code,
+                reason=e.response.reason,
+                request_method=e.response.request.method,
+                request_url=e.response.request.url,
+                json_body=json_body)
+            raise DCOSException(message)
 
 
 class Client(object):
     """Class for talking to the Marathon server.
 
-    :param marathon_url: the base URL for the Marathon server
-    :type marathon_url: str
+    :param rpc_client: provides a method for making HTTP requests
+    :type rpc_client: _RpcClient
     """
 
-    def __init__(self, marathon_url, timeout=http.DEFAULT_TIMEOUT):
-        self._base_url = marathon_url
-        self._timeout = timeout
-
-        min_version = "0.8.1"
-        version = LooseVersion(self.get_about()["version"])
-        self._version = version
-        if version < LooseVersion(min_version):
-            msg = ("The configured Marathon with version {0} is outdated. " +
-                   "Please use version {1} or later.").format(
-                       version,
-                       min_version)
-            raise DCOSException(msg)
-
-    def _create_url(self, path):
-        """Creates the url from the provided path.
-        :param path: url path
-        :type path: str
-        :returns: constructed url
-        :rtype: str
-        """
-
-        return urllib.parse.urljoin(self._base_url, path)
-
-    def get_version(self):
-        """Get marathon version
-        :returns: marathon version
-        rtype: LooseVersion
-        """
-
-        return self._version
+    def __init__(self, rpc_client):
+        self._rpc = rpc_client
 
     def get_about(self):
         """Returns info about Marathon instance
@@ -167,8 +200,7 @@ class Client(object):
         :rtype: dict
         """
 
-        url = self._create_url('v2/info')
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.get, 'v2/info')
 
         return response.json()
 
@@ -184,14 +216,13 @@ class Client(object):
         :rtype: dict
         """
 
-        app_id = self.normalize_app_id(app_id)
+        app_id = util.normalize_marathon_id_path(app_id)
         if version is None:
-            url = self._create_url('v2/apps{}'.format(app_id))
+            path = 'v2/apps{}'.format(app_id)
         else:
-            url = self._create_url(
-                'v2/apps{}/versions/{}'.format(app_id, version))
+            path = 'v2/apps{}/versions/{}'.format(app_id, version)
 
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.get, path)
 
         # Looks like Marathon return different JSON for versions
         if version is None:
@@ -206,8 +237,7 @@ class Client(object):
         :rtype: list of dict
         """
 
-        url = self._create_url('v2/groups')
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.get, 'v2/groups')
         return response.json()['groups']
 
     def get_group(self, group_id, version=None):
@@ -222,14 +252,13 @@ class Client(object):
         :rtype: dict
         """
 
-        group_id = self.normalize_app_id(group_id)
+        group_id = util.normalize_marathon_id_path(group_id)
         if version is None:
-            url = self._create_url('v2/groups{}'.format(group_id))
+            path = 'v2/groups{}'.format(group_id)
         else:
-            url = self._create_url(
-                'v2/groups{}/versions/{}'.format(group_id, version))
+            path = 'v2/groups{}/versions/{}'.format(group_id, version)
 
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.get, path)
         return response.json()
 
     def get_app_versions(self, app_id, max_count=None):
@@ -237,8 +266,6 @@ class Client(object):
         maximum count.
 
         :param app_id: the ID of the application or group
-        :type app_id: str
-        :param id_type: type of the id ("apps" or "groups")
         :type app_id: str
         :param max_count: the maximum number of version to fetch
         :type max_count: int
@@ -251,11 +278,11 @@ class Client(object):
                 'Maximum count must be a positive number: {}'.format(max_count)
             )
 
-        app_id = self.normalize_app_id(app_id)
+        app_id = util.normalize_marathon_id_path(app_id)
 
-        url = self._create_url('v2/apps{}/versions'.format(app_id))
+        path = 'v2/apps{}/versions'.format(app_id)
 
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.get, path)
 
         if max_count is None:
             return response.json()['versions']
@@ -269,9 +296,20 @@ class Client(object):
         :rtype: [dict]
         """
 
-        url = self._create_url('v2/apps')
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.get, 'v2/apps')
         return response.json()['apps']
+
+    def get_apps_for_framework(self, framework_name):
+        """ Return all apps running the given framework.
+
+        :param framework_name: framework name
+        :type framework_name: str
+        :rtype: [dict]
+        """
+
+        return [app for app in self.get_apps()
+                if app.get('labels', {}).get(
+                    'DCOS_PACKAGE_FRAMEWORK_NAME') == framework_name]
 
     def add_app(self, app_resource):
         """Add a new application.
@@ -282,52 +320,68 @@ class Client(object):
         :rtype: dict
         """
 
-        url = self._create_url('v2/apps')
-
         # The file type exists only in Python 2, preventing type(...) is file.
         if hasattr(app_resource, 'read'):
             app_json = json.load(app_resource)
         else:
             app_json = app_resource
 
-        response = _http_req(http.post, url,
-                             json=app_json,
-                             timeout=self._timeout)
+        response = self._rpc.http_req(http.post, 'v2/apps', json=app_json)
 
         return response.json()
 
-    def _update(self, resource_id, payload, force=None, url_endpoint="apps"):
-        """Update an application or group.
+    def _update_req(
+            self, resource_type, resource_id, resource_json, force=False):
+        """Send an HTTP request to update an application, group, or pod.
 
-        :param resource_id: the app or group id
+        :param resource_type: one of 'apps', 'groups', or 'pods'
+        :type resource_type: str
+        :param resource_id: the app, group, or pod ID
         :type resource_id: str
-        :param payload: the json payload
-        :type payload: dict
+        :param resource_json: the json payload
+        :type resource_json: {}
         :param force: whether to override running deployments
         :type force: bool
-        :param url_endpoint: resource type to update ("apps" or "groups")
-        :type url_endpoint: str
+        :returns: the response from Marathon
+        :rtype: requests.Response
+        """
+
+        path_prefix = 'v2/{}'.format(resource_type)
+        path = self._marathon_id_path_join(path_prefix, resource_id)
+        params = self._force_params(force)
+        return self._rpc.http_req(
+            http.put, path, params=params, json=resource_json)
+
+    def _update(self, resource_type, resource_id, resource_json, force=False):
+        """Update an application or group.
+
+        The HTTP response is handled differently for pods; see `update_pod`.
+
+        :param resource_type: either 'apps' or 'groups'
+        :type resource_type: str
+        :param resource_id: the app or group ID
+        :type resource_id: str
+        :param resource_json: the json payload
+        :type resource_json: {}
+        :param force: whether to override running deployments
+        :type force: bool
         :returns: the resulting deployment ID
         :rtype: str
         """
 
-        resource_id = self.normalize_app_id(resource_id)
+        response = self._update_req(
+            resource_type, resource_id, resource_json, force)
+        body_json = self._parse_json(response)
 
-        if not force:
-            params = None
-        else:
-            params = {'force': 'true'}
+        try:
+            return body_json['deploymentId']
+        except KeyError:
+            template = ('Error: missing "deploymentId" field in the following '
+                        'JSON response from Marathon:\n{}')
+            rendered_json = json.dumps(body_json, indent=2, sort_keys=True)
+            raise DCOSException(template.format(rendered_json))
 
-        url = self._create_url('v2/{}{}'.format(url_endpoint, resource_id))
-
-        response = _http_req(http.put, url,
-                             params=params,
-                             json=payload,
-                             timeout=self._timeout)
-
-        return response.json().get('deploymentId')
-
-    def update_app(self, app_id, payload, force=None):
+    def update_app(self, app_id, payload, force=False):
         """Update an application.
 
         :param app_id: the application id
@@ -340,9 +394,9 @@ class Client(object):
         :rtype: str
         """
 
-        return self._update(app_id, payload, force)
+        return self._update('apps', app_id, payload, force)
 
-    def update_group(self, group_id, payload, force=None):
+    def update_group(self, group_id, payload, force=False):
         """Update a group.
 
         :param group_id: the group id
@@ -355,9 +409,9 @@ class Client(object):
         :rtype: str
         """
 
-        return self._update(group_id, payload, force, "groups")
+        return self._update('groups', group_id, payload, force)
 
-    def scale_app(self, app_id, instances, force=None):
+    def scale_app(self, app_id, instances, force=False):
         """Scales an application to the requested number of instances.
 
         :param app_id: the ID of the application to scale
@@ -370,25 +424,19 @@ class Client(object):
         :rtype: str
         """
 
-        app_id = self.normalize_app_id(app_id)
+        app_id = util.normalize_marathon_id_path(app_id)
+        params = self._force_params(force)
+        path = 'v2/apps{}'.format(app_id)
 
-        if not force:
-            params = None
-        else:
-            params = {'force': 'true'}
-
-        url = self._create_url('v2/apps{}'.format(app_id))
-
-        response = _http_req(http.put,
-                             url,
-                             params=params,
-                             json={'instances': int(instances)},
-                             timeout=self._timeout)
+        response = self._rpc.http_req(http.put,
+                                      path,
+                                      params=params,
+                                      json={'instances': int(instances)})
 
         deployment = response.json()['deploymentId']
         return deployment
 
-    def scale_group(self, group_id, scale_factor, force=None):
+    def scale_group(self, group_id, scale_factor, force=False):
         """Scales a group with the requested scale-factor.
         :param group_id: the ID of the group to scale
         :type group_id: str
@@ -400,24 +448,19 @@ class Client(object):
         :rtype: bool
         """
 
-        group_id = self.normalize_app_id(group_id)
+        group_id = util.normalize_marathon_id_path(group_id)
+        params = self._force_params(force)
+        path = 'v2/groups{}'.format(group_id)
 
-        if not force:
-            params = None
-        else:
-            params = {'force': 'true'}
-
-        url = self._create_url('v2/groups{}'.format(group_id))
-
-        response = http.put(url,
-                            params=params,
-                            json={'scaleBy': scale_factor},
-                            timeout=self._timeout)
+        response = self._rpc.http_req(http.put,
+                                      path,
+                                      params=params,
+                                      json={'scaleBy': scale_factor})
 
         deployment = response.json()['deploymentId']
         return deployment
 
-    def stop_app(self, app_id, force=None):
+    def stop_app(self, app_id, force=False):
         """Scales an application to zero instances.
 
         :param app_id: the ID of the application to stop
@@ -430,7 +473,7 @@ class Client(object):
 
         return self.scale_app(app_id, 0, force)
 
-    def remove_app(self, app_id, force=None):
+    def remove_app(self, app_id, force=False):
         """Completely removes the requested application.
 
         :param app_id: the ID of the application to remove
@@ -440,17 +483,12 @@ class Client(object):
         :rtype: None
         """
 
-        app_id = self.normalize_app_id(app_id)
+        app_id = util.normalize_marathon_id_path(app_id)
+        params = self._force_params(force)
+        path = 'v2/apps{}'.format(app_id)
+        self._rpc.http_req(http.delete, path, params=params)
 
-        if not force:
-            params = None
-        else:
-            params = {'force': 'true'}
-
-        url = self._create_url('v2/apps{}'.format(app_id))
-        _http_req(http.delete, url, params=params, timeout=self._timeout)
-
-    def remove_group(self, group_id, force=None):
+    def remove_group(self, group_id, force=False):
         """Completely removes the requested application.
 
         :param group_id: the ID of the application to remove
@@ -460,16 +498,11 @@ class Client(object):
         :rtype: None
         """
 
-        group_id = self.normalize_app_id(group_id)
+        group_id = util.normalize_marathon_id_path(group_id)
+        params = self._force_params(force)
+        path = 'v2/groups{}'.format(group_id)
 
-        if not force:
-            params = None
-        else:
-            params = {'force': 'true'}
-
-        url = self._create_url('v2/groups{}'.format(group_id))
-
-        _http_req(http.delete, url, params=params, timeout=self._timeout)
+        self._rpc.http_req(http.delete, path, params=params)
 
     def kill_tasks(self, app_id, scale=None, host=None):
         """Kills the tasks for a given application,
@@ -483,18 +516,16 @@ class Client(object):
         :type host: string
         """
         params = {}
-        app_id = self.normalize_app_id(app_id)
+        app_id = util.normalize_marathon_id_path(app_id)
         if host:
             params['host'] = host
         if scale:
             params['scale'] = scale
-        url = self._create_url('v2/apps{}/tasks'.format(app_id))
-        response = _http_req(http.delete, url,
-                             params=params,
-                             timeout=self._timeout)
+        path = 'v2/apps{}/tasks'.format(app_id)
+        response = self._rpc.http_req(http.delete, path, params=params)
         return response.json()
 
-    def restart_app(self, app_id, force=None):
+    def restart_app(self, app_id, force=False):
         """Performs a rolling restart of all of the tasks.
 
         :param app_id: the id of the application to restart
@@ -505,18 +536,11 @@ class Client(object):
         :rtype: dict
         """
 
-        app_id = self.normalize_app_id(app_id)
+        app_id = util.normalize_marathon_id_path(app_id)
+        params = self._force_params(force)
+        path = 'v2/apps{}/restart'.format(app_id)
 
-        if not force:
-            params = None
-        else:
-            params = {'force': 'true'}
-
-        url = self._create_url('v2/apps{}/restart'.format(app_id))
-
-        response = _http_req(http.post, url,
-                             params=params,
-                             timeout=self._timeout)
+        response = self._rpc.http_req(http.post, path, params=params)
         return response.json()
 
     def get_deployment(self, deployment_id):
@@ -528,9 +552,7 @@ class Client(object):
         :rtype: dict
         """
 
-        url = self._create_url('v2/deployments')
-
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.get, 'v2/deployments')
         deployment = next(
             (deployment for deployment in response.json()
              if deployment_id == deployment['id']),
@@ -547,12 +569,10 @@ class Client(object):
         :rtype: list of dict
         """
 
-        url = self._create_url('v2/deployments')
-
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.get, 'v2/deployments')
 
         if app_id is not None:
-            app_id = self.normalize_app_id(app_id)
+            app_id = util.normalize_marathon_id_path(app_id)
             deployments = [
                 deployment for deployment in response.json()
                 if app_id in deployment['affectedApps']
@@ -576,16 +596,10 @@ class Client(object):
         :rtype: dict
         """
 
-        if not force:
-            params = None
-        else:
-            params = {'force': 'true'}
+        params = self._force_params(force)
+        path = 'v2/deployments/{}'.format(deployment_id)
 
-        url = self._create_url('v2/deployments/{}'.format(deployment_id))
-
-        response = _http_req(http.delete, url,
-                             params=params,
-                             timeout=self._timeout)
+        response = self._rpc.http_req(http.delete, path, params=params)
 
         if force:
             return None
@@ -622,12 +636,10 @@ class Client(object):
         :rtype: [dict]
         """
 
-        url = self._create_url('v2/tasks')
-
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.get, 'v2/tasks')
 
         if app_id is not None:
-            app_id = self.normalize_app_id(app_id)
+            app_id = util.normalize_marathon_id_path(app_id)
             tasks = [
                 task for task in response.json()['tasks']
                 if app_id == task['appId']
@@ -646,9 +658,7 @@ class Client(object):
         :rtype: dict
         """
 
-        url = self._create_url('v2/tasks')
-
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.get, 'v2/tasks')
 
         task = next(
             (task for task in response.json()['tasks']
@@ -657,33 +667,33 @@ class Client(object):
 
         return task
 
-    def get_app_schema(self):
-        """Returns app json schema
+    def stop_task(self, task_id, wipe=None):
+        """Stops a task.
 
-        :returns: application json schema
-        :rtype: json schema or None if endpoint doesn't exist
+        :param task_id: the ID of the task
+        :type task_id: str
+        :param wipe: whether remove reservations and persistent volumes.
+        :type wipe: bool
+        :returns: a tasks
+        :rtype: dict
         """
 
-        version = self.get_version()
-        schema_version = LooseVersion("0.9.0")
-        if version < schema_version:
-            return None
+        if not wipe:
+            params = None
+        else:
+            params = {'wipe': 'true'}
 
-        url = self._create_url('v2/schemas/app')
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.post,
+                                      'v2/tasks/delete',
+                                      params=params,
+                                      json={'ids': [task_id]})
 
-        return response.json()
+        task = next(
+            (task for task in response.json()['tasks']
+             if task_id == task['id']),
+            None)
 
-    def normalize_app_id(self, app_id):
-        """Normalizes the application id.
-
-        :param app_id: raw application ID
-        :type app_id: str
-        :returns: normalized application ID
-        :rtype: str
-        """
-
-        return urllib.parse.quote('/' + app_id.strip('/'))
+        return task
 
     def create_group(self, group_resource):
         """Add a new group.
@@ -693,7 +703,6 @@ class Client(object):
         :returns: the group description
         :rtype: dict
         """
-        url = self._create_url('v2/groups')
 
         # The file type exists only in Python 2, preventing type(...) is file.
         if hasattr(group_resource, 'read'):
@@ -701,9 +710,7 @@ class Client(object):
         else:
             group_json = group_resource
 
-        response = _http_req(http.post, url,
-                             json=group_json,
-                             timeout=self._timeout)
+        response = self._rpc.http_req(http.post, 'v2/groups', json=group_json)
         return response.json()
 
     def get_leader(self):
@@ -713,9 +720,149 @@ class Client(object):
         :rtype: str
         """
 
-        url = self._create_url('v2/leader')
-        response = _http_req(http.get, url, timeout=self._timeout)
+        response = self._rpc.http_req(http.get, 'v2/leader')
         return response.json()['leader']
+
+    def add_pod(self, pod_json):
+        """Add a new pod.
+
+        :param pod_json: JSON pod definition
+        :type pod_json: dict
+        :returns: description of created pod
+        :rtype: dict
+        """
+
+        response = self._rpc.http_req(http.post, 'v2/pods', json=pod_json)
+        return self._parse_json(response)
+
+    def remove_pod(self, pod_id, force=False):
+        """Completely removes the requested pod.
+
+        :param pod_id: the ID of the pod to remove
+        :type pod_id: str
+        :param force: whether to override running deployments
+        :type force: bool
+        :rtype: None
+        """
+
+        path = self._marathon_id_path_join('v2/pods', pod_id)
+        params = self._force_params(force)
+        self._rpc.http_req(http.delete, path, params=params)
+
+    def show_pod(self, pod_id):
+        """Returns a representation of the requested pod.
+
+        :param pod_id: the ID of the pod
+        :type pod_id: str
+        :returns: the requested Marathon pod
+        :rtype: dict
+        """
+
+        path = self._marathon_id_path_join('v2/pods', pod_id)
+        response = self._rpc.http_req(http.get, path)
+        return self._parse_json(response)
+
+    def list_pod(self):
+        """Get a list of known pods.
+
+        :returns: list of known pods
+        :rtype: [dict]
+        """
+
+        response = self._rpc.http_req(http.get, 'v2/pods')
+        return self._parse_json(response)
+
+    def update_pod(self, pod_id, pod_json, force=False):
+        """Update a pod.
+
+        :param pod_id: the pod ID
+        :type pod_id: str
+        :param pod_json: JSON pod definition
+        :type pod_json: {}
+        :param force: whether to override running deployments
+        :type force: bool
+        :rtype: None
+        """
+
+        response = self._update_req('pods', pod_id, pod_json, force)
+        deployment_id_header_name = 'Marathon-Deployment-Id'
+        deployment_id = response.headers.get(deployment_id_header_name)
+
+        if deployment_id is None:
+            template = 'Error: missing "{}" header from Marathon response'
+            raise DCOSException(template.format(deployment_id_header_name))
+
+        return deployment_id
+
+    def pod_feature_supported(self):
+        """Return whether or not this client is communicating with a version
+        of Marathon that supports pod operations.
+
+        :rtype: bool
+        """
+
+        # Allow response objects to be returned from `http_req` on status 404,
+        # while handling all other exceptions as usual
+        def test_for_pods(url, **kwargs):
+            try:
+                return http.head(url, **kwargs)
+            except DCOSHTTPException as e:
+                if e.status() == 404:
+                    return e.response
+                raise
+
+        response = self._rpc.http_req(test_for_pods, 'v2/pods')
+        return response.status_code // 100 == 2
+
+    @staticmethod
+    def _marathon_id_path_join(url_path, id_path):
+        """Concatenates a URL path with a Marathon "ID path", ensuring the
+        result is well-formed.
+
+        The path and the ID will be joined with a single forward slash (/),
+        all trailing slashes in the ID will be removed, and the ID will have
+        all URL-unsafe characters escaped, as if by urllib.parse.quote().
+
+        :param url_path: the path portion of a URL
+        :type url_path: str
+        :param path_id: a Marathon "ID path", e.g. app ID or group ID
+        :type path_id: str
+        :returns: the path with the ID appended
+        :rtype: str
+        """
+
+        normalized_id_path = urllib.parse.quote(id_path.strip('/'))
+        return url_path.rstrip('/') + '/' + normalized_id_path
+
+    @staticmethod
+    def _force_params(force):
+        """Returns the query parameters that signify the provided force value.
+
+        :param force: whether to override running deployments
+        :type force: bool
+        :rtype: {} | None
+        """
+
+        return {'force': 'true'} if force else None
+
+    @staticmethod
+    def _parse_json(response):
+        """Attempts to parse the body of the given response as JSON.
+
+        Raises DCOSException if parsing fails.
+
+        :param response: the response containing the body to parse
+        :type response: requests.Response
+        :return: the parsed JSON
+        :rtype: {} | [] | str | int | float | bool | None
+        """
+
+        try:
+            return response.json()
+        except:
+            template = ('Error: Response from Marathon was not in expected '
+                        'JSON format:\n{}')
+            raise DCOSException(template.format(response.text))
 
 
 def _default_marathon_error(message=""):

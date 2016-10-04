@@ -1,16 +1,16 @@
 import os
 import signal
 import sys
-from functools import wraps
-from subprocess import PIPE, Popen
 
 import dcoscli
 import docopt
-import pkg_resources
-from dcos import auth, constants, emitting, errors, http, subcommand, util
+from dcos import config, constants, emitting, errors, http, subcommand, util
 from dcos.errors import DCOSException
-from dcoscli import analytics
+from dcoscli.subcommand import SubcommandMain, default_doc
 
+from six.moves import urllib
+
+logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
 
 
@@ -22,13 +22,42 @@ def main():
         return 1
 
 
+def _get_versions(dcos_url):
+    """Print DC/OS and DC/OS-CLI versions
+
+    :param dcos_url: url to DC/OS cluster
+    :type dcos_url: str
+    :returns: Process status
+    :rtype: int
+    """
+
+    dcos_info = {}
+    try:
+        url = urllib.parse.urljoin(
+            dcos_url, 'dcos-metadata/dcos-version.json')
+        res = http.get(url, timeout=1)
+        if res.status_code == 200:
+            dcos_info = res.json()
+    except Exception as e:
+        logger.exception(e)
+        pass
+
+    emitter.publish(
+        "dcoscli.version={}\n".format(dcoscli.version) +
+        "dcos.version={}\n".format(dcos_info.get("version", "N/A")) +
+        "dcos.commit={}\n".format(dcos_info.get(
+            "dcos-image-commit", "N/A")) +
+        "dcos.bootstrap-id={}".format(dcos_info.get("bootstrap-id", "N/A"))
+    )
+    return 0
+
+
 def _main():
     signal.signal(signal.SIGINT, signal_handler)
 
-    args = docopt.docopt(
-        _doc(),
-        version='dcos version {}'.format(dcoscli.version),
-        options_first=True)
+    http.silence_requests_warnings()
+
+    args = docopt.docopt(default_doc("dcos"), options_first=True)
 
     log_level = args['--log-level']
     if log_level and not _config_log_level_environ(log_level):
@@ -39,36 +68,23 @@ def _main():
 
     util.configure_process_from_environ()
 
-    if args['<command>'] != 'config' and \
-       not auth.check_if_user_authenticated():
-        auth.force_auth()
-
-    config = util.get_config()
-    set_ssl_info_env_vars(config)
+    if args['--version']:
+        return _get_versions(config.get_config_val("core.dcos_url"))
 
     command = args['<command>']
-    http.silence_requests_warnings()
 
     if not command:
         command = "help"
 
-    executable = subcommand.command_executables(command)
-
-    subproc = Popen([executable,  command] + args['<args>'],
-                    stderr=PIPE)
-    if dcoscli.version != 'SNAPSHOT':
-        return analytics.wait_and_track(subproc)
+    if command in subcommand.default_subcommands():
+        sc = SubcommandMain(command, args['<args>'])
     else:
-        return analytics.wait_and_capture(subproc)[0]
+        executable = subcommand.command_executables(command)
+        sc = subcommand.SubcommandProcess(
+            executable, command, args['<args>'])
 
-
-def _doc():
-    """
-    :rtype: str
-    """
-    return pkg_resources.resource_string(
-        'dcoscli',
-        'data/help/dcos.txt').decode('utf-8')
+    exitcode, _ = sc.run_and_capture()
+    return exitcode
 
 
 def _config_log_level_environ(log_level):
@@ -96,39 +112,5 @@ def signal_handler(signal, frame):
         errors.DefaultError("User interrupted command with Ctrl-C"))
     sys.exit(0)
 
-
-def decorate_docopt_usage(func):
-    """Handle DocoptExit exception
-
-    :param func: function
-    :type func: function
-    :return: wrapped function
-    :rtype: function
-    """
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            result = func(*args, **kwargs)
-        except docopt.DocoptExit as e:
-            emitter.publish("Command not recognized\n")
-            emitter.publish(e)
-            return 1
-        return result
-    return wrapper
-
-
-def set_ssl_info_env_vars(config):
-    """Set SSL info from config to environment variable if enviornment
-       variable doesn't exist
-
-    :param config: config
-    :type config: Toml
-    :rtype: None
-    """
-
-    if 'core.ssl_verify' in config and (
-            not os.environ.get(constants.DCOS_SSL_VERIFY_ENV)):
-
-        os.environ[constants.DCOS_SSL_VERIFY_ENV] = str(
-            config['core.ssl_verify'])
+if __name__ == "__main__":
+    sys.exit(main())

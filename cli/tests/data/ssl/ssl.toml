@@ -1,8 +1,0 @@
-[package]
-cache = "tmp/cache"
-sources = [ "https://github.com/mesosphere/universe/archive/cli-test-3.zip",]
-[core]
-timeout = 5
-dcos_url = "https://dcos.snakeoil.mesosphere.com"
-email = "test@mail.com"
-reporting = false

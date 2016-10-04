@@ -1,23 +1,42 @@
-Manage DCOS tasks
+Description:
+    Manage DC/OS tasks.
 
 Usage:
+    dcos task --help
     dcos task --info
+    dcos task log [--completed --follow --lines=N] [<task>] [<file>]
+    dcos task ls [--long --completed] [<task>] [<path>]
     dcos task [--completed --json <task>]
-    dcos task log [--completed --follow --lines=N] <task> [<file>]
-    dcos task ls [--long] <task> [<path>]
+
+Command:
+    log
+        Print the task log. By default, the 10 most recent task logs from stdout
+        are printed.
+    ls
+        Print the list of files in the Mesos task sandbox.
 
 Options:
-    -h, --help    Show this screen
-    --info        Show a short description of this subcommand
-    --completed   Include completed tasks as well
-    --follow      Print data as the file grows
-    --json        Print json-formatted tasks
-    --lines=N     Print the last N lines [default: 10]
-    --long        Use a long listing format
-    --version     Show version
+    --completed
+        Print completed and in-progress tasks.
+    -h, --help
+        Print usage.
+    --info
+        Print a short description of this subcommand.
+    --follow
+        Dynamically update the log.
+    --json
+        Print JSON-formatted list of tasks.
+    --lines=N
+        Print the last N lines. The default is 10 lines.
+    --long
+        Print full Mesos sandbox file attributes.
+    --version
+        Print version information.
 
 Positional Arguments:
-    <file>        Print this file. [default: stdout]
-    <path>        List this directory. [default: '.']
-    <task>        Only match tasks whose ID matches <task>.  <task> may be
-                  a substring of the ID, or a unix glob pattern.
+    <file>
+        Specify the sandbox file to print. The default is stdout.
+    <path>
+        The Mesos sandbox directory path. The default is '.'.
+    <task>
+        A full task ID, a partial task ID, or a regular expression.

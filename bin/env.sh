@@ -4,10 +4,14 @@ BASEDIR=`dirname $0`/..
 
 if [ ! -d "$BASEDIR/env" ]; then
 
-    virtualenv -q $BASEDIR/env --prompt='(dcos) '
+    pyvenv-3.4 $BASEDIR/env
     echo "Virtualenv created."
 
-    source $BASEDIR/env/bin/activate
+    if [ -f "$BASEDIR/env/bin/activate" ]; then
+	    source $BASEDIR/env/bin/activate
+    else
+	    $BASEDIR/env/Scripts/activate
+    fi
     echo "Virtualenv activated."
 
     pip install -r $BASEDIR/requirements.txt

@@ -1,17 +1,14 @@
+import base64
 import collections
 import contextlib
 import json
 import os
-import pty
 import subprocess
-import sys
 import time
 
-import requests
 import six
-from dcos import util
+from dcos import config, http
 
-import mock
 from six.moves import urllib
 
 
@@ -21,7 +18,7 @@ def exec_command(cmd, env=None, stdin=None):
     :param cmd: Program and arguments
     :type cmd: [str]
     :param env: Environment variables
-    :type env: dict
+    :type env: dict | None
     :param stdin: File to use for stdin
     :type stdin: file
     :returns: A tuple with the returncode, stdout and stderr
@@ -69,9 +66,9 @@ def assert_command(
     :param returncode: Expected return code
     :type returncode: int
     :param stdout: Expected stdout
-    :type stdout: str
+    :type stdout: bytes
     :param stderr: Expected stderr
-    :type stderr: str
+    :type stderr: bytes
     :param env: Environment variables
     :type env: dict of str to str
     :param stdin: File to use for stdin
@@ -86,87 +83,8 @@ def assert_command(
     assert stderr_ == stderr
 
 
-def exec_mock(main, args):
-    """Call a main function with sys.args mocked, and capture
-    stdout/stderr
-
-    :param main: main function to call
-    :type main: function
-    :param args: sys.args to mock, excluding the initial 'dcos'
-    :type args: [str]
-    :returns: (returncode, stdout, stderr)
-    :rtype: (int, bytes, bytes)
-    """
-
-    print('MOCK ARGS: {}'.format(' '.join(args)))
-
-    with mock_args(args) as (stdout, stderr):
-        returncode = main()
-
-    stdout_val = six.b(stdout.getvalue())
-    stderr_val = six.b(stderr.getvalue())
-
-    print('STDOUT: {}'.format(stdout_val))
-    print('STDERR: {}'.format(stderr_val))
-
-    return (returncode, stdout_val, stderr_val)
-
-
-def assert_mock(main,
-                args,
-                returncode=0,
-                stdout=b'',
-                stderr=b''):
-    """Mock and call a main function, and assert expected behavior.
-
-    :param main: main function to call
-    :type main: function
-    :param args: sys.args to mock, excluding the initial 'dcos'
-    :type args: [str]
-    :type returncode: int
-    :param stdout: Expected stdout
-    :type stdout: str
-    :param stderr: Expected stderr
-    :type stderr: str
-    :rtype: None
-    """
-
-    returncode_, stdout_, stderr_ = exec_mock(main, args)
-
-    assert returncode_ == returncode
-    assert stdout_ == stdout
-    assert stderr_ == stderr
-
-
-def mock_called_some_args(mock, *args, **kwargs):
-    """Convience method for some mock assertions.  Returns True if the
-    arguments to one of the calls of `mock` contains `args` and
-    `kwargs`.
-
-    :param mock: the mock to check
-    :type mock: mock.Mock
-    :returns: True if the arguments to one of the calls for `mock`
-    contains `args` and `kwargs`.
-    :rtype: bool
-    """
-
-    for call in mock.call_args_list:
-        call_args, call_kwargs = call
-
-        if any(arg not in call_args for arg in args):
-            continue
-
-        if any(k not in call_kwargs or call_kwargs[k] != v
-               for k, v in kwargs.items()):
-            continue
-
-        return True
-
-    return False
-
-
 def watch_deployment(deployment_id, count):
-    """ Wait for a deployment to complete.
+    """Wait for a deployment to complete.
 
     :param deployment_id: deployment id
     :type deployment_id: str
@@ -183,8 +101,21 @@ def watch_deployment(deployment_id, count):
     assert stderr == b''
 
 
+def watch_job_deployments(count=300):
+    """Wait for all deployments to complete.
+
+    :param count: max number of seconds to wait
+    :type count: int
+    :rtype: None
+    """
+
+    deps = list_job_deployments()
+    for dep in deps:
+        watch_deployment(dep['id'], count)
+
+
 def watch_all_deployments(count=300):
-    """ Wait for all deployments to complete.
+    """Wait for all deployments to complete.
 
     :param count: max number of seconds to wait
     :type count: int
@@ -219,6 +150,19 @@ def wait_for_service(service_name, number_of_services=1, max_count=300):
         count += 1
 
 
+def add_job(app_path):
+    """ Add a job, and wait for it to deploy
+
+    :param app_path: path to job's json definition
+    :type app_path: str
+    :param wait: whether to wait for the deploy
+    :type wait: bool
+    :rtype: None
+    """
+
+    assert_command(['dcos', 'job', 'add', app_path])
+
+
 def add_app(app_path, wait=True):
     """ Add an app, and wait for it to deploy
 
@@ -249,7 +193,19 @@ def remove_app(app_id):
     :rtype: None
     """
 
-    assert_command(['dcos', 'marathon', 'app', 'remove', app_id])
+    assert_command(['dcos', 'marathon', 'app', 'remove', '--force', app_id])
+
+
+def remove_job(app_id):
+    """ Remove a job
+
+    :param app_id: id of app to remove
+    :type app_id: str
+    :rtype: None
+    """
+
+    assert_command(['dcos', 'job', 'remove',
+                    '--stop-current-job-runs', app_id])
 
 
 def package_install(package, deploy=False, args=[]):
@@ -345,6 +301,34 @@ def list_deployments(expected_count=None, app_id=None):
     return result
 
 
+def list_job_deployments(expected_count=None, app_id=None):
+    """Get all active deployments.
+
+    :param expected_count: assert that number of active deployments
+    equals `expected_count`
+    :type expected_count: int
+    :param app_id: only get deployments for this app
+    :type app_id: str
+    :returns: active deployments
+    :rtype: [dict]
+    """
+
+    cmd = ['dcos', 'job', 'list', '--json']
+    if app_id is not None:
+        cmd.append(app_id)
+
+    returncode, stdout, stderr = exec_command(cmd)
+
+    result = json.loads(stdout.decode('utf-8'))
+
+    assert returncode == 0
+    if expected_count is not None:
+        assert len(result) == expected_count
+    assert stderr == b''
+
+    return result
+
+
 def show_app(app_id, version=None):
     """Show details of a Marathon application.
 
@@ -372,6 +356,54 @@ def show_app(app_id, version=None):
     assert result['id'] == '/' + app_id
 
     return result
+
+
+def show_job(app_id):
+    """Show details of a Metronome job.
+
+    :param app_id: The id for the application
+    :type app_id: str
+    :returns: The requested Metronome job.
+    :rtype: dict
+    """
+
+    cmd = ['dcos', 'job', 'show', app_id]
+
+    returncode, stdout, stderr = exec_command(cmd)
+
+    assert returncode == 0
+    assert stderr == b''
+
+    result = json.loads(stdout.decode('utf-8'))
+    assert isinstance(result, dict)
+    assert result['id'] == app_id
+
+    return result
+
+
+def show_job_schedule(app_id, schedule_id):
+    """Show details of a Metronome schedule.
+
+    :param app_id: The id for the job
+    :type app_id: str
+    :param schedule_id: The id for the schedule
+    :type schedule_id: str
+    :returns: The requested Metronome job.
+    :rtype: dict
+    """
+
+    cmd = ['dcos', 'job', 'schedule', 'show', app_id, '--json']
+
+    returncode, stdout, stderr = exec_command(cmd)
+
+    assert returncode == 0
+    assert stderr == b''
+
+    result = json.loads(stdout.decode('utf-8'))
+    assert isinstance(result[0], dict)
+    assert result[0]['id'] == schedule_id
+
+    return result[0]
 
 
 def service_shutdown(service_id):
@@ -403,11 +435,11 @@ def delete_zk_node(znode):
     :rtype: None
     """
 
-    dcos_url = util.get_config_vals(['core.dcos_url'])[0]
+    dcos_url = config.get_config_val('core.dcos_url')
     znode_url = urllib.parse.urljoin(
         dcos_url,
         '/exhibitor/exhibitor/v1/explorer/znode/{}'.format(znode))
-    requests.delete(znode_url)
+    http.delete(znode_url)
 
 
 def assert_lines(cmd, num_lines):
@@ -427,17 +459,14 @@ def assert_lines(cmd, num_lines):
     assert len(stdout.decode('utf-8').split('\n')) - 1 == num_lines
 
 
-def file_bytes(path):
-    """ Read all bytes from a file
-
+def file_json_ast(path):
+    """Returns the JSON AST parsed from file
     :param path: path to file
     :type path: str
-    :rtype: bytes
-    :returns: bytes from the file
+    :returns: parsed JSON AST
     """
-
     with open(path) as f:
-        return six.b(f.read())
+        return json.load(f)
 
 
 def file_json(path):
@@ -479,6 +508,65 @@ def app(path, app_id, wait=True):
 
 
 @contextlib.contextmanager
+def job(path, app_id):
+    """Context manager that deploys an app on entrance, and removes it on
+    exit.
+
+    :param path: path to app's json definition:
+    :type path: str
+    :param app_id: app id
+    :type app_id: str
+    :param wait: whether to wait for the deploy
+    :type wait: bool
+    :rtype: None
+    """
+
+    add_job(path)
+    try:
+        yield
+    finally:
+        remove_job(app_id)
+
+
+@contextlib.contextmanager
+def update_config(name, value, env=None):
+    """ Context manager for altering config for tests
+
+    :param key: <key>
+    :type key: str
+    :param value: <value>
+    :type value: str
+    ;param env: env vars
+    :type env: dict
+    :rtype: None
+    """
+
+    returncode, stdout, _ = exec_command(
+        ['dcos', 'config', 'show', name], env)
+
+    result = None
+    # config param already exists
+    if returncode == 0:
+        result = json.loads('"' + stdout.decode('utf-8').strip() + '"')
+
+    # if we are setting a value
+    if value is not None:
+        config_set(name, value, env)
+    # only unset if the config param already exists
+    elif result is not None:
+        config_unset(name, env)
+
+    try:
+        yield
+    finally:
+        # return config to previous state
+        if result is not None:
+            config_set(name, result, env)
+        else:
+            exec_command(['dcos', 'config', 'unset', name], env)
+
+
+@contextlib.contextmanager
 def package(package_name, deploy=False, args=[]):
     """Context manager that deploys an app on entrance, and removes it on
     exit.
@@ -498,23 +586,6 @@ def package(package_name, deploy=False, args=[]):
         watch_all_deployments()
 
 
-@contextlib.contextmanager
-def mock_args(args):
-    """ Context manager that mocks sys.args and captures stdout/stderr
-
-    :param args: sys.args values to mock
-    :type args: [str]
-    :rtype: None
-    """
-    with mock.patch('sys.argv', [util.which('dcos')] + args):
-        stdout, stderr = sys.stdout, sys.stderr
-        sys.stdout, sys.stderr = six.StringIO(), six.StringIO()
-        try:
-            yield sys.stdout, sys.stderr
-        finally:
-            sys.stdout, sys.stderr = stdout, stderr
-
-
 def popen_tty(cmd):
     """Open a process with stdin connected to a pseudo-tty.  Returns a
 
@@ -527,6 +598,8 @@ def popen_tty(cmd):
     :rtype: (Popen, int)
 
     """
+
+    import pty
     master, slave = pty.openpty()
     proc = subprocess.Popen(cmd,
                             stdin=slave,
@@ -554,7 +627,7 @@ def ssh_output(cmd):
     proc, master = popen_tty(cmd)
 
     # wait for the ssh connection
-    time.sleep(8)
+    time.sleep(5)
 
     proc.poll()
     returncode = proc.returncode
@@ -585,31 +658,37 @@ def config_set(key, value, env=None):
     :type env: dict
     :rtype: None
     """
-    returncode, _, stderr = exec_command(
+    returncode, stdout, _ = exec_command(
         ['dcos', 'config', 'set', key, value],
         env=env)
 
     assert returncode == 0
-    assert stderr == b''
+    assert stdout == b''
 
 
-def config_unset(key, index=None, env=None):
+def config_unset(key, env=None):
     """ dcos config unset <key> --index=<index>
 
     :param key: <key>
     :type key: str
-    :param index: <index>
-    :type index: str
     :param env: env vars
     :type env: dict
     :rtype: None
     """
 
     cmd = ['dcos', 'config', 'unset', key]
-    if index is not None:
-        cmd.append('--index={}'.format(index))
 
     returncode, stdout, stderr = exec_command(cmd, env=env)
 
     assert returncode == 0
-    assert stderr == b''
+    assert stdout == b''
+
+
+def base64_to_dict(byte_string):
+    """
+    :param byte_string: base64 encoded string
+    :type byte_string: str
+    :return: python dictionary decoding of byte_string
+    :rtype dict
+    """
+    return json.loads(base64.b64decode(byte_string).decode('utf-8'))

@@ -1,0 +1,18 @@
+Command line utility for the Mesosphere Datacenter Operating
+System (DC/OS). The Mesosphere DC/OS is a distributed operating
+system built around Apache Mesos. This utility provides tools
+for easy management of a DC/OS installation.
+
+Available DC/OS commands:
+
+	auth           	Authenticate to DC/OS cluster
+	config         	Manage the DC/OS configuration file
+	help           	Display help information about DC/OS
+	job            	Deploy and manage jobs in DC/OS
+	marathon       	Deploy and manage applications to DC/OS
+	node           	Administer and manage DC/OS cluster nodes
+	package        	Install and manage DC/OS software packages
+	service        	Manage DC/OS services
+	task           	Manage DC/OS tasks
+
+Get detailed command description with 'dcos <command> --help'.

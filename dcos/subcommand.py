@@ -1,13 +1,20 @@
 from __future__ import print_function
 
+import hashlib
 import json
 import os
+import platform
 import shutil
-import subprocess
-import tempfile
+import stat
+import sys
+import zipfile
+from distutils.version import LooseVersion
+from subprocess import PIPE
 
+import requests
 from dcos import constants, util
 from dcos.errors import DCOSException
+from dcos.subprocess import Subproc
 
 logger = util.get_logger(__name__)
 
@@ -21,7 +28,11 @@ def command_executables(subcommand):
     :rtype: str
     """
 
-    executables = [
+    executables = []
+    if subcommand in default_subcommands():
+        executables += [default_list_paths()]
+
+    executables += [
         command_path
         for command_path in list_paths()
         if noun(command_path) == subcommand
@@ -46,8 +57,9 @@ def get_package_commands(package_name):
     :returns: list of all the dcos program paths in package
     :rtype: [str]
     """
-    bin_dir = os.path.join(package_dir(package_name),
-                           constants.DCOS_SUBCOMMAND_VIRTUALENV_SUBDIR,
+
+    bin_dir = os.path.join(_package_dir(package_name),
+                           constants.DCOS_SUBCOMMAND_ENV_SUBDIR,
                            BIN_DIRECTORY)
 
     executables = []
@@ -62,6 +74,18 @@ def get_package_commands(package_name):
     return executables
 
 
+def default_list_paths():
+    """List the real path to dcos executable
+
+    :returns: list dcos program path
+    :rtype: str
+    """
+
+    # Let's get all the default subcommands
+    binpath = util.dcos_bin_path()
+    return os.path.join(binpath, "dcos")
+
+
 def list_paths():
     """List the real path to executable dcos subcommand programs.
 
@@ -69,20 +93,11 @@ def list_paths():
     :rtype: [str]
     """
 
-    # Let's get all the default subcommands
-    binpath = util.dcos_bin_path()
-    commands = [
-        os.path.join(binpath, filename)
-        for filename in os.listdir(binpath)
-        if (filename.startswith(constants.DCOS_COMMAND_PREFIX) and
-            _is_executable(os.path.join(binpath, filename)))
-    ]
-
     subcommands = []
     for package in distributions():
         subcommands += get_package_commands(package)
 
-    return commands + subcommands
+    return subcommands
 
 
 def _is_executable(path):
@@ -113,10 +128,21 @@ def distributions():
                 os.path.join(
                     subcommand_dir,
                     subdir,
-                    constants.DCOS_SUBCOMMAND_VIRTUALENV_SUBDIR))
+                    constants.DCOS_SUBCOMMAND_ENV_SUBDIR))
         ]
     else:
         return []
+
+
+# must also add subcommand name to dcoscli.subcommand._default_modules
+def default_subcommands():
+    """List the default dcos cli subcommands
+
+    :returns: list of all the default dcos cli subcommands
+    :rtype: [str]
+    """
+    return ["auth", "config", "help", "job", "marathon",
+            "node", "package", "service", "task"]
 
 
 def documentation(executable_path):
@@ -143,23 +169,27 @@ def info(executable_path, path_noun):
     :rtype: str
     """
 
-    out = subprocess.check_output(
+    out = Subproc().check_output(
         [executable_path, path_noun, '--info'])
 
     return out.decode('utf-8').strip()
 
 
-def config_schema(executable_path):
+def config_schema(executable_path, noun=None):
     """Collects subcommand config schema
 
     :param executable_path: real path to the dcos subcommand
     :type executable_path: str
+    :param noun: name of subcommand
+    :type noun: str
     :returns: the subcommand config schema
     :rtype: dict
     """
+    if noun is None:
+        noun = noun(executable_path)
 
-    out = subprocess.check_output(
-        [executable_path, noun(executable_path), '--config-schema'])
+    out = Subproc().check_output(
+        [executable_path, noun, '--config-schema'])
 
     return json.loads(out.decode('utf-8'))
 
@@ -179,109 +209,151 @@ def noun(executable_path):
     return noun
 
 
-def _write_package_json(pkg, revision):
+def _write_package_json(pkg):
     """ Write package.json locally.
 
     :param pkg: the package being installed
-    :type pkg: Package
-    :param revision: the package revision to install
-    :type revision: str
+    :type pkg: PackageVersion
     :rtype: None
     """
 
-    pkg_dir = package_dir(pkg.name())
+    pkg_dir = _package_dir(pkg.name())
 
     package_path = os.path.join(pkg_dir, 'package.json')
 
-    package_json = pkg.package_json(revision)
+    package_json = pkg.package_json()
 
     with util.open_file(package_path, 'w') as package_file:
         json.dump(package_json, package_file)
 
 
-def _write_package_revision(pkg, revision):
-    """ Write package revision locally.
+def _hashfile(filename):
+    """Calculates the sha256 of a file
 
-    :param pkg: the package being installed
-    :type pkg: Package
-    :param revision: the package revision to install
-    :type revision: str
+    :param filename: path to the file to sum
+    :type filename: str
+    :returns: digest in hexadecimal
+    :rtype: str
+    """
+
+    hasher = hashlib.sha256()
+    with open(filename, 'rb') as f:
+        for chunk in iter(lambda: f.read(4096), b''):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def _check_hash(filename, content_hashes):
+    """Validates whether downloaded binary matches expected hash
+
+    :param filename: path to binary
+    :type filename: str
+    :param content_hashes: list of hash algorithms/value
+    :type content_hashes: [{"algo": <str>, "value": <str>}]
+    :returns: None if valid hash, else throws exception
     :rtype: None
     """
 
-    pkg_dir = package_dir(pkg.name())
+    content_hash = next((contents for contents in content_hashes
+                        if contents.get("algo") == "sha256"),
+                        None)
+    if content_hash:
+        expected_value = content_hash.get("value")
+        actual_value = _hashfile(filename)
+        if expected_value != actual_value:
+            raise DCOSException(
+                "The hash for the downloaded subcommand [{}] "
+                "does not match the expected value [{}]. Aborting...".format(
+                    actual_value, expected_value))
+        else:
+            return
+    else:
+        raise DCOSException(
+            "Hash algorithm specified is unsupported. "
+            "Please contact the package maintainer. Aborting...")
 
-    revision_path = os.path.join(pkg_dir, 'version')
 
-    with util.open_file(revision_path, 'w') as revision_file:
-        revision_file.write(revision)
+def _get_cli_binary_info(cli_resources):
+    """Find compatible cli binary, if one exists
 
-
-def _write_package_source(pkg):
-    """ Write package source locally.
-
-    :param pkg: the package being installed
-    :type pkg: Package
-    :rtype: None
+    :param cli_resources: cli property of resource.json
+    :type resources: {}
+    :returns: {"url": <str>, "kind": <str>, "contentHash": [{}]}
+    :rtype: {} | None
     """
 
-    pkg_dir = package_dir(pkg.name())
+    if "binaries" in cli_resources:
+        binaries = cli_resources["binaries"]
+        arch = platform.architecture()[0]
+        if arch != "64bit":
+            raise DCOSException(
+                "There is no compatible subcommand for your architecture [{}] "
+                "We only support x86-64. Aborting...".format(arch))
+        system = platform.system().lower()
+        binary = binaries.get(system)
+        if binary is None:
+            raise DCOSException(
+                "There is not compatible subcommand for your system [{}] "
+                "Aborting...".format(system))
+        elif "x86-64" in binary:
+            return binary["x86-64"]
 
-    source_path = os.path.join(pkg_dir, 'source')
+    raise DCOSException(
+        "The CLI subcommand has unexpected format [{}]. "
+        "Please contact the package maintainer. Aborting...".format(
+            cli_resources))
 
-    with util.open_file(source_path, 'w') as source_file:
-        source_file.write(pkg.registry.source.url)
 
-
-def _install_env(pkg, revision, options):
-    """ Install subcommand virtual env.
+def _install_cli(pkg):
+    """Install subcommand cli
 
     :param pkg: the package to install
-    :type pkg: Package
-    :param revision: the package revision to install
-    :type revision: str
-    :param options: package parameters
-    :type options: dict
+    :type pkg: PackageVersion
     :rtype: None
     """
 
-    pkg_dir = package_dir(pkg.name())
+    with util.remove_path_on_error(_package_dir(pkg.name())) as pkg_dir:
+        env_dir = os.path.join(pkg_dir, constants.DCOS_SUBCOMMAND_ENV_SUBDIR)
 
-    install_operation = pkg.command_json(revision, options)
+        resources = pkg.resource_json()
 
-    env_dir = os.path.join(pkg_dir,
-                           constants.DCOS_SUBCOMMAND_VIRTUALENV_SUBDIR)
+        if resources and resources.get("cli") is not None:
+            binary = resources["cli"]
+            binary_cli = _get_cli_binary_info(binary)
+            _install_with_binary(
+                pkg.name(),
+                env_dir,
+                binary_cli)
+        elif pkg.command_json() is not None:
+            install_operation = pkg.command_json()
+            if 'pip' in install_operation:
+                _install_with_pip(
+                    pkg.name(),
+                    env_dir,
+                    install_operation['pip'])
+            else:
+                raise DCOSException(
+                    "Installation methods '{}' not supported".format(
+                        install_operation.keys()))
+        else:
+            raise DCOSException(
+                "Could not find a CLI subcommand for your platform")
 
-    if 'pip' in install_operation:
-        _install_with_pip(
-            pkg.name(),
-            env_dir,
-            install_operation['pip'])
-    else:
-        raise DCOSException("Installation methods '{}' not supported".format(
-            install_operation.keys()))
 
-
-def install(pkg, revision, options):
+def install(pkg):
     """Installs the dcos cli subcommand
 
     :param pkg: the package to install
     :type pkg: Package
-    :param revision: the package revision to install
-    :type revision: str
-    :param options: package parameters
-    :type options: dict
     :rtype: None
     """
 
-    pkg_dir = package_dir(pkg.name())
+    pkg_dir = _package_dir(pkg.name())
     util.ensure_dir_exists(pkg_dir)
 
-    _write_package_json(pkg, revision)
-    _write_package_revision(pkg, revision)
-    _write_package_source(pkg)
+    _write_package_json(pkg)
 
-    _install_env(pkg, revision, options)
+    _install_cli(pkg)
 
 
 def _subcommand_dir():
@@ -291,8 +363,7 @@ def _subcommand_dir():
                                            constants.DCOS_SUBCOMMAND_SUBDIR))
 
 
-# TODO(mgummelt): should be made private after "dcos subcommand" is removed
-def package_dir(name):
+def _package_dir(name):
     """ Returns ~/.dcos/subcommands/<name>
 
     :param name: package name
@@ -312,7 +383,7 @@ def uninstall(package_name):
     :rtype: bool
     """
 
-    pkg_dir = package_dir(package_name)
+    pkg_dir = _package_dir(package_name)
 
     if os.path.isdir(pkg_dir):
         shutil.rmtree(pkg_dir)
@@ -336,9 +407,98 @@ def _find_virtualenv(bin_directory):
         virtualenv_path = util.which('virtualenv')
 
     if virtualenv_path is None:
-        raise DCOSException('Unable to find the virtualenv program')
+        msg = ("Unable to install CLI subcommand. "
+               "Missing required program 'virtualenv'.\n"
+               "Please see installation instructions: "
+               "https://virtualenv.pypa.io/en/latest/installation.html")
+        raise DCOSException(msg)
 
     return virtualenv_path
+
+
+def _download_and_store(url, location):
+    """Download given url and store in location on disk
+
+    :param url: url to download
+    :type url: str
+    :param location: path to file to store url
+    :type location: str
+    :rtype: None
+    """
+
+    with open(location, 'wb') as f:
+        r = requests.get(url, stream=True)
+        for chunk in r.iter_content(1024):
+            f.write(chunk)
+
+
+def _install_with_binary(
+        package_name,
+        env_directory,
+        binary_cli):
+    """
+    :param package_name: the name of the package
+    :type package_name: str
+    :param env_directory: the path to the directory in which to install the
+                          package's binary_cli
+    :type env_directory: str
+    :param binary_cli: binary cli to install
+    :type binary_cli: str
+    :rtype: None
+    """
+
+    binary_url, kind = binary_cli.get("url"), binary_cli.get("kind")
+
+    try:
+        env_bin_dir = os.path.join(env_directory, BIN_DIRECTORY)
+
+        if kind in ["executable", "zip"]:
+            with util.temptext() as file_tmp:
+                _, binary_tmp = file_tmp
+                _download_and_store(binary_url, binary_tmp)
+                _check_hash(binary_tmp, binary_cli.get("contentHash"))
+
+                if kind == "executable":
+                    util.ensure_dir_exists(env_bin_dir)
+                    binary_name = "dcos-{}".format(package_name)
+                    if util.is_windows_platform():
+                        binary_name += '.exe'
+                    binary_file = os.path.join(env_bin_dir, binary_name)
+
+                    # copy to avoid windows error of moving open file
+                    # binary_tmp will be removed by context manager
+                    shutil.copy(binary_tmp, binary_file)
+                else:
+                    # kind == "zip"
+                    with zipfile.ZipFile(binary_tmp) as zf:
+                        zf.extractall(env_directory)
+
+            # check contents for package_name/env/bin folder structure
+            if not os.path.exists(env_bin_dir):
+                msg = (
+                    "CLI subcommand for [{}] has an unexpected format. "
+                    "Please contact the package maintainer".format(
+                        package_name))
+                raise DCOSException(msg)
+        else:
+            msg = ("CLI subcommand for [{}] is an unsupported type: {}"
+                   "Please contact the package maintainer".format(
+                       package_name, kind))
+            raise DCOSException(msg)
+
+        # make binar(ies) executable
+        for f in os.listdir(env_bin_dir):
+            binary = os.path.join(env_bin_dir, f)
+            if (f.startswith(constants.DCOS_COMMAND_PREFIX)):
+                st = os.stat(binary)
+                os.chmod(binary, st.st_mode | stat.S_IEXEC)
+    except DCOSException:
+        raise
+    except Exception as e:
+        logger.exception(e)
+        raise _generic_error(package_name)
+
+    return None
 
 
 def _install_with_pip(
@@ -361,60 +521,75 @@ def _install_with_pip(
 
     pip_path = os.path.join(env_directory, BIN_DIRECTORY, 'pip')
     if not os.path.exists(pip_path):
+        virtualenv_path = _find_virtualenv(bin_directory)
+
+        virtualenv_version = _execute_command(
+            [virtualenv_path, '--version'])[0].strip().decode('utf-8')
+        if LooseVersion("12") > LooseVersion(virtualenv_version):
+            msg = ("Unable to install CLI subcommand. "
+                   "Required program 'virtualenv' must be version 12+, "
+                   "currently version {}\n"
+                   "Please see installation instructions: "
+                   "https://virtualenv.pypa.io/en/latest/installation.html"
+                   "".format(virtualenv_version))
+            raise DCOSException(msg)
+
         cmd = [_find_virtualenv(bin_directory), env_directory]
 
-        if _execute_install(cmd) != 0:
+        if _execute_command(cmd)[2] != 0:
             raise _generic_error(package_name)
 
-    with tempfile.NamedTemporaryFile() as temp_file:
+    # Do not replace util.temptext NamedTemporaryFile
+    # otherwise bad things will happen on Windows
+    with util.temptext() as text_file:
+        fd, requirement_path = text_file
+
         # Write the requirements to the file
-        for line in requirements:
-            temp_file.write((line + os.linesep).encode('utf-8'))
-        # Make sure that we flush the file before passing it to pip
-        temp_file.flush()
+        with os.fdopen(fd, 'w') as requirements_file:
+            for line in requirements:
+                print(line, file=requirements_file)
 
         cmd = [
             os.path.join(env_directory, BIN_DIRECTORY, 'pip'),
             'install',
             '--requirement',
-            temp_file.name,
+            requirement_path,
         ]
 
-        if _execute_install(cmd) != 0:
+        if _execute_command(cmd)[2] != 0:
             # We should remove the directory that we just created
             if new_package_dir:
                 shutil.rmtree(env_directory)
 
             raise _generic_error(package_name)
-
     return None
 
 
-def _execute_install(command):
+def _execute_command(command):
     """
-    :param command: the install command to execute
+    :param command: a command to execute
     :type command: list of str
-    :returns: the process return code
-    :rtype: int
+    :returns: stdout, stderr, the process return code
+    :rtype: str, str, int
     """
 
     logger.info('Calling: %r', command)
 
-    process = subprocess.Popen(
+    process = Subproc().Popen(
         command,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
+        stdout=PIPE,
+        stderr=PIPE)
 
     stdout, stderr = process.communicate()
 
     if process.returncode != 0:
-        logger.error("Install script's stdout: %s", stdout)
-        logger.error("Install script's stderr: %s", stderr)
+        logger.error("Command script's stdout: %s", stdout)
+        logger.error("Command script's stderr: %s", stderr)
     else:
-        logger.info("Install script's stdout: %s", stdout)
-        logger.info("Install script's stderr: %s", stderr)
+        logger.info("Command script's stdout: %s", stdout)
+        logger.info("Command script's stderr: %s", stderr)
 
-    return process.returncode
+    return stdout, stderr, process.returncode
 
 
 def _generic_error(package_name):
@@ -447,16 +622,16 @@ class InstalledSubcommand(object):
         :rtype: str
         """
 
-        return package_dir(self.name)
+        return _package_dir(self.name)
 
     def package_revision(self):
         """
-        :returns: this subcommand's revision.
+        :returns: this subcommand's version.
         :rtype: str
         """
 
-        revision_path = os.path.join(self._dir(), 'version')
-        return util.read_file(revision_path)
+        version_path = os.path.join(self._dir(), 'version')
+        return util.read_file(version_path)
 
     def package_source(self):
         """
@@ -476,3 +651,49 @@ class InstalledSubcommand(object):
         package_json_path = os.path.join(self._dir(), 'package.json')
         with util.open_file(package_json_path) as package_json_file:
             return util.load_json(package_json_file)
+
+
+class SubcommandProcess():
+
+    def __init__(self, executable, command, args):
+        """Representes a subcommand running by a forked process
+
+        :param executable: executable to run
+        :type executable: executable
+        :param command: command to run by executable
+        :type command: str
+        :param args: arguments for command
+        :type args: [str]
+        """
+
+        self._executable = executable
+        self._command = command
+        self._args = args
+
+    def run_and_capture(self):
+        """
+        Run a command and capture exceptions. This is a blocking call
+        :returns: tuple of exitcode, error (or None)
+        :rtype: int, str | None
+        """
+
+        subproc = Subproc().Popen(
+            [self._executable,  self._command] + self._args,
+            stderr=PIPE)
+
+        err = ''
+        while subproc.poll() is None:
+            line = subproc.stderr.readline().decode('utf-8')
+            err += line
+            sys.stderr.write(line)
+            sys.stderr.flush()
+
+        exitcode = subproc.poll()
+        # We only want to catch exceptions, not other stderr messages
+        # (such as "task does not exist", so we look for the 'Traceback'
+        # string.  This only works for python, so we'll need to revisit
+        # this in the future when we support subcommands written in other
+        # languages.
+        err = ('Traceback' in err and err) or None
+
+        return exitcode, err

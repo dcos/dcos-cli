@@ -1,0 +1,25 @@
+# This image runs the dcos-cli test suite.
+
+FROM ubuntu:15.04
+MAINTAINER support@mesosphere.com
+
+RUN apt-get update && apt-get install -y \
+  httpie \
+  jq \
+  make \
+  openssh-client \
+  git \
+  sudo \
+&& sudo apt-get update --fix-missing \
+&& sudo apt-get install -y python-dev build-essential python3-pip python3-venv \
+&& pip3 install pip --upgrade \
+&& python3 -m pip install pyinstaller==3.1.1
+
+ADD . /dcos-cli
+WORKDIR /dcos-cli
+RUN make clean env packages
+
+WORKDIR /dcos-cli/cli
+RUN make clean env packages
+
+RUN make binary && PATH=/dcos-cli/cli/dist:$PATH

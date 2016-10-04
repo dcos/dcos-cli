@@ -1,24 +1,22 @@
 import collections
-import fcntl
 import json
 import os
 import re
 import subprocess
+import sys
 import time
 
 import dcos.util as util
-from dcos import mesos
-from dcos.errors import DCOSException
 from dcos.util import create_schema
-from dcoscli.task.main import main
 
-from mock import MagicMock, patch
+import pytest
 
 from ..fixtures.task import task_fixture
-from .common import (add_app, app, assert_command, assert_lines, assert_mock,
-                     exec_command, remove_app, watch_all_deployments)
+from .common import (add_app, app, assert_command, assert_lines, exec_command,
+                     remove_app, watch_all_deployments)
 
 SLEEP_COMPLETED = 'tests/data/marathon/apps/sleep-completed.json'
+SLEEP_COMPLETED1 = 'tests/data/marathon/apps/sleep-completed1.json'
 SLEEP1 = 'tests/data/marathon/apps/sleep1.json'
 SLEEP2 = 'tests/data/marathon/apps/sleep2.json'
 FOLLOW = 'tests/data/file/follow.json'
@@ -53,7 +51,7 @@ def test_help():
 
 
 def test_info():
-    stdout = b"Manage DCOS tasks\n"
+    stdout = b"Manage DC/OS tasks\n"
     assert_command(['dcos', 'task', '--info'], stdout=stdout)
 
 
@@ -68,7 +66,7 @@ def test_task():
     assert isinstance(tasks, collections.Sequence)
     assert len(tasks) == NUM_TASKS
 
-    schema = create_schema(task_fixture().dict())
+    schema = create_schema(task_fixture().dict(), True)
     schema['required'].remove('labels')
 
     for task in tasks:
@@ -81,13 +79,13 @@ def test_task_table():
 
 def test_task_completed():
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'task', '--completed', '--json'])
+        ['dcos', 'task', '--completed', '--json', '*-app*'])
     assert returncode == 0
     assert stderr == b''
     assert len(json.loads(stdout.decode('utf-8'))) > NUM_TASKS
 
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'task', '--json'])
+        ['dcos', 'task', '--json', '*-app*'])
     assert returncode == 0
     assert stderr == b''
     assert len(json.loads(stdout.decode('utf-8'))) == NUM_TASKS
@@ -121,7 +119,7 @@ def test_log_single_file():
 
     assert returncode == 0
     assert stderr == b''
-    assert len(stdout.decode('utf-8').split('\n')) == 5
+    assert len(stdout.decode('utf-8').split('\n')) > 0
 
 
 def test_log_missing_file():
@@ -147,6 +145,8 @@ def test_log_lines_invalid():
                    returncode=1)
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason="Using Windows unsupported import (fcntl)")
 def test_log_follow():
     """ Test --follow """
     # verify output
@@ -178,11 +178,13 @@ def test_log_two_tasks():
     assert stderr == b''
 
     lines = stdout.decode('utf-8').split('\n')
-    assert len(lines) == 11
+    assert len(lines) == 17
     assert re.match('===>.*<===', lines[0])
-    assert re.match('===>.*<===', lines[5])
+    assert re.match('===>.*<===', lines[8])
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='Using Windows unsupported import (fcntl)')
 def test_log_two_tasks_follow():
     """ Test tailing a single file on two separate tasks with --follow """
     with app(TWO_TASKS_FOLLOW, 'two-tasks-follow'):
@@ -229,56 +231,47 @@ def test_log_completed():
     assert len(stdout.decode('utf-8').split('\n')) > 4
 
 
-def test_log_master_unavailable():
-    """ Test master's state.json being unavailable """
-    client = mesos.DCOSClient()
-    client.get_master_state = _mock_exception()
+def test_ls_no_params():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'task', 'ls'])
 
-    with patch('dcos.mesos.DCOSClient', return_value=client):
-        args = ['task', 'log', '_']
-        assert_mock(main, args, returncode=1, stderr=(b"exception\n"))
+    assert returncode == 0
+    assert stderr == b''
 
-
-def test_log_slave_unavailable():
-    """ Test slave's state.json being unavailable """
-    client = mesos.DCOSClient()
-    client.get_slave_state = _mock_exception()
-
-    with patch('dcos.mesos.DCOSClient', return_value=client):
-        args = ['task', 'log', 'test-app1']
-        stderr = (b"""Error accessing slave: exception\n"""
-                  b"""No matching tasks. Exiting.\n""")
-        assert_mock(main, args, returncode=1, stderr=stderr)
-
-
-def test_log_file_unavailable():
-    """ Test a file's read.json being unavailable """
-    files = [mesos.MesosFile('bogus')]
-    files[0].read = _mock_exception('exception')
-
-    with patch('dcoscli.task.main._mesos_files', return_value=files):
-        args = ['task', 'log', 'test-app1']
-        stderr = b"No files exist. Exiting.\n"
-        assert_mock(main, args, returncode=1, stderr=stderr)
+    ls_line = 'stderr  stderr.logrotate.conf  stdout  stdout.logrotate.conf'
+    lines = stdout.decode('utf-8').split('\n')
+    assert len(lines) == 7
+    assert re.match('===>.*<===', lines[0])
+    assert re.match(ls_line, lines[1])
+    assert re.match('===>.*<===', lines[2])
+    assert re.match(ls_line, lines[3])
+    assert re.match('===>.*<===', lines[4])
+    assert re.match(ls_line, lines[5])
 
 
 def test_ls():
+    stdout = b'stderr  stderr.logrotate.conf  stdout  stdout.logrotate.conf\n'
     assert_command(['dcos', 'task', 'ls', 'test-app1'],
-                   stdout=b'stderr  stdout\n')
+                   stdout=stdout)
 
 
 def test_ls_multiple_tasks():
+    ls_line = 'stderr  stderr.logrotate.conf  stdout  stdout.logrotate.conf'
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'task', 'ls', 'test-app'])
+    lines = stdout.decode('utf-8').split('\n')
+    assert len(lines) == 5
+    assert re.match('===>.*<===', lines[0])
+    assert re.match(ls_line, lines[1])
+    assert re.match('===>.*<===', lines[2])
+    assert re.match(ls_line, lines[3])
+
     returncode, stdout, stderr = exec_command(
         ['dcos', 'task', 'ls', 'test-app'])
 
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr.startswith(b'There are multiple tasks with ID matching '
-                             b'[test-app]. Please choose one:\n\t')
-
 
 def test_ls_long():
-    assert_lines(['dcos', 'task', 'ls', '--long', 'test-app1'], 2)
+    assert_lines(['dcos', 'task', 'ls', '--long', 'test-app1'], 4)
 
 
 def test_ls_path():
@@ -293,11 +286,32 @@ def test_ls_bad_path():
         returncode=1)
 
 
-def _mock_exception(contents='exception'):
-    return MagicMock(side_effect=DCOSException(contents))
+def test_ls_completed():
+    # create a completed task
+    with app(SLEEP_COMPLETED1, 'test-app-completed1'):
+        # get its task id
+        task_id_completed = _get_completed_task_id('test-app-completed1')
+
+    """ Test `dcos task ls --completed` """
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'task', 'ls', task_id_completed])
+
+    err = b'Cannot find a task with ID containing "test-app-completed1'
+    assert returncode == 1
+    assert stdout == b''
+    assert stderr.startswith(err)
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'task', 'ls', '--completed', task_id_completed])
+
+    out = b'stderr  stderr.logrotate.conf  stdout  stdout.logrotate.conf\n'
+    assert returncode == 0
+    assert stdout == out
+    assert stderr == b''
 
 
 def _mark_non_blocking(file_):
+    import fcntl
     fcntl.fcntl(file_.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
 
 
@@ -313,3 +327,13 @@ def _uninstall_helloworld(args=[]):
 
 def _uninstall_sleep(app_id='test-app'):
     assert_command(['dcos', 'marathon', 'app', 'remove', app_id])
+
+
+def _get_completed_task_id(app_id='test-app-completed'):
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'task', '--json', app_id])
+    assert returncode == 0
+    tasks = json.loads(stdout.decode('utf-8'))
+    assert len(tasks) == 1
+    task_id = tasks[0]['id']
+    return task_id

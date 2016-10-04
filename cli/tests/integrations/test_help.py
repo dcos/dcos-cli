@@ -9,7 +9,7 @@ def test_help():
 
 def test_info():
     assert_command(['dcos', 'help', '--info'],
-                   stdout=b'Display command line usage information\n')
+                   stdout=b'Display help information about DC/OS\n')
 
 
 def test_version():
@@ -20,19 +20,21 @@ def test_version():
 def test_list():
     stdout = """\
 Command line utility for the Mesosphere Datacenter Operating
-System (DCOS). The Mesosphere DCOS is a distributed operating
+System (DC/OS). The Mesosphere DC/OS is a distributed operating
 system built around Apache Mesos. This utility provides tools
-for easy management of a DCOS installation.
+for easy management of a DC/OS installation.
 
-Available DCOS commands:
+Available DC/OS commands:
 
-\tconfig         \tGet and set DCOS CLI configuration properties
-\thelp           \tDisplay command line usage information
-\tmarathon       \tDeploy and manage applications on the DCOS
-\tnode           \tManage DCOS nodes
-\tpackage        \tInstall and manage DCOS packages
-\tservice        \tManage DCOS services
-\ttask           \tManage DCOS tasks
+\tauth           \tAuthenticate to DC/OS cluster
+\tconfig         \tManage the DC/OS configuration file
+\thelp           \tDisplay help information about DC/OS
+\tjob            \tDeploy and manage jobs in DC/OS
+\tmarathon       \tDeploy and manage applications to DC/OS
+\tnode           \tAdminister and manage DC/OS cluster nodes
+\tpackage        \tInstall and manage DC/OS software packages
+\tservice        \tManage DC/OS services
+\ttask           \tManage DC/OS tasks
 
 Get detailed command description with 'dcos <command> --help'.
 """.encode('utf-8')
@@ -44,6 +46,12 @@ Get detailed command description with 'dcos <command> --help'.
 def test_help_config():
     with open('tests/data/help/config.txt') as content:
         assert_command(['dcos', 'help', 'config'],
+                       stdout=content.read().encode('utf-8'))
+
+
+def test_help_job():
+    with open('tests/data/help/job.txt') as content:
+        assert_command(['dcos', 'help', 'job'],
                        stdout=content.read().encode('utf-8'))
 
 
@@ -74,4 +82,10 @@ def test_help_service():
 def test_help_task():
     with open('tests/data/help/task.txt') as content:
         assert_command(['dcos', 'help', 'task'],
+                       stdout=content.read().encode('utf-8'))
+
+
+def test_help_auth():
+    with open('tests/data/help/auth.txt') as content:
+        assert_command(['dcos', 'help', 'auth'],
                        stdout=content.read().encode('utf-8'))

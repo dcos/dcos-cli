@@ -18,7 +18,7 @@ setup(
     # https://packaging.python.org/en/latest/single_source_version.html
     version=dcoscli.version,
 
-    description='DCOS Command Line Interface',
+    description='DC/OS Command Line Interface',
     long_description=long_description,
 
     # The project's main homepage.
@@ -47,8 +47,6 @@ setup(
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.4',
     ],
@@ -67,12 +65,9 @@ setup(
     install_requires=[
         'dcos=={}'.format(dcoscli.version),
         'docopt>=0.6, <1.0',
-        'pkginfo>=1.2, <2.0',
+        'pkginfo==1.2.1',
         'toml>=0.9, <1.0',
-        'virtualenv>=13.0, <14.0',
-        'rollbar>=0.9, <1.0',
-        'futures>=3.0, <4.0',
-        'oauth2client>=1.4, <2.0',
+        'virtualenv>=13.0, <16.0',
     ],
 
     # If there are data files included in your packages that need to be
@@ -82,8 +77,6 @@ setup(
         'dcoscli': [
             'data/*.json',
             'data/help/*.txt',
-            'data/config-schema/*.json',
-            'data/universe-schema/*.json',
         ],
     },
 
@@ -92,14 +85,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
-            'dcos=dcoscli.main:main',
-            'dcos-help=dcoscli.help.main:main',
-            'dcos-config=dcoscli.config.main:main',
-            'dcos-marathon=dcoscli.marathon.main:main',
-            'dcos-package=dcoscli.package.main:main',
-            'dcos-service=dcoscli.service.main:main',
-            'dcos-task=dcoscli.task.main:main',
-            'dcos-node=dcoscli.node.main:main'
+            'dcos=dcoscli.main:main'
         ],
     },
 

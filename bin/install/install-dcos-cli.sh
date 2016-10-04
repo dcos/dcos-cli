@@ -9,7 +9,7 @@ usage()
 
 post_install_message()
 {
-    echo 'Finished installing and configuring DCOS CLI.'
+    echo 'Finished installing and configuring DC/OS CLI.'
     echo ''
     echo 'Run this command to set up your environment and to get started:'
     echo "source $1 && dcos help"
@@ -20,7 +20,7 @@ RC_NAME=""
 write_to_profile()
 {
     echo "" >> ~/"$2";
-    echo "# path to the DCOS CLI binary" >> ~/"$2";
+    echo "# path to the DC/OS CLI binary" >> ~/"$2";
     echo "if [[ \"\$PATH\" != *\"$1\"* ]];" >> ~/"$2";
     echo "  then export PATH=\$PATH:$1;" >> ~/"$2";
     echo "fi" >> ~/"$2";
@@ -66,12 +66,44 @@ check_pip_version()
     fi
 }
 
+check_dcoscli_version()
+{
+    if [ ! -z "$DCOS_CLI_VERSION" ]; then
+        # result is the larger of the two versions
+        COSMOS_VERSION="0.4.0"
+        # convert the str to numbers, sort, and return the larger
+        result=$(echo -e "$COSMOS_VERSION\n$DCOS_CLI_VERSION" | sed '/^$/d' | sort -nr | head -1)
+        # if DCOS_CLI_VERSION < COSMOS_VERSION, exit
+        if [ "$result" != "$DCOS_CLI_VERSION" ]; then
+                echo "Please use legacy installer for dcoscli versions <0.4.0. Aborting.";
+                exit 1;
+        fi
+    fi
+}
+
+validate_dcos_url()
+{
+    curl -f -k -s ${DCOS_URL} 2>&1 >/dev/null
+    echo $?
+}
+
+get_dcos_environment_version()
+{
+    VER=$(curl -f -k -s ${DCOS_URL}/dcos-metadata/dcos-version.json)
+    if [ $? -eq 22 ]; then
+        echo "1.1"
+    else
+        echo $VER | python -c 'import json,sys;obj=json.load(sys.stdin);print(obj.get("version", "1.0"))'
+    fi
+}
+
 if [ "$#" -lt 2 ]; then
   usage;
   exit 1;
 fi
 
 check_pip_version;
+check_dcoscli_version;
 
 ARGS=( "$@" );
 
@@ -82,7 +114,9 @@ if [[ $VIRTUAL_ENV_PATH =~ \  ]];
 fi
 DCOS_URL=${ARGS[1]}
 
-command -v virtualenv >/dev/null 2>&1 || { echo "Cannot find virtualenv. Aborting."; exit 1; }
+hash curl 2>/dev/null || { echo >&2 "Cannot find curl. You may need to install it by following the documentation at https://dcos.io/docs/usage/cli/install/. Aborting."; exit 1; }
+
+command -v virtualenv >/dev/null 2>&1 || { echo "Cannot find virtualenv. You may need to install it by following the documentation at https://dcos.io/docs/usage/cli/install/. Aborting."; exit 1; }
 
 VIRTUALENV_VERSION=$(virtualenv --version)
 VERSION_REGEX="s#[^0-9]*\([0-9]*\)[.]\([0-9]*\)[.]\([0-9]*\)\([0-9A-Za-z-]*\)#\1#"
@@ -93,16 +127,33 @@ if [ $MAJOR -lt 12 ];
 	exit 1;
 fi
 
-echo "Installing DCOS CLI from PyPI...";
+echo "Installing DC/OS CLI from PyPI...";
 echo "";
+
+if [ "$(validate_dcos_url)" -gt 0 ]; then
+    echo "dcos-url is invalid. Please double check that the URL is formatted correctly and pointing at a valid cluster."
+    exit 1
+fi
+
+DCOS_ENVIRONMENT_VERSION=$(get_dcos_environment_version)
+
+compare_version()
+{
+    python -c "import distutils.version as v, sys; sys.exit(not (v.LooseVersion('"${DCOS_ENVIRONMENT_VERSION}"') < v.LooseVersion('"${1}"')))"
+}
 
 # Let's first setup a virtualenv: we are assuming that the path is absolute
 mkdir -p "$VIRTUAL_ENV_PATH"
 virtualenv "$VIRTUAL_ENV_PATH"
 
-# Install the DCOS CLI package, using version if set
+
+# Install the DC/OS CLI package, using version if set
 if [ -z "$DCOS_CLI_VERSION" ]; then
-    "$VIRTUAL_ENV_PATH/bin/pip" install --quiet "dcoscli"
+    if $(compare_version 1.6.1); then
+        "$VIRTUAL_ENV_PATH/bin/pip" install --quiet "dcoscli<0.4.0"
+    else
+        "$VIRTUAL_ENV_PATH/bin/pip" install --quiet "dcoscli"
+    fi
 else
     "$VIRTUAL_ENV_PATH/bin/pip" install --quiet "dcoscli==$DCOS_CLI_VERSION"
 fi
@@ -113,9 +164,6 @@ dcos config set core.reporting true
 dcos config set core.dcos_url $DCOS_URL
 dcos config set core.ssl_verify false
 dcos config set core.timeout 5
-dcos config set package.cache ~/.dcos/cache
-dcos config set package.sources '["https://github.com/mesosphere/universe/archive/version-1.x.zip"]'
-dcos package update
 
 ADD_PATH=""
 while [ $# -gt 0 ]; do
@@ -131,8 +179,4 @@ case "$ADD_PATH" in
     * ) prompt_add_dcos_path_to_profile "$VIRTUAL_ENV_PATH/bin";;
 esac
 
-if [ -z "$RC_NAME" ]; then
-    post_install_message "$ENV_SETUP"
-else
-    post_install_message "~/$RC_NAME"
-fi
+post_install_message "$ENV_SETUP"

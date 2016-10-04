@@ -2,6 +2,7 @@ import contextlib
 import json
 import os
 import re
+import sys
 import threading
 
 from dcos import constants
@@ -9,10 +10,12 @@ from dcos import constants
 import pytest
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
-from .common import (app, assert_command, assert_lines, config_set,
-                     config_unset, exec_command, list_deployments, popen_tty,
-                     show_app, watch_all_deployments, watch_deployment)
+from .common import (app, assert_command, assert_lines,
+                     exec_command, list_deployments, popen_tty,
+                     show_app, update_config, watch_all_deployments,
+                     watch_deployment)
 
+_ZERO_INSTANCE_APP_ID = 'zero-instance-app'
 _ZERO_INSTANCE_APP_INSTANCES = 100
 
 
@@ -29,7 +32,7 @@ def test_version():
 
 def test_info():
     assert_command(['dcos', 'marathon', '--info'],
-                   stdout=b'Deploy and manage applications on the DCOS\n')
+                   stdout=b'Deploy and manage applications to DC/OS\n')
 
 
 def test_about():
@@ -43,24 +46,24 @@ def test_about():
 
 
 @pytest.fixture
-def missing_env():
-    env = os.environ.copy()
-    env.update({
+def env():
+    r = os.environ.copy()
+    r.update({
         constants.PATH_ENV: os.environ[constants.PATH_ENV],
-        constants.DCOS_CONFIG_ENV:
-            os.path.join("tests", "data", "marathon",
-                         "missing_marathon_params.toml")
+        constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "dcos.toml"),
     })
-    return env
+
+    return r
 
 
-def test_missing_config(missing_env):
-    assert_command(
-        ['dcos', 'marathon', 'app', 'list'],
-        returncode=1,
-        stderr=(b'Missing required config parameter: "core.dcos_url".  '
-                b'Please run `dcos config set core.dcos_url <value>`.\n'),
-        env=missing_env)
+def test_missing_config(env):
+    with update_config("core.dcos_url", None, env):
+        assert_command(
+            ['dcos', 'marathon', 'app', 'list'],
+            returncode=1,
+            stderr=(b'Missing required config parameter: "core.dcos_url".  '
+                    b'Please run `dcos config set core.dcos_url <value>`.\n'),
+            env=env)
 
 
 def test_empty_list():
@@ -142,16 +145,24 @@ def test_show_relative_app_version():
 
 
 def test_show_missing_relative_app_version():
+    app_id = _ZERO_INSTANCE_APP_ID
+
     with _zero_instance_app():
         _update_app(
-            'zero-instance-app',
+            app_id,
             'tests/data/marathon/apps/update_zero_instance_sleep.json')
 
-        stderr = b"Application 'zero-instance-app' only has 2 version(s).\n"
-        assert_command(['dcos', 'marathon', 'app', 'show',
-                        '--app-version=-2', 'zero-instance-app'],
-                       returncode=1,
-                       stderr=stderr)
+        # Marathon persists app versions indefinitely by ID, so pick a large
+        # index here in case the history is long
+        cmd = ['dcos', 'marathon', 'app', 'show', '--app-version=-200', app_id]
+        returncode, stdout, stderr = exec_command(cmd)
+
+        assert returncode == 1
+        assert stdout == b''
+
+        pattern = ("Application 'zero-instance-app' only has [1-9][0-9]* "
+                   "version\\(s\\)\\.\n")
+        assert re.fullmatch(pattern, stderr.decode('utf-8'), flags=re.DOTALL)
 
 
 def test_show_missing_absolute_app_version():
@@ -428,6 +439,8 @@ def test_killing_with_host_app():
         assert len(expected_to_be_killed.intersection(new_tasks)) == 0
 
 
+@pytest.mark.skipif(
+    True, reason='https://github.com/mesosphere/marathon/issues/3251')
 def test_kill_stopped_app():
     with _zero_instance_app():
         returncode, stdout, stderr = exec_command(
@@ -460,24 +473,28 @@ def test_list_version_negative_max_count():
 
 
 def test_list_version_app():
+    app_id = _ZERO_INSTANCE_APP_ID
+
     with _zero_instance_app():
-        _list_versions('zero-instance-app', 1)
+        _list_versions(app_id, 1)
 
         _update_app(
-            'zero-instance-app',
+            app_id,
             'tests/data/marathon/apps/update_zero_instance_sleep.json')
-        _list_versions('zero-instance-app', 2)
+        _list_versions(app_id, 2)
 
 
 def test_list_version_max_count():
+    app_id = _ZERO_INSTANCE_APP_ID
+
     with _zero_instance_app():
         _update_app(
-            'zero-instance-app',
+            app_id,
             'tests/data/marathon/apps/update_zero_instance_sleep.json')
 
-        _list_versions('zero-instance-app', 1, 1)
-        _list_versions('zero-instance-app', 2, 2)
-        _list_versions('zero-instance-app', 2, 3)
+        _list_versions(app_id, 1, 1)
+        _list_versions(app_id, 2, 2)
+        _list_versions(app_id, 2, 3)
 
 
 def test_list_empty_deployment():
@@ -629,31 +646,68 @@ def test_show_task():
         assert stderr == b''
 
 
-def test_bad_configuration():
-    config_set('marathon.url', 'http://localhost:88888')
+def test_stop_task():
+    with _zero_instance_app():
+        _start_app('zero-instance-app', 1)
+        watch_all_deployments()
+        task_list = _list_tasks(1, 'zero-instance-app')
+        task_id = task_list[0]['id']
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'list'])
+        _stop_task(task_id)
 
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr.startswith(
-        b"URL [http://localhost:88888/v2/info] is unreachable")
 
-    config_unset('marathon.url')
+def test_stop_task_wipe():
+    with _zero_instance_app():
+        _start_app('zero-instance-app', 1)
+        watch_all_deployments()
+        task_list = _list_tasks(1, 'zero-instance-app')
+        task_id = task_list[0]['id']
+
+        _stop_task(task_id, '--wipe')
+
+
+def test_stop_unknown_task():
+    with _zero_instance_app():
+        _start_app('zero-instance-app')
+        watch_all_deployments()
+        task_id = 'unknown-task-id'
+
+        _stop_task(task_id, expect_success=False)
+
+
+def test_stop_unknown_task_wipe():
+    with _zero_instance_app():
+        _start_app('zero-instance-app')
+        watch_all_deployments()
+        task_id = 'unknown-task-id'
+
+        _stop_task(task_id, '--wipe', expect_success=False)
+
+
+def test_bad_configuration(env):
+    with update_config('marathon.url', 'http://localhost:88888', env):
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'about'], env=env)
+
+        assert returncode == 1
+        assert stdout == b''
+        assert stderr.startswith(
+            b"URL [http://localhost:88888/v2/info] is unreachable")
 
 
 def test_app_locked_error():
     with app('tests/data/marathon/apps/sleep_many_instances.json',
              '/sleep-many-instances',
              wait=False):
+        stderr = b'Changes blocked: deployment already in progress for app.\n'
         assert_command(
             ['dcos', 'marathon', 'app', 'stop', 'sleep-many-instances'],
             returncode=1,
-            stderr=(b'App or group is locked by one or more deployments. '
-                    b'Override with --force.\n'))
+            stderr=stderr)
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason="No pseudo terminal on windows")
 def test_app_add_no_tty():
     proc, master = popen_tty('dcos marathon app add')
 
@@ -711,7 +765,7 @@ def _update_app(app_id, file_path):
         assert stderr == b''
 
 
-def _list_versions(app_id, expected_count, max_count=None):
+def _list_versions(app_id, expected_min_count, max_count=None):
     cmd = ['dcos', 'marathon', 'app', 'version', 'list', app_id]
     if max_count is not None:
         cmd.append('--max-count={}'.format(max_count))
@@ -722,8 +776,13 @@ def _list_versions(app_id, expected_count, max_count=None):
 
     assert returncode == 0
     assert isinstance(result, list)
-    assert len(result) == expected_count
     assert stderr == b''
+
+    # Marathon persists app versions indefinitely by ID, so there may be extras
+    assert len(result) >= expected_min_count
+
+    if max_count is not None:
+        assert len(result) <= max_count
 
 
 def _list_tasks(expected_count=None, app_id=None):
@@ -741,6 +800,22 @@ def _list_tasks(expected_count=None, app_id=None):
     assert stderr == b''
 
     return result
+
+
+def _stop_task(task_id, wipe=None, expect_success=True):
+    cmd = ['dcos', 'marathon', 'task', 'stop', task_id]
+    if wipe is not None:
+        cmd.append('--wipe')
+
+    returncode, stdout, stderr = exec_command(cmd)
+
+    if expect_success:
+        assert returncode == 0
+        assert stderr == b''
+        result = json.loads(stdout.decode('utf-8'))
+        assert result['id'] == task_id
+    else:
+        assert returncode == 1
 
 
 @contextlib.contextmanager

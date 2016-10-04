@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# DCOS Command Line Interface documentation build configuration file, created by
+# DC/OS Command Line Interface documentation build configuration file, created by
 # sphinx-quickstart on Sat Jan 31 23:07:01 2015.
 #
 # This file is execfile()d with the current directory set to its
@@ -47,7 +47,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'DCOS Command Line Interface'
+project = u'DC/OS Command Line Interface'
 copyright = u'2015, Mesosphere, Inc.'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -202,7 +202,7 @@ latex_elements = {
 latex_documents = [
     ('index',
      'DCOSCommandLineInterface.tex',
-     u'DCOS Command Line Interface Documentation',
+     u'DC/OS Command Line Interface Documentation',
      u'Mesosphere, Inc.',
      'manual'),
 ]
@@ -235,7 +235,7 @@ latex_documents = [
 man_pages = [
     ('index',
      'dcoscommandlineinterface',
-     u'DCOS Command Line Interface Documentation',
+     u'DC/OS Command Line Interface Documentation',
      [u'Mesosphere, Inc.'],
      1)
 ]
@@ -251,7 +251,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     ('index',
-     'DCOSCommandLineInterface', u'DCOS Command Line Interface Documentation',
+     'DCOSCommandLineInterface', u'DC/OS Command Line Interface Documentation',
      u'Mesosphere, Inc.',
      'DCOSCommandLineInterface', 'One line description of project.',
      'Miscellaneous'),

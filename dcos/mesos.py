@@ -2,7 +2,7 @@ import fnmatch
 import itertools
 import os
 
-from dcos import http, util
+from dcos import config, http, util
 from dcos.errors import DCOSException, DCOSHTTPException
 
 from six.moves import urllib
@@ -26,33 +26,29 @@ def get_master(dcos_client=None):
 
 
 class DCOSClient(object):
-    """Client for communicating with DCOS"""
+    """Client for communicating with DC/OS"""
 
     def __init__(self):
-        config = util.get_config()
-        self._dcos_url = None
-        self._mesos_master_url = None
+        toml_config = config.get_config()
 
-        mesos_master_url = config.get('core.mesos_master_url')
-        if mesos_master_url is None:
-            self._dcos_url = util.get_config_vals(['core.dcos_url'], config)[0]
-        else:
-            self._mesos_master_url = mesos_master_url
+        self._dcos_url = config.get_config_val("core.dcos_url", toml_config)
+        if self._dcos_url is None:
+            raise config.missing_config_exception(['core.dcos_url'])
+        self._mesos_master_url = config.get_config_val(
+            'core.mesos_master_url', toml_config)
 
-        self._timeout = config.get('core.timeout')
+        self._timeout = config.get_config_val('core.timeout', toml_config)
 
     def get_dcos_url(self, path):
-        """ Create a DCOS URL
+        """ Create a DC/OS URL
 
         :param path: the path suffix of the URL
         :type path: str
-        :returns: DCOS URL
+        :returns: DC/OS URL
         :rtype: str
         """
-        if self._dcos_url:
-            return urllib.parse.urljoin(self._dcos_url, path)
-        else:
-            raise util.missing_config_exception('core.dcos_url')
+
+        return urllib.parse.urljoin(self._dcos_url, path)
 
     def master_url(self, path):
         """ Create a master URL
@@ -74,7 +70,7 @@ class DCOSClient(object):
         :type slave_id: str
         :param private_url: The slave's private URL derived from its
                             pid.  Used when we're accessing mesos
-                            directly, rather than through DCOS.
+                            directly, rather than through DC/OS.
         :type private_url: str
         :param path: the path suffix of the desired URL
         :type path: str
@@ -83,11 +79,11 @@ class DCOSClient(object):
 
         """
 
-        if self._dcos_url:
+        if self._mesos_master_url:
+            return urllib.parse.urljoin(private_url, path)
+        else:
             return urllib.parse.urljoin(self._dcos_url,
                                         'slave/{}/{}'.format(slave_id, path))
-        else:
-            return urllib.parse.urljoin(private_url, path)
 
     def get_master_state(self):
         """Get the Mesos master state json object
@@ -106,7 +102,7 @@ class DCOSClient(object):
         :type slave_id: str
         :param private_url: The slave's private URL derived from its
                             pid.  Used when we're accessing mesos
-                            directly, rather than through DCOS.
+                            directly, rather than through DC/OS.
         :type private_url: str
         :returns: Mesos' master state json object
         :rtype: dict
@@ -135,7 +131,7 @@ class DCOSClient(object):
         :type path: str
         :param private_url: The slave's private URL derived from its
                             pid.  Used when we're accessing mesos
-                            directly, rather than through DCOS.
+                            directly, rather than through DC/OS.
         :type private_url: str
         :param offset: start byte location, or -1.  -1 means read no data, and
                        is used to fetch the size of the file in the response's
@@ -274,7 +270,7 @@ class MesosDNSClient(object):
     """
     def __init__(self, url=None):
         self.url = url or urllib.parse.urljoin(
-            util.get_config_vals(['core.dcos_url'])[0], '/mesos_dns/')
+            config.get_config_val('core.dcos_url'), '/mesos_dns/')
 
     def _path(self, path):
         """ Construct a full path
@@ -335,7 +331,8 @@ class Master(object):
                                         'slave/{}/'.format(slave['id']))
 
     def slave(self, fltr):
-        """Returns the slave that has `fltr` in its ID.  Raises a
+        """Returns the slave that has `fltr` in its ID. If any slaves
+        are an exact match, returns that task, id not raises a
         DCOSException if there is not exactly one such slave.
 
         :param fltr: filter string
@@ -350,25 +347,33 @@ class Master(object):
             raise DCOSException('No slave found with ID "{}".'.format(fltr))
 
         elif len(slaves) > 1:
-            matches = ['\t{0}'.format(slave['id']) for slave in slaves]
-            raise DCOSException(
-                "There are multiple slaves with that ID. " +
-                "Please choose one: {}".format('\n'.join(matches)))
+
+            exact_matches = [s for s in slaves if s['id'] == fltr]
+            if len(exact_matches) == 1:
+                return exact_matches[0]
+
+            else:
+                matches = ['\t{0}'.format(s['id']) for s in slaves]
+                raise DCOSException(
+                    "There are multiple slaves with that ID. " +
+                    "Please choose one:\n{}".format('\n'.join(matches)))
 
         else:
             return slaves[0]
 
-    def task(self, fltr):
+    def task(self, fltr, completed=False):
         """Returns the task with `fltr` in its ID.  Raises a DCOSException if
         there is not exactly one such task.
 
         :param fltr: filter string
         :type fltr: str
         :returns: the task that has `fltr` in its ID
+        :param completed: also include completed tasks
+        :type completed: bool
         :rtype: Task
         """
 
-        tasks = self.tasks(fltr)
+        tasks = self.tasks(fltr, completed)
 
         if len(tasks) == 0:
             raise DCOSException(
@@ -424,7 +429,7 @@ class Master(object):
 
         keys = ['tasks']
         if completed:
-            keys = ['completed_tasks']
+            keys.extend(['completed_tasks'])
 
         tasks = []
         for framework in self._framework_dicts(completed, completed):

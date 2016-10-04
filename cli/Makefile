@@ -9,6 +9,12 @@ env:
 test: env
 	bin/test.sh
 
+binary: clean env packages
+	bin/create-binary.sh
+
+test-binary: binary
+	bin/test-binary.sh
+
 doc: env
 	bin/doc.sh
 

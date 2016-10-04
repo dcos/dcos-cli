@@ -2,42 +2,33 @@ import posixpath
 
 import dcoscli
 import docopt
-import pkg_resources
+import six
 from dcos import cmds, emitting, mesos, util
 from dcos.errors import DCOSException, DCOSHTTPException, DefaultError
 from dcoscli import log, tables
-from dcoscli.main import decorate_docopt_usage
+from dcoscli.subcommand import default_command_info, default_doc
+from dcoscli.util import decorate_docopt_usage
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
 
 
-def main():
+def main(argv):
     try:
-        return _main()
+        return _main(argv)
     except DCOSException as e:
         emitter.publish(e)
         return 1
 
 
 @decorate_docopt_usage
-def _main():
-    util.configure_process_from_environ()
-
+def _main(argv):
     args = docopt.docopt(
-        _doc(),
+        default_doc("task"),
+        argv=argv,
         version="dcos-task version {}".format(dcoscli.version))
 
     return cmds.execute(_cmds(), args)
-
-
-def _doc():
-    """
-    :rtype: str
-    """
-    return pkg_resources.resource_string(
-        'dcoscli',
-        'data/help/task.txt').decode('utf-8')
 
 
 def _cmds():
@@ -60,7 +51,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['task', 'ls'],
-            arg_keys=['<task>', '<path>', '--long'],
+            arg_keys=['<task>', '<path>', '--long', '--completed'],
             function=_ls),
 
         cmds.Command(
@@ -77,15 +68,15 @@ def _info():
     :rtype: int
     """
 
-    emitter.publish(_doc().split('\n')[0])
+    emitter.publish(default_command_info("task"))
     return 0
 
 
-def _task(fltr, completed, json_):
+def _task(task, completed, json_):
     """List DCOS tasks
 
-    :param fltr: task id filter
-    :type fltr: str
+    :param task: task id filter
+    :type task: str
     :param completed: If True, include completed tasks
     :type completed: bool
     :param json_: If True, output json.  Otherwise, output a human
@@ -94,17 +85,17 @@ def _task(fltr, completed, json_):
     :returns: process return code
     """
 
-    if fltr is None:
-        fltr = ""
+    if task is None:
+        task = ""
 
-    tasks = sorted(mesos.get_master().tasks(completed=completed, fltr=fltr),
-                   key=lambda task: task['name'])
+    tasks = sorted(mesos.get_master().tasks(completed=completed, fltr=task),
+                   key=lambda t: t['name'])
 
     if json_:
-        emitter.publish([task.dict() for task in tasks])
+        emitter.publish([t.dict() for t in tasks])
     else:
         table = tables.task_table(tasks)
-        output = str(table)
+        output = six.text_type(table)
         if output:
             emitter.publish(output)
 
@@ -136,6 +127,8 @@ def _log(follow, completed, lines, task, file_):
     if file_ is None:
         file_ = 'stdout'
 
+    if lines is None:
+        lines = 10
     lines = util.parse_int(lines)
 
     # get tasks
@@ -167,7 +160,7 @@ def _log(follow, completed, lines, task, file_):
     return 0
 
 
-def _ls(task, path, long_):
+def _ls(task, path, long_, completed):
     """ List files in a task's sandbox.
 
     :param task: task pattern to match
@@ -176,21 +169,34 @@ def _ls(task, path, long_):
     :type path: str
     :param long_: whether to use a long listing format
     :type long_: bool
+    :param completed: If True, include completed tasks
+    :type completed: bool
     :returns: process return code
     :rtype: int
     """
 
+    if task is None:
+        task = ""
     if path is None:
         path = '.'
     if path.startswith('/'):
         path = path[1:]
 
     dcos_client = mesos.DCOSClient()
-    task_obj = mesos.get_master(dcos_client).task(task)
-    dir_ = posixpath.join(task_obj.directory(), path)
+    task_objects = mesos.get_master(dcos_client).tasks(
+        fltr=task,
+        completed=completed)
+
+    if len(task_objects) == 0:
+        raise DCOSException(
+            'Cannot find a task with ID containing "{}"'.format(task))
 
     try:
-        files = dcos_client.browse(task_obj.slave(), dir_)
+        all_files = []
+        for task_obj in task_objects:
+            dir_ = posixpath.join(task_obj.directory(), path)
+            all_files += [
+                (task_obj['id'], dcos_client.browse(task_obj.slave(), dir_))]
     except DCOSHTTPException as e:
         if e.response.status_code == 404:
             raise DCOSException(
@@ -198,7 +204,10 @@ def _ls(task, path, long_):
         else:
             raise
 
-    if files:
+    add_header = len(all_files) > 1
+    for (task_id, files) in all_files:
+        if add_header:
+            emitter.publish('===> {} <==='.format(task_id))
         if long_:
             emitter.publish(tables.ls_long_table(files))
         else:
@@ -218,7 +227,7 @@ def _mesos_files(tasks, file_, client):
     :type tasks: [mesos.Task]
     :param file_: file path to read
     :type file_: str
-    :param client: DCOS client
+    :param client: DC/OS client
     :type client: mesos.DCOSClient
     :returns: MesosFile objects
     :rtype: [mesos.MesosFile]

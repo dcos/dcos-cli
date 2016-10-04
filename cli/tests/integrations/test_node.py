@@ -1,11 +1,14 @@
 import json
 import os
 import re
+import sys
 
 import dcos.util as util
 import six
 from dcos import mesos
 from dcos.util import create_schema
+
+import pytest
 
 from ..fixtures.node import slave_fixture
 from .common import assert_command, assert_lines, exec_command, ssh_output
@@ -18,7 +21,7 @@ def test_help():
 
 
 def test_info():
-    stdout = b"Manage DCOS nodes\n"
+    stdout = b"Administer and manage DC/OS cluster nodes\n"
     assert_command(['dcos', 'node', '--info'], stdout=stdout)
 
 
@@ -43,33 +46,33 @@ def test_node_table():
 
 
 def test_node_log_empty():
-    stderr = b"You must choose one of --master or --slave.\n"
+    stderr = b"You must choose one of --leader or --mesos-id.\n"
     assert_command(['dcos', 'node', 'log'], returncode=1, stderr=stderr)
 
 
-def test_node_log_master():
-    assert_lines(['dcos', 'node', 'log', '--master'], 10)
+def test_node_log_leader():
+    assert_lines(['dcos', 'node', 'log', '--leader'], 10)
 
 
 def test_node_log_slave():
     slave_id = _node()[0]['id']
-    assert_lines(['dcos', 'node', 'log', '--slave={}'.format(slave_id)], 10)
+    assert_lines(['dcos', 'node', 'log', '--mesos-id={}'.format(slave_id)], 10)
 
 
 def test_node_log_missing_slave():
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'node', 'log', '--slave=bogus'])
+        ['dcos', 'node', 'log', '--mesos-id=bogus'])
 
     assert returncode == 1
     assert stdout == b''
     assert stderr == b'No slave found with ID "bogus".\n'
 
 
-def test_node_log_master_slave():
+def test_node_log_leader_slave():
     slave_id = _node()[0]['id']
 
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'node', 'log', '--master', '--slave={}'.format(slave_id)])
+        ['dcos', 'node', 'log', '--leader', '--mesos-id={}'.format(slave_id)])
 
     assert returncode == 0
     assert stderr == b''
@@ -81,43 +84,53 @@ def test_node_log_master_slave():
 
 
 def test_node_log_lines():
-    assert_lines(['dcos', 'node', 'log', '--master', '--lines=4'], 4)
+    assert_lines(['dcos', 'node', 'log', '--leader', '--lines=4'], 4)
 
 
 def test_node_log_invalid_lines():
-    assert_command(['dcos', 'node', 'log', '--master', '--lines=bogus'],
+    assert_command(['dcos', 'node', 'log', '--leader', '--lines=bogus'],
                    stdout=b'',
                    stderr=b'Error parsing string as int\n',
                    returncode=1)
 
 
-def test_node_ssh_master():
-    _node_ssh(['--master'])
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='No pseudo terminal on windows')
+def test_node_ssh_leader():
+    _node_ssh(['--leader'])
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='No pseudo terminal on windows')
 def test_node_ssh_slave():
     slave_id = mesos.DCOSClient().get_state_summary()['slaves'][0]['id']
-    _node_ssh(['--slave={}'.format(slave_id), '--master-proxy'])
+    _node_ssh(['--mesos-id={}'.format(slave_id), '--master-proxy'])
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='No pseudo terminal on windows')
 def test_node_ssh_option():
     stdout, stderr, _ = _node_ssh_output(
-        ['--master', '--option', 'Protocol=0'])
+        ['--leader', '--option', 'Protocol=0'])
     assert stdout == b''
     assert b'ignoring bad proto spec' in stderr
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='No pseudo terminal on windows')
 def test_node_ssh_config_file():
     stdout, stderr, _ = _node_ssh_output(
-        ['--master', '--config-file', 'tests/data/node/ssh_config'])
+        ['--leader', '--config-file', 'tests/data/node/ssh_config'])
     assert stdout == b''
     assert b'ignoring bad proto spec' in stderr
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='No pseudo terminal on windows')
 def test_node_ssh_user():
     stdout, stderr, _ = _node_ssh_output(
-        ['--master-proxy', '--master', '--user=bogus', '--option',
-         'PasswordAuthentication=no'])
+        ['--master-proxy', '--leader', '--user=bogus', '--option',
+         'BatchMode=yes'])
     assert stdout == b''
     assert b'Permission denied' in stderr
 
@@ -131,14 +144,52 @@ def test_node_ssh_master_proxy_no_agent():
               b"private key to hop between nodes in your cluster.  Please "
               b"run `ssh-agent`, then add your private key with `ssh-add`.\n")
 
-    assert_command(['dcos', 'node', 'ssh', '--master-proxy', '--master'],
+    assert_command(['dcos', 'node', 'ssh', '--master-proxy', '--leader'],
                    stderr=stderr,
                    returncode=1,
                    env=env)
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='No pseudo terminal on windows')
 def test_node_ssh_master_proxy():
-    _node_ssh(['--master', '--master-proxy'])
+    _node_ssh(['--leader', '--master-proxy'])
+
+
+def test_master_arg_deprecation_notice():
+    stderr = b"--master has been deprecated. Please use --leader.\n"
+    assert_command(['dcos', 'node', 'log', '--master'],
+                   stderr=stderr,
+                   returncode=1)
+    assert_command(['dcos', 'node', 'ssh', '--master'],
+                   stderr=stderr,
+                   returncode=1)
+
+
+def test_slave_arg_deprecation_notice():
+    stderr = b"--slave has been deprecated. Please use --mesos-id.\n"
+    assert_command(['dcos', 'node', 'log', '--slave=bogus'],
+                   stderr=stderr,
+                   returncode=1)
+    assert_command(['dcos', 'node', 'ssh', '--slave=bogus'],
+                   stderr=stderr,
+                   returncode=1)
+
+
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='No pseudo terminal on windows')
+def test_node_ssh_with_command():
+    leader_hostname = mesos.DCOSClient().get_state_summary()['hostname']
+    _node_ssh(['--leader', '--master-proxy', '/opt/mesosphere/bin/detect_ip'],
+              0, leader_hostname)
+
+
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='No pseudo terminal on windows')
+def test_node_ssh_slave_with_command():
+    slave = mesos.DCOSClient().get_state_summary()['slaves'][0]
+    _node_ssh(['--mesos-id={}'.format(slave['id']), '--master-proxy',
+              '/opt/mesosphere/bin/detect_ip'], 0, slave['hostname'])
 
 
 def _node_ssh_output(args):
@@ -152,39 +203,32 @@ def _node_ssh_output(args):
     return ssh_output(cmd)
 
 
-def _node_ssh(args):
+def _node_ssh(args, expected_returncode=None, expected_stdout=None):
     if os.environ.get('CLI_TEST_MASTER_PROXY') and \
             '--master-proxy' not in args:
         args.append('--master-proxy')
 
     stdout, stderr, returncode = _node_ssh_output(args)
-    assert returncode is None
-
-    assert stdout
+    assert returncode is expected_returncode
+    if expected_stdout is not None:
+        assert stdout.decode('utf-8').startswith(expected_stdout)
     assert b"Running `" in stderr
-    num_lines = len(stderr.decode().split('\n'))
-    expected_num_lines = 2 if '--master-proxy' in args else 3
-    assert (num_lines == expected_num_lines or
-            (num_lines == (expected_num_lines + 1) and
-             b'Warning: Permanently added' in stderr))
 
 
 def _get_schema(slave):
-    schema = create_schema(slave)
+    schema = create_schema(slave, True)
     schema['required'].remove('reregistered_time')
 
     schema['required'].remove('reserved_resources')
     schema['properties']['reserved_resources']['required'] = []
-    schema['properties']['reserved_resources']['additionalProperties'] = True
 
     schema['required'].remove('unreserved_resources')
     schema['properties']['unreserved_resources']['required'] = []
-    schema['properties']['unreserved_resources']['additionalProperties'] = True
 
     schema['properties']['used_resources']['required'].remove('ports')
     schema['properties']['offered_resources']['required'].remove('ports')
-    schema['properties']['attributes']['additionalProperties'] = True
 
+    schema['required'].remove('version')
     return schema
 
 

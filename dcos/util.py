@@ -1,4 +1,5 @@
 import collections
+import concurrent.futures
 import contextlib
 import functools
 import json
@@ -11,13 +12,12 @@ import sys
 import tempfile
 import time
 
-import concurrent.futures
 import jsonschema
-import png
-import pystache
 import six
 from dcos import constants
 from dcos.errors import DCOSException
+
+from six.moves import urllib
 
 
 def get_logger(name):
@@ -48,6 +48,46 @@ def tempdir():
         yield tmpdir
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+@contextlib.contextmanager
+def temptext():
+    """A context manager for temporary files.
+
+    The lifetime of the returned temporary file corresponds to the
+    lexical scope of the returned file descriptor.
+
+    :return: reference to a temporary file
+    :rtype: (fd, str)
+    """
+
+    fd, path = tempfile.mkstemp()
+    try:
+        yield (fd, path)
+    finally:
+        # Close the file descriptor and ignore errors
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+
+        # delete the path
+        shutil.rmtree(path, ignore_errors=True)
+
+
+@contextlib.contextmanager
+def remove_path_on_error(path):
+    """A context manager for modifying a specific path
+    `path` and all subpaths will be removed on error
+
+    :rtype: None
+    """
+
+    try:
+        yield path
+    except:
+        shutil.rmtree(path, ignore_errors=True)
+        raise
 
 
 def sh_copy(src, dst):
@@ -104,6 +144,7 @@ def ensure_file_exists(path):
     if not os.path.exists(path):
         try:
             open(path, 'w').close()
+            os.chmod(path, 0o600)
         except IOError as e:
             raise DCOSException(
                 'Cannot create file [{}]: {}'.format(path, e))
@@ -121,74 +162,6 @@ def read_file(path):
 
     with open_file(path) as file_:
         return file_.read()
-
-
-def get_config_path():
-    """ Returns the path to the DCOS config file.
-
-    :returns: path to the DCOS config file
-    :rtype: str
-    """
-
-    default = os.path.expanduser(
-        os.path.join("~",
-                     constants.DCOS_DIR,
-                     'dcos.toml'))
-
-    return os.environ.get(constants.DCOS_CONFIG_ENV, default)
-
-
-def get_config(mutable=False):
-    """ Returns the DCOS configuration object
-
-    :param mutable: True if the returned Toml object should be mutable
-    :type mutable: boolean
-    :returns: Configuration object
-    :rtype: Toml | MutableToml
-    """
-
-    # avoid circular import
-    from dcos import config
-
-    path = get_config_path()
-
-    return config.load_from_path(path, mutable)
-
-
-def get_config_vals(keys, config=None):
-    """Gets config values for each of the keys.  Raises a DCOSException if
-    any of the keys don't exist.
-
-    :param config: config
-    :type config: Toml
-    :param keys: keys in the config dict
-    :type keys: [str]
-    :returns: values for each of the keys
-    :rtype: [object]
-    """
-
-    config = config or get_config()
-    missing = [key for key in keys if key not in config]
-    if missing:
-        raise missing_config_exception(keys)
-
-    return [config[key] for key in keys]
-
-
-def missing_config_exception(keys):
-    """ DCOSException for a missing config value
-
-    :param keys: keys in the config dict
-    :type keys: [str]
-    :returns: DCOSException
-    :rtype: DCOSException
-    """
-
-    msg = '\n'.join(
-        'Missing required config parameter: "{0}".'.format(key) +
-        '  Please run `dcos config set {0} <value>`.'.format(key)
-        for key in keys)
-    return DCOSException(msg)
 
 
 def which(program):
@@ -267,7 +240,8 @@ def configure_logger(log_level):
 
     if log_level in constants.VALID_LOG_LEVEL_VALUES:
         logging.basicConfig(
-            format=('%(asctime)s '
+            format=('%(threadName)s: '
+                    '%(asctime)s '
                     '%(pathname)s:%(funcName)s:%(lineno)d - '
                     '%(message)s'),
             stream=sys.stderr,
@@ -376,17 +350,21 @@ def _format_validation_error(error):
         message = 'Error: {}\n'.format(error_message)
         if len(error.absolute_path) > 0:
             message += 'Path: {}\n'.format(
-                       '.'.join([str(path) for path in error.absolute_path]))
+                       '.'.join(
+                           [six.text_type(path)
+                            for path in error.absolute_path]))
         message += 'Value: {}'.format(json.dumps(error.instance))
 
     return message
 
 
-def create_schema(obj):
+def create_schema(obj, add_properties=False):
     """ Creates a basic json schema derived from `obj`.
 
     :param obj: object for which to derive a schema
     :type obj: str | int | float | dict | list
+    :param add_properties: whether to allow additional properties
+    :type add_properties: bool
     :returns: json schema
     :rtype: dict
     """
@@ -406,24 +384,24 @@ def create_schema(obj):
     elif isinstance(obj, collections.Mapping):
         schema = {'type': 'object',
                   'properties': {},
-                  'additionalProperties': False,
+                  'additionalProperties': add_properties,
                   'required': list(obj.keys())}
 
         for key, val in obj.items():
-            schema['properties'][key] = create_schema(val)
+            schema['properties'][key] = create_schema(val, add_properties)
 
         return schema
 
     elif isinstance(obj, collections.Sequence):
         schema = {'type': 'array'}
         if obj:
-            schema['items'] = create_schema(obj[0])
+            schema['items'] = create_schema(obj[0], add_properties)
         return schema
 
     else:
         raise ValueError(
             'Cannot create schema with object {} of unrecognized type'
-            .format(str(obj)))
+            .format(six.text_type(obj)))
 
 
 def list_to_err(errs):
@@ -476,33 +454,6 @@ def parse_float(string):
         raise DCOSException('Error parsing string as float')
 
 
-def render_mustache_json(template, data):
-    """Render the supplied mustache template and data as a JSON value
-
-    :param template: the mustache template to render
-    :type template: str
-    :param data: the data to use as a rendering context
-    :type data: dict
-    :returns: the rendered template
-    :rtype: dict | list | str | int | float | bool
-    """
-
-    try:
-        r = CustomJsonRenderer()
-        rendered = r.render(template, data)
-    except Exception as e:
-        logger.exception(
-            'Error rendering mustache template [%r] [%r]',
-            template,
-            data)
-
-        raise DCOSException(e)
-
-    logger.debug('Rendered mustache template: %s', rendered)
-
-    return load_jsons(rendered)
-
-
 def is_windows_platform():
     """
     :returns: True is program is running on Windows platform, False
@@ -511,23 +462,6 @@ def is_windows_platform():
     """
 
     return platform.system() == "Windows"
-
-
-class CustomJsonRenderer(pystache.Renderer):
-    def str_coerce(self, val):
-        """
-        Coerce a non-string value to a string.
-        This method is called whenever a non-string is encountered during the
-        rendering process when a string is needed (e.g. if a context value
-        for string interpolation is not a string).
-
-        :param val: the mustache template to render
-        :type val: any
-        :returns: a string containing a JSON representation of the value
-        :rtype: str
-        """
-
-        return json.dumps(val)
 
 
 def duration(fn):
@@ -659,20 +593,20 @@ def get_ssh_options(config_file, options):
     return ssh_options
 
 
-def validate_png(filename):
-    """Validate file as a png image. Throws a DCOSException if it is not an PNG
+def normalize_marathon_id_path(id_path):
+    """Normalizes a Marathon "ID path", such as an app ID, group ID, or pod ID.
 
-    :param filename: path to the image
-    :type filename: str
-    :rtype: None
+    A normalized path has a single leading forward slash (/), no trailing
+    forward slashes, and has all URL-unsafe characters escaped, as if by
+    urllib.parse.quote().
+
+    :param id_path
+    :type id_path: str
+    :returns: normalized path
+    :rtype: str
     """
 
-    try:
-        png.Reader(filename=filename).validate_signature()
-    except Exception as e:
-        logger.exception(e)
-        raise DCOSException(
-            'Unable to validate [{}] as a PNG file'.format(filename))
+    return urllib.parse.quote('/' + id_path.strip('/'))
 
 
 logger = get_logger(__name__)

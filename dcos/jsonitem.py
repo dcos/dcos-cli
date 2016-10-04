@@ -14,7 +14,7 @@ def parse_json_item(json_item, schema):
     :param json_item: A JSON item in the form 'key=value'
     :type json_item: str
     :param schema: The JSON schema to use for parsing
-    :type schema: dict
+    :type schema: dict | None
     :returns: A tuple for the parsed JSON item
     :rtype: (str, any) where any is one of str, int, float, bool, list or dict
     """
@@ -64,10 +64,10 @@ def find_parser(key, schema):
 
     key_schema = schema['properties'].get(key)
     if key_schema is None:
-        keys = ', '.join(schema['properties'].keys())
+        keys = '\n'.join(schema['properties'].keys())
         raise DCOSException(
-            'Error: {!r} is not a valid property. '
-            'Possible properties are: {}'.format(key, keys))
+            'Property {!r} is invalid - '
+            'possible properties are: \n{}'.format(key, keys))
     else:
         return ValueTypeParser(key_schema)
 
@@ -223,7 +223,7 @@ def _parse_boolean(value):
     """
 
     try:
-        boolean = json.loads(value)
+        boolean = json.loads(value.lower())
         if boolean is None or isinstance(boolean, bool):
             return boolean
         else:

@@ -1,39 +1,34 @@
-Command line utility for the Mesosphere Datacenter Operating
-System (DCOS)
-
-'dcos help' lists all available subcommands. See 'dcos <command> --help'
-to read about a specific subcommand.
+Description:
+    The Mesosphere Datacenter Operating System (DC/OS) spans all of the machines in
+your datacenter or cloud and treats them as a single, shared set of resources.
 
 Usage:
     dcos [options] [<command>] [<args>...]
 
 Options:
-    --help                      Show this screen
-    --version                   Show version
-    --log-level=<log-level>     If set then print supplementary messages to
-                                stderr at or above this level. The severity
-                                levels in the order of severity are: debug,
-                                info, warning, error, and critical. E.g.
-                                Setting the option to warning will print
-                                warning, error and critical messages to stderr.
-                                Note: that this does not affect the output sent
-                                to stdout by the command.
-    --debug                     If set then enable further debug messages which
-                                are sent to stdout.
+    --debug
+        Enable debug mode.
+    --help
+        Print usage.
+    --log-level=<log-level>
+        Set the logging level. This setting does not affect the output sent to
+        stdout. The severity levels are:
+        The severity level:
+        * debug    Prints all messages.
+        * info     Prints informational, warning, error, and critical messages.
+        * warning  Prints warning, error, and critical messages.
+        * error    Prints error and critical messages.
+        * critical Prints only critical messages to stderr.
+    --version
+        Print version information
 
 Environment Variables:
-    DCOS_LOG_LEVEL              If set then it specifies that message should be
-                                printed to stderr at or above this level. See
-                                the --log-level option for details.
-
-    DCOS_CONFIG                 This environment variable points to the
-                                location of the DCOS configuration file.
-                                [default: ~/.dcos/dcos.toml]
-
-    DCOS_DEBUG                  If set then enable further debug messages which
-                                are sent to stdout.
-
-    DCOS_SSL_VERIFY             If set, specifies whether to verify SSL certs
-                                for HTTPS, or the path to the certificate(s).
-                                Can also be configured by setting
-                                `core.ssl_config` in the config.
+    DCOS_CONFIG
+        Set the path to the DC/OS configuration file. By default, this variable
+        is set to ~/.dcos/dcos.toml.
+    DCOS_DEBUG
+        Indicates whether to print additional debug messages to stdout. By
+        default this is set to false.
+    DCOS_LOG_LEVEL
+        Prints log messages to stderr at or above the level indicated. This is
+        equivalent to the --log-level command-line option.

@@ -1,7 +1,0 @@
-[core]
-reporting = false
-email = "test@mail.com"
-[marathon]
-[package]
-sources = [ "git://github.com/mesosphere/universe.git", "https://github.com/mesosphere/universe/archive/master.zip",]
-cache = "true"

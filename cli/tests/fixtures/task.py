@@ -1,6 +1,4 @@
-from dcos.mesos import Slave, Task
-
-import mock
+from dcos.mesos import Task
 
 
 def task_fixture():
@@ -28,7 +26,11 @@ def task_fixture():
                 "container_status": {
                     "network_infos": [
                         {
-                            "ip_address": "172.17.8.12"
+                            "ip_addresses": [
+                                {
+                                    "ip_address": "127.17.8.12"
+                                }
+                            ]
                         }
                     ]
                 },
@@ -38,9 +40,6 @@ def task_fixture():
         ]
     }, None)
 
-    task.user = mock.Mock(return_value='root')
-    slave = Slave({"hostname": "mock-hostname"}, None, None)
-    task.slave = mock.Mock(return_value=slave)
     return task
 
 
