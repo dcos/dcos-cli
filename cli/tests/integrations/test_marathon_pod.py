@@ -13,7 +13,7 @@ from ..fixtures.marathon import (DOUBLE_POD_FILE_PATH, DOUBLE_POD_ID,
 from .common import (assert_command, exec_command, file_json_ast,
                      watch_all_deployments)
 
-_PODS_ENABLED = 'PODS_ENABLED' in os.environ
+_PODS_ENABLED = 'DCOS_PODS_ENABLED' in os.environ
 
 _POD_BASE_CMD = ['dcos', 'marathon', 'pod']
 _POD_ADD_CMD = _POD_BASE_CMD + ['add']
