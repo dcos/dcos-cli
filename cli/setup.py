@@ -26,7 +26,7 @@ setup(
 
     # Author details
     author='Mesosphere, Inc.',
-    author_email='team@mesosphere.io',
+    author_email='help@dcos.io',
 
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
