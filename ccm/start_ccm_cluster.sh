@@ -13,7 +13,7 @@ CLUSTER_ID=$(http --ignore-stdin \https://ccm.mesosphere.com/api/cluster/ \
      Authorization:"Token ${CCM_AUTH_TOKEN}" \
      name=$CLUSTER_NAME \
      cloud_provider=0 \
-     region=us-west-2 \
+     region=${CCM_CLUSTER_REGION:-"eu-central-1"} \
      time=120 \
      channel=$DCOS_CHANNEL \
      cluster_desc="DC/OS CLI testing cluster" \
