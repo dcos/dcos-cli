@@ -2,16 +2,16 @@ import contextlib
 import json
 import os
 import re
+import time
 
 import pytest
 
 from .common import (assert_command, exec_command, file_json_ast,
                      watch_all_deployments)
-from ..common import file_bytes
 from ..fixtures.marathon import (DOUBLE_POD_FILE_PATH, DOUBLE_POD_ID,
                                  GOOD_POD_FILE_PATH, GOOD_POD_ID,
-                                 pod_fixture, TRIPLE_POD_FILE_PATH,
-                                 TRIPLE_POD_ID, UPDATED_GOOD_POD_FILE_PATH)
+                                 TRIPLE_POD_FILE_PATH, TRIPLE_POD_ID,
+                                 UPDATED_GOOD_POD_FILE_PATH, pod_list_fixture)
 
 _PODS_ENABLED = 'DCOS_PODS_ENABLED' in os.environ
 
@@ -45,15 +45,14 @@ def test_pod_add_from_stdin_then_force_remove():
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_list():
-    expected_json = pod_fixture()
-    expected_table = file_bytes('tests/unit/data/pod.txt')
+    expected_json = pod_list_fixture()
 
     with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH), \
             _pod(DOUBLE_POD_ID, DOUBLE_POD_FILE_PATH), \
             _pod(TRIPLE_POD_ID, TRIPLE_POD_FILE_PATH):
 
         _assert_pod_list_json(expected_json)
-        _assert_pod_list_table(stdout=expected_table + b'\n')
+        _assert_pod_list_table()
 
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
@@ -112,7 +111,7 @@ def _assert_pod_list_json_subset(expected_json, actual_json):
     for expected_pod in expected_json:
         pod_id = expected_pod['id']
         actual_pod = actual_pods_by_id[pod_id]
-        _assert_pod_json(expected_pod, actual_pod)
+        _assert_pod_json(expected_pod['spec'], actual_pod['spec'])
 
     assert len(actual_json) == len(expected_json)
 
@@ -144,8 +143,37 @@ def _assert_pod_json(expected_pod, actual_pod):
     assert len(actual_containers) == len(expected_containers)
 
 
-def _assert_pod_list_table(stdout):
-    assert_command(_POD_LIST_CMD, returncode=0, stdout=stdout, stderr=b'')
+def _assert_pod_list_table():
+    for attempt in range(10):
+        returncode, stdout, stderr = exec_command(_POD_LIST_CMD)
+        stdout_lines = stdout.decode('utf-8').split('\n')
+
+        expected_instances = ['2', '3', '1']
+        actual_instances = [stdout_lines[i].split()[1] for i in [1, 4, 6]]
+        if actual_instances == expected_instances:
+            break
+        time.sleep(1)
+    else:
+        assert False, "Timed out waiting for instances to appear"
+
+    assert returncode == 0
+    assert stderr == b''
+
+    pattern = r'ID\+CONTAINERS +INSTANCES +VERSION +STATUS +STATUS SINCE *'
+    assert re.fullmatch(pattern, stdout_lines[0])
+
+    assert stdout_lines[1].startswith('/double-pod')
+    assert stdout_lines[2].startswith(' |-thing-1')
+    assert stdout_lines[3].startswith(' |-thing-2')
+    assert stdout_lines[4].startswith('/good-pod')
+    assert stdout_lines[5].startswith(' |-good-container')
+    assert stdout_lines[6].startswith('/winston')
+    assert stdout_lines[7].startswith(' |-the-cat')
+    assert stdout_lines[8].startswith(' |-thing-1')
+    assert stdout_lines[9].startswith(' |-thing-2')
+
+    assert stdout_lines[10] == ''
+    assert len(stdout_lines) == 11
 
 
 def _assert_pod_remove(pod_id, extra_args):

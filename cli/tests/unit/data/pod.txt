@@ -1,4 +1,10 @@
-ID           CONTAINERS  
-/double-pod      2       
-/good-pod        1       
-/winston         3       
+ID+CONTAINERS      INSTANCES  VERSION                   STATUS    STATUS SINCE              
+/double-pod            2      2016-10-04T27:18:28.183Z  terminal  2016-10-04T03:13:37.101Z  
+ |-thing-1                                                                                  
+ |-thing-2                                                                                  
+/good-pod              3      2016-10-05T16:18:03.399Z  stable    2016-10-05T15:36:54.123Z  
+ |-good-container                                                                           
+/winston               1      2016-09-01T31:41:59.265Z  degraded  2016-09-30T22:28:09.201Z  
+ |-the-cat                                                                                  
+ |-thing-1                                                                                  
+ |-thing-2                                                                                  

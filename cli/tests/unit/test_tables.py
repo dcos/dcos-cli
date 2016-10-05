@@ -10,7 +10,7 @@ from ..fixtures.marathon import (app_fixture, app_task_fixture,
                                  deployment_fixture_app_post_pods,
                                  deployment_fixture_app_pre_pods,
                                  deployment_fixture_pod,
-                                 group_fixture, pod_fixture)
+                                 group_fixture, pod_list_fixture)
 from ..fixtures.node import slave_fixture
 from ..fixtures.package import package_fixture, search_result_fixture
 from ..fixtures.service import framework_fixture
@@ -72,7 +72,9 @@ def test_group_table():
 
 
 def test_pod_table():
-    _test_table(tables.pod_table, pod_fixture(), 'tests/unit/data/pod.txt')
+    _test_table(tables.pod_table,
+                pod_list_fixture(),
+                'tests/unit/data/pod.txt')
 
 
 def test_package_table():
