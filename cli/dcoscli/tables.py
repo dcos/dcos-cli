@@ -443,8 +443,8 @@ def pod_table(pods):
 
     fields = OrderedDict([
         ('ID+CONTAINERS', id_and_containers),
-        ('INSTANCES', lambda pod: len(pod['instances'])),
-        ('VERSION', lambda pod: pod['spec']['version']),
+        ('INSTANCES', lambda pod: len(pod.get('instances', []))),
+        ('VERSION', lambda pod: pod['spec'].get('version', '-')),
         ('STATUS', lambda pod: pod['status']),
         ('STATUS SINCE', lambda pod: pod['statusSince'])
     ])

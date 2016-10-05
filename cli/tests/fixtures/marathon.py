@@ -294,3 +294,75 @@ def pod_list_fixture():
     }
 
     return [good_pod_status, double_pod_status, triple_pod_status]
+
+
+def pod_list_without_instances_fixture():
+    """Marathon pod without an "instances" field.
+
+    :rtype: {}
+    """
+
+    return {
+        "id": "/pod-without-instances",
+        "spec": {
+            "id": "/pod-without-instances",
+            "containers": [
+                {
+                    "name": "no-instances",
+                    "exec": {
+                        "command": {
+                            "shell": "sleep 1000"
+                        }
+                    },
+                    "resources": {
+                        "cpus": 0.1,
+                        "mem": 16.0
+                    }
+                }
+            ],
+            "networks": [
+                {
+                    "mode": "host"
+                }
+            ],
+            "version": "2016-10-05T16:18:03.399Z"
+        },
+        "status": "stable",
+        "statusSince": "2016-10-05T15:36:54.123Z"
+    }
+
+
+def pod_list_without_spec_version_fixture():
+    """Marathon pod without a "spec"."version" field.
+
+    :rtype: {}
+    """
+
+    return {
+        "id": "/pod-without-spec-version",
+        "instances": [{}],
+        "spec": {
+            "id": "/pod-without-spec-version",
+            "containers": [
+                {
+                    "name": "no-spec-version",
+                    "exec": {
+                        "command": {
+                            "shell": "sleep 1000"
+                        }
+                    },
+                    "resources": {
+                        "cpus": 0.1,
+                        "mem": 16.0
+                    }
+                }
+            ],
+            "networks": [
+                {
+                    "mode": "host"
+                }
+            ]
+        },
+        "status": "stable",
+        "statusSince": "2016-10-05T15:36:54.123Z"
+    }

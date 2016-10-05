@@ -144,20 +144,13 @@ def _assert_pod_json(expected_pod, actual_pod):
 
 
 def _assert_pod_list_table():
-    for attempt in range(10):
-        returncode, stdout, stderr = exec_command(_POD_LIST_CMD)
-        stdout_lines = stdout.decode('utf-8').split('\n')
-
-        expected_instances = ['2', '3', '1']
-        actual_instances = [stdout_lines[i].split()[1] for i in [1, 4, 6]]
-        if actual_instances == expected_instances:
-            break
-        time.sleep(1)
-    else:
-        assert False, "Timed out waiting for instances to appear"
+    _wait_for_instances({'/double-pod': 2, '/good-pod': 3, '/winston': 1})
+    returncode, stdout, stderr = exec_command(_POD_LIST_CMD)
 
     assert returncode == 0
     assert stderr == b''
+
+    stdout_lines = stdout.decode('utf-8').split('\n')
 
     pattern = r'ID\+CONTAINERS +INSTANCES +VERSION +STATUS +STATUS SINCE *'
     assert re.fullmatch(pattern, stdout_lines[0])
@@ -225,3 +218,30 @@ def _pod(pod_id, file_path):
     finally:
         if pod_added:
             _assert_pod_remove(pod_id, extra_args=['--force'])
+
+
+def _wait_for_instances(expected_instances, max_attempts=10):
+    """Polls the `pod list` command until the instance counts are as expected.
+
+    :param expected_instances: a mapping from pod ID to instance count
+    :type expected_instances: {}
+    :param max_attempts: give up and fail the test after this many attempts
+    :type max_attempts: int
+    :rtype: None
+    """
+
+    for attempt in range(max_attempts):
+        returncode, stdout, stderr = exec_command(_POD_LIST_CMD + ['--json'])
+
+        assert returncode == 0
+        assert stderr == b''
+
+        status_json = json.loads(stdout.decode('utf-8'))
+        actual_instances = {pod['id']: len(pod.get('instances', []))
+                            for pod in status_json}
+
+        if actual_instances == expected_instances:
+            return
+        time.sleep(1)
+    else:
+        assert False, "Timed out waiting for expected instance counts"
