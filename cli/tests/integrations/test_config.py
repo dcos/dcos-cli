@@ -1,10 +1,10 @@
 import json
 import os
 
-import six
-from dcos import constants
-
 import pytest
+import six
+
+from dcos import constants
 
 from .common import (assert_command, config_set, config_unset,
                      exec_command, update_config)

@@ -2,9 +2,9 @@ import contextlib
 import json
 import os
 
-from dcos import constants
-
 import pytest
+
+from dcos import constants
 
 from .common import (assert_command, exec_command, job, show_job,
                      show_job_schedule, update_config)

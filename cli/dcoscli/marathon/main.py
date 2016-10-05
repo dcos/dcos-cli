@@ -3,10 +3,11 @@ import os
 import sys
 import time
 
-import dcoscli
 import docopt
 import pkg_resources
 import six
+
+import dcoscli
 from dcos import cmds, emitting, http, jsonitem, marathon, options, util
 from dcos.errors import DCOSException
 from dcoscli import tables

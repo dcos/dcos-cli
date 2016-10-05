@@ -3,18 +3,18 @@ import contextlib
 import json
 import sys
 
+import pytest
 import six
+
 from dcos import subcommand
 
-import pytest
-
-from ..common import file_bytes
 from .common import (assert_command, assert_lines, base64_to_dict,
                      delete_zk_node, delete_zk_nodes, exec_command,
                      file_json,
                      get_services, package_install,
                      package_uninstall, service_shutdown,
                      wait_for_service, watch_all_deployments)
+from ..common import file_bytes
 
 
 def setup_module(module):
@@ -876,10 +876,10 @@ def _install_bad_chronos(args=['--yes'],
     returncode_, stdout_, stderr_ = exec_command(cmd)
     assert returncode_ == 1
     assert stderr in stderr_.decode('utf-8')
-    preInstallNotes = (b'We recommend a minimum of one node with at least 1 '
-                       b'CPU and 2GB of RAM available for the Chronos '
-                       b'Service.\n')
-    assert stdout_ == preInstallNotes
+    pre_install_notes = (b'We recommend a minimum of one node with at least 1 '
+                         b'CPU and 2GB of RAM available for the Chronos '
+                         b'Service.\n')
+    assert stdout_ == pre_install_notes
 
 
 def _install_chronos(
@@ -888,11 +888,11 @@ def _install_chronos(
         stdout=b'Installing Marathon app for package [chronos] '
                b'version [2.4.0]\n',
         stderr=b'',
-        preInstallNotes=b'We recommend a minimum of one node with at least 1 '
-                        b'CPU and 2GB of RAM available for the Chronos '
-                        b'Service.\n',
-        postInstallNotes=b'Chronos DCOS Service has been successfully '
-                         b'''installed!
+        pre_install_notes=b'We recommend a minimum of one node with at least '
+                          b'1 CPU and 2GB of RAM available for the Chronos '
+                          b'Service.\n',
+        post_install_notes=b'Chronos DCOS Service has been successfully '
+                           b'''installed!
 
 \tDocumentation: http://mesos.github.io/chronos
 \tIssues: https://github.com/mesos/chronos/issues\n''',
@@ -902,7 +902,7 @@ def _install_chronos(
     assert_command(
         cmd,
         returncode,
-        preInstallNotes + stdout + postInstallNotes,
+        pre_install_notes + stdout + post_install_notes,
         stderr,
         stdin=stdin)
 
@@ -914,11 +914,11 @@ def _chronos_package(
         stdout=b'Installing Marathon app for package [chronos] '
                b'version [2.4.0]\n',
         stderr=b'',
-        preInstallNotes=b'We recommend a minimum of one node with at least 1 '
-                        b'CPU and 2GB of RAM available for the Chronos '
-                        b'Service.\n',
-        postInstallNotes=b'Chronos DCOS Service has been successfully '
-                         b'''installed!
+        pre_install_notes=b'We recommend a minimum of one node with at least '
+                          b'1 CPU and 2GB of RAM available for the Chronos '
+                          b'Service.\n',
+        post_install_notes=b'Chronos DCOS Service has been successfully '
+                           b'''installed!
 
 \tDocumentation: http://mesos.github.io/chronos
 \tIssues: https://github.com/mesos/chronos/issues\n''',
@@ -929,8 +929,8 @@ def _chronos_package(
         returncode,
         stdout,
         stderr,
-        preInstallNotes,
-        postInstallNotes,
+        pre_install_notes,
+        post_install_notes,
         stdin)
     try:
         yield

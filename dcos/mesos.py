@@ -2,10 +2,10 @@ import fnmatch
 import itertools
 import os
 
+from six.moves import urllib
+
 from dcos import config, http, util
 from dcos.errors import DCOSException, DCOSHTTPException
-
-from six.moves import urllib
 
 logger = util.get_logger(__name__)
 

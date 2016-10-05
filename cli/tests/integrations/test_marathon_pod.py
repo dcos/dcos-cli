@@ -5,13 +5,13 @@ import re
 
 import pytest
 
+from .common import (assert_command, exec_command, file_json_ast,
+                     watch_all_deployments)
 from ..common import file_bytes
 from ..fixtures.marathon import (DOUBLE_POD_FILE_PATH, DOUBLE_POD_ID,
                                  GOOD_POD_FILE_PATH, GOOD_POD_ID,
-                                 TRIPLE_POD_FILE_PATH, TRIPLE_POD_ID,
-                                 UPDATED_GOOD_POD_FILE_PATH, pod_fixture)
-from .common import (assert_command, exec_command, file_json_ast,
-                     watch_all_deployments)
+                                 pod_fixture, TRIPLE_POD_FILE_PATH,
+                                 TRIPLE_POD_ID, UPDATED_GOOD_POD_FILE_PATH)
 
 _PODS_ENABLED = 'DCOS_PODS_ENABLED' in os.environ
 

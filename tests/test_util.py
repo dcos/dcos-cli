@@ -1,7 +1,7 @@
+import pytest
+
 from dcos import util
 from dcos.errors import DCOSException
-
-import pytest
 
 
 def test_open_file():

@@ -5,10 +5,10 @@ import re
 import sys
 import threading
 
-from dcos import constants
-
 import pytest
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+
+from dcos import constants
 
 from .common import (app, assert_command, assert_lines,
                      exec_command, list_deployments, popen_tty,
@@ -830,7 +830,7 @@ def _zero_instance_app():
 def _zero_instance_app_through_http():
     class JSONRequestHandler (BaseHTTPRequestHandler):
 
-        def do_GET(self):
+        def do_GET(self):  # noqa: N802
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.end_headers()

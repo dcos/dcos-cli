@@ -1,8 +1,8 @@
 import os
 
-from dcos import constants
-
 import pytest
+
+from dcos import constants
 
 from .common import config_set, exec_command, update_config
 

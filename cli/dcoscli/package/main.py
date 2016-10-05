@@ -2,9 +2,10 @@ import json
 import os
 import sys
 
-import dcoscli
 import docopt
 import pkg_resources
+
+import dcoscli
 from dcos import (cmds, config, cosmospackage, emitting, http, options,
                   package, subcommand, util)
 from dcos.errors import DCOSException

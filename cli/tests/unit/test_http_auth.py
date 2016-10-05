@@ -1,12 +1,12 @@
 import copy
 
-from dcos import http
-from dcos.errors import DCOSException
-from requests.auth import HTTPBasicAuth
-
 import pytest
 from mock import Mock, patch
+from requests.auth import HTTPBasicAuth
 from six.moves.urllib.parse import urlparse
+
+from dcos import http
+from dcos.errors import DCOSException
 
 
 def test_get_auth_scheme_basic():

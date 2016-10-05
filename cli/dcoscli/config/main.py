@@ -1,7 +1,8 @@
 import collections
 
-import dcoscli
 import docopt
+
+import dcoscli
 from dcos import cmds, config, emitting, http, util
 from dcos.errors import DCOSException, DefaultError
 from dcoscli.subcommand import default_command_info, default_doc

@@ -575,7 +575,7 @@ def _execute_command(command):
 
     logger.info('Calling: %r', command)
 
-    process = Subproc().Popen(
+    process = Subproc().popen(
         command,
         stdout=PIPE,
         stderr=PIPE)
@@ -677,7 +677,7 @@ class SubcommandProcess():
         :rtype: int, str | None
         """
 
-        subproc = Subproc().Popen(
+        subproc = Subproc().popen(
             [self._executable,  self._command] + self._args,
             stderr=PIPE)
 

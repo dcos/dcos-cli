@@ -1,9 +1,10 @@
+import pytest
+from mock import create_autospec, patch
+
 import dcoscli.marathon.main as main
 from dcos import marathon
 from dcos.errors import DCOSException, DCOSHTTPException
 
-import pytest
-from mock import create_autospec, patch
 from ..common import file_bytes
 from ..fixtures import marathon as marathon_fixtures
 
