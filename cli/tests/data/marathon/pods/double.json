@@ -3,6 +3,11 @@
   "containers": [
     {
       "name": "thing-1",
+      "exec": {
+        "command": {
+          "shell": "sleep 1000"
+        }
+      },
       "resources": {
         "cpus": 0.1,
         "mem": 16.0
@@ -20,5 +25,9 @@
     {
       "mode": "host"
     }
-  ]
+  ],
+  "scaling": {
+    "kind": "fixed",
+    "instances": 2
+  }
 }

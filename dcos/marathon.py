@@ -769,7 +769,7 @@ class Client(object):
         :rtype: [dict]
         """
 
-        response = self._rpc.http_req(http.get, 'v2/pods')
+        response = self._rpc.http_req(http.get, 'v2/pods/::status')
         return self._parse_json(response)
 
     def update_pod(self, pod_id, pod_json, force=False):

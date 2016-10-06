@@ -6,7 +6,7 @@ from dcos import marathon
 from dcos.errors import DCOSException, DCOSHTTPException
 
 from ..common import file_bytes
-from ..fixtures import marathon as marathon_fixtures
+from ..fixtures.marathon import pod_list_fixture
 
 
 def test_pod_add_invoked_successfully():
@@ -52,7 +52,7 @@ def test_pod_list_with_json():
 @patch('dcoscli.marathon.main.emitter', autospec=True)
 def test_pod_list_table(emitter):
     subcmd, marathon_client = _failing_reader_fixture()
-    marathon_client.list_pod.return_value = marathon_fixtures.pod_fixture()
+    marathon_client.list_pod.return_value = pod_list_fixture()
 
     returncode = subcmd.pod_list(json_=False)
 

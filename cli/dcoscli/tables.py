@@ -425,13 +425,35 @@ def pod_table(pods):
     :rtype: PrettyTable
     """
 
+    def id_and_containers(pod):
+        """Extract the pod ID and container names from the given pod JSON.
+
+        :param pod: the pod JSON to read
+        :type pod: {}
+        :returns: the entry for the ID+CONTAINER column of the pod table
+        :rtype: str
+        """
+
+        pod_id = pod['id']
+        container_names = sorted(container['name'] for container
+                                 in pod['spec']['containers'])
+
+        container_lines = ('\n |-{}'.format(name) for name in container_names)
+        return pod_id + ''.join(container_lines)
+
     fields = OrderedDict([
-        ('ID', lambda pod: pod['id']),
-        ('CONTAINERS', lambda pod: len(pod['containers'])),
+        ('ID+CONTAINERS', id_and_containers),
+        ('INSTANCES', lambda pod: len(pod.get('instances', []))),
+        ('VERSION', lambda pod: pod['spec'].get('version', '-')),
+        ('STATUS', lambda pod: pod['status']),
+        ('STATUS SINCE', lambda pod: pod['statusSince'])
     ])
 
-    tb = table(fields, pods, sortby='ID')
-    tb.align['ID'] = 'l'
+    tb = table(fields, pods, sortby='ID+CONTAINERS')
+    tb.align['ID+CONTAINERS'] = 'l'
+    tb.align['VERSION'] = 'l'
+    tb.align['STATUS'] = 'l'
+    tb.align['STATUS SINCE'] = 'l'
 
     return tb
 

@@ -73,7 +73,7 @@ def test_show_pod_raises_dcos_exception_for_json_parse_errors():
 def test_list_pod_builds_rpc_correctly():
     marathon_client, rpc_client = _create_fixtures()
     marathon_client.list_pod()
-    rpc_client.http_req.assert_called_with(http.get, 'v2/pods')
+    rpc_client.http_req.assert_called_with(http.get, 'v2/pods/::status')
 
 
 def test_list_pod_returns_success_response_json():
