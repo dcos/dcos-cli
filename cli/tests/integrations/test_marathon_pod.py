@@ -111,26 +111,26 @@ def _assert_pod_list_json_subset(expected_json, actual_json):
     for expected_pod in expected_json:
         pod_id = expected_pod['id']
         actual_pod = actual_pods_by_id[pod_id]
-        _assert_pod_json(expected_pod['spec'], actual_pod['spec'])
+        _assert_pod_spec_json(expected_pod['spec'], actual_pod['spec'])
 
     assert len(actual_json) == len(expected_json)
 
 
-def _assert_pod_json(expected_pod, actual_pod):
-    """Checks that the "actual" pod JSON matches the "expected" pod JSON.
+def _assert_pod_spec_json(expected_pod_spec, actual_pod_spec):
+    """Checks that the "actual" pod spec JSON matches the "expected" JSON.
 
     The comparison only looks at specific fields that are present in the
     test data used by this module.
 
-    :param expected_pod: contains the baseline values for the comparison
-    :type expected_pod: {}
-    :param actual_pod: has its fields checked against the expected fields
-    :type actual_pod: {}
+    :param expected_pod_spec: contains the baseline values for the comparison
+    :type expected_pod_spec: {}
+    :param actual_pod_spec: has its fields checked against the expected fields
+    :type actual_pod_spec: {}
     :rtype: None
     """
 
-    expected_containers = expected_pod['containers']
-    actual_containers = actual_pod['containers']
+    expected_containers = expected_pod_spec['containers']
+    actual_containers = actual_pod_spec['containers']
     actual_containers_by_name = {c['name']: c for c in actual_containers}
 
     for expected_container in expected_containers:
@@ -183,8 +183,8 @@ def _assert_pod_show(pod_id, expected_json):
     assert returncode == 0
     assert stderr == b''
 
-    pod_json = json.loads(stdout.decode('utf-8'))
-    _assert_pod_json(expected_json, pod_json)
+    pod_status_json = json.loads(stdout.decode('utf-8'))
+    _assert_pod_spec_json(expected_json, pod_status_json['spec'])
 
 
 def _assert_pod_update_from_stdin(extra_args):

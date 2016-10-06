@@ -758,7 +758,7 @@ class Client(object):
         :rtype: dict
         """
 
-        path = self._marathon_id_path_join('v2/pods', pod_id)
+        path = self._marathon_id_path_join('v2/pods', pod_id) + '::status'
         response = self._rpc.http_req(http.get, path)
         return self._parse_json(response)
 
