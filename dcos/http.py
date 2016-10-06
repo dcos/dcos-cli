@@ -433,7 +433,7 @@ def _get_dcos_oauth_creds(dcos_url):
     msg = "\n{}\n\n    {}\n\n{} ".format(
           "Please go to the following link in your browser:",
           url,
-          "Enter authentication token:")
+          "Enter OpenID Connect ID Token:")
     sys.stderr.write(msg)
     sys.stderr.flush()
     token = sys.stdin.readline().strip()
