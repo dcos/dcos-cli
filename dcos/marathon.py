@@ -758,7 +758,8 @@ class Client(object):
         :rtype: dict
         """
 
-        path = self._marathon_id_path_join('v2/pods', pod_id) + '::status'
+        normalized_pod_id = urllib.parse.quote(pod_id.strip('/'))
+        path = 'v2/pods/{}::status'.format(normalized_pod_id)
         response = self._rpc.http_req(http.get, path)
         return self._parse_json(response)
 

@@ -33,6 +33,6 @@
   ],
   "scaling": {
     "kind": "fixed",
-    "instances": 6
+    "instances": 1
   }
 }

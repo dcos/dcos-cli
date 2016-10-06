@@ -139,15 +139,14 @@ def _assert_pod_status_json(expected_pod_status, actual_pod_status):
     _assert_pod_spec_json(expected_pod_status['spec'],
                           actual_pod_status['spec'])
 
-    for i in range(len(expected_pod_status['instances'])):
-        expected_instance = expected_pod_status['instances'][i]
-        actual_instance = actual_pod_status['instances'][i]
+    expected_instance = expected_pod_status['instances'][0]
+    expected_container_statuses = {container['name']: container['status']
+                                   for container
+                                   in expected_instance['containers']}
 
+    for actual_instance in actual_pod_status['instances']:
         assert actual_instance['status'] == expected_instance['status']
 
-        expected_container_statuses = {container['name']: container['status']
-                                       for container
-                                       in expected_instance['containers']}
         actual_container_statuses = {container['name']: container['status']
                                      for container
                                      in actual_instance['containers']}
@@ -183,7 +182,7 @@ def _assert_pod_spec_json(expected_pod_spec, actual_pod_spec):
 
 
 def _assert_pod_list_table():
-    _wait_for_instances({'/double-pod': 2, '/good-pod': 3, '/winston': 1})
+    _wait_for_instances({'/double-pod': 2, '/good-pod': 1, '/winston': 1})
     returncode, stdout, stderr = exec_command(_POD_LIST_CMD)
 
     assert returncode == 0
@@ -259,7 +258,7 @@ def _pod(pod_id, file_path):
             _assert_pod_remove(pod_id, extra_args=['--force'])
 
 
-def _wait_for_instances(expected_instances, max_attempts=20):
+def _wait_for_instances(expected_instances, max_attempts=10):
     """Polls the `pod list` command until the instance counts are as expected.
 
     :param expected_instances: a mapping from pod ID to instance count

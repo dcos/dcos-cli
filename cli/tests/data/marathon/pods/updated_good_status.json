@@ -13,71 +13,6 @@
         }
       ],
       "status": "stable"
-    },
-    {
-      "containers": [
-        {
-          "name": "good-container",
-          "status": "TASK_RUNNING"
-        },
-        {
-          "name": "another-good-container",
-          "status": "TASK_RUNNING"
-        }
-      ],
-      "status": "stable"
-    },
-    {
-      "containers": [
-        {
-          "name": "good-container",
-          "status": "TASK_RUNNING"
-        },
-        {
-          "name": "another-good-container",
-          "status": "TASK_RUNNING"
-        }
-      ],
-      "status": "stable"
-    },
-    {
-      "containers": [
-        {
-          "name": "good-container",
-          "status": "TASK_RUNNING"
-        },
-        {
-          "name": "another-good-container",
-          "status": "TASK_RUNNING"
-        }
-      ],
-      "status": "stable"
-    },
-    {
-      "containers": [
-        {
-          "name": "good-container",
-          "status": "TASK_RUNNING"
-        },
-        {
-          "name": "another-good-container",
-          "status": "TASK_RUNNING"
-        }
-      ],
-      "status": "stable"
-    },
-    {
-      "containers": [
-        {
-          "name": "good-container",
-          "status": "TASK_RUNNING"
-        },
-        {
-          "name": "another-good-container",
-          "status": "TASK_RUNNING"
-        }
-      ],
-      "status": "stable"
     }
   ],
   "spec": {
@@ -115,7 +50,7 @@
     ],
     "scaling": {
       "kind": "fixed",
-      "instances": 6
+      "instances": 1
     }
   },
   "status": "stable"
