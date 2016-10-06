@@ -1,8 +1,8 @@
 {
   "repositories": [
     {
-      "name": "test4",
-      "uri": "https://github.com/mesosphere/universe/archive/cli-test-4.zip"
+      "name": "test-universe",
+      "uri": "http://universe.marathon.mesos:8085/repo"
     }
   ]
 }
