@@ -441,16 +441,17 @@ def pod_table(pods):
         container_lines = ('\n |-{}'.format(name) for name in container_names)
         return pod_id + ''.join(container_lines)
 
+    key_column = 'ID+TASKS'
     fields = OrderedDict([
-        ('ID+CONTAINERS', id_and_containers),
+        (key_column, id_and_containers),
         ('INSTANCES', lambda pod: len(pod.get('instances', []))),
         ('VERSION', lambda pod: pod['spec'].get('version', '-')),
         ('STATUS', lambda pod: pod['status']),
         ('STATUS SINCE', lambda pod: pod['statusSince'])
     ])
 
-    tb = table(fields, pods, sortby='ID+CONTAINERS')
-    tb.align['ID+CONTAINERS'] = 'l'
+    tb = table(fields, pods, sortby=key_column)
+    tb.align[key_column] = 'l'
     tb.align['VERSION'] = 'l'
     tb.align['STATUS'] = 'l'
     tb.align['STATUS SINCE'] = 'l'
