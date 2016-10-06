@@ -6,10 +6,10 @@ import os
 import platform
 import shutil
 import stat
+import subprocess
 import sys
 import zipfile
 from distutils.version import LooseVersion
-from subprocess import PIPE
 
 import requests
 from dcos import constants, util
@@ -577,8 +577,8 @@ def _execute_command(command):
 
     process = Subproc().popen(
         command,
-        stdout=PIPE,
-        stderr=PIPE)
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE)
 
     stdout, stderr = process.communicate()
 
@@ -679,7 +679,7 @@ class SubcommandProcess():
 
         subproc = Subproc().popen(
             [self._executable,  self._command] + self._args,
-            stderr=PIPE)
+            stderr=subprocess.PIPE)
 
         err = ''
         while subproc.poll() is None:
