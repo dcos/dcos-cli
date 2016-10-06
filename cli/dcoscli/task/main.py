@@ -86,9 +86,6 @@ def _task(task, completed, json_):
     :returns: process return code
     """
 
-    if task is None:
-        task = ""
-
     tasks = sorted(mesos.get_master().tasks(completed=completed, fltr=task),
                    key=lambda t: t['name'])
 
@@ -120,10 +117,7 @@ def _log(follow, completed, lines, task, file_):
     :rtype: int
     """
 
-    if task is None:
-        fltr = ""
-    else:
-        fltr = task
+    fltr = task
 
     if file_ is None:
         file_ = 'stdout'
@@ -138,7 +132,9 @@ def _log(follow, completed, lines, task, file_):
     tasks = master.tasks(completed=completed, fltr=fltr)
 
     if not tasks:
-        if not completed:
+        if not fltr:
+            raise DCOSException("No tasks found. Exiting.")
+        elif not completed:
             completed_tasks = master.tasks(completed=True, fltr=fltr)
             if completed_tasks:
                 msg = 'No running tasks match ID [{}]; however, there '.format(
@@ -154,6 +150,10 @@ def _log(follow, completed, lines, task, file_):
 
     mesos_files = _mesos_files(tasks, file_, client)
     if not mesos_files:
+        if fltr is None:
+            msg = "No tasks found. Exiting"
+        else:
+            msg = "No matching tasks. Exiting."
         raise DCOSException('No matching tasks. Exiting.')
 
     log.log_files(mesos_files, follow, lines)
@@ -176,8 +176,6 @@ def _ls(task, path, long_, completed):
     :rtype: int
     """
 
-    if task is None:
-        task = ""
     if path is None:
         path = '.'
     if path.startswith('/'):
@@ -189,8 +187,11 @@ def _ls(task, path, long_, completed):
         completed=completed)
 
     if len(task_objects) == 0:
-        raise DCOSException(
-            'Cannot find a task with ID containing "{}"'.format(task))
+        if task is None:
+            raise DCOSException("No tasks found")
+        else:
+            raise DCOSException(
+                'Cannot find a task with ID containing "{}"'.format(task))
 
     try:
         all_files = []
