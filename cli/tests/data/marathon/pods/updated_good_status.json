@@ -1,0 +1,122 @@
+{
+  "id": "/good-pod",
+  "instances": [
+    {
+      "containers": [
+        {
+          "name": "good-container",
+          "status": "TASK_RUNNING"
+        },
+        {
+          "name": "another-good-container",
+          "status": "TASK_RUNNING"
+        }
+      ],
+      "status": "stable"
+    },
+    {
+      "containers": [
+        {
+          "name": "good-container",
+          "status": "TASK_RUNNING"
+        },
+        {
+          "name": "another-good-container",
+          "status": "TASK_RUNNING"
+        }
+      ],
+      "status": "stable"
+    },
+    {
+      "containers": [
+        {
+          "name": "good-container",
+          "status": "TASK_RUNNING"
+        },
+        {
+          "name": "another-good-container",
+          "status": "TASK_RUNNING"
+        }
+      ],
+      "status": "stable"
+    },
+    {
+      "containers": [
+        {
+          "name": "good-container",
+          "status": "TASK_RUNNING"
+        },
+        {
+          "name": "another-good-container",
+          "status": "TASK_RUNNING"
+        }
+      ],
+      "status": "stable"
+    },
+    {
+      "containers": [
+        {
+          "name": "good-container",
+          "status": "TASK_RUNNING"
+        },
+        {
+          "name": "another-good-container",
+          "status": "TASK_RUNNING"
+        }
+      ],
+      "status": "stable"
+    },
+    {
+      "containers": [
+        {
+          "name": "good-container",
+          "status": "TASK_RUNNING"
+        },
+        {
+          "name": "another-good-container",
+          "status": "TASK_RUNNING"
+        }
+      ],
+      "status": "stable"
+    }
+  ],
+  "spec": {
+    "id": "/good-pod",
+    "containers": [
+      {
+        "name": "good-container",
+        "exec": {
+          "command": {
+            "shell": "sleep 1000"
+          }
+        },
+        "resources": {
+          "cpus": 0.2,
+          "mem": 32.0
+        }
+      },
+      {
+        "name": "another-good-container",
+        "exec": {
+          "command": {
+            "shell": "sleep 1000"
+          }
+        },
+        "resources": {
+          "cpus": 0.1,
+          "mem": 16.0
+        }
+      }
+    ],
+    "networks": [
+      {
+        "mode": "host"
+      }
+    ],
+    "scaling": {
+      "kind": "fixed",
+      "instances": 6
+    }
+  },
+  "status": "stable"
+}

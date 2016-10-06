@@ -10,8 +10,10 @@ from .common import (assert_command, exec_command, file_json_ast,
                      watch_all_deployments)
 from ..fixtures.marathon import (DOUBLE_POD_FILE_PATH, DOUBLE_POD_ID,
                                  GOOD_POD_FILE_PATH, GOOD_POD_ID,
-                                 pod_list_fixture, TRIPLE_POD_FILE_PATH,
-                                 TRIPLE_POD_ID, UPDATED_GOOD_POD_FILE_PATH)
+                                 GOOD_POD_STATUS_FILE_PATH, pod_list_fixture,
+                                 TRIPLE_POD_FILE_PATH, TRIPLE_POD_ID,
+                                 UPDATED_GOOD_POD_FILE_PATH,
+                                 UPDATED_GOOD_POD_STATUS_FILE_PATH)
 
 _PODS_ENABLED = 'DCOS_PODS_ENABLED' in os.environ
 
@@ -57,7 +59,7 @@ def test_pod_list():
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_show():
-    expected_json = file_json_ast(GOOD_POD_FILE_PATH)
+    expected_json = file_json_ast(GOOD_POD_STATUS_FILE_PATH)
 
     with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH):
         _assert_pod_show(GOOD_POD_ID, expected_json)
@@ -114,6 +116,43 @@ def _assert_pod_list_json_subset(expected_json, actual_json):
         _assert_pod_spec_json(expected_pod['spec'], actual_pod['spec'])
 
     assert len(actual_json) == len(expected_json)
+
+
+def _assert_pod_status_json(expected_pod_status, actual_pod_status):
+    """Checks that the "actual" pod status JSON matched the "expected" JSON.
+
+    The comparison only looks at specific fields that are present in the
+    test data used by this module.
+
+    :param expected_pod_status: contains the baseline values for the comparison
+    :type expected_pod_status: {}
+    :param actual_pod_status: has its fields checked against expected's fields
+    :type actual_pod_status: {}
+    :rtype: None
+    """
+
+    assert actual_pod_status['id'] == expected_pod_status['id']
+    assert actual_pod_status['status'] == expected_pod_status['status']
+    assert len(actual_pod_status['instances']) == \
+        len(expected_pod_status['instances'])
+
+    _assert_pod_spec_json(expected_pod_status['spec'],
+                          actual_pod_status['spec'])
+
+    for i in range(len(expected_pod_status['instances'])):
+        expected_instance = expected_pod_status['instances'][i]
+        actual_instance = actual_pod_status['instances'][i]
+
+        assert actual_instance['status'] == expected_instance['status']
+
+        expected_container_statuses = {container['name']: container['status']
+                                       for container
+                                       in expected_instance['containers']}
+        actual_container_statuses = {container['name']: container['status']
+                                     for container
+                                     in actual_instance['containers']}
+
+        assert actual_container_statuses == expected_container_statuses
 
 
 def _assert_pod_spec_json(expected_pod_spec, actual_pod_spec):
@@ -184,11 +223,11 @@ def _assert_pod_show(pod_id, expected_json):
     assert stderr == b''
 
     pod_status_json = json.loads(stdout.decode('utf-8'))
-    _assert_pod_spec_json(expected_json, pod_status_json['spec'])
+    _assert_pod_status_json(expected_json, pod_status_json)
 
 
 def _assert_pod_update_from_stdin(extra_args):
-    expected_json = file_json_ast(UPDATED_GOOD_POD_FILE_PATH)
+    expected_json = file_json_ast(UPDATED_GOOD_POD_STATUS_FILE_PATH)
 
     with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH):
         cmd = _POD_UPDATE_CMD + [GOOD_POD_ID] + extra_args
@@ -220,7 +259,7 @@ def _pod(pod_id, file_path):
             _assert_pod_remove(pod_id, extra_args=['--force'])
 
 
-def _wait_for_instances(expected_instances, max_attempts=10):
+def _wait_for_instances(expected_instances, max_attempts=20):
     """Polls the `pod list` command until the instance counts are as expected.
 
     :param expected_instances: a mapping from pod ID to instance count
