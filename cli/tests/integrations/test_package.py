@@ -16,12 +16,22 @@ from .common import (assert_command, assert_lines, base64_to_dict,
                      wait_for_service, watch_all_deployments)
 from ..common import file_bytes
 
+UNIVERSE_REPO = "https://universe.mesosphere.com/repo"
+UNIVERSE_TEST_REPO = "http://universe.marathon.mesos:8085/repo"
+
 
 def setup_module(module):
+    # add universe-server with static packages
+    assert_command(
+        ['dcos', 'marathon', 'app', 'add', 'tests/data/universe-v3-stub.json'])
+    watch_all_deployments()
+
     assert_command(
         ['dcos', 'package', 'repo', 'remove', 'Universe'])
-    repo = "https://github.com/mesosphere/universe/archive/cli-test-4.zip"
-    assert_command(['dcos', 'package', 'repo', 'add', 'test4', repo])
+
+    assert_command(
+        ['dcos', 'package', 'repo', 'add', 'test-universe', UNIVERSE_TEST_REPO]
+    )
 
 
 def teardown_module(module):
@@ -31,9 +41,11 @@ def teardown_module(module):
             service_shutdown(framework['id'])
 
     assert_command(
-        ['dcos', 'package', 'repo', 'remove', 'test4'])
-    repo = "https://universe.mesosphere.com/repo"
-    assert_command(['dcos', 'package', 'repo', 'add', 'Universe', repo])
+        ['dcos', 'package', 'repo', 'remove', 'test-universe'])
+    assert_command(
+        ['dcos', 'package', 'repo', 'add', 'Universe', UNIVERSE_REPO])
+    assert_command(
+        ['dcos', 'marathon', 'app', 'remove', '/universe', '--force'])
 
 
 @pytest.fixture(scope="module")
@@ -69,9 +81,8 @@ def test_update_deprecation_notice():
 
 
 def test_repo_list():
-    repo_list = b"""\
-test4: https://github.com/mesosphere/universe/archive/cli-test-4.zip
-"""
+    repo_list = bytes(
+        "test-universe: {}\n".format(UNIVERSE_TEST_REPO), 'utf-8')
     assert_command(['dcos', 'package', 'repo', 'list'], stdout=repo_list)
 
 
@@ -83,43 +94,36 @@ def test_repo_list_json():
 
 
 def test_repo_add():
-    repo = \
-        "https://github.com/mesosphere/universe/archive/cli-test-3.zip"
-    repo_list = b"""\
-test4: https://github.com/mesosphere/universe/archive/cli-test-4.zip
-test: https://github.com/mesosphere/universe/archive/cli-test-3.zip
-"""
-    args = ["test", repo]
+    repo_list = bytes("test-universe: {}\nUniverse: {}\n".format(
+        UNIVERSE_TEST_REPO, UNIVERSE_REPO), 'utf-8')
+
+    args = ["Universe", UNIVERSE_REPO]
     _repo_add(args, repo_list)
 
 
 def test_repo_add_index():
-    repo = \
-        "https://github.com/mesosphere/universe/archive/cli-test-2.zip"
-    repo_list = b"""\
-test4: https://github.com/mesosphere/universe/archive/cli-test-4.zip
-test2: https://github.com/mesosphere/universe/archive/cli-test-2.zip
-test: https://github.com/mesosphere/universe/archive/cli-test-3.zip
-"""
-    args = ["test2", repo, '--index=1']
+    repo17 = "http://universe.mesosphere.com/repo-1.7"
+    repo_list = bytes(
+        "test-universe: {}\n1.7-universe: {}\nUniverse: {}\n".format(
+            UNIVERSE_TEST_REPO, repo17,  UNIVERSE_REPO), 'utf-8')
+
+    args = ["1.7-universe", repo17, '--index=1']
     _repo_add(args, repo_list)
 
 
 def test_repo_remove():
-    repo_list = b"""\
-test4: https://github.com/mesosphere/universe/archive/cli-test-4.zip
-test2: https://github.com/mesosphere/universe/archive/cli-test-2.zip
-"""
-    _repo_remove(['test'], repo_list)
-    repo_list = b"""\
-test4: https://github.com/mesosphere/universe/archive/cli-test-4.zip
-"""
-    _repo_remove(['test2'], repo_list)
+    repo_list = bytes("test-universe: {}\nUniverse: {}\n".format(
+        UNIVERSE_TEST_REPO, UNIVERSE_REPO), 'utf-8')
+    _repo_remove(['1.7-universe'], repo_list)
+
+    repo_list = bytes(
+        "test-universe: {}\n".format(UNIVERSE_TEST_REPO), 'utf-8')
+    _repo_remove(['Universe'], repo_list)
 
 
 def test_repo_empty():
     assert_command(
-        ['dcos', 'package', 'repo', 'remove', 'test4'])
+        ['dcos', 'package', 'repo', 'remove', 'test-universe'])
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'package', 'repo', 'list'])
@@ -129,12 +133,10 @@ def test_repo_empty():
     assert stdout == b''
     assert stderr == stderr_msg
 
-    repo = \
-        "https://github.com/mesosphere/universe/archive/cli-test-4.zip"
-    repo_list = b"""\
-test4: https://github.com/mesosphere/universe/archive/cli-test-4.zip
-"""
-    _repo_add(["test4", repo], repo_list)
+    repo_list = bytes(
+        "test-universe: {}\n".format(UNIVERSE_TEST_REPO), 'utf-8')
+
+    _repo_add(["test-universe", UNIVERSE_TEST_REPO], repo_list)
 
 
 def test_describe_nonexistent():
@@ -423,8 +425,7 @@ def test_package_metadata():
         ]
     }
 
-    expected_source = b"""https://github.com/mesosphere/universe/archive/\
-cli-test-4.zip"""
+    expected_source = bytes(UNIVERSE_TEST_REPO, 'utf-8')
 
     expected_labels = {
         'DCOS_PACKAGE_REGISTRY_VERSION': b'2.0',
