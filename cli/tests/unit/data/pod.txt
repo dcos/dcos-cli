@@ -1,4 +1,4 @@
-ID+CONTAINERS      INSTANCES  VERSION                   STATUS    STATUS SINCE              
+ID+TASKS           INSTANCES  VERSION                   STATUS    STATUS SINCE              
 /double-pod            2      2016-10-04T27:18:28.183Z  terminal  2016-10-04T03:13:37.101Z  
  |-thing-1                                                                                  
  |-thing-2                                                                                  

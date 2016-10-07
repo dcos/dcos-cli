@@ -1,3 +1,3 @@
-ID+CONTAINERS           INSTANCES  VERSION                   STATUS  STATUS SINCE              
+ID+TASKS                INSTANCES  VERSION                   STATUS  STATUS SINCE              
 /pod-without-instances      0      2016-10-05T16:18:03.399Z  stable  2016-10-05T15:36:54.123Z  
  |-no-instances                                                                                
