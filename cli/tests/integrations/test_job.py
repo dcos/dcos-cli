@@ -94,21 +94,21 @@ def test_show_job_with_blank_jobname():
     assert returncode == 1
     assert "Command not recognized" in stdout.decode('utf-8')
 
-
+#
 def test_show_job_with_invalid_jobname():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'job', 'show', 'invalid'])
-
-    assert returncode == 1
-    assert "does NOT exist" in stderr.decode('utf-8')
+    assert_command(
+        ['dcos', 'job', 'show', 'invalid'],
+        stdout=b'',
+        stderr=b"Job ID: 'invalid' does NOT exist.\n",
+        returncode=1)
 
 
 def test_show_job_runs_blank_jobname():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'job', 'show', 'runs'])
-
-    assert returncode == 1
-    assert "does NOT exist" in stderr.decode('utf-8')
+    assert_command(
+        ['dcos', 'job', 'show', 'runs'],
+        stdout=b'',
+        stderr=b"Job ID: 'runs' does NOT exist.\n",
+        returncode=1)
 
 
 def test_show_schedule_blank_jobname():
@@ -120,11 +120,11 @@ def test_show_schedule_blank_jobname():
 
 
 def test_show_schedule_invalid_jobname():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'job', 'schedule', 'show', 'invalid'])
-
-    assert returncode == 1
-    assert "does NOT exist" in stderr.decode('utf-8')
+    assert_command(
+        ['dcos', 'job', 'schedule', 'show', 'invalid'],
+        stdout=b'',
+        stderr=b"Job ID: 'invalid' does NOT exist.\n",
+        returncode=1)
 
 
 def test_remove_job():
