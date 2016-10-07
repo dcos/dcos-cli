@@ -12,8 +12,8 @@ from ..fixtures.marathon import (DOUBLE_POD_FILE_PATH, DOUBLE_POD_ID,
                                  GOOD_POD_FILE_PATH, GOOD_POD_ID,
                                  GOOD_POD_STATUS_FILE_PATH, pod_list_fixture,
                                  TRIPLE_POD_FILE_PATH, TRIPLE_POD_ID,
-                                 UPDATED_GOOD_POD_FILE_PATH,
-                                 UPDATED_GOOD_POD_STATUS_FILE_PATH)
+                                 UNGOOD_POD_FILE_PATH,
+                                 UPDATED_GOOD_POD_FILE_PATH)
 
 _PODS_ENABLED = 'DCOS_PODS_ENABLED' in os.environ
 
@@ -36,6 +36,7 @@ def test_pod_add_from_file_then_remove():
 
     # Explicitly testing non-forced-removal; can't use the context manager
     _assert_pod_remove(GOOD_POD_ID, extra_args=[])
+    watch_all_deployments()
 
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
@@ -43,15 +44,16 @@ def test_pod_add_from_stdin_then_force_remove():
     # Explicitly testing adding from stdin; can't use the context manager
     _assert_pod_add_from_stdin(GOOD_POD_FILE_PATH)
     _assert_pod_remove(GOOD_POD_ID, extra_args=['--force'])
+    watch_all_deployments()
 
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_list():
     expected_json = pod_list_fixture()
 
-    with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH), \
-            _pod(DOUBLE_POD_ID, DOUBLE_POD_FILE_PATH), \
-            _pod(TRIPLE_POD_ID, TRIPLE_POD_FILE_PATH):
+    with _pods({GOOD_POD_ID: GOOD_POD_FILE_PATH,
+                DOUBLE_POD_ID: DOUBLE_POD_FILE_PATH,
+                TRIPLE_POD_ID: TRIPLE_POD_FILE_PATH}):
 
         _assert_pod_list_json(expected_json)
         _assert_pod_list_table()
@@ -76,12 +78,18 @@ def test_pod_update_does_not_support_properties():
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_update_from_stdin():
-    _assert_pod_update_from_stdin(extra_args=[])
+    with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH):
+        # The deployment will never complete
+        _assert_pod_update_from_stdin(
+            extra_args=[],
+            pod_json_file_path=UNGOOD_POD_FILE_PATH)
 
+        # Override above failed deployment
+        _assert_pod_update_from_stdin(
+            extra_args=['--force'],
+            pod_json_file_path=UPDATED_GOOD_POD_FILE_PATH)
 
-@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
-def test_pod_update_from_stdin_force():
-    _assert_pod_update_from_stdin(extra_args=['--force'])
+        watch_all_deployments()
 
 
 def _pod_add_from_file(file_path):
@@ -211,8 +219,6 @@ def _assert_pod_remove(pod_id, extra_args):
     cmd = _POD_REMOVE_CMD + [pod_id] + extra_args
     assert_command(cmd, returncode=0, stdout=b'', stderr=b'')
 
-    watch_all_deployments()
-
 
 def _assert_pod_show(pod_id, expected_json):
     cmd = _POD_SHOW_CMD + [pod_id]
@@ -225,37 +231,42 @@ def _assert_pod_show(pod_id, expected_json):
     _assert_pod_status_json(expected_json, pod_status_json)
 
 
-def _assert_pod_update_from_stdin(extra_args):
-    expected_json = file_json_ast(UPDATED_GOOD_POD_STATUS_FILE_PATH)
+def _assert_pod_update_from_stdin(extra_args, pod_json_file_path):
+    cmd = _POD_UPDATE_CMD + [GOOD_POD_ID] + extra_args
+    with open(pod_json_file_path) as fd:
+        returncode, stdout, stderr = exec_command(cmd, stdin=fd)
 
-    with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH):
-        cmd = _POD_UPDATE_CMD + [GOOD_POD_ID] + extra_args
-        with open(UPDATED_GOOD_POD_FILE_PATH) as fd:
-            returncode, stdout, stderr = exec_command(cmd, stdin=fd)
-
-        assert returncode == 0
-        assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
-        assert stderr == b''
-
-        watch_all_deployments()
-        _assert_pod_show(GOOD_POD_ID, expected_json)
+    assert returncode == 0
+    assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
+    assert stderr == b''
 
 
 @contextlib.contextmanager
 def _pod(pod_id, file_path):
-    returncode, stdout, stderr = _pod_add_from_file(file_path)
-    pod_added = (returncode == 0)
+    with _pods({pod_id: file_path}):
+        yield
+
+
+@contextlib.contextmanager
+def _pods(ids_and_paths):
+    ids_and_results = {}
+    for pod_id, file_path in ids_and_paths.items():
+        ids_and_results[pod_id] = _pod_add_from_file(file_path)
+
+    expected_results = {pod_id: (0, b'', b'')
+                        for pod_id in ids_and_results.keys()}
 
     try:
-        assert pod_added
-        assert stdout == b''
-        assert stderr == b''
+        assert ids_and_results == expected_results
 
         watch_all_deployments()
         yield
     finally:
-        if pod_added:
-            _assert_pod_remove(pod_id, extra_args=['--force'])
+        for pod_id, results in ids_and_results.items():
+            returncode, _, _ = results
+            if returncode == 0:
+                _assert_pod_remove(pod_id, extra_args=['--force'])
+        watch_all_deployments()
 
 
 def _wait_for_instances(expected_instances, max_attempts=10):

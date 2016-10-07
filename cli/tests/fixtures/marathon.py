@@ -6,12 +6,12 @@ PODS_FILE_PATH_BASE = 'tests/data/marathon/pods'
 
 GOOD_POD_ID = 'good-pod'
 GOOD_POD_FILE_PATH = os.path.join(PODS_FILE_PATH_BASE, 'good.json')
+UNGOOD_POD_FILE_PATH = \
+    os.path.join(PODS_FILE_PATH_BASE, 'ungood.json')
 UPDATED_GOOD_POD_FILE_PATH = \
     os.path.join(PODS_FILE_PATH_BASE, 'updated_good.json')
 GOOD_POD_STATUS_FILE_PATH = \
     os.path.join(PODS_FILE_PATH_BASE, 'good_status.json')
-UPDATED_GOOD_POD_STATUS_FILE_PATH = \
-    os.path.join(PODS_FILE_PATH_BASE, 'updated_good_status.json')
 
 DOUBLE_POD_ID = 'double-pod'
 DOUBLE_POD_FILE_PATH = os.path.join(PODS_FILE_PATH_BASE, 'double.json')
