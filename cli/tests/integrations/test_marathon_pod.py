@@ -10,15 +10,17 @@ from .common import (assert_command, exec_command, file_json_ast,
                      watch_all_deployments)
 from ..fixtures.marathon import (DOUBLE_POD_FILE_PATH, DOUBLE_POD_ID,
                                  GOOD_POD_FILE_PATH, GOOD_POD_ID,
-                                 GOOD_POD_STATUS_FILE_PATH, pod_list_fixture,
-                                 TRIPLE_POD_FILE_PATH, TRIPLE_POD_ID,
-                                 UNGOOD_POD_FILE_PATH,
+                                 GOOD_POD_STATUS_FILE_PATH,
+                                 INSTANCE_REMOVE_FILE_PATH, INSTANCE_REMOVE_ID,
+                                 pod_list_fixture, TRIPLE_POD_FILE_PATH,
+                                 TRIPLE_POD_ID, UNGOOD_POD_FILE_PATH,
                                  UPDATED_GOOD_POD_FILE_PATH)
 
 _PODS_ENABLED = 'DCOS_PODS_ENABLED' in os.environ
 
 _POD_BASE_CMD = ['dcos', 'marathon', 'pod']
 _POD_ADD_CMD = _POD_BASE_CMD + ['add']
+_POD_INSTANCE_REMOVE_CMD = _POD_BASE_CMD + ['instance', 'remove']
 _POD_LIST_CMD = _POD_BASE_CMD + ['list']
 _POD_REMOVE_CMD = _POD_BASE_CMD + ['remove']
 _POD_SHOW_CMD = _POD_BASE_CMD + ['show']
@@ -90,6 +92,26 @@ def test_pod_update_from_stdin():
             pod_json_file_path=UPDATED_GOOD_POD_FILE_PATH)
 
         watch_all_deployments()
+
+
+@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
+def test_pod_instance_remove():
+    with _pod(INSTANCE_REMOVE_ID, INSTANCE_REMOVE_FILE_PATH):
+        _wait_for_instances({'/{}'.format(INSTANCE_REMOVE_ID): 3})
+
+        show_cmd = _POD_SHOW_CMD + [INSTANCE_REMOVE_ID]
+        returncode, stdout, stderr = exec_command(show_cmd)
+
+        assert returncode == 0
+        assert stderr == b''
+
+        pod_status_json = json.loads(stdout.decode('utf-8'))
+        remove_1, keep, remove_2 = [instance['id'] for instance
+                                    in pod_status_json['instances']]
+
+        remove_args = [INSTANCE_REMOVE_ID, remove_1, remove_2]
+        assert_command(_POD_INSTANCE_REMOVE_CMD + remove_args)
+        _wait_for_instances({'/{}'.format(INSTANCE_REMOVE_ID): 1})
 
 
 def _pod_add_from_file(file_path):
