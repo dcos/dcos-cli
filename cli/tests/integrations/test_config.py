@@ -40,10 +40,10 @@ def test_version():
 
 
 def _test_list_property(env):
-    stdout = b"""core.dcos_url=http://dcos.snakeoil.mesosphere.com
-core.reporting=False
-core.ssl_verify=false
-core.timeout=5
+    stdout = b"""core.dcos_url http://dcos.snakeoil.mesosphere.com
+core.reporting False
+core.ssl_verify false
+core.timeout 5
 """
     assert_command(['dcos', 'config', 'show'],
                    stdout=stdout,
