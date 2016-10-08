@@ -21,6 +21,6 @@
   ],
   "scaling": {
     "kind": "fixed",
-    "instances": 3
+    "instances": 1
   }
 }

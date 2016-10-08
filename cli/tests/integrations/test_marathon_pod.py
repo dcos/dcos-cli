@@ -10,8 +10,10 @@ from .common import (assert_command, exec_command, file_json_ast,
                      watch_all_deployments)
 from ..fixtures.marathon import (DOUBLE_POD_FILE_PATH, DOUBLE_POD_ID,
                                  GOOD_POD_FILE_PATH, GOOD_POD_ID,
-                                 pod_list_fixture, TRIPLE_POD_FILE_PATH,
-                                 TRIPLE_POD_ID, UPDATED_GOOD_POD_FILE_PATH)
+                                 GOOD_POD_STATUS_FILE_PATH, pod_list_fixture,
+                                 TRIPLE_POD_FILE_PATH, TRIPLE_POD_ID,
+                                 UNGOOD_POD_FILE_PATH,
+                                 UPDATED_GOOD_POD_FILE_PATH)
 
 _PODS_ENABLED = 'DCOS_PODS_ENABLED' in os.environ
 
@@ -34,6 +36,7 @@ def test_pod_add_from_file_then_remove():
 
     # Explicitly testing non-forced-removal; can't use the context manager
     _assert_pod_remove(GOOD_POD_ID, extra_args=[])
+    watch_all_deployments()
 
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
@@ -41,15 +44,16 @@ def test_pod_add_from_stdin_then_force_remove():
     # Explicitly testing adding from stdin; can't use the context manager
     _assert_pod_add_from_stdin(GOOD_POD_FILE_PATH)
     _assert_pod_remove(GOOD_POD_ID, extra_args=['--force'])
+    watch_all_deployments()
 
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_list():
     expected_json = pod_list_fixture()
 
-    with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH), \
-            _pod(DOUBLE_POD_ID, DOUBLE_POD_FILE_PATH), \
-            _pod(TRIPLE_POD_ID, TRIPLE_POD_FILE_PATH):
+    with _pods({GOOD_POD_ID: GOOD_POD_FILE_PATH,
+                DOUBLE_POD_ID: DOUBLE_POD_FILE_PATH,
+                TRIPLE_POD_ID: TRIPLE_POD_FILE_PATH}):
 
         _assert_pod_list_json(expected_json)
         _assert_pod_list_table()
@@ -57,7 +61,7 @@ def test_pod_list():
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_show():
-    expected_json = file_json_ast(GOOD_POD_FILE_PATH)
+    expected_json = file_json_ast(GOOD_POD_STATUS_FILE_PATH)
 
     with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH):
         _assert_pod_show(GOOD_POD_ID, expected_json)
@@ -74,12 +78,18 @@ def test_pod_update_does_not_support_properties():
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_update_from_stdin():
-    _assert_pod_update_from_stdin(extra_args=[])
+    with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH):
+        # The deployment will never complete
+        _assert_pod_update_from_stdin(
+            extra_args=[],
+            pod_json_file_path=UNGOOD_POD_FILE_PATH)
 
+        # Override above failed deployment
+        _assert_pod_update_from_stdin(
+            extra_args=['--force'],
+            pod_json_file_path=UPDATED_GOOD_POD_FILE_PATH)
 
-@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
-def test_pod_update_from_stdin_force():
-    _assert_pod_update_from_stdin(extra_args=['--force'])
+        watch_all_deployments()
 
 
 def _pod_add_from_file(file_path):
@@ -111,26 +121,62 @@ def _assert_pod_list_json_subset(expected_json, actual_json):
     for expected_pod in expected_json:
         pod_id = expected_pod['id']
         actual_pod = actual_pods_by_id[pod_id]
-        _assert_pod_json(expected_pod['spec'], actual_pod['spec'])
+        _assert_pod_spec_json(expected_pod['spec'], actual_pod['spec'])
 
     assert len(actual_json) == len(expected_json)
 
 
-def _assert_pod_json(expected_pod, actual_pod):
-    """Checks that the "actual" pod JSON matches the "expected" pod JSON.
+def _assert_pod_status_json(expected_pod_status, actual_pod_status):
+    """Checks that the "actual" pod status JSON matched the "expected" JSON.
 
     The comparison only looks at specific fields that are present in the
     test data used by this module.
 
-    :param expected_pod: contains the baseline values for the comparison
-    :type expected_pod: {}
-    :param actual_pod: has its fields checked against the expected fields
-    :type actual_pod: {}
+    :param expected_pod_status: contains the baseline values for the comparison
+    :type expected_pod_status: {}
+    :param actual_pod_status: has its fields checked against expected's fields
+    :type actual_pod_status: {}
     :rtype: None
     """
 
-    expected_containers = expected_pod['containers']
-    actual_containers = actual_pod['containers']
+    assert actual_pod_status['id'] == expected_pod_status['id']
+    assert actual_pod_status['status'] == expected_pod_status['status']
+    assert len(actual_pod_status['instances']) == \
+        len(expected_pod_status['instances'])
+
+    _assert_pod_spec_json(expected_pod_status['spec'],
+                          actual_pod_status['spec'])
+
+    expected_instance = expected_pod_status['instances'][0]
+    expected_container_statuses = {container['name']: container['status']
+                                   for container
+                                   in expected_instance['containers']}
+
+    for actual_instance in actual_pod_status['instances']:
+        assert actual_instance['status'] == expected_instance['status']
+
+        actual_container_statuses = {container['name']: container['status']
+                                     for container
+                                     in actual_instance['containers']}
+
+        assert actual_container_statuses == expected_container_statuses
+
+
+def _assert_pod_spec_json(expected_pod_spec, actual_pod_spec):
+    """Checks that the "actual" pod spec JSON matches the "expected" JSON.
+
+    The comparison only looks at specific fields that are present in the
+    test data used by this module.
+
+    :param expected_pod_spec: contains the baseline values for the comparison
+    :type expected_pod_spec: {}
+    :param actual_pod_spec: has its fields checked against the expected fields
+    :type actual_pod_spec: {}
+    :rtype: None
+    """
+
+    expected_containers = expected_pod_spec['containers']
+    actual_containers = actual_pod_spec['containers']
     actual_containers_by_name = {c['name']: c for c in actual_containers}
 
     for expected_container in expected_containers:
@@ -144,7 +190,7 @@ def _assert_pod_json(expected_pod, actual_pod):
 
 
 def _assert_pod_list_table():
-    _wait_for_instances({'/double-pod': 2, '/good-pod': 3, '/winston': 1})
+    _wait_for_instances({'/double-pod': 2, '/good-pod': 1, '/winston': 1})
     returncode, stdout, stderr = exec_command(_POD_LIST_CMD)
 
     assert returncode == 0
@@ -173,8 +219,6 @@ def _assert_pod_remove(pod_id, extra_args):
     cmd = _POD_REMOVE_CMD + [pod_id] + extra_args
     assert_command(cmd, returncode=0, stdout=b'', stderr=b'')
 
-    watch_all_deployments()
-
 
 def _assert_pod_show(pod_id, expected_json):
     cmd = _POD_SHOW_CMD + [pod_id]
@@ -183,41 +227,46 @@ def _assert_pod_show(pod_id, expected_json):
     assert returncode == 0
     assert stderr == b''
 
-    pod_json = json.loads(stdout.decode('utf-8'))
-    _assert_pod_json(expected_json, pod_json)
+    pod_status_json = json.loads(stdout.decode('utf-8'))
+    _assert_pod_status_json(expected_json, pod_status_json)
 
 
-def _assert_pod_update_from_stdin(extra_args):
-    expected_json = file_json_ast(UPDATED_GOOD_POD_FILE_PATH)
+def _assert_pod_update_from_stdin(extra_args, pod_json_file_path):
+    cmd = _POD_UPDATE_CMD + [GOOD_POD_ID] + extra_args
+    with open(pod_json_file_path) as fd:
+        returncode, stdout, stderr = exec_command(cmd, stdin=fd)
 
-    with _pod(GOOD_POD_ID, GOOD_POD_FILE_PATH):
-        cmd = _POD_UPDATE_CMD + [GOOD_POD_ID] + extra_args
-        with open(UPDATED_GOOD_POD_FILE_PATH) as fd:
-            returncode, stdout, stderr = exec_command(cmd, stdin=fd)
-
-        assert returncode == 0
-        assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
-        assert stderr == b''
-
-        watch_all_deployments()
-        _assert_pod_show(GOOD_POD_ID, expected_json)
+    assert returncode == 0
+    assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
+    assert stderr == b''
 
 
 @contextlib.contextmanager
 def _pod(pod_id, file_path):
-    returncode, stdout, stderr = _pod_add_from_file(file_path)
-    pod_added = (returncode == 0)
+    with _pods({pod_id: file_path}):
+        yield
+
+
+@contextlib.contextmanager
+def _pods(ids_and_paths):
+    ids_and_results = {}
+    for pod_id, file_path in ids_and_paths.items():
+        ids_and_results[pod_id] = _pod_add_from_file(file_path)
+
+    expected_results = {pod_id: (0, b'', b'')
+                        for pod_id in ids_and_results.keys()}
 
     try:
-        assert pod_added
-        assert stdout == b''
-        assert stderr == b''
+        assert ids_and_results == expected_results
 
         watch_all_deployments()
         yield
     finally:
-        if pod_added:
-            _assert_pod_remove(pod_id, extra_args=['--force'])
+        for pod_id, results in ids_and_results.items():
+            returncode, _, _ = results
+            if returncode == 0:
+                _assert_pod_remove(pod_id, extra_args=['--force'])
+        watch_all_deployments()
 
 
 def _wait_for_instances(expected_instances, max_attempts=10):

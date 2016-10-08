@@ -48,11 +48,14 @@ def test_remove_pod_propagates_dcos_exception():
 
 
 def test_show_pod_builds_rpc_correctly():
-    _assert_show_pod_builds_rpc_correctly(pod_id='foo', path='v2/pods/foo')
-    _assert_show_pod_builds_rpc_correctly(pod_id='/bar', path='v2/pods/bar')
-    _assert_show_pod_builds_rpc_correctly(pod_id='baz/', path='v2/pods/baz')
-    _assert_show_pod_builds_rpc_correctly(pod_id='foo bar',
-                                          path='v2/pods/foo%20bar')
+    _assert_show_pod_builds_rpc_correctly(
+        pod_id='foo', path='v2/pods/foo::status')
+    _assert_show_pod_builds_rpc_correctly(
+        pod_id='/bar', path='v2/pods/bar::status')
+    _assert_show_pod_builds_rpc_correctly(
+        pod_id='baz/', path='v2/pods/baz::status')
+    _assert_show_pod_builds_rpc_correctly(
+        pod_id='foo bar', path='v2/pods/foo%20bar::status')
 
 
 def test_show_pod_returns_response_json():
