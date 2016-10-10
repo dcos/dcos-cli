@@ -1,6 +1,6 @@
 {
     "id": "follow",
-    "cmd": "while true; do echo 'follow_this'; sleep 1; done;",
+    "cmd": "while true; do echo 'follow_this'; done;",
     "cpus": 0.1,
     "mem": 16,
     "instances": 1
