@@ -94,7 +94,7 @@ def test_show_job_with_blank_jobname():
     assert returncode == 1
     assert "Command not recognized" in stdout.decode('utf-8')
 
-#
+
 def test_show_job_with_invalid_jobname():
     assert_command(
         ['dcos', 'job', 'show', 'invalid'],
