@@ -344,8 +344,11 @@ def _show(job_id):
     try:
         response = _do_request("{}/{}".format(
             _get_api_url('v1/jobs'), job_id), 'GET')
-    except DCOSException as e:
-        raise DCOSException(e)
+    except DCOSHTTPException as e:
+        if e.response.status_code == 404:
+            raise DCOSException("Job ID: '{}' does NOT exist.".format(job_id))
+        else:
+            raise DCOSException(e)
 
     json_job = _read_http_response_body(response)
     emitter.publish(json_job)
@@ -447,6 +450,11 @@ def _show_schedule(job_id, json_flag=False):
     url = "{}/{}/schedules".format(_get_api_url('v1/jobs'), job_id)
     try:
         response = _do_request(url, 'GET')
+    except DCOSHTTPException as e:
+        if e.response.status_code == 404:
+            raise DCOSException("Job ID: '{}' does NOT exist.".format(job_id))
+        else:
+            raise DCOSException(e)
     except DCOSException as e:
         raise DCOSException(e)
 
