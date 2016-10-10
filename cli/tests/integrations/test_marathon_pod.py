@@ -96,7 +96,7 @@ def test_pod_update_from_stdin():
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_instance_remove():
-    with _pod(INSTANCE_REMOVE_ID, INSTANCE_REMOVE_FILE_PATH):
+    def assert_show_and_get_instance_ids():
         _wait_for_instances({'/{}'.format(INSTANCE_REMOVE_ID): 3})
 
         show_cmd = _POD_SHOW_CMD + [INSTANCE_REMOVE_ID]
@@ -106,12 +106,20 @@ def test_pod_instance_remove():
         assert stderr == b''
 
         pod_status_json = json.loads(stdout.decode('utf-8'))
-        remove_1, keep, remove_2 = [instance['id'] for instance
-                                    in pod_status_json['instances']]
+        instances_json = pod_status_json['instances']
+        return tuple(instance['id'] for instance in instances_json)
+
+    with _pod(INSTANCE_REMOVE_ID, INSTANCE_REMOVE_FILE_PATH):
+        remove_1, keep, remove_2 = assert_show_and_get_instance_ids()
 
         remove_args = [INSTANCE_REMOVE_ID, remove_1, remove_2]
         assert_command(_POD_INSTANCE_REMOVE_CMD + remove_args)
-        _wait_for_instances({'/{}'.format(INSTANCE_REMOVE_ID): 1})
+
+        new_instance_ids = assert_show_and_get_instance_ids()
+        assert keep in new_instance_ids
+        assert remove_1 not in new_instance_ids
+        assert remove_2 not in new_instance_ids
+        assert len(new_instance_ids) == 3
 
 
 def _pod_add_from_file(file_path):
