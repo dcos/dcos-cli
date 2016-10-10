@@ -346,8 +346,8 @@ class Client(object):
         :rtype: requests.Response
         """
 
-        path_prefix = 'v2/{}'.format(resource_type)
-        path = self._marathon_id_path_join(path_prefix, resource_id)
+        path_template = 'v2/{}/{{}}'.format(resource_type)
+        path = self._marathon_id_path_format(path_template, resource_id)
         params = self._force_params(force)
         return self._rpc.http_req(
             http.put, path, params=params, json=resource_json)
@@ -745,7 +745,7 @@ class Client(object):
         :rtype: None
         """
 
-        path = self._marathon_id_path_join('v2/pods', pod_id)
+        path = self._marathon_id_path_format('v2/pods/{}', pod_id)
         params = self._force_params(force)
         self._rpc.http_req(http.delete, path, params=params)
 
@@ -758,8 +758,7 @@ class Client(object):
         :rtype: dict
         """
 
-        normalized_pod_id = urllib.parse.quote(pod_id.strip('/'))
-        path = 'v2/pods/{}::status'.format(normalized_pod_id)
+        path = self._marathon_id_path_format('v2/pods/{}::status', pod_id)
         response = self._rpc.http_req(http.get, path)
         return self._parse_json(response)
 
@@ -795,6 +794,21 @@ class Client(object):
 
         return deployment_id
 
+    def remove_pod_instances(self, pod_id, instance_ids):
+        """Kills the given instances of the specified pod.
+
+        :param pod_id: the pod to delete instances from
+        :type pod_id: str
+        :param instance_ids: the IDs of the instances to kill
+        :type instance_ids: [str]
+        :return: the status JSON objects for the killed instances
+        :rtype: [{}]
+        """
+
+        path = self._marathon_id_path_format('v2/pods/{}::instance', pod_id)
+        response = self._rpc.http_req(http.delete, path, json=instance_ids)
+        return response.json()
+
     def pod_feature_supported(self):
         """Return whether or not this client is communicating with a version
         of Marathon that supports pod operations.
@@ -816,24 +830,26 @@ class Client(object):
         return response.status_code // 100 == 2
 
     @staticmethod
-    def _marathon_id_path_join(url_path, id_path):
-        """Concatenates a URL path with a Marathon "ID path", ensuring the
-        result is well-formed.
+    def _marathon_id_path_format(url_path_template, id_path):
+        """Substitutes a Marathon "ID path" into a URL path format string,
+        ensuring the result is well-formed.
 
-        The path and the ID will be joined with a single forward slash (/),
-        all trailing slashes in the ID will be removed, and the ID will have
-        all URL-unsafe characters escaped, as if by urllib.parse.quote().
+        All leading and trailing slashes in the ID will be removed, and the ID
+        will have all URL-unsafe characters escaped, as if by
+        urllib.parse.quote().
 
-        :param url_path: the path portion of a URL
-        :type url_path: str
-        :param path_id: a Marathon "ID path", e.g. app ID or group ID
-        :type path_id: str
-        :returns: the path with the ID appended
+        :param url_path_template: format string for the path portion of a URL,
+                                  with a single format specifier (i.e. {})
+                                  where the "ID path" should be inserted
+        :type url_path_template: str
+        :param id_path: a Marathon "ID path", e.g. app, group, or pod ID
+        :type id_path: str
+        :returns: the url path template with the ID inserted
         :rtype: str
         """
 
         normalized_id_path = urllib.parse.quote(id_path.strip('/'))
-        return url_path.rstrip('/') + '/' + normalized_id_path
+        return url_path_template.format(normalized_id_path)
 
     @staticmethod
     def _force_params(force):
