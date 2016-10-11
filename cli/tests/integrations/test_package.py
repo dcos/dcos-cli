@@ -12,7 +12,7 @@ from .common import (assert_command, assert_lines, base64_to_dict,
                      delete_zk_node, delete_zk_nodes, exec_command,
                      file_json, file_json_ast,
                      get_services, package_install,
-                     package_uninstall, service_shutdown,
+                     package_uninstall, service_shutdown, update_config,
                      wait_for_service, watch_all_deployments)
 from ..common import (assert_same_elements, file_bytes)
 
@@ -675,30 +675,28 @@ def test_list_cli():
     _uninstall_cli_helloworld()
 
 
-def test_list_cli_flag():
-    kafka_path = 'tests/data/package/json/test_list_kafka_entry.json'
-    kafka_json = file_json_ast(kafka_path)
-    helloworld_path = 'tests/data/package/json/test_list_helloworld_entry.json'
-    helloworld_json = file_json_ast(helloworld_path)
+def test_list_cli_only():
+    helloworld_path = 'tests/data/package/json/test_list_helloworld_cli.json'
+    helloworld_json = file_json_ast(helloworld_path)[0]
 
     def assert_test_case(args, expected_packages):
-        stdout = _list_stdout(args=['--json', '--cli'] + args)
+        command = ['dcos', 'package', 'list', '--json', '--cli'] + args
+        returncode, stdout, stderr = exec_command(command)
+
+        assert returncode == 0
+        assert stderr == b''
+
         actual_packages = json.loads(stdout.decode('utf-8'))
         assert_same_elements(expected_packages, actual_packages)
 
-    with _kafka():
-        with _helloworld_cli():
-            assert_test_case(
-                args=[],
-                expected_packages=[kafka_json, helloworld_json])
+    with _helloworld_cli(), update_config('core.dcos_url', 'http://nohost'):
+        assert_test_case(args=[], expected_packages=[helloworld_json])
 
-            assert_test_case(
-                args=['--app-id=/helloworld'],
-                expected_packages=[])
+        assert_test_case(args=['--app-id=/helloworld'], expected_packages=[])
 
-            assert_test_case(
-                args=['helloworld'],
-                expected_packages=[helloworld_json])
+        assert_test_case(
+            args=['helloworld'],
+            expected_packages=[helloworld_json])
 
 
 def test_uninstall_multiple_frameworknames(zk_znode):
@@ -970,16 +968,6 @@ def _chronos_package(
 
 def _list(args, stdout):
     assert_command(['dcos', 'package', 'list'] + args, stdout=stdout)
-
-
-def _list_stdout(args):
-    command = ['dcos', 'package', 'list'] + args
-    returncode_, stdout_, stderr_ = exec_command(command)
-
-    assert returncode_ == 0
-    assert stderr_ == b''
-
-    return stdout_
 
 
 HELLOWORLD_CLI_STDOUT = (b'Installing CLI subcommand for package [helloworld] '
