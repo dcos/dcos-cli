@@ -807,7 +807,7 @@ class Client(object):
 
         path = self._marathon_id_path_format('v2/pods/{}::instance', pod_id)
         response = self._rpc.http_req(http.delete, path, json=instance_ids)
-        return response.json()
+        return self._parse_json(response)
 
     def pod_feature_supported(self):
         """Return whether or not this client is communicating with a version

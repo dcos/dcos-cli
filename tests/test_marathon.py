@@ -178,6 +178,18 @@ def test_remove_pod_instances_executes_successfully():
         response_json={'another': ['json', 'object']})
 
 
+def test_remove_pod_instances_propagates_rpc_dcos_exception():
+    _assert_method_propagates_rpc_dcos_exception(
+        lambda marathon_client:
+            marathon_client.remove_pod_instances('foo', ['inst1', 'inst2']))
+
+
+def test_remove_pod_instances_raises_dcos_exception_for_json_parse_errors():
+    _assert_method_raises_dcos_exception_for_json_parse_errors(
+        lambda marathon_client: marathon_client.remove_pod_instances(
+            'foo', ['bar', 'baz']))
+
+
 @mock.patch('dcos.http.head')
 def test_pod_feature_supported_gets_success_response(head_fn):
     def invoke_test_case(status_code):
