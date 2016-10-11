@@ -186,9 +186,9 @@ def _cmds():
             function=subcommand.pod_update),
 
         cmds.Command(
-            hierarchy=['marathon', 'pod', 'instance', 'kill'],
+            hierarchy=['marathon', 'pod', 'kill'],
             arg_keys=['<pod-id>', '<instance-ids>'],
-            function=subcommand.pod_instance_kill),
+            function=subcommand.pod_kill),
 
         cmds.Command(
             hierarchy=['marathon', 'about'],
@@ -943,7 +943,7 @@ class MarathonSubcommand(object):
         emitter.publish('Created deployment {}'.format(deployment_id))
         return 0
 
-    def pod_instance_kill(self, pod_id, instance_ids):
+    def pod_kill(self, pod_id, instance_ids):
         """
         :param pod_id: the Marathon ID of the pod to kill instances from
         :type pod_id: str
@@ -952,6 +952,9 @@ class MarathonSubcommand(object):
         :returns: process return code
         :rtype: int
         """
+
+        if not instance_ids:
+            raise DCOSException('Please provide at least one pod instance ID')
 
         marathon_client = self._create_marathon_client()
         self._ensure_pods_support(marathon_client)

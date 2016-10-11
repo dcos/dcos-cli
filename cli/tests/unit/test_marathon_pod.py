@@ -97,11 +97,29 @@ def test_pod_update_propagates_dcos_exception_from_update_pod():
         resource_reader, marathon_client, 'update error')
 
 
-def test_pod_instance_kill_invoked_successfully():
-    _assert_pod_instance_kill_invoked_successfully(
-        pod_id='foo', instance_ids=['instance1', 'instance2'])
-    _assert_pod_instance_kill_invoked_successfully(
-        pod_id='/bar baz/', instance_ids=['thing-1', 'thing-2'])
+def test_pod_kill_invoked_successfully():
+    pod_id = 'foo'
+    instance_ids = ['instance1', 'instance2']
+    subcmd, marathon_client = _failing_reader_fixture()
+
+    returncode = subcmd.pod_kill(pod_id, instance_ids)
+
+    assert returncode == 0
+    marathon_client.kill_pod_instances.assert_called_with(pod_id, instance_ids)
+
+
+def test_pod_kill_reports_error_when_no_instance_ids_are_provided():
+    def no_marathon_client():
+        assert False, "should not be called"
+
+    subcmd = main.MarathonSubcommand(_failing_resource_reader(),
+                                     no_marathon_client)
+
+    with pytest.raises(DCOSException) as exception_info:
+        subcmd.pod_kill('arbitrary', [])
+
+    message = 'Please provide at least one pod instance ID'
+    assert str(exception_info.value) == message
 
 
 def test_pod_command_fails_if_not_supported():
@@ -120,7 +138,7 @@ def test_pod_command_fails_if_not_supported():
     test_case(_default_pod_list)
     test_case(_default_pod_show)
     test_case(_default_pod_update)
-    test_case(_default_pod_instance_kill)
+    test_case(_default_pod_kill)
 
 
 def test_pod_command_propagates_exceptions_from_support_check():
@@ -138,7 +156,7 @@ def test_pod_command_propagates_exceptions_from_support_check():
     test_case(_default_pod_list, ValueError('Oops'))
     test_case(_default_pod_show, IOError('Bad stuff'))
     test_case(_default_pod_update, Exception('uh oh'))
-    test_case(_default_pod_instance_kill, Exception('problem'))
+    test_case(_default_pod_kill, Exception('problem'))
 
 
 def test_pod_command_propagates_exceptions_from_marathon_client():
@@ -167,7 +185,7 @@ def test_pod_command_propagates_exceptions_from_marathon_client():
         _default_pod_list,
         lambda marathon_client: marathon_client.list_pod)
     test_several_exceptions(
-        _default_pod_instance_kill,
+        _default_pod_kill,
         lambda marathon_client: marathon_client.kill_pod_instances)
 
 
@@ -260,15 +278,6 @@ def _assert_pod_update_propagates_exception(
     assert str(exception_info.value) == error_message
 
 
-def _assert_pod_instance_kill_invoked_successfully(pod_id, instance_ids):
-    subcmd, marathon_client = _failing_reader_fixture()
-
-    returncode = subcmd.pod_instance_kill(pod_id, instance_ids)
-
-    assert returncode == 0
-    marathon_client.kill_pod_instances.assert_called_with(pod_id, instance_ids)
-
-
 def _marathon_client_fixture():
     marathon_client = create_autospec(marathon.Client)
     marathon_client.pod_feature_supported.return_value = True
@@ -311,5 +320,5 @@ def _default_pod_update(subcmd):
     return subcmd.pod_update(pod_id='some-id', force=False)
 
 
-def _default_pod_instance_kill(subcmd):
-    return subcmd.pod_instance_kill(pod_id='some-id', instance_ids=[])
+def _default_pod_kill(subcmd):
+    return subcmd.pod_kill(pod_id='some-id', instance_ids=['some-instance'])

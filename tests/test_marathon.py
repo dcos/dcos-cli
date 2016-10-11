@@ -153,29 +153,28 @@ def test_update_pod_raises_dcos_exception_if_deployment_id_missing():
 
 
 def test_kill_pod_instances_executes_successfully():
-    _assert_kill_pod_instances_executes_successfully(
-        pod_id='foo',
-        instance_ids=['instance1', 'instance2'],
-        path='v2/pods/foo::instance',
-        response_json={'some': ['instance', 'status']})
+    pod_id = 'foo'
+    instance_ids = ['instance1', 'instance2']
+    path = 'v2/pods/foo::instance'
+    response_json = {'some': ['instance', 'status']}
 
-    _assert_kill_pod_instances_executes_successfully(
-        pod_id='/bar baz/',
-        instance_ids=['instance1', 'instance2'],
-        path='v2/pods/bar%20baz::instance',
-        response_json={'some': ['instance', 'status']})
+    mock_response = mock.create_autospec(requests.Response)
+    mock_response.json.return_value = response_json
 
-    _assert_kill_pod_instances_executes_successfully(
-        pod_id='foo',
-        instance_ids=['i1', 'i2', 'i3'],
-        path='v2/pods/foo::instance',
-        response_json={'some': ['instance', 'status']})
+    marathon_client, rpc_client = _create_fixtures()
+    rpc_client.http_req.return_value = mock_response
 
-    _assert_kill_pod_instances_executes_successfully(
-        pod_id='foo',
-        instance_ids=['instance1', 'instance2'],
-        path='v2/pods/foo::instance',
-        response_json={'another': ['json', 'object']})
+    path_format_method_name = 'dcos.marathon.Client._marathon_id_path_format'
+    path_format = mock.MagicMock()
+    path_format.return_value = path
+
+    with mock.patch(path_format_method_name, new=path_format):
+        actual_json = marathon_client.kill_pod_instances(pod_id, instance_ids)
+
+    path_format.assert_called_once()
+    rpc_client.http_req.assert_called_with(
+        http.delete, path, json=instance_ids)
+    assert actual_json == response_json
 
 
 def test_kill_pod_instances_propagates_rpc_dcos_exception():
@@ -682,21 +681,6 @@ def _assert_pod_feature_supported_raises_exception(head_fn, exception):
         marathon_client.pod_feature_supported()
 
     assert exception_info.value == exception
-
-
-def _assert_kill_pod_instances_executes_successfully(
-        pod_id, instance_ids, path, response_json):
-    mock_response = mock.create_autospec(requests.Response)
-    mock_response.json.return_value = response_json
-
-    marathon_client, rpc_client = _create_fixtures()
-    rpc_client.http_req.return_value = mock_response
-
-    actual_json = marathon_client.kill_pod_instances(pod_id, instance_ids)
-
-    rpc_client.http_req.assert_called_with(
-        http.delete, path, json=instance_ids)
-    assert actual_json == response_json
 
 
 def _assert_response_error_message_with_400_status_no_json(

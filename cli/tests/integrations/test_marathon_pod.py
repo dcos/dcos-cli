@@ -11,7 +11,7 @@ from .common import (assert_command, exec_command, file_json_ast,
 from ..fixtures.marathon import (DOUBLE_POD_FILE_PATH, DOUBLE_POD_ID,
                                  GOOD_POD_FILE_PATH, GOOD_POD_ID,
                                  GOOD_POD_STATUS_FILE_PATH,
-                                 INSTANCE_KILL_FILE_PATH, INSTANCE_KILL_ID,
+                                 POD_KILL_FILE_PATH, POD_KILL_ID,
                                  pod_list_fixture, TRIPLE_POD_FILE_PATH,
                                  TRIPLE_POD_ID, UNGOOD_POD_FILE_PATH,
                                  UPDATED_GOOD_POD_FILE_PATH)
@@ -20,7 +20,7 @@ _PODS_ENABLED = 'DCOS_PODS_ENABLED' in os.environ
 
 _POD_BASE_CMD = ['dcos', 'marathon', 'pod']
 _POD_ADD_CMD = _POD_BASE_CMD + ['add']
-_POD_INSTANCE_KILL_CMD = _POD_BASE_CMD + ['instance', 'kill']
+_POD_KILL_CMD = _POD_BASE_CMD + ['kill']
 _POD_LIST_CMD = _POD_BASE_CMD + ['list']
 _POD_REMOVE_CMD = _POD_BASE_CMD + ['remove']
 _POD_SHOW_CMD = _POD_BASE_CMD + ['show']
@@ -95,11 +95,11 @@ def test_pod_update_from_stdin():
 
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
-def test_pod_instance_kill():
-    def assert_show_and_get_instance_ids():
-        _wait_for_instances({'/{}'.format(INSTANCE_KILL_ID): 3})
+def test_pod_kill():
+    def get_instance_ids():
+        _wait_for_instances({'/{}'.format(POD_KILL_ID): 3})
 
-        show_cmd = _POD_SHOW_CMD + [INSTANCE_KILL_ID]
+        show_cmd = _POD_SHOW_CMD + [POD_KILL_ID]
         returncode, stdout, stderr = exec_command(show_cmd)
 
         assert returncode == 0
@@ -109,16 +109,17 @@ def test_pod_instance_kill():
         instances_json = pod_status_json['instances']
         return tuple(instance['id'] for instance in instances_json)
 
-    with _pod(INSTANCE_KILL_ID, INSTANCE_KILL_FILE_PATH):
-        kill_1, keep, kill_2 = assert_show_and_get_instance_ids()
+    with _pod(POD_KILL_ID, POD_KILL_FILE_PATH):
+        kill_1, keep, kill_2 = get_instance_ids()
 
-        remove_args = [INSTANCE_KILL_ID, kill_1, kill_2]
-        assert_command(_POD_INSTANCE_KILL_CMD + remove_args)
+        remove_args = [POD_KILL_ID, kill_1, kill_2]
+        assert_command(_POD_KILL_CMD + remove_args)
 
-        new_instance_ids = assert_show_and_get_instance_ids()
+        new_instance_ids = get_instance_ids()
         assert keep in new_instance_ids
         assert kill_1 not in new_instance_ids
         assert kill_2 not in new_instance_ids
+        # Marathon spins up new instances to replace the killed ones
         assert len(new_instance_ids) == 3
 
 

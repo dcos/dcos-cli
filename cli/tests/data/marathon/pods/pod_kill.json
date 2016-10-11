@@ -1,5 +1,5 @@
 {
-  "id": "/instance-kill",
+  "id": "/pod-kill",
   "containers": [
     {
       "name": "the-container",
