@@ -2,6 +2,7 @@ import base64
 import contextlib
 import json
 import sys
+import time
 
 import pytest
 import six
@@ -9,12 +10,11 @@ import six
 from dcos import subcommand
 
 from .common import (assert_command, assert_lines, base64_to_dict,
-                     delete_zk_node, delete_zk_nodes, exec_command,
-                     file_json, file_json_ast,
-                     get_services, package_install,
-                     package_uninstall, service_shutdown, update_config,
-                     wait_for_service, watch_all_deployments)
-from ..common import (assert_same_elements, file_bytes)
+                     delete_zk_node, delete_zk_nodes, exec_command, file_json,
+                     get_services, package_install, package_uninstall,
+                     service_shutdown, update_config, wait_for_service,
+                     watch_all_deployments)
+from ..common import file_bytes
 
 UNIVERSE_REPO = "https://universe.mesosphere.com/repo"
 UNIVERSE_TEST_REPO = "http://universe.marathon.mesos:8085/repo"
@@ -32,6 +32,15 @@ def setup_module(module):
     assert_command(
         ['dcos', 'package', 'repo', 'add', 'test-universe', UNIVERSE_TEST_REPO]
     )
+
+    describe_command = ['dcos', 'package', 'describe', 'helloworld']
+    for _ in range(10):
+        returncode, _, _ = exec_command(describe_command)
+        if returncode == 0:
+            break
+        time.sleep(1)
+    else:
+        assert False, 'test-universe failed to come up'
 
 
 def teardown_module(module):
@@ -677,26 +686,20 @@ def test_list_cli():
 
 def test_list_cli_only():
     helloworld_path = 'tests/data/package/json/test_list_helloworld_cli.json'
-    helloworld_json = file_json_ast(helloworld_path)[0]
+    helloworld_json = file_json(helloworld_path)
 
-    def assert_test_case(args, expected_packages):
+    def assert_test_case(args, expected_stdout):
         command = ['dcos', 'package', 'list', '--json', '--cli'] + args
-        returncode, stdout, stderr = exec_command(command)
-
-        assert returncode == 0
-        assert stderr == b''
-
-        actual_packages = json.loads(stdout.decode('utf-8'))
-        assert_same_elements(expected_packages, actual_packages)
+        assert_command(command, stdout=expected_stdout)
 
     with _helloworld_cli(), update_config('core.dcos_url', 'http://nohost'):
-        assert_test_case(args=[], expected_packages=[helloworld_json])
-
-        assert_test_case(args=['--app-id=/helloworld'], expected_packages=[])
+        assert_test_case(args=[], expected_stdout=helloworld_json)
 
         assert_test_case(
-            args=['helloworld'],
-            expected_packages=[helloworld_json])
+            args=['--app-id=/helloworld'], expected_stdout=b'[]\n')
+
+        assert_test_case(
+            args=['helloworld'], expected_stdout=helloworld_json)
 
 
 def test_uninstall_multiple_frameworknames(zk_znode):
@@ -994,29 +997,6 @@ def _helloworld_cli():
                     args=['--yes', '--cli'],
                     stdout=HELLOWORLD_CLI_STDOUT,
                     uninstall_stderr=b'')
-
-
-def _kafka():
-    stdout = (b'This will install Apache Kafka DCOS Service.\n'
-              b'Installing Marathon app for package [kafka] version '
-              b'[0.9.4.0]\n'
-              b'Installing CLI subcommand for package [kafka] '
-              b'version [0.9.4.0]\n'
-              b'New command available: dcos ' +
-              _executable_name(b'kafka') + b'\n'
-              b'The Apache Kafka DCOS Service is installed:\n'
-              b'  docs   - https://github.com/mesos/kafka\n'
-              b'  issues - https://github.com/mesos/kafka/issues\n')
-    stderr = (b'Uninstalled package [kafka] version [0.9.4.0]\n'
-              b'The Apache Kafka DCOS Service has been uninstalled and will '
-              b'no longer run.\n'
-              b'Please follow the instructions at '
-              b'http://docs.mesosphere.com/services/kafka/#uninstall to '
-              b'clean up any persisted state\n')
-    return _package(name='kafka',
-                    args=['--yes'],
-                    stdout=stdout,
-                    uninstall_stderr=stderr)
 
 
 @contextlib.contextmanager
