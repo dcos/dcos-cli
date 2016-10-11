@@ -186,6 +186,11 @@ def _cmds():
             function=subcommand.pod_update),
 
         cmds.Command(
+            hierarchy=['marathon', 'pod', 'instance', 'kill'],
+            arg_keys=['<pod-id>', '<instance-ids>'],
+            function=subcommand.pod_instance_kill),
+
+        cmds.Command(
             hierarchy=['marathon', 'about'],
             arg_keys=[],
             function=subcommand.about),
@@ -938,11 +943,11 @@ class MarathonSubcommand(object):
         emitter.publish('Created deployment {}'.format(deployment_id))
         return 0
 
-    def pod_instance_remove(self, pod_id, instance_ids):
+    def pod_instance_kill(self, pod_id, instance_ids):
         """
-        :param pod_id: the Marathon ID of the pod to delete instances from
+        :param pod_id: the Marathon ID of the pod to kill instances from
         :type pod_id: str
-        :param instance_ids: the instance IDs to remove
+        :param instance_ids: the instance IDs to kill
         :type instance_ids: [str]
         :returns: process return code
         :rtype: int
@@ -951,7 +956,7 @@ class MarathonSubcommand(object):
         marathon_client = self._create_marathon_client()
         self._ensure_pods_support(marathon_client)
 
-        marathon_client.remove_pod_instances(pod_id, instance_ids)
+        marathon_client.kill_pod_instances(pod_id, instance_ids)
         return 0
 
     @staticmethod

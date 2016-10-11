@@ -794,7 +794,7 @@ class Client(object):
 
         return deployment_id
 
-    def remove_pod_instances(self, pod_id, instance_ids):
+    def kill_pod_instances(self, pod_id, instance_ids):
         """Kills the given instances of the specified pod.
 
         :param pod_id: the pod to delete instances from

@@ -152,41 +152,41 @@ def test_update_pod_raises_dcos_exception_if_deployment_id_missing():
         headers={'marathon-deployment_ID': 'misspelled-field', 'zzz': 'aaa'})
 
 
-def test_remove_pod_instances_executes_successfully():
-    _assert_remove_pod_instances_executes_successfully(
+def test_kill_pod_instances_executes_successfully():
+    _assert_kill_pod_instances_executes_successfully(
         pod_id='foo',
         instance_ids=['instance1', 'instance2'],
         path='v2/pods/foo::instance',
         response_json={'some': ['instance', 'status']})
 
-    _assert_remove_pod_instances_executes_successfully(
+    _assert_kill_pod_instances_executes_successfully(
         pod_id='/bar baz/',
         instance_ids=['instance1', 'instance2'],
         path='v2/pods/bar%20baz::instance',
         response_json={'some': ['instance', 'status']})
 
-    _assert_remove_pod_instances_executes_successfully(
+    _assert_kill_pod_instances_executes_successfully(
         pod_id='foo',
         instance_ids=['i1', 'i2', 'i3'],
         path='v2/pods/foo::instance',
         response_json={'some': ['instance', 'status']})
 
-    _assert_remove_pod_instances_executes_successfully(
+    _assert_kill_pod_instances_executes_successfully(
         pod_id='foo',
         instance_ids=['instance1', 'instance2'],
         path='v2/pods/foo::instance',
         response_json={'another': ['json', 'object']})
 
 
-def test_remove_pod_instances_propagates_rpc_dcos_exception():
+def test_kill_pod_instances_propagates_rpc_dcos_exception():
     _assert_method_propagates_rpc_dcos_exception(
         lambda marathon_client:
-            marathon_client.remove_pod_instances('foo', ['inst1', 'inst2']))
+            marathon_client.kill_pod_instances('foo', ['inst1', 'inst2']))
 
 
-def test_remove_pod_instances_raises_dcos_exception_for_json_parse_errors():
+def test_kill_pod_instances_raises_dcos_exception_for_json_parse_errors():
     _assert_method_raises_dcos_exception_for_json_parse_errors(
-        lambda marathon_client: marathon_client.remove_pod_instances(
+        lambda marathon_client: marathon_client.kill_pod_instances(
             'foo', ['bar', 'baz']))
 
 
@@ -684,7 +684,7 @@ def _assert_pod_feature_supported_raises_exception(head_fn, exception):
     assert exception_info.value == exception
 
 
-def _assert_remove_pod_instances_executes_successfully(
+def _assert_kill_pod_instances_executes_successfully(
         pod_id, instance_ids, path, response_json):
     mock_response = mock.create_autospec(requests.Response)
     mock_response.json.return_value = response_json
@@ -692,7 +692,7 @@ def _assert_remove_pod_instances_executes_successfully(
     marathon_client, rpc_client = _create_fixtures()
     rpc_client.http_req.return_value = mock_response
 
-    actual_json = marathon_client.remove_pod_instances(pod_id, instance_ids)
+    actual_json = marathon_client.kill_pod_instances(pod_id, instance_ids)
 
     rpc_client.http_req.assert_called_with(
         http.delete, path, json=instance_ids)

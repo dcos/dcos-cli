@@ -19,9 +19,9 @@ DOUBLE_POD_FILE_PATH = os.path.join(PODS_FILE_PATH_BASE, 'double.json')
 TRIPLE_POD_ID = 'winston'
 TRIPLE_POD_FILE_PATH = os.path.join(PODS_FILE_PATH_BASE, 'doubleplusgood.json')
 
-INSTANCE_REMOVE_ID = 'instance-remove'
-INSTANCE_REMOVE_FILE_PATH = os.path.join(PODS_FILE_PATH_BASE,
-                                         'instance_remove.json')
+INSTANCE_KILL_ID = 'instance-kill'
+INSTANCE_KILL_FILE_PATH = os.path.join(PODS_FILE_PATH_BASE,
+                                       'instance_kill.json')
 
 
 def app_fixture():
