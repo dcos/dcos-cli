@@ -801,7 +801,7 @@ class Client(object):
         :type pod_id: str
         :param instance_ids: the IDs of the instances to kill
         :type instance_ids: [str]
-        :return: the status JSON objects for the killed instances
+        :returns: the status JSON objects for the killed instances
         :rtype: [{}]
         """
 

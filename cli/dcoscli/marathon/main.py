@@ -938,6 +938,20 @@ class MarathonSubcommand(object):
         emitter.publish('Created deployment {}'.format(deployment_id))
         return 0
 
+    def pod_instance_remove(self, pod_id, instance_ids):
+        """
+        :param pod_id: the Marathon ID of the pod to delete instances from
+        :type pod_id: str
+        :param instance_ids: the instance IDs to remove
+        :type instance_ids: [str]
+        :returns: process return code
+        :rtype: int
+        """
+
+        marathon_client = self._create_marathon_client()
+        marathon_client.remove_pod_instances(pod_id, instance_ids)
+        return 0
+
     @staticmethod
     def _ensure_pods_support(marathon_client):
         """Raises an exception if the given client is communicating with a

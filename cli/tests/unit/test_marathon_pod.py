@@ -118,6 +118,13 @@ def test_pod_update_propagates_dcos_exception_from_update_pod():
         resource_reader, marathon_client, 'update error')
 
 
+def test_pod_instance_remove_invoked_successfully():
+    _assert_pod_instance_remove_invoked_successfully(
+        pod_id='foo', instance_ids=['instance1', 'instance2'])
+    _assert_pod_instance_remove_invoked_successfully(
+        pod_id='/bar baz/', instance_ids=['thing-1', 'thing-2'])
+
+
 def test_pod_command_fails_if_not_supported():
     def test_case(invoke_command):
         subcmd, marathon_client = _failing_reader_fixture()
@@ -270,6 +277,16 @@ def _assert_pod_update_propagates_exception(
         subcmd.pod_update(pod_id='foo', force=False)
 
     assert str(exception_info.value) == error_message
+
+
+def _assert_pod_instance_remove_invoked_successfully(pod_id, instance_ids):
+    subcmd, marathon_client = _failing_reader_fixture()
+
+    returncode = subcmd.pod_instance_remove(pod_id, instance_ids)
+
+    assert returncode == 0
+    marathon_client.remove_pod_instances.\
+        assert_called_with(pod_id, instance_ids)
 
 
 def _marathon_client_fixture():
