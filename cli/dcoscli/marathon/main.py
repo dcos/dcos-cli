@@ -949,6 +949,8 @@ class MarathonSubcommand(object):
         """
 
         marathon_client = self._create_marathon_client()
+        self._ensure_pods_support(marathon_client)
+
         marathon_client.remove_pod_instances(pod_id, instance_ids)
         return 0
 

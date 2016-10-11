@@ -25,23 +25,9 @@ def test_pod_remove_invoked_successfully():
     _assert_pod_remove_invoked_successfully(pod_id='b-pod', force=False)
 
 
-def test_pod_remove_propagates_exceptions_from_remove_pod():
-    _assert_pod_remove_propagates_exceptions_from_remove_pod(
-        DCOSException('BOOM!'))
-    _assert_pod_remove_propagates_exceptions_from_remove_pod(
-        Exception('Oops!'))
-
-
 def test_pod_show_invoked_successfully():
     _assert_pod_show_invoked_successfully(pod_json={'id': 'a-pod', 'foo': 1})
     _assert_pod_show_invoked_successfully(pod_json={'id': 'b-pod', 'bar': 2})
-
-
-def test_pod_show_propagates_exceptions_from_show_pod():
-    _assert_pod_show_propagates_exceptions_from_show_pod(
-        DCOSException('BOOM!'))
-    _assert_pod_show_propagates_exceptions_from_show_pod(
-        Exception('Oops!'))
 
 
 def test_pod_list_with_json():
@@ -60,13 +46,6 @@ def test_pod_list_table(emitter):
     marathon_client.list_pod.assert_called_with()
     expected_table = file_bytes('tests/unit/data/pod.txt')
     emitter.publish.assert_called_with(expected_table.decode('utf-8'))
-
-
-def test_pod_list_propagates_exceptions_from_list_pod():
-    _assert_pod_list_propagates_exceptions_from_list_pod(
-        DCOSException('BOOM!'))
-    _assert_pod_list_propagates_exceptions_from_list_pod(
-        Exception('Oops!'))
 
 
 def test_pod_update_invoked_successfully():
@@ -141,6 +120,7 @@ def test_pod_command_fails_if_not_supported():
     test_case(_default_pod_list)
     test_case(_default_pod_show)
     test_case(_default_pod_update)
+    test_case(_default_pod_instance_remove)
 
 
 def test_pod_command_propagates_exceptions_from_support_check():
@@ -158,6 +138,37 @@ def test_pod_command_propagates_exceptions_from_support_check():
     test_case(_default_pod_list, ValueError('Oops'))
     test_case(_default_pod_show, IOError('Bad stuff'))
     test_case(_default_pod_update, Exception('uh oh'))
+    test_case(_default_pod_instance_remove, Exception('problem'))
+
+
+def test_pod_command_propagates_exceptions_from_marathon_client():
+    def test_single_exception(invoke_command, marathon_method, exception):
+        subcmd, marathon_client = _failing_reader_fixture()
+        marathon_method(marathon_client).side_effect = exception
+
+        with pytest.raises(exception.__class__) as exception_info:
+            invoke_command(subcmd)
+
+        assert exception_info.value == exception
+
+    def test_several_exceptions(invoke_command, marathon_method):
+        test_single_exception(
+            invoke_command, marathon_method, DCOSException('BOOM!'))
+        test_single_exception(
+            invoke_command, marathon_method, Exception('Oops!'))
+
+    test_several_exceptions(
+        _default_pod_remove,
+        lambda marathon_client: marathon_client.remove_pod)
+    test_several_exceptions(
+        _default_pod_show,
+        lambda marathon_client: marathon_client.show_pod)
+    test_several_exceptions(
+        _default_pod_list,
+        lambda marathon_client: marathon_client.list_pod)
+    test_several_exceptions(
+        _default_pod_instance_remove,
+        lambda marathon_client: marathon_client.remove_pod_instances)
 
 
 def _assert_pod_add_invoked_successfully(pod_file_json):
@@ -197,16 +208,6 @@ def _assert_pod_remove_invoked_successfully(pod_id, force):
     marathon_client.remove_pod.assert_called_with(pod_id, force)
 
 
-def _assert_pod_remove_propagates_exceptions_from_remove_pod(exception):
-    subcmd, marathon_client = _failing_reader_fixture()
-    marathon_client.remove_pod.side_effect = exception
-
-    with pytest.raises(exception.__class__) as exception_info:
-        subcmd.pod_remove('does/not/matter', force=False)
-
-    assert exception_info.value == exception
-
-
 @patch('dcoscli.marathon.main.emitter', autospec=True)
 def _assert_pod_show_invoked_successfully(emitter, pod_json):
     subcmd, marathon_client = _failing_reader_fixture()
@@ -219,16 +220,6 @@ def _assert_pod_show_invoked_successfully(emitter, pod_json):
     emitter.publish.assert_called_with(pod_json)
 
 
-def _assert_pod_show_propagates_exceptions_from_show_pod(exception):
-    subcmd, marathon_client = _failing_reader_fixture()
-    marathon_client.show_pod.side_effect = exception
-
-    with pytest.raises(exception.__class__) as exception_info:
-        subcmd.pod_show('does/not/matter')
-
-    assert exception_info.value == exception
-
-
 @patch('dcoscli.marathon.main.emitter', autospec=True)
 def _assert_pod_list_with_json(emitter, pod_list_json):
     subcmd, marathon_client = _failing_reader_fixture()
@@ -237,16 +228,6 @@ def _assert_pod_list_with_json(emitter, pod_list_json):
     subcmd.pod_list(json_=True)
 
     emitter.publish.assert_called_with(pod_list_json)
-
-
-def _assert_pod_list_propagates_exceptions_from_list_pod(exception):
-    subcmd, marathon_client = _failing_reader_fixture()
-    marathon_client.list_pod.side_effect = exception
-
-    with pytest.raises(exception.__class__) as exception_info:
-        subcmd.pod_list(json_=False)
-
-    assert exception_info.value == exception
 
 
 @patch('dcoscli.marathon.main.emitter', autospec=True)
@@ -329,3 +310,7 @@ def _default_pod_show(subcmd):
 
 def _default_pod_update(subcmd):
     return subcmd.pod_update(pod_id='some-id', force=False)
+
+
+def _default_pod_instance_remove(subcmd):
+    return subcmd.pod_instance_remove(pod_id='some-id', instance_ids=[])
