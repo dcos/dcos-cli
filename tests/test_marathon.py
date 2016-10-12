@@ -21,11 +21,6 @@ def test_add_pod_returns_parsed_response_body():
     _assert_add_pod_returns_parsed_response_body(["another", "pod", "json"])
 
 
-def test_add_pod_raises_dcos_exception_for_json_parse_errors():
-    _assert_method_raises_dcos_exception_for_json_parse_errors(
-        lambda marathon_client: marathon_client.add_pod({'some': 'json'}))
-
-
 def test_remove_pod_has_default_force_value():
     marathon_client, rpc_client = _create_fixtures()
     marathon_client.remove_pod('foo')
@@ -541,7 +536,7 @@ def _assert_add_pod_returns_parsed_response_body(response_json):
     marathon_client, rpc_client = _create_fixtures()
     rpc_client.http_req.return_value = mock_response
 
-    assert marathon_client.add_pod({'some': 'json'}) == response_json
+    assert marathon_client.add_pod({'some': 'json'}) startswith "Marathon-Deployment-ID"
 
 
 def _assert_remove_pod_builds_rpc_correctly(pod_id, force, path, params):
