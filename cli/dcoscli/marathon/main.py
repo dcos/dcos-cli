@@ -865,8 +865,8 @@ class MarathonSubcommand(object):
         self._ensure_pods_support(marathon_client)
 
         pod_json = self._resource_reader.get_resource(pod_resource_path)
-        deployment_id = marathon_client.add_pod(pod_json)
-        emitter.publish('Deployment-id: {}'.format(deployment_id))
+        deployment = marathon_client.add_pod(pod_json)
+        emitter.publish('Created deployment {}'.format(deployment))
         return 0
 
     def pod_remove(self, pod_id, force):
