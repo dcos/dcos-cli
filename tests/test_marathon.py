@@ -530,13 +530,15 @@ def _assert_add_pod_puts_json_in_request_body(pod_json):
 
 
 def _assert_add_pod_returns_parsed_response_body(response_json):
-    mock_response = mock.create_autospec(requests.Response)
+
+    headers = {'Marathon-Deployment-Id': "XYZ"}
+    mock_response = _update_pod_response_fixture(headers)
     mock_response.json.return_value = response_json
 
     marathon_client, rpc_client = _create_fixtures()
     rpc_client.http_req.return_value = mock_response
 
-    assert marathon_client.add_pod({'some': 'json'}) startswith "Marathon-Deployment-ID"
+    assert marathon_client.add_pod({'some': 'json'}) == "XYZ"
 
 
 def _assert_remove_pod_builds_rpc_correctly(pod_id, force, path, params):
