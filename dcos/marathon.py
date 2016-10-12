@@ -736,8 +736,8 @@ class Client(object):
         try:
             return response.headers['Marathon-Deployment-Id']
         except KeyError:
-            raise DCOSException('Error: missing "Marathon-Deployment-Id" from header')
-
+            msg = 'Error: missing "Marathon-Deployment-Id" from header'
+            raise DCOSException(msg)
 
     def remove_pod(self, pod_id, force=False):
         """Completely removes the requested pod.
