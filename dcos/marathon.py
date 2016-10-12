@@ -733,7 +733,7 @@ class Client(object):
         """
 
         response = self._rpc.http_req(http.post, 'v2/pods', json=pod_json)
-        return self._parse_json(response)
+        return response.headers['Marathon-Deployment-Id']
 
     def remove_pod(self, pod_id, force=False):
         """Completely removes the requested pod.
