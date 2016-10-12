@@ -16,7 +16,7 @@ Usage:
                          [--options=<file>]
                          [--yes]
                          <package-name>
-    dcos package list [--json --app-id=<app-id> <package-name>]
+    dcos package list [--json --app-id=<app-id> --cli <package-name>]
     dcos package search [--json <query>]
     dcos package repo add [--index=<index>] <repo-name> <repo-url>
     dcos package repo remove <repo-name>

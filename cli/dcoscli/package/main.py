@@ -78,7 +78,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['package', 'list'],
-            arg_keys=['--json', '--app-id', '<package-name>'],
+            arg_keys=['--json', '--app-id', '--cli', '<package-name>'],
             function=_list),
 
         cmds.Command(
@@ -405,13 +405,15 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
     return 0
 
 
-def _list(json_, app_id, package_name):
+def _list(json_, app_id, cli_only, package_name):
     """List installed apps
 
     :param json_: output json if True
     :type json_: bool
     :param app_id: App ID of app to show
     :type app_id: str
+    :param cli_only: if True, only show packages with installed subcommands
+    :type cli: bool
     :param package_name: The package to show
     :type package_name: str
     :returns: process return code
@@ -422,7 +424,7 @@ def _list(json_, app_id, package_name):
     if app_id is not None:
         app_id = util.normalize_marathon_id_path(app_id)
     results = package.installed_packages(
-        package_manager, app_id, package_name)
+        package_manager, app_id, package_name, cli_only)
 
     # only emit those packages that match the provided package_name and app_id
     if results or json_:

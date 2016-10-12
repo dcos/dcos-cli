@@ -2,6 +2,7 @@ import base64
 import contextlib
 import json
 import sys
+import time
 
 import pytest
 import six
@@ -9,11 +10,10 @@ import six
 from dcos import subcommand
 
 from .common import (assert_command, assert_lines, base64_to_dict,
-                     delete_zk_node, delete_zk_nodes, exec_command,
-                     file_json,
-                     get_services, package_install,
-                     package_uninstall, service_shutdown,
-                     wait_for_service, watch_all_deployments)
+                     delete_zk_node, delete_zk_nodes, exec_command, file_json,
+                     get_services, package_install, package_uninstall,
+                     service_shutdown, update_config, wait_for_service,
+                     watch_all_deployments)
 from ..common import file_bytes
 
 UNIVERSE_REPO = "https://universe.mesosphere.com/repo"
@@ -32,6 +32,16 @@ def setup_module(module):
     assert_command(
         ['dcos', 'package', 'repo', 'add', 'test-universe', UNIVERSE_TEST_REPO]
     )
+
+    # Give the test universe some time to become available
+    describe_command = ['dcos', 'package', 'describe', 'helloworld']
+    for _ in range(10):
+        returncode, _, _ = exec_command(describe_command)
+        if returncode == 0:
+            break
+        time.sleep(1)
+    else:
+        assert False, 'test-universe failed to come up'
 
 
 def teardown_module(module):
@@ -378,10 +388,10 @@ def test_install_specific_version():
         b'persisted state\n'
     )
 
-    with _package('marathon',
+    with _package(name='marathon',
+                  args=['--yes', '--package-version=0.11.1'],
                   stdout=stdout,
-                  uninstall_stderr=uninstall_stderr,
-                  args=['--yes', '--package-version=0.11.1']):
+                  uninstall_stderr=uninstall_stderr):
 
         returncode, stdout, stderr = exec_command(
             ['dcos', 'package', 'list', 'marathon', '--json'])
@@ -533,7 +543,7 @@ def test_uninstall_missing():
 def test_uninstall_subcommand():
     _install_helloworld()
     _uninstall_helloworld()
-    _list()
+    _list(args=['--json'], stdout=b'[]\n')
 
 
 def test_uninstall_cli():
@@ -604,20 +614,23 @@ def test_uninstall_multiple_apps():
 
 
 def test_list(zk_znode):
-    _list()
-    _list(args=['xyzzy', '--json'])
-    _list(args=['--app-id=/xyzzy', '--json'])
+    empty = b'[]\n'
+
+    _list(args=['--json'], stdout=empty)
+    _list(args=['xyzzy', '--json'], stdout=empty)
+    _list(args=['--app-id=/xyzzy', '--json'], stdout=empty)
 
     with _chronos_package():
 
         expected_output = file_json(
             'tests/data/package/json/test_list_chronos.json')
-        _list(stdout=expected_output)
+        _list(args=['--json'], stdout=expected_output)
         _list(args=['--json', 'chronos'], stdout=expected_output)
         _list(args=['--json', '--app-id=/chronos'], stdout=expected_output)
 
-    _list(args=['--json', 'ceci-nest-pas-une-package'])
-    _list(args=['--json', '--app-id=/ceci-nest-pas-une-package'])
+    le_package = 'ceci-nest-pas-une-package'
+    _list(args=['--json', le_package], stdout=empty)
+    _list(args=['--json', '--app-id=/' + le_package], stdout=empty)
 
 
 def test_list_table():
@@ -655,7 +668,7 @@ def test_list_cli():
     _install_helloworld()
     stdout = file_json(
         'tests/data/package/json/test_list_helloworld.json')
-    _list(stdout=stdout)
+    _list(args=['--json'], stdout=stdout)
     _uninstall_helloworld()
 
     stdout = (b"Installing CLI subcommand for package [helloworld] " +
@@ -667,9 +680,28 @@ def test_list_cli():
 
     stdout = file_json(
         'tests/data/package/json/test_list_helloworld_cli.json')
-    _list(stdout=stdout)
+    _list(args=['--json'], stdout=stdout)
 
     _uninstall_cli_helloworld()
+
+
+def test_list_cli_only():
+    helloworld_path = 'tests/data/package/json/test_list_helloworld_cli.json'
+    helloworld_json = file_json(helloworld_path)
+
+    with _helloworld_cli(), update_config('core.dcos_url', 'http://nohost'):
+        assert_command(
+            cmd=['dcos', 'package', 'list', '--json', '--cli'],
+            stdout=helloworld_json)
+
+        assert_command(
+            cmd=['dcos', 'package', 'list', '--json', '--cli',
+                 '--app-id=/helloworld'],
+            stdout=b'[]\n')
+
+        assert_command(
+            cmd=['dcos', 'package', 'list', '--json', '--cli', 'helloworld'],
+            stdout=helloworld_json)
 
 
 def test_uninstall_multiple_frameworknames(zk_znode):
@@ -683,14 +715,12 @@ def test_uninstall_multiple_frameworknames(zk_znode):
     expected_output = file_json(
         'tests/data/package/json/test_list_chronos_two_users.json')
 
-    _list(stdout=expected_output)
+    _list(args=['--json'], stdout=expected_output)
     _list(args=['--json', 'chronos'], stdout=expected_output)
-    _list(args=['--json', '--app-id=/chronos-user-1'],
-          stdout=file_json(
+    _list(args=['--json', '--app-id=/chronos-user-1'], stdout=file_json(
         'tests/data/package/json/test_list_chronos_user_1.json'))
 
-    _list(args=['--json', '--app-id=/chronos-user-2'],
-          stdout=file_json(
+    _list(args=['--json', '--app-id=/chronos-user-2'], stdout=file_json(
         'tests/data/package/json/test_list_chronos_user_2.json'))
 
     _uninstall_chronos(
@@ -941,56 +971,72 @@ def _chronos_package(
         watch_all_deployments()
 
 
-def _list(args=['--json'],
-          stdout=b'[]\n'):
-    assert_command(['dcos', 'package', 'list'] + args,
-                   stdout=stdout)
+def _list(args, stdout):
+    assert_command(['dcos', 'package', 'list'] + args, stdout=stdout)
+
+
+HELLOWORLD_CLI_STDOUT = (b'Installing CLI subcommand for package [helloworld] '
+                         b'version [0.1.0]\n'
+                         b'New command available: dcos ' +
+                         _executable_name(b'helloworld') + b'\n')
 
 
 def _helloworld():
     stdout = (b'A sample pre-installation message\n'
               b'Installing Marathon app for package [helloworld] version '
-              b'[0.1.0]\n'
-              b'Installing CLI subcommand for package [helloworld] '
-              b'version [0.1.0]\n'
-              b'New command available: dcos ' +
-              _executable_name(b'helloworld') +
-              b'\nA sample post-installation message\n')
+              b'[0.1.0]\n' + HELLOWORLD_CLI_STDOUT +
+              b'A sample post-installation message\n')
 
     stderr = b'Uninstalled package [helloworld] version [0.1.0]\n'
-    return _package('helloworld',
+    return _package(name='helloworld',
+                    args=['--yes'],
                     stdout=stdout,
                     uninstall_stderr=stderr)
 
 
+def _helloworld_cli():
+    return _package(name='helloworld',
+                    args=['--yes', '--cli'],
+                    stdout=HELLOWORLD_CLI_STDOUT,
+                    uninstall_stderr=b'')
+
+
 @contextlib.contextmanager
 def _package(name,
+             args,
              stdout=b'',
-             uninstall_stderr=b'',
-             args=['--yes']):
-    """Context manager that installs a package on entrace, and uninstalls it on
+             uninstall_stderr=b''):
+    """Context manager that installs a package on entrance, and uninstalls it on
     exit.
 
     :param name: package name
     :type name: str
-    :param stdout: Expected stdout
-    :type stdout: str
-    :param uninstall_stderr: Expected stderr
-    :type uninstall_stderr: str
     :param args: extra CLI args
     :type args: [str]
+    :param stdout: Expected stdout
+    :type stdout: bytes
+    :param uninstall_stderr: Expected stderr
+    :type uninstall_stderr: bytes
     :rtype: None
     """
 
-    assert_command(['dcos', 'package', 'install', name] + args,
-                   stdout=stdout)
+    command = ['dcos', 'package', 'install', name] + args
+
+    installed = False
     try:
+        returncode_, stdout_, stderr_ = exec_command(command)
+        installed = (returncode_ == 0)
+
+        assert installed
+        assert stdout_ == stdout
+
         yield
     finally:
-        assert_command(
-            ['dcos', 'package', 'uninstall', name],
-            stderr=uninstall_stderr)
-        watch_all_deployments()
+        if installed:
+            assert_command(
+                ['dcos', 'package', 'uninstall', name],
+                stderr=uninstall_stderr)
+            watch_all_deployments()
 
 
 def _repo_add(args=[], repo_list=[]):

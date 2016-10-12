@@ -469,20 +469,29 @@ def file_json_ast(path):
         return json.load(f)
 
 
+def json_ast_format(ast):
+    """Returns the given JSON AST formatted as bytes
+
+    :param ast: JSON AST
+    :returns: formatted JSON
+    :rtype: bytes
+    """
+    return six.b(
+        json.dumps(ast,
+                   sort_keys=True,
+                   indent=2,
+                   separators=(',', ': '))) + b'\n'
+
+
 def file_json(path):
     """ Returns formatted json from file
 
     :param path: path to file
     :type path: str
-    :returns: formatted json as a string
+    :returns: formatted json
     :rtype: bytes
     """
-    with open(path) as f:
-        return six.b(
-            json.dumps(json.load(f),
-                       sort_keys=True,
-                       indent=2,
-                       separators=(',', ': '))) + b'\n'
+    return json_ast_format(file_json_ast(path))
 
 
 @contextlib.contextmanager
