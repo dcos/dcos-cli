@@ -19,6 +19,10 @@ DOUBLE_POD_FILE_PATH = os.path.join(PODS_FILE_PATH_BASE, 'double.json')
 TRIPLE_POD_ID = 'winston'
 TRIPLE_POD_FILE_PATH = os.path.join(PODS_FILE_PATH_BASE, 'doubleplusgood.json')
 
+POD_KILL_ID = 'pod-kill'
+POD_KILL_FILE_PATH = os.path.join(PODS_FILE_PATH_BASE,
+                                  'pod_kill.json')
+
 
 def app_fixture():
     """ Marathon app fixture.

@@ -152,6 +152,43 @@ def test_update_pod_raises_dcos_exception_if_deployment_id_missing():
         headers={'marathon-deployment_ID': 'misspelled-field', 'zzz': 'aaa'})
 
 
+def test_kill_pod_instances_executes_successfully():
+    pod_id = 'foo'
+    instance_ids = ['instance1', 'instance2']
+    path = 'v2/pods/foo::instance'
+    response_json = {'some': ['instance', 'status']}
+
+    mock_response = mock.create_autospec(requests.Response)
+    mock_response.json.return_value = response_json
+
+    marathon_client, rpc_client = _create_fixtures()
+    rpc_client.http_req.return_value = mock_response
+
+    path_format_method_name = 'dcos.marathon.Client._marathon_id_path_format'
+    path_format = mock.MagicMock()
+    path_format.return_value = path
+
+    with mock.patch(path_format_method_name, new=path_format):
+        actual_json = marathon_client.kill_pod_instances(pod_id, instance_ids)
+
+    path_format.assert_called_once()
+    rpc_client.http_req.assert_called_with(
+        http.delete, path, json=instance_ids)
+    assert actual_json == response_json
+
+
+def test_kill_pod_instances_propagates_rpc_dcos_exception():
+    _assert_method_propagates_rpc_dcos_exception(
+        lambda marathon_client:
+            marathon_client.kill_pod_instances('foo', ['inst1', 'inst2']))
+
+
+def test_kill_pod_instances_raises_dcos_exception_for_json_parse_errors():
+    _assert_method_raises_dcos_exception_for_json_parse_errors(
+        lambda marathon_client: marathon_client.kill_pod_instances(
+            'foo', ['bar', 'baz']))
+
+
 @mock.patch('dcos.http.head')
 def test_pod_feature_supported_gets_success_response(head_fn):
     def invoke_test_case(status_code):

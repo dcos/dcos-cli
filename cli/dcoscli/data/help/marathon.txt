@@ -28,6 +28,7 @@ Usage:
     dcos marathon group remove [--force] <group-id>
     dcos marathon group update [--force] <group-id> [<properties>...]
     dcos marathon pod add [<pod-resource>]
+    dcos marathon pod kill <pod-id> [<instance-ids>...]
     dcos marathon pod list [--json]
     dcos marathon pod remove [--force] <pod-id>
     dcos marathon pod show <pod-id>
@@ -81,6 +82,8 @@ Commands:
         Update a group.
     pod add
         Create a new pod.
+    pod kill
+        Kill one or more running pod instances.
     pod list
         List the deployed pods.
     pod remove
@@ -145,6 +148,8 @@ Positional Arguments:
         If omitted, the definition is read from stdin. For a detailed
         description see
         https://mesosphere.github.io/marathon/docs/rest-api.html#post-v2-groups.
+    <instance-ids>
+        List of one or more space-separated pod instance IDs.
     <instances>
         The number of instances.
     <pod-id>
