@@ -33,6 +33,7 @@ def setup_module(module):
         ['dcos', 'package', 'repo', 'add', 'test-universe', UNIVERSE_TEST_REPO]
     )
 
+    # Give the test universe some time to become available
     describe_command = ['dcos', 'package', 'describe', 'helloworld']
     for _ in range(10):
         returncode, _, _ = exec_command(describe_command)
@@ -688,18 +689,19 @@ def test_list_cli_only():
     helloworld_path = 'tests/data/package/json/test_list_helloworld_cli.json'
     helloworld_json = file_json(helloworld_path)
 
-    def assert_test_case(args, expected_stdout):
-        command = ['dcos', 'package', 'list', '--json', '--cli'] + args
-        assert_command(command, stdout=expected_stdout)
-
     with _helloworld_cli(), update_config('core.dcos_url', 'http://nohost'):
-        assert_test_case(args=[], expected_stdout=helloworld_json)
+        assert_command(
+            cmd=['dcos', 'package', 'list', '--json', '--cli'],
+            stdout=helloworld_json)
 
-        assert_test_case(
-            args=['--app-id=/helloworld'], expected_stdout=b'[]\n')
+        assert_command(
+            cmd=['dcos', 'package', 'list', '--json', '--cli',
+                 '--app-id=/helloworld'],
+            stdout=b'[]\n')
 
-        assert_test_case(
-            args=['helloworld'], expected_stdout=helloworld_json)
+        assert_command(
+            cmd=['dcos', 'package', 'list', '--json', '--cli', 'helloworld'],
+            stdout=helloworld_json)
 
 
 def test_uninstall_multiple_frameworknames(zk_znode):
