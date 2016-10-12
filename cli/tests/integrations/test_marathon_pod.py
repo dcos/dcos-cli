@@ -96,26 +96,13 @@ def test_pod_update_from_stdin():
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_kill():
-    def get_instance_ids():
-        _wait_for_instances({'/{}'.format(POD_KILL_ID): 3})
-
-        show_cmd = _POD_SHOW_CMD + [POD_KILL_ID]
-        returncode, stdout, stderr = exec_command(show_cmd)
-
-        assert returncode == 0
-        assert stderr == b''
-
-        pod_status_json = json.loads(stdout.decode('utf-8'))
-        instances_json = pod_status_json['instances']
-        return tuple(instance['id'] for instance in instances_json)
-
     with _pod(POD_KILL_ID, POD_KILL_FILE_PATH):
-        kill_1, keep, kill_2 = get_instance_ids()
+        kill_1, keep, kill_2 = _get_pod_instance_ids(POD_KILL_ID, 3)
 
         remove_args = [POD_KILL_ID, kill_1, kill_2]
         assert_command(_POD_KILL_CMD + remove_args)
 
-        new_instance_ids = get_instance_ids()
+        new_instance_ids = _get_pod_instance_ids(POD_KILL_ID, 3)
         assert keep in new_instance_ids
         assert kill_1 not in new_instance_ids
         assert kill_2 not in new_instance_ids
@@ -325,3 +312,29 @@ def _wait_for_instances(expected_instances, max_attempts=10):
         time.sleep(1)
     else:
         assert False, "Timed out waiting for expected instance counts"
+
+
+def _get_pod_instance_ids(pod_id, target_instance_count):
+    """Waits for the given pod to reach a target instance count, then returns
+    the IDs of all instances.
+
+    :param pod_id: the pod to retrieve the instance IDs from
+    :type pod_id: str
+    :param target_instance_count: waits until the number of instances reaches
+                                  this number
+    :type target_instance_count: int
+    :returns: a tuple of the pod's instance IDs
+    :rtype: tuple(str)
+    """
+
+    _wait_for_instances({'/{}'.format(pod_id): target_instance_count})
+
+    show_cmd = _POD_SHOW_CMD + [pod_id]
+    returncode, stdout, stderr = exec_command(show_cmd)
+
+    assert returncode == 0
+    assert stderr == b''
+
+    pod_status_json = json.loads(stdout.decode('utf-8'))
+    instances_json = pod_status_json['instances']
+    return tuple(instance['id'] for instance in instances_json)
