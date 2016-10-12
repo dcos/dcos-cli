@@ -11,6 +11,7 @@ import shutil
 import sys
 import tempfile
 import time
+import yaml
 
 import jsonschema
 import six
@@ -608,5 +609,25 @@ def normalize_marathon_id_path(id_path):
 
     return urllib.parse.quote('/' + id_path.strip('/'))
 
+def load_yaml(reader):
+    """Deserialize a reader into a python object
+
+    :param reader: the yaml reader
+    :type reader: a :code:`.read()`-supporting object
+    :returns: the deserialized YAML object
+    :rtype: dict | list | str | int | float | bool
+    """
+
+    try:
+        return yaml.load(reader)
+    except Exception as error:
+        logger.error(
+            'Unhandled exception while loading YAML: %r',
+            error)
+
+        raise DCOSException('Error loading YAML: {}'.format(error))
+
 
 logger = get_logger(__name__)
+
+

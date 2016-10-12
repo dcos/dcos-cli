@@ -806,6 +806,8 @@ def _get_resource(resource):
     if resource is not None:
         if os.path.isfile(resource):
             with util.open_file(resource) as resource_file:
+                if resource.endswith('.yaml') or resource.endswith('.yml'):
+                    return util.load_yaml(resource_file)
                 return util.load_json(resource_file)
         else:
             try:
