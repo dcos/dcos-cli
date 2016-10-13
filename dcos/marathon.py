@@ -809,7 +809,7 @@ class Client(object):
         :rtype: [{}]
         """
 
-        path = self._marathon_id_path_format('v2/pods/{}::instance', pod_id)
+        path = self._marathon_id_path_format('v2/pods/{}::instances', pod_id)
         response = self._rpc.http_req(http.delete, path, json=instance_ids)
         return self._parse_json(response)
 

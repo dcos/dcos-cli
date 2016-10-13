@@ -157,7 +157,7 @@ def test_update_pod_raises_dcos_exception_if_deployment_id_missing():
 def test_kill_pod_instances_executes_successfully():
     pod_id = 'foo'
     instance_ids = ['instance1', 'instance2']
-    path = 'v2/pods/foo::instance'
+    path = 'v2/pods/foo::instances'
     response_json = {'some': ['instance', 'status']}
 
     mock_response = mock.create_autospec(requests.Response)
@@ -173,7 +173,7 @@ def test_kill_pod_instances_executes_successfully():
     with mock.patch(path_format_method_name, new=path_format):
         actual_json = marathon_client.kill_pod_instances(pod_id, instance_ids)
 
-    path_format.assert_called_once()
+    path_format.assert_called_with('v2/pods/{}::instances', pod_id)
     rpc_client.http_req.assert_called_with(
         http.delete, path, json=instance_ids)
     assert actual_json == response_json
