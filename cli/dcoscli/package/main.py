@@ -5,10 +5,9 @@ import sys
 import tempfile
 import zipfile
 
-import dcoscli
 import docopt
 import pkg_resources
-import re
+import dcoscli
 
 from dcos import (cmds, config, cosmospackage, emitting, http, options,
                   package, subcommand, util)
@@ -241,7 +240,8 @@ def _bundle(package_json,
     logger.debug("Using [%s] as output directory", output_directory)
 
     if not os.path.exists(package_json_path):
-        raise DCOSException("The file [{}] does not exist".format(package_json_path))
+        raise DCOSException(
+            "The file [{}] does not exist".format(package_json_path))
 
     # load raw package json
     with util.open_file(package_json_path) as pj:
@@ -250,27 +250,33 @@ def _bundle(package_json,
     # validate package json with local references
     bundle_schema_path = "data/schemas/bundle-schema.json"
     bundle_schema = util.load_jsons(
-        pkg_resources.resource_string("dcoscli", bundle_schema_path).decode("utf-8"))
+        pkg_resources.resource_string(
+            "dcoscli", bundle_schema_path).decode("utf-8"))
 
     errs = util.validate_json(package_raw, bundle_schema)
 
     if errs:
         raise DCOSException('Error validating package: '
-                            '[{}] does not conform to the specified schema'.format(package_json_path))
+                            '[{}] does not conform to the specified '
+                            'schema'.format(package_json_path))
 
     # resolve local references
-    package_resolved = _resolve_local_references(package_raw, package_directory)
+    package_resolved = _resolve_local_references(
+        package_raw, package_directory)
 
     # validate resolved package json
     package_schema_path = "data/schemas/package-schema.json"
     package_schema = util.load_jsons(
-        pkg_resources.resource_string("dcoscli", package_schema_path).decode("utf-8"))
+        pkg_resources.resource_string(
+            "dcoscli", package_schema_path).decode("utf-8"))
 
     errs = util.validate_json(package_resolved, package_schema)
 
     if errs:
         raise DCOSException('Error validating package: '
-                            'one of the references does not conform to the specified schema'.format(package_json))
+                            'one of the references does '
+                            'not conform to the specified '
+                            'schema'.format(package_json))
 
     # create zip file
     with tempfile.NamedTemporaryFile() as temp_file:
@@ -315,7 +321,8 @@ def _resolve_local_references(package_json, package_directory):
     """
     bundle_schema_path = "data/schemas/bundle-schema.json"
     bundle_schema = util.load_jsons(
-        pkg_resources.resource_string("dcoscli", bundle_schema_path).decode("utf-8"))
+        pkg_resources.resource_string(
+            "dcoscli", bundle_schema_path).decode("utf-8"))
 
     ref = "marathon"
     tp = "v2AppMustacheTemplate"
@@ -326,14 +333,16 @@ def _resolve_local_references(package_json, package_directory):
 
         # convert the contents of the marathon file into base64
         with util.open_file(location) as f:
-            contents = base64.b64encode(f.read().encode("utf-8")).decode("utf-8")
+            contents = base64.b64encode(
+                f.read().encode("utf-8")).decode("utf-8")
 
         package_json[ref][tp] = contents
 
         errs = util.validate_json(package_json, bundle_schema)
         if errs:
             raise DCOSException('Error validating package: '
-                                '[{}] does not conform to the specified schema'.format(location))
+                                '[{}] does not conform to the '
+                                'specified schema'.format(location))
 
     ref = "resource"
     if ref in package_json and _is_local_reference(package_json[ref]):
@@ -349,7 +358,8 @@ def _resolve_local_references(package_json, package_directory):
         errs = util.validate_json(package_json, bundle_schema)
         if errs:
             raise DCOSException('Error validating package: '
-                                '[{}] does not conform to the specified schema'.format(location))
+                                '[{}] does not conform to the'
+                                ' specified schema'.format(location))
 
     ref = "config"
     if ref in package_json and _is_local_reference(package_json[ref]):
@@ -365,7 +375,8 @@ def _resolve_local_references(package_json, package_directory):
         errs = util.validate_json(package_json, bundle_schema)
         if errs:
             raise DCOSException('Error validating package: '
-                                '[{}] does not conform to the specified schema'.format(location))
+                                '[{}] does not conform to the'
+                                ' specified schema'.format(location))
 
     return package_json
 

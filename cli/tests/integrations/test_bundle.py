@@ -28,7 +28,9 @@ def _success_test(package_json):
     assert stderr == b""
 
     # check that the files created are correct
-    zip_file_name = re.search('^Created DCOS Universe package \[(.+?)\].', stdout.decode()).group(1)
+    zip_file_name = re.search('^Created DCOS Universe package \[(.+?)\].',
+                              stdout.decode()).group(1)
+
     results = re.search('^(.+)-(.+)-(.+)\.dcos', zip_file_name)
 
     name_result = results.group(1)
@@ -87,11 +89,13 @@ def test_package_all_references():
 def test_package_missing_references():
     _failure_test("tests/data/bundle/package_missing_references.json",
                   "^Error opening file "
-                  "\[(.+)tests/data/bundle/marathon\.json\]: No such file or directory")
+                  "\[(.+)tests/data/bundle/marathon\.json\]: "
+                  "No such file or directory")
 
 
 def test_package_reference_does_not_match_schema():
-    _failure_test("tests/data/bundle/package_reference_does_not_match_schema.json",
+    _failure_test("tests/data/bundle/"
+                  "package_reference_does_not_match_schema.json",
                   "^Error validating package: "
                   "\[(.+)tests/data/bundle/resource-bad\.json\] "
                   "does not conform to the specified schema")
@@ -100,4 +104,5 @@ def test_package_reference_does_not_match_schema():
 def test_package_no_match_schema():
     _failure_test("tests/data/bundle/package_no_match_schema.json",
                   "^Error validating package: "
-                  "\[(.+)tests/data/bundle/package_no_match_schema\.json\] does not conform to the specified schema")
+                  "\[(.+)tests/data/bundle/package_no_match_schema\.json\]"
+                  " does not conform to the specified schema")
