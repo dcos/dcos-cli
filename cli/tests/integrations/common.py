@@ -722,12 +722,15 @@ def setup_universe_server():
 
     # Give the test universe some time to become available
     describe_command = ['dcos', 'package', 'describe', 'helloworld']
-    for _ in range(10):
+    for _ in range(30):
         returncode, _, _ = exec_command(describe_command)
         if returncode == 0:
             break
         time.sleep(1)
     else:
+        # Explicitly clean up in this case; pytest will not automatically
+        # perform teardowns if setup fails. See the remarks at the end of
+        # http://doc.pytest.org/en/latest/xunit_setup.html for more info.
         teardown_universe_server()
         assert False, 'test-universe failed to come up'
 
