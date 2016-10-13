@@ -426,7 +426,7 @@ class MarathonSubcommand(object):
 
         deployment = client.create_group(group_resource)
         emitter.publish('Created deployment {}'.format(deployment))
-        
+
         return 0
 
     def remove(self, app_id, force):

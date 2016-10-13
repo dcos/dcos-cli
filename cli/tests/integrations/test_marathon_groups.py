@@ -152,7 +152,8 @@ def _deploy_group(file_path, stdin=True):
             cmd = ['dcos', 'marathon', 'group', 'add']
             returncode, stdout, stderr = exec_command(cmd, stdin=fd)
             assert returncode == 0
-            assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
+            assert re.fullmatch('Created deployment \S+\n',
+                                stdout.decode('utf-8'))
             assert stderr == b''
     else:
         cmd = ['dcos', 'marathon', 'group', 'add', file_path]
@@ -160,7 +161,6 @@ def _deploy_group(file_path, stdin=True):
         assert returncode == 0
         assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
         assert stderr == b''
-
 
     # Let's make sure that we don't return until the deployment has finished
     watch_all_deployments()

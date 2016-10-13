@@ -338,7 +338,6 @@ class Client(object):
             rendered_json = json.dumps(body_json, indent=2, sort_keys=True)
             raise DCOSException(template.format(rendered_json))
 
-
     def _update_req(
             self, resource_type, resource_id, resource_json, force=False):
         """Send an HTTP request to update an application, group, or pod.
@@ -729,7 +728,6 @@ class Client(object):
                         'JSON response from Marathon:\n{}')
             rendered_json = json.dumps(body_json, indent=2, sort_keys=True)
             raise DCOSException(template.format(rendered_json))
-
 
     def get_leader(self):
         """ Get the leading marathon instance.
