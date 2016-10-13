@@ -346,7 +346,7 @@ class MarathonSubcommand(object):
         :rtype: int
         """
         application_resource = self._resource_reader.get_resource(app_resource)
-        
+
         # Add application to marathon
         client = self._create_marathon_client()
 
@@ -424,8 +424,9 @@ class MarathonSubcommand(object):
         else:
             raise DCOSException("Group '{}' already exists".format(group_id))
 
-        client.create_group(group_resource)
-
+        deployment = client.create_group(group_resource)
+        emitter.publish('Created deployment {}'.format(deployment))
+        
         return 0
 
     def remove(self, app_id, force):

@@ -1,5 +1,6 @@
 import contextlib
 import json
+import re
 
 from .common import (assert_command, assert_lines, exec_command, remove_group,
                      show_app, watch_all_deployments)
@@ -148,9 +149,18 @@ def test_scale_group_when_scale_factor_not_float():
 def _deploy_group(file_path, stdin=True):
     if stdin:
         with open(file_path) as fd:
-            assert_command(['dcos', 'marathon', 'group', 'add'], stdin=fd)
+            cmd = ['dcos', 'marathon', 'group', 'add']
+            returncode, stdout, stderr = exec_command(cmd, stdin=fd)
+            assert returncode == 0
+            assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
+            assert stderr == b''
     else:
-        assert_command(['dcos', 'marathon', 'group', 'add', file_path])
+        cmd = ['dcos', 'marathon', 'group', 'add', file_path]
+        returncode, stdout, stderr = exec_command(cmd)
+        assert returncode == 0
+        assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
+        assert stderr == b''
+
 
     # Let's make sure that we don't return until the deployment has finished
     watch_all_deployments()
