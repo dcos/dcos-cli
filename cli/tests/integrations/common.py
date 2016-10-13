@@ -5,6 +5,7 @@ import json
 import os
 import subprocess
 import time
+import re
 
 import six
 from six.moves import urllib
@@ -173,7 +174,12 @@ def add_app(app_path, wait=True):
     :rtype: None
     """
 
-    assert_command(['dcos', 'marathon', 'app', 'add', app_path])
+    cmd =['dcos', 'marathon', 'app', 'add', app_path]
+    returncode, stdout, stderr = exec_command(cmd)
+    assert returncode == 0
+    assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
+    assert stderr == b''
+
     if wait:
         watch_all_deployments()
 

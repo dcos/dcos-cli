@@ -346,7 +346,7 @@ class MarathonSubcommand(object):
         :rtype: int
         """
         application_resource = self._resource_reader.get_resource(app_resource)
-
+        
         # Add application to marathon
         client = self._create_marathon_client()
 
@@ -361,7 +361,8 @@ class MarathonSubcommand(object):
             message = "Application '{}' already exists".format(app_id)
             raise DCOSException(message)
 
-        client.add_app(application_resource)
+        deployment = client.add_app(application_resource)
+        emitter.publish('Created deployment {}'.format(deployment))
 
         return 0
 
