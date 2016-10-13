@@ -21,11 +21,6 @@ def test_add_pod_returns_parsed_response_body():
     _assert_add_pod_returns_parsed_response_body(["another", "pod", "json"])
 
 
-def test_add_pod_raises_dcos_exception_for_json_parse_errors():
-    _assert_method_raises_dcos_exception_for_json_parse_errors(
-        lambda marathon_client: marathon_client.add_pod({'some': 'json'}))
-
-
 def test_remove_pod_has_default_force_value():
     marathon_client, rpc_client = _create_fixtures()
     marathon_client.remove_pod('foo')
@@ -143,6 +138,13 @@ def test_update_pod_propagates_rpc_dcos_exception():
     _assert_method_propagates_rpc_dcos_exception(
         lambda marathon_client:
             marathon_client.update_pod('foo', {'some': 'json'}))
+
+
+def test_add_pod_raises_dcos_exception_if_deployment_id_missing():
+    _assert_add_pod_raises_dcos_exception_if_deployment_id_missing(
+        headers={'foo': 'bar'})
+    _assert_add_pod_raises_dcos_exception_if_deployment_id_missing(
+        headers={'marathon-deployment_ID': 'misspelled-field', 'zzz': 'aaa'})
 
 
 def test_update_pod_raises_dcos_exception_if_deployment_id_missing():
@@ -572,13 +574,15 @@ def _assert_add_pod_puts_json_in_request_body(pod_json):
 
 
 def _assert_add_pod_returns_parsed_response_body(response_json):
-    mock_response = mock.create_autospec(requests.Response)
+
+    headers = {'Marathon-Deployment-Id': "XYZ"}
+    mock_response = _pod_response_fixture(headers)
     mock_response.json.return_value = response_json
 
     marathon_client, rpc_client = _create_fixtures()
     rpc_client.http_req.return_value = mock_response
 
-    assert marathon_client.add_pod({'some': 'json'}) == response_json
+    assert marathon_client.add_pod({'some': 'json'}) == "XYZ"
 
 
 def _assert_remove_pod_builds_rpc_correctly(pod_id, force, path, params):
@@ -616,7 +620,7 @@ def _assert_list_pod_returns_success_response_json(body_json):
 def _assert_update_pod_executes_successfully(
         pod_id, pod_json, force, path, params, deployment_id):
     headers = {'Marathon-Deployment-Id': deployment_id}
-    mock_response = _update_pod_response_fixture(headers)
+    mock_response = _pod_response_fixture(headers)
 
     marathon_client, rpc_client = _create_fixtures()
     rpc_client.http_req.return_value = mock_response
@@ -649,9 +653,20 @@ def _assert_method_raises_dcos_exception_for_json_parse_errors(invoke_method):
     assert_test_case('{"oops"}')
 
 
+def _assert_add_pod_raises_dcos_exception_if_deployment_id_missing(headers):
+    marathon_client, rpc_client = _create_fixtures()
+    rpc_client.http_req.return_value = _pod_response_fixture(headers)
+
+    with pytest.raises(DCOSException) as exception_info:
+        marathon_client.add_pod({'some': 'json'})
+
+    expected_error = 'Error: missing "Marathon-Deployment-Id" from header'
+    assert str(exception_info.value) == expected_error
+
+
 def _assert_update_pod_raises_dcos_exception_if_deployment_id_missing(headers):
     marathon_client, rpc_client = _create_fixtures()
-    rpc_client.http_req.return_value = _update_pod_response_fixture(headers)
+    rpc_client.http_req.return_value = _pod_response_fixture(headers)
 
     with pytest.raises(DCOSException) as exception_info:
         marathon_client.update_pod('foo', {'some': 'json'})
@@ -781,7 +796,7 @@ def _create_fixtures():
     return marathon_client, rpc_client
 
 
-def _update_pod_response_fixture(headers=None):
+def _pod_response_fixture(headers=None):
     mock_response = mock.create_autospec(requests.Response)
 
     headers = CaseInsensitiveDict({} if headers is None else headers)

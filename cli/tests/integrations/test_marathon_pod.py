@@ -31,7 +31,7 @@ _POD_UPDATE_CMD = _POD_BASE_CMD + ['update']
 def test_pod_add_from_file_then_remove():
     returncode, stdout, stderr = _pod_add_from_file(GOOD_POD_FILE_PATH)
     assert returncode == 0
-    assert stdout == b''
+    assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
     assert stderr == b''
 
     watch_all_deployments()
@@ -118,7 +118,11 @@ def _pod_add_from_file(file_path):
 def _assert_pod_add_from_stdin(file_path):
     cmd = _POD_ADD_CMD
     with open(file_path) as fd:
-        assert_command(cmd, returncode=0, stdout=b'', stderr=b'', stdin=fd)
+        returncode, stdout, stderr = exec_command(cmd, stdin=fd)
+
+    assert returncode == 0
+    assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
+    assert stderr == b''
 
     watch_all_deployments()
 
@@ -271,11 +275,12 @@ def _pods(ids_and_paths):
     for pod_id, file_path in ids_and_paths.items():
         ids_and_results[pod_id] = _pod_add_from_file(file_path)
 
-    expected_results = {pod_id: (0, b'', b'')
-                        for pod_id in ids_and_results.keys()}
-
     try:
-        assert ids_and_results == expected_results
+        for pod_id, (returncode, stdout, stderr) in ids_and_results.items():
+            assert returncode == 0
+            assert re.fullmatch('Created deployment \S+\n',
+                                stdout.decode('utf-8'))
+            assert stderr == b''
 
         watch_all_deployments()
         yield

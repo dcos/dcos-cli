@@ -733,7 +733,11 @@ class Client(object):
         """
 
         response = self._rpc.http_req(http.post, 'v2/pods', json=pod_json)
-        return self._parse_json(response)
+        try:
+            return response.headers['Marathon-Deployment-Id']
+        except KeyError:
+            msg = 'Error: missing "Marathon-Deployment-Id" from header'
+            raise DCOSException(msg)
 
     def remove_pod(self, pod_id, force=False):
         """Completely removes the requested pod.
