@@ -327,16 +327,7 @@ class Client(object):
             app_json = app_resource
 
         response = self._rpc.http_req(http.post, 'v2/apps', json=app_json)
-
-        try:
-            body_json = response.json()
-            return body_json['deployments'][0]['id']
-        except KeyError:
-            template = ('Error: missing ["deployments"][0]["id"] '
-                        'field in the following '
-                        'JSON response from Marathon:\n{}')
-            rendered_json = json.dumps(body_json, indent=2, sort_keys=True)
-            raise DCOSException(template.format(rendered_json))
+        return response.get('deployments')[0]['id']
 
     def _update_req(
             self, resource_type, resource_id, resource_json, force=False):
@@ -719,15 +710,7 @@ class Client(object):
             group_json = group_resource
 
         response = self._rpc.http_req(http.post, 'v2/groups', json=group_json)
-        try:
-            body_json = response.json()
-            return body_json["deploymentId"]
-        except KeyError:
-            template = ('Error: missing ["deploymentId"]'
-                        'field in the following '
-                        'JSON response from Marathon:\n{}')
-            rendered_json = json.dumps(body_json, indent=2, sort_keys=True)
-            raise DCOSException(template.format(rendered_json))
+        return response.json().get("deploymentId")
 
     def get_leader(self):
         """ Get the leading marathon instance.
