@@ -256,7 +256,7 @@ def _bundle(package_json,
 
     if errs:
         raise DCOSException('Error validating package: '
-                            '[{}] does not conform to the specified schema'.format(package_json))
+                            '[{}] does not conform to the specified schema'.format(package_json_path))
 
     # resolve local references
     package_resolved = _resolve_local_references(package_raw, package_directory)

@@ -54,7 +54,7 @@ def _success_test(package_json):
     rmtree(output_folder)
 
 
-def _failure_test(package_json, expected_error):
+def _failure_test(package_json, error_pattern):
     output_folder = tempfile.mkdtemp()
 
     # perform the operation
@@ -65,7 +65,9 @@ def _failure_test(package_json, expected_error):
 
     # check that the output is correct
     assert return_code == 1
-    assert stderr == expected_error
+
+    p = re.compile(error_pattern)
+    assert p.match(stderr.decode())
 
     # delete the files created
     rmtree(output_folder)
@@ -81,18 +83,18 @@ def test_package_all_references():
 
 def test_package_missing_references():
     _failure_test("tests/data/bundle/package_missing_references.json",
-                  b"Error opening file [/Users/mesosphere"
-                  b"/Work/dcos-cli/cli/tests/data/bundle/marathon.json]: No such file or directory\n")
+                  "^Error opening file "
+                  "\[(.+)tests/data/bundle/marathon\.json\]: No such file or directory")
 
 
 def test_package_reference_does_not_match_schema():
     _failure_test("tests/data/bundle/package_reference_does_not_match_schema.json",
-                  b"Error validating package: "
-                  b"[/Users/mesosphere/Work/dcos-cli/cli/tests/data/bundle/resource-bad.json] "
-                  b"does not conform to the specified schema\n")
+                  "^Error validating package: "
+                  "\[(.+)tests/data/bundle/resource-bad\.json\] "
+                  "does not conform to the specified schema")
 
 
 def test_package_no_match_schema():
     _failure_test("tests/data/bundle/package_no_match_schema.json",
-                  b"Error validating package: "
-                  b"[tests/data/bundle/package_no_match_schema.json] does not conform to the specified schema\n")
+                  "^Error validating package: "
+                  "\[(.+)tests/data/bundle/package_no_match_schema\.json\] does not conform to the specified schema")

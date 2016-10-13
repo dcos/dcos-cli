@@ -11,7 +11,7 @@ a = Analysis(['../dcoscli/main.py'],
                      ],
              binaries=None,
             datas=[('../dcoscli/data/help/*', 'dcoscli/data/help'),
-                   ('../dcoscli/data/schemas/*', 'dcoscli/data/schemas',
+                   ('../dcoscli/data/schemas/*', 'dcoscli/data/schemas'),
                    ('../../dcos/data/config-schema/*', 'dcos/data/config-schema'),
                    ('../../dcos/data/marathon/*', 'dcos/data/marathon')
                   ],
