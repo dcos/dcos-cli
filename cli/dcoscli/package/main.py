@@ -13,7 +13,7 @@ import re
 from dcos import (cmds, config, cosmospackage, emitting, http, options,
                   package, subcommand, util)
 from dcos.errors import DCOSException
-from dcos.util import sha256_file
+from dcos.util import hash_file
 from dcoscli import tables
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
@@ -288,7 +288,7 @@ def _bundle(package_json,
             '{}-{}-{}.dcos'.format(
                 package_resolved['name'],
                 package_resolved['version'],
-                sha256_file(temp_file.name)))
+                hash_file(temp_file.name)))
 
         if os.path.exists(zip_file_name):
             raise DCOSException(
@@ -304,7 +304,8 @@ def _bundle(package_json,
 
 
 def _resolve_local_references(package_json, package_directory):
-    """ Resolves all local refereces in package json
+    """ Resolves all local references in package json
+
     :param package_json: The package json that may contain local references
     :type package_json: dict
     :param package_directory: The directory of the project.
@@ -377,8 +378,7 @@ def _is_local_reference(item):
    :returns: true if item is a local reference else false
    :rtype: bool
    """
-    local_ref_pattern = re.compile("^@")
-    return isinstance(item, str) and local_ref_pattern.match(item)
+    return isinstance(item, str) and item.startswith("@")
 
 
 def _describe(package_name,

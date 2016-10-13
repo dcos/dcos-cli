@@ -28,7 +28,7 @@ Usage:
 
 Commands:
     bundle
-        Bundle a package for dcos consumption.
+        Bundle a package to install to DC/OS or share with Universe.
     describe
         Get specific details for packages.
     install

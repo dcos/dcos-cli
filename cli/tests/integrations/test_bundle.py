@@ -7,7 +7,7 @@ import zipfile
 from shutil import rmtree
 
 from dcos import util
-from dcos.util import sha256_file
+from dcos.util import hash_file
 from .common import exec_command
 
 
@@ -40,7 +40,7 @@ def _success_test(package_json):
     assert version_result == version_expected
 
     hash_result = results.group(3)
-    hash_expected = sha256_file(zip_file_name)
+    hash_expected = hash_file(zip_file_name)
     assert hash_result == hash_expected
 
     # check that the contents of the zip file created are correct
@@ -68,6 +68,9 @@ def _failure_test(package_json, error_pattern):
 
     p = re.compile(error_pattern)
     assert p.match(stderr.decode())
+
+    # check that no files were created in the temp folder
+    assert len(os.listdir(output_folder)) == 0
 
     # delete the files created
     rmtree(output_folder)

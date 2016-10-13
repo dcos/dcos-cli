@@ -1,9 +1,8 @@
 import collections
-import hashlib
-
 import concurrent.futures
 import contextlib
 import functools
+import hashlib
 import json
 import logging
 import os
@@ -619,7 +618,7 @@ def normalize_marathon_id_path(id_path):
 logger = get_logger(__name__)
 
 
-def sha256_file(filename):
+def hash_file(filename):
     """Calculates the sha256 of a file
 
    :param filename: path to the file to sum
@@ -627,7 +626,7 @@ def sha256_file(filename):
    :returns: digest in hexadecimal
    :rtype: str
    """
-    hasher = hashlib.sha256()
+    hasher = hashlib.md5()
     with open(filename, 'rb') as f:
         for chunk in iter(lambda: f.read(4096), b''):
             hasher.update(chunk)
