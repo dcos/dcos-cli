@@ -29,7 +29,7 @@ _POD_UPDATE_CMD = _POD_BASE_CMD + ['update']
 def test_pod_add_from_file_then_remove():
     returncode, stdout, stderr = _pod_add_from_file(GOOD_POD_FILE_PATH)
     assert returncode == 0
-    assert stdout.startswith(b'Created deployment ')
+    assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
     assert stderr == b''
 
     watch_all_deployments()
