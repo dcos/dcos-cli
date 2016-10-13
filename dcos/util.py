@@ -1,4 +1,6 @@
 import collections
+import hashlib
+
 import concurrent.futures
 import contextlib
 import functools
@@ -253,17 +255,22 @@ def configure_logger(log_level):
         msg.format(log_level, constants.VALID_LOG_LEVEL_VALUES))
 
 
-def load_json(reader):
+def load_json(reader, keep_order=False):
     """Deserialize a reader into a python object
 
     :param reader: the json reader
     :type reader: a :code:`.read()`-supporting object
+    :param keep_order: whether the return should be an ordered dictionary
+    :type keep_order: bool
     :returns: the deserialized JSON object
     :rtype: dict | list | str | int | float | bool
     """
 
     try:
-        return json.load(reader)
+        if keep_order:
+            return json.load(reader, object_pairs_hook=collections.OrderedDict)
+        else:
+            return json.load(reader)
     except Exception as error:
         logger.error(
             'Unhandled exception while loading JSON: %r',
@@ -610,3 +617,18 @@ def normalize_marathon_id_path(id_path):
 
 
 logger = get_logger(__name__)
+
+
+def sha256_file(filename):
+    """Calculates the sha256 of a file
+
+   :param filename: path to the file to sum
+   :type filename: str
+   :returns: digest in hexadecimal
+   :rtype: str
+   """
+    hasher = hashlib.sha256()
+    with open(filename, 'rb') as f:
+        for chunk in iter(lambda: f.read(4096), b''):
+            hasher.update(chunk)
+    return hasher.hexdigest()

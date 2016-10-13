@@ -1,14 +1,19 @@
+import base64
 import json
 import os
 import sys
-
-import docopt
-import pkg_resources
+import tempfile
+import zipfile
 
 import dcoscli
+import docopt
+import pkg_resources
+import re
+
 from dcos import (cmds, config, cosmospackage, emitting, http, options,
                   package, subcommand, util)
 from dcos.errors import DCOSException
+from dcos.util import sha256_file
 from dcoscli import tables
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
@@ -63,6 +68,11 @@ def _cmds():
             arg_keys=['<repo-name>'],
             function=_remove_repo),
 
+        cmds.Command(
+            hierarchy=['package', 'bundle'],
+            arg_keys=['<package-json>', '--output-directory'],
+            function=_bundle,
+        ),
         cmds.Command(
             hierarchy=['package', 'describe'],
             arg_keys=['<package-name>', '--app', '--cli', '--options',
@@ -150,8 +160,8 @@ def _update():
 def _list_repos(is_json):
     """List configured package repositories.
 
-    :param json_: output json if True
-    :type json_: bool
+    :param is_json: output json if True
+    :type is_json: bool
     :returns: Process status
     :rtype: int
     """
@@ -204,6 +214,171 @@ def _remove_repo(repo_name):
     package_manager.remove_repo(repo_name)
 
     return 0
+
+
+def _bundle(package_json,
+            output_directory):
+    """ Creates a bundle from a project.
+
+    :param package_json: The package json of the project
+    :type package_json: str
+    :param output_directory: The directory where the bundle will be stored
+    :type output_directory: str
+    :returns: Process status
+    :rtype: int
+    """
+    # get the path of package json
+    cwd = os.getcwd()
+    package_json_path = package_json
+    if not os.path.isabs(package_json_path):
+        package_json_path = os.path.join(cwd, package_json_path)
+
+    package_directory = os.path.dirname(package_json_path)
+
+    # get the path to the output directory
+    if output_directory is None:
+        output_directory = cwd
+    logger.debug("Using [%s] as output directory", output_directory)
+
+    if not os.path.exists(package_json_path):
+        raise DCOSException("The file [{}] does not exist".format(package_json_path))
+
+    # load raw package json
+    with util.open_file(package_json_path) as pj:
+        package_raw = util.load_json(pj, keep_order=True)
+
+    # validate package json with local references
+    bundle_schema_path = "data/schemas/bundle-schema.json"
+    bundle_schema = util.load_jsons(
+        pkg_resources.resource_string("dcoscli", bundle_schema_path).decode("utf-8"))
+
+    errs = util.validate_json(package_raw, bundle_schema)
+
+    if errs:
+        raise DCOSException('Error validating package: '
+                            '[{}] does not conform to the specified schema'.format(package_json))
+
+    # resolve local references
+    package_resolved = _resolve_local_references(package_raw, package_directory)
+
+    # validate resolved package json
+    package_schema_path = "data/schemas/package-schema.json"
+    package_schema = util.load_jsons(
+        pkg_resources.resource_string("dcoscli", package_schema_path).decode("utf-8"))
+
+    errs = util.validate_json(package_resolved, package_schema)
+
+    if errs:
+        raise DCOSException('Error validating package: '
+                            'one of the references does not conform to the specified schema'.format(package_json))
+
+    # create zip file
+    with tempfile.NamedTemporaryFile() as temp_file:
+        with zipfile.ZipFile(
+                temp_file.file,
+                mode='w',
+                compression=zipfile.ZIP_DEFLATED,
+                allowZip64=True) as zip_file:
+            contents = json.dumps(package_resolved, indent=2)
+            zip_file.writestr("package.json", contents.encode())
+
+        # name the zip file appropriately
+        zip_file_name = os.path.join(
+            output_directory,
+            '{}-{}-{}.dcos'.format(
+                package_resolved['name'],
+                package_resolved['version'],
+                sha256_file(temp_file.name)))
+
+        if os.path.exists(zip_file_name):
+            raise DCOSException(
+                'Output file [{}] already exists'.format(
+                    zip_file_name))
+
+        util.sh_copy(temp_file.name, zip_file_name)
+
+    emitter.publish(
+            'Created DCOS Universe package [{}].'.format(zip_file_name))
+
+    return 0
+
+
+def _resolve_local_references(package_json, package_directory):
+    """ Resolves all local refereces in package json
+    :param package_json: The package json that may contain local references
+    :type package_json: dict
+    :param package_directory: The directory of the project.
+    :type package_directory: str
+    :returns: The package json with all references resolved
+    :rtype: dict
+    """
+    bundle_schema_path = "data/schemas/bundle-schema.json"
+    bundle_schema = util.load_jsons(
+        pkg_resources.resource_string("dcoscli", bundle_schema_path).decode("utf-8"))
+
+    ref = "marathon"
+    tp = "v2AppMustacheTemplate"
+    if ref in package_json and _is_local_reference(package_json[ref][tp]):
+        location = (package_json[ref])[tp][1:]
+        if not os.path.isabs(location):
+            location = os.path.join(package_directory, location)
+
+        # convert the contents of the marathon file into base64
+        with util.open_file(location) as f:
+            contents = base64.b64encode(f.read().encode("utf-8")).decode("utf-8")
+
+        package_json[ref][tp] = contents
+
+        errs = util.validate_json(package_json, bundle_schema)
+        if errs:
+            raise DCOSException('Error validating package: '
+                                '[{}] does not conform to the specified schema'.format(location))
+
+    ref = "resource"
+    if ref in package_json and _is_local_reference(package_json[ref]):
+        location = package_json[ref][1:]
+        if not os.path.isabs(location):
+            location = os.path.join(package_directory, location)
+
+        with util.open_file(location) as f:
+            contents = util.load_json(f, True)
+
+        package_json[ref] = contents
+
+        errs = util.validate_json(package_json, bundle_schema)
+        if errs:
+            raise DCOSException('Error validating package: '
+                                '[{}] does not conform to the specified schema'.format(location))
+
+    ref = "config"
+    if ref in package_json and _is_local_reference(package_json[ref]):
+        location = package_json[ref][1:]
+        if not os.path.isabs(location):
+            location = os.path.join(package_directory, location)
+
+        with util.open_file(location) as f:
+            contents = util.load_json(f, True)
+
+        package_json[ref] = contents
+
+        errs = util.validate_json(package_json, bundle_schema)
+        if errs:
+            raise DCOSException('Error validating package: '
+                                '[{}] does not conform to the specified schema'.format(location))
+
+    return package_json
+
+
+def _is_local_reference(item):
+    """Checks if an object is a local reference
+
+   :param item: the object that may be a reference
+   :type item: object
+   :returns: true if item is a local reference else false
+   :rtype: bool
+   """
+    local_ref_pattern = re.compile("^@")
+    return isinstance(item, str) and local_ref_pattern.match(item)
 
 
 def _describe(package_name,

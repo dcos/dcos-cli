@@ -5,6 +5,7 @@ Usage:
     dcos package --config-schema
     dcos package --help
     dcos package --info
+    dcos package bundle [--output-directory=<output-directory>] <package-json>
     dcos package describe [--app --cli --config]
                           [--render]
                           [--package-versions]
@@ -26,6 +27,8 @@ Usage:
     dcos package update
 
 Commands:
+    bundle
+        Bundle a package for dcos consumption.
     describe
         Get specific details for packages.
     install

@@ -78,6 +78,7 @@ setup(
         'dcoscli': [
             'data/*.json',
             'data/help/*.txt',
+            'data/schemas/*.json'
         ],
     },
 

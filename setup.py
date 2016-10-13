@@ -75,7 +75,8 @@ setup(
     package_data={
         'dcos': [
             'data/config-schema/*.json',
-            'data/marathon/*.json'
+            'data/marathon/*.json',
+            'data/schemas/*.json'
         ],
     },
 )
