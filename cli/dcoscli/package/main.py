@@ -262,7 +262,7 @@ def _bundle(package_json,
 
     # resolve local references
     package_resolved = _resolve_local_references(
-        package_raw, package_directory)
+        package_raw, package_directory, bundle_schema)
 
     # validate resolved package json
     package_schema_path = "data/schemas/package-schema.json"
@@ -309,21 +309,18 @@ def _bundle(package_json,
     return 0
 
 
-def _resolve_local_references(package_json, package_directory):
+def _resolve_local_references(package_json, package_directory, bundle_schema):
     """ Resolves all local references in package json
 
     :param package_json: The package json that may contain local references
     :type package_json: dict
     :param package_directory: The directory of the project.
     :type package_directory: str
+    :param bundle_schema: The schema for the package with local references
+    :type bundle_schema: dict
     :returns: The package json with all references resolved
     :rtype: dict
     """
-    bundle_schema_path = "data/schemas/bundle-schema.json"
-    bundle_schema = util.load_jsons(
-        pkg_resources.resource_string(
-            "dcoscli", bundle_schema_path).decode("utf-8"))
-
     ref = "marathon"
     tp = "v2AppMustacheTemplate"
     if ref in package_json and _is_local_reference(package_json[ref][tp]):
