@@ -159,7 +159,7 @@ def test_log_follow():
         _mark_non_blocking(proc.stdout)
 
         time.sleep(10)
-        assert len(proc.stdout.read().decode('utf-8').split('\n')) >= 1
+        assert len(_read_lines(proc.stdout)) >= 1
 
         proc.kill()
 
@@ -192,9 +192,9 @@ def test_log_two_tasks_follow():
         _mark_non_blocking(proc.stdout)
 
         time.sleep(5)
-        first_lines = proc.stdout.read().decode('utf-8').split('\n')
+        first_lines = _read_lines(proc.stdout)
         time.sleep(3)
-        second_lines = proc.stdout.read().decode('utf-8').split('\n')
+        second_lines = _read_lines(proc.stdout)
 
         assert len(first_lines) >= 1
         # assert there are more lines after sleeping
@@ -328,3 +328,24 @@ def _get_completed_task_id(app_id='test-app-completed'):
     assert len(tasks) == 1
     task_id = tasks[0]['id']
     return task_id
+
+
+def _read_lines(raw_io):
+    """Polls calls to `read()` on the given byte stream until some bytes are
+    returned, or the maximum number of attempts is reached.
+
+    :param raw_io: the byte stream to read from
+    :type raw_io: io.RawIOBase
+    :returns: the bytes read, decoded as UTF-8 and split into a list of lines
+    :rtype: [str]
+    """
+
+    for _ in range(30):
+        bytes_read = raw_io.read()
+        if bytes_read is not None:
+            break
+        time.sleep(1)
+    else:
+        assert False, 'timed out trying to read bytes'
+
+    return bytes_read.decode('utf-8').split('\n')

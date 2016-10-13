@@ -2,7 +2,6 @@ import base64
 import contextlib
 import json
 import sys
-import time
 
 import pytest
 import six
@@ -12,36 +11,15 @@ from dcos import subcommand
 from .common import (assert_command, assert_lines, base64_to_dict,
                      delete_zk_node, delete_zk_nodes, exec_command, file_json,
                      get_services, package_install, package_uninstall,
-                     service_shutdown, update_config, wait_for_service,
+                     service_shutdown, setup_universe_server,
+                     teardown_universe_server, UNIVERSE_REPO,
+                     UNIVERSE_TEST_REPO, update_config, wait_for_service,
                      watch_all_deployments)
 from ..common import file_bytes
 
-UNIVERSE_REPO = "https://universe.mesosphere.com/repo"
-UNIVERSE_TEST_REPO = "http://universe.marathon.mesos:8085/repo"
-
 
 def setup_module(module):
-    # add universe-server with static packages
-    assert_command(
-        ['dcos', 'marathon', 'app', 'add', 'tests/data/universe-v3-stub.json'])
-    watch_all_deployments()
-
-    assert_command(
-        ['dcos', 'package', 'repo', 'remove', 'Universe'])
-
-    assert_command(
-        ['dcos', 'package', 'repo', 'add', 'test-universe', UNIVERSE_TEST_REPO]
-    )
-
-    # Give the test universe some time to become available
-    describe_command = ['dcos', 'package', 'describe', 'helloworld']
-    for _ in range(10):
-        returncode, _, _ = exec_command(describe_command)
-        if returncode == 0:
-            break
-        time.sleep(1)
-    else:
-        assert False, 'test-universe failed to come up'
+    setup_universe_server()
 
 
 def teardown_module(module):
@@ -50,12 +28,7 @@ def teardown_module(module):
         if framework['name'] == 'chronos':
             service_shutdown(framework['id'])
 
-    assert_command(
-        ['dcos', 'package', 'repo', 'remove', 'test-universe'])
-    assert_command(
-        ['dcos', 'package', 'repo', 'add', 'Universe', UNIVERSE_REPO])
-    assert_command(
-        ['dcos', 'marathon', 'app', 'remove', '/universe', '--force'])
+    teardown_universe_server()
 
 
 @pytest.fixture(scope="module")
