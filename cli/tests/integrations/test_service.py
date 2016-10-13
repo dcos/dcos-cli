@@ -12,35 +12,18 @@ from dcos.util import create_schema
 from .common import (assert_command, assert_lines, delete_zk_node,
                      delete_zk_nodes, exec_command, get_services,
                      package_install, remove_app, service_shutdown,
-                     ssh_output, wait_for_service, watch_all_deployments)
+                     setup_universe_server, ssh_output,
+                     teardown_universe_server, wait_for_service)
 from ..fixtures.service import framework_fixture
-
-UNIVERSE_REPO = "https://universe.mesosphere.com/repo"
-UNIVERSE_TEST_REPO = "http://universe.marathon.mesos:8085/repo"
 
 
 def setup_module(module):
-    # add universe-server with static packages
-    assert_command(
-        ['dcos', 'marathon', 'app', 'add', 'tests/data/universe-v3-stub.json'])
-    watch_all_deployments()
-
-    exec_command(['dcos', 'package', 'repo', 'remove', 'Universe'])
-
-    assert_command(
-        ['dcos', 'package', 'repo', 'add', 'test-universe', UNIVERSE_TEST_REPO]
-    )
+    setup_universe_server()
 
 
 def teardown_module(module):
     delete_zk_nodes()
-
-    assert_command(['dcos', 'package', 'repo', 'remove', 'test-universe'])
-
-    assert_command(
-        ['dcos', 'package', 'repo', 'add', 'Universe', UNIVERSE_REPO])
-    assert_command(
-        ['dcos', 'marathon', 'app', 'remove', '/universe', '--force'])
+    teardown_universe_server()
 
 
 def test_help():
