@@ -361,7 +361,8 @@ class MarathonSubcommand(object):
             message = "Application '{}' already exists".format(app_id)
             raise DCOSException(message)
 
-        client.add_app(application_resource)
+        deployment = client.add_app(application_resource)
+        emitter.publish('Created deployment {}'.format(deployment))
 
         return 0
 
@@ -423,7 +424,8 @@ class MarathonSubcommand(object):
         else:
             raise DCOSException("Group '{}' already exists".format(group_id))
 
-        client.create_group(group_resource)
+        deployment = client.create_group(group_resource)
+        emitter.publish('Created deployment {}'.format(deployment))
 
         return 0
 

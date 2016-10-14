@@ -656,12 +656,9 @@ def _assert_method_raises_dcos_exception_for_json_parse_errors(invoke_method):
 def _assert_add_pod_raises_dcos_exception_if_deployment_id_missing(headers):
     marathon_client, rpc_client = _create_fixtures()
     rpc_client.http_req.return_value = _pod_response_fixture(headers)
+    result = marathon_client.add_pod({'some': 'json'})
 
-    with pytest.raises(DCOSException) as exception_info:
-        marathon_client.add_pod({'some': 'json'})
-
-    expected_error = 'Error: missing "Marathon-Deployment-Id" from header'
-    assert str(exception_info.value) == expected_error
+    assert result is None
 
 
 def _assert_update_pod_raises_dcos_exception_if_deployment_id_missing(headers):

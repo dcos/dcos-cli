@@ -3,6 +3,7 @@ import collections
 import contextlib
 import json
 import os
+import re
 import subprocess
 import time
 
@@ -173,7 +174,12 @@ def add_app(app_path, wait=True):
     :rtype: None
     """
 
-    assert_command(['dcos', 'marathon', 'app', 'add', app_path])
+    cmd = ['dcos', 'marathon', 'app', 'add', app_path]
+    returncode, stdout, stderr = exec_command(cmd)
+    assert returncode == 0
+    assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
+    assert stderr == b''
+
     if wait:
         watch_all_deployments()
 
@@ -709,9 +715,7 @@ UNIVERSE_TEST_REPO = "http://universe.marathon.mesos:8085/repo"
 
 def setup_universe_server():
     # add universe-server with static packages
-    assert_command(
-        ['dcos', 'marathon', 'app', 'add', 'tests/data/universe-v3-stub.json'])
-    watch_all_deployments()
+    add_app('tests/data/universe-v3-stub.json', True)
 
     assert_command(
         ['dcos', 'package', 'repo', 'remove', 'Universe'])
