@@ -321,6 +321,54 @@ def _resolve_local_references(package_json, package_directory, bundle_schema):
     :returns: The package json with all references resolved
     :rtype: dict
     """
+    _replace_marathon(bundle_schema, package_directory, package_json)
+
+    _replace_resources(bundle_schema, package_directory, package_json)
+
+    _replace_cofig(bundle_schema, package_directory, package_json)
+
+    return package_json
+
+
+def _replace_cofig(bundle_schema, package_directory, package_json):
+    ref = "config"
+    if ref in package_json and _is_local_reference(package_json[ref]):
+        location = package_json[ref][1:]
+        if not os.path.isabs(location):
+            location = os.path.join(package_directory, location)
+
+        with util.open_file(location) as f:
+            contents = util.load_json(f, True)
+
+        package_json[ref] = contents
+
+        errs = util.validate_json(package_json, bundle_schema)
+        if errs:
+            raise DCOSException('Error validating package: '
+                                '[{}] does not conform to the'
+                                ' specified schema'.format(location))
+
+
+def _replace_resources(bundle_schema, package_directory, package_json):
+    ref = "resource"
+    if ref in package_json and _is_local_reference(package_json[ref]):
+        location = package_json[ref][1:]
+        if not os.path.isabs(location):
+            location = os.path.join(package_directory, location)
+
+        with util.open_file(location) as f:
+            contents = util.load_json(f, True)
+
+        package_json[ref] = contents
+
+        errs = util.validate_json(package_json, bundle_schema)
+        if errs:
+            raise DCOSException('Error validating package: '
+                                '[{}] does not conform to the'
+                                ' specified schema'.format(location))
+
+
+def _replace_marathon(bundle_schema, package_directory, package_json):
     ref = "marathon"
     tp = "v2AppMustacheTemplate"
     if ref in package_json and _is_local_reference(package_json[ref][tp]):
@@ -340,42 +388,6 @@ def _resolve_local_references(package_json, package_directory, bundle_schema):
             raise DCOSException('Error validating package: '
                                 '[{}] does not conform to the '
                                 'specified schema'.format(location))
-
-    ref = "resource"
-    if ref in package_json and _is_local_reference(package_json[ref]):
-        location = package_json[ref][1:]
-        if not os.path.isabs(location):
-            location = os.path.join(package_directory, location)
-
-        with util.open_file(location) as f:
-            contents = util.load_json(f, True)
-
-        package_json[ref] = contents
-
-        errs = util.validate_json(package_json, bundle_schema)
-        if errs:
-            raise DCOSException('Error validating package: '
-                                '[{}] does not conform to the'
-                                ' specified schema'.format(location))
-
-    ref = "config"
-    if ref in package_json and _is_local_reference(package_json[ref]):
-        location = package_json[ref][1:]
-        if not os.path.isabs(location):
-            location = os.path.join(package_directory, location)
-
-        with util.open_file(location) as f:
-            contents = util.load_json(f, True)
-
-        package_json[ref] = contents
-
-        errs = util.validate_json(package_json, bundle_schema)
-        if errs:
-            raise DCOSException('Error validating package: '
-                                '[{}] does not conform to the'
-                                ' specified schema'.format(location))
-
-    return package_json
 
 
 def _is_local_reference(item):

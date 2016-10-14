@@ -11,9 +11,10 @@ from dcos.util import hash_file
 from .common import exec_command
 
 
-def _success_test(package_json):
+def _success_test(package_json,
+                  expected_path="tests/data/bundle/"
+                                "package_no_references.json"):
     output_folder = tempfile.mkdtemp()
-    expected_path = "tests/data/bundle/package_no_references.json"
 
     # perform the operation
     return_code, stdout, stderr = exec_command(
@@ -23,9 +24,9 @@ def _success_test(package_json):
 
     # check that the output is correct
     pattern = re.compile("^Created DCOS Universe package")
+    assert stderr == b""
     assert return_code == 0
     assert pattern.match(stdout.decode())
-    assert stderr == b""
 
     # check that the files created are correct
     zip_file_name = re.search('^Created DCOS Universe package \[(.+?)\].',
@@ -77,6 +78,35 @@ def _failure_test(package_json, error_pattern):
 
     # delete the files created
     rmtree(output_folder)
+
+
+def test_package_resource_only_reference():
+    _success_test("tests/data/bundle/package_resource_only_reference.json",
+                  expected_path="tests/data/bundle/"
+                                "package_resource_only"
+                                "_reference_expected.json")
+
+
+def test_package_config_no_reference():
+    _success_test("tests/data/bundle/package_config_reference_expected.json",
+                  expected_path="tests/data/bundle/"
+                                "package_config_reference_expected.json")
+
+
+def test_package_config_reference():
+    _success_test("tests/data/bundle/package_config_reference.json",
+                  expected_path="tests/data/bundle/"
+                                "package_config_reference_expected.json")
+
+
+def test_package_marathon_reference():
+    _success_test("tests/data/bundle/package_marathon_reference.json",
+                  expected_path="tests/data/bundle/"
+                                "package_marathon_reference_expected.json")
+
+
+def test_package_resource_reference():
+    _success_test("tests/data/bundle/package_resource_reference.json")
 
 
 def test_package_no_references():

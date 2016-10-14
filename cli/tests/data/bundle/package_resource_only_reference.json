@@ -1,0 +1,10 @@
+{
+  "packagingVersion": "3.0",
+  "name": "bitbucket",
+  "version": "4.5",
+  "releaseVersion": 3,
+  "description": "Bitbucket Server gives you secure, fast, enterprise-grade controls, like fine-grained permissions and powerful management features.",
+  "maintainer": "support@mesosphere.io",
+  "tags": [ "git", "bitbucket", "bit", "bucket", "vcs", "scm" ],
+  "resource": "@resource.json"
+}
