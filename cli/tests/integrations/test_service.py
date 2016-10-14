@@ -9,7 +9,7 @@ import pytest
 import dcos.util as util
 from dcos.util import create_schema
 
-from .common import (assert_command, assert_lines, delete_zk_node,
+from .common import (add_app, assert_command, assert_lines, delete_zk_node,
                      delete_zk_nodes, exec_command, get_services,
                      package_install, remove_app, service_shutdown,
                      ssh_output, wait_for_service, watch_all_deployments)
@@ -21,9 +21,7 @@ UNIVERSE_TEST_REPO = "http://universe.marathon.mesos:8085/repo"
 
 def setup_module(module):
     # add universe-server with static packages
-    assert_command(
-        ['dcos', 'marathon', 'app', 'add', 'tests/data/universe-v3-stub.json'])
-    watch_all_deployments()
+    add_app('tests/data/universe-v3-stub.json', True)
 
     exec_command(['dcos', 'package', 'repo', 'remove', 'Universe'])
 
