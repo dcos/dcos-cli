@@ -13,7 +13,7 @@ from .common import (assert_command, assert_lines, base64_to_dict,
                      delete_zk_node, delete_zk_nodes, exec_command, file_json,
                      get_services, package_install, package_uninstall,
                      service_shutdown, update_config, wait_for_service,
-                     watch_all_deployments)
+                     watch_all_deployments, add_app)
 from ..common import file_bytes
 
 UNIVERSE_REPO = "https://universe.mesosphere.com/repo"
@@ -22,9 +22,7 @@ UNIVERSE_TEST_REPO = "http://universe.marathon.mesos:8085/repo"
 
 def setup_module(module):
     # add universe-server with static packages
-    assert_command(
-        ['dcos', 'marathon', 'app', 'add', 'tests/data/universe-v3-stub.json'])
-    watch_all_deployments()
+    add_app('tests/data/universe-v3-stub.json', True)
 
     assert_command(
         ['dcos', 'package', 'repo', 'remove', 'Universe'])
