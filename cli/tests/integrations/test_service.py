@@ -12,7 +12,7 @@ from dcos.util import create_schema
 from .common import (add_app, assert_command, assert_lines, delete_zk_node,
                      delete_zk_nodes, exec_command, get_services,
                      package_install, remove_app, service_shutdown,
-                     ssh_output, wait_for_service, watch_all_deployments)
+                     ssh_output, wait_for_service)
 from ..fixtures.service import framework_fixture
 
 UNIVERSE_REPO = "https://universe.mesosphere.com/repo"
