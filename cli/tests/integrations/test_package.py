@@ -9,11 +9,11 @@ import six
 
 from dcos import subcommand
 
-from .common import (assert_command, assert_lines, base64_to_dict,
+from .common import (add_app, assert_command, assert_lines, base64_to_dict,
                      delete_zk_node, delete_zk_nodes, exec_command, file_json,
                      get_services, package_install, package_uninstall,
                      service_shutdown, update_config, wait_for_service,
-                     watch_all_deployments, add_app)
+                     watch_all_deployments)
 from ..common import file_bytes
 
 UNIVERSE_REPO = "https://universe.mesosphere.com/repo"
