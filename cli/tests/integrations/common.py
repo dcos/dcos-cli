@@ -707,3 +707,44 @@ def base64_to_dict(byte_string):
     :rtype dict
     """
     return json.loads(base64.b64decode(byte_string).decode('utf-8'))
+
+
+UNIVERSE_REPO = "https://universe.mesosphere.com/repo"
+UNIVERSE_TEST_REPO = "http://universe.marathon.mesos:8085/repo"
+
+
+def setup_universe_server():
+    # add universe-server with static packages
+    assert_command(
+        ['dcos', 'marathon', 'app', 'add', 'tests/data/universe-v3-stub.json'])
+    watch_all_deployments()
+
+    assert_command(
+        ['dcos', 'package', 'repo', 'remove', 'Universe'])
+
+    assert_command(
+        ['dcos', 'package', 'repo', 'add', 'test-universe', UNIVERSE_TEST_REPO]
+    )
+
+    # Give the test universe some time to become available
+    describe_command = ['dcos', 'package', 'describe', 'helloworld']
+    for _ in range(30):
+        returncode, _, _ = exec_command(describe_command)
+        if returncode == 0:
+            break
+        time.sleep(1)
+    else:
+        # Explicitly clean up in this case; pytest will not automatically
+        # perform teardowns if setup fails. See the remarks at the end of
+        # http://doc.pytest.org/en/latest/xunit_setup.html for more info.
+        teardown_universe_server()
+        assert False, 'test-universe failed to come up'
+
+
+def teardown_universe_server():
+    assert_command(
+        ['dcos', 'package', 'repo', 'remove', 'test-universe'])
+    assert_command(
+        ['dcos', 'package', 'repo', 'add', 'Universe', UNIVERSE_REPO])
+    assert_command(
+        ['dcos', 'marathon', 'app', 'remove', '/universe', '--force'])
