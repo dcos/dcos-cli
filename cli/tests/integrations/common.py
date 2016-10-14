@@ -715,10 +715,8 @@ UNIVERSE_TEST_REPO = "http://universe.marathon.mesos:8085/repo"
 
 def setup_universe_server():
     # add universe-server with static packages
-    assert_command(
-        ['dcos', 'marathon', 'app', 'add', 'tests/data/universe-v3-stub.json'])
-    watch_all_deployments()
-
+    add_app('tests/data/universe-v3-stub.json', True)
+    
     assert_command(
         ['dcos', 'package', 'repo', 'remove', 'Universe'])
 
