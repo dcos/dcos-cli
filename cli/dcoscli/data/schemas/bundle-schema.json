@@ -292,11 +292,6 @@
         "version": {
           "type": "string"
         },
-        "releaseVersion": {
-          "type": "integer",
-          "description": "Corresponds to the revision index from the universe directory structure",
-          "minimum": 0
-        },
         "scm": {
           "type": "string"
         },
@@ -332,11 +327,6 @@
             "type": "string",
             "pattern": "^[^\\s]+$"
           }
-        },
-        "selected": {
-          "type": "boolean",
-          "description": "Flag indicating if the package is selected in search results",
-          "default": false
         },
         "licenses": {
           "type": "array",
@@ -401,11 +391,6 @@
         "version": {
           "type": "string"
         },
-        "releaseVersion": {
-          "type": "integer",
-          "description": "Corresponds to the revision index from the universe directory structure",
-          "minimum": 0
-        },
         "scm": {
           "type": "string"
         },
@@ -441,11 +426,6 @@
             "type": "string",
             "pattern": "^[^\\s]+$"
           }
-        },
-        "selected": {
-          "type": "boolean",
-          "description": "Flag indicating if the package is selected in search results",
-          "default": false
         },
         "licenses": {
           "type": "array",
@@ -495,7 +475,6 @@
         "packagingVersion",
         "name",
         "version",
-        "releaseVersion",
         "maintainer",
         "description",
         "tags"
