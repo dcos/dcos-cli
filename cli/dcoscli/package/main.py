@@ -236,7 +236,12 @@ def _bundle(package_json,
 
     # get the path to the output directory
     if output_directory is None:
-        output_directory = cwd
+        package_json_dir = os.path.dirname(package_json_path)
+        output_directory = os.path.join(package_json_dir, "target/")
+
+        # create the directory if it does not exist
+        if not (os.path.exists(output_directory)):
+            os.makedirs(output_directory)
     logger.debug("Using [%s] as output directory", output_directory)
 
     if not os.path.exists(package_json_path):
@@ -325,12 +330,12 @@ def _resolve_local_references(package_json, package_directory, bundle_schema):
 
     _replace_resources(bundle_schema, package_directory, package_json)
 
-    _replace_cofig(bundle_schema, package_directory, package_json)
+    _replace_config(bundle_schema, package_directory, package_json)
 
     return package_json
 
 
-def _replace_cofig(bundle_schema, package_directory, package_json):
+def _replace_config(bundle_schema, package_directory, package_json):
     ref = "config"
     if ref in package_json and _is_local_reference(package_json[ref]):
         location = package_json[ref][1:]

@@ -71,6 +71,9 @@ Options:
         Print a short description of this subcommand.
     --options=<file>
         Path to a JSON file that contains customized package installation options.
+    --output-directory=<output-directory>
+        Path to the directory where the data should be stored.
+        Defaults to target/ underneath the directory of package json.
     --package-version=<package-version>
         The package version to install.
     --package-versions
@@ -84,6 +87,8 @@ Options:
         Turn off interactive mode and assume "yes" is the answer to all prompts.
 
 Positional Arguments:
+    <package-json>
+        Path to the package json of the project.
     <package-name>
         Name of the DC/OS package in the package repository.
     <query>
