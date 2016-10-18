@@ -283,6 +283,9 @@ def _bundle(package_json,
                             'not conform to the specified '
                             'schema'.format(package_json))
 
+    # create the mainfest
+    manifest_json = {'built-by': util.formatted_cli_version()}
+
     # create zip file
     with tempfile.NamedTemporaryFile() as temp_file:
         with zipfile.ZipFile(
@@ -292,6 +295,9 @@ def _bundle(package_json,
                 allowZip64=True) as zip_file:
             contents = json.dumps(package_resolved, indent=2)
             zip_file.writestr("package.json", contents.encode())
+
+            manifest = json.dumps(manifest_json, indent=2)
+            zip_file.writestr("manifest.json", manifest.encode())
 
         # name the zip file appropriately
         zip_file_name = os.path.join(
@@ -328,15 +334,24 @@ def _resolve_local_references(package_json, package_directory, bundle_schema):
     """
     _replace_marathon(bundle_schema, package_directory, package_json)
 
-    _replace_directly(bundle_schema, package_directory, package_json, "config")
+    _replace_directly(bundle_schema,
+                      package_directory,
+                      package_json,
+                      "config")
 
-    _replace_directly(bundle_schema, package_directory, package_json, "resource")
+    _replace_directly(bundle_schema,
+                      package_directory,
+                      package_json,
+                      "resource")
 
     return package_json
 
 
-def _replace_directly(bundle_schema, package_directory, package_json, ref):
-    """ Replaces the local reference ref with the contents of the file pointed to by ref
+def _replace_directly(bundle_schema,
+                      package_directory,
+                      package_json, ref):
+    """ Replaces the local reference ref with the contents of
+     the file pointed to by ref
 
     :param package_json: The package json that may contain local references
     :type package_json: dict
@@ -364,9 +379,11 @@ def _replace_directly(bundle_schema, package_directory, package_json, ref):
                                 ' specified schema'.format(location))
 
 
-def _replace_marathon(bundle_schema, package_directory, package_json):
-    """ Replaces the marathon v2AppMustacheTemplate ref with the base64 encoding of the
-    file pointed to by the reference
+def _replace_marathon(bundle_schema,
+                      package_directory,
+                      package_json):
+    """ Replaces the marathon v2AppMustacheTemplate ref with
+     the base64 encoding of the file pointed to by the reference
 
     :param package_json: The package json that may contain local references
     :type package_json: dict

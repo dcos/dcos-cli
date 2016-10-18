@@ -48,10 +48,16 @@ def _success_test(package_json,
 
     # check that the contents of the zip file created are correct
     with zipfile.ZipFile(zip_file_name) as zip_file:
+        # package.json
         with util.open_file(expected_path) as pj:
             expected = util.load_json(pj)
         actual = json.loads(zip_file.read("package.json").decode())
         assert actual == expected
+
+        # manifest.json
+        expected_manifest = {'built-by': util.formatted_cli_version()}
+        manifest = json.loads(zip_file.read("manifest.json").decode())
+        assert manifest == expected_manifest
 
     # delete the files created
     rmtree(output_folder)
@@ -81,7 +87,8 @@ def _failure_test(package_json, error_pattern):
 
 
 def test_package_resource_only_reference():
-    _success_test("tests/data/bundle/package_resource_only_reference.json",
+    _success_test("tests/data/bundle/"
+                  "package_resource_only_reference.json",
                   expected_path="tests/data/bundle/"
                                 "package_resource_only"
                                 "_reference_expected.json")
@@ -136,4 +143,12 @@ def test_package_no_match_schema():
     _failure_test("tests/data/bundle/package_no_match_schema.json",
                   "^Error validating package: "
                   "\[(.+)tests/data/bundle/package_no_match_schema\.json\]"
+                  " does not conform to the specified schema.*")
+
+
+def test_package_badly_formed_reference():
+    _failure_test("tests/data/bundle/package_badly_formed_reference.json",
+                  "^Error validating package: "
+                  "\[(.+)tests/data/bundle/"
+                  "package_badly_formed_reference\.json\]"
                   " does not conform to the specified schema.*")

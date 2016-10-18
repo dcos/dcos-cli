@@ -17,6 +17,7 @@ import jsonschema
 import six
 from six.moves import urllib
 
+import dcoscli
 from dcos import constants
 from dcos.errors import DCOSException
 
@@ -631,3 +632,7 @@ def md5_hash_file(filename):
         for chunk in iter(lambda: f.read(4096), b''):
             hasher.update(chunk)
     return hasher.hexdigest()
+
+
+def formatted_cli_version():
+    "dcoscli.version={}".format(dcoscli.version)
