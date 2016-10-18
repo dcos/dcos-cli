@@ -34,4 +34,4 @@ def formatted_cli_version():
     :return: formatted cli version
     :rtype: str
     """
-    "dcoscli.version={}".format(dcoscli.version)
+    return "dcoscli.version={}".format(dcoscli.version)
