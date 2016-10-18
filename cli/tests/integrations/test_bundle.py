@@ -7,7 +7,7 @@ import zipfile
 from shutil import rmtree
 
 from dcos import util
-from dcos.util import hash_file
+from dcos.util import md5_hash_file
 from .common import exec_command
 
 
@@ -43,7 +43,7 @@ def _success_test(package_json,
     assert version_result == version_expected
 
     hash_result = results.group(3)
-    hash_expected = hash_file(zip_file_name)
+    hash_expected = md5_hash_file(zip_file_name)
     assert hash_result == hash_expected
 
     # check that the contents of the zip file created are correct

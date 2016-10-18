@@ -12,7 +12,7 @@ import dcoscli
 from dcos import (cmds, config, cosmospackage, emitting, http, options,
                   package, subcommand, util)
 from dcos.errors import DCOSException
-from dcos.util import hash_file
+from dcos.util import md5_hash_file
 from dcoscli import tables
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
@@ -237,11 +237,11 @@ def _bundle(package_json,
     # get the path to the output directory
     if output_directory is None:
         package_json_dir = os.path.dirname(package_json_path)
-        output_directory = os.path.join(package_json_dir, "target/")
+        output_directory = os.path.join(package_json_dir, "target")
 
-        # create the directory if it does not exist
-        if not (os.path.exists(output_directory)):
-            os.makedirs(output_directory)
+        # ensure the directory exists
+        os.makedirs(output_directory, exist_ok=True)
+
     logger.debug("Using [%s] as output directory", output_directory)
 
     if not os.path.exists(package_json_path):
@@ -299,7 +299,7 @@ def _bundle(package_json,
             '{}-{}-{}.dcos'.format(
                 package_resolved['name'],
                 package_resolved['version'],
-                hash_file(temp_file.name)))
+                md5_hash_file(temp_file.name)))
 
         if os.path.exists(zip_file_name):
             raise DCOSException(
@@ -328,34 +328,25 @@ def _resolve_local_references(package_json, package_directory, bundle_schema):
     """
     _replace_marathon(bundle_schema, package_directory, package_json)
 
-    _replace_resources(bundle_schema, package_directory, package_json)
+    _replace_directly(bundle_schema, package_directory, package_json, "config")
 
-    _replace_config(bundle_schema, package_directory, package_json)
+    _replace_directly(bundle_schema, package_directory, package_json, "resource")
 
     return package_json
 
 
-def _replace_config(bundle_schema, package_directory, package_json):
-    ref = "config"
-    if ref in package_json and _is_local_reference(package_json[ref]):
-        location = package_json[ref][1:]
-        if not os.path.isabs(location):
-            location = os.path.join(package_directory, location)
+def _replace_directly(bundle_schema, package_directory, package_json, ref):
+    """ Replaces the local reference ref with the contents of the file pointed to by ref
 
-        with util.open_file(location) as f:
-            contents = util.load_json(f, True)
-
-        package_json[ref] = contents
-
-        errs = util.validate_json(package_json, bundle_schema)
-        if errs:
-            raise DCOSException('Error validating package: '
-                                '[{}] does not conform to the'
-                                ' specified schema'.format(location))
-
-
-def _replace_resources(bundle_schema, package_directory, package_json):
-    ref = "resource"
+    :param package_json: The package json that may contain local references
+    :type package_json: dict
+    :param package_directory: The directory of the project.
+    :type package_directory: str
+    :param bundle_schema: The schema for the package with local references
+    :type bundle_schema: dict
+    :param ref: The key in package_json that will be replaced
+    :type ref: str
+    """
     if ref in package_json and _is_local_reference(package_json[ref]):
         location = package_json[ref][1:]
         if not os.path.isabs(location):
@@ -374,6 +365,16 @@ def _replace_resources(bundle_schema, package_directory, package_json):
 
 
 def _replace_marathon(bundle_schema, package_directory, package_json):
+    """ Replaces the marathon v2AppMustacheTemplate ref with the base64 encoding of the
+    file pointed to by the reference
+
+    :param package_json: The package json that may contain local references
+    :type package_json: dict
+    :param package_directory: The directory of the project.
+    :type package_directory: str
+    :param bundle_schema: The schema for the package with local references
+    :type bundle_schema: dict
+    """
     ref = "marathon"
     tp = "v2AppMustacheTemplate"
     if ref in package_json and _is_local_reference(package_json[ref][tp]):

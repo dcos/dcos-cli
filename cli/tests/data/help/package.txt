@@ -73,7 +73,7 @@ Options:
         Path to a JSON file that contains customized package installation options.
     --output-directory=<output-directory>
         Path to the directory where the data should be stored.
-        Defaults to target/ underneath the directory of package json.
+        Defaults to target/ underneath the directory of package JSON.
     --package-version=<package-version>
         The package version to install.
     --package-versions
@@ -88,7 +88,7 @@ Options:
 
 Positional Arguments:
     <package-json>
-        Path to the package json of the project.
+        Path to the package JSON of the project.
     <package-name>
         Name of the DC/OS package in the package repository.
     <query>

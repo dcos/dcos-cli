@@ -618,10 +618,10 @@ def normalize_marathon_id_path(id_path):
 logger = get_logger(__name__)
 
 
-def hash_file(filename):
-    """Calculates the sha256 of a file
+def md5_hash_file(filename):
+    """Calculates the md5 of a file
 
-   :param filename: path to the file to sum
+   :param filename: path to the file to hash
    :type filename: str
    :returns: digest in hexadecimal
    :rtype: str
