@@ -44,7 +44,6 @@ def _get_versions(dcos_url):
         pass
 
     emitter.publish(
-
         formatted_cli_version() + "\n" +
         "dcos.version={}\n".format(dcos_info.get("version", "N/A")) +
         "dcos.commit={}\n".format(dcos_info.get(

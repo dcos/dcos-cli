@@ -627,7 +627,7 @@ def md5_hash_file(filename):
    :rtype: str
    """
     hasher = hashlib.md5()
-    with open(filename, 'rb') as f:
+    with open_file(filename, 'rb') as f:
         for chunk in iter(lambda: f.read(4096), b''):
             hasher.update(chunk)
     return hasher.hexdigest()

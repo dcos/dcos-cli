@@ -287,7 +287,8 @@ def _bundle(package_json,
     manifest_json = {'built-by': formatted_cli_version()}
 
     # create zip file
-    with tempfile.NamedTemporaryFile() as temp_file:
+    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+        tmp_name = temp_file.name
         with zipfile.ZipFile(
                 temp_file.file,
                 mode='w',
@@ -299,20 +300,24 @@ def _bundle(package_json,
             manifest = json.dumps(manifest_json, indent=2)
             zip_file.writestr("manifest.json", manifest.encode())
 
+    try:
         # name the zip file appropriately
         zip_file_name = os.path.join(
             output_directory,
             '{}-{}-{}.dcos'.format(
                 package_resolved['name'],
                 package_resolved['version'],
-                md5_hash_file(temp_file.name)))
+                md5_hash_file(tmp_name)))
 
         if os.path.exists(zip_file_name):
             raise DCOSException(
                 'Output file [{}] already exists'.format(
                     zip_file_name))
 
-        util.sh_copy(temp_file.name, zip_file_name)
+        util.sh_copy(tmp_name, zip_file_name)
+    finally:
+        if os.path.exists(tmp_name):
+            os.remove(tmp_name)
 
     emitter.publish(
             'Created DCOS Universe package [{}].'.format(zip_file_name))
