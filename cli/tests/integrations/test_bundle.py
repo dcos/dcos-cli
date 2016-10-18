@@ -78,6 +78,10 @@ def _failure_test(package_json, error_pattern):
 
     p = re.compile(error_pattern)
     m = p.match(stderr.decode())
+
+    assert m, '[[' + stderr.decode() + ']]' \
+              + ' did not match ' \
+              + '[[' + error_pattern + ']]'
     assert stderr.decode() == m.string
 
     # check that no files were created in the temp folder
@@ -128,7 +132,7 @@ def test_package_all_references():
 def test_package_missing_references():
     _failure_test("tests/data/bundle/package_missing_references.json",
                   "^Error opening file "
-                  "\[(.+)tests/data/bundle/marathon\.json\]: "
+                  "\[(.+)marathon\.json\]: "
                   "No such file or directory.*")
 
 
@@ -136,20 +140,20 @@ def test_package_reference_does_not_match_schema():
     _failure_test("tests/data/bundle/"
                   "package_reference_does_not_match_schema.json",
                   "^Error validating package: "
-                  "\[(.+)tests/data/bundle/resource-bad\.json\] "
+                  "\[(.+)resource-bad\.json\] "
                   "does not conform to the specified schema.*")
 
 
 def test_package_no_match_schema():
     _failure_test("tests/data/bundle/package_no_match_schema.json",
                   "^Error validating package: "
-                  "\[(.+)tests/data/bundle/package_no_match_schema\.json\]"
+                  "\[(.+)package_no_match_schema\.json\]"
                   " does not conform to the specified schema.*")
 
 
 def test_package_badly_formed_reference():
     _failure_test("tests/data/bundle/package_badly_formed_reference.json",
                   "^Error validating package: "
-                  "\[(.+)tests/data/bundle/"
+                  "\[(.+)"
                   "package_badly_formed_reference\.json\]"
                   " does not conform to the specified schema.*")
