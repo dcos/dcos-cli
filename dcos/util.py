@@ -635,4 +635,9 @@ def md5_hash_file(filename):
 
 
 def formatted_cli_version():
+    """Formats the CLI version
+    
+    :return: formatted cli version
+    :rtype: str
+    """
     "dcoscli.version={}".format(dcoscli.version)
