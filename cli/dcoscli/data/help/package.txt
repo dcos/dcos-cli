@@ -5,7 +5,7 @@ Usage:
     dcos package --config-schema
     dcos package --help
     dcos package --info
-    dcos package bundle [--output-directory=<output-directory>] <package-json>
+    dcos package build [--output-directory=<output-directory>] <build-definition>
     dcos package describe [--app --cli --config]
                           [--render]
                           [--package-versions]
@@ -27,8 +27,8 @@ Usage:
     dcos package update
 
 Commands:
-    bundle
-        Bundle a package to install to DC/OS or share with Universe.
+    build
+        Build a package to install to DC/OS or share with Universe.
     describe
         Get specific details for packages.
     install
@@ -73,7 +73,7 @@ Options:
         Path to a JSON file that contains customized package installation options.
     --output-directory=<output-directory>
         Path to the directory where the data should be stored.
-        Defaults to target/ underneath the directory of package JSON.
+        Defaults to target/ underneath the directory of the DC/OS Package Build Definition.
     --package-version=<package-version>
         The package version to install.
     --package-versions
@@ -87,8 +87,8 @@ Options:
         Turn off interactive mode and assume "yes" is the answer to all prompts.
 
 Positional Arguments:
-    <package-json>
-        Path to the package JSON of the project.
+    <build-definition>
+        Path to a DC/OS Package Build Definition.
     <package-name>
         Name of the DC/OS package in the package repository.
     <query>

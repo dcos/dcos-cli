@@ -68,9 +68,9 @@ def _cmds():
             function=_remove_repo),
 
         cmds.Command(
-            hierarchy=['package', 'bundle'],
-            arg_keys=['<package-json>', '--output-directory'],
-            function=_bundle,
+            hierarchy=['package', 'build'],
+            arg_keys=['<build-definition>', '--output-directory'],
+            function=_build,
         ),
         cmds.Command(
             hierarchy=['package', 'describe'],
@@ -215,76 +215,85 @@ def _remove_repo(repo_name):
     return 0
 
 
-def _bundle(package_json,
-            output_directory):
-    """ Creates a bundle from a project.
+def _build(build_definition,
+           output_directory):
+    """ Creates a DC/OS Package from a DC/OS Package Build Definition
 
-    :param package_json: The package json of the project
-    :type package_json: str
-    :param output_directory: The directory where the bundle will be stored
+    :param build_definition: The path to a DC/OS Package Build Definition
+    :type build_definition: str
+    :param output_directory: The directory where the DC/OS Package
+    will be stored
     :type output_directory: str
-    :returns: Process status
+    :returns: The process status
     :rtype: int
     """
-    # get the path of package json
+    # get the path of the build definition
     cwd = os.getcwd()
-    package_json_path = package_json
-    if not os.path.isabs(package_json_path):
-        package_json_path = os.path.join(cwd, package_json_path)
+    build_definition_path = build_definition
+    if not os.path.isabs(build_definition_path):
+        build_definition_path = os.path.join(cwd, build_definition_path)
 
-    package_directory = os.path.dirname(package_json_path)
+    build_definition_directory = os.path.dirname(build_definition_path)
 
     # get the path to the output directory
     if output_directory is None:
-        package_json_dir = os.path.dirname(package_json_path)
-        output_directory = os.path.join(package_json_dir, "target")
+        output_directory = os.path.join(build_definition_directory, "target")
 
         # ensure the directory exists
         os.makedirs(output_directory, exist_ok=True)
 
     logger.debug("Using [%s] as output directory", output_directory)
 
-    if not os.path.exists(package_json_path):
+    if not os.path.exists(build_definition_path):
         raise DCOSException(
-            "The file [{}] does not exist".format(package_json_path))
+            "The file [{}] does not exist".format(build_definition_path))
 
-    # load raw package json
-    with util.open_file(package_json_path) as pj:
-        package_raw = util.load_json(pj, keep_order=True)
+    # load raw build definition
+    with util.open_file(build_definition_path) as bd:
+        build_definition_raw = util.load_json(bd, keep_order=True)
 
-    # validate package json with local references
-    bundle_schema_path = "data/schemas/bundle-schema.json"
-    bundle_schema = util.load_jsons(
+    # validate DC/OS Package Build Definition with local references
+    build_definition_schema_path = "data/schemas/build-definition-schema.json"
+    build_definition_schema = util.load_jsons(
         pkg_resources.resource_string(
-            "dcoscli", bundle_schema_path).decode("utf-8"))
+            "dcoscli", build_definition_schema_path).decode())
 
-    errs = util.validate_json(package_raw, bundle_schema)
+    errs = util.validate_json(build_definition_raw, build_definition_schema)
 
     if errs:
         raise DCOSException('Error validating package: '
                             '[{}] does not conform to the specified '
-                            'schema'.format(package_json_path))
+                            'schema'.format(build_definition_path))
 
-    # resolve local references
-    package_resolved = _resolve_local_references(
-        package_raw, package_directory, bundle_schema)
+    # resolve local references in build definition
+    _resolve_local_references(
+        build_definition_raw,
+        build_definition_schema,
+        build_definition_directory
+    )
 
-    # validate resolved package json
+    # at this point all the local references have been resolved
+    build_definition_resolved = build_definition_raw
+
+    # validate resolved build definition
     package_schema_path = "data/schemas/package-schema.json"
     package_schema = util.load_jsons(
         pkg_resources.resource_string(
-            "dcoscli", package_schema_path).decode("utf-8"))
+            "dcoscli", package_schema_path).decode())
 
-    errs = util.validate_json(package_resolved, package_schema)
+    errs = util.validate_json(build_definition_resolved, package_schema)
 
     if errs:
         raise DCOSException('Error validating package: '
-                            'one of the references does '
+                            'one of the references in [{}] does '
                             'not conform to the specified '
-                            'schema'.format(package_json))
+                            'schema'.format(build_definition_path))
 
     # create the manifest
     manifest_json = {'built-by': formatted_cli_version()}
+
+    # create the metadata
+    metadata_json = build_definition_resolved
 
     # create zip file
     with tempfile.NamedTemporaryFile(delete=False) as temp_file:
@@ -294,19 +303,20 @@ def _bundle(package_json,
                 mode='w',
                 compression=zipfile.ZIP_DEFLATED,
                 allowZip64=True) as zip_file:
-            contents = json.dumps(package_resolved, indent=2)
-            zip_file.writestr("package.json", contents.encode())
 
-            manifest = json.dumps(manifest_json, indent=2)
-            zip_file.writestr("manifest.json", manifest.encode())
+            metadata = json.dumps(metadata_json, indent=2).encode()
+            zip_file.writestr("metadata.json", metadata)
+
+            manifest = json.dumps(manifest_json, indent=2).encode()
+            zip_file.writestr("manifest.json", manifest)
 
     try:
         # name the zip file appropriately
         zip_file_name = os.path.join(
             output_directory,
             '{}-{}-{}.dcos'.format(
-                package_resolved['name'],
-                package_resolved['version'],
+                metadata_json['name'],
+                metadata_json['version'],
                 md5_hash_file(tmp_name)))
 
         if os.path.exists(zip_file_name):
@@ -325,93 +335,98 @@ def _bundle(package_json,
     return 0
 
 
-def _resolve_local_references(package_json, package_directory, bundle_schema):
-    """ Resolves all local references in package json
+def _resolve_local_references(build_definition,
+                              build_schema,
+                              build_definition_directory):
+    """ Resolves all local references in a DC/OS Package Build Definition
 
-    :param package_json: The package json that may contain local references
-    :type package_json: dict
-    :param package_directory: The directory of the project.
-    :type package_directory: str
-    :param bundle_schema: The schema for the package with local references
-    :type bundle_schema: dict
-    :returns: The package json with all references resolved
-    :rtype: dict
+    :param build_definition: The DC/OS Package Build Definition that may
+     contain local references
+    :type build_definition: dict
+    :param build_definition_directory: The directory of the Build Definition
+    :type build_definition_directory: str
+    :param build_schema: The schema for the Build Definition
+    :type build_schema: dict
     """
-    _replace_marathon(bundle_schema, package_directory, package_json)
+    _replace_marathon(build_definition,
+                      build_schema,
+                      build_definition_directory)
 
-    _replace_directly(bundle_schema,
-                      package_directory,
-                      package_json,
+    _replace_directly(build_definition,
+                      build_schema,
+                      build_definition_directory,
                       "config")
 
-    _replace_directly(bundle_schema,
-                      package_directory,
-                      package_json,
+    _replace_directly(build_definition,
+                      build_schema,
+                      build_definition_directory,
                       "resource")
 
-    return package_json
 
-
-def _replace_directly(bundle_schema,
-                      package_directory,
-                      package_json, ref):
+def _replace_directly(build_definition,
+                      build_schema,
+                      build_definition_directory,
+                      ref):
     """ Replaces the local reference ref with the contents of
      the file pointed to by ref
 
-    :param package_json: The package json that may contain local references
-    :type package_json: dict
-    :param package_directory: The directory of the project.
-    :type package_directory: str
-    :param bundle_schema: The schema for the package with local references
-    :type bundle_schema: dict
-    :param ref: The key in package_json that will be replaced
+    :param build_definition: The DC/OS Package Build Definition that
+    may contain local references
+    :type build_definition: dict
+    :param build_definition_directory: The directory of the Build Definition
+    :type build_definition_directory: str
+    :param build_schema: The schema for the Build Definition
+    :type build_schema: dict
+    :param ref: The key in build_definition that will be replaced
     :type ref: str
     """
-    if ref in package_json and _is_local_reference(package_json[ref]):
-        location = package_json[ref][1:]
+    if ref in build_definition and _is_local_reference(build_definition[ref]):
+        location = build_definition[ref][1:]
         if not os.path.isabs(location):
-            location = os.path.join(package_directory, location)
+            location = os.path.join(build_definition_directory, location)
 
         with util.open_file(location) as f:
             contents = util.load_json(f, True)
 
-        package_json[ref] = contents
+        build_definition[ref] = contents
 
-        errs = util.validate_json(package_json, bundle_schema)
+        errs = util.validate_json(build_definition, build_schema)
         if errs:
             raise DCOSException('Error validating package: '
                                 '[{}] does not conform to the'
                                 ' specified schema'.format(location))
 
 
-def _replace_marathon(bundle_schema,
-                      package_directory,
-                      package_json):
+def _replace_marathon(build_definition,
+                      build_schema,
+                      build_definition_directory):
     """ Replaces the marathon v2AppMustacheTemplate ref with
      the base64 encoding of the file pointed to by the reference
 
-    :param package_json: The package json that may contain local references
-    :type package_json: dict
-    :param package_directory: The directory of the project.
-    :type package_directory: str
-    :param bundle_schema: The schema for the package with local references
-    :type bundle_schema: dict
+    :param build_definition: The DC/OS Package Build Definition that
+     may contain local references
+    :type build_definition: dict
+    :param build_definition_directory: The directory of the Build Definition
+    :type build_definition_directory: str
+    :param build_schema: The schema for the Build Definition
+    :type build_schema: dict
     """
     ref = "marathon"
     tp = "v2AppMustacheTemplate"
-    if ref in package_json and _is_local_reference(package_json[ref][tp]):
-        location = (package_json[ref])[tp][1:]
+    if ref in build_definition and \
+            _is_local_reference(build_definition[ref][tp]):
+        location = (build_definition[ref])[tp][1:]
         if not os.path.isabs(location):
-            location = os.path.join(package_directory, location)
+            location = os.path.join(build_definition_directory, location)
 
         # convert the contents of the marathon file into base64
         with util.open_file(location) as f:
             contents = base64.b64encode(
-                f.read().encode("utf-8")).decode("utf-8")
+                f.read().encode()).decode()
 
-        package_json[ref][tp] = contents
+        build_definition[ref][tp] = contents
 
-        errs = util.validate_json(package_json, bundle_schema)
+        errs = util.validate_json(build_definition, build_schema)
         if errs:
             raise DCOSException('Error validating package: '
                                 '[{}] does not conform to the '

@@ -12,22 +12,22 @@ from dcoscli.util import formatted_cli_version
 from .common import exec_command
 
 
-def _success_test(package_json,
-                  expected_path="tests/data/bundle/"
-                                "package_no_references.json"):
+def _success_test(build_definition,
+                  expected_package_path="tests/data/build/"
+                                        "package_no_references.json"):
     output_folder = tempfile.mkdtemp()
 
     # perform the operation
     return_code, stdout, stderr = exec_command(
-        ['dcos', 'package', 'bundle', '--output-directory',
-         output_folder, package_json]
+        ['dcos', 'package', 'build', '--output-directory',
+         output_folder, build_definition]
     )
 
     # check that the output is correct
     pattern = re.compile("^Created DCOS Universe package")
     assert stderr == b""
     assert return_code == 0
-    assert pattern.match(stdout.decode())
+    assert pattern.match(stdout.decode()), stdout.decode()
 
     # check that the files created are correct
     zip_file_name = re.search('^Created DCOS Universe package \[(.+?)\].',
@@ -50,10 +50,10 @@ def _success_test(package_json,
     # check that the contents of the zip file created are correct
     with zipfile.ZipFile(zip_file_name) as zip_file:
         # package.json
-        with util.open_file(expected_path) as pj:
-            expected = util.load_json(pj)
-        actual = json.loads(zip_file.read("package.json").decode())
-        assert actual == expected
+        with util.open_file(expected_package_path) as pj:
+            expected_metadata = util.load_json(pj)
+        metadata = json.loads(zip_file.read("metadata.json").decode())
+        assert metadata == expected_metadata
 
         # manifest.json
         expected_manifest = {'built-by': formatted_cli_version()}
@@ -64,13 +64,13 @@ def _success_test(package_json,
     rmtree(output_folder)
 
 
-def _failure_test(package_json, error_pattern):
+def _failure_test(build_definition, error_pattern):
     output_folder = tempfile.mkdtemp()
 
     # perform the operation
     return_code, stdout, stderr = exec_command(
-        ['dcos', 'package', 'bundle', '--output-directory',
-         output_folder, package_json]
+        ['dcos', 'package', 'build', '--output-directory',
+         output_folder, build_definition]
     )
 
     # check that the output is correct
@@ -92,52 +92,56 @@ def _failure_test(package_json, error_pattern):
 
 
 def test_package_resource_only_reference():
-    _success_test("tests/data/bundle/"
-                  "package_resource_only_reference.json",
-                  expected_path="tests/data/bundle/"
-                                "package_resource_only"
-                                "_reference_expected.json")
+    _success_test(
+        "tests/data/build/"
+        "package_resource_only_reference.json",
+        expected_package_path="tests/data/build/"
+                              "package_resource_only"
+                              "_reference_expected.json")
 
 
 def test_package_config_no_reference():
-    _success_test("tests/data/bundle/package_config_reference_expected.json",
-                  expected_path="tests/data/bundle/"
-                                "package_config_reference_expected.json")
+    _success_test(
+        "tests/data/build/package_config_reference_expected.json",
+        expected_package_path="tests/data/build/"
+                              "package_config_reference_expected.json")
 
 
 def test_package_config_reference():
-    _success_test("tests/data/bundle/package_config_reference.json",
-                  expected_path="tests/data/bundle/"
-                                "package_config_reference_expected.json")
+    _success_test(
+        "tests/data/build/package_config_reference.json",
+        expected_package_path="tests/data/build/"
+                              "package_config_reference_expected.json")
 
 
 def test_package_marathon_reference():
-    _success_test("tests/data/bundle/package_marathon_reference.json",
-                  expected_path="tests/data/bundle/"
-                                "package_marathon_reference_expected.json")
+    _success_test(
+        "tests/data/build/package_marathon_reference.json",
+        expected_package_path="tests/data/build/"
+                              "package_marathon_reference_expected.json")
 
 
 def test_package_resource_reference():
-    _success_test("tests/data/bundle/package_resource_reference.json")
+    _success_test("tests/data/build/package_resource_reference.json")
 
 
 def test_package_no_references():
-    _success_test("tests/data/bundle/package_no_references.json")
+    _success_test("tests/data/build/package_no_references.json")
 
 
 def test_package_all_references():
-    _success_test("tests/data/bundle/package_all_references.json")
+    _success_test("tests/data/build/package_all_references.json")
 
 
 def test_package_missing_references():
-    _failure_test("tests/data/bundle/package_missing_references.json",
+    _failure_test("tests/data/build/package_missing_references.json",
                   "^Error opening file "
                   "\[(.+)marathon\.json\]: "
                   "No such file or directory.*")
 
 
 def test_package_reference_does_not_match_schema():
-    _failure_test("tests/data/bundle/"
+    _failure_test("tests/data/build/"
                   "package_reference_does_not_match_schema.json",
                   "^Error validating package: "
                   "\[(.+)resource-bad\.json\] "
@@ -145,14 +149,14 @@ def test_package_reference_does_not_match_schema():
 
 
 def test_package_no_match_schema():
-    _failure_test("tests/data/bundle/package_no_match_schema.json",
+    _failure_test("tests/data/build/package_no_match_schema.json",
                   "^Error validating package: "
                   "\[(.+)package_no_match_schema\.json\]"
                   " does not conform to the specified schema.*")
 
 
 def test_package_badly_formed_reference():
-    _failure_test("tests/data/bundle/package_badly_formed_reference.json",
+    _failure_test("tests/data/build/package_badly_formed_reference.json",
                   "^Error validating package: "
                   "\[(.+)"
                   "package_badly_formed_reference\.json\]"
