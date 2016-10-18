@@ -8,6 +8,7 @@ from shutil import rmtree
 
 from dcos import util
 from dcos.util import md5_hash_file
+from dcoscli.util import formatted_cli_version
 from .common import exec_command
 
 
@@ -55,7 +56,7 @@ def _success_test(package_json,
         assert actual == expected
 
         # manifest.json
-        expected_manifest = {'built-by': util.formatted_cli_version()}
+        expected_manifest = {'built-by': formatted_cli_version()}
         manifest = json.loads(zip_file.read("manifest.json").decode())
         assert manifest == expected_manifest
 

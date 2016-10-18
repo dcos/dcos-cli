@@ -5,10 +5,10 @@ import sys
 import docopt
 from six.moves import urllib
 
-import dcoscli
 from dcos import config, constants, emitting, errors, http, subcommand, util
 from dcos.errors import DCOSException
 from dcoscli.subcommand import default_doc, SubcommandMain
+from dcoscli.util import formatted_cli_version
 
 
 logger = util.get_logger(__name__)
@@ -44,7 +44,7 @@ def _get_versions(dcos_url):
         pass
 
     emitter.publish(
-        "dcoscli.version={}\n".format(dcoscli.version) +
+        formatted_cli_version + "\n" +
         "dcos.version={}\n".format(dcos_info.get("version", "N/A")) +
         "dcos.commit={}\n".format(dcos_info.get(
             "dcos-image-commit", "N/A")) +

@@ -7,15 +7,15 @@ import zipfile
 
 import docopt
 import pkg_resources
-import dcoscli
 
+import dcoscli
 from dcos import (cmds, config, cosmospackage, emitting, http, options,
                   package, subcommand, util)
 from dcos.errors import DCOSException
 from dcos.util import md5_hash_file
 from dcoscli import tables
 from dcoscli.subcommand import default_command_info, default_doc
-from dcoscli.util import decorate_docopt_usage
+from dcoscli.util import (decorate_docopt_usage, formatted_cli_version)
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -283,8 +283,8 @@ def _bundle(package_json,
                             'not conform to the specified '
                             'schema'.format(package_json))
 
-    # create the mainfest
-    manifest_json = {'built-by': util.formatted_cli_version()}
+    # create the manifest
+    manifest_json = {'built-by': formatted_cli_version()}
 
     # create zip file
     with tempfile.NamedTemporaryFile() as temp_file:
