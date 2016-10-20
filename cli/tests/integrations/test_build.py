@@ -44,7 +44,8 @@ def _success_test(build_definition,
     assert version_result == version_expected
 
     hash_result = results.group(3)
-    hash_expected = md5_hash_file(zip_file_name)
+    with util.open_file(zip_file_name, 'rb') as zp:
+        hash_expected = md5_hash_file(zp)
     assert hash_result == hash_expected
 
     # check that the contents of the zip file created are correct
@@ -131,6 +132,11 @@ def test_package_no_references():
 
 def test_package_all_references():
     _success_test("tests/data/build/package_all_references.json")
+
+
+def test_package_does_not_exist():
+    _failure_test("tests/data/build/does_not_exist.json",
+                  "^The file \[(.+)\] does not exist.*")
 
 
 def test_package_missing_references():

@@ -618,16 +618,15 @@ def normalize_marathon_id_path(id_path):
 logger = get_logger(__name__)
 
 
-def md5_hash_file(filename):
+def md5_hash_file(file):
     """Calculates the md5 of a file
 
-   :param filename: path to the file to hash
-   :type filename: str
+   :param file: file to hash
+   :type file: file
    :returns: digest in hexadecimal
    :rtype: str
    """
     hasher = hashlib.md5()
-    with open_file(filename, 'rb') as f:
-        for chunk in iter(lambda: f.read(4096), b''):
-            hasher.update(chunk)
+    for chunk in iter(lambda: file.read(4096), b''):
+        hasher.update(chunk)
     return hasher.hexdigest()

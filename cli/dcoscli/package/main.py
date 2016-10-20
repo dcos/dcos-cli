@@ -7,6 +7,7 @@ import zipfile
 
 import docopt
 import pkg_resources
+import six
 
 import dcoscli
 from dcos import (cmds, config, cosmospackage, emitting, http, options,
@@ -235,15 +236,6 @@ def _build(build_definition,
 
     build_definition_directory = os.path.dirname(build_definition_path)
 
-    # get the path to the output directory
-    if output_directory is None:
-        output_directory = os.path.join(build_definition_directory, "target")
-
-        # ensure the directory exists
-        os.makedirs(output_directory, exist_ok=True)
-
-    logger.debug("Using [%s] as output directory", output_directory)
-
     if not os.path.exists(build_definition_path):
         raise DCOSException(
             "The file [{}] does not exist".format(build_definition_path))
@@ -261,9 +253,10 @@ def _build(build_definition,
     errs = util.validate_json(build_definition_raw, build_definition_schema)
 
     if errs:
-        raise DCOSException('Error validating package: '
-                            '[{}] does not conform to the specified '
-                            'schema'.format(build_definition_path))
+        logger.debug("Failed before resolution: \n"
+                     "\tbuild definition: {}"
+                     "".format(build_definition_raw))
+        raise DCOSException(_validation_error(build_definition_path))
 
     # resolve local references in build definition
     _resolve_local_references(
@@ -276,18 +269,21 @@ def _build(build_definition,
     build_definition_resolved = build_definition_raw
 
     # validate resolved build definition
-    package_schema_path = "data/schemas/package-schema.json"
-    package_schema = util.load_jsons(
+    metadata_schema_path = "data/schemas/metadata-schema.json"
+    metadata_schema = util.load_jsons(
         pkg_resources.resource_string(
-            "dcoscli", package_schema_path).decode())
+            "dcoscli", metadata_schema_path).decode())
 
-    errs = util.validate_json(build_definition_resolved, package_schema)
+    errs = util.validate_json(build_definition_resolved, metadata_schema)
 
     if errs:
+        logger.debug("Failed after resolution: \n"
+                     "\tbuild definition: {}"
+                     "".format(build_definition_resolved))
         raise DCOSException('Error validating package: '
-                            'one of the references in [{}] does '
-                            'not conform to the specified '
-                            'schema'.format(build_definition_path))
+                            'there was a problem resolving '
+                            'the local references in '
+                            '[{}]'.format(build_definition_path))
 
     # create the manifest
     manifest_json = {'built-by': formatted_cli_version()}
@@ -296,8 +292,8 @@ def _build(build_definition,
     metadata_json = build_definition_resolved
 
     # create zip file
-    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-        tmp_name = temp_file.name
+    zip_file_path = None
+    with tempfile.NamedTemporaryFile() as temp_file:
         with zipfile.ZipFile(
                 temp_file.file,
                 mode='w',
@@ -310,27 +306,41 @@ def _build(build_definition,
             manifest = json.dumps(manifest_json, indent=2).encode()
             zip_file.writestr("manifest.json", manifest)
 
-    try:
         # name the zip file appropriately
-        zip_file_name = os.path.join(
-            output_directory,
-            '{}-{}-{}.dcos'.format(
-                metadata_json['name'],
-                metadata_json['version'],
-                md5_hash_file(tmp_name)))
+        temp_file.file.seek(0)
+        zip_file_name = '{}-{}-{}.dcos'.format(
+            metadata_json['name'],
+            metadata_json['version'],
+            md5_hash_file(temp_file.file))
 
-        if os.path.exists(zip_file_name):
+        # get the path to the output directory
+        if output_directory is None:
+            output_directory = os.path.join(
+                build_definition_directory,
+                "target")
+
+            # ensure the directory exists
+            os.makedirs(output_directory, exist_ok=True)
+
+        if not os.path.exists(output_directory):
+            raise DCOSException(
+                "The output directory [{}]"
+                " does not exist".format(output_directory))
+
+        logger.debug("Using [%s] as output directory", output_directory)
+
+        # get the zip file path
+        zip_file_path = os.path.join(output_directory, zip_file_name)
+
+        if os.path.exists(zip_file_path):
             raise DCOSException(
                 'Output file [{}] already exists'.format(
-                    zip_file_name))
+                    zip_file_path))
 
-        util.sh_copy(tmp_name, zip_file_name)
-    finally:
-        if os.path.exists(tmp_name):
-            os.remove(tmp_name)
+        util.sh_copy(temp_file.name, zip_file_path)
 
     emitter.publish(
-            'Created DCOS Universe package [{}].'.format(zip_file_name))
+            'Created DCOS Universe package [{}].'.format(zip_file_path))
 
     return 0
 
@@ -392,9 +402,10 @@ def _replace_directly(build_definition,
 
         errs = util.validate_json(build_definition, build_schema)
         if errs:
-            raise DCOSException('Error validating package: '
-                                '[{}] does not conform to the'
-                                ' specified schema'.format(location))
+            logger.debug("Failed during resolution of {}: \n"
+                         "\tbuild definition: {}"
+                         "".format(ref, build_definition))
+            raise DCOSException(_validation_error(location))
 
 
 def _replace_marathon(build_definition,
@@ -412,10 +423,10 @@ def _replace_marathon(build_definition,
     :type build_schema: dict
     """
     ref = "marathon"
-    tp = "v2AppMustacheTemplate"
+    template = "v2AppMustacheTemplate"
     if ref in build_definition and \
-            _is_local_reference(build_definition[ref][tp]):
-        location = (build_definition[ref])[tp][1:]
+            _is_local_reference(build_definition[ref][template]):
+        location = (build_definition[ref])[template][1:]
         if not os.path.isabs(location):
             location = os.path.join(build_definition_directory, location)
 
@@ -424,24 +435,38 @@ def _replace_marathon(build_definition,
             contents = base64.b64encode(
                 f.read().encode()).decode()
 
-        build_definition[ref][tp] = contents
+        build_definition[ref][template] = contents
 
         errs = util.validate_json(build_definition, build_schema)
         if errs:
-            raise DCOSException('Error validating package: '
-                                '[{}] does not conform to the '
-                                'specified schema'.format(location))
+            logger.debug("Failed during resolution of marathon: \n"
+                         "\tbuild definition: {}"
+                         "".format(build_definition))
+            raise DCOSException(_validation_error(location))
+
+
+def _validation_error(filename):
+    """Renders a human readable validation error
+
+    :param filename: the file that failed to validate
+    :type filename: str
+    :returns: validation error message
+    :rtype: str
+    """
+    return 'Error validating package: ' \
+           '[{}] does not conform to the' \
+           ' specified schema'.format(filename)
 
 
 def _is_local_reference(item):
     """Checks if an object is a local reference
 
-   :param item: the object that may be a reference
-   :type item: object
-   :returns: true if item is a local reference else false
-   :rtype: bool
-   """
-    return isinstance(item, str) and item.startswith("@")
+    :param item: the object that may be a reference
+    :type item: object
+    :returns: true if item is a local reference else false
+    :rtype: bool
+    """
+    return isinstance(item, six.string_types) and item.startswith("@")
 
 
 def _describe(package_name,
