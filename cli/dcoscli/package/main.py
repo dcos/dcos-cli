@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+import shutil
 import sys
 import tempfile
 import zipfile
@@ -240,6 +241,17 @@ def _build(build_definition,
         raise DCOSException(
             "The file [{}] does not exist".format(build_definition_path))
 
+    # get the path to the output directory
+    if output_directory is None:
+        output_directory = cwd
+
+    if not os.path.exists(output_directory):
+        raise DCOSException(
+            "The output directory [{}]"
+            " does not exist".format(output_directory))
+
+    logger.debug("Using [%s] as output directory", output_directory)
+
     # load raw build definition
     with util.open_file(build_definition_path) as bd:
         build_definition_raw = util.load_json(bd, keep_order=True)
@@ -292,7 +304,6 @@ def _build(build_definition,
     metadata_json = build_definition_resolved
 
     # create zip file
-    zip_file_path = None
     with tempfile.NamedTemporaryFile() as temp_file:
         with zipfile.ZipFile(
                 temp_file.file,
@@ -306,41 +317,28 @@ def _build(build_definition,
             manifest = json.dumps(manifest_json, indent=2).encode()
             zip_file.writestr("manifest.json", manifest)
 
-        # name the zip file appropriately
+        # name the package appropriately
         temp_file.file.seek(0)
-        zip_file_name = '{}-{}-{}.dcos'.format(
+        dcos_package_name = '{}-{}-{}.dcos'.format(
             metadata_json['name'],
             metadata_json['version'],
             md5_hash_file(temp_file.file))
 
-        # get the path to the output directory
-        if output_directory is None:
-            output_directory = os.path.join(
-                build_definition_directory,
-                "target")
+        # get the dcos package path
+        dcos_package_path = os.path.join(output_directory, dcos_package_name)
 
-            # ensure the directory exists
-            os.makedirs(output_directory, exist_ok=True)
-
-        if not os.path.exists(output_directory):
-            raise DCOSException(
-                "The output directory [{}]"
-                " does not exist".format(output_directory))
-
-        logger.debug("Using [%s] as output directory", output_directory)
-
-        # get the zip file path
-        zip_file_path = os.path.join(output_directory, zip_file_name)
-
-        if os.path.exists(zip_file_path):
+        if os.path.exists(dcos_package_path):
             raise DCOSException(
                 'Output file [{}] already exists'.format(
-                    zip_file_path))
+                    dcos_package_path))
 
-        util.sh_copy(temp_file.name, zip_file_path)
+        # create a new file to contain the package
+        temp_file.file.seek(0)
+        with util.open_file(dcos_package_path, 'w+b') as dcos_package:
+            shutil.copyfileobj(temp_file.file, dcos_package)
 
     emitter.publish(
-            'Created DCOS Universe package [{}].'.format(zip_file_path))
+            'Created DCOS Universe package [{}].'.format(dcos_package_path))
 
     return 0
 

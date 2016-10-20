@@ -73,7 +73,7 @@ Options:
         Path to a JSON file that contains customized package installation options.
     --output-directory=<output-directory>
         Path to the directory where the data should be stored.
-        Defaults to target/ underneath the directory of the <build-definition>.
+        Defaults to the current working directory.
     --package-version=<package-version>
         The package version to install.
     --package-versions
