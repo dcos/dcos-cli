@@ -1,0 +1,9 @@
+{
+  "packagingVersion": "3.0",
+  "name": "bitbucket",
+  "version": "4.5",
+  "description": "Bitbucket",
+  "maintainer": "support@mesosphere.io",
+  "tags": [ "bitbucket" ],
+  "config": "@config.json"
+}
