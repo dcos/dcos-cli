@@ -717,6 +717,7 @@ class Task(object):
         :returns: path to task's sandbox
         :rtype: str
         """
+
         return self.executor()['directory']
 
     def __getitem__(self, name):
@@ -840,9 +841,14 @@ class MesosFile(object):
         """
 
         if self._task:
-            directory = self._task.directory()
-            if directory[-1] == '/':
-                return directory + self._path
+            directory = self._task.directory().rstrip('/')
+            executor = self._task.executor()
+            # executor.type is currently used only by pods. All tasks in a pod
+            # share an executor, so if this is a pod, get the task logs instead
+            # of the executor logs
+            if executor.get('type') == "DEFAULT":
+                task_id = self._task.dict().get('id')
+                return directory + '/tasks/{}/'.format(task_id) + self._path
             else:
                 return directory + '/' + self._path
         else:
