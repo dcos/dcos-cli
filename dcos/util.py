@@ -2,6 +2,7 @@ import collections
 import concurrent.futures
 import contextlib
 import functools
+import hashlib
 import json
 import logging
 import os
@@ -295,17 +296,22 @@ def configure_logger(log_level):
         msg.format(log_level, constants.VALID_LOG_LEVEL_VALUES))
 
 
-def load_json(reader):
+def load_json(reader, keep_order=False):
     """Deserialize a reader into a python object
 
     :param reader: the json reader
     :type reader: a :code:`.read()`-supporting object
+    :param keep_order: whether the return should be an ordered dictionary
+    :type keep_order: bool
     :returns: the deserialized JSON object
     :rtype: dict | list | str | int | float | bool
     """
 
     try:
-        return json.load(reader)
+        if keep_order:
+            return json.load(reader, object_pairs_hook=collections.OrderedDict)
+        else:
+            return json.load(reader)
     except Exception as error:
         logger.error(
             'Unhandled exception while loading JSON: %r',
@@ -652,3 +658,17 @@ def normalize_marathon_id_path(id_path):
 
 
 logger = get_logger(__name__)
+
+
+def md5_hash_file(file):
+    """Calculates the md5 of a file
+
+   :param file: file to hash
+   :type file: file
+   :returns: digest in hexadecimal
+   :rtype: str
+   """
+    hasher = hashlib.md5()
+    for chunk in iter(lambda: file.read(4096), b''):
+        hasher.update(chunk)
+    return hasher.hexdigest()

@@ -33,7 +33,7 @@ gitdb (0.6.4)
 imagesize (0.7.1)
     License: MIT
 
-jsonschema (2.4.0)
+jsonschema (2.5.1)
     License: MIT
 
 pager (3.3)
