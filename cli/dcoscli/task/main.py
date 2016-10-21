@@ -59,6 +59,11 @@ def _cmds():
             hierarchy=['task'],
             arg_keys=['<task>', '--completed', '--json'],
             function=_task),
+
+        cmds.Command(
+            hierarchy=['task', 'exec'],
+            arg_keys=['<task>', '--interactive', '--pty'],
+            function=_exec),
     ]
 
 
@@ -216,6 +221,20 @@ def _ls(task, path, long_, completed):
             emitter.publish(
                 '  '.join(posixpath.basename(file_['path'])
                           for file_ in files))
+
+
+def _exec(task, interactive=True, pty=True):
+    """ Fork a prcess inside the namespace of a container
+    associated with <task_id>.
+
+    :param task: task ID pattern to match
+    :type task: str
+    :param interactive: attach stdin
+    :type interactive: bool
+    :param pty: allocate a PTY on the remote connection
+    :type pty: bool
+    """
+    pass
 
 
 def _mesos_files(tasks, file_, client):
