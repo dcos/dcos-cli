@@ -2,6 +2,7 @@ from functools import wraps
 
 import docopt
 
+import dcoscli
 from dcos import emitting
 
 emitter = emitting.FlatEmitter()
@@ -26,3 +27,12 @@ def decorate_docopt_usage(func):
             return 1
         return result
     return wrapper
+
+
+def formatted_cli_version():
+    """Formats the CLI version
+
+    :return: formatted cli version
+    :rtype: str
+    """
+    return "dcoscli.version={}".format(dcoscli.version)

@@ -1,0 +1,27 @@
+{
+  "packagingVersion": "3.0",
+  "name": "bitbucket",
+  "version": "4.5",
+  "description": "Bitbucket Server gives you secure, fast, enterprise-grade controls, like fine-grained permissions and powerful management features.",
+  "maintainer": "support@mesosphere.io",
+  "tags": [ "git", "bitbucket", "bit", "bucket", "vcs", "scm" ],
+  "resource": "@resource.json",
+  "config": {
+    "$schema": "http://json-schema.org/schema#",
+    "properties": {
+      "bitbucket": {
+        "properties": {
+          "name": {
+            "default": "bitbucket",
+            "description": "name",
+            "type": "string"
+          }
+        },
+        "required": ["name"],
+        "type": "object"
+      }
+    },
+    "type": "object"
+  },
+  "marathon": "ewogICJpZCI6ICIve3tiaXRidWNrZXQubmFtZX19IiwKICAiaW5zdGFuY2VzIjoge3tiaXRidWNrZXQuaW5zdGFuY2VzfX0sCiAgImNwdXMiOiB7e2JpdGJ1Y2tldC5jcHVzfX0sCiAgIm1lbSI6IHt7Yml0YnVja2V0Lm1lbX19LAogICJtYWludGFpbmVyIjogInN1cHBvcnRAbWVzb3NwaGVyZS5pbyIsCiAgImNvbnRhaW5lciI6IHsKICAgICJ0eXBlIjogIkRPQ0tFUiIsCiAgICAiZG9ja2VyIjogewogICAgICAiaW1hZ2UiOiAie3tyZXNvdXJjZS5hc3NldHMuY29udGFpbmVyLmRvY2tlci5iaXRidWNrZXQtZG9ja2VyfX0iLAogICAgICAibmV0d29yayI6ICJCUklER0UiLAogICAgICAicG9ydE1hcHBpbmdzIjogWwogICAgICAgIHsgImNvbnRhaW5lclBvcnQiOiA3OTkwLCAiaG9zdFBvcnQiOiAwIH0sCiAgICAgICAgeyAiY29udGFpbmVyUG9ydCI6IDc5OTksICJob3N0UG9ydCI6IDAgfQogICAgICBdCiAgICB9LAogICAgInZvbHVtZXMiOiBbCiAgICB7CiAgICAgICAgImNvbnRhaW5lclBhdGgiOiAiL3Zhci9hdGxhc3NpYW4vYXBwbGljYXRpb24tZGF0YS9iaXRidWNrZXQiLAogICAgICAgICJob3N0UGF0aCI6ICJ7e2JpdGJ1Y2tldC5ob3N0LXZvbHVtZX19IiwKICAgICAgICAibW9kZSI6ICJSVyIKICAgIH0KICAgIF0KICB9LAogICJoZWFsdGhDaGVja3MiOiBbCiAgICB7CiAgICAgICJwcm90b2NvbCI6ICJDT01NQU5EIiwKICAgICAgImNvbW1hbmQiOiB7ICJ2YWx1ZSI6ICJjdXJsIC0tZmFpbCAke0hPU1R9OiR7UE9SVDB9IiB9LAogICAgICAiZ3JhY2VQZXJpb2RTZWNvbmRzIjogMzAwLAogICAgICAiaW50ZXJ2YWxTZWNvbmRzIjogNjAsCiAgICAgICJ0aW1lb3V0U2Vjb25kcyI6IDIwLAogICAgICAibWF4Q29uc2VjdXRpdmVGYWlsdXJlcyI6IDMKICAgIH0KICBdLAogICJhY2NlcHRlZFJlc291cmNlUm9sZXMiOiBbCiAgICAie3tiaXRidWNrZXQucm9sZX19IgogIF0sCiAgImxhYmVscyI6IHsKICAgIHt7I2JpdGJ1Y2tldC52aXJ0dWFsLWhvc3R9fQogICAgIkhBUFJPWFlfR1JPVVAiOiJleHRlcm5hbCIsCiAgICAiSEFQUk9YWV8wX1ZIT1NUIjoie3tiaXRidWNrZXQudmlydHVhbC1ob3N0fX0iLAogICAge3svYml0YnVja2V0LnZpcnR1YWwtaG9zdH19CiAgICAiRENPU19TRVJWSUNFX05BTUUiOiAie3tiaXRidWNrZXQubmFtZX19IiwKICAgICJEQ09TX1NFUlZJQ0VfU0NIRU1FIjogImh0dHAiLAogICAgIkRDT1NfU0VSVklDRV9QT1JUX0lOREVYIjogIjAiCiAgfQp9Cg=="
+}
