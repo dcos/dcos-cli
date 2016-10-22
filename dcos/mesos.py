@@ -1,11 +1,14 @@
 import fnmatch
 import itertools
 import os
+import requests
 
 from six.moves import urllib
 
 from dcos import config, http, util
 from dcos.errors import DCOSException, DCOSHTTPException
+
+from Queue import Queue
 
 logger = util.get_logger(__name__)
 
@@ -441,6 +444,17 @@ class Master(object):
                     tasks.append(task)
 
         return tasks
+
+    # TODO: Currently waiting on this mapping in state.json to be present.
+    def get_container_id(self, fltr=None):
+        """Returns the container ID for a task ID matching `fltr`
+
+        :param fltr: The task ID which will be mapped to container ID
+        :type fltr: str | None
+        :returns: the container id associated with task id
+        :rtype: str
+        """
+        return 'foo'
 
     def frameworks(self, inactive=False, completed=False):
         """Returns a list of all frameworks
@@ -919,6 +933,38 @@ class MesosFile(object):
             return "slave:{0}:{1}".format(self._slave['id'], self._path)
         else:
             return "master:{0}".format(self._path)
+
+
+class TaskExec(object):
+    """Object allowing interaction with the Mesos Agent exec functionality.
+
+    :param task: task ID
+    :type task: str
+    :param cmd: the command to fork inside the container
+    :type cmd: str
+    :param interactive: Create a third persistant connection for streaming
+    STDIN
+    :type interactive: bool
+    :param pty: Allocate a PTY for the remote process
+    :type pty: bool
+    """
+
+    def __init__(self, task, cmd, interactive=False, pty=False):
+        if not task:
+            raise ValueError(
+                "Must provide `task` to TaskExec object")
+
+        self.session = requests.Session()
+        self.input_queue = Queue()
+        self.output_queue = Queue()
+        self.exit_queue = Queue()
+
+        client = DCOSClient()
+        master = get_master(client)
+
+        container_id = master.get_container_id(task)
+        if not container_id:
+            raise ValueError("Container ID for {} not found.".format(task))
 
 
 def parse_pid(pid):
