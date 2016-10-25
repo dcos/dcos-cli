@@ -5,8 +5,8 @@ import pickle
 import requests
 
 # Generated protobuf code
-import agent_pb2
-import mesos_pb2
+from dcos import agent_pb2
+from dcos import mesos_pb2
 
 from google.protobuf.json_format import MessageToJson
 
