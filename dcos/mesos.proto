@@ -1,0 +1,86 @@
+// Licensed to the Apache Software Foundation (ASF) under one                 
+// or more contributor license agreements.  See the NOTICE file               
+// distributed with this work for additional information                      
+// regarding copyright ownership.  The ASF licenses this file                 
+// to you under the Apache License, Version 2.0 (the                          
+// "License"); you may not use this file except in compliance                 
+// with the License.  You may obtain a copy of the License at                 
+//
+//     http://www.apache.org/licenses/LICENSE-2.0                             
+//  
+// Unless required by applicable law or agreed to in writing, software        
+// distributed under the License is distributed on an "AS IS" BASIS,          
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.   
+// See the License for the specific language governing permissions and        
+// limitations under the License.                                             
+
+import "mesos.proto";
+        
+package mesos.agent;
+
+option java_package = "org.apache.mesos.agent";
+option java_outer_classname = "Protos";
+ 
+
+message Call {
+  enum Type {
+    UNKNOWN = 0;
+
+    // Launches a nested container whose life-cycle is tied to the 
+    // lifetime of the connection used to make this call. Once the 
+    // agent receives the request, it will hold onto it until the 
+    // container runs to completion or there is an error. Upon 
+    // success, a 200 response will be initiated with an “infinite” 
+    // chunked response (but no data will ever be sent over this 
+    // connection). On error, an appropriate 400 error will be    
+    // returned. If the connection is ever broken by the client, the 
+    // container will be destroyed.       
+    LAUNCH_NESTED_CONTAINER_SESSION = 17;
+
+    // Attaches a remote client to the the input/output of the 
+    // entrypoint of a container. All input/output data is packed into 
+    // I/O messages and interleaved with control messages sent between 
+    // a client and the agent. A single chunked request is used to 
+    // stream messages to the agent over the input stream, and a 
+    // single chunked response is used to stream messages to the  
+    // client over the output stream.
+    ATTACH_CONTAINER_OUTPUT = 18;
+    ATTACH_CONTAINER_INPUT = 19;
+  }
+
+
+  message LaunchNestedContainerSession {
+    required ContainerID container_id = 1;
+    optional CommandInfo command = 2;
+
+    // NOTE: The following should be backported
+    // into the TaskInfo message post-mvp
+    optional TtyInfo tty_info = 3;
+    optional bool interactive = 4;
+
+    // NOTE: The following field will be added post-mvp to
+    // support mounting a new image in the nested container.
+    // optional ContainerInfo container = 5;
+  }
+
+  message AttachContainerOutput {
+    required ContainerID container_id = 1;
+  }
+
+  message AttachContainerInput {
+    enum Type {
+      UNKNOWN = 0;
+
+      CONTAINER_ID = 1;
+      PROCESS_IO = 2;
+    }
+
+    optional Type type = 1;
+    optional ContainerID container_id = 2;
+    optional ProcessIO process_io = 3;
+  }
+
+  optional LaunchNestedContainerSession launch_nested_container_session = 9;
+  optional AttachContainerOutput attach_container_output = 10;
+  optional AttachContainerInput attach_container_input = 11;
+}
