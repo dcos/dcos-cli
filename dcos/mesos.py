@@ -3,6 +3,8 @@ import itertools
 import os
 import requests
 
+from threading import Thread
+
 from six.moves import urllib
 
 from dcos import config, http, util
@@ -954,17 +956,51 @@ class TaskExec(object):
             raise ValueError(
                 "Must provide `task` to TaskExec object")
 
+        # Get the ContainerID and Agent URL assciated with
+        # the given Task ID.
+        client = DCOSClient()
+        master = get_master(client)
+        container_id = master.get_container_id(task)
+        if not container_id:
+            raise ValueError(
+                "Container ID for task {} not found.".format(task))
+
+        # Set the container ID
+        self.container_id = container_id
+
+        task_obj = master.task(task)
+        # Set the agent ID
+        self.agent_url = master.slave_base_url(task_obj.slave())
+
         self.session = requests.Session()
-        self.input_queue = Queue()
+        self.interactive = interactive
+        self.pty = pty
+
+        self._initialize_exec_stream()
+
+        if interactive:
+            self.input_queue = Queue()
+            input_stream = Thread(target=self._input_thread)
+            input_stream.daemon = True
+            input_stream.start()
+
         self.output_queue = Queue()
         self.exit_queue = Queue()
 
-        client = DCOSClient()
-        master = get_master(client)
+    def _initialize_exec_stream(self):
+        pass
 
-        container_id = master.get_container_id(task)
-        if not container_id:
-            raise ValueError("Container ID for {} not found.".format(task))
+    def _attach_output_stream(self, ip_addr, init_msg):
+        pass
+
+    def _attach_input_stream(self):
+        pass
+
+    def _input_thread(self):
+        pass
+
+    def _output_thread(self):
+        pass
 
 
 def parse_pid(pid):

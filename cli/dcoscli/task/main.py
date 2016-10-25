@@ -223,7 +223,7 @@ def _ls(task, path, long_, completed):
                           for file_ in files))
 
 
-def _exec(task, interactive=True, pty=True):
+def _exec(task, interactive=False, pty=False):
     """ Fork a prcess inside the namespace of a container
     associated with <task_id>.
 
@@ -234,7 +234,7 @@ def _exec(task, interactive=True, pty=True):
     :param pty: allocate a PTY on the remote connection
     :type pty: bool
     """
-    pass
+    mesos.TaskExec(task, interactive, pty)
 
 
 def _mesos_files(tasks, file_, client):
