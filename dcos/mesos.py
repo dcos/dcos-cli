@@ -8,6 +8,8 @@ import requests
 import agent_pb2
 import mesos_pb2
 
+from google.protobuf.json_format import MessageToJson
+
 from threading import Thread
 
 from six.moves import urllib
@@ -1007,6 +1009,9 @@ class TaskExec(object):
         call_msg = agent_pb2.Call(
             agent_pb2.Call.LAUNCH_NESTED_CONTAINER_SESSSION,
             launch_nested_container_msg)
+
+        # DEBUG
+        print("CALL.MSG: {}".format(MessageToJson(call_msg)))
 
         pickled_msg = pickle.dumps(call_msg)
 

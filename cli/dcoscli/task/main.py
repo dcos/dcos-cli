@@ -62,7 +62,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['task', 'exec'],
-            arg_keys=['<task>', '--interactive', '--pty'],
+            arg_keys=['<task>', '<cmd>', '--interactive', '--pty'],
             function=_exec),
     ]
 
@@ -223,7 +223,7 @@ def _ls(task, path, long_, completed):
                           for file_ in files))
 
 
-def _exec(task, interactive=False, pty=False):
+def _exec(task, cmd, interactive=False, pty=False):
     """ Fork a prcess inside the namespace of a container
     associated with <task_id>.
 
@@ -234,7 +234,8 @@ def _exec(task, interactive=False, pty=False):
     :param pty: allocate a PTY on the remote connection
     :type pty: bool
     """
-    mesos.TaskExec(task, interactive, pty)
+    te = mesos.TaskExec(task, cmd, interactive, pty)
+    te.initialize_exec_stream()
 
 
 def _mesos_files(tasks, file_, client):
