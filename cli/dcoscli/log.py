@@ -1,11 +1,16 @@
+import contextlib
+import datetime
 import functools
+import json
 import sys
 import time
 
 import six
 
-from dcos import emitting, util
+from dcos import cosmospackage, emitting, http, sse, util
 from dcos.errors import DCOSException, DefaultError
+
+from dcoscli.package.main import get_cosmos_url
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -201,3 +206,88 @@ def _strip_trailing_newline(s):
         return s
     else:
         return s[:-1] if s[-1] == '\n' else s
+
+
+def dcos_log_enabled():
+    """ functions checks the cosmos capability LOGGING
+        to know if `dcos-log` is enabled on the cluster.
+
+    :return: does cosmos have LOGGING capability.
+    :rtype: bool
+    """
+    return cosmospackage.Cosmos(get_cosmos_url()).has_capability('LOGGING')
+
+
+def follow_logs(url):
+    """ Function will use dcos.sse.get to subscribe to server sent events
+        and follow the real time logs. The log entry has the following format:
+        `date _HOSTNAME SYSLOG_IDENTIFIER[_PID]: MESSAGE`, where
+        _HOSTNAME, SYSLOG_IDENTIFIER and _PID are optional fields.
+        MESSAGE is also optional, however we should skip the entire log entry
+        if MESSAGE is not found.
+
+    :param url: `dcos-log` streaming endpoint
+    :type url: str
+    """
+    for entry in sse.get(url):
+        # the sse library does not handle sse comments properly
+        # making entry.data empty. As a workaround we can check if `entry.data`
+        # is not empty.
+        if not entry.data:
+            continue
+
+        try:
+            entry_json = json.loads(entry.data)
+        except ValueError:
+            raise DCOSException(
+                'Could not deserialize log entry to json: {}'.format(entry))
+
+        if 'fields' not in entry_json:
+            raise DCOSException(
+                'Missing `fields` in log entry: {}'.format(entry))
+
+        # `MESSAGE` is optional field. Skip the log entry if it's missing.
+        if 'MESSAGE' not in entry_json['fields']:
+            continue
+
+        if 'realtime_timestamp' not in entry_json:
+            raise DCOSException(
+                'Missing `realtime_timestamp` in log entry: {}'.format(entry))
+
+        # text format: `date _HOSTNAME SYSLOG_IDENTIFIER[_PID]: MESSAGE`
+        # entry.RealtimeTimestamp returns a unix time in microseconds
+        # https://www.freedesktop.org/software/systemd/man/sd_journal_get_realtime_usec.html
+        t = int(entry_json['realtime_timestamp'] / 1000000)
+        l = [datetime.datetime.fromtimestamp(t).ctime()]
+
+        optional_fields = ['_HOSTNAME', 'SYSLOG_IDENTIFIER']
+        for optional_field in optional_fields:
+            if optional_field in entry_json['fields']:
+                l.append(entry_json['fields'][optional_field])
+        if '_PID' in entry_json['fields']:
+            l.append('[' + entry_json['fields']['_PID'] + ']')
+        line = ' '.join(l)
+        line += ': {}'.format(entry_json['fields']['MESSAGE'])
+        emitter.publish(line)
+
+
+def print_logs_range(url):
+    """ Make a get request to `dcos-log` range endpoint.
+        the function will print out logs to stdout and exit.
+
+    :param url: `dcos-log` endpoint
+    :type url: str
+    """
+    with contextlib.closing(
+            http.get(url, headers={'Accept': 'text/plain'})) as r:
+
+        if r.status_code == 204:
+            raise DCOSException('No logs found')
+
+        if r.status_code != 200:
+            raise DCOSException(
+                'Error getting logs. Url: {};'
+                'response code: {}'.format(url, r.status_code))
+
+        for line in r.iter_lines():
+            emitter.publish(line.decode('utf-8', 'ignore'))
