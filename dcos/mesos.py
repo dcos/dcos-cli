@@ -1,7 +1,12 @@
 import fnmatch
 import itertools
 import os
+import pickle
 import requests
+
+# Generated protobuf code
+import agent_pb2
+import mesos_pb2
 
 from threading import Thread
 
@@ -951,7 +956,7 @@ class TaskExec(object):
     :type pty: bool
     """
 
-    def __init__(self, task, cmd, interactive=False, pty=False):
+    def __init__(self, task, cmd, interactive=False, tty=False):
         if not task:
             raise ValueError(
                 "Must provide `task` to TaskExec object")
@@ -974,7 +979,7 @@ class TaskExec(object):
 
         self.session = requests.Session()
         self.interactive = interactive
-        self.pty = pty
+        self.tty = tty
 
         self._initialize_exec_stream()
 
@@ -987,8 +992,35 @@ class TaskExec(object):
         self.output_queue = Queue()
         self.exit_queue = Queue()
 
-    def _initialize_exec_stream(self):
-        pass
+    def initialize_exec_stream(self):
+        headers = {'connection': 'keep-alive',
+                   'content-type': 'application/x-protobuf'}
+
+        # Call requires an initialization message
+        launch_nested_container_msg = agent_pb2.LaunchNestedContainerSession(
+            self.container_id,
+            self.cmd,
+            self.tty,
+            self.interactive
+        )
+        # Initilize nested container using Call
+        call_msg = agent_pb2.Call(
+            agent_pb2.Call.LAUNCH_NESTED_CONTAINER_SESSSION,
+            launch_nested_container_msg)
+
+        pickled_msg = pickle.dumps(call_msg)
+
+        request = requests.Request(
+            'POST',
+            self.agent_url,
+            headers=headers,
+            data=pickled_msg).prepare()
+
+        response = self.session.send(request, stream=True)
+
+        if response.status_code != 200:
+            # Not sure if this is the right thing to do here
+            raise DCOSException  # another kind of exception?
 
     def _attach_output_stream(self, ip_addr, init_msg):
         pass
@@ -1001,6 +1033,19 @@ class TaskExec(object):
 
     def _output_thread(self):
         pass
+
+    def _window_resizer(self):
+        rows, columns = os.popen('stty size', 'r').read().split()
+
+        window_msg = mesos_pb2.TtyInfo.WindowSize(
+            rows,
+            columns)
+
+        # resize_me_msg = agent_pb2.Call.LaunchNestedContainerSession.TtyInfo(
+        #    AttachContainerMessage.CONTROL_MSG,
+        #    control_msg)
+
+        self.input_queue.put(pickle.dumps(window_msg))
 
 
 def parse_pid(pid):
