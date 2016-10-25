@@ -15,4 +15,4 @@ Vagrantfile
 .vagrant
 .idea
 
-dcos/*_pb2.py
+*_pb2.py

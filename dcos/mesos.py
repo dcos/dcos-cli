@@ -5,8 +5,8 @@ import pickle
 import requests
 
 # Generated protobuf code
-from dcos import agent_pb2
-from dcos import mesos_pb2
+import agent_pb2
+import mesos_pb2
 
 from google.protobuf.json_format import MessageToJson
 
@@ -17,7 +17,7 @@ from six.moves import urllib
 from dcos import config, http, util
 from dcos.errors import DCOSException, DCOSHTTPException
 
-from Queue import Queue
+from queue import Queue
 
 logger = util.get_logger(__name__)
 
