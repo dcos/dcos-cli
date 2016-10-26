@@ -5,8 +5,8 @@ import pickle
 import requests
 
 # Generated protobuf code
-import agent_pb2
-import mesos_pb2
+import agent_pb2 as pba
+import mesos_pb2 as pbm
 
 from google.protobuf.json_format import MessageToJson
 
@@ -463,7 +463,7 @@ class Master(object):
         :returns: the container id associated with task id
         :rtype: str
         """
-        return 'foo'
+        return 'foo-container-id'
 
     def frameworks(self, inactive=False, completed=False):
         """Returns a list of all frameworks
@@ -960,8 +960,9 @@ class TaskExec(object):
 
     def __init__(self, task, cmd, interactive=False, tty=False):
         if not task:
-            raise ValueError(
-                "Must provide `task` to TaskExec object")
+            raise DCOSException(
+                "Must provide <task ID>, example:"
+                " `dcos task exec <task ID> <cmd>")
 
         # Get the ContainerID and Agent URL assciated with
         # the given Task ID.
@@ -969,57 +970,57 @@ class TaskExec(object):
         master = get_master(client)
         container_id = master.get_container_id(task)
         if not container_id:
-            raise ValueError(
+            raise DCOSException(
                 "Container ID for task {} not found.".format(task))
 
-        # Set the container ID
-        self.container_id = container_id
-
-        task_obj = master.task(task)
-        # Set the agent ID
-        self.agent_url = master.slave_base_url(task_obj.slave())
-
-        self.session = requests.Session()
-        self.interactive = interactive
-        self.tty = tty
-
-        self._initialize_exec_stream()
-
-        if interactive:
-            self.input_queue = Queue()
-            input_stream = Thread(target=self._input_thread)
-            input_stream.daemon = True
-            input_stream.start()
-
-        self.output_queue = Queue()
-        self.exit_queue = Queue()
+# TODO @malnick - Leaving commented out in order to debug the protobuf usage.
+# We will uncomment this once the protobuf usage is ironed out, since we do
+# no need it until we start talking to Mesos
+#        # Set the container ID
+#        self.container_id = container_id
+#
+#        task_obj = master.task(task)
+#        # Set the agent ID
+#        self.agent_url = master.slave_base_url(task_obj.slave())
+#
+#        self.session = requests.Session()
+#        self.interactive = interactive
+#        self.tty = tty
+#
+#        self._initialize_exec_stream()
+#
+#        if interactive:
+#            self.input_queue = Queue()
+#            input_stream = Thread(target=self._input_thread)
+#            input_stream.daemon = True
+#            input_stream.start()
+#
+#        self.output_queue = Queue()
+#        self.exit_queue = Queue()
 
     def initialize_exec_stream(self):
         headers = {'connection': 'keep-alive',
                    'content-type': 'application/x-protobuf'}
 
-        # Call requires an initialization message
-        launch_nested_container_msg = agent_pb2.LaunchNestedContainerSession(
-            self.container_id,
-            self.cmd,
-            self.tty,
-            self.interactive
-        )
         # Initilize nested container using Call
-        call_msg = agent_pb2.Call(
-            agent_pb2.Call.LAUNCH_NESTED_CONTAINER_SESSSION,
-            launch_nested_container_msg)
+        call_msg = pba.Call()
+        call_msg.type = pba.Call.LAUNCH_NESTED_CONTAINER_SESSION
+        call_msg.launch_nested_container_session.container_id.value = "foo-container"  # self.container_id
+        call_msg.launch_nested_container_session.command.value = "ls"  # self.cmd,
+        # nc_msg.tty_info.value = False  # self.tty
+        call_msg.launch_nested_container_session.interactive = False  # self.interactive
 
-        # DEBUG
-        print("CALL.MSG: {}".format(MessageToJson(call_msg)))
+        if not call_msg.IsInitialized():
+            raise DCOSException("Some values for initializing the remote exec "
+            "stream are invalid.")
 
-        pickled_msg = pickle.dumps(call_msg)
+        debug(MessageToJson(call_msg))
 
         request = requests.Request(
             'POST',
             self.agent_url,
             headers=headers,
-            data=pickled_msg).prepare()
+            data=call_msg.SerializeToString()).prepare()
 
         response = self.session.send(request, stream=True)
 
@@ -1042,7 +1043,7 @@ class TaskExec(object):
     def _window_resizer(self):
         rows, columns = os.popen('stty size', 'r').read().split()
 
-        window_msg = mesos_pb2.TtyInfo.WindowSize(
+        window_msg = pba.TtyInfo.WindowSize(
             rows,
             columns)
 
@@ -1051,6 +1052,10 @@ class TaskExec(object):
         #    control_msg)
 
         self.input_queue.put(pickle.dumps(window_msg))
+
+
+def debug(msg):
+    print("MSG: {}".format(msg))
 
 
 def parse_pid(pid):

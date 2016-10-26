@@ -56,14 +56,15 @@ def _cmds():
             function=_ls),
 
         cmds.Command(
+            hierarchy=['task', 'exec'],
+            arg_keys=['<task>', '<cmd>', '--interactive', '--pty'],
+            function=_exec),
+
+        cmds.Command(
             hierarchy=['task'],
             arg_keys=['<task>', '--completed', '--json'],
             function=_task),
 
-        cmds.Command(
-            hierarchy=['task', 'exec'],
-            arg_keys=['<task>', '<cmd>', '--interactive', '--pty'],
-            function=_exec),
     ]
 
 
@@ -234,6 +235,8 @@ def _exec(task, cmd, interactive=False, pty=False):
     :param pty: allocate a PTY on the remote connection
     :type pty: bool
     """
+    # DEBUG
+    print("Executing...")
     te = mesos.TaskExec(task, cmd, interactive, pty)
     te.initialize_exec_stream()
 
