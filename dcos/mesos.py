@@ -2,10 +2,13 @@ import fnmatch
 import itertools
 import os
 import pickle
-import requests
+import sys
 
 # Generated protobuf code
 import agent_pb2 as pba
+import mesos_pb2 as pbm
+
+from functools import partial
 
 from google.protobuf.json_format import MessageToJson
 
@@ -984,16 +987,25 @@ class TaskExec(object):
 
         self._initialize_exec_stream()
 
+        threads = []
         if interactive:
             self.input_queue = Queue()
-            input_stream = Thread(target=self._input_thread)
-            input_stream.daemon = True
-            input_stream.start()
+
+            # Local input thread
+            threads.append(Thread(target=self._input_thread))
+            threads[-1].daemon = True
+            threads[-1].start()
+
+            # Remote input thread
+            threads.append(Thread(
+                target=self._attach_input_stream))
+            threads[-1].daemon = True
+            threads[-1].start()
 
         self.output_queue = Queue()
         self.exit_queue = Queue()
 
-    def initialize_exec_stream(self):
+    def _initialize_exec_stream(self):
         # Initilize nested container using Call
         call_msg = pba.Call()
         call_msg.type = pba.Call.LAUNCH_NESTED_CONTAINER_SESSION
@@ -1020,7 +1032,7 @@ class TaskExec(object):
             self.agent_url,
             # TODO @malnick - do we want to use  JSON or protobuf to
             # talk to Mesos Agent API here?
-            call_msg.SerializeToString(),
+            call_msg.call_msg_json,
             req_extra_args)
 
         if response.status_code != 200:
@@ -1059,7 +1071,16 @@ class TaskExec(object):
                 "Input stream returned a non 200 status code")
 
     def _input_thread(self):
-        pass
+        for chunk in iter(partial(os.read, sys.stdin.fileno(), 1024), ''):
+            input_msg = pbm.ProcessIO()
+            input_msg.type = pbm.Data.Type.STDIN
+            input_msg.data = chunk
+
+            jsonified_input_msg = MessageToJson(chunk)
+
+            debug(jsonified_input_msg)
+
+            self.input_queue.put(jsonified_input_msg)
 
     def _output_thread(self):
         pass
