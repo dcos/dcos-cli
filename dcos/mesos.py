@@ -6,7 +6,6 @@ import requests
 
 # Generated protobuf code
 import agent_pb2 as pba
-import mesos_pb2 as pbm
 
 from google.protobuf.json_format import MessageToJson
 
@@ -973,29 +972,26 @@ class TaskExec(object):
             raise DCOSException(
                 "Container ID for task {} not found.".format(task))
 
-# TODO @malnick - Leaving commented out in order to debug the protobuf usage.
-# We will uncomment this once the protobuf usage is ironed out, since we do
-# no need it until we start talking to Mesos
-#        # Set the container ID
-#        self.container_id = container_id
-#
-#        task_obj = master.task(task)
-#        # Set the agent ID
-#        self.agent_url = master.slave_base_url(task_obj.slave())
-#
-#        self.interactive = interactive
-#        self.tty = tty
-#
-#        self._initialize_exec_stream()
-#
-#        if interactive:
-#            self.input_queue = Queue()
-#            input_stream = Thread(target=self._input_thread)
-#            input_stream.daemon = True
-#            input_stream.start()
-#
-#        self.output_queue = Queue()
-#        self.exit_queue = Queue()
+        # Set the container ID
+        self.container_id = container_id
+
+        task_obj = master.task(task)
+        # Set the agent ID
+        self.agent_url = master.slave_base_url(task_obj.slave())
+
+        self.interactive = interactive
+        self.tty = tty
+
+        self._initialize_exec_stream()
+
+        if interactive:
+            self.input_queue = Queue()
+            input_stream = Thread(target=self._input_thread)
+            input_stream.daemon = True
+            input_stream.start()
+
+        self.output_queue = Queue()
+        self.exit_queue = Queue()
 
     def initialize_exec_stream(self):
         # Initilize nested container using Call
@@ -1009,9 +1005,10 @@ class TaskExec(object):
 
         if not call_msg.IsInitialized():
             raise DCOSException("Some values for initializing the remote exec "
-            "stream are invalid.")
+                                "stream are invalid.")
 
-        debug(MessageToJson(call_msg))
+        call_msg_json = MessageToJson(call_msg)
+        debug(call_msg_json)
 
         req_extra_args = {
             'stream': True,
@@ -1021,19 +1018,45 @@ class TaskExec(object):
 
         response = http.post(
             self.agent_url,
+            # TODO @malnick - do we want to use  JSON or protobuf to
+            # talk to Mesos Agent API here?
             call_msg.SerializeToString(),
             req_extra_args)
 
         if response.status_code != 200:
             # Not sure if this is the right thing to do here
             raise DCOSException(
-                "Remote command execution failed, response code was {}".format(response.status_code))
+                "Remote command execution failed, "
+                "response code was {}".format(response.status_code))
 
     def _attach_output_stream(self, ip_addr, init_msg):
         pass
 
     def _attach_input_stream(self):
-        pass
+        def _input_streamer():
+            init_input_attach_msg = pba.Call.attach_container_input()
+            init_input_attach_msg.type = pba.Call.ATTACH_CONTAINER_INPUT
+            init_input_attach_msg.container_id = "foo"  # self.container_id
+            yield MessageToJson(init_input_attach_msg)
+
+            while True:
+                yield self.input_queue.get()
+
+        req_extra_args = {
+            'stream': True,
+            'headers': {
+                'connection': 'keep-alive',
+                'content-type': 'application/x-protobuf',
+                'transfer-encoding': 'chunked'}}
+
+        response = http.post(
+            self.agent_url,
+            _input_streamer(),
+            req_extra_args)
+
+        if response.status_code != 200:
+            raise DCOSException(
+                "Input stream returned a non 200 status code")
 
     def _input_thread(self):
         pass
