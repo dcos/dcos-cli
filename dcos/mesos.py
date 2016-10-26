@@ -983,7 +983,6 @@ class TaskExec(object):
 #        # Set the agent ID
 #        self.agent_url = master.slave_base_url(task_obj.slave())
 #
-#        self.session = requests.Session()
 #        self.interactive = interactive
 #        self.tty = tty
 #
@@ -999,14 +998,12 @@ class TaskExec(object):
 #        self.exit_queue = Queue()
 
     def initialize_exec_stream(self):
-        headers = {'connection': 'keep-alive',
-                   'content-type': 'application/x-protobuf'}
-
         # Initilize nested container using Call
         call_msg = pba.Call()
         call_msg.type = pba.Call.LAUNCH_NESTED_CONTAINER_SESSION
         call_msg.launch_nested_container_session.container_id.value = "foo-container"  # self.container_id
         call_msg.launch_nested_container_session.command.value = "ls"  # self.cmd,
+        # TODO @kevin - add pty bool to protobuf spec
         # nc_msg.tty_info.value = False  # self.tty
         call_msg.launch_nested_container_session.interactive = False  # self.interactive
 
@@ -1016,17 +1013,21 @@ class TaskExec(object):
 
         debug(MessageToJson(call_msg))
 
-        request = requests.Request(
-            'POST',
-            self.agent_url,
-            headers=headers,
-            data=call_msg.SerializeToString()).prepare()
+        req_extra_args = {
+            'stream': True,
+            'headers': {
+                'connection': 'keep-alive',
+                'content-type': 'application/x-protobuf'}}
 
-        response = self.session.send(request, stream=True)
+        response = http.post(
+            self.agent_url,
+            call_msg.SerializeToString(),
+            req_extra_args)
 
         if response.status_code != 200:
             # Not sure if this is the right thing to do here
-            raise DCOSException  # another kind of exception?
+            raise DCOSException(
+                "Remote command execution failed, response code was {}".format(response.status_code))
 
     def _attach_output_stream(self, ip_addr, init_msg):
         pass
