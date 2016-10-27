@@ -993,23 +993,35 @@ class TaskExec(object):
         if self.tty:
             signal.signal(signal.SIGWINCH, self._window_resizer)
 
-        threads = []
-        if interactive:
-            self.input_queue = Queue()
-
-            # Local input thread
-            threads.append(Thread(target=self._input_thread))
-            threads[-1].daemon = True
-            threads[-1].start()
-
-            # Remote input thread
-            threads.append(Thread(
-                target=self._attach_input_stream))
-            threads[-1].daemon = True
-            threads[-1].start()
-
         self.output_queue = Queue()
         self.exit_queue = Queue()
+        if interactive:
+            self.input_queue = Queue()
+            # Local input thread
+            in_thread = Thread(target=self._input_thread)
+            in_thread.daemon = True
+            in_thread.start()
+
+            # Remote input thread
+            in_stream_thread = Thread(
+                target=self._attach_input_stream)
+            in_stream_thread.daemon = True
+            in_stream_thread.start()
+
+        out_stream_thread = Thread(
+            target=self._attach_output_stream)
+        out_stream_thread.daemon = True
+        out_stream_thread.start()
+
+        out_thread = Thread(
+            target=self._output_thread)
+        out_thread.daemon = True
+        out_thread.start()
+
+    try:
+        self.exit_queue.get(block=True, timeout=sys.maxint)
+    except KeyboardInterrupt:
+        pass
 
     def _initialize_exec_stream(self):
         # Initilize nested container using Call
