@@ -10,7 +10,7 @@ import mesos_pb2 as pbm
 
 from functools import partial
 
-from google.protobuf.json_format import MessageToJson
+from google.protobuf.json_format import MessageToJson, Parse
 
 from threading import Thread
 
@@ -1041,8 +1041,34 @@ class TaskExec(object):
                 "Remote command execution failed, "
                 "response code was {}".format(response.status_code))
 
-    def _attach_output_stream(self, ip_addr, init_msg):
-        pass
+    def _attach_output_stream(self):
+        # Create the output attach message
+        init_output_attach_msg = pba.Call.attach_container_output()
+        init_output_attach_msg.type = pba.Call.ATTACH_CONTAINER_OUTPUT
+        init_output_attach_msg.container_id = "foo"  # self.container_id
+        # Transform message to JSON
+        jsonified_output_attach_msg = MessageToJson(init_output_attach_msg)
+
+        req_extra_args = {
+            'stream': True,
+            'headers': {
+                'copntent-type': 'application/json'
+            }
+        }
+
+        response = http.post(
+            self.agent_url,
+            jsonified_output_attach_msg,
+            req_extra_args)
+
+        for chunk in response.itr_content(chunk_size=None):
+            json_response_output_msg = Parse(chunk, pbm.ProcessIO)
+
+            if isinstance(json_response_output_msg, pbm.ProcessIO):
+                self.output_queue.put(json_response_output_msg)
+
+        self.output_queue.join()
+        self.exit_queue.put(None)
 
     def _attach_input_stream(self):
         def _input_streamer():
@@ -1058,7 +1084,7 @@ class TaskExec(object):
             'stream': True,
             'headers': {
                 'connection': 'keep-alive',
-                'content-type': 'application/x-protobuf',
+                'content-type': 'application/json',
                 'transfer-encoding': 'chunked'}}
 
         response = http.post(
@@ -1071,19 +1097,33 @@ class TaskExec(object):
                 "Input stream returned a non 200 status code")
 
     def _input_thread(self):
+        # For every read of STDIN, take a line
         for chunk in iter(partial(os.read, sys.stdin.fileno(), 1024), ''):
+            # Create a ProcessIO message from proto spec
             input_msg = pbm.ProcessIO()
             input_msg.type = pbm.Data.Type.STDIN
             input_msg.data = chunk
-
+            # Create a JSON object from the message
             jsonified_input_msg = MessageToJson(chunk)
-
             debug(jsonified_input_msg)
-
+            # Dump input msg to the queue for processing
             self.input_queue.put(jsonified_input_msg)
 
     def _output_thread(self):
-        pass
+        while True:
+            # Get message from output queue
+            output_json = self.output_queue.get()
+            # Transform from JSON to protobuf message
+            processio_msg = pbm.ProcessIO()
+            output_msg = Parse(output_json, processio_msg)
+
+            if isinstance(output_msg, pbm.ProcessIO.type.STDOUT):
+                sys.stdout.write(output_msg.data)
+            elif isinstance(output_msg, pbm.ProcessIO.type.STDERR):
+                sys.stderr.write(output_msg.data)
+
+            # Close queue assuming last msg was EOF
+            self.output_queue.task_done()
 
     def _window_resizer(self):
         rows, columns = os.popen('stty size', 'r').read().split()
