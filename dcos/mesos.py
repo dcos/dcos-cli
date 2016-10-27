@@ -2,6 +2,7 @@ import fnmatch
 import itertools
 import os
 import pickle
+import signal
 import sys
 
 # Generated protobuf code
@@ -986,6 +987,11 @@ class TaskExec(object):
         self.tty = tty
 
         self._initialize_exec_stream()
+
+        # If a PTY is present, override SIGWINCH to resize the
+        # the window.
+        if self.tty:
+            signal.signal(signal.SIGWINCH, self._window_resizer)
 
         threads = []
         if interactive:
