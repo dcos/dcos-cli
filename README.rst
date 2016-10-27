@@ -143,7 +143,7 @@ Other Useful Commands
 
 #. Run a specific integration test module::
 
-    tox -e py34-integration /test_config.py
+    tox -e py35-integration /test_config.py
 
 
 Releasing

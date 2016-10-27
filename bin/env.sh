@@ -4,7 +4,12 @@ BASEDIR=`dirname $0`/..
 
 if [ ! -d "$BASEDIR/env" ]; then
 
-    pyvenv $BASEDIR/env
+    if [ ! "$(command -v pyvenv-3.5)" ]; then
+      echo "Cannot find supported python version 3.5. Exiting..."
+      exit 1
+    fi
+
+    pyvenv-3.5 $BASEDIR/env
     echo "Virtualenv created."
 
     if [ -f "$BASEDIR/env/bin/activate" ]; then
