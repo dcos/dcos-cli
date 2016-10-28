@@ -126,7 +126,7 @@ def _request_with_auth(response,
                        timeout=None,
                        verify=None,
                        **kwargs):
-    """Try request (3 times) with credentials if 401 returned from server
+    """Request with credentials
 
     :param response: requests.response
     :type response: requests.Response
@@ -146,37 +146,33 @@ def _request_with_auth(response,
     :rtype: requests.Response
     """
 
-    i = 0
-    while i < 3 and response.status_code == 401:
-        parsed_url = urlparse(url)
-        hostname = parsed_url.hostname
-        auth_scheme, realm = get_auth_scheme(response)
-        creds = (hostname, auth_scheme, realm)
+    parsed_url = urlparse(url)
+    hostname = parsed_url.hostname
+    auth_scheme, realm = get_auth_scheme(response)
+    creds = (hostname, auth_scheme, realm)
 
-        with lock:
-            if creds not in AUTH_CREDS:
-                auth = _get_http_auth(response, parsed_url, auth_scheme)
-            else:
-                auth = AUTH_CREDS[creds]
+    with lock:
+        if creds not in AUTH_CREDS:
+            auth = _get_http_auth(response, parsed_url, auth_scheme)
+        else:
+            auth = AUTH_CREDS[creds]
 
-        # try request again, with auth
-        response = _request(method, url, is_success, timeout, auth,
-                            verify, **kwargs)
+    # try request again, with auth
+    response = _request(method, url, is_success, timeout, auth,
+                        verify, **kwargs)
 
-        # only store credentials if they're valid
-        with lock:
-            if creds not in AUTH_CREDS and response.status_code == 200:
-                AUTH_CREDS[creds] = auth
-            # acs invalid token
-            elif response.status_code == 401 and \
-                    auth_scheme in ["acsjwt", "oauthjwt"]:
+    # only store credentials if they're valid
+    with lock:
+        if creds not in AUTH_CREDS and response.status_code == 200:
+            AUTH_CREDS[creds] = auth
+        # acs invalid token
+        elif response.status_code == 401 and \
+                auth_scheme in ["acsjwt", "oauthjwt"]:
 
-                if config.get_config_val("core.dcos_acs_token") is not None:
-                    msg = ("Your core.dcos_acs_token is invalid. "
-                           "Please run: `dcos auth login`")
-                    raise DCOSException(msg)
-
-        i += 1
+            if config.get_config_val("core.dcos_acs_token") is not None:
+                msg = ("Your core.dcos_acs_token is invalid. "
+                       "Please run: `dcos auth login`")
+                raise DCOSException(msg)
 
     if response.status_code == 401:
         raise DCOSAuthenticationException(response)
@@ -218,12 +214,20 @@ def request(method,
     if verify is not None:
         silence_requests_warnings()
 
-    response = _request(method, url, is_success, timeout,
-                        verify=verify, **kwargs)
+    response = _request('head', url, is_success, timeout,
+                        verify=verify)
+    i = 0
+    while i < 3 and response.status_code == 401:
+        auth_response = _request_with_auth(response, 'head', url, is_success,
+                                           timeout, verify=verify)
+        response.status_code = auth_response.status_code
+        i += 1
 
     if response.status_code == 401:
-        response = _request_with_auth(response, method, url, is_success,
-                                      timeout, verify, **kwargs)
+        raise DCOSAuthenticationException(response)
+
+    response = _request_with_auth(response, method, url, is_success,
+                                  timeout, verify, **kwargs)
 
     if is_success(response.status_code):
         return response
