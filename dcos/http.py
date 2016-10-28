@@ -157,7 +157,6 @@ def _request_with_auth(response,
         else:
             auth = AUTH_CREDS[creds]
 
-    # try request again, with auth
     response = _request(method, url, is_success, timeout, auth,
                         verify, **kwargs)
 
@@ -174,9 +173,6 @@ def _request_with_auth(response,
                        "Please run: `dcos auth login`")
                 raise DCOSException(msg)
 
-    if response.status_code == 401:
-        raise DCOSAuthenticationException(response)
-
     return response
 
 
@@ -186,8 +182,14 @@ def request(method,
             timeout=None,
             verify=None,
             **kwargs):
-    """Sends an HTTP request. If the server responds with a 401, ask the
-    user for their credentials, and try request again (up to 3 times).
+    """Sends an HTTP request. We first send a HEAD request for the
+    supplied URL so that we can determine the type of authentication
+    required (if any). If authentication is required then we again
+    use a HEAD request asking the user for their credentials, and
+    try request again (up to 3 times). Once authenticated, we issue
+    the request passed in. We are careful to execute the request
+    passed in just once given that it may be stateful e.g. any files
+    object containing a stream may only be evaluated once.
 
     :param method: method for the new Request object
     :type method: str
