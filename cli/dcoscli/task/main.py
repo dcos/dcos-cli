@@ -235,7 +235,14 @@ def _exec(task, cmd, interactive=False, pty=False):
     :param pty: allocate a PTY on the remote connection
     :type pty: bool
     """
-    mesos.TaskExec(task, cmd, interactive, pty)
+    if not cmd:
+        raise DCOSException("Must pass a command to `dcos task exec`")
+
+    if not task:
+        raise DCOSException("Must pass a task ID to `dcos task exec`")
+
+    tIO = mesos.TaskIO(task, interactive, pty, cmd)
+    tIO.IORunner()
 
 
 def _mesos_files(tasks, file_, client):

@@ -947,7 +947,8 @@ class MesosFile(object):
             return "master:{0}".format(self._path)
 
 
-class TaskExec(object):
+
+class TaskIO(object):
     """Object allowing interaction with the Mesos Agent exec functionality.
 
     :param task: task ID
@@ -961,7 +962,7 @@ class TaskExec(object):
     :type pty: bool
     """
 
-    def __init__(self, task, cmd, interactive=False, tty=False):
+    def __init__(self, task, interactive, tty, cmd=None):
         if not task:
             raise DCOSException(
                 "Must provide <task ID>, example:"
@@ -976,27 +977,32 @@ class TaskExec(object):
             raise DCOSException(
                 "Container ID for task {} not found.".format(task))
 
-        # Set the container ID
         self.container_id = container_id
 
+        # Get the URL to the agent which is running the task
         task_obj = master.task(task)
-        # Set the agent ID
         self.agent_url = master.slave_base_url(task_obj.slave())
 
         self.interactive = interactive
         self.tty = tty
 
-        self._initialize_exec_stream()
+        self.output_queue = Queue()
+        self.exit_queue = Queue()
 
+        if interactive:
+            self.input_queue = Queue()
+
+    def IORunner(self):
+        """IORunner handles running the helper methods in this
+        class which enable streaming of STDIN/OUT/ERR back and
+        forth between the CLI client and Mesos Agent API
+        """
         # If a PTY is present, override SIGWINCH to resize the
         # the window.
         if self.tty:
             signal.signal(signal.SIGWINCH, self._window_resizer)
 
-        self.output_queue = Queue()
-        self.exit_queue = Queue()
-        if interactive:
-            self.input_queue = Queue()
+        if self.interactive:
             # Local input thread
             in_thread = Thread(target=self._input_thread)
             in_thread.daemon = True
@@ -1023,49 +1029,37 @@ class TaskExec(object):
     except KeyboardInterrupt:
         pass
 
-    def _initialize_exec_stream(self):
-        # Initilize nested container using Call
-        call_msg = pba.Call()
-        call_msg.type = pba.Call.LAUNCH_NESTED_CONTAINER_SESSION
-        call_msg.launch_nested_container_session.container_id.value = "foo-container"  # self.container_id
-        call_msg.launch_nested_container_session.command.value = "ls"  # self.cmd,
-        # TODO @kevin - add pty bool to protobuf spec
-        # nc_msg.tty_info.value = False  # self.tty
-        call_msg.launch_nested_container_session.interactive = False  # self.interactive
+    def _initialize_output_message(self):
+        """Decides if this is an `attach` or `exec` on the basis that
+        an exec needs a cmd, and an attach does not.
 
-        if not call_msg.IsInitialized():
-            raise DCOSException("Some values for initializing the remote exec "
-                                "stream are invalid.")
+        :rtype: string - JSON value for initializing the output stream
+        """
+        if cmd:
+            init_output_attach_msg = pba.Call()
+            init_output_attach_msg.type = pba.Call.LAUNCH_NESTED_CONTAINER_SESSION
+            init_output_attach_msg.launch_nested_container_session.container_id.value = "foo-container"  # self.container_id
+            init_output_attach_msg.launch_nested_container_session.command.value = "ls"  # self.cmd,
+            # TODO(@kevin) Add pty bool to protobuf spec
+            # nc_msg.tty_info.value = False  # self.tty
+            init_output_attach_msg.launch_nested_container_session.interactive = False  # self.interactive
 
-        call_msg_json = MessageToJson(call_msg)
-        debug(call_msg_json)
+        else:
+            init_output_attach_msg = pba.Call.attach_container_output()
+            init_output_attach_msg.type = pba.Call.ATTACH_CONTAINER_OUTPUT
+            init_output_attach_msg.container_id = "foo"  # self.container_id
 
-        req_extra_args = {
-            'stream': True,
-            'headers': {
-                'connection': 'keep-alive',
-                'content-type': 'application/x-protobuf'}}
+        if not init_output_attach_msg.IsInitialized():
+            raise DCOSException("Some values for initializing the remote "
+                                "output stream are invalid.")
 
-        response = http.post(
-            self.agent_url,
-            # TODO @malnick - do we want to use  JSON or protobuf to
-            # talk to Mesos Agent API here?
-            call_msg.call_msg_json,
-            req_extra_args)
-
-        if response.status_code != 200:
-            # Not sure if this is the right thing to do here
-            raise DCOSException(
-                "Remote command execution failed, "
-                "response code was {}".format(response.status_code))
+        return MessageToJson(init_output_attach_msg)
 
     def _attach_output_stream(self):
-        # Create the output attach message
-        init_output_attach_msg = pba.Call.attach_container_output()
-        init_output_attach_msg.type = pba.Call.ATTACH_CONTAINER_OUTPUT
-        init_output_attach_msg.container_id = "foo"  # self.container_id
-        # Transform message to JSON
-        jsonified_output_attach_msg = MessageToJson(init_output_attach_msg)
+        """Sends a request to the Mesos Agent API to attach an
+        STDOUT stream to an already running container.
+        """
+        jsonified_output_attach_msg = self._initialize_output_message()
 
         req_extra_args = {
             'stream': True,
@@ -1084,6 +1078,10 @@ class TaskExec(object):
 
             if isinstance(json_response_output_msg, pbm.ProcessIO):
                 self.output_queue.put(json_response_output_msg)
+            # TODO(@malnick)
+            # Should probably elif and raise DCOSException here if the
+            # value returned is not ProcessIO? Or do we ignore any none
+            # processIO types and continue blindly?
 
         self.output_queue.join()
         self.exit_queue.put(None)
