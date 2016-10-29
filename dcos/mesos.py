@@ -947,7 +947,6 @@ class MesosFile(object):
             return "master:{0}".format(self._path)
 
 
-
 class TaskIO(object):
     """Object allowing interaction with the Mesos Agent exec functionality.
 
@@ -1035,7 +1034,7 @@ class TaskIO(object):
 
         :rtype: string - JSON value for initializing the output stream
         """
-        if cmd:
+        if self.cmd:
             init_output_attach_msg = pba.Call()
             init_output_attach_msg.type = pba.Call.LAUNCH_NESTED_CONTAINER_SESSION
             init_output_attach_msg.launch_nested_container_session.container_id.value = "foo-container"  # self.container_id
@@ -1056,8 +1055,8 @@ class TaskIO(object):
         return MessageToJson(init_output_attach_msg)
 
     def _attach_output_stream(self):
-        """Sends a request to the Mesos Agent API to attach an
-        STDOUT stream to an already running container.
+        """Sends a request to the Mesos Agent API to attach the
+        STDOUT stream of an already running container.
         """
         jsonified_output_attach_msg = self._initialize_output_message()
 
