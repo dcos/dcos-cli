@@ -828,15 +828,12 @@ def _zero_instance_app():
 
 @contextlib.contextmanager
 def _zero_instance_app_through_http():
-    class JSONRequestHandler (BaseHTTPRequestHandler):
+    class JSONRequestHandler(BaseHTTPRequestHandler):
 
         def do_HEAD(self):  # noqa: N802
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.end_headers()
-            self.wfile.write(open(
-                'tests/data/marathon/apps/zero_instance_sleep.json',
-                'rb').read())
 
         def do_GET(self):  # noqa: N802
             self.send_response(200)

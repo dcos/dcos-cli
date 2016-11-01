@@ -102,9 +102,8 @@ def test_request_with_bad_auth_basic(mock, req_mock, auth_mock):
 
     req_mock.return_value = mock
 
-    with pytest.raises(DCOSException) as e:
-        http._request_with_auth(mock, "method", mock.url)
-    assert e.exconly().split(':')[1].strip() == "Authentication failed"
+    response = http._request_with_auth(mock, "method", mock.url)
+    assert response.status_code == 401
 
 
 @patch('requests.Response')

@@ -216,20 +216,26 @@ def request(method,
     if verify is not None:
         silence_requests_warnings()
 
-    response = _request('head', url, is_success, timeout,
-                        verify=verify)
-    i = 0
-    while i < 3 and response.status_code == 401:
-        auth_response = _request_with_auth(response, 'head', url, is_success,
-                                           timeout, verify=verify)
-        response.status_code = auth_response.status_code
-        i += 1
+    dcos_url = config.get_config_val("core.dcos_url")
+    auth_url = urllib.parse.urljoin(dcos_url, 'exhibitor/')
+    response = _request(
+        'GET', auth_url, is_success, timeout, verify=verify, **kwargs)
 
     if response.status_code == 401:
-        raise DCOSAuthenticationException(response)
+        i = 0
+        while i < 3 and response.status_code == 401:
+            auth_response = _request_with_auth(
+                response, 'GET', auth_url, is_success, timeout,
+                verify=verify, **kwargs)
+            response.status_code = auth_response.status_code
+            i += 1
 
-    response = _request_with_auth(response, method, url, is_success,
-                                  timeout, verify, **kwargs)
+        response = _request_with_auth(response, method, url, is_success,
+                                      timeout, verify=verify, **kwargs)
+        if response.status_code == 401:
+            raise DCOSAuthenticationException(response)
+    else:
+        response = _request(method, url, is_success, timeout, verify, **kwargs)
 
     if is_success(response.status_code):
         return response
