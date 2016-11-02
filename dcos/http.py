@@ -126,7 +126,7 @@ def _request_with_auth(response,
                        timeout=None,
                        verify=None,
                        **kwargs):
-    """Try request (3 times) with credentials if 401 returned from server
+    """Request with credentials
 
     :param response: requests.response
     :type response: requests.Response
@@ -146,40 +146,32 @@ def _request_with_auth(response,
     :rtype: requests.Response
     """
 
-    i = 0
-    while i < 3 and response.status_code == 401:
-        parsed_url = urlparse(url)
-        hostname = parsed_url.hostname
-        auth_scheme, realm = get_auth_scheme(response)
-        creds = (hostname, auth_scheme, realm)
+    parsed_url = urlparse(url)
+    hostname = parsed_url.hostname
+    auth_scheme, realm = get_auth_scheme(response)
+    creds = (hostname, auth_scheme, realm)
 
-        with lock:
-            if creds not in AUTH_CREDS:
-                auth = _get_http_auth(response, parsed_url, auth_scheme)
-            else:
-                auth = AUTH_CREDS[creds]
+    with lock:
+        if creds not in AUTH_CREDS:
+            auth = _get_http_auth(response, parsed_url, auth_scheme)
+        else:
+            auth = AUTH_CREDS[creds]
 
-        # try request again, with auth
-        response = _request(method, url, is_success, timeout, auth,
-                            verify, **kwargs)
+    response = _request(method, url, is_success, timeout, auth,
+                        verify, **kwargs)
 
-        # only store credentials if they're valid
-        with lock:
-            if creds not in AUTH_CREDS and response.status_code == 200:
-                AUTH_CREDS[creds] = auth
-            # acs invalid token
-            elif response.status_code == 401 and \
-                    auth_scheme in ["acsjwt", "oauthjwt"]:
+    # only store credentials if they're valid
+    with lock:
+        if creds not in AUTH_CREDS and response.status_code == 200:
+            AUTH_CREDS[creds] = auth
+        # acs invalid token
+        elif response.status_code == 401 and \
+                auth_scheme in ["acsjwt", "oauthjwt"]:
 
-                if config.get_config_val("core.dcos_acs_token") is not None:
-                    msg = ("Your core.dcos_acs_token is invalid. "
-                           "Please run: `dcos auth login`")
-                    raise DCOSException(msg)
-
-        i += 1
-
-    if response.status_code == 401:
-        raise DCOSAuthenticationException(response)
+            if config.get_config_val("core.dcos_acs_token") is not None:
+                msg = ("Your core.dcos_acs_token is invalid. "
+                       "Please run: `dcos auth login`")
+                raise DCOSException(msg)
 
     return response
 
@@ -190,8 +182,14 @@ def request(method,
             timeout=None,
             verify=None,
             **kwargs):
-    """Sends an HTTP request. If the server responds with a 401, ask the
-    user for their credentials, and try request again (up to 3 times).
+    """Sends an HTTP request. We first send a HEAD request for the
+    supplied URL so that we can determine the type of authentication
+    required (if any). If authentication is required then we again
+    use a HEAD request asking the user for their credentials, and
+    try request again (up to 3 times). Once authenticated, we issue
+    the request passed in. We are careful to execute the request
+    passed in just once given that it may be stateful e.g. any files
+    object containing a stream may only be evaluated once.
 
     :param method: method for the new Request object
     :type method: str
@@ -218,12 +216,26 @@ def request(method,
     if verify is not None:
         silence_requests_warnings()
 
-    response = _request(method, url, is_success, timeout,
-                        verify=verify, **kwargs)
+    dcos_url = config.get_config_val("core.dcos_url")
+    auth_url = urllib.parse.urljoin(dcos_url, 'exhibitor/')
+    response = _request(
+        'GET', auth_url, is_success, timeout, verify=verify, **kwargs)
 
     if response.status_code == 401:
+        i = 0
+        while i < 3 and response.status_code == 401:
+            auth_response = _request_with_auth(
+                response, 'GET', auth_url, is_success, timeout,
+                verify=verify, **kwargs)
+            response.status_code = auth_response.status_code
+            i += 1
+
         response = _request_with_auth(response, method, url, is_success,
-                                      timeout, verify, **kwargs)
+                                      timeout, verify=verify, **kwargs)
+        if response.status_code == 401:
+            raise DCOSAuthenticationException(response)
+    else:
+        response = _request(method, url, is_success, timeout, verify, **kwargs)
 
     if is_success(response.status_code):
         return response
