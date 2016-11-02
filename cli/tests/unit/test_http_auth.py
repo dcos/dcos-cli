@@ -103,8 +103,9 @@ def test_request_with_bad_auth_basic(mock, req_mock, auth_mock):
     req_mock.return_value = mock
 
     with pytest.raises(DCOSException) as e:
-        http._request_with_auth(mock, "method", mock.url)
-    assert e.exconly().split(':')[1].strip() == "Authentication failed"
+        http.request_with_auth("method", mock.url)
+    msg = "Authentication failed. Please run `dcos auth login`"
+    assert e.exconly().split(':')[1].strip() == msg
 
 
 @patch('requests.Response')
@@ -120,7 +121,7 @@ def test_request_with_bad_auth_acl(mock, req_mock, auth_mock):
     req_mock.return_value = mock
 
     with pytest.raises(DCOSException) as e:
-        http._request_with_auth(mock, "method", mock.url)
+        http.request_with_auth("method", mock.url)
     msg = "Your core.dcos_acs_token is invalid. Please run: `dcos auth login`"
     assert e.exconly().split(':', 1)[1].strip() == msg
 
@@ -138,7 +139,7 @@ def test_request_with_bad_oauth(mock, req_mock, auth_mock):
     req_mock.return_value = mock
 
     with pytest.raises(DCOSException) as e:
-        http._request_with_auth(mock, "method", mock.url)
+        http.request_with_auth("method", mock.url)
     msg = "Your core.dcos_acs_token is invalid. Please run: `dcos auth login`"
     assert e.exconly().split(':', 1)[1].strip() == msg
 
@@ -158,7 +159,7 @@ def test_request_with_auth_basic(mock, req_mock, auth_mock):
     mock2.status_code = 200
     req_mock.return_value = mock2
 
-    response = http._request_with_auth(mock, "method", mock.url)
+    response = http.request_with_auth("method", mock.url)
     assert response.status_code == 200
 
 
@@ -177,7 +178,7 @@ def test_request_with_auth_acl(mock, req_mock, auth_mock):
     mock2.status_code = 200
     req_mock.return_value = mock2
 
-    response = http._request_with_auth(mock, "method", mock.url)
+    response = http.request_with_auth("method", mock.url)
     assert response.status_code == 200
 
 
@@ -196,5 +197,5 @@ def test_request_with_auth_oauth(mock, req_mock, auth_mock):
     mock2.status_code = 200
     req_mock.return_value = mock2
 
-    response = http._request_with_auth(mock, "method", mock.url)
+    response = http.request_with_auth("method", mock.url)
     assert response.status_code == 200
