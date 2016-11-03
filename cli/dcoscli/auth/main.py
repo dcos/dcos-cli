@@ -84,8 +84,9 @@ def _login():
 
     # hit protected endpoint which will prompt for auth if cluster has auth
     try:
-        url = urllib.parse.urljoin(dcos_url, 'exhibitor/')
-        http.get(url)
+        endpoint = '/pkgpanda/active.buildinfo.full.json'
+        url = urllib.parse.urljoin(dcos_url, endpoint)
+        http.request_with_auth('HEAD', url)
     # if the user is authenticated, they have effectively "logged in" even if
     # they are not authorized for this endpoint
     except DCOSAuthorizationException:
