@@ -814,6 +814,29 @@ def package_search_table(search_results):
     return tb
 
 
+def auth_provider_table(providers):
+    """Returns a PrettyTable representation of the auth providers for cluster
+
+    :param providers: auth providers available
+    :type providers: dict
+    :rtype: PrettyTable
+
+    """
+
+    fields = OrderedDict([
+        ('PROVIDER-ID', lambda p: p),
+        ('AUTHENTICATION-TYPE', lambda p: providers[p]['authentication-type']),
+        ('DESCRIPTION', lambda p: providers[p]['description'])
+    ])
+
+    tb = table(fields, providers, sortby="PROVIDER-ID")
+    tb.align['PROVIDER-ID'] = 'l'
+    tb.align['AUTHENTICATION-TYPE'] = 'l'
+    tb.align['DESCRIPTION'] = 'l'
+
+    return tb
+
+
 def slave_table(slaves):
     """Returns a PrettyTable representation of the provided DC/OS slaves
 

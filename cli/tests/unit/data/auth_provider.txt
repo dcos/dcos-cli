@@ -1,0 +1,2 @@
+PROVIDER-ID  AUTHENTICATION-TYPE  DESCRIPTION                  
+dcos-users   dcos-uid-password    Default DC/OS authenticator  

@@ -6,6 +6,7 @@ import pytz
 from dcos.mesos import Slave
 from dcoscli import tables
 
+from ..fixtures.auth_provider import auth_provider_fixture
 from ..fixtures.marathon import (app_fixture, app_task_fixture,
                                  deployment_fixture_app_post_pods,
                                  deployment_fixture_app_pre_pods,
@@ -71,6 +72,12 @@ def test_group_table():
     _test_table(tables.group_table,
                 [group_fixture()],
                 'tests/unit/data/group.txt')
+
+
+def test_auth_providers_table():
+    _test_table(tables.auth_provider_table,
+                auth_provider_fixture(),
+                'tests/unit/data/auth_provider.txt')
 
 
 def test_pod_table():
