@@ -497,7 +497,7 @@ class Client(object):
         :rtype: {} | None
         """
 
-        return {'force': 'true'} if force else None
+        return {'stopCurrentJobRuns': 'true'} if force else None
 
     @staticmethod
     def _parse_json(response):
