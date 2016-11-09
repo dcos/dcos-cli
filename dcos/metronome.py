@@ -2,11 +2,11 @@ import json
 import jsonschema
 import pkg_resources
 
+from dcoscli.package.main import get_cosmos_url
 from six.moves import urllib
 
-from dcos import config, http, util, cosmospackage
+from dcos import config, cosmospackage, http, util
 from dcos.errors import DCOSException, DCOSHTTPException
-from dcoscli.package.main import get_cosmos_url
 
 logger = util.get_logger(__name__)
 
@@ -223,9 +223,7 @@ class Client(object):
         path = 'v1/jobs{}'.format(job_id)
 
         response = self._rpc.http_req(http.get, path)
-
         return response.json()
-
 
     def get_jobs(self):
         """Get a list of known jobs.
@@ -236,7 +234,6 @@ class Client(object):
 
         response = self._rpc.http_req(http.get, 'v1/jobs')
         return response.json()
-
 
     def add_job(self, job_resource):
         """Add a new job.
@@ -424,7 +421,7 @@ class Client(object):
 
         job_id = util.normalize_marathon_id_path(job_id)
         path = '/v1/jobs{}/runs'.format(job_id)
-        response = self._rpc.http_req(http.post, path)
+        self._rpc.http_req(http.post, path)
 
     def get_runs(self, job_id):
         """Gets the schedules for a given job
@@ -454,7 +451,6 @@ class Client(object):
         response = self._rpc.http_req(http.get, path)
         return response.json()
 
-
     def kill_run(self, job_id, run_id):
         """Add a new job.
 
@@ -468,8 +464,7 @@ class Client(object):
         job_id = util.normalize_marathon_id_path(job_id)
         run_id = util.normalize_marathon_id_path(run_id)
         path = '/v1/jobs{}/runs{}/actions/stop'.format(job_id, run_id)
-        response = self._rpc.http_req(http.post, path)
-
+        self._rpc.http_req(http.post, path)
 
     @staticmethod
     def _job_id_path_format(url_path_template, id_path):
