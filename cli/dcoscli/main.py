@@ -8,6 +8,7 @@ from six.moves import urllib
 import dcoscli
 from dcos import config, constants, emitting, errors, http, subcommand, util
 from dcos.errors import DCOSException
+from dcoscli.help.main import dcos_help
 from dcoscli.subcommand import default_doc, SubcommandMain
 
 
@@ -75,7 +76,10 @@ def _main():
     command = args['<command>']
 
     if not command:
-        command = "help"
+        if args['--help']:
+            command = "help"
+        else:
+            return dcos_help()
 
     if command in subcommand.default_subcommands():
         sc = SubcommandMain(command, args['<args>'])

@@ -71,27 +71,39 @@ def _help(command):
     if command is not None:
         _help_command(command)
     else:
-        logger.debug("DCOS bin path: {!r}".format(util.dcos_bin_path()))
-
-        results = [(c, default_command_info(c))
-                   for c in subcommand.default_subcommands()]
-        paths = subcommand.list_paths()
-        with ThreadPoolExecutor(max_workers=max(len(paths), 1)) as executor:
-            results += list(executor.map(subcommand.documentation, paths))
-            commands_message = options\
-                .make_command_summary_string(sorted(results))
-
-        emitter.publish(
-            "Command line utility for the Mesosphere Datacenter Operating\n"
-            "System (DC/OS). The Mesosphere DC/OS is a distributed operating\n"
-            "system built around Apache Mesos. This utility provides tools\n"
-            "for easy management of a DC/OS installation.\n")
-        emitter.publish("Available DC/OS commands:")
-        emitter.publish(commands_message)
-        emitter.publish(
-            "\nGet detailed command description with 'dcos <command> --help'.")
-
+        emitter.publish(default_command_documentation("dcos"))
         return 0
+
+
+def dcos_help():
+    """
+    help text for `dcos` command
+
+    :returns: process return code
+    :rtype: int
+    """
+
+    logger.debug("DCOS bin path: {!r}".format(util.dcos_bin_path()))
+
+    results = [(c, default_command_info(c))
+               for c in subcommand.default_subcommands()]
+    paths = subcommand.list_paths()
+    with ThreadPoolExecutor(max_workers=max(len(paths), 1)) as executor:
+        results += list(executor.map(subcommand.documentation, paths))
+        commands_message = options\
+            .make_command_summary_string(sorted(results))
+
+    emitter.publish(
+        "Command line utility for the Mesosphere Datacenter Operating\n"
+        "System (DC/OS). The Mesosphere DC/OS is a distributed operating\n"
+        "system built around Apache Mesos. This utility provides tools\n"
+        "for easy management of a DC/OS installation.\n")
+    emitter.publish("Available DC/OS commands:")
+    emitter.publish(commands_message)
+    emitter.publish(
+        "\nGet detailed command description with 'dcos <command> --help'.")
+
+    return 0
 
 
 def _help_command(command):

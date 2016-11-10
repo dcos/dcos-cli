@@ -13,6 +13,12 @@ def test_help():
                        stdout=content.read().encode('utf-8'))
 
 
+def test_dcos_help():
+    with open('tests/data/help/dcos.txt') as content:
+        assert_command(['dcos', 'help'],
+                       stdout=content.read().encode('utf-8'))
+
+
 def test_version():
     returncode, stdout, stderr = exec_command(
         ['dcos', '--version'])
