@@ -315,21 +315,6 @@ class Master(object):
 
         return self._state
 
-    def slave_base_url(self, slave):
-        """Returns the base url of the provided slave object.
-
-        :param slave: slave to create a url for
-        :type slave: Slave
-        :returns: slave's base url
-        :rtype: str
-        """
-        if self._mesos_master_url is not None:
-            slave_ip = slave['pid'].split('@')[1]
-            return 'http://{}'.format(slave_ip)
-        else:
-            return urllib.parse.urljoin(self._dcos_url,
-                                        'slave/{}/'.format(slave['id']))
-
     def slave(self, fltr):
         """Returns the slave that has `fltr` in its ID. If any slaves
         are an exact match, returns that task, id not raises a
