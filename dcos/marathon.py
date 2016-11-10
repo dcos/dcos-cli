@@ -829,6 +829,34 @@ class Client(object):
         response = self._rpc.http_req(test_for_pods, 'v2/pods')
         return response.status_code // 100 == 2
 
+    def get_queue_app(self, app_id):
+        """Returns app information inside the launch queue.
+
+        :param app_id: the app id
+        :type app_id: str
+        :returns: app information inside the launch queue
+        :rtype: dict
+        """
+
+        response = self._rpc.http_req(http.get, 'v2/queue', {'embed': 'lastUnusedOffers'})
+        app = next(
+            (app for app in response.json().get('queue')
+             if app_id == app.get('app').get('id'),
+            None)
+
+        return app
+
+    def get_queue(self):
+        """Returns the content of the launch queue, including the apps which should be scheduled.
+
+        :returns: a list of to be scheduled apps, including debug information
+        :rtype: list of dict
+        """
+
+        response = self._rpc.http_req(http.get, 'v2/queue', {'embed': 'lastUnusedOffers'})
+
+        return response.json().get('queue')
+
     @staticmethod
     def _marathon_id_path_format(url_path_template, id_path):
         """Substitutes a Marathon "ID path" into a URL path format string,
