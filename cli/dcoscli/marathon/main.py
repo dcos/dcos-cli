@@ -191,12 +191,12 @@ def _cmds():
             function=subcommand.pod_kill),
 
         cmds.Command(
-            hierarchy=['marathon', 'queue', 'list'],
+            hierarchy=['marathon', 'launchqueue', 'list'],
             arg_keys=[],
             function=subcommand.queued_apps_list),
 
         cmds.Command(
-            hierarchy=['marathon', 'queue', 'show'],
+            hierarchy=['marathon', 'launchqueue', 'show'],
             arg_keys=['<app-id>', '--details'],
             function=subcommand.queued_app_details),
 
@@ -998,12 +998,13 @@ class MarathonSubcommand(object):
         """
 
         client = self._create_marathon_client()
-        queued_apps = client.get_queued_app(app_id)
+        queued_app = client.get_queued_app(app_id)
 
-        emitting.publish_table(emitter, queued_apps, tables.queued_app_table, False)
+        if queued_app:
+            emitting.publish_table(emitter, queued_app, tables.queued_app_table, False)
 
-        if details:
-            emitting.publish_table(emitter, queued_apps, tables.queued_app_details_table, False)
+            if details:
+                emitting.publish_table(emitter, queued_app, tables.queued_app_details_table, False)
 
         return 0
 
