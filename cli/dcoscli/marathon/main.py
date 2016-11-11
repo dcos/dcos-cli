@@ -192,12 +192,12 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['marathon', 'launchqueue', 'list'],
-            arg_keys=[],
+            arg_keys=['--json'],
             function=subcommand.queued_apps_list),
 
         cmds.Command(
             hierarchy=['marathon', 'launchqueue', 'show'],
-            arg_keys=['<app-id>', '--details'],
+            arg_keys=['<app-id>', '--details', '--json'],
             function=subcommand.queued_app_details),
 
         cmds.Command(
@@ -975,8 +975,10 @@ class MarathonSubcommand(object):
         marathon_client.kill_pod_instances(pod_id, instance_ids)
         return 0
 
-    def queued_apps_list(self):
+    def queued_apps_list(self, json_):
         """
+        :param json_: output json if True
+        :type json_: bool
         :returns: process return code
         :rtype: int
         """
@@ -984,15 +986,17 @@ class MarathonSubcommand(object):
         client = self._create_marathon_client()
         queued_apps = client.get_queued_apps()
 
-        emitting.publish_table(emitter, queued_apps, tables.queued_apps_table, False)
+        emitting.publish_table(emitter, queued_apps, tables.queued_apps_table, json_)
         return 0
 
-    def queued_app_details(self, app_id, details):
+    def queued_app_details(self, app_id, details, json_):
         """
         :param app_id: the Marathon ID to display details
         :type app_id: string
         :param details: output details if True
         :type details: bool
+        :param json_: output json if True
+        :type json_: bool
         :returns: process return code
         :rtype: int
         """
@@ -1001,10 +1005,10 @@ class MarathonSubcommand(object):
         queued_app = client.get_queued_app(app_id)
 
         if queued_app:
-            emitting.publish_table(emitter, queued_app, tables.queued_app_table, False)
+            emitting.publish_table(emitter, queued_app, tables.queued_app_table, json_)
 
             if details:
-                emitting.publish_table(emitter, queued_app, tables.queued_app_details_table, False)
+                emitting.publish_table(emitter, queued_app, tables.queued_app_details_table, json_)
 
         return 0
 
