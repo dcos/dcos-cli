@@ -460,6 +460,85 @@ def pod_table(pods):
     return tb
 
 
+def queued_apps_table(queued_apps):
+    """Returns a PrettyTable representation of the Marathon launch queue content.
+
+    :param queued_apps: apps to render
+    :type queued_apps: [dict]
+    :rtype: PrettyTable
+    """
+
+    key_column = 'ID'
+    fields = OrderedDict([
+        (key_column, lambda entry: entry.get('app').get('id')),
+        ('SINCE', lambda entry: entry.get('since')),
+        ('INSTANCES TO LAUNCH', lambda entry: entry.get('count')),
+        ('OVERDUE', lambda entry: entry.get('delay').get('overdue')),
+        ('processed Offers', lambda entry: entry.get('processedOffersSummary').get('processedOffersCount')),
+        ('unused Offers', lambda entry: entry.get('processedOffersSummary').get('unusedOffersCount')),
+        ('last Unused Offer', lambda entry: entry.get('processedOffersSummary').get('lastUnusedOfferAt')),
+        ('last Used Offer', lambda entry: entry.get('processedOffersSummary').get('lastUsedOfferAt')),
+    ])
+
+    tb = table(fields, queued_apps, sortby=key_column)
+    tb.align[key_column] = 'l'
+    tb.align['SINCE'] = 'l'
+    tb.align['INSTANCES TO LAUNCH'] = 'l'
+    tb.align['OVERDUE'] = 'l'
+    tb.align['processed Offers'] = 'l'
+    tb.align['unused Offers'] = 'l'
+    tb.align['last Unused Offer'] = 'l'
+    tb.align['last Used Offer'] = 'l'
+
+    return tb
+
+
+def queued_app_table(queued_app):
+    """Returns a PrettyTable representation of the Marathon launch queue content.
+
+    :param queued_app: app to render
+    :type queued_app: dict
+    :rtype: PrettyTable
+    """
+
+    reasons = queued_app.get('processedOffersSummary').get('rejectReason')
+    key_column = 'REASON'
+    fields = OrderedDict([
+        (key_column, lambda entry: entry),
+        ('COUNT', lambda entry: reasons.get(entry)),
+    ])
+
+    tb = table(fields, reasons, sortby=key_column)
+    tb.align[key_column] = 'l'
+    tb.align['COUNT'] = 'l'
+
+    return tb
+
+
+def queued_app_details_table(queued_app):
+    """Returns a PrettyTable representation of the Marathon launch queue detailed content.
+
+    :param queued_app: app to render
+    :type queued_app: dict
+    :rtype: PrettyTable
+    """
+
+    reasons = queued_app.get('lastUnusedOffers')
+    key_column = 'OFFER'
+    fields = OrderedDict([
+        (key_column, lambda entry: entry.get('offer').get('id')),
+        ('HOSTNAME', lambda entry: entry.get('offer').get('hostname')),
+        ('REASON', lambda entry: entry.get('reason')),
+    ])
+
+    tb = table(fields, reasons)
+    tb.align[key_column] = 'l'
+    tb.align['HOSTNAME'] = 'l'
+    tb.align['REASON'] = 'l'
+
+    return tb
+
+
 def package_table(packages):
     """Returns a PrettyTable representation of the provided DC/OS packages
 
