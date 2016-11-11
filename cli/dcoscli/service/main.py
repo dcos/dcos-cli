@@ -241,7 +241,8 @@ def _get_service_app(marathon_client, service_name):
 
 
 def _log_marathon(follow, lines, ssh_config_file):
-    """Prints the contents of the marathon logs.
+    """Prints the contents of the marathon logs. Proxy through the master
+    because marathon only runs on the master.
 
     :param follow: same as unix tail's -f
     :type follow: bool
@@ -262,17 +263,21 @@ def _log_marathon(follow, lines, ssh_config_file):
         journalctl_args += '-n {} '.format(lines)
 
     leader_ip = marathon.create_client().get_leader().split(':')[0]
-
     user_string = 'core@'
     if ssh_config_file:
         user_string = ''
 
-    cmd = ("ssh {0}{1}{2} " +
-           "journalctl {3}-u dcos-marathon").format(
-               ssh_options,
-               user_string,
-               leader_ip,
-               journalctl_args)
+    dcos_client = mesos.DCOSClient()
+    master_public_ip = dcos_client.metadata().get('PUBLIC_IPV4')
+    service = 'dcos-marathon'
+
+    cmd = "ssh -At {0}{1}{2} ssh -At {0}{1}{3} journalctl {4}-u {5}".format(
+        ssh_options,
+        user_string,
+        master_public_ip,
+        leader_ip,
+        journalctl_args,
+        service)
 
     emitter.publish(DefaultError("Running `{}`".format(cmd)))
 
