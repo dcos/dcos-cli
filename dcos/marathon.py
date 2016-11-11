@@ -829,7 +829,7 @@ class Client(object):
         response = self._rpc.http_req(test_for_pods, 'v2/pods')
         return response.status_code // 100 == 2
 
-    def get_queue_app(self, app_id):
+    def get_queued_app(self, app_id):
         """Returns app information inside the launch queue.
 
         :param app_id: the app id
@@ -838,22 +838,22 @@ class Client(object):
         :rtype: dict
         """
 
-        response = self._rpc.http_req(http.get, 'v2/queue', {'embed': 'lastUnusedOffers'})
+        response = self._rpc.http_req(http.get, 'v2/queue?embed=lastUnusedOffers')
         app = next(
             (app for app in response.json().get('queue')
-             if app_id == app.get('app').get('id'),
+             if app_id == app.get('app').get('id')),
             None)
 
         return app
 
-    def get_queue(self):
+    def get_queued_apps(self):
         """Returns the content of the launch queue, including the apps which should be scheduled.
 
         :returns: a list of to be scheduled apps, including debug information
         :rtype: list of dict
         """
 
-        response = self._rpc.http_req(http.get, 'v2/queue', {'embed': 'lastUnusedOffers'})
+        response = self._rpc.http_req(http.get, 'v2/queue')
 
         return response.json().get('queue')
 
