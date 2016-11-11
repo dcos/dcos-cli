@@ -838,7 +838,8 @@ class Client(object):
         :rtype: dict
         """
 
-        response = self._rpc.http_req(http.get, 'v2/queue?embed=lastUnusedOffers')
+        response = self._rpc.http_req(http.get,
+                                      'v2/queue?embed=lastUnusedOffers')
         app = next(
             (app for app in response.json().get('queue')
              if app_id == app.get('app').get('id')),
@@ -847,7 +848,8 @@ class Client(object):
         return app
 
     def get_queued_apps(self):
-        """Returns the content of the launch queue, including the apps which should be scheduled.
+        """Returns the content of the launch queue,
+        including the apps which should be scheduled.
 
         :returns: a list of to be scheduled apps, including debug information
         :rtype: list of dict

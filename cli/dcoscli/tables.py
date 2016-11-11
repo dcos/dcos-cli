@@ -461,7 +461,8 @@ def pod_table(pods):
 
 
 def queued_apps_table(queued_apps):
-    """Returns a PrettyTable representation of the Marathon launch queue content.
+    """Returns a PrettyTable representation of the Marathon
+    launch queue content.
 
     :param queued_apps: apps to render
     :type queued_apps: [dict]
@@ -474,10 +475,18 @@ def queued_apps_table(queued_apps):
         ('SINCE', lambda entry: entry.get('since')),
         ('INSTANCES TO LAUNCH', lambda entry: entry.get('count')),
         ('OVERDUE', lambda entry: entry.get('delay').get('overdue')),
-        ('PROCESSED OFFERS', lambda entry: entry.get('processedOffersSummary').get('processedOffersCount')),
-        ('UNUSED OFFERS', lambda entry: entry.get('processedOffersSummary').get('unusedOffersCount')),
-        ('LAST UNUSED OFFER', lambda entry: entry.get('processedOffersSummary').get('lastUnusedOfferAt')),
-        ('LAST USED OFFER', lambda entry: entry.get('processedOffersSummary').get('lastUsedOfferAt')),
+        ('PROCESSED OFFERS', lambda entry: {
+            entry.get('processedOffersSummary').get('processedOffersCount')
+        }),
+        ('UNUSED OFFERS', lambda entry: {
+            entry.get('processedOffersSummary').get('unusedOffersCount')
+        }),
+        ('LAST UNUSED OFFER', lambda entry: {
+            entry.get('processedOffersSummary').get('lastUnusedOfferAt')}
+         ),
+        ('LAST USED OFFER', lambda entry: {
+            entry.get('processedOffersSummary').get('lastUsedOfferAt')
+        }),
     ])
 
     tb = table(fields, queued_apps, sortby=key_column)
@@ -494,16 +503,18 @@ def queued_apps_table(queued_apps):
 
 
 def queued_app_table(queued_app):
-    """Returns a PrettyTable representation of the Marathon launch queue content.
+    """Returns a PrettyTable representation of the Marathon
+    launch queue content.
 
     :param queued_app: app to render
     :type queued_app: dict
     :rtype: PrettyTable
     """
 
-    reject_reasons = queued_app.get('processedOffersSummary').get('rejectReason')
+    reject_reasons = queued_app.get('processedOffersSummary')\
+        .get('rejectReason')
 
-    app_definition = queued_app.get('app')
+    app = queued_app.get('app')
     rows = ['ROLE', 'CONSTRAINTS', 'RESOURCES', 'PORTS']
 
     calculations = {}
@@ -513,23 +524,23 @@ def queued_app_table(queued_app):
 
     calculations['RESOURCES']['RESOURCE'] = 'CPUs / MEM / DISK / GPUs'
 
-    if app_definition.get('acceptedResourceRoles'):
-        calculations['ROLE']['REQUESTED'] = app_definition\
+    if app.get('acceptedResourceRoles'):
+        calculations['ROLE']['REQUESTED'] = app\
             .get('acceptedResourceRoles').get('role1')
     else:
         calculations['ROLE']['REQUESTED'] = '*'
 
     calculations['ROLE']['MATCHED'] = 'TODO'
 
-    calculations['CONSTRAINTS']['REQUESTED'] = app_definition.get('constraints')
+    calculations['CONSTRAINTS']['REQUESTED'] = app.get('constraints')
     calculations['CONSTRAINTS']['MATCHED'] = 'TODO'
 
     calculations['RESOURCES']['REQUESTED'] = "{0} / {1} / {2} / {3}"\
-        .format(app_definition.get('cpus'), app_definition.get('mem'),
-                app_definition.get('disk'), app_definition.get('gpus'))
+        .format(app.get('cpus'), app.get('mem'),
+                app.get('disk'), app.get('gpus'))
     calculations['RESOURCES']['MATCHED'] = 'TODO'
 
-    calculations['PORTS']['REQUESTED'] = app_definition.get('ports')
+    calculations['PORTS']['REQUESTED'] = app.get('ports')
     calculations['PORTS']['MATCHED'] = 'TODO'
 
     fields = OrderedDict([
@@ -556,15 +567,14 @@ def queued_app_details_table(queued_app):
     """
 
     reasons = queued_app.get('lastUnusedOffers')
-    key_column = 'OFFER'
     fields = OrderedDict([
-        (key_column, lambda entry: entry.get('offer').get('id')),
+        ('OFFER ID', lambda entry: entry.get('offer').get('id')),
         ('HOSTNAME', lambda entry: entry.get('offer').get('hostname')),
         ('REASON', lambda entry: ', '.join(entry.get('reason'))),
     ])
 
-    tb = table(fields, reasons)
-    tb.align[key_column] = 'l'
+    tb = table(fields, reasons, sortby='HOSTNAME')
+    tb.align['OFFER ID'] = 'l'
     tb.align['HOSTNAME'] = 'l'
     tb.align['REASON'] = 'l'
 

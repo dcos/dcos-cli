@@ -986,7 +986,8 @@ class MarathonSubcommand(object):
         client = self._create_marathon_client()
         queued_apps = client.get_queued_apps()
 
-        emitting.publish_table(emitter, queued_apps, tables.queued_apps_table, json_)
+        emitting.publish_table(emitter, queued_apps,
+                               tables.queued_apps_table, json_)
         return 0
 
     def queued_app_details(self, app_id, details, json_):
@@ -1005,11 +1006,14 @@ class MarathonSubcommand(object):
         queued_app = client.get_queued_app(app_id)
 
         if queued_app:
-            emitting.publish_table(emitter, queued_app, tables.queued_app_table, json_)
+            emitting.publish_table(emitter, queued_app,
+                                   tables.queued_app_table, json_)
 
             if details:
                 emitter.publish('')
-                emitting.publish_table(emitter, queued_app, tables.queued_app_details_table, json_)
+                emitting.publish_table(
+                    emitter, queued_app,
+                    tables.queued_app_details_table, json_)
 
         return 0
 
