@@ -17,32 +17,6 @@ def test_version():
                    stdout=b'dcos-help version SNAPSHOT\n')
 
 
-def test_list():
-    stdout = """\
-Command line utility for the Mesosphere Datacenter Operating
-System (DC/OS). The Mesosphere DC/OS is a distributed operating
-system built around Apache Mesos. This utility provides tools
-for easy management of a DC/OS installation.
-
-Available DC/OS commands:
-
-\tauth           \tAuthenticate to DC/OS cluster
-\tconfig         \tManage the DC/OS configuration file
-\thelp           \tDisplay help information about DC/OS
-\tjob            \tDeploy and manage jobs in DC/OS
-\tmarathon       \tDeploy and manage applications to DC/OS
-\tnode           \tAdminister and manage DC/OS cluster nodes
-\tpackage        \tInstall and manage DC/OS software packages
-\tservice        \tManage DC/OS services
-\ttask           \tManage DC/OS tasks
-
-Get detailed command description with 'dcos <command> --help'.
-""".encode('utf-8')
-
-    assert_command(['dcos', 'help'],
-                   stdout=stdout)
-
-
 def test_help_config():
     with open('tests/data/help/config.txt') as content:
         assert_command(['dcos', 'help', 'config'],
