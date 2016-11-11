@@ -1008,6 +1008,7 @@ class MarathonSubcommand(object):
             emitting.publish_table(emitter, queued_app, tables.queued_app_table, json_)
 
             if details:
+                emitter.publish('')
                 emitting.publish_table(emitter, queued_app, tables.queued_app_details_table, json_)
 
         return 0

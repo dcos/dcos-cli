@@ -501,22 +501,54 @@ def queued_app_table(queued_app):
     :rtype: PrettyTable
     """
 
-    reasons = queued_app.get('processedOffersSummary').get('rejectReason')
-    key_column = 'REASON'
+    reject_reasons = queued_app.get('processedOffersSummary').get('rejectReason')
+
+    app_definition = queued_app.get('app')
+    rows = ['ROLE', 'CONSTRAINTS', 'RESOURCES', 'PORTS']
+
+    calculations = {}
+    for reason in rows:
+        calculations[reason] = {}
+        calculations[reason]['RESOURCE'] = reason
+
+    calculations['RESOURCES']['RESOURCE'] = 'CPUs / MEM / DISK / GPUs'
+
+    if app_definition.get('acceptedResourceRoles'):
+        calculations['ROLE']['REQUESTED'] = app_definition\
+            .get('acceptedResourceRoles').get('role1')
+    else:
+        calculations['ROLE']['REQUESTED'] = '*'
+
+    calculations['ROLE']['MATCHED'] = 'TODO'
+
+    calculations['CONSTRAINTS']['REQUESTED'] = app_definition.get('constraints')
+    calculations['CONSTRAINTS']['MATCHED'] = 'TODO'
+
+    calculations['RESOURCES']['REQUESTED'] = "{0} / {1} / {2} / {3}"\
+        .format(app_definition.get('cpus'), app_definition.get('mem'),
+                app_definition.get('disk'), app_definition.get('gpus'))
+    calculations['RESOURCES']['MATCHED'] = 'TODO'
+
+    calculations['PORTS']['REQUESTED'] = app_definition.get('ports')
+    calculations['PORTS']['MATCHED'] = 'TODO'
+
     fields = OrderedDict([
-        (key_column, lambda entry: entry),
-        ('COUNT', lambda entry: reasons.get(entry)),
+        ('RESOURCE', lambda entry: calculations.get(entry).get('RESOURCE')),
+        ('REQUESTED', lambda entry: calculations.get(entry).get('REQUESTED')),
+        ('MATCHED', lambda entry: calculations.get(entry).get('MATCHED')),
     ])
 
-    tb = table(fields, reasons, sortby=key_column)
-    tb.align[key_column] = 'l'
-    tb.align['COUNT'] = 'l'
+    tb = table(fields, rows)
+    tb.align['RESOURCE'] = 'l'
+    tb.align['REQUESTED'] = 'l'
+    tb.align['MATCHED'] = 'l'
 
     return tb
 
 
 def queued_app_details_table(queued_app):
-    """Returns a PrettyTable representation of the Marathon launch queue detailed content.
+    """Returns a PrettyTable representation of the Marathon
+    launch queue detailed content.
 
     :param queued_app: app to render
     :type queued_app: dict
@@ -528,7 +560,7 @@ def queued_app_details_table(queued_app):
     fields = OrderedDict([
         (key_column, lambda entry: entry.get('offer').get('id')),
         ('HOSTNAME', lambda entry: entry.get('offer').get('hostname')),
-        ('REASON', lambda entry: entry.get('reason')),
+        ('REASON', lambda entry: ', '.join(entry.get('reason'))),
     ])
 
     tb = table(fields, reasons)
