@@ -474,10 +474,10 @@ def queued_apps_table(queued_apps):
         ('SINCE', lambda entry: entry.get('since')),
         ('INSTANCES TO LAUNCH', lambda entry: entry.get('count')),
         ('OVERDUE', lambda entry: entry.get('delay').get('overdue')),
-        ('processed Offers', lambda entry: entry.get('processedOffersSummary').get('processedOffersCount')),
-        ('unused Offers', lambda entry: entry.get('processedOffersSummary').get('unusedOffersCount')),
-        ('last Unused Offer', lambda entry: entry.get('processedOffersSummary').get('lastUnusedOfferAt')),
-        ('last Used Offer', lambda entry: entry.get('processedOffersSummary').get('lastUsedOfferAt')),
+        ('PROCESSED OFFERS', lambda entry: entry.get('processedOffersSummary').get('processedOffersCount')),
+        ('UNUSED OFFERS', lambda entry: entry.get('processedOffersSummary').get('unusedOffersCount')),
+        ('LAST UNUSED OFFER', lambda entry: entry.get('processedOffersSummary').get('lastUnusedOfferAt')),
+        ('LAST USED OFFER', lambda entry: entry.get('processedOffersSummary').get('lastUsedOfferAt')),
     ])
 
     tb = table(fields, queued_apps, sortby=key_column)
@@ -485,10 +485,10 @@ def queued_apps_table(queued_apps):
     tb.align['SINCE'] = 'l'
     tb.align['INSTANCES TO LAUNCH'] = 'l'
     tb.align['OVERDUE'] = 'l'
-    tb.align['processed Offers'] = 'l'
-    tb.align['unused Offers'] = 'l'
-    tb.align['last Unused Offer'] = 'l'
-    tb.align['last Used Offer'] = 'l'
+    tb.align['PROCESSED OFFERS'] = 'l'
+    tb.align['UNUSED OFFERS'] = 'l'
+    tb.align['LAST UNUSED OFFER'] = 'l'
+    tb.align['LAST USED OFFER'] = 'l'
 
     return tb
 
