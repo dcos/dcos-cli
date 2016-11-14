@@ -469,24 +469,38 @@ def queued_apps_table(queued_apps):
     :rtype: PrettyTable
     """
 
+    def extract_value_from_entry(entry, value):
+        """Extracts the value parameter from given row entry. If value
+        is not present, EMPTY_LINE will be returned
+
+        :param entry: row entry
+        :type entry: [dict]
+        :param entry: value which should be extracted
+        :type entry: string
+        :rtype: PrettyTable
+        """
+        if entry.get('processedOffersSummary'):
+            return entry.get('processedOffersSummary').get(value)
+        else: return EMPTY_ENTRY
+
     key_column = 'ID'
     fields = OrderedDict([
         (key_column, lambda entry: entry.get('app').get('id')),
         ('SINCE', lambda entry: entry.get('since')),
         ('INSTANCES TO LAUNCH', lambda entry: entry.get('count')),
         ('OVERDUE', lambda entry: entry.get('delay').get('overdue')),
-        ('PROCESSED OFFERS', lambda entry: {
-            entry.get('processedOffersSummary').get('processedOffersCount')
-        }),
-        ('UNUSED OFFERS', lambda entry: {
-            entry.get('processedOffersSummary').get('unusedOffersCount')
-        }),
-        ('LAST UNUSED OFFER', lambda entry: {
-            entry.get('processedOffersSummary').get('lastUnusedOfferAt')}
-         ),
-        ('LAST USED OFFER', lambda entry: {
-            entry.get('processedOffersSummary').get('lastUsedOfferAt')
-        }),
+        ('PROCESSED OFFERS', lambda entry:
+            extract_value_from_entry(entry, 'processedOffersCount')
+        ),
+        ('UNUSED OFFERS', lambda entry:
+            extract_value_from_entry(entry, 'unusedOffersCount')
+        ),
+        ('LAST UNUSED OFFER', lambda entry:
+            extract_value_from_entry(entry, 'lastUnusedOfferAt')
+        ),
+        ('LAST USED OFFER', lambda entry:
+            extract_value_from_entry(entry, 'lastUsedOfferAt')
+        ),
     ])
 
     tb = table(fields, queued_apps, sortby=key_column)
@@ -511,48 +525,96 @@ def queued_app_table(queued_app):
     :rtype: PrettyTable
     """
 
-    reject_reasons = queued_app.get('processedOffersSummary')\
-        .get('rejectReason')
-
-    app = queued_app.get('app')
-    rows = ['ROLE', 'CONSTRAINTS', 'RESOURCES', 'PORTS']
-
-    calculations = {}
-    for reason in rows:
-        calculations[reason] = {}
-        calculations[reason]['RESOURCE'] = reason
-
-    calculations['RESOURCES']['RESOURCE'] = 'CPUs / MEM / DISK / GPUs'
-
-    if app.get('acceptedResourceRoles'):
-        calculations['ROLE']['REQUESTED'] = app\
-            .get('acceptedResourceRoles').get('role1')
-    else:
-        calculations['ROLE']['REQUESTED'] = '*'
-
-    calculations['ROLE']['MATCHED'] = 'TODO'
-
-    calculations['CONSTRAINTS']['REQUESTED'] = app.get('constraints')
-    calculations['CONSTRAINTS']['MATCHED'] = 'TODO'
-
-    calculations['RESOURCES']['REQUESTED'] = "{0} / {1} / {2} / {3}"\
-        .format(app.get('cpus'), app.get('mem'),
-                app.get('disk'), app.get('gpus'))
-    calculations['RESOURCES']['MATCHED'] = 'TODO'
-
-    calculations['PORTS']['REQUESTED'] = app.get('ports')
-    calculations['PORTS']['MATCHED'] = 'TODO'
-
     fields = OrderedDict([
         ('RESOURCE', lambda entry: calculations.get(entry).get('RESOURCE')),
         ('REQUESTED', lambda entry: calculations.get(entry).get('REQUESTED')),
-        ('MATCHED', lambda entry: calculations.get(entry).get('MATCHED')),
+        ('DECLINED', lambda entry: calculations.get(entry).get('DECLINED')),
+        ('DECLINED PERCENTAGE', lambda entry: calculations.get(entry).get('DECLINED PERCENTAGE')),
     ])
 
-    tb = table(fields, rows)
-    tb.align['RESOURCE'] = 'l'
-    tb.align['REQUESTED'] = 'l'
-    tb.align['MATCHED'] = 'l'
+    """Make sure only display this table if api offers according information"""
+    if queued_app.get('processedOffersSummary'):
+        reject_reasons = queued_app.get('processedOffersSummary')\
+            .get('rejectReason')
+
+        processed_offers = queued_app.get('processedOffersSummary').get('processedOffersCount')
+
+        declined_by_role = reject_reasons.get('UnfulfilledRole') or 0
+        declined_by_constraints = reject_reasons.get('UnfulfilledConstraint') or 0
+        declined_by_cpus = reject_reasons.get('InsufficientCpus') or 0
+        declined_by_mem = reject_reasons.get('InsufficientMemory') or 0
+        declined_by_disk = reject_reasons.get('InsufficientDisk') or 0
+        declined_by_gpus = reject_reasons.get('InsufficientGpus') or 0
+        declined_by_ports = reject_reasons.get('InsufficientPorts') or 0
+
+        matched_constraints_and_roles = \
+            processed_offers - declined_by_role - declined_by_constraints
+
+        app = queued_app.get('app')
+        rows = ['ROLE', 'CONSTRAINTS', 'CPUS', 'MEM', 'DISK', 'GPUS', 'PORTS']
+
+        calculations = {}
+        for reason in rows:
+            calculations[reason] = {}
+            calculations[reason]['RESOURCE'] = reason
+
+        if app.get('acceptedResourceRoles'):
+            calculations['ROLE']['REQUESTED'] = app\
+                .get('acceptedResourceRoles').get('role1')
+        else:
+            calculations['ROLE']['REQUESTED'] = '*'
+
+        calculations['ROLE']['DECLINED'] = '{0} / {1}'\
+            .format(declined_by_role, processed_offers)
+        calculations['ROLE']['DECLINED PERCENTAGE'] = \
+            '{0:0.2f}%'.format(100 * declined_by_role / processed_offers)
+
+        calculations['CONSTRAINTS']['REQUESTED'] = app.get('constraints')
+        calculations['CONSTRAINTS']['DECLINED'] = '{0} / {1}' \
+            .format(declined_by_constraints, processed_offers - declined_by_role)
+        calculations['CONSTRAINTS']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
+            100 * declined_by_constraints / (processed_offers - declined_by_role))
+
+        calculations['CPUS']['REQUESTED'] = app.get('cpus')
+        calculations['CPUS']['DECLINED'] = '{0} / {1}' \
+            .format(declined_by_cpus, matched_constraints_and_roles)
+        calculations['CPUS']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
+            100 * declined_by_cpus / matched_constraints_and_roles)
+
+        calculations['MEM']['REQUESTED'] = app.get('mem')
+        calculations['MEM']['DECLINED'] = '{0} / {1}' \
+            .format(declined_by_mem, matched_constraints_and_roles)
+        calculations['MEM']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
+            100 * declined_by_mem / matched_constraints_and_roles)
+
+
+        calculations['DISK']['REQUESTED'] = app.get('disk')
+        calculations['DISK']['DECLINED'] = '{0} / {1}' \
+            .format(declined_by_disk, matched_constraints_and_roles)
+        calculations['DISK']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
+            100 * declined_by_disk / matched_constraints_and_roles)
+
+
+        calculations['GPUS']['REQUESTED'] = app.get('gpus')
+        calculations['GPUS']['DECLINED'] = '{0} / {1}' \
+            .format(declined_by_gpus, matched_constraints_and_roles)
+        calculations['GPUS']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
+            100 * declined_by_gpus / matched_constraints_and_roles)
+
+
+        calculations['PORTS']['REQUESTED'] = app.get('ports')
+        calculations['PORTS']['DECLINED'] = '{0} / {1}' \
+            .format(declined_by_ports, matched_constraints_and_roles)
+        calculations['PORTS']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
+            100 * declined_by_ports / matched_constraints_and_roles)
+
+        tb = table(fields, rows, sortby='DECLINED PERCENTAGE', reversesort=True)
+        tb.align['RESOURCE'] = 'l'
+        tb.align['REQUESTED'] = 'l'
+        tb.align['DECLINED'] = 'l'
+        tb.align['DECLINED PERCENTAGE'] = 'l'
+    else:
+        tb = table(fields, [])
 
     return tb
 
