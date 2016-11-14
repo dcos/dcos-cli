@@ -630,15 +630,15 @@ def queued_app_details_table(queued_app):
 
     reasons = queued_app.get('lastUnusedOffers')
     fields = OrderedDict([
-        ('OFFER ID', lambda entry: entry.get('offer').get('id')),
         ('HOSTNAME', lambda entry: entry.get('offer').get('hostname')),
         ('REASON', lambda entry: ', '.join(entry.get('reason'))),
+        ('RECEIVED', lambda entry: entry.get('timestamp')),
     ])
 
     tb = table(fields, reasons, sortby='HOSTNAME')
-    tb.align['OFFER ID'] = 'l'
     tb.align['HOSTNAME'] = 'l'
     tb.align['REASON'] = 'l'
+    tb.align['RECEIVED'] = 'l'
 
     return tb
 
