@@ -481,7 +481,8 @@ def queued_apps_table(queued_apps):
         """
         if entry.get('processedOffersSummary'):
             return entry.get('processedOffersSummary').get(value)
-        else: return EMPTY_ENTRY
+        else:
+            return EMPTY_ENTRY
 
     key_column = 'ID'
     fields = OrderedDict([
@@ -490,17 +491,13 @@ def queued_apps_table(queued_apps):
         ('INSTANCES TO LAUNCH', lambda entry: entry.get('count')),
         ('OVERDUE', lambda entry: entry.get('delay').get('overdue')),
         ('PROCESSED OFFERS', lambda entry:
-            extract_value_from_entry(entry, 'processedOffersCount')
-        ),
+            extract_value_from_entry(entry, 'processedOffersCount')),
         ('UNUSED OFFERS', lambda entry:
-            extract_value_from_entry(entry, 'unusedOffersCount')
-        ),
+            extract_value_from_entry(entry, 'unusedOffersCount')),
         ('LAST UNUSED OFFER', lambda entry:
-            extract_value_from_entry(entry, 'lastUnusedOfferAt')
-        ),
+            extract_value_from_entry(entry, 'lastUnusedOfferAt')),
         ('LAST USED OFFER', lambda entry:
-            extract_value_from_entry(entry, 'lastUsedOfferAt')
-        ),
+            extract_value_from_entry(entry, 'lastUsedOfferAt')),
     ])
 
     tb = table(fields, queued_apps, sortby=key_column)
@@ -529,23 +526,25 @@ def queued_app_table(queued_app):
         ('RESOURCE', lambda entry: calculations.get(entry).get('RESOURCE')),
         ('REQUESTED', lambda entry: calculations.get(entry).get('REQUESTED')),
         ('DECLINED', lambda entry: calculations.get(entry).get('DECLINED')),
-        ('DECLINED PERCENTAGE', lambda entry: calculations.get(entry).get('DECLINED PERCENTAGE')),
+        ('DECLINED PERCENTAGE', lambda entry:
+            calculations.get(entry).get('DECLINED PERCENTAGE')),
     ])
 
     """Make sure only display this table if api offers according information"""
     if queued_app.get('processedOffersSummary'):
-        reject_reasons = queued_app.get('processedOffersSummary')\
+        reasons = queued_app.get('processedOffersSummary')\
             .get('rejectReason')
 
-        processed_offers = queued_app.get('processedOffersSummary').get('processedOffersCount')
+        processed_offers = queued_app.get('processedOffersSummary')\
+            .get('processedOffersCount')
 
-        declined_by_role = reject_reasons.get('UnfulfilledRole') or 0
-        declined_by_constraints = reject_reasons.get('UnfulfilledConstraint') or 0
-        declined_by_cpus = reject_reasons.get('InsufficientCpus') or 0
-        declined_by_mem = reject_reasons.get('InsufficientMemory') or 0
-        declined_by_disk = reject_reasons.get('InsufficientDisk') or 0
-        declined_by_gpus = reject_reasons.get('InsufficientGpus') or 0
-        declined_by_ports = reject_reasons.get('InsufficientPorts') or 0
+        declined_by_role = reasons.get('UnfulfilledRole') or 0
+        declined_by_constraints = reasons.get('UnfulfilledConstraint') or 0
+        declined_by_cpus = reasons.get('InsufficientCpus') or 0
+        declined_by_mem = reasons.get('InsufficientMemory') or 0
+        declined_by_disk = reasons.get('InsufficientDisk') or 0
+        declined_by_gpus = reasons.get('InsufficientGpus') or 0
+        declined_by_ports = reasons.get('InsufficientPorts') or 0
 
         matched_constraints_and_roles = \
             processed_offers - declined_by_role - declined_by_constraints
@@ -571,9 +570,11 @@ def queued_app_table(queued_app):
 
         calculations['CONSTRAINTS']['REQUESTED'] = app.get('constraints')
         calculations['CONSTRAINTS']['DECLINED'] = '{0} / {1}' \
-            .format(declined_by_constraints, processed_offers - declined_by_role)
-        calculations['CONSTRAINTS']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
-            100 * declined_by_constraints / (processed_offers - declined_by_role))
+            .format(declined_by_constraints,
+                    processed_offers - declined_by_role)
+        calculations['CONSTRAINTS']['DECLINED PERCENTAGE'] = '{0:0.2f}%'\
+            .format(100 * declined_by_constraints /
+                    (processed_offers - declined_by_role))
 
         calculations['CPUS']['REQUESTED'] = app.get('cpus')
         calculations['CPUS']['DECLINED'] = '{0} / {1}' \
@@ -587,13 +588,11 @@ def queued_app_table(queued_app):
         calculations['MEM']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
             100 * declined_by_mem / matched_constraints_and_roles)
 
-
         calculations['DISK']['REQUESTED'] = app.get('disk')
         calculations['DISK']['DECLINED'] = '{0} / {1}' \
             .format(declined_by_disk, matched_constraints_and_roles)
         calculations['DISK']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
             100 * declined_by_disk / matched_constraints_and_roles)
-
 
         calculations['GPUS']['REQUESTED'] = app.get('gpus')
         calculations['GPUS']['DECLINED'] = '{0} / {1}' \
@@ -601,14 +600,15 @@ def queued_app_table(queued_app):
         calculations['GPUS']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
             100 * declined_by_gpus / matched_constraints_and_roles)
 
-
         calculations['PORTS']['REQUESTED'] = app.get('ports')
         calculations['PORTS']['DECLINED'] = '{0} / {1}' \
             .format(declined_by_ports, matched_constraints_and_roles)
         calculations['PORTS']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
             100 * declined_by_ports / matched_constraints_and_roles)
 
-        tb = table(fields, rows, sortby='DECLINED PERCENTAGE', reversesort=True)
+        tb = table(fields, rows,
+                   sortby='DECLINED PERCENTAGE',
+                   reversesort=True)
         tb.align['RESOURCE'] = 'l'
         tb.align['REQUESTED'] = 'l'
         tb.align['DECLINED'] = 'l'
