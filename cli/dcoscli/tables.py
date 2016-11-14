@@ -523,33 +523,40 @@ def queued_app_table(queued_app):
     """
 
     fields = OrderedDict([
-        ('RESOURCE', lambda entry: calculations.get(entry).get('RESOURCE')),
-        ('REQUESTED', lambda entry: calculations.get(entry).get('REQUESTED')),
-        ('DECLINED', lambda entry: calculations.get(entry).get('DECLINED')),
+        ('RESOURCE', lambda entry:
+            calculations.get(entry, {}).get('RESOURCE', EMPTY_ENTRY)
+         ),
+        ('REQUESTED', lambda entry:
+            calculations.get(entry, {}).get('REQUESTED', EMPTY_ENTRY)
+         ),
+        ('DECLINED', lambda entry:
+            calculations.get(entry, {}).get('DECLINED', EMPTY_ENTRY)
+         ),
         ('DECLINED PERCENTAGE', lambda entry:
-            calculations.get(entry).get('DECLINED PERCENTAGE')),
+            calculations.get(entry, {}).get('DECLINED PERCENTAGE', EMPTY_ENTRY)
+         ),
     ])
 
     """Make sure only display this table if api offers according information"""
     if queued_app.get('processedOffersSummary'):
-        reasons = queued_app.get('processedOffersSummary')\
-            .get('rejectReason')
+        reasons = queued_app.get('processedOffersSummary', {})\
+            .get('rejectReason', {})
 
-        processed_offers = queued_app.get('processedOffersSummary')\
-            .get('processedOffersCount')
+        processed_offers = queued_app.get('processedOffersSummary', {})\
+            .get('processedOffersCount', 0)
 
-        declined_by_role = reasons.get('UnfulfilledRole') or 0
-        declined_by_constraints = reasons.get('UnfulfilledConstraint') or 0
-        declined_by_cpus = reasons.get('InsufficientCpus') or 0
-        declined_by_mem = reasons.get('InsufficientMemory') or 0
-        declined_by_disk = reasons.get('InsufficientDisk') or 0
-        declined_by_gpus = reasons.get('InsufficientGpus') or 0
-        declined_by_ports = reasons.get('InsufficientPorts') or 0
+        declined_by_role = reasons.get('UnfulfilledRole', 0)
+        declined_by_constraints = reasons.get('UnfulfilledConstraint', 0)
+        declined_by_cpus = reasons.get('InsufficientCpus', 0)
+        declined_by_mem = reasons.get('InsufficientMemory', 0)
+        declined_by_disk = reasons.get('InsufficientDisk', 0)
+        declined_by_gpus = reasons.get('InsufficientGpus', 0)
+        declined_by_ports = reasons.get('InsufficientPorts', 0)
 
         matched_constraints_and_roles = \
             processed_offers - declined_by_role - declined_by_constraints
 
-        app = queued_app.get('app')
+        app = queued_app.get('app', {})
         rows = ['ROLE', 'CONSTRAINTS', 'CPUS', 'MEM', 'DISK', 'GPUS', 'PORTS']
 
         calculations = {}
@@ -557,18 +564,15 @@ def queued_app_table(queued_app):
             calculations[reason] = {}
             calculations[reason]['RESOURCE'] = reason
 
-        if app.get('acceptedResourceRoles'):
-            calculations['ROLE']['REQUESTED'] = app\
-                .get('acceptedResourceRoles').get('role1')
-        else:
-            calculations['ROLE']['REQUESTED'] = '*'
-
+        calculations['ROLE']['REQUESTED'] = app \
+            .get('acceptedResourceRoles', {}).get('role1', '*')
         calculations['ROLE']['DECLINED'] = '{0} / {1}'\
             .format(declined_by_role, processed_offers)
         calculations['ROLE']['DECLINED PERCENTAGE'] = \
             '{0:0.2f}%'.format(100 * declined_by_role / processed_offers)
 
-        calculations['CONSTRAINTS']['REQUESTED'] = app.get('constraints')
+        calculations['CONSTRAINTS']['REQUESTED'] = app.\
+            get('constraints', EMPTY_ENTRY)
         calculations['CONSTRAINTS']['DECLINED'] = '{0} / {1}' \
             .format(declined_by_constraints,
                     processed_offers - declined_by_role)
@@ -576,31 +580,31 @@ def queued_app_table(queued_app):
             .format(100 * declined_by_constraints /
                     (processed_offers - declined_by_role))
 
-        calculations['CPUS']['REQUESTED'] = app.get('cpus')
+        calculations['CPUS']['REQUESTED'] = app.get('cpus', EMPTY_ENTRY)
         calculations['CPUS']['DECLINED'] = '{0} / {1}' \
             .format(declined_by_cpus, matched_constraints_and_roles)
         calculations['CPUS']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
             100 * declined_by_cpus / matched_constraints_and_roles)
 
-        calculations['MEM']['REQUESTED'] = app.get('mem')
+        calculations['MEM']['REQUESTED'] = app.get('mem', EMPTY_ENTRY)
         calculations['MEM']['DECLINED'] = '{0} / {1}' \
             .format(declined_by_mem, matched_constraints_and_roles)
         calculations['MEM']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
             100 * declined_by_mem / matched_constraints_and_roles)
 
-        calculations['DISK']['REQUESTED'] = app.get('disk')
+        calculations['DISK']['REQUESTED'] = app.get('disk', EMPTY_ENTRY)
         calculations['DISK']['DECLINED'] = '{0} / {1}' \
             .format(declined_by_disk, matched_constraints_and_roles)
         calculations['DISK']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
             100 * declined_by_disk / matched_constraints_and_roles)
 
-        calculations['GPUS']['REQUESTED'] = app.get('gpus')
+        calculations['GPUS']['REQUESTED'] = app.get('gpus', EMPTY_ENTRY)
         calculations['GPUS']['DECLINED'] = '{0} / {1}' \
             .format(declined_by_gpus, matched_constraints_and_roles)
         calculations['GPUS']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
             100 * declined_by_gpus / matched_constraints_and_roles)
 
-        calculations['PORTS']['REQUESTED'] = app.get('ports')
+        calculations['PORTS']['REQUESTED'] = app.get('ports', EMPTY_ENTRY)
         calculations['PORTS']['DECLINED'] = '{0} / {1}' \
             .format(declined_by_ports, matched_constraints_and_roles)
         calculations['PORTS']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
@@ -630,9 +634,15 @@ def queued_app_details_table(queued_app):
 
     reasons = queued_app.get('lastUnusedOffers')
     fields = OrderedDict([
-        ('HOSTNAME', lambda entry: entry.get('offer').get('hostname')),
-        ('REASON', lambda entry: ', '.join(entry.get('reason'))),
-        ('RECEIVED', lambda entry: entry.get('timestamp')),
+        ('HOSTNAME', lambda entry:
+            entry.get('offer', {}).get('hostname', EMPTY_ENTRY)
+         ),
+        ('REASON', lambda entry:
+            ', '.join(entry.get('reason'))
+         ),
+        ('RECEIVED', lambda entry:
+            entry.get('timestamp')
+         ),
     ])
 
     tb = table(fields, reasons, sortby='HOSTNAME')
