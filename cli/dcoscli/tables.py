@@ -479,25 +479,34 @@ def queued_apps_table(queued_apps):
         :type entry: string
         :rtype: PrettyTable
         """
-        if entry.get('processedOffersSummary'):
-            return entry.get('processedOffersSummary').get(value)
-        else:
-            return EMPTY_ENTRY
+        return entry.get('processedOffersSummary', {}).get(value, EMPTY_ENTRY)
 
     key_column = 'ID'
     fields = OrderedDict([
-        (key_column, lambda entry: entry.get('app').get('id')),
-        ('SINCE', lambda entry: entry.get('since')),
-        ('INSTANCES TO LAUNCH', lambda entry: entry.get('count')),
-        ('OVERDUE', lambda entry: entry.get('delay').get('overdue')),
+        (key_column, lambda entry:
+            entry.get('app', {}).get('id', EMPTY_ENTRY)
+         ),
+        ('SINCE', lambda entry:
+            entry.get('since', EMPTY_ENTRY)
+         ),
+        ('INSTANCES TO LAUNCH', lambda entry:
+            entry.get('count', EMPTY_ENTRY)
+         ),
+        ('OVERDUE', lambda entry:
+            entry.get('delay', {}).get('overdue', EMPTY_ENTRY)
+         ),
         ('PROCESSED OFFERS', lambda entry:
-            extract_value_from_entry(entry, 'processedOffersCount')),
+            extract_value_from_entry(entry, 'processedOffersCount')
+         ),
         ('UNUSED OFFERS', lambda entry:
-            extract_value_from_entry(entry, 'unusedOffersCount')),
+            extract_value_from_entry(entry, 'unusedOffersCount')
+         ),
         ('LAST UNUSED OFFER', lambda entry:
-            extract_value_from_entry(entry, 'lastUnusedOfferAt')),
+            extract_value_from_entry(entry, 'lastUnusedOfferAt')
+         ),
         ('LAST USED OFFER', lambda entry:
-            extract_value_from_entry(entry, 'lastUsedOfferAt')),
+            extract_value_from_entry(entry, 'lastUsedOfferAt')
+         ),
     ])
 
     tb = table(fields, queued_apps, sortby=key_column)
@@ -539,11 +548,10 @@ def queued_app_table(queued_app):
 
     """Make sure only display this table if api offers according information"""
     if queued_app.get('processedOffersSummary'):
-        reasons = queued_app.get('processedOffersSummary', {})\
-            .get('rejectReason', {})
+        summary = queued_app.get('processedOffersSummary', {})
+        reasons = summary.get('rejectReason', {})
 
-        processed_offers = queued_app.get('processedOffersSummary', {})\
-            .get('processedOffersCount', 0)
+        processed_offers = summary.get('processedOffersCount', 0)
 
         declined_by_role = reasons.get('UnfulfilledRole', 0)
         declined_by_constraints = reasons.get('UnfulfilledConstraint', 0)
