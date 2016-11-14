@@ -649,7 +649,7 @@ def queued_app_details_table(queued_app):
             ', '.join(entry.get('reason'))
          ),
         ('RECEIVED', lambda entry:
-            entry.get('timestamp')
+            entry.get('timestamp', EMPTY_ENTRY)
          ),
     ])
 
