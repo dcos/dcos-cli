@@ -34,7 +34,8 @@ Usage:
     dcos marathon pod show <pod-id>
     dcos marathon pod update [--force] <pod-id>
     dcos marathon launchqueue list [--json]
-    dcos marathon launchqueue show <app-id> [--details] [--json]
+    dcos marathon launchqueue summary <app-id> [--json]
+    dcos marathon launchqueue details <app-id> [--json]
     dcos marathon task list [--json <app-id>]
     dcos marathon task stop [--wipe] <task-id>
     dcos marathon task show <task-id>
