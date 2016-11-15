@@ -117,5 +117,6 @@ def signal_handler(signal, frame):
         errors.DefaultError("User interrupted command with Ctrl-C"))
     sys.exit(0)
 
+
 if __name__ == "__main__":
     sys.exit(main())

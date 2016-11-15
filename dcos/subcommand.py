@@ -391,6 +391,7 @@ def uninstall(package_name):
 
     return False
 
+
 BIN_DIRECTORY = 'Scripts' if util.is_windows_platform() else 'bin'
 
 
