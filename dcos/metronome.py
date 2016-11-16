@@ -1,12 +1,11 @@
 import json
-import jsonschema
-import pkg_resources
+
 
 from dcoscli.package.main import get_cosmos_url
 from six.moves import urllib
 
-from dcos import config, cosmospackage, http, util
-from dcos.errors import DCOSException, DCOSHTTPException
+from dcos import config, cosmospackage, http, rpcclient, util
+from dcos.errors import DCOSException
 
 logger = util.get_logger(__name__)
 
@@ -25,7 +24,7 @@ def create_client(toml_config=None):
 
     metronome_url = _get_metronome_url(toml_config)
     timeout = config.get_config_val('core.timeout') or http.DEFAULT_TIMEOUT
-    rpc_client = RpcClient(metronome_url, timeout)
+    rpc_client = rpcclient.create_client(metronome_url, timeout)
 
     logger.info('Creating metronome client with: %r', metronome_url)
     return Client(rpc_client)
@@ -51,139 +50,6 @@ def _get_metronome_url(toml_config=None):
         metronome_url = urllib.parse.urljoin(dcos_url, 'service/metronome/')
 
     return metronome_url
-
-
-def load_error_json_schema():
-    """Reads and parses Jobs error response JSON schema from file
-
-    :returns: the parsed JSON schema
-    :rtype: dict
-    """
-    schema_path = 'data/marathon/error.schema.json'
-    schema_bytes = pkg_resources.resource_string('dcos', schema_path)
-    return json.loads(schema_bytes.decode('utf-8'))
-
-
-class RpcClient(object):
-    """Convenience class for making requests against a common RPC API.
-
-    For example, it ensures the same base URL is used for all requests. This
-    class is also useful as a target for mocks in unit tests, because it
-    presents a minimal, application-focused interface.
-
-    :param base_url: the URL prefix to use for all requests
-    :type base_url: str
-    :param timeout: number of seconds to wait for a response
-    :type timeout: float
-    """
-
-    def __init__(self, base_url, timeout=http.DEFAULT_TIMEOUT):
-        if not base_url.endswith('/'):
-            base_url += '/'
-        self._base_url = base_url
-        self._timeout = timeout
-
-    ERROR_JSON_VALIDATOR = jsonschema.Draft4Validator(load_error_json_schema())
-    RESOURCE_TYPES = ['app', 'group', 'pod']
-
-    @classmethod
-    def response_error_message(cls, status_code, reason, request_method,
-                               request_url, json_body):
-        """Renders a human-readable error message from the given response data.
-
-        :param status_code: the integer status code from an HTTP response
-        :type status_code: int
-        :param reason: human-readable text representation of the status code
-        :type reason: str
-        :param request_method: the HTTP method used for the request
-        :type request_method: str
-        :param request_url: the URL the request was sent to
-        :type request_url: str
-        :param json_body: the response body, parsed as JSON, or None if
-                          parsing failed
-        :type json_body: dict | list | str | int | bool | None
-        :return: the rendered error message
-        :rtype: str
-        """
-
-        if status_code == 400:
-            template = 'Error on request [{} {}]: HTTP 400: {}{}'
-            suffix = ''
-            if json_body is not None:
-                json_str = json.dumps(json_body, indent=2, sort_keys=True)
-                suffix = ':\n' + json_str
-            return template.format(request_method, request_url, reason, suffix)
-
-        if status_code == 409:
-            path = urllib.parse.urlparse(request_url).path
-            path_name = (name for name in cls.RESOURCE_TYPES if name in path)
-            resource_name = next(path_name, 'resource')
-
-            template = ('Changes blocked: '
-                        'deployment already in progress for {}.')
-            return template.format(resource_name)
-
-        if json_body is None:
-            template = 'Error decoding response from [{}]: HTTP {}: {}'
-            return template.format(request_url, status_code, reason)
-
-        if not cls.ERROR_JSON_VALIDATOR.is_valid(json_body):
-            log_str = 'Metronome server did not return a message: %s'
-            logger.error(log_str, json_body)
-
-            return _default_metronome_error()
-
-        message = json_body.get('message')
-        if message is None:
-            message = '\n'.join(err['error'] for err in json_body['errors'])
-            return _default_metronome_error(message)
-
-        return 'Error: {}'.format(message)
-
-    def http_req(self, method_fn, path, *args, **kwargs):
-        """Make an HTTP request, and raise a metronome-specific exception for
-        HTTP error codes.
-
-        :param method_fn: function to call that invokes a specific HTTP method
-        :type method_fn: function
-        :param path: the endpoint path to append to this object's base URL
-        :type path: str
-        :param args: additional args to pass to `method_fn`
-        :type args: [object]
-        :param kwargs: kwargs to pass to `method_fn`
-        :type kwargs: dict
-        :returns: `method_fn` return value
-        :rtype: requests.Response
-        """
-
-        url = self._base_url + path.lstrip('/')
-
-        if 'timeout' not in kwargs:
-            kwargs['timeout'] = self._timeout
-
-        try:
-            return method_fn(url, *args, **kwargs)
-        except DCOSHTTPException as e:
-
-            logger.error('Metronome Error: %s\n%s',
-                         e.response.reason, e.response.text)
-
-            try:
-                json_body = e.response.json()
-            except:
-                logger.exception(
-                    'Unable to decode response body as a JSON value: %r',
-                    e.response)
-
-                json_body = None
-
-            message = RpcClient.response_error_message(
-                status_code=e.response.status_code,
-                reason=e.response.reason,
-                request_method=e.response.request.method,
-                request_url=e.response.request.url,
-                json_body=json_body)
-            raise DCOSException(message)
 
 
 class Client(object):
@@ -531,16 +397,3 @@ def _check_capability():
         raise DCOSException(
             'DC/OS backend does not support metronome capabilities in this '
             'version. Must be DC/OS >= 1.8')
-
-
-def _default_metronome_error(message=""):
-    """
-    :param message: additional message
-    :type message: str
-    :returns: metronome specific error message
-    :rtype: str
-    """
-
-    return ("Jobs likely misconfigured. Please check your proxy or "
-            "Jobs URL settings. See dcos config --help. {}").format(
-                message)
