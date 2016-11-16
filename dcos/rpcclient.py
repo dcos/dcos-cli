@@ -125,9 +125,9 @@ class RpcClient(object):
         try:
             return method_fn(url, *args, **kwargs)
         except DCOSHTTPException as e:
-
+            text = _get_response_text(e.response)
             logger.error('DCOS Error: %s\n%s',
-                         e.response.reason, e.response.text)
+                         e.response.reason, text)
 
             try:
                 json_body = e.response.json()
@@ -147,6 +147,13 @@ class RpcClient(object):
             raise DCOSException(message)
 
 
+def _get_response_text(response):
+    try:
+        return e.response.text
+    except:
+        return ''
+
+
 def _default_dcos_error(message=""):
     """
     :param message: additional message
@@ -155,6 +162,6 @@ def _default_dcos_error(message=""):
     :rtype: str
     """
 
-    return ("Jobs likely misconfigured. Please check your proxy or "
-            "Jobs URL settings. See dcos config --help. {}").format(
+    return ("Service likely misconfigured. Please check your proxy or "
+            "Service URL settings. See dcos config --help. {}").format(
                 message)
