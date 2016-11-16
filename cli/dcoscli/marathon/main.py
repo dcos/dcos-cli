@@ -191,17 +191,17 @@ def _cmds():
             function=subcommand.pod_kill),
 
         cmds.Command(
-            hierarchy=['marathon', 'launchqueue', 'list'],
+            hierarchy=['marathon', 'debug', 'list'],
             arg_keys=['--json'],
             function=subcommand.queued_apps_list),
 
         cmds.Command(
-            hierarchy=['marathon', 'launchqueue', 'summary'],
+            hierarchy=['marathon', 'debug', 'summary'],
             arg_keys=['<app-id>', '--json'],
             function=subcommand.queued_app_summary),
 
         cmds.Command(
-            hierarchy=['marathon', 'launchqueue', 'details'],
+            hierarchy=['marathon', 'debug', 'details'],
             arg_keys=['<app-id>', '--json'],
             function=subcommand.queued_app_details),
 
