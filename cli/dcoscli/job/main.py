@@ -8,7 +8,8 @@ import six
 from six.moves import urllib
 
 import dcoscli
-from dcos import cmds, config, cosmospackage, emitting, http, options, util
+from dcos import (cmds, config, cosmospackage, emitting, http, metronome,
+                  options, util)
 from dcos.errors import DCOSException, DCOSHTTPException
 from dcoscli import tables
 from dcoscli.package.main import get_cosmos_url
@@ -168,8 +169,8 @@ def _remove_schedule(job_id, schedule_id):
     """
 
     try:
-        _do_request("{}/{}/schedules/{}".format(_get_api_url('v1/jobs'),
-                    job_id, schedule_id), 'DELETE')
+        client = metronome.create_client()
+        client.remove_schedule(job_id, schedule_id)
     except DCOSHTTPException as e:
         if e.response.status_code == 404:
             raise DCOSException("Schedule or job ID does NOT exist.")
@@ -192,11 +193,9 @@ def _remove(job_id, stop_current_job_runs=False):
     """
 
     try:
-        _do_request("{}/{}?stopCurrentJobRuns={}"
-                    .format(_get_api_url('v1/jobs'),
-                            job_id,
-                            str(stop_current_job_runs).lower()),
-                    'DELETE')
+        client = metronome.create_client()
+        client.remove_job(job_id, stop_current_job_runs)
+
     except DCOSHTTPException as e:
         if e.response.status_code == 500 and stop_current_job_runs:
             return _remove(job_id, False)
@@ -247,14 +246,12 @@ def _list(json_flag=False):
     :returns: process return code
     :rtype: int
     """
-    response = None
-    url = _get_api_url('v1/jobs' + METRONOME_EMBEDDED)
+
     try:
-        response = _do_request(url, 'GET')
+        client = metronome.create_client()
+        json_list = client.get_jobs()
     except DCOSException as e:
         raise DCOSException(e)
-
-    json_list = _read_http_response_body(response)
 
     if json_flag:
         emitter.publish(json_list)
