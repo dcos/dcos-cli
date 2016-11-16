@@ -149,7 +149,7 @@ class RpcClient(object):
 
 def _get_response_text(response):
     try:
-        return e.response.text
+        return response.text
     except:
         return ''
 
