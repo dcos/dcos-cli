@@ -47,7 +47,7 @@ def task_table(tasks):
     return tb
 
 
-def app_table(apps, deployments):
+def app_table(apps, deployments, queued_apps):
     """Returns a PrettyTable representation of the provided apps.
 
     :param tasks: apps to render
@@ -70,6 +70,16 @@ def app_table(apps, deployments):
             return app["container"]["type"]
         else:
             return "mesos"
+
+    def is_stuck(row):
+        queued_app = next(
+            (app for app in queued_apps
+             if row.get('id') == app.get('app', app.get('pod', {})).get('id')),
+            None)
+        if queued_app:
+            return queued_app.get('delay', {}).get('overdue', False)
+        else:
+            return False
 
     def get_health(app):
         if app["healthChecks"]:
@@ -105,6 +115,7 @@ def app_table(apps, deployments):
                                            a["instances"])),
         ("HEALTH", get_health),
         ("DEPLOYMENT", get_deployment),
+        ("STUCK", is_stuck),
         ("CONTAINER", get_container),
         ("CMD", get_cmd)
     ])
@@ -112,6 +123,7 @@ def app_table(apps, deployments):
     tb = table(fields, apps, sortby="ID")
     tb.align["CMD"] = "l"
     tb.align["ID"] = "l"
+    tb.align["STUCK"] = "l"
 
     return tb
 
@@ -418,11 +430,13 @@ def group_table(groups):
     return tb
 
 
-def pod_table(pods):
+def pod_table(pods, queued_apps):
     """Returns a PrettyTable representation of the provided Marathon pods.
 
     :param pods: pods to render
     :type pods: [dict]
+    :param queued_apps: currently queued apps
+    :type queued_apps: []
     :rtype: PrettyTable
     """
 
@@ -442,13 +456,24 @@ def pod_table(pods):
         container_lines = ('\n |-{}'.format(name) for name in container_names)
         return pod_id + ''.join(container_lines)
 
+    def is_stuck(row):
+        queued_app = next(
+            (app for app in queued_apps
+             if row.get('id') == app.get('app', app.get('pod', {})).get('id')),
+            None)
+        if queued_app:
+            return queued_app.get('delay', {}).get('overdue', False)
+        else:
+            return False
+
     key_column = 'ID+TASKS'
     fields = OrderedDict([
         (key_column, id_and_containers),
         ('INSTANCES', lambda pod: len(pod.get('instances', []))),
         ('VERSION', lambda pod: pod['spec'].get('version', '-')),
         ('STATUS', lambda pod: pod['status']),
-        ('STATUS SINCE', lambda pod: pod['statusSince'])
+        ('STATUS SINCE', lambda pod: pod['statusSince']),
+        ('STUCK', is_stuck)
     ])
 
     tb = table(fields, pods, sortby=key_column)
@@ -456,6 +481,7 @@ def pod_table(pods):
     tb.align['VERSION'] = 'l'
     tb.align['STATUS'] = 'l'
     tb.align['STATUS SINCE'] = 'l'
+    tb.align['STUCK'] = 'l'
 
     return tb
 

@@ -396,7 +396,8 @@ class MarathonSubcommand(object):
             emitter.publish(apps)
         else:
             deployments = client.get_deployments()
-            table = tables.app_table(apps, deployments)
+            queued_apps = client.get_queued_apps()
+            table = tables.app_table(apps, deployments, queued_apps)
             output = six.text_type(table)
             if output:
                 emitter.publish(output)
@@ -919,7 +920,14 @@ class MarathonSubcommand(object):
         self._ensure_pods_support(marathon_client)
 
         pods = marathon_client.list_pod()
-        emitting.publish_table(emitter, pods, tables.pod_table, json_)
+        queued_apps = marathon_client.get_queued_apps()
+        if json_:
+            emitter.publish(pods)
+        else:
+            table = tables.pod_table(pods, queued_apps)
+            output = six.text_type(table)
+            if output:
+                emitter.publish(output)
         return 0
 
     def pod_show(self, pod_id):
