@@ -531,11 +531,11 @@ def queued_app_table(queued_app):
     :rtype: PrettyTable
     """
 
-    def calc_division(divident, divisor):
+    def calc_division(dividend, divisor):
         """Calcs divident / divisor, displays 0 if divisor equals 0.
 
-        :param divident: divident
-        :type divident: int
+        :param dividend: divident
+        :type dividend: int
         :param divisor: divisor
         :type divisor: int
         :rtype: str
@@ -543,7 +543,7 @@ def queued_app_table(queued_app):
         if divisor == 0:
             return 0
         else:
-            return 100 * divident / divisor
+            return 100 * dividend / divisor
 
     fields = OrderedDict([
         ('RESOURCE', lambda entry:
@@ -670,8 +670,21 @@ def queued_app_table(queued_app):
         calculations['PORTS']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
             calc_division(declined_by_ports, matched_constraints_and_roles))
 
+        def percentage_to_float(row):
+            """Converts the first element in the given row from a
+            string containing '%' to a float value.
+            The first value of this array is always the DECLINED PERCENTAGE
+            column from the table, therefore this value is present.
+
+            :param row: list of all values of this row
+            :type row: []
+            :rtype: float
+            """
+            return float((row[0] or '0').replace('%', ''))
+
         tb = table(fields, rows,
                    sortby='DECLINED PERCENTAGE',
+                   sort_key=percentage_to_float,
                    reversesort=True)
         tb.align['RESOURCE'] = 'l'
         tb.align['REQUESTED'] = 'l'
