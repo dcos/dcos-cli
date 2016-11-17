@@ -1013,7 +1013,6 @@ class MarathonSubcommand(object):
                 emitter, queued_app,
                 tables.queued_app_details_table, json_)
 
-
         return 0
 
     def queued_app_summary(self, app_id, json_):
