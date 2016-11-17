@@ -477,7 +477,7 @@ def queued_apps_table(queued_apps):
         :type entry: [dict]
         :param entry: value which should be extracted
         :type entry: string
-        :rtype: PrettyTable
+        :rtype: str
         """
         return entry.get('processedOffersSummary', {}).get(value, EMPTY_ENTRY)
 
@@ -640,14 +640,37 @@ def queued_app_details_table(queued_app):
     :rtype: PrettyTable
     """
 
+    def value_declined(entry, value):
+        """Returns `yes` if the value was inside entry.get('reason'),
+        returns `no` otherwise.
+
+        :param entry: row entry
+        :type entry: [dict]
+        :param value: value which should be checked
+        :type value: string
+        :rtype: PrettyTable
+        """
+        if value in entry.get('reason', []):
+            """check sumbol"""
+            return u'\u2713'
+        else:
+            """cross symbol"""
+            return u'\u2717'
+
     reasons = queued_app.get('lastUnusedOffers')
     fields = OrderedDict([
         ('HOSTNAME', lambda entry:
             entry.get('offer', {}).get('hostname', EMPTY_ENTRY)
          ),
-        ('REASON', lambda entry:
-            ', '.join(entry.get('reason'))
+        ('ROLE', lambda entry: value_declined(entry, 'UnfulfilledRole')),
+        ('CONSTRAINTS', lambda entry:
+            value_declined(entry, 'UnfulfilledConstraint')
          ),
+        ('CPUS', lambda entry: value_declined(entry, 'InsufficientCpus')),
+        ('MEM', lambda entry: value_declined(entry, 'InsufficientMemory')),
+        ('DISK', lambda entry: value_declined(entry, 'InsufficientDisk')),
+        ('GPUS', lambda entry: value_declined(entry, 'InsufficientGpus')),
+        ('PORTS', lambda entry: value_declined(entry, 'UnfulfilledRole')),
         ('RECEIVED', lambda entry:
             entry.get('timestamp', EMPTY_ENTRY)
          ),
