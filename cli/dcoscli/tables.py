@@ -650,7 +650,7 @@ def queued_app_details_table(queued_app):
         :type value: string
         :rtype: PrettyTable
         """
-        if value in entry.get('reason', []):
+        if value not in entry.get('reason', []):
             """check sumbol"""
             return u'\u2713'
         else:
