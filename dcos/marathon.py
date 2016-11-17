@@ -842,7 +842,7 @@ class Client(object):
                                       'v2/queue?embed=lastUnusedOffers')
         app = next(
             (app for app in response.json().get('queue')
-             if app_id == app.get('app').get('id')),
+             if app_id == app.get('app', app.get('pod', {})).get('id')),
             None)
 
         return app

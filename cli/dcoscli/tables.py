@@ -475,8 +475,8 @@ def queued_apps_table(queued_apps):
 
         :param entry: row entry
         :type entry: [dict]
-        :param entry: value which should be extracted
-        :type entry: string
+        :param value: value which should be extracted
+        :type value: string
         :rtype: str
         """
         return entry.get('processedOffersSummary', {}).get(value, EMPTY_ENTRY)
@@ -484,7 +484,7 @@ def queued_apps_table(queued_apps):
     key_column = 'ID'
     fields = OrderedDict([
         (key_column, lambda entry:
-            entry.get('app', {}).get('id', EMPTY_ENTRY)
+            entry.get('app', entry.get('pod', {})).get('id', EMPTY_ENTRY)
          ),
         ('SINCE', lambda entry:
             entry.get('since', EMPTY_ENTRY)
@@ -531,6 +531,20 @@ def queued_app_table(queued_app):
     :rtype: PrettyTable
     """
 
+    def calc_division(divident, divisor):
+        """Calcs divident / divisor, displays 0 if divisor equals 0.
+
+        :param divident: divident
+        :type divident: int
+        :param divisor: divisor
+        :type divisor: int
+        :rtype: str
+        """
+        if divisor == 0:
+            return 0
+        else:
+            return 100 * divident / divisor
+
     fields = OrderedDict([
         ('RESOURCE', lambda entry:
             calculations.get(entry, {}).get('RESOURCE', EMPTY_ENTRY)
@@ -564,7 +578,46 @@ def queued_app_table(queued_app):
         matched_constraints_and_roles = \
             processed_offers - declined_by_role - declined_by_constraints
 
-        app = queued_app.get('app', {})
+        app = queued_app.get('app')
+        if app:
+            roles = app.get('acceptedResourceRoles', [])
+            if len(roles) == 0:
+                spec_roles = '[*]'
+            else:
+                spec_roles = roles
+            spec_constraints = app.get('constraints', EMPTY_ENTRY)
+            spec_cpus = app.get('cpus', EMPTY_ENTRY)
+            spec_mem = app.get('mem', EMPTY_ENTRY)
+            spec_disk = app.get('disk', EMPTY_ENTRY)
+            spec_gpus = app.get('gpus', EMPTY_ENTRY)
+            spec_ports = app.get('ports', EMPTY_ENTRY)
+        else:
+            def sum_resources(value):
+                def container_value(container):
+                    return container.get('resources', {}).get(value, 0)
+
+                return sum(map(container_value, pod.get('containers', [])))
+
+            pod = queued_app.get('pod')
+            roles = pod.\
+                get('scheduling', {}).get('placement', {}).\
+                get('acceptedResourceRoles', [])
+            if len(roles) == 0:
+                spec_roles = '[*]'
+            else:
+                spec_roles = roles
+            spec_constraints = pod.\
+                get('scheduling', {}).get('placement', {}).\
+                get('constraints', EMPTY_ENTRY)
+            spec_cpus = sum_resources('cpus')
+            spec_mem = sum_resources('mem')
+            spec_disk = sum_resources('disk')
+            spec_gpus = sum_resources('gpus')
+            spec_ports = []
+            for container in pod.get('containers', []):
+                for endpoint in container.get('endpoints', []):
+                    spec_ports.append(endpoint.get('hostPort'))
+
         rows = ['ROLE', 'CONSTRAINTS', 'CPUS', 'MEM', 'DISK', 'GPUS', 'PORTS']
 
         calculations = {}
@@ -572,51 +625,50 @@ def queued_app_table(queued_app):
             calculations[reason] = {}
             calculations[reason]['RESOURCE'] = reason
 
-        calculations['ROLE']['REQUESTED'] = app \
-            .get('acceptedResourceRoles', {}).get('role1', '*')
+        calculations['ROLE']['REQUESTED'] = spec_roles
         calculations['ROLE']['DECLINED'] = '{0} / {1}'\
             .format(declined_by_role, processed_offers)
         calculations['ROLE']['DECLINED PERCENTAGE'] = \
-            '{0:0.2f}%'.format(100 * declined_by_role / processed_offers)
+            '{0:0.2f}%'.format(
+                calc_division(declined_by_role, processed_offers))
 
-        calculations['CONSTRAINTS']['REQUESTED'] = app.\
-            get('constraints', EMPTY_ENTRY)
+        calculations['CONSTRAINTS']['REQUESTED'] = spec_constraints
         calculations['CONSTRAINTS']['DECLINED'] = '{0} / {1}' \
             .format(declined_by_constraints,
                     processed_offers - declined_by_role)
         calculations['CONSTRAINTS']['DECLINED PERCENTAGE'] = '{0:0.2f}%'\
-            .format(100 * declined_by_constraints /
-                    (processed_offers - declined_by_role))
+            .format(calc_division(
+                declined_by_constraints, processed_offers - declined_by_role))
 
-        calculations['CPUS']['REQUESTED'] = app.get('cpus', EMPTY_ENTRY)
+        calculations['CPUS']['REQUESTED'] = spec_cpus
         calculations['CPUS']['DECLINED'] = '{0} / {1}' \
             .format(declined_by_cpus, matched_constraints_and_roles)
         calculations['CPUS']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
-            100 * declined_by_cpus / matched_constraints_and_roles)
+            calc_division(declined_by_cpus, matched_constraints_and_roles))
 
-        calculations['MEM']['REQUESTED'] = app.get('mem', EMPTY_ENTRY)
+        calculations['MEM']['REQUESTED'] = spec_mem
         calculations['MEM']['DECLINED'] = '{0} / {1}' \
             .format(declined_by_mem, matched_constraints_and_roles)
         calculations['MEM']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
-            100 * declined_by_mem / matched_constraints_and_roles)
+            calc_division(declined_by_mem, matched_constraints_and_roles))
 
-        calculations['DISK']['REQUESTED'] = app.get('disk', EMPTY_ENTRY)
+        calculations['DISK']['REQUESTED'] = spec_disk
         calculations['DISK']['DECLINED'] = '{0} / {1}' \
             .format(declined_by_disk, matched_constraints_and_roles)
         calculations['DISK']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
-            100 * declined_by_disk / matched_constraints_and_roles)
+            calc_division(declined_by_disk, matched_constraints_and_roles))
 
-        calculations['GPUS']['REQUESTED'] = app.get('gpus', EMPTY_ENTRY)
+        calculations['GPUS']['REQUESTED'] = spec_gpus
         calculations['GPUS']['DECLINED'] = '{0} / {1}' \
             .format(declined_by_gpus, matched_constraints_and_roles)
         calculations['GPUS']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
-            100 * declined_by_gpus / matched_constraints_and_roles)
+            calc_division(declined_by_gpus, matched_constraints_and_roles))
 
-        calculations['PORTS']['REQUESTED'] = app.get('ports', EMPTY_ENTRY)
+        calculations['PORTS']['REQUESTED'] = spec_ports
         calculations['PORTS']['DECLINED'] = '{0} / {1}' \
             .format(declined_by_ports, matched_constraints_and_roles)
         calculations['PORTS']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
-            100 * declined_by_ports / matched_constraints_and_roles)
+            calc_division(declined_by_ports, matched_constraints_and_roles))
 
         tb = table(fields, rows,
                    sortby='DECLINED PERCENTAGE',
@@ -651,10 +703,8 @@ def queued_app_details_table(queued_app):
         :rtype: PrettyTable
         """
         if value not in entry.get('reason', []):
-            """check sumbol"""
             return 'ok'
         else:
-            """cross symbol"""
             return '-'
 
     reasons = queued_app.get('lastUnusedOffers')
