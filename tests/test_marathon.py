@@ -361,10 +361,12 @@ def test_rpc_client_http_req_returns_method_fn_result():
 
 def test_rpc_client_http_req_propagates_method_fn_exception_1():
     request = requests.Request(method='ANY', url='http://arbitrary/url')
-    response = requests.Response()
+    # Need the mock so that the `.json()` method can be overridden
+    response = mock.create_autospec(requests.Response)
     response.status_code = 403
     response.reason = 'Forbidden'
     response.request = request
+    response.json.side_effect = Exception('not JSON')
 
     def method_fn(*args, **kwargs):
         raise DCOSHTTPException(response)
@@ -384,7 +386,7 @@ def test_rpc_client_http_req_propagates_method_fn_exception_1():
 
 def test_rpc_client_http_req_propagates_method_fn_exception_2():
     request = requests.Request(method='NONE', url='http://host/path')
-    # Need the mock so that the json() method can be overridden
+    # Need the mock so that the `.json()` method can be overridden
     response = mock.create_autospec(requests.Response)
     response.status_code = 422
     response.reason = 'Something Bad'
