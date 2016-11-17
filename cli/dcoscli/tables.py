@@ -652,10 +652,10 @@ def queued_app_details_table(queued_app):
         """
         if value not in entry.get('reason', []):
             """check sumbol"""
-            return u'\u2713'
+            return 'ok'
         else:
             """cross symbol"""
-            return u'\u2717'
+            return '-'
 
     reasons = queued_app.get('lastUnusedOffers')
     fields = OrderedDict([
