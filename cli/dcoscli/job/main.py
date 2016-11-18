@@ -469,10 +469,12 @@ def _show_schedule(job_id, json_flag=False):
 
     return 0
 
+
 def reduce_to_schedule(schedules_json):
     """
-    The original design of metronome had an array of schedules defined but limited
-    it to 1.  This limits to 1 and takes the array format or just 1 schedule format.
+    The original design of metronome had an array of schedules defined but
+    limited it to 1.  This limits to 1 and takes the array format or just
+    1 schedule format.
     :param schedules_json: schedule or array of schedules in json
     :type schedules_json: json
     :returns: schedule json
