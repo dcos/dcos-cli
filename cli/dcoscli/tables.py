@@ -47,11 +47,13 @@ def task_table(tasks):
     return tb
 
 
-def app_table(apps, deployments, queued_apps):
+def app_table(apps, deployments):
     """Returns a PrettyTable representation of the provided apps.
 
-    :param tasks: apps to render
-    :type tasks: [dict]
+    :param apps: apps to render
+    :type apps: [dict]
+    :param deployments: deployments to enhance information
+    :type deployments: [dict]
     :rtype: PrettyTable
     """
 
@@ -70,23 +72,6 @@ def app_table(apps, deployments, queued_apps):
             return app["container"]["type"]
         else:
             return "mesos"
-
-    def is_overdue(row):
-        """Calculates if given app is overdue
-
-        :param row: the pod JSON to read
-        :type row: {}
-        :returns: true if app is overdue, false otherwise
-        :rtype: bool
-        """
-        queued_app = next(
-            (app for app in queued_apps
-             if row.get('id') == app.get('app', app.get('pod', {})).get('id')),
-            None)
-        if queued_app:
-            return queued_app.get('delay', {}).get('overdue', False)
-        else:
-            return False
 
     def get_health(app):
         if app["healthChecks"]:
@@ -122,7 +107,7 @@ def app_table(apps, deployments, queued_apps):
                                            a["instances"])),
         ("HEALTH", get_health),
         ("DEPLOYMENT", get_deployment),
-        ("OVERDUE", is_overdue),
+        ("OVERDUE", lambda app: app.get('overdue', False)),
         ("CONTAINER", get_container),
         ("CMD", get_cmd)
     ])
@@ -437,7 +422,7 @@ def group_table(groups):
     return tb
 
 
-def pod_table(pods, queued_apps):
+def pod_table(pods):
     """Returns a PrettyTable representation of the provided Marathon pods.
 
     :param pods: pods to render
@@ -463,24 +448,6 @@ def pod_table(pods, queued_apps):
         container_lines = ('\n |-{}'.format(name) for name in container_names)
         return pod_id + ''.join(container_lines)
 
-    def is_overdue(row):
-        """Calculates if given pod is overdue
-
-        :param row: the pod JSON to read
-        :type row: {}
-        :returns: true if pod is overdue, false otherwise
-        :rtype: bool
-        """
-
-        queued_app = next(
-            (app for app in queued_apps
-             if row.get('id') == app.get('app', app.get('pod', {})).get('id')),
-            None)
-        if queued_app:
-            return queued_app.get('delay', {}).get('overdue', False)
-        else:
-            return False
-
     key_column = 'ID+TASKS'
     fields = OrderedDict([
         (key_column, id_and_containers),
@@ -488,7 +455,7 @@ def pod_table(pods, queued_apps):
         ('VERSION', lambda pod: pod['spec'].get('version', '-')),
         ('STATUS', lambda pod: pod['status']),
         ('STATUS SINCE', lambda pod: pod['statusSince']),
-        ('OVERDUE', is_overdue)
+        ('OVERDUE', lambda pod: pod.get('overdue', False))
     ])
 
     tb = table(fields, pods, sortby=key_column)
@@ -512,7 +479,7 @@ def queued_apps_table(queued_apps):
 
     def extract_value_from_entry(entry, value):
         """Extracts the value parameter from given row entry. If value
-        is not present, EMPTY_LINE will be returned
+        is not present, EMPTY_ENTRY will be returned
 
         :param entry: row entry
         :type entry: [dict]

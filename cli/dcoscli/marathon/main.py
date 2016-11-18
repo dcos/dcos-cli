@@ -193,17 +193,17 @@ def _cmds():
         cmds.Command(
             hierarchy=['marathon', 'debug', 'list'],
             arg_keys=['--json'],
-            function=subcommand.queued_apps_list),
+            function=subcommand.debug_list),
 
         cmds.Command(
             hierarchy=['marathon', 'debug', 'summary'],
             arg_keys=['<app-id>', '--json'],
-            function=subcommand.queued_app_summary),
+            function=subcommand.debug_summary),
 
         cmds.Command(
             hierarchy=['marathon', 'debug', 'details'],
             arg_keys=['<app-id>', '--json'],
-            function=subcommand.queued_app_details),
+            function=subcommand.debug_details),
 
         cmds.Command(
             hierarchy=['marathon', 'about'],
@@ -397,7 +397,8 @@ class MarathonSubcommand(object):
         else:
             deployments = client.get_deployments()
             queued_apps = client.get_queued_apps()
-            table = tables.app_table(apps, deployments, queued_apps)
+            _enhance_row_with_overdue_information(apps, queued_apps)
+            table = tables.app_table(apps, deployments)
             output = six.text_type(table)
             if output:
                 emitter.publish(output)
@@ -921,13 +922,8 @@ class MarathonSubcommand(object):
 
         pods = marathon_client.list_pod()
         queued_apps = marathon_client.get_queued_apps()
-        if json_:
-            emitter.publish(pods)
-        else:
-            table = tables.pod_table(pods, queued_apps)
-            output = six.text_type(table)
-            if output:
-                emitter.publish(output)
+        _enhance_row_with_overdue_information(pods, queued_apps)
+        emitting.publish_table(emitter, pods, tables.pod_table, json_)
         return 0
 
     def pod_show(self, pod_id):
@@ -988,7 +984,7 @@ class MarathonSubcommand(object):
         marathon_client.kill_pod_instances(pod_id, instance_ids)
         return 0
 
-    def queued_apps_list(self, json_):
+    def debug_list(self, json_):
         """
         :param json_: output json if True
         :type json_: bool
@@ -1003,7 +999,7 @@ class MarathonSubcommand(object):
                                tables.queued_apps_table, json_)
         return 0
 
-    def queued_app_details(self, app_id, json_):
+    def debug_details(self, app_id, json_):
         """
         :param app_id: the Marathon ID to display details
         :type app_id: string
@@ -1020,10 +1016,12 @@ class MarathonSubcommand(object):
             emitting.publish_table(
                 emitter, queued_app,
                 tables.queued_app_details_table, json_)
+        else:
+            raise DCOSException("No apps found in Marathon queue")
 
         return 0
 
-    def queued_app_summary(self, app_id, json_):
+    def debug_summary(self, app_id, json_):
         """
         :param app_id: the Marathon ID to display details
         :type app_id: string
@@ -1040,6 +1038,8 @@ class MarathonSubcommand(object):
             emitting.publish_table(
                 emitter, queued_app,
                 tables.queued_app_table, json_)
+        else:
+            raise DCOSException("No apps found in Marathon queue")
 
         return 0
 
@@ -1056,6 +1056,37 @@ class MarathonSubcommand(object):
         if not marathon_client.pod_feature_supported():
             msg = 'This command is not supported by your version of Marathon'
             raise DCOSException(msg)
+
+
+def _enhance_row_with_overdue_information(rows, queued_apps):
+    """Calculates if configured `backoff` duration for this
+    app or pod definition was exceeded. In that case this application
+    is marked as `overdue`.
+    If the app or pod inside this row should be
+
+    :param rows: list of rows
+    :type rows: []
+    :param queued_apps: list of
+    :type queued_apps: []
+    :returns: true if pod is overdue, false otherwise
+    :rtype: bool
+    """
+
+    for row in rows:
+        queued_app = next(
+            (app for app in queued_apps
+             if row.get('id') == app.get('app', app.get('pod', {})).get('id')),
+            None)
+        if queued_app:
+            overdue = queued_app.get('delay', {}).get('overdue', False)
+            if overdue:
+                row['overdue'] = True
+            else:
+                row['overdue'] = False
+        else:
+            row['overdue'] = False
+
+    return rows
 
 
 def _calculate_version(client, app_id, version):
