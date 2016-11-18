@@ -575,6 +575,9 @@ def _add_job(job_file):
     if 'id' not in full_json:
         raise DCOSException("Jobs JSON requires an ID.")
 
+    if 'disk' not in full_json['run']:
+        full_json['run']['disk'] = 0
+
     job_id = full_json['id']
     schedules = None
 
@@ -588,8 +591,11 @@ def _add_job(job_file):
         _post_job(full_json)
         job_added = True
     except DCOSHTTPException as e:
-        if e.response.status_code == 409:
-            emitter.publish("Job ID: '{}' already exists".format(job_id))
+        if e.response.status_code == 422:
+            message = e
+            if e.response is not None and e.response.text is not None:
+                message = e.response.text
+            raise DCOSException(message)
         else:
             raise DCOSException(e)
 
