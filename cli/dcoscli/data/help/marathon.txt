@@ -95,10 +95,15 @@ Commands:
         Display detailed information for a specific pod.
     pod update
         Update a pod.
-    queue list
-        Print a list of currently queued instance launches.
-    queue show
-        Display detailed information for a queued instance launch.
+    debug list
+        Print a list of currently queued instance launches for
+        debugging purpose.
+    debug summary
+        Display summarized information for a queued instance launch
+        for debugging purpose.
+    debug details
+        Display detailed information for a queued instance launch
+        for debugging purpose.
     task list
         List all tasks.
     task stop
