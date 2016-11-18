@@ -613,7 +613,7 @@ def queued_app_table(queued_app):
         declined_by_cpus = reasons.get('InsufficientCpus', 0)
         declined_by_mem = reasons.get('InsufficientMemory', 0)
         declined_by_disk = reasons.get('InsufficientDisk', 0)
-        declined_by_gpus = reasons.get('InsufficientGpus', 0)
+        """declined_by_gpus = reasons.get('InsufficientGpus', 0)"""
         declined_by_ports = reasons.get('InsufficientPorts', 0)
 
         matched_constraints_and_roles = \
@@ -630,7 +630,7 @@ def queued_app_table(queued_app):
             spec_cpus = app.get('cpus', EMPTY_ENTRY)
             spec_mem = app.get('mem', EMPTY_ENTRY)
             spec_disk = app.get('disk', EMPTY_ENTRY)
-            spec_gpus = app.get('gpus', EMPTY_ENTRY)
+            """spec_gpus = app.get('gpus', EMPTY_ENTRY)"""
             spec_ports = app.get('ports', EMPTY_ENTRY)
         else:
             def sum_resources(value):
@@ -653,13 +653,14 @@ def queued_app_table(queued_app):
             spec_cpus = sum_resources('cpus')
             spec_mem = sum_resources('mem')
             spec_disk = sum_resources('disk')
-            spec_gpus = sum_resources('gpus')
+            """spec_gpus = sum_resources('gpus')"""
             spec_ports = []
             for container in pod.get('containers', []):
                 for endpoint in container.get('endpoints', []):
                     spec_ports.append(endpoint.get('hostPort'))
 
-        rows = ['ROLE', 'CONSTRAINTS', 'CPUS', 'MEM', 'DISK', 'GPUS', 'PORTS']
+        """'GPUS'"""
+        rows = ['ROLE', 'CONSTRAINTS', 'CPUS', 'MEM', 'DISK', 'PORTS']
 
         calculations = {}
         for reason in rows:
@@ -699,11 +700,11 @@ def queued_app_table(queued_app):
         calculations['DISK']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
             calc_division(declined_by_disk, matched_constraints_and_roles))
 
-        calculations['GPUS']['REQUESTED'] = spec_gpus
+        """calculations['GPUS']['REQUESTED'] = spec_gpus
         calculations['GPUS']['DECLINED'] = '{0} / {1}' \
             .format(declined_by_gpus, matched_constraints_and_roles)
         calculations['GPUS']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
-            calc_division(declined_by_gpus, matched_constraints_and_roles))
+            calc_division(declined_by_gpus, matched_constraints_and_roles))"""
 
         calculations['PORTS']['REQUESTED'] = spec_ports
         calculations['PORTS']['DECLINED'] = '{0} / {1}' \
@@ -773,12 +774,12 @@ def queued_app_details_table(queued_app):
         ('CPUS', lambda entry: value_declined(entry, 'InsufficientCpus')),
         ('MEM', lambda entry: value_declined(entry, 'InsufficientMemory')),
         ('DISK', lambda entry: value_declined(entry, 'InsufficientDisk')),
-        ('GPUS', lambda entry: value_declined(entry, 'InsufficientGpus')),
         ('PORTS', lambda entry: value_declined(entry, 'UnfulfilledRole')),
         ('RECEIVED', lambda entry:
             entry.get('timestamp', EMPTY_ENTRY)
          ),
     ])
+    """('GPUS', lambda entry: value_declined(entry, 'InsufficientGpus')),"""
 
     tb = table(fields, reasons, sortby='HOSTNAME')
     tb.align['HOSTNAME'] = 'l'
