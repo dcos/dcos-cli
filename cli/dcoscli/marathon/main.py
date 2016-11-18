@@ -1075,7 +1075,7 @@ def _enhance_row_with_overdue_information(rows, queued_apps):
     for row in rows:
         queued_app = next(
             (app for app in queued_apps
-             if row.get('id') == app.get('app', app.get('pod', {})).get('id')),
+             if row.get('id') == marathon.get_app_or_pod_id(app)),
             None)
         if queued_app:
             overdue = queued_app.get('delay', {}).get('overdue', False)

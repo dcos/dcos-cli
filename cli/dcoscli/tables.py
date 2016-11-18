@@ -491,9 +491,7 @@ def queued_apps_table(queued_apps):
 
     key_column = 'ID'
     fields = OrderedDict([
-        (key_column, lambda entry:
-            entry.get('app', entry.get('pod', {})).get('id', EMPTY_ENTRY)
-         ),
+        (key_column, lambda entry: marathon.get_app_or_pod_id(entry)),
         ('SINCE', lambda entry:
             entry.get('since', EMPTY_ENTRY)
          ),

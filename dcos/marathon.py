@@ -842,7 +842,7 @@ class Client(object):
                                       'v2/queue?embed=lastUnusedOffers')
         app = next(
             (app for app in response.json().get('queue')
-             if app_id == app.get('app', app.get('pod', {})).get('id')),
+             if app_id == get_app_or_pod_id(app)),
             None)
 
         return app
@@ -910,6 +910,17 @@ class Client(object):
             template = ('Error: Response from Marathon was not in expected '
                         'JSON format:\n{}')
             raise DCOSException(template.format(response.text))
+
+
+def get_app_or_pod_id(app_or_pod):
+    """Gets the app or pod ID from the given app or pod
+
+        :param app_or_pod: app or pod definition
+        :type app_or_pod: requests.Response
+        :return: the parsed JSON
+        :rtype: {} | [] | str | int | float | bool | None
+        """
+    return app_or_pod.get('app', app_or_pod.get('pod', {})).get('id')
 
 
 def _default_marathon_error(message=""):
