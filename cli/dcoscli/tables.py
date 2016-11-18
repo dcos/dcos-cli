@@ -71,7 +71,14 @@ def app_table(apps, deployments, queued_apps):
         else:
             return "mesos"
 
-    def is_stuck(row):
+    def is_overdue(row):
+        """Calculates if given app is overdue
+
+        :param row: the pod JSON to read
+        :type row: {}
+        :returns: true if app is overdue, false otherwise
+        :rtype: bool
+        """
         queued_app = next(
             (app for app in queued_apps
              if row.get('id') == app.get('app', app.get('pod', {})).get('id')),
@@ -115,7 +122,7 @@ def app_table(apps, deployments, queued_apps):
                                            a["instances"])),
         ("HEALTH", get_health),
         ("DEPLOYMENT", get_deployment),
-        ("STUCK", is_stuck),
+        ("OVERDUE", is_overdue),
         ("CONTAINER", get_container),
         ("CMD", get_cmd)
     ])
@@ -123,7 +130,7 @@ def app_table(apps, deployments, queued_apps):
     tb = table(fields, apps, sortby="ID")
     tb.align["CMD"] = "l"
     tb.align["ID"] = "l"
-    tb.align["STUCK"] = "l"
+    tb.align["OVERDUE"] = "l"
 
     return tb
 
@@ -456,7 +463,15 @@ def pod_table(pods, queued_apps):
         container_lines = ('\n |-{}'.format(name) for name in container_names)
         return pod_id + ''.join(container_lines)
 
-    def is_stuck(row):
+    def is_overdue(row):
+        """Calculates if given pod is overdue
+
+        :param row: the pod JSON to read
+        :type row: {}
+        :returns: true if pod is overdue, false otherwise
+        :rtype: bool
+        """
+
         queued_app = next(
             (app for app in queued_apps
              if row.get('id') == app.get('app', app.get('pod', {})).get('id')),
@@ -473,7 +488,7 @@ def pod_table(pods, queued_apps):
         ('VERSION', lambda pod: pod['spec'].get('version', '-')),
         ('STATUS', lambda pod: pod['status']),
         ('STATUS SINCE', lambda pod: pod['statusSince']),
-        ('STUCK', is_stuck)
+        ('OVERDUE', is_overdue)
     ])
 
     tb = table(fields, pods, sortby=key_column)
@@ -481,7 +496,7 @@ def pod_table(pods, queued_apps):
     tb.align['VERSION'] = 'l'
     tb.align['STATUS'] = 'l'
     tb.align['STATUS SINCE'] = 'l'
-    tb.align['STUCK'] = 'l'
+    tb.align['OVERDUE'] = 'l'
 
     return tb
 
