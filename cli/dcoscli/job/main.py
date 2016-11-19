@@ -470,22 +470,20 @@ def _show_schedule(job_id, json_flag=False):
     return 0
 
 
-def reduce_to_schedule(schedules_json):
+def parse_schedule_json(schedules_json):
     """
     The original design of metronome had an array of schedules defined but
     limited it to 1.  This limits to 1 and takes the array format or just
     1 schedule format.
     :param schedules_json: schedule or array of schedules in json
-    :type schedules_json: json
+    :type schedules_json: json [] or {}
     :returns: schedule json
     :rtype: json
     """
-    try:
-        schedule = schedules_json[0]
-        schedule['id'] is not None
-    except:
-        schedule = schedules_json
-    return schedule
+    if type(scheule_json) is list:
+        return schedule_json[0]
+    else:
+        return schedule_json
 
 
 def _add_schedules(job_id, schedules_json):
@@ -499,7 +497,7 @@ def _add_schedules(job_id, schedules_json):
     """
 
     if schedules_json is None:
-        return 1
+        raise DCOSException('Schedule JSON is required.')
 
     schedule = reduce_to_schedule(schedules_json)
     try:
