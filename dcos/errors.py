@@ -43,6 +43,7 @@ class DCOSUnprocessableException(DCOSException):
             self.response.status_code,
             self.response.text)
 
+
 class DCOSAuthenticationException(DCOSHTTPException):
     """A wrapper around Response objects for HTTP Authentication errors (401).
 
