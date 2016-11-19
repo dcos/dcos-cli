@@ -480,10 +480,10 @@ def parse_schedule_json(schedules_json):
     :returns: schedule json
     :rtype: json
     """
-    if type(scheule_json) is list:
-        return schedule_json[0]
+    if type(schedules_json) is list:
+        return schedules_json[0]
     else:
-        return schedule_json
+        return schedules_json
 
 
 def _add_schedules(job_id, schedules_json):
