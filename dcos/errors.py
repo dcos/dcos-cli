@@ -24,6 +24,25 @@ class DCOSHTTPException(DCOSException):
             self.response.reason)
 
 
+class DCOSUnprocessableException(DCOSException):
+    """ A wrapper around Response objects for HTTP 422
+    error codes, Unprocessable JSON Entities.
+
+    :param response: requests Response object
+    :type response: Response
+    """
+    def __init__(self, response):
+        self.response = response
+
+    def status(self):
+        return self.response.status_code
+
+    def __str__(self):
+        return 'Error while fetching [{0}]: HTTP {1}: {2}'.format(
+            self.response.request.url,
+            self.response.status_code,
+            self.response.text)
+
 class DCOSAuthenticationException(DCOSHTTPException):
     """A wrapper around Response objects for HTTP Authentication errors (401).
 
