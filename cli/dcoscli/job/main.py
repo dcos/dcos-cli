@@ -499,7 +499,7 @@ def _add_schedules(job_id, schedules_json):
     if schedules_json is None:
         raise DCOSException('Schedule JSON is required.')
 
-    schedule = reduce_to_schedule(schedules_json)
+    schedule = parse_schedule_json(schedules_json)
     try:
         _post_schedule(job_id, schedule)
     except DCOSHTTPException as e:
