@@ -187,13 +187,14 @@ def test_show_bad_app_version():
             'zero-instance-app',
             'tests/data/marathon/apps/update_zero_instance_sleep.json')
 
-        stderr = (b'Error: Invalid format: "20:39:32.972Z" is malformed at '
-                  b'":39:32.972Z"\n')
-        assert_command(
+        returncode, stdout, stderr = exec_command(
             ['dcos', 'marathon', 'app', 'show', '--app-version=20:39:32.972Z',
-             'zero-instance-app'],
-            returncode=1,
-            stderr=stderr)
+             'zero-instance-app'])
+        assert returncode == 1
+        assert stdout == b''
+        assert stderr.startswith(b'Error while fetching')
+        pattern = b"""{"message":"Invalid format: \\"20:39:32.972Z\\" is malformed at \\":39:32.972Z\\""}\n"""
+        assert stderr.endswith(pattern)
 
 
 def test_show_bad_relative_app_version():
