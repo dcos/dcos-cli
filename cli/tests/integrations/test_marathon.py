@@ -193,7 +193,9 @@ def test_show_bad_app_version():
         assert returncode == 1
         assert stdout == b''
         assert stderr.startswith(b'Error while fetching')
-        pattern = b"""{"message":"Invalid format: \\"20:39:32.972Z\\" is malformed at \\":39:32.972Z\\""}\n"""
+        pattern = (b"""{"message":"Invalid format: """
+                   b"""\\"20:39:32.972Z\\" is malformed"""
+                   b""" at \\":39:32.972Z\\""}\n""")
         assert stderr.endswith(pattern)
 
 
