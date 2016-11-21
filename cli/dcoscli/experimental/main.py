@@ -1,9 +1,10 @@
 import docopt
 import dcoscli
 
-from dcos import (cmds, emitting, http, util)
+from dcos import cmds, emitting, http, util
 from dcos.errors import DCOSException
-from dcoscli.subcommand import (default_command_info, default_doc)
+from dcos.package import get_package_manager
+from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
 
 
@@ -34,7 +35,12 @@ def _cmds():
     :returns: All of the supported commands
     :rtype: dcos.cmds.Command
     """
-    return []
+    return [
+        cmds.Command(
+            hierarchy=['experimental', 'package', 'add'],
+            arg_keys=['<dcos-package>'],
+            function=_add),
+    ]
 
 
 def _info():
@@ -45,3 +51,17 @@ def _info():
     emitter.publish(default_command_info("experimental"))
     return 0
 
+
+def _add(dcos_package):
+    """
+    Adds a DC/OS package to DC/OS
+
+    :param dcos_package: path to the DC/OS package
+    :type dcos_package: str
+    :return: process status
+    :rtype: int
+    """
+    package_manager = get_package_manager()
+    response = package_manager.experimental_package_add(dcos_package)
+    emitter.publish(response.json())
+    return 0

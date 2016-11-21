@@ -4,8 +4,11 @@ Description:
 Usage:
     dcos experimental --help
     dcos experimental --info
+    dcos experimental package add <dcos-package>
 
 Commands:
+    package add
+        Adds a DC/OS package to DC/OS.
 
 Options:
     -h, --help
@@ -14,3 +17,7 @@ Options:
         Print a short description of this subcommand.
     --version
         Print version information.
+
+Positional Arguments:
+    <dcos-package>
+        Path to a DC/OS Package.
