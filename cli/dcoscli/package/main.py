@@ -1,17 +1,20 @@
 import json
 import os
 import sys
+from urllib.parse import urljoin
 
 import docopt
 import pkg_resources
 
 import dcoscli
 from dcos import (cmds, config, cosmospackage, emitting, http, options,
-                  package, subcommand, util)
+                  package, subcommand, util, janitorpackage)
 from dcos.errors import DCOSException
 from dcoscli import tables
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
+
+import requests
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -88,7 +91,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['package', 'uninstall'],
-            arg_keys=['<package-name>', '--all', '--app-id', '--cli', '--app'],
+            arg_keys=['<package-name>', '--all', '--app-id', '--cli', '--app', '--force'],
             function=_uninstall),
 
         cmds.Command(
@@ -491,7 +494,7 @@ def _search(json_, query):
     return 0
 
 
-def _uninstall(package_name, remove_all, app_id, cli, app):
+def _uninstall(package_name, remove_all, app_id, cli, app, force):
     """Uninstall the specified package.
 
     :param package_name: The package to uninstall
@@ -505,8 +508,21 @@ def _uninstall(package_name, remove_all, app_id, cli, app):
     """
 
     package_manager = _get_package_manager()
-    err = package.uninstall(
-        package_manager, package_name, remove_all, app_id, cli, app)
+
+    if(force == True):
+        toml_config = config.get_config()
+        dcos_url = config.get_config_val("core.dcos_url", toml_config)
+        master_url = "{0}:5050/master".format(dcos_url)
+        exhibitor_url = "{0}:8181".format(dcos_url)
+
+        janitor = janitorpackage.Janitor(package_manager, emitter)
+
+        janitor.destroy_volumes(master_url, "{0}-role".format(package_name), "{0}-principal".format(package_name))
+        janitor.unreserve_resources(master_url, "{0}-role".format(package_name), "{0}-principal".format(package_name))
+        janitor.delete_zk_node(exhibitor_url, "dcos-service-{0}".format(package_name))
+
+    err = package.uninstall(package_manager, package_name, remove_all, app_id, cli, app)
+
     if err is not None:
         emitter.publish(err)
         return 1
