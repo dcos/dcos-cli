@@ -571,8 +571,11 @@ def queued_app_table(queued_app):
         calculations[key]['REQUESTED'] = requested
         calculations[key]['MATCHED'] = '{0} / {1}'\
             .format(dividend, divisor)
-        calculations[key]['MATCHED PERCENTAGE'] = '{0:0.2f}%' \
-            .format(calc_division(dividend, divisor))
+        if divisor > 0:
+            calculations[key]['PERCENTAGE'] = '{0:06.2f}%' \
+                .format(calc_division(dividend, divisor))
+        else:
+            calculations[key]['PERCENTAGE'] = EMPTY_ENTRY
 
     def extract_reason_from_list(list, reason_string):
         """Extracts the reason for the given reason_string from the given list
@@ -599,8 +602,8 @@ def queued_app_table(queued_app):
         ('MATCHED', lambda entry:
             calculations.get(entry, {}).get('MATCHED', EMPTY_ENTRY)
          ),
-        ('MATCHED PERCENTAGE', lambda entry:
-            calculations.get(entry, {}).get('MATCHED PERCENTAGE', EMPTY_ENTRY)
+        ('PERCENTAGE', lambda entry:
+            calculations.get(entry, {}).get('PERCENTAGE', EMPTY_ENTRY)
          ),
     ])
 
@@ -686,7 +689,7 @@ def queued_app_table(queued_app):
     tb.align['RESOURCE'] = 'l'
     tb.align['REQUESTED'] = 'l'
     tb.align['MATCHED'] = 'l'
-    tb.align['MATCHED PERCENTAGE'] = 'l'
+    tb.align['PERCENTAGE'] = 'l'
 
     return tb
 
