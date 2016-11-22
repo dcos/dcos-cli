@@ -1,4 +1,5 @@
 import json
+
 import jsonschema
 import pkg_resources
 
@@ -226,7 +227,7 @@ class Client(object):
 
         # Looks like Marathon return different JSON for versions
         if version is None:
-            return response.json()['app']
+            return response.json().get('app')
         else:
             return response.json()
 
@@ -238,7 +239,7 @@ class Client(object):
         """
 
         response = self._rpc.http_req(http.get, 'v2/groups')
-        return response.json()['groups']
+        return response.json().get('groups')
 
     def get_group(self, group_id, version=None):
         """Returns a representation of the requested group version. If
@@ -285,9 +286,9 @@ class Client(object):
         response = self._rpc.http_req(http.get, path)
 
         if max_count is None:
-            return response.json()['versions']
+            return response.json().get('versions')
         else:
-            return response.json()['versions'][:max_count]
+            return response.json().get('versions')[:max_count]
 
     def get_apps(self):
         """Get a list of known applications.
@@ -297,7 +298,7 @@ class Client(object):
         """
 
         response = self._rpc.http_req(http.get, 'v2/apps')
-        return response.json()['apps']
+        return response.json().get('apps')
 
     def get_apps_for_framework(self, framework_name):
         """ Return all apps running the given framework.
@@ -327,8 +328,7 @@ class Client(object):
             app_json = app_resource
 
         response = self._rpc.http_req(http.post, 'v2/apps', json=app_json)
-
-        return response.json()
+        return response.json().get('deployments', {})[0].get('id')
 
     def _update_req(
             self, resource_type, resource_id, resource_json, force=False):
@@ -374,7 +374,7 @@ class Client(object):
         body_json = self._parse_json(response)
 
         try:
-            return body_json['deploymentId']
+            return body_json.get('deploymentId')
         except KeyError:
             template = ('Error: missing "deploymentId" field in the following '
                         'JSON response from Marathon:\n{}')
@@ -433,7 +433,7 @@ class Client(object):
                                       params=params,
                                       json={'instances': int(instances)})
 
-        deployment = response.json()['deploymentId']
+        deployment = response.json().get('deploymentId')
         return deployment
 
     def scale_group(self, group_id, scale_factor, force=False):
@@ -457,7 +457,7 @@ class Client(object):
                                       params=params,
                                       json={'scaleBy': scale_factor})
 
-        deployment = response.json()['deploymentId']
+        deployment = response.json().get('deploymentId')
         return deployment
 
     def stop_app(self, app_id, force=False):
@@ -711,7 +711,7 @@ class Client(object):
             group_json = group_resource
 
         response = self._rpc.http_req(http.post, 'v2/groups', json=group_json)
-        return response.json()
+        return response.json().get("deploymentId")
 
     def get_leader(self):
         """ Get the leading marathon instance.
@@ -721,7 +721,7 @@ class Client(object):
         """
 
         response = self._rpc.http_req(http.get, 'v2/leader')
-        return response.json()['leader']
+        return response.json().get('leader')
 
     def add_pod(self, pod_json):
         """Add a new pod.
@@ -733,11 +733,7 @@ class Client(object):
         """
 
         response = self._rpc.http_req(http.post, 'v2/pods', json=pod_json)
-        try:
-            return response.headers['Marathon-Deployment-Id']
-        except KeyError:
-            msg = 'Error: missing "Marathon-Deployment-Id" from header'
-            raise DCOSException(msg)
+        return response.headers.get('Marathon-Deployment-Id')
 
     def remove_pod(self, pod_id, force=False):
         """Completely removes the requested pod.

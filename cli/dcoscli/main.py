@@ -7,6 +7,7 @@ from six.moves import urllib
 
 from dcos import config, constants, emitting, errors, http, subcommand, util
 from dcos.errors import DCOSException
+from dcoscli.help.main import dcos_help
 from dcoscli.subcommand import default_doc, SubcommandMain
 from dcoscli.util import formatted_cli_version
 
@@ -75,7 +76,10 @@ def _main():
     command = args['<command>']
 
     if not command:
-        command = "help"
+        if args['--help']:
+            command = "help"
+        else:
+            return dcos_help()
 
     if command in subcommand.default_subcommands():
         sc = SubcommandMain(command, args['<args>'])
@@ -112,6 +116,7 @@ def signal_handler(signal, frame):
     emitter.publish(
         errors.DefaultError("User interrupted command with Ctrl-C"))
     sys.exit(0)
+
 
 if __name__ == "__main__":
     sys.exit(main())

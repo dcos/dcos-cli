@@ -17,7 +17,7 @@ lock = threading.Lock()
 
 DEFAULT_TIMEOUT = 5
 
-# only accessed from _request_with_auth
+# only accessed from request_with_auth
 AUTH_CREDS = {}  # (hostname, auth_scheme, realm) -> AuthBase()
 
 
@@ -80,6 +80,15 @@ def _request(method,
     :rtype: Response
     """
 
+    if 'headers' not in kwargs:
+        kwargs['headers'] = {'Accept': 'application/json'}
+
+    verify = _verify_ssl(verify)
+
+    # Silence 'Unverified HTTPS request' and 'SecurityWarning' for bad certs
+    if verify is not None:
+        silence_requests_warnings()
+
     logger.info(
         'Sending HTTP [%r] to [%r]: %r',
         method,
@@ -119,17 +128,14 @@ def _request(method,
     return response
 
 
-def _request_with_auth(response,
-                       method,
-                       url,
-                       is_success=_default_is_success,
-                       timeout=None,
-                       verify=None,
-                       **kwargs):
+def request_with_auth(method,
+                      url,
+                      is_success=_default_is_success,
+                      timeout=None,
+                      verify=None,
+                      **kwargs):
     """Try request (3 times) with credentials if 401 returned from server
 
-    :param response: requests.response
-    :type response: requests.Response
     :param method: method for the new Request object
     :type method: str
     :param url: URL for the new Request object
@@ -145,6 +151,8 @@ def _request_with_auth(response,
     :type kwargs: dict
     :rtype: requests.Response
     """
+
+    response = _request(method, url, is_success, timeout, verify, **kwargs)
 
     i = 0
     while i < 3 and response.status_code == 401:
@@ -209,24 +217,24 @@ def request(method,
     :rtype: Response
     """
 
-    if 'headers' not in kwargs:
-        kwargs['headers'] = {'Accept': 'application/json'}
-
-    verify = _verify_ssl(verify)
-
-    # Silence 'Unverified HTTPS request' and 'SecurityWarning' for bad certs
-    if verify is not None:
-        silence_requests_warnings()
-
+    auth_token = config.get_config_val(
+        "core.dcos_acs_token", config.get_config())
+    if auth_token is None:
+        auth = None
+    else:
+        auth = DCOSAcsAuth(auth_token)
     response = _request(method, url, is_success, timeout,
-                        verify=verify, **kwargs)
-
-    if response.status_code == 401:
-        response = _request_with_auth(response, method, url, is_success,
-                                      timeout, verify, **kwargs)
+                        auth=auth, verify=verify, **kwargs)
 
     if is_success(response.status_code):
         return response
+    elif response.status_code == 401:
+        if auth_token is not None:
+            msg = ("Your core.dcos_acs_token is invalid. "
+                   "Please run: `dcos auth login`")
+            raise DCOSException(msg)
+        else:
+            raise DCOSAuthenticationException(response)
     elif response.status_code == 403:
         raise DCOSAuthorizationException(response)
     elif response.status_code == 400:
@@ -482,15 +490,8 @@ def _get_dcos_auth(auth_scheme, username, password, hostname):
         else:
             creds = _get_dcos_oauth_creds(dcos_url)
 
-        verify = _verify_ssl()
-        # Silence 'Unverified HTTPS request' and 'SecurityWarning' for bad cert
-        if verify is not None:
-            silence_requests_warnings()
-
         url = urllib.parse.urljoin(dcos_url, 'acs/api/v1/auth/login')
-        # using private method here, so we don't retry on this request
-        # error here will be bubbled up to _request_with_auth
-        response = _request('post', url, json=creds, verify=verify)
+        response = _request('post', url, json=creds)
 
         if response.status_code == 200:
             token = response.json()['token']

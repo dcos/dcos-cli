@@ -12,7 +12,7 @@ import dcos.util as util
 from dcos.util import create_schema
 
 from .common import (add_app, app, assert_command, assert_lines, exec_command,
-                     remove_app, watch_all_deployments)
+                     pod, remove_app, watch_all_deployments)
 from ..fixtures.task import task_fixture
 
 SLEEP_COMPLETED = 'tests/data/marathon/apps/sleep-completed.json'
@@ -120,6 +120,23 @@ def test_log_single_file():
     assert returncode == 0
     assert stderr == b''
     assert len(stdout.decode('utf-8').split('\n')) > 0
+
+
+@pytest.mark.skipif('DCOS_PODS_ENABLED' not in os.environ,
+                    reason="Requires pods")
+def test_log_pod_task():
+    good_pod_file = 'tests/data/marathon/pods/good.json'
+    with pod(good_pod_file, 'good-pod'):
+
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'task', 'log', 'good-container', 'stderr'])
+
+        # pod task log are not executor logs, so normal executor stderr
+        # logs shouldn't be seen and this pod shoudn't have any logging
+        # to stderr
+        assert returncode == 1
+        assert stderr == b'No files exist. Exiting.\n'
+        assert stdout == b''
 
 
 def test_log_missing_file():

@@ -361,10 +361,12 @@ def test_rpc_client_http_req_returns_method_fn_result():
 
 def test_rpc_client_http_req_propagates_method_fn_exception_1():
     request = requests.Request(method='ANY', url='http://arbitrary/url')
-    response = requests.Response()
+    # Need the mock so that the `.json()` method can be overridden
+    response = mock.create_autospec(requests.Response)
     response.status_code = 403
     response.reason = 'Forbidden'
     response.request = request
+    response.json.side_effect = Exception('not JSON')
 
     def method_fn(*args, **kwargs):
         raise DCOSHTTPException(response)
@@ -384,7 +386,7 @@ def test_rpc_client_http_req_propagates_method_fn_exception_1():
 
 def test_rpc_client_http_req_propagates_method_fn_exception_2():
     request = requests.Request(method='NONE', url='http://host/path')
-    # Need the mock so that the json() method can be overridden
+    # Need the mock so that the `.json()` method can be overridden
     response = mock.create_autospec(requests.Response)
     response.status_code = 422
     response.reason = 'Something Bad'
@@ -656,12 +658,9 @@ def _assert_method_raises_dcos_exception_for_json_parse_errors(invoke_method):
 def _assert_add_pod_raises_dcos_exception_if_deployment_id_missing(headers):
     marathon_client, rpc_client = _create_fixtures()
     rpc_client.http_req.return_value = _pod_response_fixture(headers)
+    result = marathon_client.add_pod({'some': 'json'})
 
-    with pytest.raises(DCOSException) as exception_info:
-        marathon_client.add_pod({'some': 'json'})
-
-    expected_error = 'Error: missing "Marathon-Deployment-Id" from header'
-    assert str(exception_info.value) == expected_error
+    assert result is None
 
 
 def _assert_update_pod_raises_dcos_exception_if_deployment_id_missing(headers):

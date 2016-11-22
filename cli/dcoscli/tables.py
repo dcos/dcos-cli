@@ -4,6 +4,7 @@ import posixpath
 from collections import OrderedDict
 
 import prettytable
+
 from dcos import mesos, util
 
 EMPTY_ENTRY = '---'

@@ -12,6 +12,7 @@ import zipfile
 from distutils.version import LooseVersion
 
 import requests
+
 from dcos import constants, util
 from dcos.errors import DCOSException
 from dcos.subprocess import Subproc
@@ -390,6 +391,7 @@ def uninstall(package_name):
         return True
 
     return False
+
 
 BIN_DIRECTORY = 'Scripts' if util.is_windows_platform() else 'bin'
 

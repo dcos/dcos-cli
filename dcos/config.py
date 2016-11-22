@@ -7,6 +7,7 @@ import sys
 
 import pkg_resources
 import toml
+
 from dcos import constants, jsonitem, subcommand, util
 from dcos.errors import DCOSException
 

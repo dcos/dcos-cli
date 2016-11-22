@@ -3,6 +3,7 @@ import collections
 import contextlib
 import json
 import os
+import re
 import subprocess
 import time
 
@@ -150,17 +151,17 @@ def wait_for_service(service_name, number_of_services=1, max_count=300):
         count += 1
 
 
-def add_job(app_path):
+def add_job(job_path):
     """ Add a job, and wait for it to deploy
 
-    :param app_path: path to job's json definition
-    :type app_path: str
+    :param job_path: path to job's json definition
+    :type job_path: str
     :param wait: whether to wait for the deploy
     :type wait: bool
     :rtype: None
     """
 
-    assert_command(['dcos', 'job', 'add', app_path])
+    assert_command(['dcos', 'job', 'add', job_path])
 
 
 def add_app(app_path, wait=True):
@@ -173,7 +174,12 @@ def add_app(app_path, wait=True):
     :rtype: None
     """
 
-    assert_command(['dcos', 'marathon', 'app', 'add', app_path])
+    cmd = ['dcos', 'marathon', 'app', 'add', app_path]
+    returncode, stdout, stderr = exec_command(cmd)
+    assert returncode == 0
+    assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
+    assert stderr == b''
+
     if wait:
         watch_all_deployments()
 
@@ -196,16 +202,32 @@ def remove_app(app_id):
     assert_command(['dcos', 'marathon', 'app', 'remove', '--force', app_id])
 
 
-def remove_job(app_id):
+def remove_pod(pod_id, force=True):
+    """ Remove a pod
+
+    :param pod_id: id of app to remove
+    :type pod_id: str
+    :param force: whether to force a remove
+    :type force: bool
+    :rtype: None
+    """
+
+    cmd = ['dcos', 'marathon', 'pod', 'remove', pod_id]
+    if force:
+        cmd += ['--force']
+    assert_command(cmd)
+
+
+def remove_job(job_id):
     """ Remove a job
 
-    :param app_id: id of app to remove
-    :type app_id: str
+    :param job_id: id of job to remove
+    :type job_id: str
     :rtype: None
     """
 
     assert_command(['dcos', 'job', 'remove',
-                    '--stop-current-job-runs', app_id])
+                    '--stop-current-job-runs', job_id])
 
 
 def package_install(package, deploy=False, args=[]):
@@ -516,15 +538,78 @@ def app(path, app_id, wait=True):
         watch_all_deployments()
 
 
+def add_pod(pod_path, wait=True):
+    """Add a pod, and wait for it to deploy
+
+    :param pod_path: path to pod's json definition
+    :type pod_path: str
+    :param wait: whether to wait for the deploy
+    :type wait: bool
+    :rtype: None
+    """
+
+    cmd = ['dcos', 'marathon', 'pod', 'add', pod_path]
+    returncode, stdout, stderr = exec_command(cmd)
+    assert returncode == 0
+    assert re.fullmatch('Created deployment \S+\n', stdout.decode('utf-8'))
+    assert stderr == b''
+
+    if wait:
+        watch_all_deployments()
+
+
 @contextlib.contextmanager
-def job(path, app_id):
-    """Context manager that deploys an app on entrance, and removes it on
+def pod(path, pod_id, wait=True):
+    """Context manager that deploys an pod on entrance, and removes it on exit
+
+    :param path: path to pod's json definition:
+    :type path: str
+    :param pod_id: pod id
+    :type pod_id: str
+    :param wait: whether to wait for the deploy
+    :type wait: bool
+    :rtype: None
+    """
+
+    add_pod(path, wait)
+    try:
+        yield
+    finally:
+        remove_pod(pod_id)
+        watch_all_deployments()
+
+
+@contextlib.contextmanager
+def pods(pods):
+    """Context manager that deploys pods on entrance, and removes
+    them on exit.
+
+    :param pods: dict of path/to/pod/json -> pod id
+    :type pods: {}
+    :rtype: None
+    """
+
+    for pod_path in pods:
+        add_pod(pod_path, wait=False)
+    watch_all_deployments()
+
+    try:
+        yield
+    finally:
+        for pod_id in list(pods.values()):
+            remove_pod(pod_id)
+        watch_all_deployments()
+
+
+@contextlib.contextmanager
+def job(path, job_id):
+    """Context manager that deploys a job on entrance, and removes it on
     exit.
 
-    :param path: path to app's json definition:
+    :param path: path to job's json definition:
     :type path: str
-    :param app_id: app id
-    :type app_id: str
+    :param job_id: job id
+    :type job_id: str
     :param wait: whether to wait for the deploy
     :type wait: bool
     :rtype: None
@@ -534,7 +619,7 @@ def job(path, app_id):
     try:
         yield
     finally:
-        remove_job(app_id)
+        remove_job(job_id)
 
 
 @contextlib.contextmanager
@@ -709,9 +794,7 @@ UNIVERSE_TEST_REPO = "http://universe.marathon.mesos:8085/repo"
 
 def setup_universe_server():
     # add universe-server with static packages
-    assert_command(
-        ['dcos', 'marathon', 'app', 'add', 'tests/data/universe-v3-stub.json'])
-    watch_all_deployments()
+    add_app('tests/data/universe-v3-stub.json', True)
 
     assert_command(
         ['dcos', 'package', 'repo', 'remove', 'Universe'])

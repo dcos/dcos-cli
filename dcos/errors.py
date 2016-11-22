@@ -34,7 +34,7 @@ class DCOSAuthenticationException(DCOSHTTPException):
         self.response = response
 
     def __str__(self):
-        return "Authentication failed"
+        return "Authentication failed. Please run `dcos auth login`"
 
 
 class DCOSAuthorizationException(DCOSHTTPException):
