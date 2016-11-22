@@ -572,7 +572,7 @@ def queued_app_table(queued_app):
         calculations[key]['MATCHED'] = '{0} / {1}'\
             .format(dividend, divisor)
         if divisor > 0:
-            calculations[key]['PERCENTAGE'] = '{0:06.2f}%' \
+            calculations[key]['PERCENTAGE'] = '{0:0.2f}%' \
                 .format(calc_division(dividend, divisor))
         else:
             calculations[key]['PERCENTAGE'] = EMPTY_ENTRY
