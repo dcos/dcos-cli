@@ -1,12 +1,14 @@
 import contextlib
 import os
 import pytest
+import re
 
 from .common import (app, exec_command, pod)
 from .test_marathon import (_list_tasks)
 
 _PODS_ENABLED = 'DCOS_PODS_ENABLED' in os.environ
-
+list_regex = '/stuck-(?:sleep|pod)\W+[^Z]+Z\W+9\W+(?:True|False)' \
+             '\W+\d\W+\d\W+[^Z]+Z\W+[^Z]+Z'
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_debug_list():
@@ -20,13 +22,11 @@ def test_debug_list():
         decoded = stdout.decode()
         assert 'OVERDUE' in decoded
         assert '/stuck-sleep' in decoded
-        """There should be a line of the following format in the stdout:
+        """A line in the output looks like
         /stuck-sleep $since 9 True 4 3 $last_unsued_offer $last_used_offer
-        To avoid formatting issues, whitspaces are ignored.
-        Explanation:
-        9 Instances should be launched and $since timestamp ends with `Z`.
+        Therefore `list_regex` tests this
         """
-        assert 'Z9' in decoded.replace(' ', '')
+        assert re.search(list_regex, decoded) is not None
 
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
@@ -56,13 +56,11 @@ def test_debug_list_pod():
         decoded = stdout.decode()
         assert 'OVERDUE' in decoded
         assert '/stuck-pod' in decoded
-        """There should be a line of the following format in the stdout:
+        """A line in the output looks like
         /stuck-sleep $since 9 True 4 3 $last_unsued_offer $last_used_offer
-        To avoid formatting issues, whitspaces are ignored.
-        Explanation:
-        9 Instances should be launched and $since timestamp ends with `Z`.
+        Therefore `list_regex` tests this
         """
-        assert 'Z9' in decoded.replace(' ', '')
+        assert re.search(list_regex, decoded) is not None
 
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
@@ -120,7 +118,7 @@ def test_debug_summary_pod():
 
         decoded = stdout.decode()
         assert 'CONSTRAINTS' in decoded
-        assert "'operator': 'unique'" in decoded
+        assert "'operator': 'UNIQUE'" in decoded
         assert "'fieldName': 'hostname'" in decoded
         assert '0.00%' in decoded
 
@@ -151,10 +149,10 @@ def test_debug_details():
         decoded = stdout.decode()
         """The public agent has all resources to launch this task,
         but not the matching role, therefore the output should be:
-        ok        -        ok    ok   ok    ok     ok
+        ok        -        ok    ok   ok    ok
         To avoid formatting issues, whitspaces are ignored.
         """
-        assert 'ok-okokokokok' in decoded.replace(' ', '')
+        assert 'ok-okokokok' in decoded.replace(' ', '')
         """We do have 3 lines. The headline and two lines for the agents.
         If we split the decoded output by line break, there should be four
         entries in the array. The additional entry is empty.
@@ -188,10 +186,10 @@ def test_debug_details_pod():
         decoded = stdout.decode()
         """The public agent has all resources to launch this task,
         but not the matching role, therefore the output should be:
-        ok        -        ok    ok   ok    ok     ok
+        ok        -        ok    ok   ok    ok
         To avoid formatting issues, whitspaces are ignored.
         """
-        assert 'ok-okokokokok' in decoded.replace(' ', '')
+        assert 'ok-okokokok' in decoded.replace(' ', '')
         """We do have 3 lines. The headline and two lines for the agents.
         If we split the decoded output by line break, there should be four
         entries in the array. The additional entry is empty.
