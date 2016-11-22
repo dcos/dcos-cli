@@ -1,6 +1,7 @@
 from functools import wraps
 
 import docopt
+
 from dcos import emitting
 
 emitter = emitting.FlatEmitter()

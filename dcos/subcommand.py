@@ -12,6 +12,7 @@ import zipfile
 from distutils.version import LooseVersion
 
 import requests
+
 from dcos import constants, util
 from dcos.errors import DCOSException
 from dcos.subprocess import Subproc
