@@ -1035,9 +1035,13 @@ class MarathonSubcommand(object):
         queued_app = client.get_queued_app(app_id)
 
         if queued_app:
-            emitting.publish_table(
-                emitter, queued_app,
-                tables.queued_app_table, json_)
+            if queued_app.get('processedOffersSummary'):
+                emitting.publish_table(
+                    emitter, queued_app,
+                    tables.queued_app_table, json_)
+            else:
+                msg = "This command is not supported on your cluster"
+                raise DCOSException(msg)
         else:
             raise DCOSException("No apps found in Marathon queue")
 

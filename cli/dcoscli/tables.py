@@ -604,93 +604,89 @@ def queued_app_table(queued_app):
          ),
     ])
 
-    """Make sure only display this table if api offers according information"""
-    if queued_app.get('processedOffersSummary'):
-        summary = queued_app.get('processedOffersSummary', {})
-        reasons = summary.get('rejectSummaryLastOffers', {})
+    summary = queued_app.get('processedOffersSummary', {})
+    reasons = summary.get('rejectSummaryLastOffers', {})
 
-        declined_by_role = extract_reason_from_list(
-            reasons, 'UnfulfilledRole')
-        declined_by_constraints = extract_reason_from_list(
-            reasons, 'UnfulfilledConstraint')
-        declined_by_cpus = extract_reason_from_list(
-            reasons, 'InsufficientCpus')
-        declined_by_mem = extract_reason_from_list(
-            reasons, 'InsufficientMemory')
-        declined_by_disk = extract_reason_from_list(
-            reasons, 'InsufficientDisk')
-        """declined_by_gpus = extract_reason_from_list(
-            reasons, 'InsufficientGpus')"""
-        declined_by_ports = extract_reason_from_list(
-            reasons, 'InsufficientPorts')
+    declined_by_role = extract_reason_from_list(
+        reasons, 'UnfulfilledRole')
+    declined_by_constraints = extract_reason_from_list(
+        reasons, 'UnfulfilledConstraint')
+    declined_by_cpus = extract_reason_from_list(
+        reasons, 'InsufficientCpus')
+    declined_by_mem = extract_reason_from_list(
+        reasons, 'InsufficientMemory')
+    declined_by_disk = extract_reason_from_list(
+        reasons, 'InsufficientDisk')
+    """declined_by_gpus = extract_reason_from_list(
+        reasons, 'InsufficientGpus')"""
+    declined_by_ports = extract_reason_from_list(
+        reasons, 'InsufficientPorts')
 
-        app = queued_app.get('app')
-        if app:
-            roles = app.get('acceptedResourceRoles', [])
-            if len(roles) == 0:
-                spec_roles = '[*]'
-            else:
-                spec_roles = roles
-            spec_constraints = app.get('constraints', EMPTY_ENTRY)
-            spec_cpus = app.get('cpus', EMPTY_ENTRY)
-            spec_mem = app.get('mem', EMPTY_ENTRY)
-            spec_disk = app.get('disk', EMPTY_ENTRY)
-            """spec_gpus = app.get('gpus', EMPTY_ENTRY)"""
-            spec_ports = app.get('ports', EMPTY_ENTRY)
+    app = queued_app.get('app')
+    if app:
+        roles = app.get('acceptedResourceRoles', [])
+        if len(roles) == 0:
+            spec_roles = '[*]'
         else:
-            def sum_resources(value):
-                def container_value(container):
-                    return container.get('resources', {}).get(value, 0)
-
-                return sum(map(container_value, pod.get('containers', [])))
-
-            pod = queued_app.get('pod')
-            roles = pod.\
-                get('scheduling', {}).get('placement', {}).\
-                get('acceptedResourceRoles', [])
-            if len(roles) == 0:
-                spec_roles = '[*]'
-            else:
-                spec_roles = roles
-            spec_constraints = pod.\
-                get('scheduling', {}).get('placement', {}).\
-                get('constraints', EMPTY_ENTRY)
-            spec_cpus = sum_resources('cpus')
-            spec_mem = sum_resources('mem')
-            spec_disk = sum_resources('disk')
-            """spec_gpus = sum_resources('gpus')"""
-            spec_ports = []
-            for container in pod.get('containers', []):
-                for endpoint in container.get('endpoints', []):
-                    spec_ports.append(endpoint.get('hostPort'))
-
-        """'GPUS'"""
-        rows = ['ROLE', 'CONSTRAINTS', 'CPUS', 'MEM', 'DISK', 'PORTS']
-
-        calculations = {}
-        for reason in rows:
-            calculations[reason] = {}
-            calculations[reason]['RESOURCE'] = reason
-
-        add_reason_entry(calculations, 'ROLE', spec_roles, declined_by_role)
-        add_reason_entry(
-            calculations, 'CONSTRAINTS', spec_constraints,
-            declined_by_constraints)
-        add_reason_entry(calculations, 'CPUS', spec_cpus, declined_by_cpus)
-        add_reason_entry(calculations, 'MEM', spec_mem, declined_by_mem)
-        add_reason_entry(calculations, 'DISK', spec_disk, declined_by_disk)
-        """
-        add_reason_entry(calculations, 'GPUS', spec_gpus, declined_by_gpus)
-        """
-        add_reason_entry(calculations, 'PORTS', spec_ports, declined_by_ports)
-
-        tb = table(fields, rows)
-        tb.align['RESOURCE'] = 'l'
-        tb.align['REQUESTED'] = 'l'
-        tb.align['MATCHED'] = 'l'
-        tb.align['MATCHED PERCENTAGE'] = 'l'
+            spec_roles = roles
+        spec_constraints = app.get('constraints', EMPTY_ENTRY)
+        spec_cpus = app.get('cpus', EMPTY_ENTRY)
+        spec_mem = app.get('mem', EMPTY_ENTRY)
+        spec_disk = app.get('disk', EMPTY_ENTRY)
+        """spec_gpus = app.get('gpus', EMPTY_ENTRY)"""
+        spec_ports = app.get('ports', EMPTY_ENTRY)
     else:
-        tb = table(fields, [])
+        def sum_resources(value):
+            def container_value(container):
+                return container.get('resources', {}).get(value, 0)
+
+            return sum(map(container_value, pod.get('containers', [])))
+
+        pod = queued_app.get('pod')
+        roles = pod.\
+            get('scheduling', {}).get('placement', {}).\
+            get('acceptedResourceRoles', [])
+        if len(roles) == 0:
+            spec_roles = '[*]'
+        else:
+            spec_roles = roles
+        spec_constraints = pod.\
+            get('scheduling', {}).get('placement', {}).\
+            get('constraints', EMPTY_ENTRY)
+        spec_cpus = sum_resources('cpus')
+        spec_mem = sum_resources('mem')
+        spec_disk = sum_resources('disk')
+        """spec_gpus = sum_resources('gpus')"""
+        spec_ports = []
+        for container in pod.get('containers', []):
+            for endpoint in container.get('endpoints', []):
+                spec_ports.append(endpoint.get('hostPort'))
+
+    """'GPUS'"""
+    rows = ['ROLE', 'CONSTRAINTS', 'CPUS', 'MEM', 'DISK', 'PORTS']
+
+    calculations = {}
+    for reason in rows:
+        calculations[reason] = {}
+        calculations[reason]['RESOURCE'] = reason
+
+    add_reason_entry(calculations, 'ROLE', spec_roles, declined_by_role)
+    add_reason_entry(
+        calculations, 'CONSTRAINTS', spec_constraints,
+        declined_by_constraints)
+    add_reason_entry(calculations, 'CPUS', spec_cpus, declined_by_cpus)
+    add_reason_entry(calculations, 'MEM', spec_mem, declined_by_mem)
+    add_reason_entry(calculations, 'DISK', spec_disk, declined_by_disk)
+    """
+    add_reason_entry(calculations, 'GPUS', spec_gpus, declined_by_gpus)
+    """
+    add_reason_entry(calculations, 'PORTS', spec_ports, declined_by_ports)
+
+    tb = table(fields, rows)
+    tb.align['RESOURCE'] = 'l'
+    tb.align['REQUESTED'] = 'l'
+    tb.align['MATCHED'] = 'l'
+    tb.align['MATCHED PERCENTAGE'] = 'l'
 
     return tb
 
