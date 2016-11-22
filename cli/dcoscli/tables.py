@@ -5,7 +5,7 @@ from collections import OrderedDict
 
 import prettytable
 
-from dcos import mesos, util, marathon
+from dcos import marathon, mesos, util
 
 EMPTY_ENTRY = '---'
 
