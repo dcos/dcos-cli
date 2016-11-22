@@ -63,6 +63,6 @@ def _add(dcos_package):
     :rtype: int
     """
     package_manager = get_package_manager()
-    response = package_manager.experimental_package_add(dcos_package)
+    response = package_manager.package_add(dcos_package)
     emitter.publish(response.json())
     return 0

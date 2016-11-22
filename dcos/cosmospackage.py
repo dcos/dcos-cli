@@ -299,7 +299,7 @@ class Cosmos():
         response = self.cosmos_post("repository/delete", params=params)
         return response.json()
 
-    def experimental_package_add(self, dcos_package):
+    def package_add(self, dcos_package):
         """
         Adds a DC/OS package to DC/OS
 
@@ -310,13 +310,14 @@ class Cosmos():
         """
         request = "add"
         headers = self._request_preferences().get(request).pop(0)
-        headers['X-Dcos-Content-Length'] = str(_file_length(dcos_package))
-        data = _chunk_file(dcos_package)
-        response = self._post(request, params=None, headers=[headers], data=data)
+        with util.open_file(dcos_package, 'r+b') as pkg:
+            headers['Content-MD5'] = util.md5_hash_file(pkg)
+        files = {'file': open(dcos_package, 'r+b')}
+        response = self._post(request, headers=[headers], files=files)
         return response
 
     @cosmos_error
-    def _post(self, request, params, headers=None, data=None):
+    def _post(self, request, params=None, headers=None, files=None):
         """Request to cosmos server
 
         :param request: type of request
@@ -325,8 +326,8 @@ class Cosmos():
         :type params: dict
         :param headers: list of headers for request in order of preference
         :type headers: [str]
-        :param data: a generator for chunked responses
-        :type: generator
+        :param files: a files object
+        :type: dict
         :returns: Response
         :rtype: Response
         """
@@ -339,7 +340,7 @@ class Cosmos():
             header_preference = headers.pop(0)
             version = header_preference.get("Accept").split("version=")[1]
             response = http.post(url, json=params,
-                                 headers=header_preference, data=data)
+                                 headers=header_preference, files=files)
             if not _check_cosmos_header(request, response, version):
                 raise DCOSException(
                     "Server returned incorrect response type: {}".format(
@@ -350,7 +351,7 @@ class Cosmos():
             raise
         except DCOSBadRequest as e:
             if len(headers) > 0:
-                response = self._post(request, params, headers)
+                response = self._post(request, params, headers=headers)
             else:
                 response = e.response
         except DCOSHTTPException as e:
@@ -582,9 +583,8 @@ def _get_header(request_type, version):
     :returns: header information
     :rtype: str
     """
-
-    if request_type == 'add-response':
-        return 'application/vnd.dcos.universe.package+json;charset=utf-8;version=v3'
+    if request_type == 'add-request':
+        return 'application/vnd.dcos.universe.package+zip;version=v1'
     else:
         return ("application/vnd.dcos.package.{}+json;"
                 "charset=utf-8;version={}").format(request_type, version)
@@ -600,18 +600,11 @@ def _get_cosmos_header(request_name, version):
     :returns: dict of required headers
     :rtype: {}
     """
-    if request_name == "add":
-        return {
-            'Accept': 'application/vnd.dcos.package.add-response+json;charset=utf-8;version=v1',
-            'Content-Type': 'application/vnd.dcos.universe.package+zip;version=v1',
-            'Transfer-Encoding': 'chunked',
-        }
-    else:
-        request_name = request_name.replace("/", ".")
-        return {"Accept": _get_header("{}-response".format(request_name),
-                                      version),
-                "Content-Type": _get_header("{}-request".format(request_name),
-                                            "v1")}
+    request_name = request_name.replace("/", ".")
+    return {
+        "Accept": _get_header("{}-response".format(request_name), version),
+        "Content-Type": _get_header("{}-request".format(request_name), "v1")
+    }
 
 
 def _get_capabilities_header():
@@ -734,38 +727,3 @@ def _v2_package_to_v1_package_json(package_info):
         del package_json["resource"]
 
     return package_json
-
-
-def _file_length(filename):
-    """
-    Gets the length of a file
-
-    :param filename: a path to a file
-    :type filename: str
-    :return: length of the file whose path is filename
-    :rtype: int
-    """
-    with util.open_file(filename, 'r+b') as file:
-        file.seek(0, 2)
-        return file.tell()
-
-
-def _chunk_file(filename, chunk_size=200):
-    """
-    A generator that returns chunks of a file
-
-    :param filename: a path to a file
-    :type filename: str
-    :param chunk_size: the max size of each byte array yielded by the generator
-    :type chunk_size: int
-    :return: yields a byte array
-    :rtype: bytearray
-    """
-    with util.open_file(filename, 'r+b') as file:
-        eof = False
-        while not eof:
-            chunk = file.read(chunk_size)
-            if len(chunk) is 0:
-                eof = True
-            else:
-                yield chunk
