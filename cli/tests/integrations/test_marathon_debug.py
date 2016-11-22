@@ -1,7 +1,7 @@
 import contextlib
 import os
-import pytest
 import re
+import pytest
 
 from .common import (app, exec_command, pod)
 from .test_marathon import (_list_tasks)
@@ -9,6 +9,7 @@ from .test_marathon import (_list_tasks)
 _PODS_ENABLED = 'DCOS_PODS_ENABLED' in os.environ
 list_regex = '/stuck-(?:sleep|pod)\W+[^Z]+Z\W+9\W+(?:True|False)' \
              '\W+\d\W+\d\W+[^Z]+Z\W+[^Z]+Z'
+
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_debug_list():
@@ -104,7 +105,8 @@ def test_debug_summary_json():
 
         decoded = stdout.decode().replace(' ', '').replace('\n', '')
         assert '"reason":"UnfulfilledConstraint"' in decoded
-        assert '{"declined":0,"processed":0,"reason":"InsufficientCpus"}' in decoded
+        assert '{"declined":0,"processed":0,"reason":"InsufficientCpus"}' \
+               in decoded
 
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
@@ -134,7 +136,8 @@ def test_debug_summary_pod_json():
 
         decoded = stdout.decode().replace(' ', '').replace('\n', '')
         assert '"reason":"UnfulfilledConstraint"' in decoded
-        assert '{"declined":0,"processed":0,"reason":"InsufficientCpus"}' in decoded
+        assert '{"declined":0,"processed":0,"reason":"InsufficientCpus"}' \
+               in decoded
 
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
@@ -171,7 +174,8 @@ def test_debug_details_json():
 
         decoded = stdout.decode().replace(' ', '').replace('\n', '')
         assert '"reason":"UnfulfilledConstraint"' in decoded
-        assert '{"declined":0,"processed":0,"reason":"InsufficientCpus"}' in decoded
+        assert '{"declined":0,"processed":0,"reason":"InsufficientCpus"}' \
+               in decoded
 
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
@@ -208,7 +212,8 @@ def test_debug_details_pod_json():
 
         decoded = stdout.decode().replace(' ', '').replace('\n', '')
         assert '"reason":"UnfulfilledConstraint"' in decoded
-        assert '{"declined":0,"processed":0,"reason":"InsufficientCpus"}' in decoded
+        assert '{"declined":0,"processed":0,"reason":"InsufficientCpus"}' \
+               in decoded
 
 
 @contextlib.contextmanager
