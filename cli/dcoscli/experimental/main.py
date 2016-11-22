@@ -1,4 +1,5 @@
 import docopt
+
 import dcoscli
 
 from dcos import cmds, emitting, http, util
