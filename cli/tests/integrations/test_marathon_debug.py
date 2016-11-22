@@ -30,6 +30,21 @@ def test_debug_list():
 
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
+def test_debug_list_json():
+    with _stuck_app():
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'debug', 'list', '--json'])
+
+        assert returncode == 0
+        assert stderr == b''
+
+        decoded = stdout.decode()
+        assert 'overdue' in decoded
+        assert '/stuck-sleep' in decoded
+        assert '"reason": "UnfulfilledConstraint"' in decoded
+
+
+@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_debug_list_pod():
     with _stuck_pod():
         returncode, stdout, stderr = exec_command(
@@ -51,6 +66,21 @@ def test_debug_list_pod():
 
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
+def test_debug_list_pod_json():
+    with _stuck_pod():
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'debug', 'list', '--json'])
+
+        assert returncode == 0
+        assert stderr == b''
+
+        decoded = stdout.decode()
+        assert 'overdue' in decoded
+        assert '/stuck-pod' in decoded
+        assert '"reason": "UnfulfilledConstraint"' in decoded
+
+
+@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_debug_summary():
     with _stuck_app():
         returncode, stdout, stderr = exec_command(
@@ -63,6 +93,20 @@ def test_debug_summary():
         assert 'CONSTRAINTS' in decoded
         assert "[['hostname', 'UNIQUE']]" in decoded
         assert '0.00%' in decoded
+
+
+@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
+def test_debug_summary_json():
+    with _stuck_app():
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'debug', 'summary', '/stuck-sleep', '--json'])
+
+        assert returncode == 0
+        assert stderr == b''
+
+        decoded = stdout.decode().replace(' ', '').replace('\n', '')
+        assert '"reason":"UnfulfilledConstraint"' in decoded
+        assert '{"declined":0,"processed":0,"reason":"InsufficientCpus"}' in decoded
 
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
@@ -79,6 +123,20 @@ def test_debug_summary_pod():
         assert "'operator': 'unique'" in decoded
         assert "'fieldName': 'hostname'" in decoded
         assert '0.00%' in decoded
+
+
+@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
+def test_debug_summary_pod_json():
+    with _stuck_pod():
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'debug', 'summary', '/stuck-pod', '--json'])
+
+        assert returncode == 0
+        assert stderr == b''
+
+        decoded = stdout.decode().replace(' ', '').replace('\n', '')
+        assert '"reason":"UnfulfilledConstraint"' in decoded
+        assert '{"declined":0,"processed":0,"reason":"InsufficientCpus"}' in decoded
 
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
@@ -105,6 +163,20 @@ def test_debug_details():
 
 
 @pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
+def test_debug_details_json():
+    with _stuck_app():
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'debug', 'details', '/stuck-sleep', '--json'])
+
+        assert returncode == 0
+        assert stderr == b''
+
+        decoded = stdout.decode().replace(' ', '').replace('\n', '')
+        assert '"reason":"UnfulfilledConstraint"' in decoded
+        assert '{"declined":0,"processed":0,"reason":"InsufficientCpus"}' in decoded
+
+
+@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_debug_details_pod():
     with _stuck_pod():
         returncode, stdout, stderr = exec_command(
@@ -125,6 +197,20 @@ def test_debug_details_pod():
         entries in the array. The additional entry is empty.
         """
         assert len(decoded.split('\n')) == 4
+
+
+@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
+def test_debug_details_pod_json():
+    with _stuck_pod():
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'debug', 'details', '/stuck-pod', '--json'])
+
+        assert returncode == 0
+        assert stderr == b''
+
+        decoded = stdout.decode().replace(' ', '').replace('\n', '')
+        assert '"reason":"UnfulfilledConstraint"' in decoded
+        assert '{"declined":0,"processed":0,"reason":"InsufficientCpus"}' in decoded
 
 
 @contextlib.contextmanager
