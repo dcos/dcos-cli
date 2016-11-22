@@ -5,7 +5,7 @@ from collections import OrderedDict
 
 import prettytable
 
-from dcos import mesos, util
+from dcos import mesos, util, marathon
 
 EMPTY_ENTRY = '---'
 
@@ -551,6 +551,44 @@ def queued_app_table(queued_app):
         else:
             return 100 * dividend / divisor
 
+    def add_reason_entry(calculations, key, requested, reason_entry):
+        """Pretty prints the division of
+        reason_entry.get('declined') / reason_entry.get('processed')
+
+        :param calculations: object where result should be added
+        :type calculations: dict
+        :param key: key for which the result should be added
+        :type key: string
+        :param requested: the value initially was requested for this entry
+        :type requested: string
+        :param reason_entry: entry for a declined offer reason
+        :type reason_entry: [dict]
+        :rtype: str
+        """
+        dividend = reason_entry.get('processed', 0) - \
+            reason_entry.get('declined', 0)
+        divisor = reason_entry.get('processed', 0)
+        calculations[key]['REQUESTED'] = requested
+        calculations[key]['MATCHED'] = '{0} / {1}'\
+            .format(dividend, divisor)
+        calculations[key]['MATCHED PERCENTAGE'] = '{0:0.2f}%' \
+            .format(calc_division(dividend, divisor))
+
+    def extract_reason_from_list(list, reason_string):
+        """Extracts the reason for the given reason_string from the given list
+
+        :param list: list of reason entries
+        :type list: [dict]
+        :param reason_string: reasong as string
+        :type reason_string: str
+        :rtype: reason entry
+        """
+        filtered = [x for x in list if x['reason'] == reason_string]
+        if len(filtered) == 1:
+            return filtered[0]
+        else:
+            return {'reason': reason_string, 'declined': 0, 'processed': 0}
+
     fields = OrderedDict([
         ('RESOURCE', lambda entry:
             calculations.get(entry, {}).get('RESOURCE', EMPTY_ENTRY)
@@ -558,31 +596,33 @@ def queued_app_table(queued_app):
         ('REQUESTED', lambda entry:
             calculations.get(entry, {}).get('REQUESTED', EMPTY_ENTRY)
          ),
-        ('DECLINED', lambda entry:
-            calculations.get(entry, {}).get('DECLINED', EMPTY_ENTRY)
+        ('MATCHED', lambda entry:
+            calculations.get(entry, {}).get('MATCHED', EMPTY_ENTRY)
          ),
-        ('DECLINED PERCENTAGE', lambda entry:
-            calculations.get(entry, {}).get('DECLINED PERCENTAGE', EMPTY_ENTRY)
+        ('MATCHED PERCENTAGE', lambda entry:
+            calculations.get(entry, {}).get('MATCHED PERCENTAGE', EMPTY_ENTRY)
          ),
     ])
 
     """Make sure only display this table if api offers according information"""
     if queued_app.get('processedOffersSummary'):
         summary = queued_app.get('processedOffersSummary', {})
-        reasons = summary.get('rejectReason', {})
+        reasons = summary.get('rejectSummaryLastOffers', {})
 
-        processed_offers = summary.get('processedOffersCount', 0)
-
-        declined_by_role = reasons.get('UnfulfilledRole', 0)
-        declined_by_constraints = reasons.get('UnfulfilledConstraint', 0)
-        declined_by_cpus = reasons.get('InsufficientCpus', 0)
-        declined_by_mem = reasons.get('InsufficientMemory', 0)
-        declined_by_disk = reasons.get('InsufficientDisk', 0)
-        """declined_by_gpus = reasons.get('InsufficientGpus', 0)"""
-        declined_by_ports = reasons.get('InsufficientPorts', 0)
-
-        matched_constraints_and_roles = \
-            processed_offers - declined_by_role - declined_by_constraints
+        declined_by_role = extract_reason_from_list(
+            reasons, 'UnfulfilledRole')
+        declined_by_constraints = extract_reason_from_list(
+            reasons, 'UnfulfilledConstraint')
+        declined_by_cpus = extract_reason_from_list(
+            reasons, 'InsufficientCpus')
+        declined_by_mem = extract_reason_from_list(
+            reasons, 'InsufficientMemory')
+        declined_by_disk = extract_reason_from_list(
+            reasons, 'InsufficientDisk')
+        """declined_by_gpus = extract_reason_from_list(
+            reasons, 'InsufficientGpus')"""
+        declined_by_ports = extract_reason_from_list(
+            reasons, 'InsufficientPorts')
 
         app = queued_app.get('app')
         if app:
@@ -632,71 +672,23 @@ def queued_app_table(queued_app):
             calculations[reason] = {}
             calculations[reason]['RESOURCE'] = reason
 
-        calculations['ROLE']['REQUESTED'] = spec_roles
-        calculations['ROLE']['DECLINED'] = '{0} / {1}'\
-            .format(declined_by_role, processed_offers)
-        calculations['ROLE']['DECLINED PERCENTAGE'] = \
-            '{0:0.2f}%'.format(
-                calc_division(declined_by_role, processed_offers))
+        add_reason_entry(calculations, 'ROLE', spec_roles, declined_by_role)
+        add_reason_entry(
+            calculations, 'CONSTRAINTS', spec_constraints,
+            declined_by_constraints)
+        add_reason_entry(calculations, 'CPUS', spec_cpus, declined_by_cpus)
+        add_reason_entry(calculations, 'MEM', spec_mem, declined_by_mem)
+        add_reason_entry(calculations, 'DISK', spec_disk, declined_by_disk)
+        """
+        add_reason_entry(calculations, 'GPUS', spec_gpus, declined_by_gpus)
+        """
+        add_reason_entry(calculations, 'PORTS', spec_ports, declined_by_ports)
 
-        calculations['CONSTRAINTS']['REQUESTED'] = spec_constraints
-        calculations['CONSTRAINTS']['DECLINED'] = '{0} / {1}' \
-            .format(declined_by_constraints,
-                    processed_offers - declined_by_role)
-        calculations['CONSTRAINTS']['DECLINED PERCENTAGE'] = '{0:0.2f}%'\
-            .format(calc_division(
-                declined_by_constraints, processed_offers - declined_by_role))
-
-        calculations['CPUS']['REQUESTED'] = spec_cpus
-        calculations['CPUS']['DECLINED'] = '{0} / {1}' \
-            .format(declined_by_cpus, matched_constraints_and_roles)
-        calculations['CPUS']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
-            calc_division(declined_by_cpus, matched_constraints_and_roles))
-
-        calculations['MEM']['REQUESTED'] = spec_mem
-        calculations['MEM']['DECLINED'] = '{0} / {1}' \
-            .format(declined_by_mem, matched_constraints_and_roles)
-        calculations['MEM']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
-            calc_division(declined_by_mem, matched_constraints_and_roles))
-
-        calculations['DISK']['REQUESTED'] = spec_disk
-        calculations['DISK']['DECLINED'] = '{0} / {1}' \
-            .format(declined_by_disk, matched_constraints_and_roles)
-        calculations['DISK']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
-            calc_division(declined_by_disk, matched_constraints_and_roles))
-
-        """calculations['GPUS']['REQUESTED'] = spec_gpus
-        calculations['GPUS']['DECLINED'] = '{0} / {1}' \
-            .format(declined_by_gpus, matched_constraints_and_roles)
-        calculations['GPUS']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
-            calc_division(declined_by_gpus, matched_constraints_and_roles))"""
-
-        calculations['PORTS']['REQUESTED'] = spec_ports
-        calculations['PORTS']['DECLINED'] = '{0} / {1}' \
-            .format(declined_by_ports, matched_constraints_and_roles)
-        calculations['PORTS']['DECLINED PERCENTAGE'] = '{0:0.2f}%'.format(
-            calc_division(declined_by_ports, matched_constraints_and_roles))
-
-        def percentage_to_float(row):
-            """Converts the first element in the given row from a
-            string containing '%' to a float value.
-            The first value of this array is always the DECLINED PERCENTAGE
-            column from the table, therefore this value is present.
-
-            :param row: list of all values of this row
-            :type row: []
-            :rtype: float
-            """
-            return float((row[0] or '0').replace('%', ''))
-
-        tb = table(fields, rows,
-                   sortby='DECLINED PERCENTAGE',
-                   sort_key=percentage_to_float,
-                   reversesort=True)
+        tb = table(fields, rows)
         tb.align['RESOURCE'] = 'l'
         tb.align['REQUESTED'] = 'l'
-        tb.align['DECLINED'] = 'l'
-        tb.align['DECLINED PERCENTAGE'] = 'l'
+        tb.align['MATCHED'] = 'l'
+        tb.align['MATCHED PERCENTAGE'] = 'l'
     else:
         tb = table(fields, [])
 
