@@ -310,14 +310,14 @@ class Cosmos():
         """
         request = "add"
         headers = self._request_preferences().get(request).pop(0)
-        with util.open_file(dcos_package, 'r+b') as pkg:
+        with util.open_file(dcos_package, 'rb') as pkg:
             headers['Content-MD5'] = util.md5_hash_file(pkg)
-        files = {'file': open(dcos_package, 'r+b')}
-        response = self._post(request, headers=[headers], files=files)
+        with util.open_file(dcos_package, 'rb') as data:
+            response = self._post(request, headers=[headers], data=data)
         return response
 
     @cosmos_error
-    def _post(self, request, params=None, headers=None, files=None):
+    def _post(self, request, params=None, headers=None, data=None):
         """Request to cosmos server
 
         :param request: type of request
@@ -326,8 +326,8 @@ class Cosmos():
         :type params: dict
         :param headers: list of headers for request in order of preference
         :type headers: [str]
-        :param files: a files object
-        :type: dict
+        :param data: a file object
+        :type: file
         :returns: Response
         :rtype: Response
         """
@@ -340,7 +340,7 @@ class Cosmos():
             header_preference = headers.pop(0)
             version = header_preference.get("Accept").split("version=")[1]
             response = http.post(url, json=params,
-                                 headers=header_preference, files=files)
+                                 headers=header_preference, data=data)
             if not _check_cosmos_header(request, response, version):
                 raise DCOSException(
                     "Server returned incorrect response type: {}".format(
@@ -351,7 +351,11 @@ class Cosmos():
             raise
         except DCOSBadRequest as e:
             if len(headers) > 0:
-                response = self._post(request, params, headers=headers)
+                response = self._post(
+                    request,
+                    params=params,
+                    headers=headers,
+                    data=data)
             else:
                 response = e.response
         except DCOSHTTPException as e:
