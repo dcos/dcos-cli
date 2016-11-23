@@ -99,7 +99,7 @@ make sure you set owner only permissions on these files:
 
 :code:`chmod 600 cli/tests/data/dcos.toml`
 
-:code:`chmod 600 cli/tests/config/parse_error.toml`
+:code:`chmod 600 cli/tests/data/config/parse_error.toml`
 
 The :code:`node` integration tests use :code:`CLI_TEST_SSH_KEY_PATH` for ssh
 credentials to your cluster.
