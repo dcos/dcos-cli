@@ -11,13 +11,13 @@ import pkg_resources
 import six
 
 import dcoscli
-from dcos import (cmds, config, cosmospackage, emitting, http, options,
-                  package, subcommand, util)
+from dcos import cmds, emitting, http, options, package, subcommand, util
 from dcos.errors import DCOSException
+from dcos.package import get_package_manager
 from dcos.util import md5_hash_file
 from dcoscli import tables
 from dcoscli.subcommand import default_command_info, default_doc
-from dcoscli.util import (decorate_docopt_usage, formatted_cli_version)
+from dcoscli.util import decorate_docopt_usage, formatted_cli_version
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -151,7 +151,7 @@ def _update():
     :rtype: str
     """
 
-    _get_package_manager()
+    get_package_manager()
     notice = ("This command has been deprecated. "
               "Repositories will be automatically updated after they are added"
               " by `dcos package repo add`")
@@ -167,7 +167,7 @@ def _list_repos(is_json):
     :rtype: int
     """
 
-    package_manager = _get_package_manager()
+    package_manager = get_package_manager()
     repos = package_manager.get_repos()
 
     if is_json:
@@ -196,7 +196,7 @@ def _add_repo(repo_name, repo_url, index):
     :rtype: None
     """
 
-    package_manager = _get_package_manager()
+    package_manager = get_package_manager()
     package_manager.add_repo(repo_name, repo_url, index)
 
     return 0
@@ -211,7 +211,7 @@ def _remove_repo(repo_name):
     :rtype: int
     """
 
-    package_manager = _get_package_manager()
+    package_manager = get_package_manager()
     package_manager.remove_repo(repo_name)
 
     return 0
@@ -514,7 +514,7 @@ def _describe(package_name,
     # Fail early if options file isn't valid
     user_options = _user_options(options_path)
 
-    package_manager = _get_package_manager()
+    package_manager = get_package_manager()
     pkg = package_manager.get_package_version(package_name, package_version)
 
     pkg_json = pkg.package_json()
@@ -614,7 +614,7 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
     # Fail early if options file isn't valid
     user_options = _user_options(options_path)
 
-    package_manager = _get_package_manager()
+    package_manager = get_package_manager()
     pkg = package_manager.get_package_version(package_name, package_version)
 
     pkg_json = pkg.package_json()
@@ -674,14 +674,14 @@ def _list(json_, app_id, cli_only, package_name):
     :param app_id: App ID of app to show
     :type app_id: str
     :param cli_only: if True, only show packages with installed subcommands
-    :type cli: bool
+    :type cli_only: bool
     :param package_name: The package to show
     :type package_name: str
     :returns: process return code
     :rtype: int
     """
 
-    package_manager = _get_package_manager()
+    package_manager = get_package_manager()
     if app_id is not None:
         app_id = util.normalize_marathon_id_path(app_id)
     results = package.installed_packages(
@@ -739,7 +739,7 @@ def _search(json_, query):
     if not query:
         query = ''
 
-    package_manager = _get_package_manager()
+    package_manager = get_package_manager()
     results = package_manager.search_sources(query)
 
     if json_ or results['packages']:
@@ -765,7 +765,7 @@ def _uninstall(package_name, remove_all, app_id, cli, app):
     :rtype: int
     """
 
-    package_manager = _get_package_manager()
+    package_manager = get_package_manager()
     err = package.uninstall(
         package_manager, package_name, remove_all, app_id, cli, app)
     if err is not None:
@@ -773,36 +773,3 @@ def _uninstall(package_name, remove_all, app_id, cli, app):
         return 1
 
     return 0
-
-
-def get_cosmos_url():
-    """
-    :returns: cosmos base url
-    :rtype: str
-    """
-    toml_config = config.get_config()
-    cosmos_url = config.get_config_val("package.cosmos_url", toml_config)
-    if cosmos_url is None:
-        cosmos_url = config.get_config_val("core.dcos_url", toml_config)
-        if cosmos_url is None:
-            raise config.missing_config_exception(["core.dcos_url"])
-    return cosmos_url
-
-
-def _get_package_manager():
-    """Returns type of package manager to use
-
-    :returns: PackageManager instance
-    :rtype: PackageManager
-    """
-
-    cosmos_url = get_cosmos_url()
-    cosmos_manager = cosmospackage.Cosmos(cosmos_url)
-    if cosmos_manager.enabled():
-        return cosmos_manager
-    else:
-        msg = ("This version of the DC/OS CLI is not supported for your "
-               "cluster. Please downgrade the CLI to an older version: "
-               "https://dcos.io/docs/usage/cli/update/#downgrade"
-               )
-        raise DCOSException(msg)
