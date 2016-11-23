@@ -11,8 +11,9 @@ from dcos import (cmds, config, cosmospackage, emitting, errors, http, mesos,
 from dcos.errors import (DCOSAuthenticationException,
                          DCOSAuthorizationException,
                          DCOSException, DefaultError)
+from dcos.package import get_cosmos_url
 from dcoscli import log, tables
-from dcoscli.package.main import confirm, get_cosmos_url
+from dcoscli.package.main import confirm
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
 

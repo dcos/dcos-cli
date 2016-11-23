@@ -11,8 +11,8 @@ import dcoscli
 from dcos import (cmds, config, cosmospackage, emitting, http, metronome,
                   options, util)
 from dcos.errors import DCOSException, DCOSHTTPException
+from dcos.package import get_cosmos_url
 from dcoscli import tables
-from dcoscli.package.main import get_cosmos_url
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
 

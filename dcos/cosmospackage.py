@@ -118,6 +118,9 @@ class Cosmos():
         :rtype: dict
         """
         return {
+            "add": [
+                _get_cosmos_header("add", "v1")
+            ],
             "describe": [
                 _get_cosmos_header("describe", "v2"),
                 _get_cosmos_header("describe", "v1")
@@ -296,16 +299,34 @@ class Cosmos():
         response = self.cosmos_post("repository/delete", params=params)
         return response.json()
 
+    def package_add(self, dcos_package):
+        """
+        Adds a DC/OS package to DC/OS
+
+        :param dcos_package: path to the DC/OS package
+        :type dcos_package: str
+        :return: Response to the package add request
+        :rtype: Response
+        """
+        request = "add"
+        headers = self._request_preferences().get(request).pop(0)
+        with util.open_file(dcos_package, 'rb') as pkg:
+            headers['Content-MD5'] = util.md5_hash_file(pkg)
+        with util.open_file(dcos_package, 'rb') as data:
+            return self._post(request, headers=[headers], data=data)
+
     @cosmos_error
-    def _post(self, request, params, headers=None):
+    def _post(self, request, params=None, headers=None, data=None):
         """Request to cosmos server
 
         :param request: type of request
-        :type requet: str
+        :type request: str
         :param params: body of request
         :type params: dict
         :param headers: list of headers for request in order of preference
         :type headers: [str]
+        :param data: a file object
+        :type: file
         :returns: Response
         :rtype: Response
         """
@@ -318,7 +339,7 @@ class Cosmos():
             header_preference = headers.pop(0)
             version = header_preference.get("Accept").split("version=")[1]
             response = http.post(url, json=params,
-                                 headers=header_preference)
+                                 headers=header_preference, data=data)
             if not _check_cosmos_header(request, response, version):
                 raise DCOSException(
                     "Server returned incorrect response type: {}".format(
@@ -329,7 +350,11 @@ class Cosmos():
             raise
         except DCOSBadRequest as e:
             if len(headers) > 0:
-                response = self._post(request, params, headers)
+                response = self._post(
+                    request,
+                    params=params,
+                    headers=headers,
+                    data=data)
             else:
                 response = e.response
         except DCOSHTTPException as e:
@@ -343,7 +368,7 @@ class Cosmos():
         """Request to cosmos server
 
         :param request: type of request
-        :type requet: str
+        :type request: str
         :param params: body of request
         :type params: dict
         :returns: Response
@@ -568,9 +593,11 @@ def _get_header(request_type, version):
     :returns: header information
     :rtype: str
     """
-
-    return ("application/vnd.dcos.package.{}+json;"
-            "charset=utf-8;version={}").format(request_type, version)
+    if request_type == 'add-request':
+        return 'application/vnd.dcos.universe.package+zip;version=v1'
+    else:
+        return ("application/vnd.dcos.package.{}+json;"
+                "charset=utf-8;version={}").format(request_type, version)
 
 
 def _get_cosmos_header(request_name, version):
@@ -583,12 +610,11 @@ def _get_cosmos_header(request_name, version):
     :returns: dict of required headers
     :rtype: {}
     """
-
     request_name = request_name.replace("/", ".")
-    return {"Accept": _get_header("{}-response".format(request_name),
-                                  version),
-            "Content-Type": _get_header("{}-request".format(request_name),
-                                        "v1")}
+    return {
+        "Accept": _get_header("{}-response".format(request_name), version),
+        "Content-Type": _get_header("{}-request".format(request_name), "v1")
+    }
 
 
 def _get_capabilities_header():
