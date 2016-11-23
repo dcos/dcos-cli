@@ -313,8 +313,7 @@ class Cosmos():
         with util.open_file(dcos_package, 'rb') as pkg:
             headers['Content-MD5'] = util.md5_hash_file(pkg)
         with util.open_file(dcos_package, 'rb') as data:
-            response = self._post(request, headers=[headers], data=data)
-        return response
+            return self._post(request, headers=[headers], data=data)
 
     @cosmos_error
     def _post(self, request, params=None, headers=None, data=None):
