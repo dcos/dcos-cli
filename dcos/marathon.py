@@ -917,8 +917,8 @@ def get_app_or_pod_id(app_or_pod):
 
         :param app_or_pod: app or pod definition
         :type app_or_pod: requests.Response
-        :return: the parsed JSON
-        :rtype: {} | [] | str | int | float | bool | None
+        :return: app or pod id
+        :rtype: str
         """
     return app_or_pod.get('app', app_or_pod.get('pod', {})).get('id')
 

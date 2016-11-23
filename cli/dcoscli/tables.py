@@ -427,8 +427,6 @@ def pod_table(pods):
 
     :param pods: pods to render
     :type pods: [dict]
-    :param queued_apps: currently queued apps
-    :type queued_apps: []
     :rtype: PrettyTable
     """
 
