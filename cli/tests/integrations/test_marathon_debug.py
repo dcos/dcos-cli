@@ -21,7 +21,7 @@ def test_debug_list():
         assert stderr == b''
 
         decoded = stdout.decode()
-        assert 'OVERDUE' in decoded
+        assert 'WAITING' in decoded
         assert '/stuck-sleep' in decoded
         """A line in the output looks like
         /stuck-sleep $since 9 True 4 3 $last_unsued_offer $last_used_offer
@@ -55,7 +55,7 @@ def test_debug_list_pod():
         assert stderr == b''
 
         decoded = stdout.decode()
-        assert 'OVERDUE' in decoded
+        assert 'WAITING' in decoded
         assert '/stuck-pod' in decoded
         """A line in the output looks like
         /stuck-sleep $since 9 True 4 3 $last_unsued_offer $last_used_offer

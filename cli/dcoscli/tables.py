@@ -107,7 +107,7 @@ def app_table(apps, deployments):
                                            a["instances"])),
         ("HEALTH", get_health),
         ("DEPLOYMENT", get_deployment),
-        ("OVERDUE", lambda app: app.get('overdue', False)),
+        ("WAITING", lambda app: app.get('overdue', False)),
         ("CONTAINER", get_container),
         ("CMD", get_cmd)
     ])
@@ -115,7 +115,7 @@ def app_table(apps, deployments):
     tb = table(fields, apps, sortby="ID")
     tb.align["CMD"] = "l"
     tb.align["ID"] = "l"
-    tb.align["OVERDUE"] = "l"
+    tb.align["WAITING"] = "l"
 
     return tb
 
@@ -455,7 +455,7 @@ def pod_table(pods):
         ('VERSION', lambda pod: pod['spec'].get('version', '-')),
         ('STATUS', lambda pod: pod['status']),
         ('STATUS SINCE', lambda pod: pod['statusSince']),
-        ('OVERDUE', lambda pod: pod.get('overdue', False))
+        ('WAITING', lambda pod: pod.get('overdue', False))
     ])
 
     tb = table(fields, pods, sortby=key_column)
@@ -463,7 +463,7 @@ def pod_table(pods):
     tb.align['VERSION'] = 'l'
     tb.align['STATUS'] = 'l'
     tb.align['STATUS SINCE'] = 'l'
-    tb.align['OVERDUE'] = 'l'
+    tb.align['WAITING'] = 'l'
 
     return tb
 
@@ -498,7 +498,7 @@ def queued_apps_table(queued_apps):
         ('INSTANCES TO LAUNCH', lambda entry:
             entry.get('count', EMPTY_ENTRY)
          ),
-        ('OVERDUE', lambda entry:
+        ('WAITING', lambda entry:
             entry.get('delay', {}).get('overdue', EMPTY_ENTRY)
          ),
         ('PROCESSED OFFERS', lambda entry:
@@ -519,7 +519,7 @@ def queued_apps_table(queued_apps):
     tb.align[key_column] = 'l'
     tb.align['SINCE'] = 'l'
     tb.align['INSTANCES TO LAUNCH'] = 'l'
-    tb.align['OVERDUE'] = 'l'
+    tb.align['WAITING'] = 'l'
     tb.align['PROCESSED OFFERS'] = 'l'
     tb.align['UNUSED OFFERS'] = 'l'
     tb.align['LAST UNUSED OFFER'] = 'l'
