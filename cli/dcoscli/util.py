@@ -1,6 +1,7 @@
 from functools import wraps
 
 import docopt
+
 import dcoscli
 
 from dcos import emitting
