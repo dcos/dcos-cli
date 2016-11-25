@@ -641,7 +641,14 @@ def queued_app_table(queued_app):
             def container_value(container):
                 return container.get('resources', {}).get(value, 0)
 
-            return sum(map(container_value, pod.get('containers', [])))
+            """While running pods, marathon will add resources for
+            the executor to the requested resources.
+            Therefore this requirements should be reflected in the summary."""
+            def executor_value():
+                return pod.get('executorResources', {}).get(value, 0)
+
+            resources = sum(map(container_value, pod.get('containers', [])))
+            return resources + executor_value()
 
         pod = queued_app.get('pod')
         roles = pod.\
