@@ -31,7 +31,7 @@ def test_pod_show_invoked_successfully():
 
 
 def test_pod_list_with_json():
-    _assert_pod_list_with_json(pod_list_json=['one', 'two', 'three'])
+    _assert_pod_list_with_json(pod_list_json=[{'id': 'one'}, {'id': 'two'}, {'id': 'three'}])
     _assert_pod_list_with_json(pod_list_json=[{'id': 'a'}, {'id': 'b'}])
 
 
