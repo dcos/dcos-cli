@@ -1,14 +1,48 @@
 import base64
+import collections
+import functools
 
+import six
 from six.moves import urllib
 
-from dcos import cosmos, emitting, http, util
+from dcos import cosmos, emitting, util
 from dcos.errors import (DCOSAuthenticationException,
-                         DCOSAuthorizationException,
-                         DCOSHTTPException, DefaultError)
+                         DCOSAuthorizationException, DCOSBadRequest,
+                         DCOSException, DCOSHTTPException, DefaultError)
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
+
+
+def cosmos_error(fn):
+    """Decorator for errors returned from cosmos
+
+    :param fn: function to check for errors from cosmos
+    :type fn: function
+    :rtype: Response
+    :returns: Response
+    """
+
+    @functools.wraps(fn)
+    def check_for_cosmos_error(*args, **kwargs):
+        """Returns response from cosmos or raises exception
+
+        :returns: Response or raises Exception
+        :rtype: valid response
+        """
+
+        response = fn(*args, **kwargs)
+        content_type = response.headers.get('Content-Type')
+        if content_type is None:
+            raise DCOSHTTPException(response)
+        elif cosmos.format_cosmos_header_type(
+                "package/error", "v1", '') in content_type:
+            logger.debug("Error: {}".format(response.json()))
+            error_msg = _format_error_message(response.json())
+            raise DCOSException(error_msg)
+        return response
+
+    return check_for_cosmos_error
 
 
 class Cosmos():
@@ -31,9 +65,8 @@ class Cosmos():
             return False
 
         try:
-            url = urllib.parse.urljoin(self.cosmos_url, 'capabilities')
-            response = http.get(url,
-                                headers=_get_capabilities_header()).json()
+            response = self.cosmos.call_cosmos_endpoint(
+                'capabilities').json()
         except Exception as e:
             logger.exception(e)
             return False
@@ -42,7 +75,9 @@ class Cosmos():
             logger.error(
                 'Request to get cluster capabilities: {} '
                 'returned unexpected response: {}. '
-                'Missing "capabilities" field'.format(url, response))
+                'Missing "capabilities" field'.format(
+                    urllib.parse.urljoin(self.cosmos_url, 'capabilities'),
+                    response))
             return False
 
         return {'name': capability} in response['capabilities']
@@ -54,9 +89,8 @@ class Cosmos():
         """
 
         try:
-            url = urllib.parse.urljoin(self.cosmos_url, 'capabilities')
-            response = http.get(url,
-                                headers=_get_capabilities_header())
+            response = self.cosmos.call_cosmos_endpoint(
+                'capabilities').json()
         # return `Authentication failed` error messages
         except DCOSAuthenticationException:
             raise
@@ -86,8 +120,14 @@ class Cosmos():
         :type app_id: str
         :rtype: None
         """
-        self.cosmos.package_install(
-            pkg.name(), pkg.version(), options, app_id)
+
+        params = {"packageName": pkg.name(), "packageVersion": pkg.version()}
+        if options is not None:
+            params["options"] = options
+        if app_id is not None:
+            params["appId"] = app_id
+
+        self.cosmos_post("install", params)
 
     def uninstall_app(self, package_name, remove_all, app_id):
         """Uninstalls an app.
@@ -101,8 +141,14 @@ class Cosmos():
         :returns: whether uninstall was successful or not
         :rtype: bool
         """
-        response = self.cosmos.package_uninstall(
-            package_name, app_id, remove_all)
+
+        params = {"packageName": package_name}
+        if remove_all is True:
+            params["all"] = True
+        if app_id is not None:
+            params["appId"] = app_id
+
+        response = self.cosmos_post("uninstall", params)
         results = response.json().get("results")
 
         uninstalled_versions = []
@@ -130,7 +176,8 @@ class Cosmos():
         :returns: list of package indicies of matching packages
         :rtype: [packages]
         """
-        return self.cosmos.package_search(query).json()
+        response = self.cosmos_post("search", {"query": query})
+        return response.json()
 
     def get_package_version(self, package_name, package_version):
         """Returns PackageVersion of specified package
@@ -159,10 +206,17 @@ class Cosmos():
         :type app_id: str
         :rtype: [dict]
         """
-        response = self.cosmos.package_list(package_name, app_id).json()
+
+        params = {}
+        if package_name is not None:
+            params["packageName"] = package_name
+        if app_id is not None:
+            params["appId"] = app_id
+
+        list_response = self.cosmos_post("list", params).json()
 
         packages = []
-        for pkg in response['packages']:
+        for pkg in list_response['packages']:
             result = pkg['packageInformation']['packageDefinition']
 
             result['appId'] = pkg['appId']
@@ -176,7 +230,8 @@ class Cosmos():
         :returns: the list of repos, in resolution order or list
         :rtype: dict
         """
-        return self.cosmos.package_repository_list().json()
+
+        return self.cosmos_post("repository/list", params={}).json()
 
     def add_repo(self, name, package_repo, index):
         """Add package repo and update repo with new repo
@@ -190,8 +245,12 @@ class Cosmos():
         :returns: current repo list
         :rtype: dict
         """
-        return self.cosmos.package_repository_add(
-            name, package_repo, index).json()
+
+        params = {"name": name, "uri": package_repo}
+        if index is not None:
+            params["index"] = index
+        response = self.cosmos_post("repository/add", params=params)
+        return response.json()
 
     def remove_repo(self, name):
         """Remove package repo and update repo
@@ -201,7 +260,10 @@ class Cosmos():
         :returns: current repo list
         :rtype: dict
         """
-        return self.cosmos.package_repository_delete(name).json()
+
+        params = {"name": name}
+        response = self.cosmos_post("repository/delete", params=params)
+        return response.json()
 
     def package_add(self, dcos_package):
         """
@@ -212,7 +274,54 @@ class Cosmos():
         :return: Response to the package add request
         :rtype: Response
         """
-        return self.cosmos.package_add(dcos_package)
+        with util.open_file(dcos_package, 'rb') as pkg:
+            extra_headers = {'Content-MD5': util.md5_hash_file(pkg)}
+        with util.open_file(dcos_package, 'rb') as data:
+            return self._post('add', headers=extra_headers, data=data)
+
+    @cosmos_error
+    def _post(self, request, params=None, headers=None, data=None):
+        """Request to cosmos server
+
+        :param request: type of request
+        :type request: str
+        :param params: body of request
+        :type params: dict
+        :param headers: list of headers for request in order of preference
+        :type headers: [str]
+        :param data: a file object
+        :type: file
+        :returns: Response
+        :rtype: Response
+        """
+
+        endpoint = 'package/{}'.format(request)
+        try:
+            return self.cosmos.call_cosmos_endpoint(
+                endpoint, headers, data=data, json=params)
+        except DCOSAuthenticationException:
+            raise
+        except DCOSAuthorizationException:
+            raise
+        except DCOSBadRequest as e:
+            return e.response
+        except DCOSHTTPException as e:
+            # let non authentication responses be handled by `cosmos_error` so
+            # we can expose errors reported by cosmos
+            return e.response
+
+    def cosmos_post(self, request, params):
+        """Request to cosmos server
+
+        :param request: type of request
+        :type request: str
+        :param params: body of request
+        :type params: dict
+        :returns: Response
+        :rtype: Response
+        """
+
+        return self._post(request, params)
 
 
 class CosmosPackageVersion():
@@ -221,10 +330,13 @@ class CosmosPackageVersion():
     def __init__(self, name, package_version, url):
         self._name = name
         self._cosmos_url = url
-        self._cosmos = cosmos.Cosmos(self._cosmos_url)
 
-        package_info = self._cosmos.package_describe(
-            name, package_version).json()
+        params = {"packageName": name}
+        if package_version is not None:
+            params["packageVersion"] = package_version
+        response = Cosmos(url).cosmos_post("describe", params)
+
+        package_info = response.json()
 
         self._config_json = package_info.get("config")
         self._command_json = package_info.get("command")
@@ -246,8 +358,8 @@ class CosmosPackageVersion():
             self._package_json = _v2_package_to_v1_package_json(package_info)
             self._package_version = self._package_json["version"]
 
-        self._package_version = \
-            package_version or self._package_json.get("version")
+        self._package_version = (package_version or
+                                 self._package_json.get("version"))
 
     def registry(self):
         """Cosmos only supports one registry right now, so default to cosmos
@@ -339,9 +451,13 @@ class CosmosPackageVersion():
         :type options: dict
         :rtype: dict
         """
-        return self._cosmos.package_render(
-            self._name, self._package_version, options
-        ).json().get('marathonJson')
+
+        params = {"packageName": self._name}
+        params["packageVersion"] = self._package_version
+        if options:
+            params["options"] = options
+        response = Cosmos(self._cosmos_url).cosmos_post("render", params)
+        return response.json().get("marathonJson")
 
     def has_mustache_definition(self):
         """Returns True if packages has a marathon template
@@ -398,18 +514,84 @@ class CosmosPackageVersion():
         :returns: package version
         :rtype: []
         """
-        response = self._cosmos.package_list_versions(self.name()).json()
-        return list(response.get('results').keys())
+
+        params = {"packageName": self.name(), "includePackageVersions": True}
+        response = Cosmos(self._cosmos_url).cosmos_post(
+            "list-versions", params)
+
+        return list(response.json().get("results").keys())
 
 
-def _get_capabilities_header():
-    """Returns header fields needed for a valid request to cosmos capabilities
-    endpoint
-    :returns: header information
+def _format_error_message(error):
+    """Returns formatted error message based on error type
+
+    :param error: cosmos error
+    :type error: dict
+    :returns: formatted error
     :rtype: str
     """
-    header = "application/vnd.dcos.capabilities+json;charset=utf-8;version=v1"
-    return {"Accept": header, "Content-Type": header}
+    if error.get("type") == "AmbiguousAppId":
+        helper = (".\nPlease use --app-id to specify the ID of the app "
+                  "to uninstall, or use --all to uninstall all apps.")
+        error_message = error.get("message") + helper
+    elif error.get("type") == "MultipleFrameworkIds":
+        helper = ". Manually shut them down using 'dcos service shutdown'"
+        error_message = error.get("message") + helper
+    elif error.get("type") == "JsonSchemaMismatch":
+        error_message = _format_json_schema_mismatch_message(error)
+    elif error.get("type") == "MarathonBadResponse":
+        error_message = _format_marathon_bad_response_message(error)
+    else:
+        error_message = error.get("message")
+
+    return error_message
+
+
+def _format_json_schema_mismatch_message(error):
+    """Returns the formatted error message for JsonSchemaMismatch
+
+    :param error: cosmos JsonSchemMismatch error
+    :type error: dict
+    :returns: formatted error
+    :rtype: str
+    """
+
+    error_messages = ["Error: {}".format(error.get("message"))]
+    for err in error.get("data").get("errors"):
+        if err.get("unwanted"):
+            reason = "Unexpected properties: {}".format(err["unwanted"])
+            error_messages += [reason]
+        if err.get("found"):
+            found = "Found: {}".format(err["found"])
+            error_messages += [found]
+        if err.get("expected"):
+            expected = "Expected: {}".format(",".join(err["expected"]))
+            error_messages += [expected]
+        if err.get("instance"):
+            pointer = err["instance"].get("pointer")
+            formatted_path = pointer.lstrip("/").replace("/", ".")
+            path = "Path: {}".format(formatted_path)
+            error_messages += [path]
+
+    error_messages += [
+        "\nPlease create a JSON file with the appropriate options, and"
+        " pass the /path/to/file as an --options argument."
+    ]
+
+    return "\n".join(error_messages)
+
+
+def _format_marathon_bad_response_message(error):
+    data = error.get("data")
+    error_messages = [error.get("message")]
+    if data is not None:
+        for err in data.get("errors"):
+            if err.get("error") and isinstance(err["error"], six.string_types):
+                error_messages += [err["error"]]
+            elif err.get("errors") and \
+                    isinstance(err["errors"], collections.Sequence):
+                error_messages += err["errors"]
+    return "\n".join(error_messages)
 
 
 def _v2_package_to_v1_package_json(package_info):
