@@ -829,6 +829,36 @@ class Client(object):
         response = self._rpc.http_req(test_for_pods, 'v2/pods')
         return response.status_code // 100 == 2
 
+    def get_queued_app(self, app_id):
+        """Returns app information inside the launch queue.
+
+        :param app_id: the app id
+        :type app_id: str
+        :returns: app information inside the launch queue
+        :rtype: dict
+        """
+
+        response = self._rpc.http_req(http.get,
+                                      'v2/queue?embed=lastUnusedOffers')
+        app = next(
+            (app for app in response.json().get('queue')
+             if app_id == get_app_or_pod_id(app)),
+            None)
+
+        return app
+
+    def get_queued_apps(self):
+        """Returns the content of the launch queue,
+        including the apps which should be scheduled.
+
+        :returns: a list of to be scheduled apps, including debug information
+        :rtype: list of dict
+        """
+
+        response = self._rpc.http_req(http.get, 'v2/queue')
+
+        return response.json().get('queue')
+
     @staticmethod
     def _marathon_id_path_format(url_path_template, id_path):
         """Substitutes a Marathon "ID path" into a URL path format string,
@@ -880,6 +910,17 @@ class Client(object):
             template = ('Error: Response from Marathon was not in expected '
                         'JSON format:\n{}')
             raise DCOSException(template.format(response.text))
+
+
+def get_app_or_pod_id(app_or_pod):
+    """Gets the app or pod ID from the given app or pod
+
+        :param app_or_pod: app or pod definition
+        :type app_or_pod: requests.Response
+        :return: app or pod id
+        :rtype: str
+        """
+    return app_or_pod.get('app', app_or_pod.get('pod', {})).get('id')
 
 
 def _default_marathon_error(message=""):

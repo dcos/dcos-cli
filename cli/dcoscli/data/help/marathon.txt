@@ -33,6 +33,9 @@ Usage:
     dcos marathon pod remove [--force] <pod-id>
     dcos marathon pod show <pod-id>
     dcos marathon pod update [--force] <pod-id>
+    dcos marathon debug list [--json]
+    dcos marathon debug summary <app-id> [--json]
+    dcos marathon debug details <app-id> [--json]
     dcos marathon task list [--json <app-id>]
     dcos marathon task stop [--wipe] <task-id>
     dcos marathon task show <task-id>
@@ -92,6 +95,15 @@ Commands:
         Display detailed information for a specific pod.
     pod update
         Update a pod.
+    debug list
+        Print a list of currently queued instance launches for
+        debugging purpose.
+    debug summary
+        Display summarized information for a queued instance launch
+        for debugging purpose.
+    debug details
+        Display detailed information for a queued instance launch
+        for debugging purpose.
     task list
         List all tasks.
     task stop

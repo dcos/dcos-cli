@@ -1,0 +1,33 @@
+{
+  "id": "/stuck-pod",
+  "containers": [
+    {
+      "name": "first",
+      "exec": {
+        "command": {
+          "shell": "sleep 1000"
+        }
+      },
+      "resources": {
+        "cpus": 0.1,
+        "mem": 16
+      }
+    }
+  ],
+  "networks": [
+    {
+      "mode": "host"
+    }
+  ],
+  "scheduling": {
+    "placement": {
+      "constraints": [
+        { "fieldName": "hostname", "operator": "UNIQUE" }
+      ]
+    }
+  },
+  "scaling": {
+    "kind": "fixed",
+    "instances": 10
+  }
+}
