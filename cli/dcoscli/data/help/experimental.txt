@@ -5,19 +5,27 @@ Usage:
     dcos experimental --help
     dcos experimental --info
     dcos experimental package add <dcos-package>
+    dcos experimental package build [--output-directory=<output-directory>] <build-definition>
 
 Commands:
     package add
         Adds a DC/OS package to DC/OS.
+    package build
+        Build a package to install to DC/OS or share with Universe.
 
 Options:
     -h, --help
         Print usage.
     --info
         Print a short description of this subcommand.
+    --output-directory=<output-directory>
+        Path to the directory where the data should be stored.
+        Defaults to the current working directory.
     --version
         Print version information.
 
 Positional Arguments:
+    <build-definition>
+        Path to a DC/OS Package Build Definition.
     <dcos-package>
         Path to a DC/OS Package.
