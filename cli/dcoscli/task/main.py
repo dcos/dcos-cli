@@ -1,7 +1,10 @@
+import docopt
+import os
 import posixpath
 
 import docopt
 import six
+import sys
 
 import dcoscli
 from dcos import cmds, emitting, mesos, util
@@ -21,14 +24,61 @@ def main(argv):
         emitter.publish(e)
         return 1
 
+def docopt_wrapper(usage, real_usage, **keywords):
+    """ A wrapper around the real docopt parser. """
+    try:
+        stdout = sys.stdout
+
+        with open(os.devnull, 'w') as nullfile:
+            sys.stdout = nullfile
+            arguments = docopt.docopt(usage, **keywords)
+            sys.stdout = stdout
+
+        return arguments
+
+    except docopt.DocoptExit:
+        sys.stdout = stdout
+        print(real_usage.strip(), file=sys.stderr)
+        sys.exit(1)
+
+    except SystemExit:
+        sys.stdout = stdout
+
+        if "argv" in keywords and any(h in ("-h", "--help")
+                                      for h in keywords["argv"]):
+            print(real_usage.strip())
+        elif "version" in keywords and any(v in ("--version")
+                                           for v in keywords["argv"]):
+            print(keywords["version"].strip())
+
+        sys.exit()
+
 
 @decorate_docopt_usage
 def _main(argv):
-    args = docopt.docopt(
-        default_doc("task"),
-        argv=argv,
-        version="dcos-task version {}".format(dcoscli.version))
+    if len(argv) > 1 and argv[1] == "exec":
+        usage = \
+        '''
+        Usage:
+            dcos-task-exec [--interactive --pty] <task> <cmd> [<args>...]
+        '''
+        args = docopt_wrapper(
+            usage,
+            default_doc("task"),
+            argv=argv[2:],
+            version="dcos-task version {}".format(dcoscli.version),
+            options_first=True)
 
+        args['task'] = True
+        args['exec'] = True
+        args['log'] = False
+        args['ls'] = False
+        args['--info'] = False
+    else:
+         args = docopt.docopt(
+            default_doc("task"),
+            argv=argv,
+            version="dcos-task version {}".format(dcoscli.version))
     return cmds.execute(_cmds(), args)
 
 
