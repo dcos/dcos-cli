@@ -87,27 +87,7 @@ class PackageManager:
 
         :rtype: bool
         """
-
-        try:
-            response = self.cosmos.call_cosmos_endpoint(
-                'capabilities')
-        # return `Authentication failed` error messages
-        except DCOSAuthenticationException:
-            raise
-        # Authorization errors mean endpoint exists, and user could be
-        # authorized for the command specified, not this endpoint
-        except DCOSAuthorizationException:
-            return True
-        # allow exception through so we can show user actual http exception
-        # except 404, because then the url is fine, just not cosmos enabled
-        except DCOSHTTPException as e:
-            logger.exception(e)
-            return e.status() != 404
-        except Exception as e:
-            logger.exception(e)
-            return True
-
-        return response.status_code == 200
+        return self.cosmos.enabled()
 
     def install_app(self, pkg, options, app_id):
         """Installs a package's application

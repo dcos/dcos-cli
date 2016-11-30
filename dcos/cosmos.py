@@ -27,7 +27,8 @@ class Cosmos:
             'package/repository/delete': 'post',
             'package/repository/list': 'post',
             'package/search': 'post',
-            'package/uninstall': 'post'
+            'package/uninstall': 'post',
+            'service/start': 'post'
         }
 
         self._request_versions = {
@@ -42,7 +43,8 @@ class Cosmos:
             'package/repository/delete': ['v1'],
             'package/repository/list': ['v1'],
             'package/search': ['v1'],
-            'package/uninstall': ['v1']
+            'package/uninstall': ['v1'],
+            'service/start': ['v1']
         }
 
         self._special_content_types = {
@@ -56,6 +58,33 @@ class Cosmos:
             ('capabilities', 'v1'):
                 format_cosmos_header_type('capabilities', 'v1', '')
         }
+
+    def enabled(self):
+        """
+        Returns whether or not cosmos is enabled on specified dcos cluster
+
+        :return: true if cosmos is enabled, false otherwise
+        :rtype: bool
+        """
+        try:
+            response = self.call_cosmos_endpoint(
+                'capabilities')
+        # return `Authentication failed` error messages
+        except DCOSAuthenticationException:
+            raise
+        # Authorization errors mean endpoint exists, and user could be
+        # authorized for the command specified, not this endpoint
+        except DCOSAuthorizationException:
+            return True
+        # allow exception through so we can show user actual http exception
+        # except 404, because then the url is fine, just not cosmos enabled
+        except DCOSHTTPException as e:
+            logger.exception(e)
+            return e.status() != 404
+        except Exception as e:
+            logger.exception(e)
+            return True
+        return response.status_code == 200
 
     def call_cosmos_endpoint(self,
                              endpoint,
