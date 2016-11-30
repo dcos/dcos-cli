@@ -19,19 +19,16 @@ def _success_test(build_definition,
 
     # perform the operation
     return_code, stdout, stderr = exec_command(
-        ['dcos', 'package', 'build', '--output-directory',
+        ['dcos', 'experimental', 'package', 'build', '--output-directory',
          output_folder, build_definition]
     )
 
     # check that the output is correct
-    pattern = re.compile("^Created DCOS Universe package")
-    assert stderr == b""
+    assert stderr == b"Created DCOS Universe package: "
     assert return_code == 0
-    assert pattern.match(stdout.decode()), stdout.decode()
 
     # check that the files created are correct
-    zip_file_name = re.search('^Created DCOS Universe package \[(.+?)\].',
-                              stdout.decode()).group(1)
+    zip_file_name = str(stdout.decode()).rstrip()
 
     results = re.search('^(.+)-(.+)-(.+)\.dcos', zip_file_name)
 
@@ -44,6 +41,11 @@ def _success_test(build_definition,
     assert version_result == version_expected
 
     hash_result = results.group(3)
+
+    print(output_folder)
+
+    assert os.path.exists(output_folder)
+    assert os.path.exists(zip_file_name), zip_file_name
     with util.open_file(zip_file_name, 'rb') as zp:
         hash_expected = md5_hash_file(zp)
     assert hash_result == hash_expected
@@ -70,7 +72,7 @@ def _failure_test(build_definition, error_pattern):
 
     # perform the operation
     return_code, stdout, stderr = exec_command(
-        ['dcos', 'package', 'build', '--output-directory',
+        ['dcos', 'experimental', 'package', 'build', '--output-directory',
          output_folder, build_definition]
     )
 
