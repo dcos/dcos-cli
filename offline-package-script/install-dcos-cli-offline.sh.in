@@ -1,0 +1,46 @@
+#!/bin/bash
+# Init
+# Make sure only root can run our script
+if [ "$(id -u)" != "0" ]; then
+   echo "This script must be run as root" 1>&2
+   exit 1
+fi
+
+uuencode=1
+binary=0
+
+function untar_payload()
+{
+	match=$(grep --text --line-number '^PAYLOAD:$' $0 | cut -d ':' -f 1)
+	payload_start=$((match + 1))
+	if [[ $binary -ne 0 ]]; then
+		tail -n +$payload_start $0 | tar -xzvf - -C /opt/mesosphere
+	fi
+	if [[ $uuencode -ne 0 ]]; then
+		tail -n +$payload_start $0 | uudecode | tar -xzvf - -C /opt/mesosphere
+	fi
+}
+
+read -p "Install files? " ans
+if [[ "${ans:0:1}"  ||  "${ans:0:1}" ]]; then
+	mkdir -p /opt/mesosphere
+	untar_payload
+	# Do remainder of install steps.
+	cd /opt/mesosphere/cli
+	read -p "Add CLI to DCOS User Path? " ans
+        if [[ "${ans:0:1}"  ||  "${ans:0:1}" ]]; then
+		getent passwd dcos > /dev/null 2&>1
+		if [ $? -eq 0 ]; then
+			echo "DCOS user already exists"
+		else
+			useradd dcos
+		fi
+		HOME=`getent passwd "dcos"| cut -d: -f6`
+
+		echo "source /opt/mesosphere/cli/bin/env-setup" >> $HOME/.bashrc
+	fi
+fi
+
+
+exit 0
+
