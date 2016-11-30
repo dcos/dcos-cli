@@ -125,6 +125,9 @@ class Cosmos:
         :return: response returned by calling cosmos at url
         :rtype: requests.Response
         """
+        if not self._endpoint_exists(endpoint):
+            raise DCOSException(
+                'Cosmos called with incorrect endpoint {}'.format(endpoint))
         try:
             headers = headers_preference[0]
             if http_request_type is 'post':
@@ -216,6 +219,17 @@ class Cosmos:
             'Accept': self._get_accept(endpoint, version)
         }
         return remove_nones(merge_dict(simple_header, headers))
+
+    def _endpoint_exists(self, endpoint):
+        """
+
+        :param endpoint: a possible cosmos endpoint
+        :type endpoint: str
+        :return: true if endpoint is a valid cosmos endpoint,
+        false otherwise
+        :rtype: bool
+        """
+        return endpoint in self._request_versions
 
     def _get_accept(self, endpoint, version):
         """
