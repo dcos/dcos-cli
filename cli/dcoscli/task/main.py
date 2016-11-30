@@ -106,6 +106,16 @@ def _cmds():
             function=_ls),
 
         cmds.Command(
+            hierarchy=['task', 'exec'],
+            arg_keys=['<task>', '<cmd>', '--interactive', '--pty', '<args>'],
+            function=_exec),
+
+        # cmds.Command(
+        #     hierarchy=['task', 'attach'],
+        #     arg_keys=['<task>', '--interactive', '--pty'],
+        #     function=_attach),
+
+        cmds.Command(
             hierarchy=['task'],
             arg_keys=['<task>', '--completed', '--json'],
             function=_task),
@@ -266,6 +276,40 @@ def _ls(task, path, long_, completed):
             emitter.publish(
                 '  '.join(posixpath.basename(file_['path'])
                           for file_ in files))
+
+
+def _exec(task, cmd, interactive=False, pty=False, args=None):
+    """ Fork a prcess inside the namespace of a container
+    associated with <task_id>.
+
+    :param task: task ID pattern to match
+    :type task: str
+    :param interactive: attach stdin
+    :type interactive: bool
+    :param pty: allocate a PTY on the remote connection
+    :type pty: bool
+    :param args: Additional arguments for the command
+    :type args: str
+    """
+
+    tIO = mesos.TaskIO(task, interactive, pty, cmd, args)
+    tIO.IORunner()
+
+
+# def _attach(task, interactive=False, pty=False):
+#     """Attach to STDOUT/ERR and optionally STDIN of
+#     an already running process executed by Mesos.
+
+#     :param task: task ID pattern to match
+#     :type task: str
+#     :param interactive: attach stdin
+#     :type interactive: bool
+#     :param pty: allocate a PTY on the remote connection
+#     :type pty: bool
+#     """
+
+#     tIO = mesos.TaskIO(task, interactive, pty)
+#     tIO.IORunner()
 
 
 def _mesos_files(tasks, file_, client):

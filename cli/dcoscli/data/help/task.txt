@@ -4,11 +4,15 @@ Description:
 Usage:
     dcos task --help
     dcos task --info
+    dcos task exec [--interactive] <task> <cmd> [<args>...]
     dcos task log [--completed --follow --lines=N] [<task>] [<file>]
     dcos task ls [--long --completed] [<task>] [<path>]
     dcos task [--completed --json <task>]
 
 Command:
+    exec
+        Fork a process inside the namespace of a container with a given <task_id>
+
     log
         Print the task log. By default, the 10 most recent task logs from stdout
         are printed.
