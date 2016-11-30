@@ -931,11 +931,6 @@ class TaskIO(object):
     :type args: str
     """
 
-    def record_parse(self, message):
-        msg = pba.ProcessIO()
-        Parse(message, msg)
-        return msg
-
     def __init__(self, task_id, interactive=False, tty=False, cmd=None, args=None):
         if not task_id:
             raise DCOSException(
@@ -964,7 +959,7 @@ class TaskIO(object):
         self.args = args
 
         self.encoder = recordio.Encoder(lambda s: bytes(MessageToJson(s), "UTF-8"))
-        self.decoder = recordio.Decoder(self.record_parse)
+        self.decoder = recordio.Decoder(lambda s: Parse(s, pba.ProcessIO()))
 
         self.input_queue = Queue()
         self.output_queue = Queue()
