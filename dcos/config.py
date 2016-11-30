@@ -182,6 +182,8 @@ def save(toml_config):
 
     serial = toml.dumps(toml_config._dictionary)
     path = get_config_path()
+
+    util.ensure_file_exists(path)
     util.enforce_file_permissions(path)
     with util.open_file(path, 'w') as config_file:
         config_file.write(serial)
