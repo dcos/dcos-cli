@@ -45,7 +45,7 @@ def cosmos_error(fn):
     return check_for_cosmos_error
 
 
-class Cosmos():
+class PackageManager:
     """Implementation of Package Manager using Cosmos"""
 
     def __init__(self, cosmos_url):
@@ -334,7 +334,7 @@ class CosmosPackageVersion():
         params = {"packageName": name}
         if package_version is not None:
             params["packageVersion"] = package_version
-        response = Cosmos(url).cosmos_post("describe", params)
+        response = PackageManager(url).cosmos_post("describe", params)
 
         package_info = response.json()
 
@@ -456,7 +456,9 @@ class CosmosPackageVersion():
         params["packageVersion"] = self._package_version
         if options:
             params["options"] = options
-        response = Cosmos(self._cosmos_url).cosmos_post("render", params)
+        response = PackageManager(
+            self._cosmos_url
+        ).cosmos_post("render", params)
         return response.json().get("marathonJson")
 
     def has_mustache_definition(self):
@@ -516,7 +518,7 @@ class CosmosPackageVersion():
         """
 
         params = {"packageName": self.name(), "includePackageVersions": True}
-        response = Cosmos(self._cosmos_url).cosmos_post(
+        response = PackageManager(self._cosmos_url).cosmos_post(
             "list-versions", params)
 
         return list(response.json().get("results").keys())

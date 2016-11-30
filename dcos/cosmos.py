@@ -82,6 +82,9 @@ class Cosmos:
         :return: the Response object returned by cosmos
         :rtype: requests.Response
         """
+        if not self._endpoint_exists(endpoint):
+            raise DCOSException(
+                'Cosmos called with incorrect endpoint {}'.format(endpoint))
         url = self._get_endpoint_url(endpoint)
         request_versions = self._get_request_version_preferences(endpoint)
         headers_preference = list(map(
@@ -125,9 +128,6 @@ class Cosmos:
         :return: response returned by calling cosmos at url
         :rtype: requests.Response
         """
-        if not self._endpoint_exists(endpoint):
-            raise DCOSException(
-                'Cosmos called with incorrect endpoint {}'.format(endpoint))
         try:
             headers = headers_preference[0]
             if http_request_type is 'post':

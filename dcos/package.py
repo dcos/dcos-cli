@@ -1,6 +1,6 @@
 import itertools
 
-from dcos import config, cosmos, cosmospackage, emitting, subcommand, util
+from dcos import cosmos, emitting, packagemanager, subcommand, util
 from dcos.errors import DCOSException
 
 logger = util.get_logger(__name__)
@@ -178,7 +178,7 @@ def get_package_manager():
     :rtype: PackageManager
     """
     cosmos_url = cosmos.get_cosmos_url()
-    cosmos_manager = cosmospackage.Cosmos(cosmos_url)
+    cosmos_manager = packagemanager.PackageManager(cosmos_url)
     if cosmos_manager.enabled():
         return cosmos_manager
     else:
