@@ -1,5 +1,10 @@
-class ServiceManager:
-    def __init__(self):
+from dcos import cosmos
+
+
+class ServiceManager(object):
+    """A manager for DC/OS services"""
+
+    def __init__(self, cosmos_url):
         self.cosmos_url = cosmos_url
         self.cosmos = cosmos.Cosmos(self.cosmos_url)
 

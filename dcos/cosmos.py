@@ -1,12 +1,16 @@
 from six.moves import urllib
 
 from dcos import config, http, util
-from dcos.errors import DCOSBadRequest, DCOSException
+from dcos.errors import (DCOSAuthenticationException,
+                         DCOSAuthorizationException,
+                         DCOSBadRequest,
+                         DCOSException,
+                         DCOSHTTPException)
 
 logger = util.get_logger(__name__)
 
 
-class Cosmos:
+class Cosmos(object):
     """A wrapper on cosmos that abstracts away http requests"""
 
     def __init__(self, cosmos_url=None):
