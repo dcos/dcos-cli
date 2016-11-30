@@ -19,7 +19,7 @@ def _success_test(build_definition,
 
     # perform the operation
     return_code, stdout, stderr = exec_command(
-        ['dcos', 'package', 'build', '--output-directory',
+        ['dcos', 'experimental', 'package', 'build', '--output-directory',
          output_folder, build_definition]
     )
 
@@ -70,7 +70,7 @@ def _failure_test(build_definition, error_pattern):
 
     # perform the operation
     return_code, stdout, stderr = exec_command(
-        ['dcos', 'package', 'build', '--output-directory',
+        ['dcos', 'experimental', 'package', 'build', '--output-directory',
          output_folder, build_definition]
     )
 
