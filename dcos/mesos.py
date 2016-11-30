@@ -1005,7 +1005,6 @@ class TaskIO(object):
             in_stream_thread.start()
 
         try:
-            #TODO, fix timeout, potentially not needed if it closes correctly.
             self.exit_queue.get(block=True)
         except KeyboardInterrupt:
             pass
@@ -1014,8 +1013,9 @@ class TaskIO(object):
         """Decides if this is an `attach` or `exec` on the basis that
         an exec needs a cmd, and an attach does not.
 
-        :rtype: string - JSON value for initializing the output stream
+        :rtype: byte string - JSON value for initializing the output stream
         """
+
         init_output_attach_msg = pba.Call()
         init_output_attach_msg.type = pba.Call.Type.Value('LAUNCH_NESTED_CONTAINER_SESSION')
         init_output_attach_msg.launch_nested_container_session.container_id.value = self.container_id
@@ -1030,6 +1030,13 @@ class TaskIO(object):
         return self.encoder.encode(init_output_attach_msg)
 
     def get_chunked_msg(self, fileno):
+        """Reads and returns a message from the given fileno.
+
+        :param fileno: file number to read from
+        :type fileno: int
+        :rtype: byte string - message read from the fileno
+        """
+
         chunk_size = os.read(fileno, 2)
         while chunk_size[-2:] != b"\r\n":
             chunk_size += os.read(fileno, 1)
@@ -1062,6 +1069,13 @@ class TaskIO(object):
 
 
     def _attach_output_stream(self, fileno):
+        """Gets data from the given fileno and places the
+        returned messages into our output_queue.
+
+        :param fileno: file number to read from
+        :type fileno: int
+        """
+
         while True:
             try:
                 chunk = self.get_chunked_msg(fileno)
@@ -1083,7 +1097,14 @@ class TaskIO(object):
         self.exit_queue.put(None)
 
     def _attach_input_stream(self):
+        """Sends data from _input_streamer to the agent_url
+        """
+
         def _input_streamer():
+            """Creates the initial ATTACH_CONTAINER_INPUT message,
+            then yields a message from the input_queue on each subsequent call
+            """
+
             send_init = True
 
             init_input_attach_msg = pba.Call()
@@ -1115,6 +1136,10 @@ class TaskIO(object):
                 "Input stream returned a non 200 status code")
 
     def _input_thread(self):
+        """Reads from stdin and places a message with that data
+        onto the input_queue. Expects to be running as a daemon.
+        """
+
         # For every read of STDIN, take a line
         for chunk in iter(partial(os.read, sys.stdin.fileno(), 1024), ''):
             # Create an AttachContainerInput message from proto spec
@@ -1127,6 +1152,11 @@ class TaskIO(object):
             self.input_queue.put(self.encoder.encode(input_msg))
 
     def _output_thread(self):
+        """Reads from the output_queue and writes the data
+        to the appropriate stdout or stderr.
+        Expects to be running as a daemon.
+        """
+
         while True:
             # Get message from output queue
             output = self.output_queue.get()
