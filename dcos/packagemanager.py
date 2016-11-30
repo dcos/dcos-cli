@@ -277,7 +277,15 @@ class PackageManager:
         with util.open_file(dcos_package, 'rb') as pkg:
             extra_headers = {'Content-MD5': util.md5_hash_file(pkg)}
         with util.open_file(dcos_package, 'rb') as data:
-            return self._post('add', headers=extra_headers, data=data)
+            try:
+                return self._post('add', headers=extra_headers, data=data)
+            except DCOSHTTPException as e:
+                if e.status() == 404:
+                    message = 'Your version of DC/OS ' \
+                              'does not support this operation'
+                    raise DCOSException(message)
+                else:
+                    raise e
 
     @cosmos_error
     def _post(self, request, params=None, headers=None, data=None):
@@ -543,6 +551,9 @@ def _format_error_message(error):
         error_message = _format_json_schema_mismatch_message(error)
     elif error.get("type") == "MarathonBadResponse":
         error_message = _format_marathon_bad_response_message(error)
+    elif error.get('type') == 'NotImplemented':
+        error_message = 'DC/OS has not been ' \
+                        'configured to support this operation: package add'
     else:
         error_message = error.get("message")
 
