@@ -1,7 +1,10 @@
+from __future__ import print_function
+
 import base64
 import json
 import os
 import shutil
+import sys
 import tempfile
 import zipfile
 
@@ -16,6 +19,7 @@ from dcos.package import get_package_manager
 from dcos.util import md5_hash_file
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage, formatted_cli_version
+
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -201,8 +205,9 @@ def _build(build_definition,
         with util.open_file(dcos_package_path, 'w+b') as dcos_package:
             shutil.copyfileobj(temp_file.file, dcos_package)
 
-    emitter.publish(
-        'Created DCOS Universe package [{}].'.format(dcos_package_path))
+    print('Created DCOS Universe package: ', file=sys.stderr, end='')
+    sys.stderr.flush()
+    emitter.publish('{}'.format(dcos_package_path))
 
     return 0
 
