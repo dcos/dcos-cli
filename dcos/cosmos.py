@@ -330,11 +330,14 @@ def remove_nones(dictionary):
     any key whose corresponding value is none is removed.
 
     :param dictionary: a dictionary
-    :type dictionary: dict
+    :type dictionary: None | dict
     :return: a shallow copy of dictionary in which all keys whose value
     is none have been removed
-    :rtype: dict
+    :rtype: dict | None
     """
+    if dictionary is None:
+        return None
+
     return dict(filter(lambda kv: kv[1] is not None, dictionary.items()))
 
 

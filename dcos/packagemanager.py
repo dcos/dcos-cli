@@ -90,7 +90,7 @@ class PackageManager:
 
         try:
             response = self.cosmos.call_cosmos_endpoint(
-                'capabilities').json()
+                'capabilities')
         # return `Authentication failed` error messages
         except DCOSAuthenticationException:
             raise
