@@ -11,7 +11,7 @@ Usage:
 
 Command:
     exec
-        Fork a process inside the namespace of a container with a given <task_id>
+        Launch a process inside a container with the given <task_id>
 
     log
         Print the task log. By default, the 10 most recent task logs from stdout

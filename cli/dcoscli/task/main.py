@@ -298,8 +298,7 @@ def _ls(task, path, long_, completed):
 
 
 def _exec(task, cmd, interactive=False, args=None):
-    """ Fork a prcess inside the namespace of a container
-    associated with <task_id>.
+    """ Launch a process inside a container with the given <task_id>
 
     :param task: task ID pattern to match
     :type task: str
