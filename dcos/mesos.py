@@ -1088,40 +1088,6 @@ class TaskIO(object):
         return chunk
 
 
-    def test_get_chunked_msg(self):
-        """Tests getting a chunked message
-        """
-        
-        msg = b'Test Message.'
-        filename = 'testfile.txt'
-        chunk = '%X\r\n%s\r\n' % (len(msg), msg.decode('utf-8'))
-
-        try:
-            try:
-                with open(filename, 'w') as file:
-                    file.write(chunk)
-            except Exception as exception:
-                raise DCOSException(
-                    "Error writing to {filename} in test_get_chunked_msg: \
-                    {error}".format(filename=filename, error=exception))
-
-            try:
-                with open(filename, 'r') as file:
-                    chunked_msg = self.get_chunked_msg(file.fileno())
-            except Exception as exception:
-                raise DCOSException(
-                    "Error reading from {filename} in test_get_chunked_msg: \
-                    {error}".format(filename=filename, error=exception))
-
-            assert chunked_msg == msg
-        finally:
-            try:
-                import os
-                os.remove(filename)
-            except OSError:
-                pass
-
-
     def _launch_container_session(self):
         """Sends a request to the Mesos Agent API to attach the
         STDOUT stream of an already running container.
