@@ -30,13 +30,13 @@ def cosmos_error(fn):
         :returns: Response or raises Exception
         :rtype: valid response
         """
-
+        error_media_type = 'application/vnd.dcos.package.error+json;' \
+                           'charset=utf-8;version=v1'
         response = fn(*args, **kwargs)
         content_type = response.headers.get('Content-Type')
         if content_type is None:
             raise DCOSHTTPException(response)
-        elif cosmos.format_cosmos_header_type(
-                "package/error", "v1", '') in content_type:
+        elif error_media_type in content_type:
             logger.debug("Error: {}".format(response.json()))
             error_msg = _format_error_message(response.json())
             raise DCOSException(error_msg)
@@ -65,7 +65,7 @@ class PackageManager:
             return False
 
         try:
-            response = self.cosmos.call_cosmos_endpoint(
+            response = self.cosmos.call_endpoint(
                 'capabilities').json()
         except Exception as e:
             logger.exception(e)
@@ -285,7 +285,7 @@ class PackageManager:
 
         endpoint = 'package/{}'.format(request)
         try:
-            return self.cosmos.call_cosmos_endpoint(
+            return self.cosmos.call_endpoint(
                 endpoint, headers, data=data, json=params)
         except DCOSAuthenticationException:
             raise

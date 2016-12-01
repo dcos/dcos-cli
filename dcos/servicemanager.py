@@ -17,7 +17,7 @@ class ServiceManager(object):
         """
         return self.cosmos.enabled()
 
-    def start_service(self, package_name, package_version, options, app_id):
+    def start_service(self, package_name, package_version, options):
         """
         Starts a service that has been added to the cluster via
         cosmos' package/add endpoint.
@@ -37,7 +37,6 @@ class ServiceManager(object):
         json = {
             'packageName': package_name,
             'packageVersion': package_version,
-            'options': options,
-            'appId': app_id
+            'options': options
         }
-        return self.cosmos.call_cosmos_endpoint(endpoint, json=json)
+        return self.cosmos.call_endpoint(endpoint, json=json)

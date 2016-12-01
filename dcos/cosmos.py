@@ -11,7 +11,12 @@ logger = util.get_logger(__name__)
 
 
 class Cosmos(object):
-    """A wrapper on cosmos that abstracts away http requests"""
+    """
+    A wrapper on cosmos that abstracts away http requests
+
+    :param cosmos_url: the url of cosmos
+    :type cosmos_url: str
+    """
 
     def __init__(self, cosmos_url=None):
         if cosmos_url is None:
@@ -19,48 +24,35 @@ class Cosmos(object):
         else:
             self.cosmos_url = cosmos_url
 
-        self._http_method = {
-            'capabilities': 'get',
-            'package/add': 'post',
-            'package/describe': 'post',
-            'package/install': 'post',
-            'package/list': 'post',
-            'package/list-versions': 'post',
-            'package/render': 'post',
-            'package/repository/add': 'post',
-            'package/repository/delete': 'post',
-            'package/repository/list': 'post',
-            'package/search': 'post',
-            'package/uninstall': 'post',
-            'service/start': 'post'
-        }
+        def _data(versions, http_method):
+            return {'versions': versions, 'http_method': http_method}
 
-        self._request_versions = {
-            'capabilities': ['v1'],
-            'package/add': ['v1'],
-            'package/describe': ['v2', 'v1'],
-            'package/install': ['v2', 'v1'],
-            'package/list': ['v1'],
-            'package/list-versions': ['v1'],
-            'package/render': ['v1'],
-            'package/repository/add': ['v1'],
-            'package/repository/delete': ['v1'],
-            'package/repository/list': ['v1'],
-            'package/search': ['v1'],
-            'package/uninstall': ['v1'],
-            'service/start': ['v1']
+        self._endpoint_data = {
+            'capabilities': _data(['v1'], 'get'),
+            'package/add': _data(['v1'], 'post'),
+            'package/describe': _data(['v2', 'v1'], 'post'),
+            'package/install': _data(['v2', 'v1'], 'post'),
+            'package/list': _data(['v1'], 'post'),
+            'package/list-versions': _data(['v1'], 'post'),
+            'package/render': _data(['v1'], 'post'),
+            'package/repository/add': _data(['v1'], 'post'),
+            'package/repository/delete': _data(['v1'], 'post'),
+            'package/repository/list': _data(['v1'], 'post'),
+            'package/search': _data(['v1'], 'post'),
+            'package/uninstall': _data(['v1'], 'post'),
+            'service/start': _data(['v1'], 'post')
         }
 
         self._special_content_types = {
             ('package/add', 'v1'):
                 'application/vnd.dcos.universe.package+zip;version=v1',
             ('capabilities', 'v1'):
-                format_cosmos_header_type('capabilities', 'v1', '')
+                _format_media_type('capabilities', 'v1', '')
         }
 
         self._special_accepts = {
             ('capabilities', 'v1'):
-                format_cosmos_header_type('capabilities', 'v1', '')
+                _format_media_type('capabilities', 'v1', '')
         }
 
     def enabled(self):
@@ -71,7 +63,7 @@ class Cosmos(object):
         :rtype: bool
         """
         try:
-            response = self.call_cosmos_endpoint(
+            response = self.call_endpoint(
                 'capabilities')
         # return `Authentication failed` error messages
         except DCOSAuthenticationException:
@@ -90,12 +82,12 @@ class Cosmos(object):
             return True
         return response.status_code == 200
 
-    def call_cosmos_endpoint(self,
-                             endpoint,
-                             headers=None,
-                             data=None,
-                             json=None,
-                             **kwargs):
+    def call_endpoint(self,
+                      endpoint,
+                      headers=None,
+                      data=None,
+                      json=None,
+                      **kwargs):
         """
         Gets the Response object returned by comos at endpoint
 
@@ -117,7 +109,7 @@ class Cosmos(object):
         """
         if not self._endpoint_exists(endpoint):
             raise DCOSException(
-                'Cosmos called with incorrect endpoint {}'.format(endpoint))
+                'Cosmos called with unexpected endpoint {}'.format(endpoint))
         url = self._get_endpoint_url(endpoint)
         request_versions = self._get_request_version_preferences(endpoint)
         headers_preference = list(map(
@@ -125,21 +117,21 @@ class Cosmos(object):
                 endpoint, version, headers),
             request_versions))
         http_request_type = self._get_http_method(endpoint)
-        return self._call_cosmos(
+        return self._cosmos_request(
             url,
             http_request_type,
             headers_preference,
             data,
-            remove_nones(json),
+            _remove_nones(json),
             **kwargs)
 
-    def _call_cosmos(self,
-                     url,
-                     http_request_type,
-                     headers_preference,
-                     data=None,
-                     json=None,
-                     **kwargs):
+    def _cosmos_request(self,
+                        url,
+                        http_request_type,
+                        headers_preference,
+                        data=None,
+                        json=None,
+                        **kwargs):
         """
         Gets a Response object obtained by calling cosmos
         at the url 'url'. Will attempt each of the headers
@@ -176,18 +168,18 @@ class Cosmos(object):
                     'expected {} but got {}'.format(
                         headers.get('Accept'),
                         response.headers.get('Content-Type')))
+            return response
         except DCOSBadRequest as e:
             if len(headers_preference) > 1:
                 # reattempt with one less item in headers_preference
-                response = self._call_cosmos(url,
-                                             http_request_type,
-                                             headers_preference[1:],
-                                             data,
-                                             json,
-                                             **kwargs)
+                return self._cosmos_request(url,
+                                            http_request_type,
+                                            headers_preference[1:],
+                                            data,
+                                            json,
+                                            **kwargs)
             else:
                 raise e
-        return response
 
     def _get_endpoint_url(self, endpoint):
         """
@@ -212,7 +204,12 @@ class Cosmos(object):
         :return: list of versions in preference order
         :rtype: list[str]
         """
-        return self._request_versions.get(endpoint)
+        versions = self._endpoint_data.get(endpoint).get('versions')
+
+        if not versions:
+            raise DCOSException('Could not get versions')
+
+        return versions
 
     def _get_http_method(self, endpoint):
         """
@@ -223,10 +220,10 @@ class Cosmos(object):
         :return: http method type
         :rtype: str
         """
-        method = self._http_method.get(endpoint)
+        method = self._endpoint_data.get(endpoint).get('http_method')
 
         if method is not 'post' and method is not 'get':
-            raise DCOSException('Bad method type')
+            raise DCOSException('Could not get http_method')
 
         return method
 
@@ -251,7 +248,7 @@ class Cosmos(object):
             'Content-Type': self._get_content_type(endpoint),
             'Accept': self._get_accept(endpoint, version)
         }
-        return remove_nones(merge_dict(simple_header, headers))
+        return _remove_nones(_merge_dict(simple_header, headers))
 
     def _endpoint_exists(self, endpoint):
         """
@@ -262,7 +259,7 @@ class Cosmos(object):
         false otherwise
         :rtype: bool
         """
-        return endpoint in self._request_versions
+        return endpoint in self._endpoint_data
 
     def _get_accept(self, endpoint, version):
         """
@@ -279,7 +276,7 @@ class Cosmos(object):
         """
         if (endpoint, version) in self._special_accepts:
             return self._special_accepts[(endpoint, version)]
-        return format_cosmos_header_type(endpoint, version, 'response')
+        return _format_media_type(endpoint, version, 'response')
 
     def _get_content_type(self, endpoint):
         """
@@ -295,10 +292,10 @@ class Cosmos(object):
         version = 'v1'
         if (endpoint, version) in self._special_content_types:
             return self._special_content_types[(endpoint, version)]
-        return format_cosmos_header_type(endpoint, version, 'request')
+        return _format_media_type(endpoint, version, 'request')
 
 
-def format_cosmos_header_type(endpoint, version, suffix):
+def _format_media_type(endpoint, version, suffix):
     """
     Formats a value for a cosmos Content-Type or Accept header key.
 
@@ -314,9 +311,7 @@ def format_cosmos_header_type(endpoint, version, suffix):
     :rtype: str
     """
     prefix = endpoint.replace('/', '.')
-    separator = '-'
-    if suffix is None or suffix is "":
-        separator = ''
+    separator = '-' if suffix else ''
     return ('application/vnd.dcos.{}{}{}'
             '+json;charset=utf-8;version={}').format(prefix,
                                                      separator,
@@ -357,7 +352,7 @@ def get_cosmos_url():
     return cosmos_url
 
 
-def remove_nones(dictionary):
+def _remove_nones(dictionary):
     """
     Given a dictionary, create a shallow copy of dictionary where
     any key whose corresponding value is none is removed.
@@ -374,7 +369,7 @@ def remove_nones(dictionary):
     return dict(filter(lambda kv: kv[1] is not None, dictionary.items()))
 
 
-def merge_dict(a, b):
+def _merge_dict(a, b):
     """
     Given two dicts, merge them into a new dict as a
     shallow copy. Keys on dictionary b will overwrite keys
@@ -391,10 +386,10 @@ def merge_dict(a, b):
         return {}
 
     if a is None:
-        return b
+        return b.copy()
 
     if b is None:
-        return a
+        return a.copy()
 
     z = a.copy()
     z.update(b)
