@@ -972,7 +972,7 @@ class TaskIO(object):
     :type args: str
     """
 
-    def __init__(self, task_id, interactive=False, tty=False, cmd=None, args=None):
+    def __init__(self, task_id, interactive=False, cmd=None, args=None):
         if not task_id:
             raise DCOSException(
                 "Must provide <task ID>, example:"
@@ -995,7 +995,6 @@ class TaskIO(object):
         self.agent_url = client.slave_url(task_obj.slave()['id'], "", "api/v1")
 
         self.interactive = interactive
-        self.tty = tty
         self.cmd = cmd
         self.args = args
 
@@ -1017,11 +1016,6 @@ class TaskIO(object):
         class which enable streaming of STDIN/OUT/ERR back and
         forth between the CLI client and Mesos Agent API
         """
-        # If a PTY is present, override SIGWINCH to resize the
-        # the window. May not work on Windows, needs to be looked into (TODO)
-
-        if self.tty:
-            signal.signal(signal.SIGWINCH, self._window_resizer)
 
         launch_container_thread = threading.Thread(
             target=self._launch_container_session)
@@ -1063,10 +1057,6 @@ class TaskIO(object):
         init_output_attach_msg.launch_nested_container_session.command.shell = False
         init_output_attach_msg.launch_nested_container_session.command.value = self.cmd
         init_output_attach_msg.launch_nested_container_session.command.arguments.extend(self.args)
-
-        # TODO(@kevin) Add pty bool to protobuf spec
-        # nc_msg.tty_info.value = False  # self.tty
-        # init_output_attach_msg.launch_nested_container_session.interactive = False  # self.interactive
 
         return self.encoder.encode(init_output_attach_msg)
 

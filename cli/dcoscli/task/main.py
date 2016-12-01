@@ -25,7 +25,20 @@ def main(argv):
         return 1
 
 def docopt_wrapper(usage, real_usage, **keywords):
-    """ A wrapper around the real docopt parser. """
+    """ A wrapper around the real docopt parser.
+    Redirects a failed exec command to /dev/null and prints the proper
+    real_usage message, instead of just the usage string from dcos-task-exec
+
+    :param usage: task id filter
+    :type usage: str
+    :param real_usage: If True, include completed tasks
+    :type real_usage: bool
+    :param keywords: If True, output json.  Otherwise, output a human
+                  readable table.
+    :type keywords: bool
+    :returns: process return code
+    """
+
     try:
         stdout = sys.stdout
 
@@ -56,11 +69,22 @@ def docopt_wrapper(usage, real_usage, **keywords):
 
 @decorate_docopt_usage
 def _main(argv):
+    """This usage string rewriting is necessary in order to allow 
+    passing arguments beginning with "-" to _exec without
+    docopt trying to match them to a named parameter.
+
+    Setting args['xyz'] to True/False is done because docopt does
+    the same internally, and expects to be able to test each of them
+    to determine which parameters should match. If more commands are added
+    to /dcos-cli/cli/dcoscli/data/help/task.txt they will need to be set to False
+    in this function.
+    """
+    
     if len(argv) > 1 and argv[1] == "exec":
         usage = \
         '''
         Usage:
-            dcos-task-exec [--interactive --pty] <task> <cmd> [<args>...]
+            dcos-task-exec [--interactive] <task> <cmd> [<args>...]
         '''
         args = docopt_wrapper(
             usage,
@@ -107,13 +131,8 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['task', 'exec'],
-            arg_keys=['<task>', '<cmd>', '--interactive', '--pty', '<args>'],
+            arg_keys=['<task>', '<cmd>', '--interactive', '<args>'],
             function=_exec),
-
-        # cmds.Command(
-        #     hierarchy=['task', 'attach'],
-        #     arg_keys=['<task>', '--interactive', '--pty'],
-        #     function=_attach),
 
         cmds.Command(
             hierarchy=['task'],
@@ -278,7 +297,7 @@ def _ls(task, path, long_, completed):
                           for file_ in files))
 
 
-def _exec(task, cmd, interactive=False, pty=False, args=None):
+def _exec(task, cmd, interactive=False, args=None):
     """ Fork a prcess inside the namespace of a container
     associated with <task_id>.
 
@@ -286,30 +305,12 @@ def _exec(task, cmd, interactive=False, pty=False, args=None):
     :type task: str
     :param interactive: attach stdin
     :type interactive: bool
-    :param pty: allocate a PTY on the remote connection
-    :type pty: bool
     :param args: Additional arguments for the command
     :type args: str
     """
 
-    tIO = mesos.TaskIO(task, interactive, pty, cmd, args)
+    tIO = mesos.TaskIO(task, interactive, cmd, args)
     tIO.IORunner()
-
-
-# def _attach(task, interactive=False, pty=False):
-#     """Attach to STDOUT/ERR and optionally STDIN of
-#     an already running process executed by Mesos.
-
-#     :param task: task ID pattern to match
-#     :type task: str
-#     :param interactive: attach stdin
-#     :type interactive: bool
-#     :param pty: allocate a PTY on the remote connection
-#     :type pty: bool
-#     """
-
-#     tIO = mesos.TaskIO(task, interactive, pty)
-#     tIO.IORunner()
 
 
 def _mesos_files(tasks, file_, client):
