@@ -25,8 +25,23 @@ class Cosmos(object):
             self.cosmos_url = cosmos_url
 
         def _data(versions, http_method):
+            """
+            Create an object with the data for an endpoint.
+
+            :param versions: the accept versions in order
+            of priority.
+            :type versions: list[str]
+            :param http_method: should be 'post' or 'get'
+            :type http_method: str
+            :return:
+            """
             return {'versions': versions, 'http_method': http_method}
 
+        # This structure holds information about an endpoint. Currently
+        # the information stored is the return type versions, and the
+        # http request method. These two field should be stored in a
+        # dictionary of the form:
+        # {'versions': versions, 'http_method': http_method}.
         self._endpoint_data = {
             'capabilities': _data(['v1'], 'get'),
             'package/add': _data(['v1'], 'post'),
@@ -107,9 +122,7 @@ class Cosmos(object):
         :return: the Response object returned by cosmos
         :rtype: requests.Response
         """
-        if not self._endpoint_exists(endpoint):
-            raise DCOSException(
-                'Cosmos called with unexpected endpoint {}'.format(endpoint))
+        self._ensure_endpoint_exists(endpoint)
         url = self._get_endpoint_url(endpoint)
         request_versions = self._get_request_version_preferences(endpoint)
         headers_preference = list(map(
@@ -181,6 +194,21 @@ class Cosmos(object):
             else:
                 raise e
 
+    def _ensure_endpoint_exists(self, endpoint):
+        """
+        Will throw an error if endpoint is not part of the cosmos'
+        api.
+
+        :param endpoint: a cosmos endpoint, of the form 'x/y',
+        for example 'package/repo/add' or 'service/start'
+        :type endpoint: str
+        :return: nothing
+        :rtype: None
+        """
+        if not self._endpoint_exists(endpoint):
+            raise DCOSException(
+                'Programer error: no data for endpoint {}'.format(endpoint))
+
     def _get_endpoint_url(self, endpoint):
         """
         Gets the url for the cosmos endpoint 'endpoint'
@@ -204,11 +232,10 @@ class Cosmos(object):
         :return: list of versions in preference order
         :rtype: list[str]
         """
+        self._ensure_endpoint_exists(endpoint)
         versions = self._endpoint_data.get(endpoint).get('versions')
-
         if not versions:
-            raise DCOSException('Could not get versions')
-
+            raise DCOSException('Programer error: could not get versions')
         return versions
 
     def _get_http_method(self, endpoint):
@@ -220,11 +247,10 @@ class Cosmos(object):
         :return: http method type
         :rtype: str
         """
+        self._ensure_endpoint_exists(endpoint)
         method = self._endpoint_data.get(endpoint).get('http_method')
-
         if method is not 'post' and method is not 'get':
-            raise DCOSException('Could not get http_method')
-
+            raise DCOSException('Programmer error: could not get http_method')
         return method
 
     def _get_header(self, endpoint, version, headers=None):

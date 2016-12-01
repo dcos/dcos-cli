@@ -533,7 +533,7 @@ def _format_error_message(error):
         error_message = _format_marathon_bad_response_message(error)
     elif error.get('type') == 'NotImplemented':
         error_message = 'DC/OS has not been ' \
-                        'configured to support this operation: package add'
+                        'configured to support this operation'
     else:
         error_message = error.get("message")
 
