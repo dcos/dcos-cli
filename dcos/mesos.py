@@ -457,13 +457,19 @@ class Master(object):
             raise DCOSException("No task id passed to get container_id")
 
 
-        #actually compare the task_id to the task we're looking through
-        #Will need checks to make sure each level exists
-        for framework in self.state()['frameworks']:
-            for task in framework['tasks']:
-                if 'container_id' in task['statuses'][0]['container_status']:
-                    container_status = task['statuses'][0]['container_status']
-                    return container_status['container_id']['value']
+        #Loop through tasks in frameworks
+        if 'frameworks' in self.state():
+            for framework in self.state()['frameworks']:
+                if 'tasks' in framework:
+                    for task in framework['tasks']:
+
+                        #Check if we've found the right task, then get its value
+                        if 'id' in task and task['id'] == task_id:
+                            if 'statuses' in task  and 'container_status' in task['statuses'][0]:
+                                if 'container_id' in task['statuses'][0]['container_status']:
+                                    container_status = task['statuses'][0]['container_status']
+                                    if 'container_id' in container_status and 'value' in container_status['container_id']:
+                                        return container_status['container_id']['value']
 
         raise DCOSException(
             "No container found for the specified task."
