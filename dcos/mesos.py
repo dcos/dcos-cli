@@ -1,6 +1,18 @@
 import fnmatch
 import itertools
 import os
+import signal
+import sys
+
+# Generated protobuf code
+import mesos.v1.agent.agent_pb2 as pba
+import mesos.v1.mesos_pb2 as pbm
+
+from functools import partial
+
+from google.protobuf.json_format import MessageToJson, Parse
+
+import threading
 
 from six.moves import urllib
 
@@ -429,6 +441,35 @@ class Master(object):
                     tasks.append(task)
 
         return tasks
+
+    # TODO: Currently waiting on this mapping in state.json to be present.
+    # This mapping is only present in DC/OS 1.9+
+    def get_container_id(self, task_id):
+        """Returns the container ID for a task ID matching `task_id`
+
+        :param task_id: The task ID which will be mapped to container ID
+        :type task_id: str
+        :returns: the container id associated with task id
+        :rtype: str
+        """
+        if not task_id:
+            #TODO, make this more detailed
+            raise DCOSException("No task id passed to get container_id")
+
+
+        #actually compare the task_id to the task we're looking through
+        #Will need checks to make sure each level exists
+        for framework in self.state()['frameworks']:
+            for task in framework['tasks']:
+                if 'container_id' in task['statuses'][0]['container_status']:
+                    container_status = task['statuses'][0]['container_status']
+                    return container_status['container_id']['value']
+
+        raise DCOSException(
+            "No container found for the specified task."
+            " It might still be spinning up."
+            " Please try again later.")
+
 
     def frameworks(self, inactive=False, completed=False):
         """Returns a list of all frameworks
@@ -1046,6 +1087,41 @@ class TaskIO(object):
         os.read(fileno, 2)
         return chunk
 
+
+    def test_get_chunked_msg(self):
+        """Tests getting a chunked message
+        """
+        
+        msg = b'Test Message.'
+        filename = 'testfile.txt'
+        chunk = '%X\r\n%s\r\n' % (len(msg), msg.decode('utf-8'))
+
+        try:
+            try:
+                with open(filename, 'w') as file:
+                    file.write(chunk)
+            except Exception as exception:
+                raise DCOSException(
+                    "Error writing to {filename} in test_get_chunked_msg: \
+                    {error}".format(filename=filename, error=exception))
+
+            try:
+                with open(filename, 'r') as file:
+                    chunked_msg = self.get_chunked_msg(file.fileno())
+            except Exception as exception:
+                raise DCOSException(
+                    "Error reading from {filename} in test_get_chunked_msg: \
+                    {error}".format(filename=filename, error=exception))
+
+            assert chunked_msg == msg
+        finally:
+            try:
+                import os
+                os.remove(filename)
+            except OSError:
+                pass
+
+
     def _launch_container_session(self):
         """Sends a request to the Mesos Agent API to attach the
         STDOUT stream of an already running container.
@@ -1090,7 +1166,7 @@ class TaskIO(object):
                             self.output_queue.put(r.data)
 
             except:
-                raise DCOSException('Invalid message type passed to _launch_container_session')
+                raise DCOSException('Invalid message type passed to _attach_output_stream')
 
         self.output_queue.join()
         self.exit_event.wait()
