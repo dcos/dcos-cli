@@ -164,6 +164,7 @@ def load_from_path(path, mutable=False):
     :rtype: Toml | MutableToml
     """
 
+    util.ensure_file_exists(path)
     util.enforce_file_permissions(path)
     with util.open_file(path, 'r') as config_file:
         try:
