@@ -245,7 +245,9 @@ class PackageManager:
         response = self.cosmos_post("repository/delete", params=params)
         return response.json()
 
-    def package_add(self, dcos_package):
+    def package_add(self,
+                    local, dcos_package,
+                    remote, package_name, package_version):
         """
         Adds a DC/OS package to DC/OS
 
@@ -254,18 +256,29 @@ class PackageManager:
         :return: Response to the package add request
         :rtype: Response
         """
-        with util.open_file(dcos_package, 'rb') as pkg:
-            extra_headers = {'Content-MD5': util.md5_hash_file(pkg)}
-        with util.open_file(dcos_package, 'rb') as data:
-            try:
-                return self._post('add', headers=extra_headers, data=data)
-            except DCOSHTTPException as e:
-                if e.status() == 404:
-                    message = 'Your version of DC/OS ' \
-                              'does not support this operation'
-                    raise DCOSException(message)
-                else:
-                    raise e
+        try:
+            if local:
+                with util.open_file(dcos_package, 'rb') as pkg:
+                    extra_headers = {
+                        'Content-Type':
+                            'application/vnd.dcos.'
+                            'universe.package+zip;version=v1',
+                        'Content-MD5': util.md5_hash_file(pkg)
+                    }
+                with util.open_file(dcos_package, 'rb') as data:
+                    return self._post('add', headers=extra_headers, data=data)
+            elif remote:
+                json = {'packageName': package_name}
+                if package_version is not None:
+                    json['packageVersion'] = package_version
+                return self._post('add', params=json)
+        except DCOSHTTPException as e:
+            if e.status() == 404:
+                message = 'Your version of DC/OS ' \
+                          'does not support this operation'
+                raise DCOSException(message)
+            else:
+                raise e
 
     @cosmos_error
     def _post(self, request, params=None, headers=None, data=None):
