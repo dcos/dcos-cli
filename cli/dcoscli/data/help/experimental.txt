@@ -9,15 +9,17 @@ Usage:
                                         [--package-version=<package-version>])
     dcos experimental package build [--output-directory=<output-directory>]
                                     <build-definition>
-
-
-
+    dcos experimental service start [--package-version=<package-version>]
+                                    [--options=<options-file>]
+                                    <package-name>
 
 Commands:
     package add
         Adds a DC/OS package to DC/OS.
     package build
         Build a package locally to install to DC/OS or share with Universe.
+    service start
+        Starts a DC/OS package previously added with `dcos experimental package add`
 
 Options:
     --dcos-package=<dcos-package>
@@ -26,10 +28,12 @@ Options:
         Print usage.
     --info
         Print a short description of this subcommand.
+    --options=<options-file>
+        Path to a JSON file that contains customized package execution options.
     --output-directory=<output-directory>
         Path to the directory where the data should be stored.
         Defaults to the current working directory.
-    --package-name<package-name>
+    --package-name=<package-name>
         Name of the DC/OS package in the package repository.
     --package-version=<package-version>
         The package version to add.
@@ -39,3 +43,6 @@ Options:
 Positional Arguments:
     <build-definition>
         Path to a DC/OS Package Build Definition.
+    <package-name>
+        Name of a DC/OS package that has been added to DC/OS.
+

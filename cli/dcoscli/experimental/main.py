@@ -13,9 +13,9 @@ import pkg_resources
 import six
 
 import dcoscli
-from dcos import cmds, emitting, http, util
+from dcos import cmds, emitting, http, servicemanager, util
 from dcos.errors import DCOSException
-from dcos.package import get_package_manager
+from dcos.package import get_package_manager, get_user_options
 from dcos.util import md5_hash_file
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage, formatted_cli_version
@@ -54,12 +54,15 @@ def _cmds():
             arg_keys=['--dcos-package',
                       '--package-name', '--package-version'],
             function=_add),
-
         cmds.Command(
             hierarchy=['package', 'build'],
             arg_keys=['<build-definition>', '--output-directory'],
             function=_build,
         ),
+        cmds.Command(
+            hierarchy=['experimental', 'service', 'start'],
+            arg_keys=['<package-name>', '--package-version', '--options'],
+            function=_service_start),
     ]
 
 
@@ -343,3 +346,12 @@ def _is_local_reference(item):
     :rtype: bool
     """
     return isinstance(item, six.string_types) and item.startswith("@")
+
+
+def _service_start(package_name, package_version, options_path):
+    manager = servicemanager.ServiceManager()
+    options = get_user_options(options_path) if options_path else None
+    manager.start_service(
+        package_name, package_version, options)
+
+    return 0
