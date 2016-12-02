@@ -1,6 +1,6 @@
 import itertools
 
-from dcos import config, cosmospackage, emitting, subcommand, util
+from dcos import cosmos, emitting, packagemanager, subcommand, util
 from dcos.errors import DCOSException
 
 logger = util.get_logger(__name__)
@@ -171,28 +171,14 @@ def merge_installed(apps, subcommands, app_only, cli_only):
     return merged
 
 
-def get_cosmos_url():
-    """
-    :returns: cosmos base url
-    :rtype: str
-    """
-    toml_config = config.get_config()
-    cosmos_url = config.get_config_val("package.cosmos_url", toml_config)
-    if cosmos_url is None:
-        cosmos_url = config.get_config_val("core.dcos_url", toml_config)
-        if cosmos_url is None:
-            raise config.missing_config_exception(["core.dcos_url"])
-    return cosmos_url
-
-
 def get_package_manager():
     """Returns type of package manager to use
 
     :returns: PackageManager instance
     :rtype: PackageManager
     """
-    cosmos_url = get_cosmos_url()
-    cosmos_manager = cosmospackage.Cosmos(cosmos_url)
+    cosmos_url = cosmos.get_cosmos_url()
+    cosmos_manager = packagemanager.PackageManager(cosmos_url)
     if cosmos_manager.enabled():
         return cosmos_manager
     else:

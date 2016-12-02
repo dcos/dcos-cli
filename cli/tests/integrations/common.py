@@ -79,7 +79,8 @@ def assert_command(
 
     returncode_, stdout_, stderr_ = exec_command(cmd, env, stdin)
 
-    assert returncode_ == returncode
+    assert returncode_ == returncode, \
+        'expected {}, but got {}'.format(returncode, returncode_)
     assert stdout_ == stdout
     assert stderr_ == stderr
 
