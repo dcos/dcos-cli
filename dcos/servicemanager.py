@@ -34,9 +34,9 @@ class ServiceManager(object):
         :rtype: dict
         """
         endpoint = 'service/start'
-        json = util.remove_nones({
-            'packageName': package_name,
-            'packageVersion': package_version,
-            'options': options
-        })
+        json = {'packageName': package_name}
+        if package_version is not None:
+            json['packageVersion'] = package_version
+        if options is not None:
+            json['options'] = options
         return self.cosmos.call_endpoint(endpoint, json=json)
