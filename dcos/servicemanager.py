@@ -1,4 +1,4 @@
-from dcos import cosmos
+from dcos import cosmos, util
 
 
 class ServiceManager(object):
@@ -34,9 +34,9 @@ class ServiceManager(object):
         :rtype: dict
         """
         endpoint = 'service/start'
-        json = {
+        json = util.remove_nones({
             'packageName': package_name,
             'packageVersion': package_version,
             'options': options
-        }
+        })
         return self.cosmos.call_endpoint(endpoint, json=json)

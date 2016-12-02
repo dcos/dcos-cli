@@ -630,3 +630,20 @@ def md5_hash_file(file):
     for chunk in iter(lambda: file.read(4096), b''):
         hasher.update(chunk)
     return hasher.hexdigest()
+
+
+def remove_nones(dictionary):
+    """
+    Given a dictionary, create a shallow copy of dictionary where
+    any key whose corresponding value is none is removed.
+
+    :param dictionary: a dictionary
+    :type dictionary: None | dict
+    :return: a shallow copy of dictionary in which all keys whose value
+    is none have been removed
+    :rtype: dict | None
+    """
+    if dictionary is None:
+        return None
+
+    return dict(filter(lambda kv: kv[1] is not None, dictionary.items()))
