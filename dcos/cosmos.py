@@ -122,7 +122,6 @@ class Cosmos(object):
         :return: the Response object returned by cosmos
         :rtype: requests.Response
         """
-        self._ensure_endpoint_exists(endpoint)
         url = self._get_endpoint_url(endpoint)
         request_versions = self._get_request_version_preferences(endpoint)
         headers_preference = list(map(
@@ -194,21 +193,6 @@ class Cosmos(object):
             else:
                 raise e
 
-    def _ensure_endpoint_exists(self, endpoint):
-        """
-        Will throw an error if endpoint is not part of the cosmos'
-        api.
-
-        :param endpoint: a cosmos endpoint, of the form 'x/y',
-        for example 'package/repo/add' or 'service/start'
-        :type endpoint: str
-        :return: nothing
-        :rtype: None
-        """
-        if not self._endpoint_exists(endpoint):
-            raise DCOSException(
-                'Programer error: no data for endpoint {}'.format(endpoint))
-
     def _get_endpoint_url(self, endpoint):
         """
         Gets the url for the cosmos endpoint 'endpoint'
@@ -232,11 +216,7 @@ class Cosmos(object):
         :return: list of versions in preference order
         :rtype: list[str]
         """
-        self._ensure_endpoint_exists(endpoint)
-        versions = self._endpoint_data.get(endpoint).get('versions')
-        if not versions:
-            raise DCOSException('Programer error: could not get versions')
-        return versions
+        return self._endpoint_data.get(endpoint).get('versions')
 
     def _get_http_method(self, endpoint):
         """
@@ -247,11 +227,7 @@ class Cosmos(object):
         :return: http method type
         :rtype: str
         """
-        self._ensure_endpoint_exists(endpoint)
-        method = self._endpoint_data.get(endpoint).get('http_method')
-        if method is not 'post' and method is not 'get':
-            raise DCOSException('Programmer error: could not get http_method')
-        return method
+        return self._endpoint_data.get(endpoint).get('http_method')
 
     def _get_header(self, endpoint, version, headers=None):
         """
@@ -274,7 +250,7 @@ class Cosmos(object):
             'Content-Type': self._get_content_type(endpoint),
             'Accept': self._get_accept(endpoint, version)
         }
-        return _remove_nones(_merge_dict(simple_header, headers))
+        return _merge_dict(simple_header, headers)
 
     def _endpoint_exists(self, endpoint):
         """
