@@ -1047,7 +1047,7 @@ class TaskIO(object):
 
         init_output_attach_msg = {}
         init_output_attach_msg['type'] = "LAUNCH_NESTED_CONTAINER_SESSION"
-        init_output_attach_msg['launchNestedContainerSession'] = {
+        init_output_attach_msg['launch_nested_container_session'] = {
             'container_id': {
                 'value': self.container_id,
             },
