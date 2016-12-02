@@ -487,17 +487,7 @@ def _add_schedules(job_id, schedules_json):
 
     schedule = parse_schedule_json(schedules_json)
     client = metronome.create_client()
-    try:
-        client.add_schedule(job_id, schedule)
-    except DCOSHTTPException as e:
-        if e.response.status_code == 404:
-            emitter.publish("Job ID: '{}' does NOT exist.".format(job_id))
-        elif e.response.status_code == 409:
-            emitter.publish("Schedule already exists.")
-        else:
-            raise DCOSException(e)
-    except DCOSException as e:
-        raise DCOSException(e)
+    client.add_schedule(job_id, schedule)
 
     return 0
 
@@ -579,6 +569,9 @@ def _add_job(job_file):
     if 'id' not in full_json:
         raise DCOSException("Jobs JSON requires an ID.")
 
+    if 'disk' not in full_json['run']:
+        full_json['run']['disk'] = 0
+
     job_id = full_json['id']
     schedules = None
 
@@ -586,19 +579,10 @@ def _add_job(job_file):
         schedules = full_json['schedules']
         del full_json['schedules']
 
-    # iterate and post each schedule
-    job_added = False
-    try:
-        client = metronome.create_client()
-        client.add_job(full_json)
-        job_added = True
-    except DCOSHTTPException as e:
-        if e.response.status_code == 409:
-            emitter.publish("Job ID: '{}' already exists".format(job_id))
-        else:
-            raise DCOSException(e)
+    client = metronome.create_client()
+    client.add_job(full_json)
 
-    if schedules is not None and job_added is True:
+    if schedules is not None:
         return _add_schedules(job_id, schedules)
 
     return 0
