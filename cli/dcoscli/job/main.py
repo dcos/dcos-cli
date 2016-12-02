@@ -576,20 +576,9 @@ def _add_job(job_file):
         del full_json['schedules']
 
     # iterate and post each schedule
-    job_added = False
-    try:
-        _post_job(full_json)
-        job_added = True
-    except DCOSHTTPException as e:
-        if e.response.status_code == 422:
-            message = e
-            if e.response is not None and e.response.text is not None:
-                message = e.response.text
-            raise DCOSException(message)
-        else:
-            raise DCOSException(e)
+    _post_job(full_json)
 
-    if schedules is not None and job_added is True:
+    if schedules is not None:
         return _add_schedules(job_id, schedules)
 
     return 0
