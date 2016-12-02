@@ -6,7 +6,7 @@ import pytest
 import requests
 from requests.structures import CaseInsensitiveDict
 
-from dcos import http, marathon
+from dcos import http, marathon, rpcclient
 from dcos.errors import DCOSException, DCOSHTTPException
 
 
@@ -198,7 +198,7 @@ def test_pod_feature_supported_gets_success_response(head_fn):
         mock_response.status_code = status_code
         head_fn.return_value = mock_response
 
-        rpc_client = marathon.RpcClient('http://base/url', timeout=42)
+        rpc_client = rpcclient.RpcClient('http://base/url', timeout=42)
         marathon_client = marathon.Client(rpc_client)
         is_supported = marathon_client.pod_feature_supported()
 
@@ -219,7 +219,7 @@ def test_pod_feature_supported_gets_404_response(head_fn):
     mock_response.status_code = 404
     head_fn.side_effect = DCOSHTTPException(mock_response)
 
-    rpc_client = marathon.RpcClient('http://base/url', timeout=24)
+    rpc_client = rpcclient.RpcClient('http://base/url', timeout=24)
     marathon_client = marathon.Client(rpc_client)
 
     assert not marathon_client.pod_feature_supported()
@@ -237,13 +237,13 @@ def test_pod_feature_supported_converts_http_exceptions_to_dcos_exceptions():
         mock_response.json.side_effect = ValueError('empty body')
         head_fn.side_effect = DCOSHTTPException(mock_response)
 
-        rpc_client = marathon.RpcClient('http://does/not/matter')
+        rpc_client = rpcclient.RpcClient('http://does/not/matter')
         marathon_client = marathon.Client(rpc_client)
 
         with pytest.raises(DCOSException) as exception_info:
             marathon_client.pod_feature_supported()
 
-        message = marathon.RpcClient.response_error_message(
+        message = rpcclient.RpcClient.response_error_message(
             status_code,
             reason='Arbitrary Reason',
             request_method='ANY',
@@ -270,7 +270,7 @@ def test_rpc_client_http_req_calls_method_fn():
     def test_case(base_url, path, full_url):
         method_fn = mock.Mock()
 
-        rpc_client = marathon.RpcClient(base_url)
+        rpc_client = rpcclient.RpcClient(base_url)
         rpc_client.http_req(method_fn, path)
 
         method_fn.assert_called_with(full_url,
@@ -305,7 +305,7 @@ def test_rpc_client_http_req_calls_method_fn():
 def test_rpc_client_http_req_passes_args_to_method_fn():
     method_fn = mock.Mock()
 
-    rpc_client = marathon.RpcClient('http://base/url')
+    rpc_client = rpcclient.RpcClient('http://base/url')
     rpc_client.http_req(method_fn, 'some/path', 'foo', 42)
 
     method_fn.assert_called_with('http://base/url/some/path',
@@ -317,7 +317,7 @@ def test_rpc_client_http_req_passes_args_to_method_fn():
 def test_rpc_client_http_req_passes_kwargs_to_method_fn():
     method_fn = mock.Mock()
 
-    rpc_client = marathon.RpcClient('http://base/url')
+    rpc_client = rpcclient.RpcClient('http://base/url')
     rpc_client.http_req(method_fn, 'some/path', foo='bar', baz=42)
 
     method_fn.assert_called_with('http://base/url/some/path',
@@ -329,7 +329,7 @@ def test_rpc_client_http_req_passes_kwargs_to_method_fn():
 def test_rpc_client_http_req_kwarg_timeout_overrides_default():
     method_fn = mock.Mock()
 
-    rpc_client = marathon.RpcClient('http://base/url')
+    rpc_client = rpcclient.RpcClient('http://base/url')
     rpc_client.http_req(method_fn, 'some/path', timeout=42)
 
     method_fn.assert_called_with('http://base/url/some/path', timeout=42)
@@ -338,7 +338,7 @@ def test_rpc_client_http_req_kwarg_timeout_overrides_default():
 def test_rpc_client_http_req_set_timeout_in_constructor():
     method_fn = mock.Mock()
 
-    rpc_client = marathon.RpcClient('http://base/url', 24)
+    rpc_client = rpcclient.RpcClient('http://base/url', 24)
     rpc_client.http_req(method_fn, 'some/path')
 
     method_fn.assert_called_with('http://base/url/some/path', timeout=24)
@@ -350,7 +350,7 @@ def test_rpc_client_http_req_returns_method_fn_result():
         def method_fn(*args, **kwargs):
             return expected
 
-        rpc_client = marathon.RpcClient('http://base/url')
+        rpc_client = rpcclient.RpcClient('http://base/url')
         actual = rpc_client.http_req(method_fn, 'some/path')
 
         assert actual == expected
@@ -371,11 +371,11 @@ def test_rpc_client_http_req_propagates_method_fn_exception_1():
     def method_fn(*args, **kwargs):
         raise DCOSHTTPException(response)
 
-    rpc_client = marathon.RpcClient('http://base/url')
+    rpc_client = rpcclient.RpcClient('http://base/url')
     with pytest.raises(DCOSException) as e:
         rpc_client.http_req(method_fn, 'some/path')
 
-    expected_message = marathon.RpcClient.response_error_message(
+    expected_message = rpcclient.RpcClient.response_error_message(
         status_code=403,
         reason='Forbidden',
         request_method='ANY',
@@ -396,11 +396,11 @@ def test_rpc_client_http_req_propagates_method_fn_exception_2():
     def method_fn(*args, **kwargs):
         raise DCOSHTTPException(response)
 
-    rpc_client = marathon.RpcClient('http://base/url')
+    rpc_client = rpcclient.RpcClient('http://base/url')
     with pytest.raises(DCOSException) as e:
         rpc_client.http_req(method_fn, 'some/path')
 
-    expected_message = marathon.RpcClient.response_error_message(
+    expected_message = rpcclient.RpcClient.response_error_message(
         status_code=422,
         reason='Something Bad',
         request_method='None',
@@ -410,7 +410,7 @@ def test_rpc_client_http_req_propagates_method_fn_exception_2():
 
 
 def test_error_json_schema_is_valid():
-    error_json_schema = marathon.load_error_json_schema()
+    error_json_schema = rpcclient.load_error_json_schema()
     jsonschema.Draft4Validator.check_schema(error_json_schema)
 
 
@@ -436,7 +436,7 @@ def test_response_error_message_with_400_status_json():
 
 def test_res_err_msg_with_409_status():
     def test_case(request_url, expected_resource):
-        actual = marathon.RpcClient.response_error_message(
+        actual = rpcclient.RpcClient.response_error_message(
             status_code=409,
             reason=_REASON_X,
             request_method=_METHOD_X,
@@ -567,7 +567,7 @@ def test_res_err_msg_with_other_status_invalid_error_json():
 
 
 def _assert_add_pod_puts_json_in_request_body(pod_json):
-    rpc_client = mock.create_autospec(marathon.RpcClient)
+    rpc_client = mock.create_autospec(rpcclient.RpcClient)
 
     client = marathon.Client(rpc_client)
     client.add_pod(pod_json)
@@ -687,7 +687,7 @@ def _assert_method_propagates_rpc_dcos_exception(invoke_method):
 
 @mock.patch('dcos.http.head')
 def _assert_pod_feature_supported_raises_exception(head_fn, exception):
-    rpc_client = marathon.RpcClient('http://base/url', timeout=22)
+    rpc_client = rpcclient.RpcClient('http://base/url', timeout=22)
     marathon_client = marathon.Client(rpc_client)
     head_fn.side_effect = exception
 
@@ -699,7 +699,7 @@ def _assert_pod_feature_supported_raises_exception(head_fn, exception):
 
 def _assert_response_error_message_with_400_status_no_json(
         reason, request_method, request_url):
-    message = marathon.RpcClient.response_error_message(
+    message = rpcclient.RpcClient.response_error_message(
         status_code=400,
         reason=reason,
         request_method=request_method,
@@ -713,7 +713,7 @@ def _assert_response_error_message_with_400_status_no_json(
 
 def _assert_response_error_message_with_400_status_json(
         response_json, printed_json):
-    message = marathon.RpcClient.response_error_message(
+    message = rpcclient.RpcClient.response_error_message(
         status_code=400,
         reason=_REASON_X,
         request_method=_METHOD_X,
@@ -730,7 +730,7 @@ def _assert_response_error_message_with_400_status_json(
 
 def _assert_response_error_message_with_other_status_no_json(
         status_code, reason, request_url):
-    message = marathon.RpcClient.response_error_message(
+    message = rpcclient.RpcClient.response_error_message(
         status_code=status_code,
         reason=reason,
         request_method=_METHOD_X,
@@ -744,7 +744,7 @@ def _assert_response_error_message_with_other_status_no_json(
 
 def _assert_response_error_message_with_other_status_json_has_message(
         status_code, json_message):
-    error_message = marathon.RpcClient.response_error_message(
+    error_message = rpcclient.RpcClient.response_error_message(
         status_code=status_code,
         reason=_REASON_X,
         request_method=_METHOD_X,
@@ -757,28 +757,28 @@ def _assert_response_error_message_with_other_status_json_has_message(
 
 def _assert_res_err_msg_with_other_status_json_no_message_has_valid_errors(
         status_code, errors_json, errors_str):
-    message = marathon.RpcClient.response_error_message(
+    message = rpcclient.RpcClient.response_error_message(
         status_code=status_code,
         reason=_REASON_X,
         request_method=_METHOD_X,
         request_url=_URL_X,
         json_body={'errors': errors_json})
 
-    pattern = (r'Marathon likely misconfigured\. Please check your proxy or '
-               r'Marathon URL settings\. See dcos config --help\. (.*)')
+    pattern = (r'Service likely misconfigured\. Please check your proxy or '
+               r'Service URL settings\. See dcos config --help\. (.*)')
     _assert_matches_with_groups(pattern, message, (errors_str,))
 
 
 def _assert_res_err_msg_with_other_status_invalid_json(status_code, json_body):
-    actual = marathon.RpcClient.response_error_message(
+    actual = rpcclient.RpcClient.response_error_message(
         status_code=status_code,
         reason=_REASON_X,
         request_method=_METHOD_X,
         request_url=_URL_X,
         json_body=json_body)
 
-    expected = ('Marathon likely misconfigured. Please check your proxy or '
-                'Marathon URL settings. See dcos config --help. ')
+    expected = ('Service likely misconfigured. Please check your proxy or '
+                'Service URL settings. See dcos config --help. ')
     assert actual == expected
 
 
@@ -789,7 +789,7 @@ def _assert_matches_with_groups(pattern, text, groups):
 
 
 def _create_fixtures():
-    rpc_client = mock.create_autospec(marathon.RpcClient)
+    rpc_client = mock.create_autospec(rpcclient.RpcClient)
     marathon_client = marathon.Client(rpc_client)
 
     return marathon_client, rpc_client

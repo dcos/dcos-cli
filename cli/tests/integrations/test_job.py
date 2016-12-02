@@ -99,7 +99,7 @@ def test_show_job_with_invalid_jobname():
     assert_command(
         ['dcos', 'job', 'show', 'invalid'],
         stdout=b'',
-        stderr=b"Job ID: 'invalid' does NOT exist.\n",
+        stderr=b"Error: Job not found\n",
         returncode=1)
 
 
@@ -107,7 +107,7 @@ def test_show_job_runs_blank_jobname():
     assert_command(
         ['dcos', 'job', 'show', 'runs'],
         stdout=b'',
-        stderr=b"Job ID: 'runs' does NOT exist.\n",
+        stderr=b"Error: Job not found\n",
         returncode=1)
 
 
@@ -123,7 +123,7 @@ def test_show_schedule_invalid_jobname():
     assert_command(
         ['dcos', 'job', 'schedule', 'show', 'invalid'],
         stdout=b'',
-        stderr=b"Job ID: 'invalid' does NOT exist.\n",
+        stderr=b"Error: Job not found\n",
         returncode=1)
 
 

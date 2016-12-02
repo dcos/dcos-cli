@@ -8,7 +8,8 @@ import six
 from six.moves import urllib
 
 import dcoscli
-from dcos import cmds, config, cosmospackage, emitting, http, options, util
+from dcos import (cmds, config, cosmospackage, emitting, http, metronome,
+                  options, util)
 from dcos.errors import DCOSException, DCOSHTTPException
 from dcoscli import tables
 from dcoscli.package.main import get_cosmos_url
@@ -168,8 +169,8 @@ def _remove_schedule(job_id, schedule_id):
     """
 
     try:
-        _do_request("{}/{}/schedules/{}".format(_get_api_url('v1/jobs'),
-                    job_id, schedule_id), 'DELETE')
+        client = metronome.create_client()
+        client.remove_schedule(job_id, schedule_id)
     except DCOSHTTPException as e:
         if e.response.status_code == 404:
             raise DCOSException("Schedule or job ID does NOT exist.")
@@ -192,11 +193,9 @@ def _remove(job_id, stop_current_job_runs=False):
     """
 
     try:
-        _do_request("{}/{}?stopCurrentJobRuns={}"
-                    .format(_get_api_url('v1/jobs'),
-                            job_id,
-                            str(stop_current_job_runs).lower()),
-                    'DELETE')
+        client = metronome.create_client()
+        client.remove_job(job_id, stop_current_job_runs)
+
     except DCOSHTTPException as e:
         if e.response.status_code == 500 and stop_current_job_runs:
             return _remove(job_id, False)
@@ -224,11 +223,10 @@ def _kill(job_id, run_id, all=False):
     else:
         deadpool.append(run_id)
 
+    client = metronome.create_client()
     for dead in deadpool:
         try:
-            response = _do_request("{}/{}/runs/{}/actions/stop".format(
-                                    _get_api_url('v1/jobs'),
-                                    job_id, dead), 'POST')
+            client.kill_run(job_id, run_id)
         except DCOSHTTPException as e:
             if e.response.status_code == 404:
                 raise DCOSException("Job ID or Run ID does NOT exist.")
@@ -247,14 +245,12 @@ def _list(json_flag=False):
     :returns: process return code
     :rtype: int
     """
-    response = None
-    url = _get_api_url('v1/jobs' + METRONOME_EMBEDDED)
+
     try:
-        response = _do_request(url, 'GET')
+        client = metronome.create_client()
+        json_list = client.get_jobs()
     except DCOSException as e:
         raise DCOSException(e)
-
-    json_list = _read_http_response_body(response)
 
     if json_flag:
         emitter.publish(json_list)
@@ -340,17 +336,15 @@ def _show(job_id):
     :rtype: int
     """
 
-    response = None
     try:
-        response = _do_request("{}/{}".format(
-            _get_api_url('v1/jobs'), job_id), 'GET')
+        client = metronome.create_client()
+        json_job = client.get_job(job_id)
     except DCOSHTTPException as e:
         if e.response.status_code == 404:
             raise DCOSException("Job ID: '{}' does NOT exist.".format(job_id))
         else:
             raise DCOSException(e)
 
-    json_job = _read_http_response_body(response)
     emitter.publish(json_job)
 
     return 0
@@ -402,18 +396,14 @@ def _get_runs(job_id, run_id=None):
     :rtype: json
     """
 
-    response = None
-    url = "{}/{}/runs".format(_get_api_url('v1/jobs'), job_id)
-    if run_id is not None:
-        url = "{}/{}/runs/{}".format(_get_api_url('v1/jobs'), job_id, run_id)
+    client = metronome.create_client()
     try:
-        response = _do_request(url, 'GET')
+        if run_id is None:
+            return client.get_runs(job_id)
+        else:
+            return client.get_run(job_id, run_id)
     except DCOSException as e:
         raise DCOSException(e)
-
-    json_runs = _read_http_response_body(response)
-
-    return json_runs
 
 
 def _run(job_id):
@@ -424,11 +414,9 @@ def _run(job_id):
     :rtype: int
     """
 
-    timeout = _get_timeout()
-    url = "{}/{}/runs".format(_get_api_url('v1/jobs'), job_id)
-
     try:
-        http.post(url, timeout=timeout)
+        client = metronome.create_client()
+        client.run_job(job_id)
     except DCOSHTTPException as e:
         if e.response.status_code == 404:
             emitter.publish("Job ID: '{}' does not exist.".format(job_id))
@@ -446,10 +434,9 @@ def _show_schedule(job_id, json_flag=False):
     :rtype: int
     """
 
-    response = None
-    url = "{}/{}/schedules".format(_get_api_url('v1/jobs'), job_id)
     try:
-        response = _do_request(url, 'GET')
+        client = metronome.create_client()
+        json_schedule = client.get_schedules(job_id)
     except DCOSHTTPException as e:
         if e.response.status_code == 404:
             raise DCOSException("Job ID: '{}' does NOT exist.".format(job_id))
@@ -458,7 +445,6 @@ def _show_schedule(job_id, json_flag=False):
     except DCOSException as e:
         raise DCOSException(e)
 
-    json_schedule = _read_http_response_body(response)
     if json_flag:
         emitter.publish(json_schedule)
     else:
@@ -500,15 +486,14 @@ def _add_schedules(job_id, schedules_json):
         raise DCOSException('Schedule JSON is required.')
 
     schedule = parse_schedule_json(schedules_json)
+    client = metronome.create_client()
     try:
-        _post_schedule(job_id, schedule)
+        client.add_schedule(job_id, schedule)
     except DCOSHTTPException as e:
         if e.response.status_code == 404:
             emitter.publish("Job ID: '{}' does NOT exist.".format(job_id))
         elif e.response.status_code == 409:
             emitter.publish("Schedule already exists.")
-        elif e.response.status_code == 422:
-            raise DCOSException(e.response.text)
         else:
             raise DCOSException(e)
     except DCOSException as e:
@@ -551,7 +536,8 @@ def _update_schedule(job_id, schedule_id, schedule_json):
         raise DCOSException("No schedule to update.")
 
     try:
-        _put_schedule(job_id, schedule_id, schedule_json)
+        client = metronome.create_client()
+        client.update_schedule(job_id, schedule_id, schedule_json)
         emitter.publish("Schedule ID `{}` for job ID `{}` updated."
                         .format(schedule_id, job_id))
     except DCOSHTTPException as e:
@@ -603,7 +589,8 @@ def _add_job(job_file):
     # iterate and post each schedule
     job_added = False
     try:
-        _post_job(full_json)
+        client = metronome.create_client()
+        client.add_job(full_json)
         job_added = True
     except DCOSHTTPException as e:
         if e.response.status_code == 409:
@@ -635,7 +622,8 @@ def _update_job(job_file):
         del full_json['schedules']
 
     try:
-        _put_job(job_id, full_json)
+        client = metronome.create_client()
+        client.update_job(job_id, full_json)
     except DCOSHTTPException as e:
         emitter.publish("Error updating job: '{}'".format(job_id))
 
@@ -661,81 +649,6 @@ def _cli_config_schema():
         pkg_resources.resource_string(
             'dcoscli',
             'data/config-schema/job.json').decode('utf-8'))
-
-
-def _post_job(job_json):
-    """
-    :param job_json: json object representing a job
-    :type job_file: json
-    :returns: response json
-    :rtype: json
-    """
-
-    timeout = _get_timeout()
-    url = _get_api_url('v1/jobs')
-
-    response = http.post(url,
-                         json=job_json,
-                         timeout=timeout)
-
-    return response.json()
-
-
-def _put_job(job_id, job_json):
-    """
-    :param job_id: Id of the job
-    :type job_id: str
-    :param job_json: json object representing a job
-    :type job_file: json
-    :returns: response json
-    :rtype: json
-    """
-
-    timeout = _get_timeout()
-    url = "{}/{}".format(_get_api_url('v1/jobs'), job_id)
-
-    response = http.put(url, json=job_json, timeout=timeout)
-
-    return response.json()
-
-
-def _put_schedule(job_id, schedule_id, schedule_json):
-    """
-    :param job_id: Id of the job
-    :type job_id: str
-    :param schedule_id: Id of the schedule
-    :type schedule_id: str
-    :param schedule_json: json object representing a job
-    :type schedule_json: json
-    :returns: response json
-    :rtype: json
-    """
-
-    timeout = _get_timeout()
-    url = "{}/{}/schedules/{}".format(_get_api_url('v1/jobs'),
-                                      job_id, schedule_id)
-
-    response = http.put(url, json=schedule_json, timeout=timeout)
-
-    return response.json()
-
-
-def _post_schedule(job_id, schedule_json):
-    """
-    :param job_id: id of the job
-    :type job_id: str
-    :param schedule_json: json object representing a schedule
-    :type schedule_json: json
-    :returns: response json
-    :rtype: json
-    """
-
-    timeout = _get_timeout()
-    url = "{}/{}/schedules".format(_get_api_url('v1/jobs'), job_id)
-
-    response = http.post(url, json=schedule_json, timeout=timeout)
-
-    return response.json()
 
 
 def _do_request(url, method, timeout=None, stream=False, **kwargs):

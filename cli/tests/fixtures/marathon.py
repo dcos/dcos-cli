@@ -41,6 +41,7 @@ def app_fixture():
         "cpus": 0.1,
         "dependencies": [],
         "deployments": [],
+        "waiting": "False",
         "disk": 0.0,
         "env": {},
         "executor": "",
@@ -282,7 +283,8 @@ def pod_list_fixture():
         "instances": [{}, {}, {}],
         "spec": good_pod_spec,
         "status": "stable",
-        "statusSince": "2016-10-05T15:36:54.123Z"
+        "statusSince": "2016-10-05T15:36:54.123Z",
+        "waiting": "False"
     }
 
     double_pod_status = {
@@ -290,7 +292,8 @@ def pod_list_fixture():
         "instances": [{}, {}],
         "spec": double_pod_spec,
         "status": "terminal",
-        "statusSince": "2016-10-04T03:13:37.101Z"
+        "statusSince": "2016-10-04T03:13:37.101Z",
+        "waiting": "False"
     }
 
     triple_pod_status = {
@@ -298,7 +301,8 @@ def pod_list_fixture():
         "instances": [{}],
         "spec": triple_pod_spec,
         "status": "degraded",
-        "statusSince": "2016-09-30T22:28:09.201Z"
+        "statusSince": "2016-09-30T22:28:09.201Z",
+        "waiting": "False"
     }
 
     return [good_pod_status, double_pod_status, triple_pod_status]

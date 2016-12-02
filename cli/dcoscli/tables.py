@@ -5,7 +5,7 @@ from collections import OrderedDict
 
 import prettytable
 
-from dcos import mesos, util
+from dcos import marathon, mesos, util
 
 EMPTY_ENTRY = '---'
 
@@ -50,8 +50,10 @@ def task_table(tasks):
 def app_table(apps, deployments):
     """Returns a PrettyTable representation of the provided apps.
 
-    :param tasks: apps to render
-    :type tasks: [dict]
+    :param apps: apps to render
+    :type apps: [dict]
+    :param deployments: deployments to enhance information
+    :type deployments: [dict]
     :rtype: PrettyTable
     """
 
@@ -105,6 +107,7 @@ def app_table(apps, deployments):
                                            a["instances"])),
         ("HEALTH", get_health),
         ("DEPLOYMENT", get_deployment),
+        ("WAITING", lambda app: app.get('overdue', False)),
         ("CONTAINER", get_container),
         ("CMD", get_cmd)
     ])
@@ -112,6 +115,7 @@ def app_table(apps, deployments):
     tb = table(fields, apps, sortby="ID")
     tb.align["CMD"] = "l"
     tb.align["ID"] = "l"
+    tb.align["WAITING"] = "l"
 
     return tb
 
@@ -448,7 +452,8 @@ def pod_table(pods):
         ('INSTANCES', lambda pod: len(pod.get('instances', []))),
         ('VERSION', lambda pod: pod['spec'].get('version', '-')),
         ('STATUS', lambda pod: pod['status']),
-        ('STATUS SINCE', lambda pod: pod['statusSince'])
+        ('STATUS SINCE', lambda pod: pod['statusSince']),
+        ('WAITING', lambda pod: pod.get('overdue', False))
     ])
 
     tb = table(fields, pods, sortby=key_column)
@@ -456,6 +461,291 @@ def pod_table(pods):
     tb.align['VERSION'] = 'l'
     tb.align['STATUS'] = 'l'
     tb.align['STATUS SINCE'] = 'l'
+    tb.align['WAITING'] = 'l'
+
+    return tb
+
+
+def queued_apps_table(queued_apps):
+    """Returns a PrettyTable representation of the Marathon
+    launch queue content.
+
+    :param queued_apps: apps to render
+    :type queued_apps: [dict]
+    :rtype: PrettyTable
+    """
+
+    def extract_value_from_entry(entry, value):
+        """Extracts the value parameter from given row entry. If value
+        is not present, EMPTY_ENTRY will be returned
+
+        :param entry: row entry
+        :type entry: [dict]
+        :param value: value which should be extracted
+        :type value: string
+        :rtype: str
+        """
+        return entry.get('processedOffersSummary', {}).get(value, EMPTY_ENTRY)
+
+    key_column = 'ID'
+    fields = OrderedDict([
+        (key_column, lambda entry: marathon.get_app_or_pod_id(entry)),
+        ('SINCE', lambda entry:
+            entry.get('since', EMPTY_ENTRY)
+         ),
+        ('INSTANCES TO LAUNCH', lambda entry:
+            entry.get('count', EMPTY_ENTRY)
+         ),
+        ('WAITING', lambda entry:
+            entry.get('delay', {}).get('overdue', EMPTY_ENTRY)
+         ),
+        ('PROCESSED OFFERS', lambda entry:
+            extract_value_from_entry(entry, 'processedOffersCount')
+         ),
+        ('UNUSED OFFERS', lambda entry:
+            extract_value_from_entry(entry, 'unusedOffersCount')
+         ),
+        ('LAST UNUSED OFFER', lambda entry:
+            extract_value_from_entry(entry, 'lastUnusedOfferAt')
+         ),
+        ('LAST USED OFFER', lambda entry:
+            extract_value_from_entry(entry, 'lastUsedOfferAt')
+         ),
+    ])
+
+    tb = table(fields, queued_apps, sortby=key_column)
+    tb.align[key_column] = 'l'
+    tb.align['SINCE'] = 'l'
+    tb.align['INSTANCES TO LAUNCH'] = 'l'
+    tb.align['WAITING'] = 'l'
+    tb.align['PROCESSED OFFERS'] = 'l'
+    tb.align['UNUSED OFFERS'] = 'l'
+    tb.align['LAST UNUSED OFFER'] = 'l'
+    tb.align['LAST USED OFFER'] = 'l'
+
+    return tb
+
+
+def queued_app_table(queued_app):
+    """Returns a PrettyTable representation of the Marathon
+    launch queue content.
+
+    :param queued_app: app to render
+    :type queued_app: dict
+    :rtype: PrettyTable
+    """
+
+    def calc_division(dividend, divisor):
+        """Calcs divident / divisor, displays 0 if divisor equals 0.
+
+        :param dividend: divident
+        :type dividend: int
+        :param divisor: divisor
+        :type divisor: int
+        :rtype: str
+        """
+        if divisor == 0:
+            return 0
+        else:
+            return 100 * dividend / divisor
+
+    def add_reason_entry(calculations, key, requested, reason_entry):
+        """Pretty prints the division of
+        reason_entry.get('declined') / reason_entry.get('processed')
+
+        :param calculations: object where result should be added
+        :type calculations: dict
+        :param key: key for which the result should be added
+        :type key: string
+        :param requested: the value initially was requested for this entry
+        :type requested: string
+        :param reason_entry: entry for a declined offer reason
+        :type reason_entry: [dict]
+        :rtype: str
+        """
+        dividend = reason_entry.get('processed', 0) - \
+            reason_entry.get('declined', 0)
+        divisor = reason_entry.get('processed', 0)
+        calculations[key]['REQUESTED'] = requested
+        calculations[key]['MATCHED'] = '{0} / {1}'\
+            .format(dividend, divisor)
+        if divisor > 0:
+            calculations[key]['PERCENTAGE'] = '{0:0.2f}%' \
+                .format(calc_division(dividend, divisor))
+        else:
+            calculations[key]['PERCENTAGE'] = EMPTY_ENTRY
+
+    def extract_reason_from_list(list, reason_string):
+        """Extracts the reason for the given reason_string from the given list
+
+        :param list: list of reason entries
+        :type list: [dict]
+        :param reason_string: reasong as string
+        :type reason_string: str
+        :rtype: reason entry
+        """
+        filtered = [x for x in list if x['reason'] == reason_string]
+        if len(filtered) == 1:
+            return filtered[0]
+        else:
+            return {'reason': reason_string, 'declined': 0, 'processed': 0}
+
+    fields = OrderedDict([
+        ('RESOURCE', lambda entry:
+            calculations.get(entry, {}).get('RESOURCE', EMPTY_ENTRY)
+         ),
+        ('REQUESTED', lambda entry:
+            calculations.get(entry, {}).get('REQUESTED', EMPTY_ENTRY)
+         ),
+        ('MATCHED', lambda entry:
+            calculations.get(entry, {}).get('MATCHED', EMPTY_ENTRY)
+         ),
+        ('PERCENTAGE', lambda entry:
+            calculations.get(entry, {}).get('PERCENTAGE', EMPTY_ENTRY)
+         ),
+    ])
+
+    summary = queued_app.get('processedOffersSummary', {})
+    reasons = summary.get('rejectSummaryLastOffers', {})
+
+    declined_by_role = extract_reason_from_list(
+        reasons, 'UnfulfilledRole')
+    declined_by_constraints = extract_reason_from_list(
+        reasons, 'UnfulfilledConstraint')
+    declined_by_cpus = extract_reason_from_list(
+        reasons, 'InsufficientCpus')
+    declined_by_mem = extract_reason_from_list(
+        reasons, 'InsufficientMemory')
+    declined_by_disk = extract_reason_from_list(
+        reasons, 'InsufficientDisk')
+    """declined_by_gpus = extract_reason_from_list(
+        reasons, 'InsufficientGpus')"""
+    declined_by_ports = extract_reason_from_list(
+        reasons, 'InsufficientPorts')
+
+    app = queued_app.get('app')
+    if app:
+        roles = app.get('acceptedResourceRoles', [])
+        if len(roles) == 0:
+            spec_roles = '[*]'
+        else:
+            spec_roles = roles
+        spec_constraints = app.get('constraints', EMPTY_ENTRY)
+        spec_cpus = app.get('cpus', EMPTY_ENTRY)
+        spec_mem = app.get('mem', EMPTY_ENTRY)
+        spec_disk = app.get('disk', EMPTY_ENTRY)
+        """spec_gpus = app.get('gpus', EMPTY_ENTRY)"""
+        spec_ports = app.get('ports', EMPTY_ENTRY)
+    else:
+        def sum_resources(value):
+            def container_value(container):
+                return container.get('resources', {}).get(value, 0)
+
+            """While running pods, marathon will add resources for
+            the executor to the requested resources.
+            Therefore this requirements should be reflected in the summary."""
+            def executor_value():
+                return pod.get('executorResources', {}).get(value, 0)
+
+            resources = sum(map(container_value, pod.get('containers', [])))
+            return resources + executor_value()
+
+        pod = queued_app.get('pod')
+        roles = pod.\
+            get('scheduling', {}).get('placement', {}).\
+            get('acceptedResourceRoles', [])
+        if len(roles) == 0:
+            spec_roles = '[*]'
+        else:
+            spec_roles = roles
+        spec_constraints = pod.\
+            get('scheduling', {}).get('placement', {}).\
+            get('constraints', EMPTY_ENTRY)
+        spec_cpus = sum_resources('cpus')
+        spec_mem = sum_resources('mem')
+        spec_disk = sum_resources('disk')
+        """spec_gpus = sum_resources('gpus')"""
+        spec_ports = []
+        for container in pod.get('containers', []):
+            for endpoint in container.get('endpoints', []):
+                spec_ports.append(endpoint.get('hostPort'))
+
+    """'GPUS'"""
+    rows = ['ROLE', 'CONSTRAINTS', 'CPUS', 'MEM', 'DISK', 'PORTS']
+
+    calculations = {}
+    for reason in rows:
+        calculations[reason] = {}
+        calculations[reason]['RESOURCE'] = reason
+
+    add_reason_entry(calculations, 'ROLE', spec_roles, declined_by_role)
+    add_reason_entry(
+        calculations, 'CONSTRAINTS', spec_constraints,
+        declined_by_constraints)
+    add_reason_entry(calculations, 'CPUS', spec_cpus, declined_by_cpus)
+    add_reason_entry(calculations, 'MEM', spec_mem, declined_by_mem)
+    add_reason_entry(calculations, 'DISK', spec_disk, declined_by_disk)
+    """
+    add_reason_entry(calculations, 'GPUS', spec_gpus, declined_by_gpus)
+    """
+    add_reason_entry(calculations, 'PORTS', spec_ports, declined_by_ports)
+
+    tb = table(fields, rows)
+    tb.align['RESOURCE'] = 'l'
+    tb.align['REQUESTED'] = 'l'
+    tb.align['MATCHED'] = 'l'
+    tb.align['PERCENTAGE'] = 'l'
+
+    return tb
+
+
+def queued_app_details_table(queued_app):
+    """Returns a PrettyTable representation of the Marathon
+    launch queue detailed content.
+
+    :param queued_app: app to render
+    :type queued_app: dict
+    :rtype: PrettyTable
+    """
+
+    def value_declined(entry, value):
+        """Returns `yes` if the value was inside entry.get('reason'),
+        returns `no` otherwise.
+
+        :param entry: row entry
+        :type entry: [dict]
+        :param value: value which should be checked
+        :type value: string
+        :rtype: PrettyTable
+        """
+        if value not in entry.get('reason', []):
+            return 'ok'
+        else:
+            return '-'
+
+    reasons = queued_app.get('lastUnusedOffers')
+    fields = OrderedDict([
+        ('HOSTNAME', lambda entry:
+            entry.get('offer', {}).get('hostname', EMPTY_ENTRY)
+         ),
+        ('ROLE', lambda entry: value_declined(entry, 'UnfulfilledRole')),
+        ('CONSTRAINTS', lambda entry:
+            value_declined(entry, 'UnfulfilledConstraint')
+         ),
+        ('CPUS', lambda entry: value_declined(entry, 'InsufficientCpus')),
+        ('MEM', lambda entry: value_declined(entry, 'InsufficientMemory')),
+        ('DISK', lambda entry: value_declined(entry, 'InsufficientDisk')),
+        ('PORTS', lambda entry: value_declined(entry, 'UnfulfilledRole')),
+        ('RECEIVED', lambda entry:
+            entry.get('timestamp', EMPTY_ENTRY)
+         ),
+    ])
+    """('GPUS', lambda entry: value_declined(entry, 'InsufficientGpus')),"""
+
+    tb = table(fields, reasons, sortby='HOSTNAME')
+    tb.align['HOSTNAME'] = 'l'
+    tb.align['REASON'] = 'l'
+    tb.align['RECEIVED'] = 'l'
 
     return tb
 
