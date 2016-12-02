@@ -1,4 +1,4 @@
-from dcos import cosmos, util
+from dcos import cosmos
 
 
 class ServiceManager(object):
