@@ -456,6 +456,22 @@ def _show_schedule(job_id, json_flag=False):
     return 0
 
 
+def parse_schedule_json(schedules_json):
+    """
+    The original design of metronome had an array of schedules defined but
+    limited it to 1.  This limits to 1 and takes the array format or just
+    1 schedule format.
+    :param schedules_json: schedule or array of schedules in json
+    :type schedules_json: json [] or {}
+    :returns: schedule json
+    :rtype: json
+    """
+    if type(schedules_json) is list:
+        return schedules_json[0]
+    else:
+        return schedules_json
+
+
 def _add_schedules(job_id, schedules_json):
     """
     :param job_id: Id of the job
@@ -467,21 +483,21 @@ def _add_schedules(job_id, schedules_json):
     """
 
     if schedules_json is None:
-        return 1
+        raise DCOSException('Schedule JSON is required.')
 
+    schedule = parse_schedule_json(schedules_json)
     client = metronome.create_client()
-    for schedule in schedules_json:
-        try:
-            client.add_schedule(job_id, schedule)
-        except DCOSHTTPException as e:
-            if e.response.status_code == 404:
-                emitter.publish("Job ID: '{}' does NOT exist.".format(job_id))
-            elif e.response.status_code == 409:
-                emitter.publish("Schedule already exists.")
-            else:
-                raise DCOSException(e)
-        except DCOSException as e:
+    try:
+        client.add_schedule(job_id, schedule)
+    except DCOSHTTPException as e:
+        if e.response.status_code == 404:
+            emitter.publish("Job ID: '{}' does NOT exist.".format(job_id))
+        elif e.response.status_code == 409:
+            emitter.publish("Schedule already exists.")
+        else:
             raise DCOSException(e)
+    except DCOSException as e:
+        raise DCOSException(e)
 
     return 0
 
