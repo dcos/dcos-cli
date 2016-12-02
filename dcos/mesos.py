@@ -1,27 +1,17 @@
+import base64
 import fnmatch
 import itertools
+import json
 import os
 import signal
 import sys
-
-# Generated protobuf code
-import mesos.v1.agent.agent_pb2 as pba
-import mesos.v1.mesos_pb2 as pbm
-
-from functools import partial
-
-from google.protobuf.json_format import MessageToJson, Parse
-
 import threading
 
-from six.moves import urllib
-
-from dcos import config, http, util
+from dcos import config, http, recordio, util
 from dcos.errors import DCOSException, DCOSHTTPException
-
+from functools import partial
 from queue import Queue
-
-from dcos import recordio
+from six.moves import urllib
 
 logger = util.get_logger(__name__)
 
@@ -970,8 +960,6 @@ class TaskIO(object):
     :param interactive: Create a third persistant connection for streaming
     STDIN
     :type interactive: bool
-    :param tty: Allocate a PTY for the remote process
-    :type tty: bool
     :param cmd: the command to fork inside the container
     :type cmd: str
     :param args: Additional arguments for the command
@@ -1004,8 +992,8 @@ class TaskIO(object):
         self.cmd = cmd
         self.args = args
 
-        self.encoder = recordio.Encoder(lambda s: bytes(MessageToJson(s), "UTF-8"))
-        self.decoder = recordio.Decoder(lambda s: Parse(s, pba.ProcessIO()))
+        self.encoder = recordio.Encoder(lambda s: bytes(json.dumps(s, ensure_ascii=False), "UTF-8"))
+        self.decoder = recordio.Decoder(lambda s: json.loads(s.decode("UTF-8")))
 
         self.input_queue = Queue()
         self.output_queue = Queue()
@@ -1057,12 +1045,18 @@ class TaskIO(object):
         :rtype: byte string - JSON value for initializing the output stream
         """
 
-        init_output_attach_msg = pba.Call()
-        init_output_attach_msg.type = pba.Call.Type.Value('LAUNCH_NESTED_CONTAINER_SESSION')
-        init_output_attach_msg.launch_nested_container_session.container_id.value = self.container_id
-        init_output_attach_msg.launch_nested_container_session.command.shell = False
-        init_output_attach_msg.launch_nested_container_session.command.value = self.cmd
-        init_output_attach_msg.launch_nested_container_session.command.arguments.extend(self.args)
+        init_output_attach_msg = {}
+        init_output_attach_msg['type'] = "LAUNCH_NESTED_CONTAINER_SESSION"
+        init_output_attach_msg['launchNestedContainerSession'] = {
+            'container_id': {
+                'value': self.container_id,
+            },
+            'command': {
+                'value': self.cmd,
+                'arguments': self.args,
+                'shell': False,
+            }
+        }
 
         return self.encoder.encode(init_output_attach_msg)
 
@@ -1124,8 +1118,8 @@ class TaskIO(object):
 
                 if records:
                     for r in records:
-                        if r.type == pba.ProcessIO.Type.Value('DATA'):
-                            self.output_queue.put(r.data)
+                        if r['type'] == 'DATA':
+                            self.output_queue.put(r['data'])
 
             except:
                 raise DCOSException('Invalid message type passed to _attach_output_stream')
@@ -1143,13 +1137,16 @@ class TaskIO(object):
             then yields a message from the input_queue on each subsequent call
             """
 
+            init_input_attach_msg = {}
+            init_input_attach_msg['type'] = 'ATTACH_CONTAINER_INPUT'
+            init_input_attach_msg['attach_container_input'] = {
+                'type': 'CONTAINER_ID',
+                'container_id': {
+                    'value': self.container_id,
+                }
+            }
+
             send_init = True
-
-            init_input_attach_msg = pba.Call()
-            init_input_attach_msg.type = pba.Call.Type.Value('ATTACH_CONTAINER_INPUT')
-            init_input_attach_msg.attach_container_input.type = pba.Call.AttachContainerInput.Type.Value('CONTAINER_ID')
-            init_input_attach_msg.attach_container_input.container_id.value = self.container_id
-
             while True:
                 item = self.input_queue.get()
                 if send_init:
@@ -1180,12 +1177,16 @@ class TaskIO(object):
 
         # For every read of STDIN, take a line
         for chunk in iter(partial(os.read, sys.stdin.fileno(), 1024), ''):
-            # Create an AttachContainerInput message from proto spec
-            input_msg = pba.Call.AttachContainerInput()
-            input_msg.type = pba.Call.AttachContainerInput.Type.Value('PROCESS_IO')
-            input_msg.process_io.type = pba.ProcessIO.Type.Value('DATA')
-            input_msg.process_io.data.type = pba.ProcessIO.Data.Type.Value('STDIN')
-            input_msg.process_io.data.data = chunk
+            input_msg = {}
+            input_msg['type'] = 'PROCESS_IO'
+            input_msg['process_io'] = {
+                'type': 'DATA',
+                'data': {
+                    'type': 'STDIN',
+                    'data': base64.b64encode(chunk).decode('utf-8'),
+                }
+            }
+
             # Dump input msg to the queue for processing
             self.input_queue.put(self.encoder.encode(input_msg))
 
@@ -1198,19 +1199,14 @@ class TaskIO(object):
         while True:
             # Get message from output queue
             output = self.output_queue.get()
-            data = output.data
+            data = output['data']
+            data = base64.b64decode(data.encode('utf-8'))
 
-            if output.type == pba.ProcessIO.Data.Type.Value('STDOUT'):
-                try:
-                    sys.stdout.buffer.write(data)
-                except:
-                    sys.stdout.write(data.decode('utf-8'))
+            if output['type'] == 'STDOUT':
+                sys.stdout.buffer.write(data)
                 sys.stdout.flush()
-            elif output.type == pba.ProcessIO.Data.Type.Value('STDERR'):
-                try:
-                    sys.stderr.buffer.write(data)
-                except:
-                    sys.stderr.write(data.decode('utf-8'))
+            elif output['type'] == 'STDERR':
+                sys.stderr.buffer.write(data)
                 sys.stderr.flush()
 
             # Close queue assuming last msg was EOF
