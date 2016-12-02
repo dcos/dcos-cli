@@ -1178,12 +1178,15 @@ class TaskIO(object):
         # For every read of STDIN, take a line
         for chunk in iter(partial(os.read, sys.stdin.fileno(), 1024), ''):
             input_msg = {}
-            input_msg['type'] = 'PROCESS_IO'
-            input_msg['process_io'] = {
-                'type': 'DATA',
-                'data': {
-                    'type': 'STDIN',
-                    'data': base64.b64encode(chunk).decode('utf-8'),
+            input_msg['type'] = 'ATTACH_CONTAINER_INPUT'
+            input_msg['attach_container_input'] = {
+                'type': 'PROCESS_IO',
+                'process_io': {
+                    'type': 'DATA',
+                    'data': {
+                        'type': 'STDIN',
+                        'data': base64.b64encode(chunk).decode('utf-8'),
+                    }
                 }
             }
 
