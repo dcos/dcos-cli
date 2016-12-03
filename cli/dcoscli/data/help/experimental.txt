@@ -43,4 +43,3 @@ Options:
 Positional Arguments:
     <build-definition>
         Path to a DC/OS Package Build Definition.
-
