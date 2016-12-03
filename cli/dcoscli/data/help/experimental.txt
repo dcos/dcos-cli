@@ -4,11 +4,14 @@ Description:
 Usage:
     dcos experimental --help
     dcos experimental --info
-    dcos experimental package add ((--local <dcos-package>) |
-                                        (--remote <package-name>
+    dcos experimental package add ((--dcos-package=<dcos-package>) |
+                                    (--package-name=<package-name>
                                         [--package-version=<package-version>]))
     dcos experimental package build [--output-directory=<output-directory>]
                                     <build-definition>
+
+
+
 
 Commands:
     package add
@@ -17,6 +20,8 @@ Commands:
         Build a package to install to DC/OS or share with Universe.
 
 Options:
+    --dcos-package=<dcos-package>
+        Path to a DC/OS Package.
     -h, --help
         Print usage.
     --info
@@ -26,6 +31,8 @@ Options:
     --output-directory=<output-directory>
         Path to the directory where the data should be stored.
         Defaults to the current working directory.
+    --package-name<package-name>
+        Name of the DC/OS package in the package repository.
     --package-version=<package-version>
         The package version to add.
     --remote
@@ -36,7 +43,4 @@ Options:
 Positional Arguments:
     <build-definition>
         Path to a DC/OS Package Build Definition.
-    <dcos-package>
-        Path to a DC/OS Package.
-    <package-name>
-        Name of the DC/OS package in the package repository.
+

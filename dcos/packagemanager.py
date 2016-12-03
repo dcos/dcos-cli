@@ -245,19 +245,21 @@ class PackageManager:
         response = self.cosmos_post("repository/delete", params=params)
         return response.json()
 
-    def package_add(self,
-                    local, dcos_package,
-                    remote, package_name, package_version):
+    def package_add(self, dcos_package, package_name, package_version):
         """
-        Adds a DC/OS package to DC/OS
+         Adds a DC/OS package to DC/OS
 
         :param dcos_package: path to the DC/OS package
-        :type dcos_package: str
+        :type dcos_package: None | str
+        :param package_name: name of the remote pacakge to add
+        :type package_name: None | str
+        :param package_version: version of the remote package to add
+        :type package_version: None | str
         :return: Response to the package add request
         :rtype: Response
         """
         try:
-            if local:
+            if dcos_package:
                 with util.open_file(dcos_package, 'rb') as pkg:
                     extra_headers = {
                         'Content-Type':
@@ -267,7 +269,7 @@ class PackageManager:
                     }
                 with util.open_file(dcos_package, 'rb') as data:
                     return self._post('add', headers=extra_headers, data=data)
-            elif remote:
+            else:
                 json = {'packageName': package_name}
                 if package_version is not None:
                     json['packageVersion'] = package_version

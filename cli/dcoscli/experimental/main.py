@@ -51,8 +51,8 @@ def _cmds():
     return [
         cmds.Command(
             hierarchy=['experimental', 'package', 'add'],
-            arg_keys=['--local', '<dcos-package>',
-                      '--remote', '<package-name>', '--package-version'],
+            arg_keys=['--dcos-package',
+                      '--package-name', '--package-version'],
             function=_add),
 
         cmds.Command(
@@ -72,7 +72,7 @@ def _info():
     return 0
 
 
-def _add(local, dcos_package, remote, package_name, package_version):
+def _add(dcos_package, package_name, package_version):
     """
     Adds a DC/OS package to DC/OS
 
@@ -83,7 +83,7 @@ def _add(local, dcos_package, remote, package_name, package_version):
     """
     package_manager = get_package_manager()
     response = package_manager.package_add(
-        local, dcos_package, remote, package_name, package_version)
+        dcos_package, package_name, package_version)
     emitter.publish(response.json())
     return 0
 
