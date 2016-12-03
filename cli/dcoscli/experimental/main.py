@@ -77,7 +77,11 @@ def _add(dcos_package, package_name, package_version):
     Adds a DC/OS package to DC/OS
 
     :param dcos_package: path to the DC/OS package
-    :type dcos_package: str
+    :type dcos_package: None | str
+    :param package_name: the name of a remote DC/OS package
+    :type package_name: None | str
+    :param package_version: the version of a remote DC/OS package
+    :type package_version: None | str
     :return: process status
     :rtype: int
     """
