@@ -1023,12 +1023,12 @@ class TaskIO(object):
         if self.tty:
             fd = sys.stdin.fileno()
             self.oldtermios = termios.tcgetattr(fd)
+            atexit.register(self._terminal_reset)
             tty.setraw(fd, when=termios.TCSANOW)
 
             if self.interactive:
                 self._window_resize(signal.SIGWINCH, None)
                 signal.signal(signal.SIGWINCH, self._window_resize)
-                atexit.register(self._terminal_reset)
 
         if self.interactive:
             thread = threading.Thread(target=self._input_thread)
@@ -1202,10 +1202,12 @@ class TaskIO(object):
 
         # For every read of STDIN, take a line
         for chunk in iter(partial(os.read, sys.stdin.fileno(), 1024), b''):
-            message['attach_container_input']['process_io']['data']['data'] =\
-                base64.b64encode(chunk).decode('utf-8')
+            message\
+                ['attach_container_input']\
+                    ['process_io']\
+                        ['data']\
+                            ['data'] = base64.b64encode(chunk).decode('utf-8')
 
-            # Dump input msg to the queue for processing
             self.input_queue.put(self.encoder.encode(message))
 
         # Dump an empty string to indicate EOF to the server and push
