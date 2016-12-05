@@ -6,6 +6,7 @@ import os
 import signal
 import sys
 import threading
+import uuid
 
 from dcos import config, http, recordio, util
 from dcos.errors import DCOSException, DCOSHTTPException
@@ -977,16 +978,20 @@ class TaskIO(object):
         client = DCOSClient()
         master = get_master(client)
 
-        container_id = master.get_container_id(task_id)
-        if not container_id:
+        parent_id = master.get_container_id(task_id)
+        if not parent_id:
             raise DCOSException(
                 "Container ID for task {} not found.".format(task_id))
 
-        self.container_id = container_id
+        self.parent_id = parent_id
+        self.container_id = str(uuid.uuid4())
 
         # Get the URL to the agent which is running the task
         task_obj = master.task(task_id)
-        self.agent_url = client.slave_url(task_obj.slave()['id'], "", "api/v1")
+        if client._mesos_master_url:
+            self.agent_url = client.slave_url("", task_obj.slave().http_url(), "api/v1")
+        else:
+            self.agent_url = client.slave_url(task_obj.slave()['id'], "", "api/v1")
 
         self.interactive = interactive
         self.cmd = cmd
@@ -995,15 +1000,15 @@ class TaskIO(object):
         self.encoder = recordio.Encoder(lambda s: bytes(json.dumps(s, ensure_ascii=False), "UTF-8"))
         self.decoder = recordio.Decoder(lambda s: json.loads(s.decode("UTF-8")))
 
-        self.input_queue = Queue()
+        if interactive:
+            self.input_queue = Queue()
+        else:
+            self.input_queue = None
         self.output_queue = Queue()
         self.exit_queue = Queue()
 
-        self.exit_event = threading.Event()
-        self.exit_event.clear()
-
-        if not interactive:
-            self.input_queue = None
+        self.attach_input_event = threading.Event()
+        self.attach_input_event.clear()
 
     def IORunner(self):
         """IORunner handles running the helper methods in this
@@ -1049,16 +1054,19 @@ class TaskIO(object):
         init_output_attach_msg['type'] = "LAUNCH_NESTED_CONTAINER_SESSION"
         init_output_attach_msg['launch_nested_container_session'] = {
             'container_id': {
-                'value': self.container_id,
+                'parent' : {
+                   'value': self.parent_id
+                 },
+                'value': self.container_id
             },
             'command': {
                 'value': self.cmd,
-                'arguments': self.args,
+                'arguments': [self.cmd] + self.args,
                 'shell': False,
             }
         }
 
-        return self.encoder.encode(init_output_attach_msg)
+        return json.dumps(init_output_attach_msg)
 
     def get_chunked_msg(self, fileno):
         """Reads and returns a message from the given fileno.
@@ -1088,7 +1096,9 @@ class TaskIO(object):
         req_extra_args = {
             'stream': True,
             'headers': {
-                'content-type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json+recordio',
+                'connection': 'keep-alive'
             }
         }
 
@@ -1108,6 +1118,8 @@ class TaskIO(object):
         :type fileno: int
         """
 
+        self.attach_input_event.set()
+
         while True:
             try:
                 chunk = self.get_chunked_msg(fileno)
@@ -1125,7 +1137,6 @@ class TaskIO(object):
                 raise DCOSException('Invalid message type passed to _attach_output_stream')
 
         self.output_queue.join()
-        self.exit_event.wait()
         self.exit_queue.put(None)
 
     def _attach_input_stream(self):
@@ -1142,8 +1153,11 @@ class TaskIO(object):
             init_input_attach_msg['attach_container_input'] = {
                 'type': 'CONTAINER_ID',
                 'container_id': {
-                    'value': self.container_id,
-                }
+                    'parent' : {
+                       'value': self.parent_id
+                     },
+                    'value': self.container_id
+                },
             }
 
             send_init = True
@@ -1152,14 +1166,20 @@ class TaskIO(object):
                 if send_init:
                     send_init = False
                     yield self.encoder.encode(init_input_attach_msg)
+                if not item:
+                    break
                 yield item
 
         req_extra_args = {
-            'stream': True,
             'headers': {
-                'connection': 'keep-alive',
-                'content-type': 'application/json',
-                'transfer-encoding': 'chunked'}}
+                'Content-Type': 'application/json+recordio',
+                'Accept': 'application/json',
+                'Connection': 'keep-alive',
+                'Transfer-Encoding': 'chunked'
+            }
+        }
+
+        self.attach_input_event.wait()
 
         response = http.post(
             self.agent_url,
@@ -1175,23 +1195,32 @@ class TaskIO(object):
         onto the input_queue. Expects to be running as a daemon.
         """
 
-        # For every read of STDIN, take a line
-        for chunk in iter(partial(os.read, sys.stdin.fileno(), 1024), ''):
-            input_msg = {}
-            input_msg['type'] = 'ATTACH_CONTAINER_INPUT'
-            input_msg['attach_container_input'] = {
-                'type': 'PROCESS_IO',
-                'process_io': {
-                    'type': 'DATA',
-                    'data': {
-                        'type': 'STDIN',
-                        'data': base64.b64encode(chunk).decode('utf-8'),
-                    }
+        input_msg = {}
+        input_msg['type'] = 'ATTACH_CONTAINER_INPUT'
+        input_msg['attach_container_input'] = {
+            'type': 'PROCESS_IO',
+            'process_io': {
+                'type': 'DATA',
+                'data': {
+                    'type': 'STDIN',
+                    'data': '' # We fill this in our loop
                 }
             }
+        }
+
+        # For every read of STDIN, take a line
+        for chunk in iter(partial(os.read, sys.stdin.fileno(), 1024), b''):
+            input_msg['attach_container_input']['process_io']['data']['data'] =\
+                base64.b64encode(chunk).decode('utf-8')
 
             # Dump input msg to the queue for processing
             self.input_queue.put(self.encoder.encode(input_msg))
+
+        # Dump an empty string to indicate EOF to the server and push
+        # 'None' to our queue to indicate that we are done processing input.
+        input_msg['attach_container_input']['process_io']['data']['data'] = ''
+        self.input_queue.put(self.encoder.encode(input_msg))
+        self.input_queue.put(None)
 
     def _output_thread(self):
         """Reads from the output_queue and writes the data
@@ -1214,8 +1243,6 @@ class TaskIO(object):
 
             # Close queue assuming last msg was EOF
             self.output_queue.task_done()
-            self.exit_event.set()
-
 
     def _window_resizer(self):
         rows, columns = os.popen('stty size', 'r').read().split()
