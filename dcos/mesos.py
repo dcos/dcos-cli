@@ -13,6 +13,7 @@ from dcos.errors import DCOSException, DCOSHTTPException
 from functools import partial
 from queue import Queue
 from six.moves import urllib
+from tty import setraw, setcbreak
 
 logger = util.get_logger(__name__)
 
@@ -967,7 +968,7 @@ class TaskIO(object):
     :type args: str
     """
 
-    def __init__(self, task_id, interactive=False, cmd=None, args=None):
+    def __init__(self, task_id, cmd=None, interactive=False, tty=False, args=None):
         if not task_id:
             raise DCOSException(
                 "Must provide <task ID>, example:"
@@ -993,8 +994,9 @@ class TaskIO(object):
         else:
             self.agent_url = client.slave_url(task_obj.slave()['id'], "", "api/v1")
 
-        self.interactive = interactive
         self.cmd = cmd
+        self.interactive = interactive
+        self.tty = tty
         self.args = args
 
         self.encoder = recordio.Encoder(lambda s: bytes(json.dumps(s, ensure_ascii=False), "UTF-8"))
@@ -1037,6 +1039,12 @@ class TaskIO(object):
                 target=self._attach_input_stream)
             in_stream_thread.daemon = True
             in_stream_thread.start()
+
+        if self.tty:
+            setraw(sys.stdin.fileno())
+            setraw(sys.stdout.fileno())
+            setraw(sys.stderr.fileno())
+            signal.signal(signal.SIGWINCH, _window_resizer)
 
         try:
             self.exit_queue.get(block=True)
@@ -1246,10 +1254,26 @@ class TaskIO(object):
 
     def _window_resizer(self):
         rows, columns = os.popen('stty size', 'r').read().split()
+        print(rows, columns)
 
-        window_msg = pba.TtyInfo.WindowSize(
-            rows,
-            columns)
+        window_msg = {}
+        window_msg['type'] = 'ATTACH_CONTAINER_INPUT'
+        window_msg['attach_container_input'] = {
+            'type': 'PROCESS_IO',
+            'process_io': {
+                'type': 'CONTROL',
+                'data': {
+                    'type': 'TTY_INFO',
+                    'tty_info': {
+                        'rows': rows,
+                        'columns': columns,
+                    }
+                }
+            }
+        }
+
+        #Now we send the message by putting it on the input queue.
+        self.input_queue.put(window_msg)
 
 
 def parse_pid(pid):

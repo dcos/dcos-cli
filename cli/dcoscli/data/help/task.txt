@@ -4,7 +4,7 @@ Description:
 Usage:
     dcos task --help
     dcos task --info
-    dcos task exec [--interactive] <task> <cmd> [<args>...]
+    dcos task exec [--interactive --tty] <task> <cmd> [<args>...]
     dcos task log [--completed --follow --lines=N] [<task>] [<file>]
     dcos task ls [--long --completed] [<task>] [<path>]
     dcos task [--completed --json <task>]
@@ -26,6 +26,10 @@ Options:
         Print usage.
     --info
         Print a short description of this subcommand.
+    --interactive
+        Attach a STDIN stream to the remote command for interactive session
+    --tty
+        Attach a tty to the remote stream
     --follow
         Dynamically update the log.
     --json

@@ -79,12 +79,12 @@ def _main(argv):
     to /dcos-cli/cli/dcoscli/data/help/task.txt they will need to be set to False
     in this function.
     """
-    
+
     if len(argv) > 1 and argv[1] == "exec":
         usage = \
         '''
         Usage:
-            dcos-task-exec [--interactive] <task> <cmd> [<args>...]
+            dcos-task-exec [--interactive --tty] <task> <cmd> [<args>...]
         '''
         args = docopt_wrapper(
             usage,
@@ -131,7 +131,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['task', 'exec'],
-            arg_keys=['<task>', '<cmd>', '--interactive', '<args>'],
+            arg_keys=['<task>', '<cmd>', '--interactive', '--tty', '<args>'],
             function=_exec),
 
         cmds.Command(
@@ -297,18 +297,20 @@ def _ls(task, path, long_, completed):
                           for file_ in files))
 
 
-def _exec(task, cmd, interactive=False, args=None):
+def _exec(task, cmd, interactive=False, tty=False, args=None):
     """ Launch a process inside a container with the given <task_id>
 
     :param task: task ID pattern to match
     :type task: str
     :param interactive: attach stdin
     :type interactive: bool
+    :param tty: attach a tty
+    :type tty: bool
     :param args: Additional arguments for the command
     :type args: str
     """
 
-    tIO = mesos.TaskIO(task, interactive, cmd, args)
+    tIO = mesos.TaskIO(task, cmd, interactive, tty, args)
     tIO.IORunner()
 
 
