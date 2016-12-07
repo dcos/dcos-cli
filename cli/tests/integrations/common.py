@@ -81,8 +81,8 @@ def assert_command(
 
     assert returncode_ == returncode, \
         'expected {}, but got {}'.format(returncode, returncode_)
-    assert stdout_ == stdout
-    assert stderr_ == stderr
+    assert stdout_ == stdout, 'got [{}] but expeceted [{}]'.format(stdout_, stdout)
+    assert stderr_ == stderr, (stderr_, stderr)
 
 
 def watch_deployment(deployment_id, count):

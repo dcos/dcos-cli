@@ -42,8 +42,6 @@ def _success_test(build_definition,
 
     hash_result = results.group(3)
 
-    print(output_folder)
-
     assert os.path.exists(output_folder)
     assert os.path.exists(zip_file_name), zip_file_name
     with util.open_file(zip_file_name, 'rb') as zp:

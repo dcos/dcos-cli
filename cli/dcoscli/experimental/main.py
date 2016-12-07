@@ -13,7 +13,7 @@ import pkg_resources
 import six
 
 import dcoscli
-from dcos import cmds, emitting, http, servicemanager, util
+from dcos import cmds, emitting, http, options, servicemanager, util
 from dcos.errors import DCOSException
 from dcos.package import get_package_manager, get_user_options
 from dcos.util import md5_hash_file
@@ -63,15 +63,24 @@ def _cmds():
             hierarchy=['experimental', 'service', 'start'],
             arg_keys=['<package-name>', '--package-version', '--options'],
             function=_service_start),
+        cmds.Command(
+            hierarchy=['experimental'],
+            arg_keys=['--info'],
+            function=_info),
     ]
 
 
-def _info():
+def _info(info):
     """
     :returns: process status
     :rtype: int
     """
-    emitter.publish(default_command_info("experimental"))
+    if info:
+        emitter.publish(default_command_info("experimental"))
+    else:
+        doc = default_doc("package")
+        emitter.publish(options.make_generic_usage_message(doc))
+        return 1
     return 0
 
 
