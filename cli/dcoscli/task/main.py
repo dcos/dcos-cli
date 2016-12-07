@@ -29,10 +29,13 @@ def main(argv):
                 sys.stdin.fileno(),
                 termios.TCSAFLUSH,
                 terminal_settings)
+
+        if isinstance(e, DCOSException):
+            emitter.publish(e)
+            return 1
+
         raise e
-    except DCOSException as e:
-        emitter.publish(e)
-        return 1
+
 
 def docopt_wrapper(usage, real_usage, **keywords):
     """ A wrapper around the real docopt parser.
