@@ -962,8 +962,11 @@ class TaskIO(object):
 
     :param task: task ID
     :type task: str
-    :param interactive: Create a third persistant connection for streaming STDIN
+    :param interactive: whether to attach stdin of the current terminal to the
+    new command being forked
     :type interactive: bool
+    :param tty: whether to allocate a tty for this command
+    :type tty: bool
     :param cmd: the command to fork inside the container
     :type cmd: str
     :param args: Additional arguments for the command
@@ -976,17 +979,16 @@ class TaskIO(object):
                 "Must provide <task ID>, example:"
                 " `dcos task exec <task ID> <cmd>")
 
-        # Get the ContainerID and Agent URL assciated with
-        # the given Task ID.
+        # Get the ContainerID and Agent URL assciated with task_id
         client = DCOSClient()
         master = get_master(client)
-
         parent_id = master.get_container_id(task_id)
         if not parent_id:
             raise DCOSException(
                 "Container ID for task {} not found.".format(task_id))
 
         self.parent_id = parent_id
+        #Generate a new UUID to be used as our container id
         self.container_id = str(uuid.uuid4())
 
         # Get the URL to the agent which is running the task
@@ -1048,9 +1050,13 @@ class TaskIO(object):
         thread.start()
 
         try:
+            # When the exit queue has an item placed into it,
+            # we consider the command complete. Block until that happens,
+            # then exit.
             self.exit_queue.get(block=True)
         except KeyboardInterrupt:
             pass
+
 
     def get_chunked_msg(self, fileno):
         """Reads and returns a message from the given fileno.
@@ -1059,6 +1065,10 @@ class TaskIO(object):
         :type fileno: int
         :rtype: byte string - message read from the fileno
         """
+
+        # Read two bytes and compare with \r\n. Loop until we find hexDigits\r\n
+        # indicating the size of the message. Then read that many bytes
+        # for the message. Finally read 2 more bytes to catch the trailing \r\n.
 
         chunk_size = os.read(fileno, 2)
         while chunk_size[-2:] != b"\r\n":
@@ -1111,12 +1121,15 @@ class TaskIO(object):
 
     def _attach_output_stream(self, fileno):
         """Gets data from the given fileno and places the
-        returned messages into our output_queue.
+        returned messages into our output_queue.  Only expects to
+        receive data messages.
 
         :param fileno: file number to read from
         :type fileno: int
         """
 
+        # Allow attaching the input stream now that we know the
+        # launch nested container session has been established.
         self.attach_input_event.set()
 
         while True:
@@ -1174,6 +1187,9 @@ class TaskIO(object):
             }
         }
 
+        # Ensure we don't try to attach our input to a container that isn't
+        # fully up and running by waiting until the _attach_output_stream
+        # function signals us that it's ready.
         self.attach_input_event.wait()
 
         response = http.post(
@@ -1210,7 +1226,7 @@ class TaskIO(object):
 
             self.input_queue.put(self.encoder.encode(message))
 
-        # Dump an empty string to indicate EOF to the server and push
+        # Place an empty string to indicate EOF to the server and push
         # 'None' to our queue to indicate that we are done processing input.
         message['attach_container_input']['process_io']['data']['data'] = ''
         self.input_queue.put(self.encoder.encode(message))
@@ -1223,7 +1239,8 @@ class TaskIO(object):
         """
 
         while True:
-            # Get message from output queue
+            # Get a message from the output queue and decode it.
+            # Then write the data to the appropriate stdout or stderr.
             output = self.output_queue.get()
             data = output['data']
             data = base64.b64decode(data.encode('utf-8'))
@@ -1238,7 +1255,18 @@ class TaskIO(object):
             # Close queue assuming last msg was EOF
             self.output_queue.task_done()
 
+
     def _window_resize(self, signum, frame):
+        """Signal handler for SIGWINCH.
+        Sends a message when either dimension of our terminal changes.
+
+        :param signum: the signal number being handled
+        :type signum: int
+        :param frame: current stack frame
+        :type frame: frame
+        """
+
+        # Determine the size of our terminal, and create the message to be sent
         rows, columns = os.popen('stty size', 'r').read().split()
 
         message = {
@@ -1254,14 +1282,19 @@ class TaskIO(object):
                                   'rows': int(rows),
                                   'columns': int(columns)}}}}}}
 
-        # Now we send the message by putting it on the input queue.
         self.input_queue.put(self.encoder.encode(message))
 
+
     def _terminal_reset(self):
+        """Signal handler for SIGTERM.
+        Reset the terminal by setting the attributes back to self.oldtermios.
+        """
+
         termios.tcsetattr(
             sys.stdin.fileno(),
             termios.TCSAFLUSH,
             self.oldtermios)
+
 
 def parse_pid(pid):
     """ Parse the mesos pid string,
