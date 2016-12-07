@@ -1117,20 +1117,21 @@ class TaskIO(object):
             data=json.dumps(message),
             **req_extra_args)
 
-        self._attach_output_stream(response.raw.fileno())
+        self._attach_output_stream(response)
 
-    def _attach_output_stream(self, fileno):
-        """Gets data from the given fileno and places the
-        returned messages into our output_queue.  Only expects to
-        receive data messages.
+    def _attach_output_stream(self, response):
+        """Gets data from the given response's fileno and places the
+        returned messages into our output_queue.
 
-        :param fileno: file number to read from
-        :type fileno: int
+        :param response: response from an http post,
+        whose filnumber will receive output
+        :type response: requests.models.Response
         """
 
         # Allow attaching the input stream now that we know the
         # launch nested container session has been established.
         self.attach_input_event.set()
+        fileno = response.raw.fileno()
 
         while True:
             try:
