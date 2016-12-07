@@ -8,7 +8,7 @@
           "status": "TASK_RUNNING"
         }
       ],
-      "status": "stable"
+      "status": "STABLE"
     }
   ],
   "spec": {
@@ -37,5 +37,5 @@
       "instances": 1
     }
   },
-  "status": "stable"
+  "status": "STABLE"
 }

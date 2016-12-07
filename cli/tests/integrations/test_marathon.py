@@ -659,7 +659,6 @@ def test_stop_task():
         _stop_task(task_id)
 
 
-@pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-10325")
 def test_stop_task_wipe():
     with _zero_instance_app():
         _start_app('zero-instance-app', 1)

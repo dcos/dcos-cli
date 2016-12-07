@@ -1,18 +1,13 @@
 import contextlib
-import os
 import re
-
-import pytest
 
 from .common import (app, exec_command, pod)
 from .test_marathon import (_list_tasks)
 
-_PODS_ENABLED = 'DCOS_PODS_ENABLED' in os.environ
 list_regex = '/stuck-(?:sleep|pod)\W+[^Z]+Z\W+9\W+(?:True|False)' \
              '\W+\d\W+\d\W+[^Z]+Z\W+[^Z]+Z'
 
 
-@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_debug_list():
     with _stuck_app():
         returncode, stdout, stderr = exec_command(
@@ -31,7 +26,6 @@ def test_debug_list():
         assert re.search(list_regex, decoded) is not None
 
 
-@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_debug_list_json():
     with _stuck_app():
         returncode, stdout, stderr = exec_command(
@@ -46,7 +40,6 @@ def test_debug_list_json():
         assert '"reason": "UnfulfilledConstraint"' in decoded
 
 
-@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_debug_list_pod():
     with _stuck_pod():
         returncode, stdout, stderr = exec_command(
@@ -65,7 +58,6 @@ def test_debug_list_pod():
         assert re.search(list_regex, decoded) is not None
 
 
-@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_debug_list_pod_json():
     with _stuck_pod():
         returncode, stdout, stderr = exec_command(
@@ -80,7 +72,6 @@ def test_debug_list_pod_json():
         assert '"reason": "UnfulfilledConstraint"' in decoded
 
 
-@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_debug_summary():
     with _stuck_app():
         returncode, stdout, stderr = exec_command(
@@ -95,7 +86,6 @@ def test_debug_summary():
         assert '0.00%' in decoded
 
 
-@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_debug_summary_json():
     with _stuck_app():
         returncode, stdout, stderr = exec_command(
@@ -110,7 +100,6 @@ def test_debug_summary_json():
                in decoded
 
 
-@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_debug_summary_pod():
     with _stuck_pod():
         returncode, stdout, stderr = exec_command(
@@ -126,7 +115,6 @@ def test_debug_summary_pod():
         assert '0.00%' in decoded
 
 
-@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_debug_summary_pod_json():
     with _stuck_pod():
         returncode, stdout, stderr = exec_command(
@@ -141,7 +129,6 @@ def test_debug_summary_pod_json():
                in decoded
 
 
-@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_debug_details():
     with _stuck_app():
         returncode, stdout, stderr = exec_command(
@@ -164,7 +151,6 @@ def test_debug_details():
         assert len(decoded.split('\n')) == 4
 
 
-@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_debug_details_json():
     with _stuck_app():
         returncode, stdout, stderr = exec_command(
@@ -179,7 +165,6 @@ def test_debug_details_json():
                in decoded
 
 
-@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_debug_details_pod():
     with _stuck_pod():
         returncode, stdout, stderr = exec_command(
@@ -202,7 +187,6 @@ def test_debug_details_pod():
         assert len(decoded.split('\n')) == 4
 
 
-@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_debug_details_pod_json():
     with _stuck_pod():
         returncode, stdout, stderr = exec_command(
