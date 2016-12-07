@@ -260,7 +260,7 @@ class PackageManager:
                     'Content-Type':
                         'application/vnd.dcos.'
                         'universe.package+zip;version=v1',
-                    'Content-MD5': util.md5_hash_file(pkg)
+                    'X-Cosmos-Content-Integrity': util.md5_hash_file(pkg)
                 }
                 return self._post('add', headers=extra_headers, data=pkg)
         except DCOSHTTPException as e:
