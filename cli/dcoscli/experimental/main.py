@@ -86,8 +86,10 @@ def _add(dcos_package, package_name, package_version):
     :rtype: int
     """
     package_manager = get_package_manager()
-    response = package_manager.package_add(
-        dcos_package, package_name, package_version)
+    if dcos_package:
+        response = package_manager.package_add_local(dcos_package)
+    else:
+        response = package_manager.package_add_remote(package_name, package_version)
     emitter.publish(response.json())
     return 0
 

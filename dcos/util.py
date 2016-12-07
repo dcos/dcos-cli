@@ -619,9 +619,12 @@ logger = get_logger(__name__)
 
 
 def md5_hash_file(file):
-    """Calculates the md5 of a file
+    """Calculates the md5 of a file. Will set the
+    file pointer to beginning of the file after being
+    called.
 
-   :param file: file to hash
+   :param file: file to hash, file pointer
+    must be at the beginning of the file.
    :type file: file
    :returns: digest in hexadecimal
    :rtype: str
@@ -629,4 +632,5 @@ def md5_hash_file(file):
     hasher = hashlib.md5()
     for chunk in iter(lambda: file.read(4096), b''):
         hasher.update(chunk)
+    file.seek(0)
     return hasher.hexdigest()
