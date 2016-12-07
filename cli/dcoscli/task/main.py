@@ -5,6 +5,7 @@ import posixpath
 import docopt
 import six
 import sys
+import termios
 
 import dcoscli
 from dcos import cmds, emitting, mesos, util
@@ -19,7 +20,16 @@ emitter = emitting.FlatEmitter()
 
 def main(argv):
     try:
+        if sys.stdin.isatty():
+            terminal_settings = termios.tcgetattr(sys.stdin.fileno())
         return _main(argv)
+    except Exception as e:
+        if sys.stdin.isatty():
+            termios.tcsetattr(
+                sys.stdin.fileno(),
+                termios.TCSAFLUSH,
+                terminal_settings)
+        raise e
     except DCOSException as e:
         emitter.publish(e)
         return 1
