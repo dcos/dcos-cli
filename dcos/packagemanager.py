@@ -283,7 +283,6 @@ class PackageManager:
         :rtype: Response
         """
         try:
-
             json = {'packageName': package_name}
             if package_version is not None:
                 json['packageVersion'] = package_version
