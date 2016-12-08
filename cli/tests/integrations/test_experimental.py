@@ -6,79 +6,100 @@ import shutil
 import tempfile
 import zipfile
 
+import pytest
+
 from dcos import util
 from dcoscli.util import formatted_cli_version
-from .common import assert_command, exec_command
+from .common import assert_command, exec_command, watch_all_deployments
 
-base = ['dcos', 'experimental']
+command_base = ['dcos', 'experimental']
+build_data_dir = 'tests/data/experimental/package_build/'
 
 
 def test_experimental():
-    command = base + ['--help']
+    command = command_base + ['--help']
     with open('dcoscli/data/help/experimental.txt') as content:
         assert_command(command, stdout=content.read().encode())
 
 
 def test_info():
-    command = base + ['--info']
+    command = command_base + ['--info']
     out = b'Experimental commands. These commands ' \
           b'are under development and are subject to change\n'
     assert_command(command, stdout=out)
 
 
 def test_version():
-    command = base + ['--version']
+    command = command_base + ['--version']
     out = b'dcos-experimental version SNAPSHOT\n'
     assert_command(command, stdout=out)
 
 
 def test_package_build_with_only_resources_with_only_resources_reference():
     _successful_package_build_test(
-        "tests/data/build/"
-        "package_resource_only_reference.json",
-        expected_package_path="tests/data/build/"
-                              "package_resource_only_reference_expected.json")
+        os.path.join(
+            build_data_dir,
+            "package_resource_only_reference.json"),
+        expected_package_path=os.path.join(
+            build_data_dir,
+            "package_resource_only_reference_expected.json"))
 
 
 def test_package_build_with_only_config_with_no_references():
     _successful_package_build_test(
-        "tests/data/build/package_config_reference_expected.json",
-        expected_package_path="tests/data/build/"
-                              "package_config_reference_expected.json")
+        os.path.join(
+            build_data_dir,
+            "package_config_reference_expected.json"),
+        expected_package_path=os.path.join(
+            build_data_dir,
+            "package_config_reference_expected.json"))
 
 
 def test_package_build_with_only_config_with_only_config_reference():
     _successful_package_build_test(
-        "tests/data/build/package_config_reference.json",
-        expected_package_path="tests/data/build/"
-                              "package_config_reference_expected.json")
+        os.path.join(
+            build_data_dir,
+            "package_config_reference.json"),
+        expected_package_path=os.path.join(
+            build_data_dir,
+            "package_config_reference_expected.json"))
 
 
 def test_package_build_with_only_marathon_with_only_marathon_reference():
     _successful_package_build_test(
-        "tests/data/build/package_marathon_reference.json",
-        expected_package_path="tests/data/build/"
-                              "package_marathon_reference_expected.json")
+        os.path.join(
+            build_data_dir,
+            "package_marathon_reference.json"),
+        expected_package_path=os.path.join(
+            build_data_dir,
+            "package_marathon_reference_expected.json"))
 
 
 def test_package_build_with_only_resource_reference():
     _successful_package_build_test(
-        "tests/data/build/package_resource_reference.json")
+        os.path.join(
+            build_data_dir,
+            "package_resource_reference.json"))
 
 
 def test_package_build_with_no_references():
     _successful_package_build_test(
-        "tests/data/build/package_no_references.json")
+        os.path.join(
+            build_data_dir,
+            "package_no_references.json"))
 
 
 def test_package_build_with_all_references():
     _successful_package_build_test(
-        "tests/data/build/package_all_references.json")
+        os.path.join(
+            build_data_dir,
+            "package_all_references.json"))
 
 
 def test_package_build_where_build_definition_does_not_exist():
     with _temporary_directory() as output_directory:
-        build_definition_path = "tests/data/build/does_not_exist.json"
+        build_definition_path = os.path.join(build_data_dir,
+                                             "does_not_exist.json")
         build_definition_full_path = (
             os.path.join(os.getcwd(), build_definition_path))
         stderr = ("The file [{}] does not exist\n"
@@ -92,8 +113,10 @@ def test_package_build_where_build_definition_does_not_exist():
 def test_package_build_where_project_is_missing_references():
     with _temporary_directory() as output_directory:
         build_definition_path = (
-            "tests/data/build/package_missing_references.json")
-        marathon_json_path = "tests/data/build/marathon.json"
+            os.path.join(build_data_dir,
+                         "package_missing_references.json"))
+        marathon_json_path = os.path.join(build_data_dir,
+                                          "marathon.json")
         marathon_json_full_path = (
             os.path.join(os.getcwd(), marathon_json_path)
         )
@@ -107,9 +130,14 @@ def test_package_build_where_project_is_missing_references():
 
 def test_package_build_where_reference_does_not_match_schema():
     with _temporary_directory() as output_directory:
-        build_definition_path = (
-            "tests/data/build/package_reference_does_not_match_schema.json")
-        bad_resource_path = "tests/data/build/resource-bad.json"
+        build_definition_path = os.path.join(
+            build_data_dir,
+            "package_reference_does_not_match_schema.json"
+        )
+        bad_resource_path = os.path.join(
+            build_data_dir,
+            "resource-bad.json"
+        )
         bad_resource_full_path = (
             os.path.join(os.getcwd(), bad_resource_path)
         )
@@ -124,8 +152,10 @@ def test_package_build_where_reference_does_not_match_schema():
 
 def test_package_build_where_build_definition_does_not_match_schema():
     with _temporary_directory() as output_directory:
-        bad_build_definition_path = (
-            "tests/data/build/package_no_match_schema.json")
+        bad_build_definition_path = os.path.join(
+            build_data_dir,
+            "package_no_match_schema.json"
+        )
         bad_build_definition_full_path = (
             os.path.join(os.getcwd(), bad_build_definition_path)
         )
@@ -140,8 +170,10 @@ def test_package_build_where_build_definition_does_not_match_schema():
 
 def test_package_build_where_build_definition_has_badly_formed_reference():
     with _temporary_directory() as output_directory:
-        bad_build_definition_path = (
-            "tests/data/build/package_badly_formed_reference.json")
+        bad_build_definition_path = os.path.join(
+            build_data_dir,
+            "package_badly_formed_reference.json"
+        )
         bad_build_definition_full_path = (
             os.path.join(os.getcwd(), bad_build_definition_path)
         )
@@ -154,29 +186,38 @@ def test_package_build_where_build_definition_has_badly_formed_reference():
                               stderr=stderr)
 
 
+@pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
 def test_service_start_happy_path():
     with _temporary_directory() as output_directory:
-        cassandra_path = 'tests/data/experimental/cassandra/20/package.json'
+        cassandra_path = 'tests/data/experimental/cassandra/package.json'
         cassandra_package = package_build(cassandra_path, output_directory)
         name, version = package_add(cassandra_package)
         service_start(name, version)
         service_stop(name)
 
 
+@pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
 def test_service_start_by_starting_same_service_twice():
     with _temporary_directory() as output_directory:
-        cassandra_path = 'tests/data/experimental/cassandra/20/package.json'
+        cassandra_path = 'tests/data/experimental/cassandra/package.json'
         cassandra_package = package_build(cassandra_path, output_directory)
         name, version = package_add(cassandra_package)
         service_start(name, version)
-        stderror = b'Package is already installed\n'
-        service_start_failure(name, version, stderr=stderror)
+        stderr = b'Package is already installed\n'
+        service_start_failure(name, version, stderr=stderr)
         service_stop(name)
+
+
+@pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
+def test_service_start_by_starting_service_not_added():
+    stderr = b'Package [foo] not found\n'
+    service_start_failure('foo', stderr=stderr)
 
 
 def service_stop(package_name):
     command = ['dcos', 'package', 'uninstall', package_name]
     code, out, err = exec_command(command)
+    watch_all_deployments()
     assert code == 0
     return err == b''
 
@@ -190,7 +231,7 @@ def service_list():
 
 
 def service_start(package_name, package_version=None, options=None):
-    command = base + ['service', 'start', package_name]
+    command = command_base + ['service', 'start', package_name]
     if package_version is not None:
         command += ['--package-version', package_version]
     if options is not None:
@@ -211,7 +252,7 @@ def service_start_failure(package_name,
                           return_code=1,
                           stdout=b'',
                           stderr=b''):
-    command = base + ['service', 'start', package_name]
+    command = command_base + ['service', 'start', package_name]
     if package_version is not None:
         command += ['--package-version', package_version]
     if options is not None:
@@ -224,7 +265,7 @@ def service_start_failure(package_name,
 
 
 def package_add(package):
-    command = base + ['package', 'add', package]
+    command = command_base + ['package', 'add', package]
 
     code, out, err = exec_command(command)
     assert code == 0
@@ -241,9 +282,9 @@ def package_build(build_definition_path,
                   output_directory,
                   metadata=None,
                   manifest=None):
-    command = base + ['package', 'build',
-                      '--output-directory', output_directory,
-                      build_definition_path]
+    command = command_base + ['package', 'build',
+                              '--output-directory', output_directory,
+                              build_definition_path]
 
     code, out, err = exec_command(command)
     assert code == 0
@@ -274,9 +315,9 @@ def package_build_failure(build_definition_path,
                           return_code=1,
                           stdout=b'',
                           stderr=b''):
-    command = base + ['package', 'build',
-                      '--output-directory', output_directory,
-                      build_definition_path]
+    command = command_base + ['package', 'build',
+                              '--output-directory', output_directory,
+                              build_definition_path]
     assert_command(command,
                    returncode=return_code,
                    stdout=stdout,
@@ -286,8 +327,10 @@ def package_build_failure(build_definition_path,
 
 def _successful_package_build_test(
         build_definition_path,
-        expected_package_path="tests/data/build/"
-                              "package_no_references.json"):
+        expected_package_path=os.path.join(
+            build_data_dir,
+            "package_no_references.json"
+        )):
     with _temporary_directory() as output_directory:
         metadata = _get_json(expected_package_path)
         manifest = _get_default_manifest()
@@ -298,7 +341,9 @@ def _successful_package_build_test(
 
 
 def _decompose_name(package_path):
-    parts = re.search('^([^-]+)-(.+)-([^-]+)\.dcos', os.path.basename(package_path))
+    parts = re.search(
+        '^([^-]+)-(.+)-([^-]+)\.dcos',
+        os.path.basename(package_path))
     assert parts is not None, package_path
     return parts.group(1), parts.group(2), parts.group(3)
 

@@ -5,8 +5,8 @@ Usage:
     dcos experimental --help
     dcos experimental --info
     dcos experimental package add (--dcos-package=<dcos-package> |
-                                    --package-name=<package-name>
-                                        [--package-version=<package-version>])
+                                    (--package-name=<package-name>
+                                        [--package-version=<package-version>]))
     dcos experimental package build [--output-directory=<output-directory>]
                                     <build-definition>
     dcos experimental service start [--package-version=<package-version>]
@@ -45,4 +45,3 @@ Positional Arguments:
         Path to a DC/OS Package Build Definition.
     <package-name>
         Name of a DC/OS package that has been added to DC/OS.
-
