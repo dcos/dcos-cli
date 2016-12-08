@@ -133,7 +133,7 @@ def test_log_pod_task():
         # logs shouldn't be seen and this pod shouldn't have any logging
         # to stderr
         assert returncode == 0
-        assert stderr == b'(No logs for this task)\n'
+        assert stderr == b'No logs for this task\n'
         assert stdout == b'\n'
 
 
