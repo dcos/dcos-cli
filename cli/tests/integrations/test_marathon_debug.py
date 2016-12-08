@@ -1,4 +1,5 @@
 import contextlib
+import json
 import re
 
 from .common import (app, exec_command, pod)
@@ -141,14 +142,20 @@ def test_debug_details():
         """The public agent has all resources to launch this task,
         but not the matching role, therefore the output should be:
         ok        -        ok    ok   ok    ok
-        To avoid formatting issues, whitspaces are ignored.
+        To avoid formatting issues, whitespaces are ignored.
         """
         assert 'ok-okokokok' in decoded.replace(' ', '')
-        """We do have 3 lines. The headline and two lines for the agents.
-        If we split the decoded output by line break, there should be four
-        entries in the array. The additional entry is empty.
+
+        returncode, stdout, stderr = exec_command(['dcos', 'node', '--json'])
+
+        assert returncode == 0
+        assert stderr == b''
+        agent_count = len(json.loads(stdout.decode('utf-8')))
+
+        """The extra two lines come from the heading and the empty line at the
+        end of the table.
         """
-        assert len(decoded.split('\n')) == 4
+        assert len(decoded.split('\n')) == agent_count + 2
 
 
 def test_debug_details_json():
@@ -177,14 +184,20 @@ def test_debug_details_pod():
         """The public agent has all resources to launch this task,
         but not the matching role, therefore the output should be:
         ok        -        ok    ok   ok    ok
-        To avoid formatting issues, whitspaces are ignored.
+        To avoid formatting issues, whitespaces are ignored.
         """
         assert 'ok-okokokok' in decoded.replace(' ', '')
-        """We do have 3 lines. The headline and two lines for the agents.
-        If we split the decoded output by line break, there should be four
-        entries in the array. The additional entry is empty.
+
+        returncode, stdout, stderr = exec_command(['dcos', 'node', '--json'])
+
+        assert returncode == 0
+        assert stderr == b''
+        agent_count = len(json.loads(stdout.decode('utf-8')))
+
+        """The extra two lines come from the heading and the empty line at the
+        end of the table.
         """
-        assert len(decoded.split('\n')) == 4
+        assert len(decoded.split('\n')) == agent_count + 2
 
 
 def test_debug_details_pod_json():
@@ -208,7 +221,7 @@ def _stuck_app(max_count=300):
         count = 0
         while count < max_count:
             tasks = _list_tasks(app_id='stuck-sleep')
-            if (len(tasks) == 1):
+            if len(tasks) == 1:
                 break
         yield
 
