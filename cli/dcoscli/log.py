@@ -88,9 +88,7 @@ def _stream_files(curr_header, fn, mesos_files):
             reachable_files.remove(mesos_file)
             continue
 
-        if lines == ['']:
-            emitter.publish(DCOSException('Empty file: {}'.format(mesos_file)))
-        elif lines:
+        if lines:
             curr_header = _output(curr_header,
                                   len(reachable_files) > 1,
                                   six.text_type(mesos_file),
@@ -118,6 +116,8 @@ def _output(curr_header, output_header, header, lines):
     if lines:
         if output_header and header != curr_header:
             emitter.publish('===> {} <==='.format(header))
+        if lines == ['']:
+            emitter.publish(DCOSException('(No logs for this task)'))
         for line in lines:
             emitter.publish(line)
     return header

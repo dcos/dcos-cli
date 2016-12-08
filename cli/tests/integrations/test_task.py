@@ -133,8 +133,8 @@ def test_log_pod_task():
         # logs shouldn't be seen and this pod shouldn't have any logging
         # to stderr
         assert returncode == 0
-        assert stderr.startswith(b'Empty file:')
-        assert stdout == b''
+        assert stderr == b'(No logs for this task)\n'
+        assert stdout == b'\n'
 
 
 def test_log_missing_file():
