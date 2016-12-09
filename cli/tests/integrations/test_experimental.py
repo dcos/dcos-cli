@@ -187,6 +187,7 @@ def test_package_build_where_build_definition_has_badly_formed_reference():
                               stderr=stderr)
 
 
+@pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
 def test_package_add_argument_exclussion():
     cassandra_path = os.path.join(
         experimental_data_dir, 'cassandra/package.json')
