@@ -175,7 +175,7 @@ def get_package_manager():
     """Returns type of package manager to use
 
     :returns: PackageManager instance
-    :rtype: PackageManager
+    :rtype: packagemanager.PackageManager
     """
     cosmos_url = cosmos.get_cosmos_url()
     cosmos_manager = packagemanager.PackageManager(cosmos_url)

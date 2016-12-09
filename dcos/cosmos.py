@@ -59,8 +59,6 @@ class Cosmos(object):
         }
 
         self._special_content_types = {
-            ('package/add', 'v1'):
-                'application/vnd.dcos.universe.package+zip;version=v1',
             ('capabilities', 'v1'):
                 _format_media_type('capabilities', 'v1', '')
         }
