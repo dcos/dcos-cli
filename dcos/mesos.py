@@ -974,114 +974,125 @@ class TaskIO(object):
     """
 
     def __init__(self, task_id, cmd=None, interactive=False, tty=False, args=None):
-        if not task_id:
-            raise DCOSException(
-                "Must provide <task ID>, example:"
-                " `dcos task exec <task ID> <cmd>")
-
-        # Get the ContainerID and Agent URL assciated with task_id
+        # Get the ContainerID associated with
+        # `task_id` and save it as `parent_id`
         client = DCOSClient()
         master = get_master(client)
+
         parent_id = master.get_container_id(task_id)
         if not parent_id:
             raise DCOSException(
                 "Container ID for task {} not found.".format(task_id))
-
         self.parent_id = parent_id
-        #Generate a new UUID to be used as our container id
+
+        # Generate a new UUID to be used as our container id
         self.container_id = str(uuid.uuid4())
 
         # Get the URL to the agent which is running the task
         task_obj = master.task(task_id)
         if client._mesos_master_url:
-            self.agent_url = client.slave_url("", task_obj.slave().http_url(), "api/v1")
+            self.agent_url = client.slave_url(
+                "", task_obj.slave().http_url(), "api/v1")
         else:
-            self.agent_url = client.slave_url(task_obj.slave()['id'], "", "api/v1")
+            self.agent_url = client.slave_url(
+                task_obj.slave()['id'], "", "api/v1")
 
         self.cmd = cmd
         self.interactive = interactive
         self.tty = tty
         self.args = args
 
-        self.encoder = recordio.Encoder(lambda s: bytes(json.dumps(s, ensure_ascii=False), "UTF-8"))
-        self.decoder = recordio.Decoder(lambda s: json.loads(s.decode("UTF-8")))
+        self.encoder = recordio.Encoder(
+            lambda s: bytes(json.dumps(s, ensure_ascii=False), "UTF-8"))
+        self.decoder = recordio.Decoder(
+            lambda s: json.loads(s.decode("UTF-8")))
 
-        if interactive:
+        if self.interactive:
             self.input_queue = Queue()
-        else:
-            self.input_queue = None
         self.output_queue = Queue()
-        self.exit_queue = Queue()
 
         self.attach_input_event = threading.Event()
         self.attach_input_event.clear()
 
-    def IORunner(self):
-        """IORunner handles running the helper methods in this
-        class which enable streaming of STDIN/OUT/ERR back and
-        forth between the CLI client and Mesos Agent API
+        self.exit_event = threading.Event()
+        self.exit_event.clear()
+
+        self.exception = None
+
+    def run(self):
+        """Running the helper threads in this class which enable
+           streaming of STDIN/STDOUT/STDERR back and forth between the
+           CLI and the Mesos Agent API.
         """
 
-        if self.tty:
-            fd = sys.stdin.fileno()
-            self.oldtermios = termios.tcgetattr(fd)
-            atexit.register(self._terminal_reset)
+        if not self.tty:
+            self._start_threads()
+            self.exit_event.wait()
+            return
+
+        if not sys.stdin.isatty():
+            raise DCOSException(
+                "Must be running in a tty to pass the '--tty flag'. Exiting")
+
+        fd = sys.stdin.fileno()
+        oldtermios = termios.tcgetattr(fd)
+
+        try:
             tty.setraw(fd, when=termios.TCSANOW)
 
             if self.interactive:
                 self._window_resize(signal.SIGWINCH, None)
                 signal.signal(signal.SIGWINCH, self._window_resize)
 
-        if self.interactive:
-            thread = threading.Thread(target=self._input_thread)
-            thread.daemon = True
-            thread.start()
+            self._start_threads()
+            self.exit_event.wait()
+        except Exception as e:
+            self.exception = e
 
-            thread = threading.Thread(target=self._attach_container_input)
-            thread.daemon = True
-            thread.start()
+        termios.tcsetattr(
+            sys.stdin.fileno(),
+            termios.TCSAFLUSH,
+            oldtermios)
 
-        thread = threading.Thread(target=self._output_thread)
-        thread.daemon = True
-        thread.start()
+        if self.exception:
+            raise self.exception
 
-        thread = threading.Thread(target=self._launch_nested_container_session)
-        thread.daemon = True
-        thread.start()
-
+    def _thread_wrapper(self, func):
         try:
-            # When the exit queue has an item placed into it,
-            # we consider the command complete. Block until that happens,
-            # then exit.
-            self.exit_queue.get(block=True)
-        except KeyboardInterrupt:
-            pass
+            func()
+        except Exception as e:
+            self.exception = e
+            self.exit_event.set()
 
+    def _start_threads(self):
+        if self.interactive:
+            thread = threading.Thread(
+                target=self._thread_wrapper,
+                args=(self._input_thread,))
+            thread.daemon = True
+            thread.start()
 
-    def get_chunked_msg(self, fileno):
-        """Reads and returns a message from the given fileno.
+            thread = threading.Thread(
+                 target=self._thread_wrapper,
+                 args=(self._attach_container_input,))
+            thread.daemon = True
+            thread.start()
 
-        :param fileno: file number to read from
-        :type fileno: int
-        :rtype: byte string - message read from the fileno
-        """
+        thread = threading.Thread(
+            target=self._thread_wrapper,
+            args=(self._output_thread,))
+        thread.daemon = True
+        thread.start()
 
-        # Read two bytes and compare with \r\n. Loop until we find hexDigits\r\n
-        # indicating the size of the message. Then read that many bytes
-        # for the message. Finally read 2 more bytes to catch the trailing \r\n.
-
-        chunk_size = os.read(fileno, 2)
-        while chunk_size[-2:] != b"\r\n":
-            chunk_size += os.read(fileno, 1)
-        chunk_size = int(chunk_size[:-2], 16)
-
-        chunk = os.read(fileno, chunk_size)
-        os.read(fileno, 2)
-        return chunk
+        thread = threading.Thread(
+            target=self._thread_wrapper,
+            args=(self._launch_nested_container_session,))
+        thread.daemon = True
+        thread.start()
 
     def _launch_nested_container_session(self):
-        """Sends a request to the Mesos Agent API to attach the
-        STDOUT stream of an already running container.
+        """Sends a request to the Mesos Agent to launch a new
+        nested container and attach to its output stream.
         """
 
         message = {
@@ -1117,48 +1128,48 @@ class TaskIO(object):
             data=json.dumps(message),
             **req_extra_args)
 
-        self._attach_output_stream(response)
+        self._process_output_stream(response)
 
-    def _attach_output_stream(self, response):
-        """Gets data from the given response's fileno and places the
-        returned messages into our output_queue.
+    def _process_output_stream(self, response):
+        """Gets data streamed over the given response and places the
+        returned messages into our output_queue. Only expects to
+        receive data messages.
 
-        :param response: response from an http post,
-        whose filnumber will receive output
+        :param response: response from an http post
+                         whose filnumber will receive output
         :type response: requests.models.Response
         """
 
-        # Allow attaching the input stream now that we know the
-        # launch nested container session has been established.
+        # Now that we are ready to process the output stream (meaning
+        # our output connction has been established), allow attaching
+        # the input stream by setting an event.
         self.attach_input_event.set()
-        fileno = response.raw.fileno()
 
-        while True:
-            try:
-                chunk = self.get_chunked_msg(fileno)
-                if len(chunk) == 0:
-                    break
-
+        try:
+            for chunk in response.iter_content(chunk_size=None):
                 records = self.decoder.decode(chunk)
 
-                if records:
-                    for r in records:
-                        if r['type'] == 'DATA':
-                            self.output_queue.put(r['data'])
+                for r in records:
+                    if r['type'] == 'DATA':
+                        self.output_queue.put(r['data'])
 
-            except:
-                raise DCOSException('Invalid message type passed to _attach_output_stream')
+        except Exception as e:
+            raise DCOSException(
+                "Error parsing the output stream: {error}".format(error=e))
 
         self.output_queue.join()
-        self.exit_queue.put(None)
+        self.exit_event.set()
 
     def _attach_container_input(self):
-        """Sends data from _input_streamer to the agent_url
+        """Streams data from _input_streamer to the agent_url.
         """
 
         def _input_streamer():
-            """Creates the initial ATTACH_CONTAINER_INPUT message,
-            then yields a message from the input_queue on each subsequent call
+            """Generator function yielding ATTACH_CONTAINER_INPUT
+            messages for streaming. It creates the initial
+            ATTACH_CONTAINER_INPUT message to establish the
+            connection, then yields a message from the input_queue on
+            each subsequent call.
             """
 
             message = {
@@ -1199,8 +1210,7 @@ class TaskIO(object):
             **req_extra_args)
 
         if response.status_code != 200:
-            raise DCOSException(
-                "Input stream returned a non 200 status code")
+            raise DCOSException("Input stream returned a non 200 status code")
 
     def _input_thread(self):
         """Reads from stdin and places a message with that data
@@ -1217,7 +1227,6 @@ class TaskIO(object):
                         'type': 'STDIN',
                         'data': ''}}}}
 
-        # For every read of STDIN, take a line
         for chunk in iter(partial(os.read, sys.stdin.fileno(), 1024), b''):
             message\
                 ['attach_container_input']\
@@ -1227,8 +1236,8 @@ class TaskIO(object):
 
             self.input_queue.put(self.encoder.encode(message))
 
-        # Place an empty string to indicate EOF to the server and push
-        # 'None' to our queue to indicate that we are done processing input.
+        # Push an empty string to indicate EOF to the server and push
+        # 'None' to signal that we are done processing input.
         message['attach_container_input']['process_io']['data']['data'] = ''
         self.input_queue.put(self.encoder.encode(message))
         self.input_queue.put(None)
@@ -1253,9 +1262,7 @@ class TaskIO(object):
                 sys.stderr.buffer.write(data)
                 sys.stderr.flush()
 
-            # Close queue assuming last msg was EOF
             self.output_queue.task_done()
-
 
     def _window_resize(self, signum, frame):
         """Signal handler for SIGWINCH.
@@ -1284,17 +1291,6 @@ class TaskIO(object):
                                   'columns': int(columns)}}}}}}
 
         self.input_queue.put(self.encoder.encode(message))
-
-
-    def _terminal_reset(self):
-        """Signal handler for SIGTERM.
-        Reset the terminal by setting the attributes back to self.oldtermios.
-        """
-
-        termios.tcsetattr(
-            sys.stdin.fileno(),
-            termios.TCSAFLUSH,
-            self.oldtermios)
 
 
 def parse_pid(pid):

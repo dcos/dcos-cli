@@ -20,21 +20,10 @@ emitter = emitting.FlatEmitter()
 
 def main(argv):
     try:
-        if sys.stdin.isatty():
-            terminal_settings = termios.tcgetattr(sys.stdin.fileno())
         return _main(argv)
-    except Exception as e:
-        if sys.stdin.isatty():
-            termios.tcsetattr(
-                sys.stdin.fileno(),
-                termios.TCSAFLUSH,
-                terminal_settings)
-
-        if isinstance(e, DCOSException):
-            emitter.publish(e)
-            return 1
-
-        raise e
+    except DCOSException as e:
+        emitter.publish(e)
+        return 1
 
 
 def docopt_wrapper(usage, real_usage, **keywords):
@@ -323,8 +312,8 @@ def _exec(task, cmd, interactive=False, tty=False, args=None):
     :type args: str
     """
 
-    tIO = mesos.TaskIO(task, cmd, interactive, tty, args)
-    tIO.IORunner()
+    taskIO = mesos.TaskIO(task, cmd, interactive, tty, args)
+    taskIO.run()
 
 
 def _mesos_files(tasks, file_, client):
