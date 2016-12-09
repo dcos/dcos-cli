@@ -245,27 +245,55 @@ class PackageManager:
         response = self.cosmos_post("repository/delete", params=params)
         return response.json()
 
-    def package_add(self, dcos_package):
+    def package_add_local(self, dcos_package):
         """
-        Adds a DC/OS package to DC/OS
+         Adds a locally stored DC/OS package to DC/OS
 
         :param dcos_package: path to the DC/OS package
-        :type dcos_package: str
+        :type dcos_package: None | str
         :return: Response to the package add request
         :rtype: Response
         """
-        with util.open_file(dcos_package, 'rb') as pkg:
-            extra_headers = {'Content-MD5': util.md5_hash_file(pkg)}
-        with util.open_file(dcos_package, 'rb') as data:
-            try:
-                return self._post('add', headers=extra_headers, data=data)
-            except DCOSHTTPException as e:
-                if e.status() == 404:
-                    message = 'Your version of DC/OS ' \
-                              'does not support this operation'
-                    raise DCOSException(message)
-                else:
-                    raise e
+        try:
+            with util.open_file(dcos_package, 'rb') as pkg:
+                extra_headers = {
+                    'Content-Type':
+                        'application/vnd.dcos.'
+                        'universe.package+zip;version=v1',
+                    'X-Dcos-Content-MD5': util.md5_hash_file(pkg)
+                }
+                return self._post('add', headers=extra_headers, data=pkg)
+        except DCOSHTTPException as e:
+            if e.status() == 404:
+                message = 'Your version of DC/OS ' \
+                          'does not support this operation'
+                raise DCOSException(message)
+            else:
+                raise e
+
+    def package_add_remote(self, package_name, package_version):
+        """
+         Adds a remote DC/OS package to DC/OS
+
+        :param package_name: name of the remote package to add
+        :type package_name: None | str
+        :param package_version: version of the remote package to add
+        :type package_version: None | str
+        :return: Response to the package add request
+        :rtype: Response
+        """
+        try:
+            json = {'packageName': package_name}
+            if package_version is not None:
+                json['packageVersion'] = package_version
+            return self._post('add', params=json)
+        except DCOSHTTPException as e:
+            if e.status() == 404:
+                message = 'Your version of DC/OS ' \
+                          'does not support this operation'
+                raise DCOSException(message)
+            else:
+                raise e
 
     @cosmos_error
     def _post(self, request, params=None, headers=None, data=None):
