@@ -345,3 +345,35 @@ def get_providers():
             raise DCOSException(msg)
 
     return {}
+
+
+def auth_type_description(provider_info):
+    """
+    Returns human readable description of auth type
+
+    :param provider_info: info about auth provider
+    :type provider_info: dict
+    :returns: human readable description of auth type
+    :rtype: str
+    """
+
+    auth_type = provider_info.get("authentication-type")
+    if auth_type == "dcos-uid-password":
+        msg = ("Authenticate with a regular user account "
+               "(using username and password)")
+    elif auth_type == "dcos-uid-servicekey":
+        msg = ("Authenticate with a service user account "
+               "(using username and private key)")
+    elif auth_type == "dcos-uid-password-ldap":
+        msg = ("Authenticate with a LDAP user account "
+               "(using username and password)")
+    elif auth_type == "saml-sp-initiated":
+        msg = "Authenticate via SAML 2.0 ({})".format(
+                provider_info["description"])
+    elif auth_type in ["oidc-authorization-code-flow", "oidc-implicit-flow"]:
+        msg = "Authenticate via OpenID Connect ({})".format(
+                provider_info["description"])
+    else:
+        raise DCOSException("Unknown authentication type")
+
+    return msg

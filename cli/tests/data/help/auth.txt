@@ -8,16 +8,16 @@ Usage:
     dcos auth login
         [--provider=<provider_id>] [--username=<username>]
         [--password=<password> | --password-file=<password_file>
-        | --password-env=<password_env> | --service-key=<key_path>]
+        | --password-env=<password_env> | --private-key=<key_path>]
     dcos auth logout
 
 Commands:
     list-providers
-        List configured authentication providers for your DC/OS Cluster.
+        List configured authentication providers for your DC/OS cluster.
     login
-        Login to your DC/OS Cluster.
+        Login to your DC/OS cluster.
     logout
-        Logout of your DC/OS Cluster.
+        Logout of your DC/OS cluster.
 
 Options:
     -h, --help
@@ -27,14 +27,14 @@ Options:
     --password=<password>
         Specify password on the command line (insecure).
     --password-env=<password_env>
-        Specify environment variable name containing password.
+        Specify environment variable name that contains the password.
     --password-file=<password_file>
-        Specify path to file containing password.
+        Specify path to a file that contains the password.
     --provider=<provider_id>
-        Specify authentication provider to login with.
-    --service-key=<key_path>
-        Specify path to file containing the private key.
+        Specify authentication provider to use for login.
+    --private-key=<key_path>
+        Specify path to file that contains the private key.
     --username=<username>
-        Specify username to login with.
+        Specify username for login.
     --version
         Print version information.

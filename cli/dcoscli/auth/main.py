@@ -49,7 +49,7 @@ def _cmds():
         cmds.Command(
             hierarchy=['auth', 'login'],
             arg_keys=['--password', '--password-env', '--password-file',
-                      '--provider', '--username', '--service-key'],
+                      '--provider', '--username', '--private-key'],
             function=_login),
 
         cmds.Command(
@@ -130,7 +130,7 @@ def _login(password_str, password_env, password_file,
     :type provider: str
     :param username: username
     :type username: str
-    :param key_path: path to file with service key
+    :param key_path: path to file with private key
     :type param: str
     :rtype: int
     """
@@ -146,8 +146,10 @@ def _login(password_str, password_env, password_file,
 
     password = _get_password(password_str, password_env, password_file)
     if provider is None:
-        if password and username:
+        if username and password:
             auth.dcos_uid_password_auth(dcos_url, username, password)
+        elif username and key_path:
+            auth.servicecred_auth(dcos_url, username, key_path)
         else:
             try:
                 providers = auth.get_providers()

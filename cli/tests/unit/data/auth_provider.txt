@@ -1,2 +1,2 @@
-PROVIDER-ID  AUTHENTICATION-TYPE  DESCRIPTION                  
-dcos-users   dcos-uid-password    Default DC/OS authenticator  
+PROVIDER ID  AUTHENTICATION TYPE                                                     
+dcos-users   Authenticate with a regular user account (using username and password)  

@@ -5,7 +5,7 @@ from collections import OrderedDict
 
 import prettytable
 
-from dcos import marathon, mesos, util
+from dcos import auth, marathon, mesos, util
 
 EMPTY_ENTRY = '---'
 
@@ -824,15 +824,14 @@ def auth_provider_table(providers):
     """
 
     fields = OrderedDict([
-        ('PROVIDER-ID', lambda p: p),
-        ('AUTHENTICATION-TYPE', lambda p: providers[p]['authentication-type']),
-        ('DESCRIPTION', lambda p: providers[p]['description'])
+        ('PROVIDER ID', lambda p: p),
+        ('AUTHENTICATION TYPE', lambda p: auth.auth_type_description(
+                                            providers[p])),
     ])
 
-    tb = table(fields, providers, sortby="PROVIDER-ID")
-    tb.align['PROVIDER-ID'] = 'l'
-    tb.align['AUTHENTICATION-TYPE'] = 'l'
-    tb.align['DESCRIPTION'] = 'l'
+    tb = table(fields, providers, sortby="PROVIDER ID")
+    tb.align['PROVIDER ID'] = 'l'
+    tb.align['AUTHENTICATION TYPE'] = 'l'
 
     return tb
 
