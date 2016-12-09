@@ -13,8 +13,12 @@ from dcoscli.util import formatted_cli_version
 from .common import assert_command, exec_command, watch_all_deployments
 
 command_base = ['dcos', 'experimental']
-experimental_data_dir = 'tests/data/experimental/'
-build_data_dir = 'tests/data/experimental/package_build/'
+experimental_data_dir = os.path.join(
+    os.getcwd(), 'tests', 'data', 'experimental')
+build_data_dir = os.path.join(
+    experimental_data_dir, 'package_build')
+cassandra_path = os.path.join(
+    experimental_data_dir, 'cassandra', 'package.json')
 
 
 def test_experimental():
@@ -101,10 +105,8 @@ def test_package_build_where_build_definition_does_not_exist():
     with _temporary_directory() as output_directory:
         build_definition_path = os.path.join(build_data_dir,
                                              "does_not_exist.json")
-        build_definition_full_path = (
-            os.path.join(os.getcwd(), build_definition_path))
         stderr = ("The file [{}] does not exist\n"
-                  .format(build_definition_full_path)
+                  .format(build_definition_path)
                   .encode())
         package_build_failure(build_definition_path,
                               output_directory,
@@ -118,11 +120,8 @@ def test_package_build_where_project_is_missing_references():
                          "package_missing_references.json"))
         marathon_json_path = os.path.join(build_data_dir,
                                           "marathon.json")
-        marathon_json_full_path = (
-            os.path.join(os.getcwd(), marathon_json_path)
-        )
         stderr = ("Error opening file [{}]: No such file or directory\n"
-                  .format(marathon_json_full_path)
+                  .format(marathon_json_path)
                   .encode())
         package_build_failure(build_definition_path,
                               output_directory,
@@ -139,12 +138,9 @@ def test_package_build_where_reference_does_not_match_schema():
             build_data_dir,
             "resource-bad.json"
         )
-        bad_resource_full_path = (
-            os.path.join(os.getcwd(), bad_resource_path)
-        )
         stderr = ("Error validating package: "
                   "[{}] does not conform to the specified schema\n"
-                  .format(bad_resource_full_path)
+                  .format(bad_resource_path)
                   .encode())
         package_build_failure(build_definition_path,
                               output_directory,
@@ -157,12 +153,9 @@ def test_package_build_where_build_definition_does_not_match_schema():
             build_data_dir,
             "package_no_match_schema.json"
         )
-        bad_build_definition_full_path = (
-            os.path.join(os.getcwd(), bad_build_definition_path)
-        )
         stderr = ("Error validating package: "
                   "[{}] does not conform to the specified schema\n"
-                  .format(bad_build_definition_full_path)
+                  .format(bad_build_definition_path)
                   .encode())
         package_build_failure(bad_build_definition_path,
                               output_directory,
@@ -175,22 +168,18 @@ def test_package_build_where_build_definition_has_badly_formed_reference():
             build_data_dir,
             "package_badly_formed_reference.json"
         )
-        bad_build_definition_full_path = (
-            os.path.join(os.getcwd(), bad_build_definition_path)
-        )
         stderr = ("Error validating package: "
                   "[{}] does not conform to the specified schema\n"
-                  .format(bad_build_definition_full_path)
+                  .format(bad_build_definition_path)
                   .encode())
         package_build_failure(bad_build_definition_path,
                               output_directory,
                               stderr=stderr)
 
 
+# TODO: Add cleanup to tests
 @pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
 def test_package_add_argument_exclussion():
-    cassandra_path = os.path.join(
-        experimental_data_dir, 'cassandra/package.json')
     command = command_base + ['package', 'add',
                               '--dcos-package', cassandra_path,
                               '--package-version', '3.0']
@@ -212,8 +201,6 @@ def test_package_add_argument_exclussion():
 @pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
 def test_service_start_happy_path():
     with _temporary_directory() as output_directory:
-        cassandra_path = os.path.join(
-            experimental_data_dir, 'cassandra/package.json')
         cassandra_package = package_build(cassandra_path, output_directory)
         name, version = package_add(cassandra_package)
         service_start(name, version)
@@ -228,23 +215,8 @@ def test_service_start_happy_path_from_universe():
     service_stop(name)
 
 
-# TODO: Enable this test once we can clean up added packages
-@pytest.mark.skip(reason="Need to implement `package remove`")
-def test_service_start_by_starting_same_service_twice():
-    with _temporary_directory() as output_directory:
-        cassandra_path = os.path.join(
-            experimental_data_dir, 'cassandra/package.json')
-        cassandra_package = package_build(cassandra_path, output_directory)
-        name, version = package_add(cassandra_package)
-        service_start(name, version)
-        stderr = b'Package is already installed\n'
-        service_start_failure(name, version, stderr=stderr)
-        service_stop(name)
-
-
-# TODO: Delete this test once we can clean up added packages
 @pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
-def test_service_start_by_starting_same_service_twice_no_cleanup():
+def test_service_start_by_starting_same_service_twice():
     # Assumes that cassandra has been added in the past
     name = 'cassandra'
     version = '1.0.20-3.0.10'
