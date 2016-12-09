@@ -13,6 +13,7 @@ from dcoscli.util import formatted_cli_version
 from .common import assert_command, exec_command, watch_all_deployments
 
 command_base = ['dcos', 'experimental']
+experimental_data_dir = 'tests/data/experimental/'
 build_data_dir = 'tests/data/experimental/package_build/'
 
 
@@ -186,10 +187,32 @@ def test_package_build_where_build_definition_has_badly_formed_reference():
                               stderr=stderr)
 
 
+def test_package_add_argument_exclussion():
+    cassandra_path = os.path.join(
+        experimental_data_dir, 'cassandra/package.json')
+    command = command_base + ['package', 'add',
+                              '--dcos-package', cassandra_path,
+                              '--package-version', '3.0']
+    code, out, err = exec_command(command)
+    assert code == 1
+    assert err == b''
+
+    stdout = out.decode()
+    not_recognized = 'Command not recognized'
+    add_command = """\
+    dcos experimental package add (--dcos-package=<dcos-package> |
+                                    (--package-name=<package-name>
+                                    """
+    """[--package-version=<package-version>]))"""
+    assert not_recognized in stdout
+    assert add_command in stdout
+
+
 @pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
 def test_service_start_happy_path():
     with _temporary_directory() as output_directory:
-        cassandra_path = 'tests/data/experimental/cassandra/package.json'
+        cassandra_path = os.path.join(
+            experimental_data_dir, 'cassandra/package.json')
         cassandra_package = package_build(cassandra_path, output_directory)
         name, version = package_add(cassandra_package)
         service_start(name, version)
@@ -197,15 +220,37 @@ def test_service_start_happy_path():
 
 
 @pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
+def test_service_start_happy_path_from_universe():
+    package_name = 'linkerd'
+    name, version = package_add_universe(package_name)
+    service_start(name, version)
+    service_stop(name)
+
+
+# TODO: Enable this test once we can clean up added packages
+@pytest.mark.skip(reason="Need to implement `package remove`")
 def test_service_start_by_starting_same_service_twice():
     with _temporary_directory() as output_directory:
-        cassandra_path = 'tests/data/experimental/cassandra/package.json'
+        cassandra_path = os.path.join(
+            experimental_data_dir, 'cassandra/package.json')
         cassandra_package = package_build(cassandra_path, output_directory)
         name, version = package_add(cassandra_package)
         service_start(name, version)
         stderr = b'Package is already installed\n'
         service_start_failure(name, version, stderr=stderr)
         service_stop(name)
+
+
+# TODO: Delete this test once we can clean up added packages
+@pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
+def test_service_start_by_starting_same_service_twice_no_cleanup():
+    # Assumes that cassandra has been added in the past
+    name = 'cassandra'
+    version = '1.0.20-3.0.10'
+    service_start(name, version)
+    stderr = b'Package is already installed\n'
+    service_start_failure(name, version, stderr=stderr)
+    service_stop(name)
 
 
 @pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
@@ -265,7 +310,7 @@ def service_start_failure(package_name,
 
 
 def package_add(package):
-    command = command_base + ['package', 'add', package]
+    command = command_base + ['package', 'add', '--dcos-package', package]
 
     code, out, err = exec_command(command)
     assert code == 0
@@ -275,6 +320,21 @@ def package_add(package):
     metadata.pop('releaseVersion')
     assert metadata == _get_json_in_zip(package, 'metadata.json')
 
+    return metadata['name'], metadata['version']
+
+
+def package_add_universe(package_name, package_version=None):
+    command = command_base + ['package', 'add',
+                              '--package-name', package_name]
+    if package_version is not None:
+        command += ['--package-version', package_version]
+
+    code, out, err = exec_command(command)
+
+    assert code == 0
+    assert err == b''
+
+    metadata = json.loads(out.decode())
     return metadata['name'], metadata['version']
 
 
