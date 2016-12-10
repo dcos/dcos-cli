@@ -11,7 +11,7 @@ from dcos.util import create_schema
 
 from .common import (assert_command, assert_lines, delete_zk_node,
                      delete_zk_nodes, exec_command, get_services,
-                     package_install, remove_app, service_shutdown,
+                     package, package_install, remove_app, service_shutdown,
                      setup_universe_server, ssh_output,
                      teardown_universe_server, wait_for_service)
 from ..fixtures.service import framework_fixture
@@ -106,23 +106,21 @@ def test_service_completed():
 
 
 def test_log():
-    package_install('cassandra', args=['--package-version=0.2.0-1'])
+    with package('cassandra', deploy=True, args=['--package-version=0.2.0-1']):
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'service', 'log', 'cassandra.dcos'])
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'service', 'log', 'cassandra.dcos'])
 
-    assert returncode == 0
-    assert len(stdout.decode('utf-8').split('\n')) > 1
-    assert stderr == b'No logs for this task\n'
+        assert returncode == 0
+        assert len(stdout.decode('utf-8').split('\n')) > 1
+        assert stderr == b''
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'service', 'log', 'cassandra.dcos', 'stderr'])
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'service', 'log', 'cassandra.dcos', 'stderr'])
 
-    assert returncode == 0
-    assert len(stdout.decode('utf-8').split('\n')) > 1
-    assert stderr == b''
-    exec_command(['dcos', 'package', 'uninstall', 'cassandra'])
-    exec_command(['dcos', 'marathon', 'group', 'remove', 'cassandra'])
+        assert returncode == 0
+        assert len(stdout.decode('utf-8').split('\n')) > 1
+        assert stderr == b''
 
 
 def test_log_marathon_file():
