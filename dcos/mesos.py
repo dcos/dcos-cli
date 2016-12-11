@@ -1057,15 +1057,23 @@ class TaskIO(object):
            CLI and the Mesos Agent API.
         """
 
+        # Without a TTY.
         if not self.tty:
-            self._start_threads()
-            self.exit_event.wait()
+            try:
+                self._start_threads()
+                self.exit_event.wait()
+            except Exception as e:
+                self.exception = e
+
+            if self.exception:
+                raise self.exception
             return
 
         if not sys.stdin.isatty():
             raise DCOSException(
                 "Must be running in a tty to pass the '--tty flag'. Exiting")
 
+        # With a TTY.
         fd = sys.stdin.fileno()
         oldtermios = termios.tcgetattr(fd)
 
