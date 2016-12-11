@@ -1139,7 +1139,7 @@ class TaskIO(object):
             'type': "LAUNCH_NESTED_CONTAINER_SESSION",
             'launch_nested_container_session': {
                 'container_id': {
-                    'parent' : {
+                    'parent': {
                        'value': self.parent_id
                      },
                     'value': self.container_id
@@ -1150,11 +1150,11 @@ class TaskIO(object):
                     'shell': False}}}
 
         if self.tty:
-            message\
-                ['launch_nested_container_session']\
-                    ['container'] = {
-                        'type' : 'MESOS',
-                        'tty_info' : {}}
+            message[
+                'launch_nested_container_session'][
+                    'container'] = {
+                        'type': 'MESOS',
+                        'tty_info': {}}
 
         req_extra_args = {
             'stream': True,
@@ -1175,14 +1175,13 @@ class TaskIO(object):
         returned messages into our output_queue. Only expects to
         receive data messages.
 
-        :param response: response from an http post
-                         whose filnumber will receive output
+        :param response: Response from an http post
         :type response: requests.models.Response
         """
 
         # Now that we are ready to process the output stream (meaning
-        # our output connction has been established), allow attaching
-        # the input stream by setting an event.
+        # our output connection has been established), allow the input
+        # stream to be attached by setting an event.
         self.attach_input_event.set()
 
         try:
@@ -1192,10 +1191,9 @@ class TaskIO(object):
                 for r in records:
                     if r['type'] == 'DATA':
                         self.output_queue.put(r['data'])
-
         except Exception as e:
             raise DCOSException(
-                "Error parsing the output stream: {error}".format(error=e))
+                "Error parsing output stream: {error}".format(error=e))
 
         self.output_queue.join()
         self.exit_event.set()
@@ -1217,7 +1215,7 @@ class TaskIO(object):
                 'attach_container_input': {
                     'type': 'CONTAINER_ID',
                     'container_id': {
-                        'parent' : {
+                        'parent': {
                            'value': self.parent_id
                          },
                         'value': self.container_id}}}
@@ -1234,23 +1232,20 @@ class TaskIO(object):
             'headers': {
                 'Content-Type': 'application/json+recordio',
                 'Accept': 'application/json',
-                'Connection': 'keep-alive',
+                'Connection': 'close',
                 'Transfer-Encoding': 'chunked'
             }
         }
 
         # Ensure we don't try to attach our input to a container that isn't
-        # fully up and running by waiting until the _attach_output_stream
-        # function signals us that it's ready.
+        # fully up and running by waiting until the
+        # `_process_output_stream` function signals us that it's ready.
         self.attach_input_event.wait()
 
         response = http.post(
             self.agent_url,
             data=_input_streamer(),
             **req_extra_args)
-
-        if response.status_code != 200:
-            raise DCOSException("Input stream returned a non 200 status code")
 
     def _input_thread(self):
         """Reads from stdin and places a message with that data
@@ -1268,11 +1263,11 @@ class TaskIO(object):
                         'data': ''}}}}
 
         for chunk in iter(partial(os.read, sys.stdin.fileno(), 1024), b''):
-            message\
-                ['attach_container_input']\
-                    ['process_io']\
-                        ['data']\
-                            ['data'] = base64.b64encode(chunk).decode('utf-8')
+            message[
+                'attach_container_input'][
+                    'process_io'][
+                        'data'][
+                            'data'] = base64.b64encode(chunk).decode('utf-8')
 
             self.input_queue.put(self.encoder.encode(message))
 
@@ -1326,7 +1321,7 @@ class TaskIO(object):
                     'control': {
                         'type': 'TTY_INFO',
                         'tty_info': {
-                              'window_size' : {
+                              'window_size': {
                                   'rows': int(rows),
                                   'columns': int(columns)}}}}}}
 
