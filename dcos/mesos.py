@@ -1,4 +1,3 @@
-import atexit
 import base64
 import fnmatch
 import itertools
@@ -7,18 +6,22 @@ import os
 import signal
 import sys
 import termios
-import tty
 import threading
+import time
+import tty
 import uuid
 
-from dcos import config, http, recordio, util
-from dcos.errors import DCOSException, DCOSHTTPException
 from functools import partial
 from queue import Queue
+
 from six.moves import urllib
-from tty import setraw, setcbreak
+
+from dcos import config, http, recordio, util
+
+from dcos.errors import DCOSException, DCOSHTTPException
 
 logger = util.get_logger(__name__)
+
 
 def get_master(dcos_client=None):
     """Create a Master object using the url stored in the
