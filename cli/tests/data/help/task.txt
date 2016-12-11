@@ -4,14 +4,15 @@ Description:
 Usage:
     dcos task --help
     dcos task --info
-    dcos task exec [--interactive --tty] [<task>] [<cmd>]
+    dcos task exec [--interactive --tty] <task> <cmd> [<args>...]
     dcos task log [--completed --follow --lines=N] [<task>] [<file>]
     dcos task ls [--long --completed] [<task>] [<path>]
     dcos task [--completed --json <task>]
 
 Command:
     exec
-        Launch a process inside a container with the given <task_id>
+        Launch a process (<cmd>) inside of a container for a task (<task>).
+
     log
         Print the task log. By default, the 10 most recent task logs from stdout
         are printed.
@@ -26,9 +27,9 @@ Options:
     --info
         Print a short description of this subcommand.
     --interactive
-        Attach a STDIN stream to the remote command for interactive session
+        Attach a STDIN stream to the remote command for interactive session.
     --tty
-        Attach a tty to the remote stream
+        Attach a tty to the remote stream.
     --follow
         Dynamically update the log.
     --json
@@ -41,6 +42,11 @@ Options:
         Print version information.
 
 Positional Arguments:
+    <cmd>
+        The command to run inside the remote task's container.
+        For example: `/bin/bash`.
+    <args>
+        Additional arguments to pass to the command (<cmd>).
     <file>
         Specify the sandbox file to print. The default is stdout.
     <path>

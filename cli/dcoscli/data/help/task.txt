@@ -43,7 +43,8 @@ Options:
 
 Positional Arguments:
     <cmd>
-        The command to execute inside of the remote container. For example: `/bin/bash`.
+        The command to run inside the remote task's container.
+        For example: `/bin/bash`.
     <args>
         Additional arguments to pass to the command (<cmd>).
     <file>
