@@ -6,6 +6,7 @@ import os
 import signal
 import sys
 import threading
+import time
 import uuid
 
 from functools import partial
@@ -1121,6 +1122,12 @@ class TaskIO(object):
             thread.daemon = True
             thread.start()
 
+            thread = threading.Thread(
+                 target=self._thread_wrapper,
+                 args=(self._heartbeat_thread,))
+            thread.daemon = True
+            thread.start()
+
         thread = threading.Thread(
             target=self._thread_wrapper,
             args=(self._output_thread,))
@@ -1301,6 +1308,31 @@ class TaskIO(object):
                 sys.stderr.flush()
 
             self.output_queue.task_done()
+
+    def _heartbeat_thread(self):
+        """Generates a heartbeat message to send of the
+        ATTACH_CONTAINER_INPUT stream every `interval` seconds and
+        inserts it in the input queue.
+        """
+
+        interval = 30
+        nanoseconds = 30 * 1000000000
+
+        message = {
+            'type': 'ATTACH_CONTAINER_INPUT',
+            'attach_container_input': {
+                'type': 'PROCESS_IO',
+                'process_io': {
+                    'type': 'CONTROL',
+                    'control': {
+                        'type': 'HEARTBEAT',
+                        'heartbeat': {
+                              'interval': {
+                                   'nanoseconds': nanoseconds}}}}}}
+
+        while True:
+            self.input_queue.put(self.encoder.encode(message))
+            time.sleep(interval)
 
     def _window_resize(self, signum, frame):
         """Signal handler for SIGWINCH.
