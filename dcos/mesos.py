@@ -994,22 +994,20 @@ class TaskIO(object):
     :type args: str
     """
 
-    def __init__(self, task_id, cmd=None, interactive=False, tty=False, args=None):
-        # Get the ContainerID associated with
-        # `task_id` and save it as `parent_id`
+    def __init__(self, task_id, cmd=None,
+                 interactive=False, tty=False, args=None):
+
+        # Store relevant parameters of the call for later.
+        self.cmd = cmd
+        self.interactive = interactive
+        self.tty = tty
+        self.args = args
+
+        # Create a client and grab a reference to the DC/OS master.
         client = DCOSClient()
         master = get_master(client)
 
-        parent_id = master.get_container_id(task_id)
-        if not parent_id:
-            raise DCOSException(
-                "Container ID for task {} not found.".format(task_id))
-        self.parent_id = parent_id
-
-        # Generate a new UUID to be used as our container id
-        self.container_id = str(uuid.uuid4())
-
-        # Get the URL to the agent which is running the task
+        # Get the URL to the agent running the task.
         task_obj = master.task(task_id)
         if client._mesos_master_url:
             self.agent_url = client.slave_url(
@@ -1018,26 +1016,39 @@ class TaskIO(object):
             self.agent_url = client.slave_url(
                 task_obj.slave()['id'], "", "api/v1")
 
-        self.cmd = cmd
-        self.interactive = interactive
-        self.tty = tty
-        self.args = args
+        # Grab a reference to the container ID for the task.
+        self.parent_id = master.get_container_id(task_id)
 
+        # Generate a new UUID for the nested container
+        # used to run commands passed to `task exec`.
+        self.container_id = str(uuid.uuid4())
+
+        # Set up a recordio encoder and decoder
+        # for any incoming and outgoing messages.
         self.encoder = recordio.Encoder(
             lambda s: bytes(json.dumps(s, ensure_ascii=False), "UTF-8"))
         self.decoder = recordio.Decoder(
             lambda s: json.loads(s.decode("UTF-8")))
 
-        if self.interactive:
-            self.input_queue = Queue()
+        # Set up queues to send messages between threads used for
+        # reading/writing to stdin/stdout/stderr and threads
+        # sending/receiving data over the network.
+        self.input_queue = Queue()
         self.output_queue = Queue()
 
+        # Set up an event to block attaching
+        # input until attaching output is complete.
         self.attach_input_event = threading.Event()
         self.attach_input_event.clear()
 
+        # Set up an event to block the main thread
+        # from exiting until signaled to do so.
         self.exit_event = threading.Event()
         self.exit_event.clear()
 
+        # Use a class variable to store exceptions thrown on
+        # other threads and raise them on the main thread before
+        # exiting.
         self.exception = None
 
     def run(self):
