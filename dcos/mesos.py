@@ -440,40 +440,58 @@ class Master(object):
 
         return tasks
 
-    # TODO: Currently waiting on this mapping in state.json to be present.
-    # This mapping is only present in DC/OS 1.9+
     def get_container_id(self, task_id):
         """Returns the container ID for a task ID matching `task_id`
 
         :param task_id: The task ID which will be mapped to container ID
         :type task_id: str
-        :returns: the container id associated with task id
+        :returns: The container ID associated with 'task_id'
         :rtype: str
         """
+
+        def _get_task(task_id):
+            candidates = []
+            if 'frameworks' in self.state():
+                for framework in self.state()['frameworks']:
+                    if 'tasks' in framework:
+                        for task in framework['tasks']:
+                            if 'id' in task:
+                                if task['id'].startswith(task_id):
+                                    candidates.append(task)
+
+            if len(candidates) == 1:
+                return candidates[0]
+
+            raise DCOSException(
+                "More than one task matching '{}' found: {}"
+                .format(task_id, candidates))
+
+        def _get_container_status(task):
+            if 'statuses' in task:
+                if len(task['statuses']):
+                    if 'container_status' in task['statuses'][0]:
+                        return task['statuses'][0]['container_status']
+
+            raise DCOSException(
+                "Unable to obtain container status for task '{}'"
+                .format(task['id']))
+
+        def _get_container_id(container_status):
+            if 'container_id' in container_status:
+                if 'value' in container_status['container_id']:
+                    return container_status['container_id']['value']
+
+            raise DCOSException(
+                "No container found for the specified task."
+                " It might still be spinning up."
+                " Please try again.")
+
         if not task_id:
-            #TODO, make this more detailed
-            raise DCOSException("No task id passed to get container_id")
+            raise DCOSException("Invalid task ID")
 
-
-        #Loop through tasks in frameworks
-        if 'frameworks' in self.state():
-            for framework in self.state()['frameworks']:
-                if 'tasks' in framework:
-                    for task in framework['tasks']:
-
-                        #Check if we've found the right task, then get its value
-                        if 'id' in task and task['id'] == task_id:
-                            if 'statuses' in task  and 'container_status' in task['statuses'][0]:
-                                if 'container_id' in task['statuses'][0]['container_status']:
-                                    container_status = task['statuses'][0]['container_status']
-                                    if 'container_id' in container_status and 'value' in container_status['container_id']:
-                                        return container_status['container_id']['value']
-
-        raise DCOSException(
-            "No container found for the specified task."
-            " It might still be spinning up."
-            " Please try again later.")
-
+        task = _get_task(task_id)
+        container_status = _get_container_status(task)
+        return _get_container_id(container_status)
 
     def frameworks(self, inactive=False, completed=False):
         """Returns a list of all frameworks
