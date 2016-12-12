@@ -60,7 +60,7 @@ class ServiceManager(object):
 
 def _get_default_base_url():
     """
-    Gets the cosmos url
+    Gets the default service manager URL
 
     :returns: cosmos base url
     :rtype: str

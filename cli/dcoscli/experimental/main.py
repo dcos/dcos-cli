@@ -20,7 +20,6 @@ from dcos.util import md5_hash_file
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage, formatted_cli_version
 
-
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
 
@@ -55,7 +54,7 @@ def _cmds():
                       '--package-name', '--package-version'],
             function=_add),
         cmds.Command(
-            hierarchy=['package', 'build'],
+            hierarchy=['experimental', 'package', 'build'],
             arg_keys=['<build-definition>', '--output-directory'],
             function=_build,
         ),
@@ -66,11 +65,11 @@ def _cmds():
         cmds.Command(
             hierarchy=['experimental'],
             arg_keys=['--info'],
-            function=_info),
+            function=_experimental),
     ]
 
 
-def _info(info):
+def _experimental(info):
     """
     :returns: process status
     :rtype: int
@@ -358,6 +357,17 @@ def _is_local_reference(item):
 
 
 def _service_start(package_name, package_version, options_path):
+    """Starts a DC/OS service from a package that has been added
+
+    :param package_name:
+    :type package_name: str
+    :param package_version:
+    :type package_version: None | str
+    :param options_path:
+    :type options_path: None | str
+    :return: process status
+    :rtype: int
+    """
     manager = servicemanager.ServiceManager()
     options = get_user_options(options_path) if options_path else None
     manager.start_service(

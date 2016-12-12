@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import tempfile
+import time
 import zipfile
 
 import pytest
@@ -13,12 +14,15 @@ from dcoscli.util import formatted_cli_version
 from .common import assert_command, exec_command, watch_all_deployments
 
 command_base = ['dcos', 'experimental']
-experimental_data_dir = os.path.join(
-    os.getcwd(), 'tests', 'data', 'experimental')
+data_dir = os.path.join(
+    os.getcwd(), 'tests', 'data'
+)
 build_data_dir = os.path.join(
-    experimental_data_dir, 'package_build')
+    data_dir, 'package_build'
+)
 cassandra_path = os.path.join(
-    experimental_data_dir, 'cassandra', 'package.json')
+    build_data_dir, 'cassandra', 'package.json'
+)
 
 
 def test_experimental():
@@ -108,9 +112,9 @@ def test_package_build_where_build_definition_does_not_exist():
         stderr = ("The file [{}] does not exist\n"
                   .format(build_definition_path)
                   .encode())
-        package_build_failure(build_definition_path,
-                              output_directory,
-                              stderr=stderr)
+        _package_build_failure(build_definition_path,
+                               output_directory,
+                               stderr=stderr)
 
 
 def test_package_build_where_project_is_missing_references():
@@ -123,9 +127,9 @@ def test_package_build_where_project_is_missing_references():
         stderr = ("Error opening file [{}]: No such file or directory\n"
                   .format(marathon_json_path)
                   .encode())
-        package_build_failure(build_definition_path,
-                              output_directory,
-                              stderr=stderr)
+        _package_build_failure(build_definition_path,
+                               output_directory,
+                               stderr=stderr)
 
 
 def test_package_build_where_reference_does_not_match_schema():
@@ -142,9 +146,9 @@ def test_package_build_where_reference_does_not_match_schema():
                   "[{}] does not conform to the specified schema\n"
                   .format(bad_resource_path)
                   .encode())
-        package_build_failure(build_definition_path,
-                              output_directory,
-                              stderr=stderr)
+        _package_build_failure(build_definition_path,
+                               output_directory,
+                               stderr=stderr)
 
 
 def test_package_build_where_build_definition_does_not_match_schema():
@@ -157,9 +161,9 @@ def test_package_build_where_build_definition_does_not_match_schema():
                   "[{}] does not conform to the specified schema\n"
                   .format(bad_build_definition_path)
                   .encode())
-        package_build_failure(bad_build_definition_path,
-                              output_directory,
-                              stderr=stderr)
+        _package_build_failure(bad_build_definition_path,
+                               output_directory,
+                               stderr=stderr)
 
 
 def test_package_build_where_build_definition_has_badly_formed_reference():
@@ -172,12 +176,11 @@ def test_package_build_where_build_definition_has_badly_formed_reference():
                   "[{}] does not conform to the specified schema\n"
                   .format(bad_build_definition_path)
                   .encode())
-        package_build_failure(bad_build_definition_path,
-                              output_directory,
-                              stderr=stderr)
+        _package_build_failure(bad_build_definition_path,
+                               output_directory,
+                               stderr=stderr)
 
 
-# TODO: Add cleanup to tests
 @pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
 def test_package_add_argument_exclussion():
     command = command_base + ['package', 'add',
@@ -201,18 +204,20 @@ def test_package_add_argument_exclussion():
 @pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
 def test_service_start_happy_path():
     with _temporary_directory() as output_directory:
-        cassandra_package = package_build(cassandra_path, output_directory)
-        name, version = package_add(cassandra_package)
-        service_start(name, version)
-        service_stop(name)
+        cassandra_package = _package_build(cassandra_path, output_directory)
+        name, version = _package_add(cassandra_package)
+        _wait_for_package_add_local(cassandra_package)
+        _service_start(name, version)
+        _service_stop(name)
 
 
 @pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
 def test_service_start_happy_path_from_universe():
     package_name = 'linkerd'
-    name, version = package_add_universe(package_name)
-    service_start(name, version)
-    service_stop(name)
+    name, version = _package_add_universe(package_name)
+    _wait_for_package_add_remote(name, version)
+    _service_start(name, version)
+    _service_stop(name)
 
 
 @pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
@@ -220,104 +225,123 @@ def test_service_start_by_starting_same_service_twice():
     # Assumes that cassandra has been added in the past
     name = 'cassandra'
     version = '1.0.20-3.0.10'
-    service_start(name, version)
+    _service_start(name, version)
     stderr = b'Package is already installed\n'
-    service_start_failure(name, version, stderr=stderr)
-    service_stop(name)
+    _service_start_failure(name, version, stderr=stderr)
+    _service_stop(name)
 
 
 @pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
 def test_service_start_by_starting_service_not_added():
     stderr = b'Package [foo] not found\n'
-    service_start_failure('foo', stderr=stderr)
+    _service_start_failure('foo', stderr=stderr)
 
 
-def service_stop(package_name):
-    command = ['dcos', 'package', 'uninstall', package_name]
+def _service_stop_cmd(package_name):
+    return ['dcos', 'package', 'uninstall', package_name]
+
+
+def _service_list_cmd():
+    return ['dcos', 'package', 'list', '--json']
+
+
+def _service_start_cmd(package_name, package_version=None, options=None):
+    command = command_base + ['service', 'start', package_name]
+    if package_version is not None:
+        command += ['--package-version', package_version]
+    if options is not None:
+        command += ['--options', options]
+    return command
+
+
+def _package_add_cmd(dcos_package=None, package_name=None, package_version=None):
+    command = command_base + ['package', 'add']
+    if dcos_package is not None:
+        command += ['--dcos-package', dcos_package]
+    if package_name is not None:
+        command += ['--package-name', package_name]
+    if package_version is not None:
+        command += ['--package-version', package_version]
+    return command
+
+
+def _package_build_cmd(build_definition, output_directory=None):
+    command = command_base + ['package', 'build']
+    if output_directory is not None:
+        command += ['--output-directory', output_directory]
+    command += [build_definition]
+    return command
+
+
+def _service_stop(package_name):
+    command = _service_stop_cmd(package_name)
     code, out, err = exec_command(command)
     watch_all_deployments()
     assert code == 0
     return err == b''
 
 
-def service_list():
-    command = ['dcos', 'package', 'list', '--json']
+def _service_list():
+    command = _service_list_cmd()
     code, out, err = exec_command(command)
     assert code == 0
     assert err == b''
     return json.loads(out.decode())
 
 
-def service_start(package_name, package_version=None, options=None):
-    command = command_base + ['service', 'start', package_name]
-    if package_version is not None:
-        command += ['--package-version', package_version]
-    if options is not None:
-        command += ['--options', options]
-
+def _service_start(package_name, package_version=None, options=None):
+    command = _service_start_cmd(package_name, package_version, options)
     code, out, err = exec_command(command)
     assert code == 0
     assert err == b''
     assert out == b''
-
-    running_services = service_list()
+    running_services = _service_list()
     assert package_name in map(lambda pkg: pkg['name'], running_services)
 
 
-def service_start_failure(package_name,
-                          package_version=None,
-                          options=None,
-                          return_code=1,
-                          stdout=b'',
-                          stderr=b''):
-    command = command_base + ['service', 'start', package_name]
-    if package_version is not None:
-        command += ['--package-version', package_version]
-    if options is not None:
-        command += ['--options', options]
-
+def _service_start_failure(package_name,
+                           package_version=None,
+                           options=None,
+                           return_code=1,
+                           stdout=b'',
+                           stderr=b''):
+    command = _service_start_cmd(package_name,
+                                 package_version,
+                                 options)
     assert_command(command,
                    returncode=return_code,
                    stdout=stdout,
                    stderr=stderr)
 
 
-def package_add(package):
-    command = command_base + ['package', 'add', '--dcos-package', package]
-
+def _package_add(package):
+    command = _package_add_cmd(dcos_package=package)
     code, out, err = exec_command(command)
     assert code == 0
     assert err == b''
-
     metadata = json.loads(out.decode())
     metadata.pop('releaseVersion')
     assert metadata == _get_json_in_zip(package, 'metadata.json')
-
     return metadata['name'], metadata['version']
 
 
-def package_add_universe(package_name, package_version=None):
-    command = command_base + ['package', 'add',
-                              '--package-name', package_name]
-    if package_version is not None:
-        command += ['--package-version', package_version]
+def _package_add_universe(package_name, package_version=None):
+    command = _package_add_cmd(package_name=package_name,
+                               package_version=package_version)
 
     code, out, err = exec_command(command)
-
     assert code == 0
     assert err == b''
-
     metadata = json.loads(out.decode())
     return metadata['name'], metadata['version']
 
 
-def package_build(build_definition_path,
-                  output_directory,
-                  metadata=None,
-                  manifest=None):
-    command = command_base + ['package', 'build',
-                              '--output-directory', output_directory,
-                              build_definition_path]
+def _package_build(build_definition_path,
+                   output_directory,
+                   metadata=None,
+                   manifest=None):
+    command = _package_build_cmd(build_definition_path,
+                                 output_directory)
 
     code, out, err = exec_command(command)
     assert code == 0
@@ -339,23 +363,56 @@ def package_build(build_definition_path,
     return package_path
 
 
-def _get_default_manifest():
-    return {'built-by': formatted_cli_version()}
+def _package_build_failure(build_definition_path,
+                           output_directory,
+                           return_code=1,
+                           stdout=b'',
+                           stderr=b''):
+    command = _package_build_cmd(build_definition_path, output_directory)
 
-
-def package_build_failure(build_definition_path,
-                          output_directory,
-                          return_code=1,
-                          stdout=b'',
-                          stderr=b''):
-    command = command_base + ['package', 'build',
-                              '--output-directory', output_directory,
-                              build_definition_path]
     assert_command(command,
                    returncode=return_code,
                    stdout=stdout,
                    stderr=stderr)
     assert len(os.listdir(output_directory)) == 0
+
+
+def _wait_for_package_add_remote(package_name, package_version):
+    command = _package_add_cmd(package_name=package_name,
+                               package_version=package_version)
+    _wait_for_package_add(command, package_name, package_version)
+
+
+def _wait_for_package_add_local(package):
+    command = _package_add_cmd(dcos_package=package)
+    metadata = _get_json_in_zip(package, 'metadata.json')
+    name = metadata['name']
+    version = metadata['version']
+    _wait_for_package_add(command, name, version)
+
+
+def _wait_for_package_add(command, name, version):
+    done_adding = False
+    max_retries = 10
+    retry_number = 0
+    while not done_adding:
+        code, out, err = exec_command(command)
+        change_in_progress_message = (
+            'A change to package '
+            '{}-{} is already in progress\n'.format(
+                name, version).encode())
+        done_adding = code == 0
+        assert (done_adding or
+                (code == 1 and
+                 err == change_in_progress_message))
+        assert retry_number != max_retries, \
+            'Waiting for package add to complete took too long'
+        retry_number += 1
+        time.sleep(5)
+
+
+def _get_default_manifest():
+    return {'built-by': formatted_cli_version()}
 
 
 def _successful_package_build_test(
@@ -367,10 +424,10 @@ def _successful_package_build_test(
     with _temporary_directory() as output_directory:
         metadata = _get_json(expected_package_path)
         manifest = _get_default_manifest()
-        package_build(build_definition_path,
-                      output_directory,
-                      metadata=metadata,
-                      manifest=manifest)
+        _package_build(build_definition_path,
+                       output_directory,
+                       metadata=metadata,
+                       manifest=manifest)
 
 
 def _decompose_name(package_path):
