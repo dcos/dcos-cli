@@ -316,6 +316,30 @@ def test_ls_completed():
     assert stderr == b''
 
 
+def test_exec_non_interactive():
+    with open('tests/data/tasks/lorem-ipsum.txt') as text:
+        content = text.read()
+
+    task_id = _get_task_id('test-app1')
+
+    with open('tests/data/tasks/lorem-ipsum.txt') as text:
+        assert_command(
+            ['dcos', 'task', 'exec', task_id, 'printf', content],
+            stdout=bytes(content, 'UTF-8'))
+
+
+def test_exec_interactive():
+    with open('tests/data/tasks/lorem-ipsum.txt') as text:
+        content = bytes(text.read(), 'UTF-8')
+
+    task_id = _get_task_id('test-app1')
+
+    with open('tests/data/tasks/lorem-ipsum.txt') as text:
+        assert_command(
+            ['dcos', 'task', 'exec', '--interactive', task_id, 'cat'],
+            stdout=content, stdin=text)
+
+
 def _mark_non_blocking(file_):
     import fcntl
     fcntl.fcntl(file_.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
