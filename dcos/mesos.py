@@ -5,10 +5,8 @@ import json
 import os
 import signal
 import sys
-import termios
 import threading
 import time
-import tty
 import uuid
 
 from functools import partial
@@ -1069,11 +1067,17 @@ class TaskIO(object):
                 raise self.exception
             return
 
+        # With a TTY.
+        if util.is_windows_platform():
+            raise DCOSException(
+                "Running with the '--tty' flag is not supported on windows.")
+
         if not sys.stdin.isatty():
             raise DCOSException(
-                "Must be running in a tty to pass the '--tty flag'. Exiting")
+                "Must be running in a tty to pass the '--tty flag'.")
 
-        # With a TTY.
+        import termios
+        import tty
         fd = sys.stdin.fileno()
         oldtermios = termios.tcgetattr(fd)
 

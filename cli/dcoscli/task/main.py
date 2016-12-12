@@ -5,7 +5,6 @@ import posixpath
 import docopt
 import six
 import sys
-import termios
 
 import dcoscli
 from dcos import cmds, emitting, mesos, util
