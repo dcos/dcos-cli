@@ -26,9 +26,9 @@ Options:
         Print usage.
     --info
         Print a short description of this subcommand.
-    --interactive
+    -i, --interactive
         Attach a STDIN stream to the remote command for interactive session.
-    --tty
+    -t, --tty
         Attach a tty to the remote stream.
     --follow
         Dynamically update the log.

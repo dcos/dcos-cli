@@ -87,6 +87,12 @@ def _main(argv):
         '''
         Usage:
             dcos-task-exec [--interactive --tty] <task> <cmd> [<args>...]
+
+        Options:
+            -i, --interactive
+                Attach a STDIN stream to the remote command for interactive session.
+            -t, --tty
+                Attach a tty to the remote stream.
         '''
         args = docopt_wrapper(
             usage,
