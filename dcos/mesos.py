@@ -6,7 +6,6 @@ import os
 import signal
 import sys
 import threading
-import time
 import uuid
 
 from functools import partial
@@ -1246,7 +1245,7 @@ class TaskIO(object):
         # `_process_output_stream` function signals us that it's ready.
         self.attach_input_event.wait()
 
-        response = http.post(
+        http.post(
             self.agent_url,
             data=_input_streamer(),
             **req_extra_args)

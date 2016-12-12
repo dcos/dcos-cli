@@ -315,6 +315,7 @@ def test_ls_completed():
     assert stdout == out
     assert stderr == b''
 
+
 @pytest.mark.skip(reason="Only available in DC/OS 1.9+")
 def test_exec_non_interactive():
     with open('tests/data/tasks/lorem-ipsum.txt') as text:

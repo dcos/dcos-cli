@@ -1,10 +1,9 @@
-import docopt
 import os
 import posixpath
+import sys
 
 import docopt
 import six
-import sys
 
 import dcoscli
 from dcos import cmds, emitting, mesos, util
@@ -70,29 +69,23 @@ def docopt_wrapper(usage, real_usage, **keywords):
 
 @decorate_docopt_usage
 def _main(argv):
-    """This usage string rewriting is necessary in order to allow 
-    passing arguments beginning with "-" to _exec without
-    docopt trying to match them to a named parameter.
+    """The main function for the 'task' subcommand"""
 
-    Setting args['xyz'] to True/False is done because docopt does
-    the same internally, and expects to be able to test each of them
-    to determine which parameters should match. If more commands are added
-    to /dcos-cli/cli/dcoscli/data/help/task.txt they will need to be set to False
-    in this function.
-    """
-
+    # We must special case the 'dcos task exec' subcommand in order to
+    # allow us to pass arguments to docopt in a more user-friendly
+    # manner. Specifically, we need to be able to to pass arguments
+    # beginning with "-" to the command we are trying to launch with
+    # 'exec' without docopt trying to match them to a named parameter
+    # for the 'dcos' command itself.
     if len(argv) > 1 and argv[1] == "exec":
-        usage = \
-        '''
+        usage = """
         Usage:
             dcos-task-exec [--interactive --tty] <task> <cmd> [<args>...]
 
         Options:
             -i, --interactive
-                Attach a STDIN stream to the remote command for interactive session.
             -t, --tty
-                Attach a tty to the remote stream.
-        '''
+        """
         args = docopt_wrapper(
             usage,
             default_doc("task"),
@@ -100,16 +93,24 @@ def _main(argv):
             version="dcos-task version {}".format(dcoscli.version),
             options_first=True)
 
+        # Unfortunately, we have to set the argument below to
+        # True/False because docopt does the same internally, and the
+        # CLI expects them to be set.
+        #
+        # TODO(slocke): If more commands are added to
+        # /dcos-cli/cli/dcoscli/data/help/task.txt they will need to
+        # be set to False here as well.
         args['task'] = True
         args['exec'] = True
         args['log'] = False
         args['ls'] = False
         args['--info'] = False
     else:
-         args = docopt.docopt(
+        args = docopt.docopt(
             default_doc("task"),
             argv=argv,
             version="dcos-task version {}".format(dcoscli.version))
+
     return cmds.execute(_cmds(), args)
 
 
@@ -317,8 +318,8 @@ def _exec(task, cmd, interactive=False, tty=False, args=None):
     :type args: str
     """
 
-    taskIO = mesos.TaskIO(task, cmd, interactive, tty, args)
-    taskIO.run()
+    task_io = mesos.TaskIO(task, cmd, interactive, tty, args)
+    task_io.run()
 
 
 def _mesos_files(tasks, file_, client):
