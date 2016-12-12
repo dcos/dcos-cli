@@ -122,6 +122,9 @@ def test_log():
         assert len(stdout.decode('utf-8').split('\n')) > 1
         assert stderr == b''
 
+    # Package was uninstalled but its group needs to be removed separately
+    exec_command(['dcos', 'marathon', 'group', 'remove', 'cassandra'])
+
 
 def test_log_marathon_file():
     assert_command(['dcos', 'service', 'log', 'marathon', 'stderr'],
