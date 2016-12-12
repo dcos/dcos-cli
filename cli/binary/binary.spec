@@ -14,7 +14,7 @@ a = Analysis(['../dcoscli/main.py'],
                    ('../../dcos/data/config-schema/*', 'dcos/data/config-schema'),
                    ('../../dcos/data/marathon/*', 'dcos/data/marathon')
                   ],
-             hiddenimports=[],
+             hiddenimports=['_cffi_backend'],
              hookspath=[],
              runtime_hooks=[],
              excludes=[],

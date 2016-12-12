@@ -5,7 +5,7 @@ from collections import OrderedDict
 
 import prettytable
 
-from dcos import marathon, mesos, util
+from dcos import auth, marathon, mesos, util
 
 EMPTY_ENTRY = '---'
 
@@ -810,6 +810,28 @@ def package_search_table(search_results):
     tb.align['SELECTED'] = 'l'
     tb.align['FRAMEWORK'] = 'l'
     tb.align['DESCRIPTION'] = 'l'
+
+    return tb
+
+
+def auth_provider_table(providers):
+    """Returns a PrettyTable representation of the auth providers for cluster
+
+    :param providers: auth providers available
+    :type providers: dict
+    :rtype: PrettyTable
+
+    """
+
+    fields = OrderedDict([
+        ('PROVIDER ID', lambda p: p),
+        ('AUTHENTICATION TYPE', lambda p: auth.auth_type_description(
+                                            providers[p])),
+    ])
+
+    tb = table(fields, providers, sortby="PROVIDER ID")
+    tb.align['PROVIDER ID'] = 'l'
+    tb.align['AUTHENTICATION TYPE'] = 'l'
 
     return tb
 
