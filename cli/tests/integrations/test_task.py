@@ -296,7 +296,7 @@ def test_ls_completed():
     # create a completed task
     with app(SLEEP_COMPLETED1, 'test-app-completed1'):
         # get its task id
-        task_id_completed = _get_completed_task_id('test-app-completed1')
+        task_id_completed = _get_task_id('test-app-completed1')
 
     """ Test `dcos task ls --completed` """
     returncode, stdout, stderr = exec_command(
@@ -335,7 +335,7 @@ def _uninstall_sleep(app_id='test-app'):
     assert_command(['dcos', 'marathon', 'app', 'remove', app_id])
 
 
-def _get_completed_task_id(app_id='test-app-completed'):
+def _get_task_id(app_id):
     returncode, stdout, stderr = exec_command(
         ['dcos', 'task', '--json', app_id])
     assert returncode == 0
