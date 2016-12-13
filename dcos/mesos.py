@@ -18,6 +18,10 @@ from dcos import config, http, recordio, util
 
 from dcos.errors import DCOSException, DCOSHTTPException
 
+if not util.is_windows_platform():
+    import termios
+    import tty
+
 logger = util.get_logger(__name__)
 
 
@@ -466,7 +470,7 @@ class Master(object):
 
         def _get_container_status(task):
             if 'statuses' in task:
-                if len(task['statuses']):
+                if len(task['statuses']) > 0:
                     if 'container_status' in task['statuses'][0]:
                         return task['statuses'][0]['container_status']
 
@@ -994,6 +998,11 @@ class TaskIO(object):
     :type tty: bool
     """
 
+    # The interval to send heartbeat messages to
+    # keep persistent connections alive.
+    HEARTBEAT_INTERVAL = 30
+    HEARTBEAT_INTERVAL_NANOSECONDS = HEARTBEAT_INTERVAL * 1000000000
+
     def __init__(self, task_id, cmd=None, args=None,
                  interactive=False, tty=False):
         # Store relevant parameters of the call for later.
@@ -1010,10 +1019,14 @@ class TaskIO(object):
         task_obj = master.task(task_id)
         if client._mesos_master_url:
             self.agent_url = client.slave_url(
-                "", task_obj.slave().http_url(), "api/v1")
+                slave_id="",
+                private_url=task_obj.slave().http_url(),
+                path="api/v1")
         else:
             self.agent_url = client.slave_url(
-                task_obj.slave()['id'], "", "api/v1")
+                slave_id=task_obj.slave()['id'],
+                private_url="",
+                path="api/v1")
 
         # Grab a reference to the container ID for the task.
         self.parent_id = master.get_container_id(task_id)
@@ -1080,8 +1093,6 @@ class TaskIO(object):
             raise DCOSException(
                 "Must be running in a tty to pass the '--tty flag'.")
 
-        import termios
-        import tty
         fd = sys.stdin.fileno()
         oldtermios = termios.tcgetattr(fd)
 
@@ -1125,33 +1136,45 @@ class TaskIO(object):
         """Start all threads associated with this class
         """
         if self.interactive:
+            # Collects input from STDIN and puts
+            # it in the input_queue as data messages.
             thread = threading.Thread(
                 target=self._thread_wrapper,
                 args=(self._input_thread,))
             thread.daemon = True
             thread.start()
 
-            thread = threading.Thread(
-                 target=self._thread_wrapper,
-                 args=(self._attach_container_input,))
-            thread.daemon = True
-            thread.start()
-
+            # Prepares heartbeat control messages and
+            # puts them in the input queueaat a specific
+            # heartbeat interval.
             thread = threading.Thread(
                  target=self._thread_wrapper,
                  args=(self._heartbeat_thread,))
             thread.daemon = True
             thread.start()
 
-        thread = threading.Thread(
-            target=self._thread_wrapper,
-            args=(self._output_thread,))
-        thread.daemon = True
-        thread.start()
+            # Opens a persistent connection with the mesos agent and
+            # feeds it both control and data messages from the input
+            # queue via ATTACH_CONTAINER_INPUT messages.
+            thread = threading.Thread(
+                 target=self._thread_wrapper,
+                 args=(self._attach_container_input,))
+            thread.daemon = True
+            thread.start()
 
+        # Opens a persistent connection with a mesos agent, reads
+        # data messages from it and feeds them to an output_queue.
         thread = threading.Thread(
             target=self._thread_wrapper,
             args=(self._launch_nested_container_session,))
+        thread.daemon = True
+        thread.start()
+
+        # Collects data messages from the output queue and writes
+        # their content to STDOUT and STDERR.
+        thread = threading.Thread(
+            target=self._thread_wrapper,
+            args=(self._output_thread,))
         thread.daemon = True
         thread.start()
 
@@ -1215,7 +1238,7 @@ class TaskIO(object):
                 records = self.decoder.decode(chunk)
 
                 for r in records:
-                    if r['type'] == 'DATA':
+                    if r.get('type') and r['type'] == 'DATA':
                         self.output_queue.put(r['data'])
         except Exception as e:
             raise DCOSException(
@@ -1312,15 +1335,20 @@ class TaskIO(object):
             # Get a message from the output queue and decode it.
             # Then write the data to the appropriate stdout or stderr.
             output = self.output_queue.get()
+            if not output.get('data'):
+                raise DCOSException("Error no 'data' field in output message")
+
             data = output['data']
             data = base64.b64decode(data.encode('utf-8'))
 
-            if output['type'] == 'STDOUT':
+            if output.get('type') and output['type'] == 'STDOUT':
                 sys.stdout.buffer.write(data)
                 sys.stdout.flush()
-            elif output['type'] == 'STDERR':
+            elif output.get('type') and output['type'] == 'STDERR':
                 sys.stderr.buffer.write(data)
                 sys.stderr.flush()
+            else:
+                raise DCOSException("Unsupported data type in output stream")
 
             self.output_queue.task_done()
 
@@ -1330,8 +1358,8 @@ class TaskIO(object):
         inserts it in the input queue.
         """
 
-        interval = 30
-        nanoseconds = 30 * 1000000000
+        interval = self.HEARTBEAT_INTERVAL
+        nanoseconds = self.HEARTBEAT_INTERVAL_NANOSECONDS
 
         message = {
             'type': 'ATTACH_CONTAINER_INPUT',

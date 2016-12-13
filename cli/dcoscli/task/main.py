@@ -304,16 +304,21 @@ def _exec(task, cmd, args=None, interactive=False, tty=False):
 
     :param task: task ID pattern to match
     :type task: str
+    :param cmd: The command to launch inside the task's container
+    :type args: cmd
+    :param args: Additional arguments for the command
+    :type args: list
     :param interactive: attach stdin
     :type interactive: bool
     :param tty: attach a tty
     :type tty: bool
-    :param args: Additional arguments for the command
-    :type args: str
+    :returns: process return code
+    :rtype int
     """
 
     task_io = mesos.TaskIO(task, cmd, args, interactive, tty)
     task_io.run()
+    return 0
 
 
 def _mesos_files(tasks, file_, client):
