@@ -1,11 +1,26 @@
 import fnmatch
 import itertools
 import os
+import pickle
+import signal
+import sys
+
+# Generated protobuf code
+import agent_pb2 as pba
+import mesos_pb2 as pbm
+
+from functools import partial
+
+from google.protobuf.json_format import MessageToJson, Parse
+
+from threading import Thread
 
 from six.moves import urllib
 
 from dcos import config, http, util
 from dcos.errors import DCOSException, DCOSHTTPException
+
+from queue import Queue
 
 logger = util.get_logger(__name__)
 
@@ -426,6 +441,17 @@ class Master(object):
                     tasks.append(task)
 
         return tasks
+
+    # TODO: Currently waiting on this mapping in state.json to be present.
+    def get_container_id(self, fltr=None):
+        """Returns the container ID for a task ID matching `fltr`
+
+        :param fltr: The task ID which will be mapped to container ID
+        :type fltr: str | None
+        :returns: the container id associated with task id
+        :rtype: str
+        """
+        return 'foo-container-id'
 
     def frameworks(self, inactive=False, completed=False):
         """Returns a list of all frameworks
@@ -910,6 +936,217 @@ class MesosFile(object):
             return "slave:{0}:{1}".format(self._slave['id'], self._path)
         else:
             return "master:{0}".format(self._path)
+
+
+class TaskIO(object):
+    """Object allowing interaction with the Mesos Agent exec functionality.
+
+    :param task: task ID
+    :type task: str
+    :param cmd: the command to fork inside the container
+    :type cmd: str
+    :param interactive: Create a third persistant connection for streaming
+    STDIN
+    :type interactive: bool
+    :param pty: Allocate a PTY for the remote process
+    :type pty: bool
+    """
+
+    def __init__(self, task, interactive, tty, cmd=None):
+        if not task:
+            raise DCOSException(
+                "Must provide <task ID>, example:"
+                " `dcos task exec <task ID> <cmd>")
+
+        # Get the ContainerID and Agent URL assciated with
+        # the given Task ID.
+        client = DCOSClient()
+        master = get_master(client)
+        container_id = master.get_container_id(task)
+        if not container_id:
+            raise DCOSException(
+                "Container ID for task {} not found.".format(task))
+
+        self.container_id = container_id
+
+        # Get the URL to the agent which is running the task
+        task_obj = master.task(task)
+        self.agent_url = master.slave_base_url(task_obj.slave())
+
+        self.interactive = interactive
+        self.tty = tty
+
+        self.output_queue = Queue()
+        self.exit_queue = Queue()
+
+        if interactive:
+            self.input_queue = Queue()
+
+    def IORunner(self):
+        """IORunner handles running the helper methods in this
+        class which enable streaming of STDIN/OUT/ERR back and
+        forth between the CLI client and Mesos Agent API
+        """
+        # If a PTY is present, override SIGWINCH to resize the
+        # the window.
+        if self.tty:
+            signal.signal(signal.SIGWINCH, self._window_resizer)
+
+        if self.interactive:
+            # Local input thread
+            in_thread = Thread(target=self._input_thread)
+            in_thread.daemon = True
+            in_thread.start()
+
+            # Remote input thread
+            in_stream_thread = Thread(
+                target=self._attach_input_stream)
+            in_stream_thread.daemon = True
+            in_stream_thread.start()
+
+        out_stream_thread = Thread(
+            target=self._attach_output_stream)
+        out_stream_thread.daemon = True
+        out_stream_thread.start()
+
+        out_thread = Thread(
+            target=self._output_thread)
+        out_thread.daemon = True
+        out_thread.start()
+
+    try:
+        self.exit_queue.get(block=True, timeout=sys.maxint)
+    except KeyboardInterrupt:
+        pass
+
+    def _initialize_output_message(self):
+        """Decides if this is an `attach` or `exec` on the basis that
+        an exec needs a cmd, and an attach does not.
+
+        :rtype: string - JSON value for initializing the output stream
+        """
+        if self.cmd:
+            init_output_attach_msg = pba.Call()
+            init_output_attach_msg.type = pba.Call.LAUNCH_NESTED_CONTAINER_SESSION
+            init_output_attach_msg.launch_nested_container_session.container_id.value = "foo-container"  # self.container_id
+            init_output_attach_msg.launch_nested_container_session.command.value = "ls"  # self.cmd,
+            # TODO(@kevin) Add pty bool to protobuf spec
+            # nc_msg.tty_info.value = False  # self.tty
+            init_output_attach_msg.launch_nested_container_session.interactive = False  # self.interactive
+
+        else:
+            init_output_attach_msg = pba.Call.attach_container_output()
+            init_output_attach_msg.type = pba.Call.ATTACH_CONTAINER_OUTPUT
+            init_output_attach_msg.container_id = "foo"  # self.container_id
+
+        if not init_output_attach_msg.IsInitialized():
+            raise DCOSException("Some values for initializing the remote "
+                                "output stream are invalid.")
+
+        return MessageToJson(init_output_attach_msg)
+
+    def _attach_output_stream(self):
+        """Sends a request to the Mesos Agent API to attach the
+        STDOUT stream of an already running container.
+        """
+        jsonified_output_attach_msg = self._initialize_output_message()
+
+        req_extra_args = {
+            'stream': True,
+            'headers': {
+                'copntent-type': 'application/json'
+            }
+        }
+
+        response = http.post(
+            self.agent_url,
+            jsonified_output_attach_msg,
+            req_extra_args)
+
+        for chunk in response.itr_content(chunk_size=None):
+            json_response_output_msg = Parse(chunk, pbm.ProcessIO)
+
+            if isinstance(json_response_output_msg, pbm.ProcessIO):
+                self.output_queue.put(json_response_output_msg)
+            # TODO(@malnick)
+            # Should probably elif and raise DCOSException here if the
+            # value returned is not ProcessIO? Or do we ignore any none
+            # processIO types and continue blindly?
+
+        self.output_queue.join()
+        self.exit_queue.put(None)
+
+    def _attach_input_stream(self):
+        def _input_streamer():
+            init_input_attach_msg = pba.Call.attach_container_input()
+            init_input_attach_msg.type = pba.Call.ATTACH_CONTAINER_INPUT
+            init_input_attach_msg.container_id = "foo"  # self.container_id
+            yield MessageToJson(init_input_attach_msg)
+
+            while True:
+                yield self.input_queue.get()
+
+        req_extra_args = {
+            'stream': True,
+            'headers': {
+                'connection': 'keep-alive',
+                'content-type': 'application/json',
+                'transfer-encoding': 'chunked'}}
+
+        response = http.post(
+            self.agent_url,
+            _input_streamer(),
+            req_extra_args)
+
+        if response.status_code != 200:
+            raise DCOSException(
+                "Input stream returned a non 200 status code")
+
+    def _input_thread(self):
+        # For every read of STDIN, take a line
+        for chunk in iter(partial(os.read, sys.stdin.fileno(), 1024), ''):
+            # Create a ProcessIO message from proto spec
+            input_msg = pbm.ProcessIO()
+            input_msg.type = pbm.Data.Type.STDIN
+            input_msg.data = chunk
+            # Create a JSON object from the message
+            jsonified_input_msg = MessageToJson(chunk)
+            debug(jsonified_input_msg)
+            # Dump input msg to the queue for processing
+            self.input_queue.put(jsonified_input_msg)
+
+    def _output_thread(self):
+        while True:
+            # Get message from output queue
+            output_json = self.output_queue.get()
+            # Transform from JSON to protobuf message
+            processio_msg = pbm.ProcessIO()
+            output_msg = Parse(output_json, processio_msg)
+
+            if isinstance(output_msg, pbm.ProcessIO.type.STDOUT):
+                sys.stdout.write(output_msg.data)
+            elif isinstance(output_msg, pbm.ProcessIO.type.STDERR):
+                sys.stderr.write(output_msg.data)
+
+            # Close queue assuming last msg was EOF
+            self.output_queue.task_done()
+
+    def _window_resizer(self):
+        rows, columns = os.popen('stty size', 'r').read().split()
+
+        window_msg = pba.TtyInfo.WindowSize(
+            rows,
+            columns)
+
+        # resize_me_msg = agent_pb2.Call.LaunchNestedContainerSession.TtyInfo(
+        #    AttachContainerMessage.CONTROL_MSG,
+        #    control_msg)
+
+        self.input_queue.put(pickle.dumps(window_msg))
+
+
+def debug(msg):
+    print("MSG: {}".format(msg))
 
 
 def parse_pid(pid):

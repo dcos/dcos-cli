@@ -4,11 +4,20 @@ Description:
 Usage:
     dcos task --help
     dcos task --info
+    dcos task attach [--interactive --pty] [<task>]
+    dcos task exec [--interactive --pty] [<task>] [<cmd>]
     dcos task log [--completed --follow --lines=N] [<task>] [<file>]
     dcos task ls [--long --completed] [<task>] [<path>]
     dcos task [--completed --json <task>]
 
 Command:
+    attach
+        Attach to the STDOUT/ERR and optionally STDIN of an already running task 
+        executed by Mesos
+
+    exec
+        Fork a process inside the namespace of a container with a given <task_id>
+
     log
         Print the task log. By default, the 10 most recent task logs from stdout
         are printed.
@@ -22,6 +31,8 @@ Options:
         Print usage.
     --info
         Print a short description of this subcommand.
+    --interactive
+        Attach a STDIN stream to the remote command for interactive session
     --follow
         Dynamically update the log.
     --json
@@ -30,10 +41,14 @@ Options:
         Print the last N lines. The default is 10 lines.
     --long
         Print full Mesos sandbox file attributes.
+    --pty
+        Allocate a remote PTY to the process exec'ed in the remote container 
     --version
         Print version information.
 
 Positional Arguments:
+    <cmd>
+        The command to execute inside the remote container, example: `/bin/bash`.
     <file>
         Specify the sandbox file to print. The default is stdout.
     <path>
