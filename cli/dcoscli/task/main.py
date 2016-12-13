@@ -26,28 +26,41 @@ def main(argv):
 
 def docopt_wrapper(usage, real_usage, **keywords):
     """ A wrapper around the real docopt parser.
-    Redirects a failed exec command to /dev/null and prints the proper
-    real_usage message, instead of just the usage string from dcos-task-exec
+    Redirects a failed command to /dev/null and prints the proper
+    real_usage message, instead of just the usage string from usage.
 
-    :param usage: task id filter
+    :param usage: The simplified usage string to parse
     :type usage: str
-    :param real_usage: If True, include completed tasks
-    :type real_usage: bool
-    :param keywords: If True, output json.  Otherwise, output a human
-                  readable table.
-    :type keywords: bool
-    :returns: process return code
+    :param real_usage: The original usage string to parse
+    :type real_usage: str
+    :param keywords: The keyword arguments to pass to docopt
+    :type keywords: dict
+    :returns: The parsed arguments
+    :rtype: dict
     """
+
+    base_subcommand = keywords.pop('base_subcommand')
+    subcommand = keywords.pop('subcommand')
 
     try:
         stdout = sys.stdout
 
+        # We run docopt twice (once with the real usage string and
+        # once with the modified usage string) in order to populate
+        # the 'real' arguments properly.
         with open(os.devnull, 'w') as nullfile:
             sys.stdout = nullfile
-            arguments = docopt.docopt(usage, **keywords)
+            real_arguments = docopt.docopt(
+                real_usage,
+                argv=[base_subcommand])
+            arguments = docopt.docopt(
+                usage,
+                **keywords)
             sys.stdout = stdout
 
-        return arguments
+        real_arguments.update(arguments)
+        real_arguments[subcommand] = True
+        return real_arguments
 
     except docopt.DocoptExit:
         sys.stdout = stdout
@@ -78,33 +91,14 @@ def _main(argv):
     # 'exec' without docopt trying to match them to a named parameter
     # for the 'dcos' command itself.
     if len(argv) > 1 and argv[1] == "exec":
-        usage = """
-        Usage:
-            dcos-task-exec [--interactive --tty] <task> <cmd> [<args>...]
-
-        Options:
-            -i, --interactive
-            -t, --tty
-        """
         args = docopt_wrapper(
-            usage,
+            default_doc("task_exec"),
             default_doc("task"),
             argv=argv[2:],
             version="dcos-task version {}".format(dcoscli.version),
-            options_first=True)
-
-        # Unfortunately, we have to set the argument below to
-        # True/False because docopt does the same internally, and the
-        # CLI expects them to be set.
-        #
-        # TODO(slocke): If more commands are added to
-        # /dcos-cli/cli/dcoscli/data/help/task.txt they will need to
-        # be set to False here as well.
-        args['task'] = True
-        args['exec'] = True
-        args['log'] = False
-        args['ls'] = False
-        args['--info'] = False
+            options_first=True,
+            base_subcommand="task",
+            subcommand="exec")
     else:
         args = docopt.docopt(
             default_doc("task"),

@@ -27,7 +27,7 @@ Options:
     --info
         Print a short description of this subcommand.
     -i, --interactive
-        Attach a STDIN stream to the remote command for interactive session.
+        Attach a STDIN stream to the remote command for an interactive session.
     -t, --tty
         Attach a tty to the remote stream.
     --follow
