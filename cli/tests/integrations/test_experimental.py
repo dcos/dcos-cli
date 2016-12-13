@@ -20,8 +20,8 @@ data_dir = os.path.join(
 build_data_dir = os.path.join(
     data_dir, 'package_build'
 )
-cassandra_path = os.path.join(
-    build_data_dir, 'cassandra', 'package.json'
+runnable_package_path = os.path.join(
+    build_data_dir, 'helloworld', 'package.json'
 )
 
 
@@ -184,7 +184,7 @@ def test_package_build_where_build_definition_has_badly_formed_reference():
 @pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
 def test_package_add_argument_exclussion():
     command = command_base + ['package', 'add',
-                              '--dcos-package', cassandra_path,
+                              '--dcos-package', runnable_package_path,
                               '--package-version', '3.0']
     code, out, err = exec_command(command)
     assert code == 1
@@ -198,9 +198,10 @@ def test_package_add_argument_exclussion():
 @pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
 def test_service_start_happy_path():
     with _temporary_directory() as output_directory:
-        cassandra_package = _package_build(cassandra_path, output_directory)
-        name, version = _package_add(cassandra_package)
-        _wait_for_package_add_local(cassandra_package)
+        runnable_package = _package_build(
+            runnable_package_path, output_directory)
+        name, version = _package_add(runnable_package)
+        _wait_for_package_add_local(runnable_package)
         try:
             _service_start(name, version)
         finally:
@@ -210,9 +211,10 @@ def test_service_start_happy_path():
 @pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
 def test_service_start_happy_path_json():
     with _temporary_directory() as output_directory:
-        cassandra_package = _package_build(cassandra_path, output_directory)
-        name, version = _package_add(cassandra_package, expects_json=True)
-        _wait_for_package_add_local(cassandra_package)
+        runnable_package = _package_build(
+            runnable_package_path, output_directory)
+        name, version = _package_add(runnable_package, expects_json=True)
+        _wait_for_package_add_local(runnable_package)
         try:
             _service_start(name, version, expects_json=True)
         finally:
@@ -323,6 +325,8 @@ def _service_start(package_name,
                                  options,
                                  json=expects_json)
     code, out, err = exec_command(command)
+    assert code == 0
+    assert err == b''
 
     if expects_json:
         expected = {
@@ -337,8 +341,6 @@ def _service_start(package_name,
             package_name, package_version).encode()
         assert out == stdout, (out, stdout)
 
-    assert code == 0
-    assert err == b''
     running_services = _service_list()
     assert package_name in map(lambda pkg: pkg['name'], running_services)
 
