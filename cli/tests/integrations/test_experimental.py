@@ -192,13 +192,7 @@ def test_package_add_argument_exclussion():
 
     stdout = out.decode()
     not_recognized = 'Command not recognized'
-    add_command = """\
-    dcos experimental package add (--dcos-package=<dcos-package> |
-                                    (--package-name=<package-name>
-                                    """
-    """[--package-version=<package-version>]))"""
     assert not_recognized in stdout
-    assert add_command in stdout
 
 
 @pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
@@ -207,8 +201,22 @@ def test_service_start_happy_path():
         cassandra_package = _package_build(cassandra_path, output_directory)
         name, version = _package_add(cassandra_package)
         _wait_for_package_add_local(cassandra_package)
-        _service_start(name, version)
-        _service_stop(name)
+        try:
+            _service_start(name, version)
+        finally:
+            _service_stop(name)
+
+
+@pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
+def test_service_start_happy_path_json():
+    with _temporary_directory() as output_directory:
+        cassandra_package = _package_build(cassandra_path, output_directory)
+        name, version = _package_add(cassandra_package, expects_json=True)
+        _wait_for_package_add_local(cassandra_package)
+        try:
+            _service_start(name, version, expects_json=True)
+        finally:
+            _service_stop(name)
 
 
 @pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
@@ -216,19 +224,32 @@ def test_service_start_happy_path_from_universe():
     package_name = 'linkerd'
     name, version = _package_add_universe(package_name)
     _wait_for_package_add_remote(name, version)
-    _service_start(name, version)
-    _service_stop(name)
+    try:
+        _service_start(name, version)
+    finally:
+        _service_stop(name)
+
+
+@pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
+def test_service_start_happy_path_from_universe_json():
+    package_name = 'linkerd'
+    name, version = _package_add_universe(package_name, expects_json=True)
+    _wait_for_package_add_remote(name, version)
+    try:
+        _service_start(name, version)
+    finally:
+        _service_stop(name)
 
 
 @pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
 def test_service_start_by_starting_same_service_twice():
-    # Assumes that cassandra has been added in the past
-    name = 'cassandra'
-    version = '1.0.20-3.0.10'
-    _service_start(name, version)
-    stderr = b'Package is already installed\n'
-    _service_start_failure(name, version, stderr=stderr)
-    _service_stop(name)
+    name, version = _package_add_universe('linkerd')
+    try:
+        _service_start(name, version)
+        stderr = b'Package is already installed\n'
+        _service_start_failure(name, version, stderr=stderr)
+    finally:
+        _service_stop(name)
 
 
 @pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
@@ -245,40 +266,44 @@ def _service_list_cmd():
     return ['dcos', 'package', 'list', '--json']
 
 
-def _service_start_cmd(package_name, package_version=None, options=None):
-    command = command_base + ['service', 'start', package_name]
-    if package_version is not None:
-        command += ['--package-version', package_version]
-    if options is not None:
-        command += ['--options', options]
-    return command
+def _service_start_cmd(package_name,
+                       package_version=None,
+                       options=None,
+                       json=False):
+    return (command_base
+            + (['service', 'start'])
+            + (['--json'] if json else [])
+            + ([package_name])
+            + (['--package-version', package_version]
+               if package_version else [])
+            + (['--options', options] if options else []))
 
 
-def _package_add_cmd(dcos_package=None, package_name=None, package_version=None):
-    command = command_base + ['package', 'add']
-    if dcos_package is not None:
-        command += ['--dcos-package', dcos_package]
-    if package_name is not None:
-        command += ['--package-name', package_name]
-    if package_version is not None:
-        command += ['--package-version', package_version]
-    return command
+def _package_add_cmd(dcos_package=None,
+                     package_name=None,
+                     package_version=None,
+                     json=False):
+    return (command_base
+            + (['package', 'add'])
+            + (['--json'] if json else [])
+            + (['--dcos-package', dcos_package] if dcos_package else [])
+            + (['--package-name', package_name] if package_name else [])
+            + (['--package-version', package_version]
+               if package_version else []))
 
 
 def _package_build_cmd(build_definition, output_directory=None):
-    command = command_base + ['package', 'build']
-    if output_directory is not None:
-        command += ['--output-directory', output_directory]
-    command += [build_definition]
-    return command
+    return (command_base
+            + (['package', 'build'])
+            + (['--output-directory', output_directory]
+               if output_directory else [])
+            + ([build_definition]))
 
 
 def _service_stop(package_name):
     command = _service_stop_cmd(package_name)
-    code, out, err = exec_command(command)
+    exec_command(command)
     watch_all_deployments()
-    assert code == 0
-    return err == b''
 
 
 def _service_list():
@@ -289,12 +314,31 @@ def _service_list():
     return json.loads(out.decode())
 
 
-def _service_start(package_name, package_version=None, options=None):
-    command = _service_start_cmd(package_name, package_version, options)
+def _service_start(package_name,
+                   package_version,
+                   options=None,
+                   expects_json=False):
+    command = _service_start_cmd(package_name,
+                                 package_version,
+                                 options,
+                                 json=expects_json)
     code, out, err = exec_command(command)
+
+    if expects_json:
+        expected = {
+            'packageName': package_name,
+            'packageVersion': package_version
+        }
+        actual = json.loads(out.decode())
+        actual.pop('appId')
+        assert expected == actual, (expected, actual)
+    else:
+        stdout = 'The service [{}] version [{}] has been started\n'.format(
+            package_name, package_version).encode()
+        assert out == stdout, (out, stdout)
+
     assert code == 0
     assert err == b''
-    assert out == b''
     running_services = _service_list()
     assert package_name in map(lambda pkg: pkg['name'], running_services)
 
@@ -314,26 +358,51 @@ def _service_start_failure(package_name,
                    stderr=stderr)
 
 
-def _package_add(package):
-    command = _package_add_cmd(dcos_package=package)
+def _package_add(package, expects_json=False):
+    command = _package_add_cmd(dcos_package=package, json=expects_json)
     code, out, err = exec_command(command)
     assert code == 0
     assert err == b''
-    metadata = json.loads(out.decode())
-    metadata.pop('releaseVersion')
-    assert metadata == _get_json_in_zip(package, 'metadata.json')
+    if expects_json:
+        metadata = json.loads(out.decode())
+        metadata.pop('releaseVersion')
+        assert metadata == _get_json_in_zip(package, 'metadata.json')
+    else:
+        metadata = _get_json_in_zip(package, 'metadata.json')
+        stdout = (
+            'The package [{}] version [{}] has been added to DC/OS\n'.format(
+                metadata['name'], metadata['version'])).encode()
+        assert out == stdout, (out, stdout)
+
     return metadata['name'], metadata['version']
 
 
-def _package_add_universe(package_name, package_version=None):
+def _package_add_universe(package_name,
+                          package_version=None,
+                          expects_json=False):
     command = _package_add_cmd(package_name=package_name,
-                               package_version=package_version)
-
+                               package_version=package_version,
+                               json=expects_json)
     code, out, err = exec_command(command)
     assert code == 0
     assert err == b''
-    metadata = json.loads(out.decode())
-    return metadata['name'], metadata['version']
+    if expects_json:
+        metadata = json.loads(out.decode())
+        name = metadata['name']
+        version = metadata['version']
+    else:
+        name_version = re.search("\[(.*)\].*\[(.*)\]", out.decode())
+        name = name_version.group(1)
+        version = name_version.group(2)
+        stdout = (
+            'The package [{}] version [{}] has been added to DC/OS\n'.format(
+                name, version)).encode()
+        assert out == stdout, (out, stdout)
+
+    assert name == package_name
+    assert version == package_version if package_version else True
+
+    return name, version
 
 
 def _package_build(build_definition_path,

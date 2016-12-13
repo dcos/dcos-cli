@@ -36,8 +36,8 @@ class ServiceManager(object):
         :type package_version: None | str
         :param options: the options for the service
         :type options: None | dict
-        :return: json encoded response of cosmos' service/start endpoint
-        :rtype: dict
+        :return: the response of cosmos' service/start endpoint
+        :rtype: requests.Response
         """
         endpoint = 'service/start'
         json = {'packageName': package_name}
