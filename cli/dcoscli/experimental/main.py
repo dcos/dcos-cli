@@ -15,7 +15,7 @@ import six
 import dcoscli
 from dcos import cmds, emitting, http, options, servicemanager, util
 from dcos.errors import DCOSException
-from dcos.package import get_package_manager, get_user_options
+from dcos.package import get_package_manager
 from dcos.util import md5_hash_file
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage, formatted_cli_version
@@ -384,7 +384,7 @@ def _service_start(json, package_name, package_version, options_path):
     :rtype: int
     """
     manager = servicemanager.ServiceManager()
-    options = get_user_options(options_path) if options_path else None
+    options = util.read_file_json(options_path) if options_path else None
     response = manager.start_service(
         package_name, package_version, options)
     response_json = response.json()

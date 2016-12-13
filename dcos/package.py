@@ -1,5 +1,4 @@
 import itertools
-import os
 
 from dcos import cosmos, emitting, packagemanager, subcommand, util
 from dcos.errors import DCOSException
@@ -187,21 +186,3 @@ def get_package_manager():
                "cluster. Please downgrade the CLI to an older version: "
                "https://dcos.io/docs/usage/cli/update/#downgrade")
         raise DCOSException(msg)
-
-
-def get_user_options(path):
-    """ Read the options at the given file path.
-
-    :param path: file path
-    :type path: None | str
-    :returns: options
-    :rtype: dict
-    """
-    if path is None:
-        return {}
-    else:
-        # Expand ~ in the path
-        path = os.path.expanduser(path)
-
-        with util.open_file(path) as options_file:
-            return util.load_json(options_file)

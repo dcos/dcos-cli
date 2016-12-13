@@ -8,7 +8,7 @@ import pkg_resources
 import dcoscli
 from dcos import cmds, emitting, http, options, package, subcommand, util
 from dcos.errors import DCOSException
-from dcos.package import get_package_manager, get_user_options
+from dcos.package import get_package_manager
 from dcoscli import tables
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
@@ -252,7 +252,7 @@ def _describe(package_name,
         render = True
 
     # Fail early if options file isn't valid
-    user_options = get_user_options(options_path)
+    user_options = util.read_file_json(options_path)
 
     package_manager = get_package_manager()
     pkg = package_manager.get_package_version(package_name, package_version)
@@ -334,7 +334,7 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
         cli = app = True
 
     # Fail early if options file isn't valid
-    user_options = get_user_options(options_path)
+    user_options = util.read_file_json(options_path)
 
     package_manager = get_package_manager()
     pkg = package_manager.get_package_version(package_name, package_version)
