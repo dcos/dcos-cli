@@ -139,7 +139,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['task', 'exec'],
-            arg_keys=['<task>', '<cmd>', '--interactive', '--tty', '<args>'],
+            arg_keys=['<task>', '<cmd>', '<args>', '--interactive', '--tty'],
             function=_exec),
 
         cmds.Command(
@@ -305,7 +305,7 @@ def _ls(task, path, long_, completed):
                           for file_ in files))
 
 
-def _exec(task, cmd, interactive=False, tty=False, args=None):
+def _exec(task, cmd, args=None, interactive=False, tty=False):
     """ Launch a process inside a container with the given <task_id>
 
     :param task: task ID pattern to match
@@ -318,7 +318,7 @@ def _exec(task, cmd, interactive=False, tty=False, args=None):
     :type args: str
     """
 
-    task_io = mesos.TaskIO(task, cmd, interactive, tty, args)
+    task_io = mesos.TaskIO(task, cmd, args, interactive, tty)
     task_io.run()
 
 

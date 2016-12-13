@@ -977,24 +977,25 @@ class MesosFile(object):
 
 
 class TaskIO(object):
-    """Object allowing interaction with the Mesos Agent exec functionality.
+    """Object used to stream I/O between a
+    running Mesos task and the local terminal.
 
     :param task: task ID
     :type task: str
-    :param interactive: whether to attach stdin of the current terminal to the
-    new command being forked
-    :type interactive: bool
-    :param tty: whether to allocate a tty for this command
-    :type tty: bool
-    :param cmd: the command to fork inside the container
+    :param cmd: a command to launch inside the task's container
     :type cmd: str
     :param args: Additional arguments for the command
     :type args: str
+    :param interactive: whether to attach STDIN of the current
+                        terminal to the new command being launched
+    :type interactive: bool
+    :param tty: whether to allocate a tty for this command and attach
+                the local terminal to it
+    :type tty: bool
     """
 
-    def __init__(self, task_id, cmd=None,
-                 interactive=False, tty=False, args=None):
-
+    def __init__(self, task_id, cmd=None, args=None,
+                 interactive=False, tty=False):
         # Store relevant parameters of the call for later.
         self.cmd = cmd
         self.interactive = interactive
@@ -1029,7 +1030,7 @@ class TaskIO(object):
             lambda s: json.loads(s.decode("UTF-8")))
 
         # Set up queues to send messages between threads used for
-        # reading/writing to stdin/stdout/stderr and threads
+        # reading/writing to STDIN/STDOUT/STDERR and threads
         # sending/receiving data over the network.
         self.input_queue = Queue()
         self.output_queue = Queue()
@@ -1050,9 +1051,12 @@ class TaskIO(object):
         self.exception = None
 
     def run(self):
-        """Running the helper threads in this class which enable
-           streaming of STDIN/STDOUT/STDERR back and forth between the
-           CLI and the Mesos Agent API.
+        """Run the helper threads in this class which enable streaming
+        of STDIN/STDOUT/STDERR between the CLI and the Mesos Agent API.
+
+        If a tty is requested, we take over the current terminal and
+        put it into raw mode. We make sure to reset the terminal back
+        to its original settings before exiting.
         """
 
         # Without a TTY.
@@ -1102,6 +1106,15 @@ class TaskIO(object):
             raise self.exception
 
     def _thread_wrapper(self, func):
+        """A wrapper around all threads used in this class
+
+        If a thread throws an exception, it will unblock the main
+        thread and save the exception in a class variable. The main
+        thread will then rethrow the exception before exiting.
+
+        :param func: The start function for the thread
+        :type func: function
+        """
         try:
             func()
         except Exception as e:
@@ -1109,6 +1122,8 @@ class TaskIO(object):
             self.exit_event.set()
 
     def _start_threads(self):
+        """Start all threads associated with this class
+        """
         if self.interactive:
             thread = threading.Thread(
                 target=self._thread_wrapper,
@@ -1143,6 +1158,7 @@ class TaskIO(object):
     def _launch_nested_container_session(self):
         """Sends a request to the Mesos Agent to launch a new
         nested container and attach to its output stream.
+        The output stream is then sent back in the response.
         """
 
         message = {
@@ -1209,7 +1225,7 @@ class TaskIO(object):
         self.exit_event.set()
 
     def _attach_container_input(self):
-        """Streams data from _input_streamer to the agent_url.
+        """Streams all input data (e.g. STDIN) from the client to the agent
         """
 
         def _input_streamer():
@@ -1258,8 +1274,8 @@ class TaskIO(object):
             **req_extra_args)
 
     def _input_thread(self):
-        """Reads from stdin and places a message with that data
-        onto the input_queue. Expects to be running as a daemon.
+        """Reads from STDIN and places a message
+        with that data onto the input_queue.
         """
 
         message = {
@@ -1289,8 +1305,7 @@ class TaskIO(object):
 
     def _output_thread(self):
         """Reads from the output_queue and writes the data
-        to the appropriate stdout or stderr.
-        Expects to be running as a daemon.
+        to the appropriate STDOUT or STDERR.
         """
 
         while True:
@@ -1310,7 +1325,7 @@ class TaskIO(object):
             self.output_queue.task_done()
 
     def _heartbeat_thread(self):
-        """Generates a heartbeat message to send of the
+        """Generates a heartbeat message to send over the
         ATTACH_CONTAINER_INPUT stream every `interval` seconds and
         inserts it in the input queue.
         """
@@ -1336,7 +1351,9 @@ class TaskIO(object):
 
     def _window_resize(self, signum, frame):
         """Signal handler for SIGWINCH.
-        Sends a message when either dimension of our terminal changes.
+
+        Generates a message with the current demensions of the
+        terminal and puts it in the input_queue.
 
         :param signum: the signal number being handled
         :type signum: int
