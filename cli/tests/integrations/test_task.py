@@ -122,8 +122,6 @@ def test_log_single_file():
     assert len(stdout.decode('utf-8').split('\n')) > 0
 
 
-@pytest.mark.skipif('DCOS_PODS_ENABLED' not in os.environ,
-                    reason="Requires pods")
 def test_log_pod_task():
     good_pod_file = 'tests/data/marathon/pods/good.json'
     with pod(good_pod_file, 'good-pod'):
@@ -132,11 +130,11 @@ def test_log_pod_task():
             ['dcos', 'task', 'log', 'good-container', 'stderr'])
 
         # pod task log are not executor logs, so normal executor stderr
-        # logs shouldn't be seen and this pod shoudn't have any logging
+        # logs shouldn't be seen and this pod shouldn't have any logging
         # to stderr
-        assert returncode == 1
-        assert stderr == b'No files exist. Exiting.\n'
-        assert stdout == b''
+        assert returncode == 0
+        assert stderr == b'No logs for this task\n'
+        assert stdout == b'\n'
 
 
 def test_log_missing_file():

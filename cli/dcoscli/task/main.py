@@ -151,10 +151,10 @@ def _log(follow, completed, lines, task, file_):
     mesos_files = _mesos_files(tasks, file_, client)
     if not mesos_files:
         if fltr is None:
-            msg = "No tasks found. Exiting"
+            msg = "No tasks found. Exiting."
         else:
             msg = "No matching tasks. Exiting."
-        raise DCOSException('No matching tasks. Exiting.')
+        raise DCOSException(msg)
 
     log.log_files(mesos_files, follow, lines)
 
