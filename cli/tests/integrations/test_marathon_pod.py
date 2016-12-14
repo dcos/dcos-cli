@@ -1,9 +1,6 @@
 import json
-import os
 import re
 import time
-
-import pytest
 
 from .common import (add_pod, assert_command, exec_command,
                      file_json_ast, pod, pods, remove_pod,
@@ -16,8 +13,6 @@ from ..fixtures.marathon import (DOUBLE_POD_FILE_PATH, DOUBLE_POD_ID,
                                  TRIPLE_POD_ID, UNGOOD_POD_FILE_PATH,
                                  UPDATED_GOOD_POD_FILE_PATH)
 
-_PODS_ENABLED = 'DCOS_PODS_ENABLED' in os.environ
-
 _POD_BASE_CMD = ['dcos', 'marathon', 'pod']
 _POD_ADD_CMD = _POD_BASE_CMD + ['add']
 _POD_KILL_CMD = _POD_BASE_CMD + ['kill']
@@ -27,21 +22,18 @@ _POD_SHOW_CMD = _POD_BASE_CMD + ['show']
 _POD_UPDATE_CMD = _POD_BASE_CMD + ['update']
 
 
-@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_add_from_file():
     add_pod(GOOD_POD_FILE_PATH)
     remove_pod(GOOD_POD_ID, force=False)
     watch_all_deployments()
 
 
-@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_add_from_stdin():
     _pod_add_from_stdin(GOOD_POD_FILE_PATH)
     remove_pod(GOOD_POD_ID)
     watch_all_deployments()
 
 
-@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_list():
     expected_json = pod_list_fixture()
 
@@ -53,7 +45,6 @@ def test_pod_list():
         _assert_pod_list_table()
 
 
-@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_show():
     expected_json = file_json_ast(GOOD_POD_STATUS_FILE_PATH)
 
@@ -70,7 +61,6 @@ def test_pod_update_does_not_support_properties():
     assert stderr == b''
 
 
-@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_update_from_stdin():
     with pod(GOOD_POD_FILE_PATH, GOOD_POD_ID):
         # The deployment will never complete
@@ -86,7 +76,6 @@ def test_pod_update_from_stdin():
         watch_all_deployments()
 
 
-@pytest.mark.skipif(not _PODS_ENABLED, reason="Requires pods")
 def test_pod_kill():
     with pod(POD_KILL_FILE_PATH, POD_KILL_ID):
         kill_1, keep, kill_2 = _get_pod_instance_ids(POD_KILL_ID, 3)
@@ -207,7 +196,7 @@ def _assert_pod_list_table():
 
     stdout_lines = stdout.decode('utf-8').split('\n')
 
-    pattern = r'ID\+TASKS +INSTANCES +VERSION +STATUS +STATUS SINCE *'
+    pattern = r'ID\+TASKS +INSTANCES +VERSION +STATUS +STATUS SINCE +WAITING *'
     assert re.fullmatch(pattern, stdout_lines[0])
 
     assert stdout_lines[1].startswith('/double-pod')

@@ -191,6 +191,21 @@ def _cmds():
             function=subcommand.pod_kill),
 
         cmds.Command(
+            hierarchy=['marathon', 'debug', 'list'],
+            arg_keys=['--json'],
+            function=subcommand.debug_list),
+
+        cmds.Command(
+            hierarchy=['marathon', 'debug', 'summary'],
+            arg_keys=['<app-id>', '--json'],
+            function=subcommand.debug_summary),
+
+        cmds.Command(
+            hierarchy=['marathon', 'debug', 'details'],
+            arg_keys=['<app-id>', '--json'],
+            function=subcommand.debug_details),
+
+        cmds.Command(
             hierarchy=['marathon', 'about'],
             arg_keys=[],
             function=subcommand.about),
@@ -381,6 +396,8 @@ class MarathonSubcommand(object):
             emitter.publish(apps)
         else:
             deployments = client.get_deployments()
+            queued_apps = client.get_queued_apps()
+            _enhance_row_with_overdue_information(apps, queued_apps)
             table = tables.app_table(apps, deployments)
             output = six.text_type(table)
             if output:
@@ -904,6 +921,8 @@ class MarathonSubcommand(object):
         self._ensure_pods_support(marathon_client)
 
         pods = marathon_client.list_pod()
+        queued_apps = marathon_client.get_queued_apps()
+        _enhance_row_with_overdue_information(pods, queued_apps)
         emitting.publish_table(emitter, pods, tables.pod_table, json_)
         return 0
 
@@ -965,6 +984,69 @@ class MarathonSubcommand(object):
         marathon_client.kill_pod_instances(pod_id, instance_ids)
         return 0
 
+    def debug_list(self, json_):
+        """
+        :param json_: output json if True
+        :type json_: bool
+        :returns: process return code
+        :rtype: int
+        """
+
+        client = self._create_marathon_client()
+        queued_apps = client.get_queued_apps()
+
+        emitting.publish_table(emitter, queued_apps,
+                               tables.queued_apps_table, json_)
+        return 0
+
+    def debug_details(self, app_id, json_):
+        """
+        :param app_id: the Marathon ID to display details
+        :type app_id: string
+        :param json_: output json if True
+        :type json_: bool
+        :returns: process return code
+        :rtype: int
+        """
+
+        client = self._create_marathon_client()
+        queued_app = client.get_queued_app(app_id)
+
+        if queued_app:
+            emitting.publish_table(
+                emitter, queued_app,
+                tables.queued_app_details_table, json_)
+        else:
+            raise DCOSException("No apps found in Marathon queue")
+
+        return 0
+
+    def debug_summary(self, app_id, json_):
+        """
+        :param app_id: the Marathon ID to display details
+        :type app_id: string
+        :param json_: output json if True
+        :type json_: bool
+        :returns: process return code
+        :rtype: int
+        """
+
+        client = self._create_marathon_client()
+        queued_app = client.get_queued_app(app_id)
+
+        if queued_app:
+            if queued_app.get('processedOffersSummary'):
+                emitting.publish_table(
+                    emitter, queued_app,
+                    tables.queued_app_table, json_)
+            else:
+                msg = "This command is not supported on your cluster"
+                raise DCOSException(msg)
+        else:
+            raise DCOSException("No apps found in Marathon queue")
+
+        return 0
+
     @staticmethod
     def _ensure_pods_support(marathon_client):
         """Raises an exception if the given client is communicating with a
@@ -978,6 +1060,31 @@ class MarathonSubcommand(object):
         if not marathon_client.pod_feature_supported():
             msg = 'This command is not supported by your version of Marathon'
             raise DCOSException(msg)
+
+
+def _enhance_row_with_overdue_information(rows, queued_apps):
+    """Calculates if configured `backoff` duration for this
+    app or pod definition was exceeded. In that case this application
+    is marked as `overdue`.
+    If the app or pod inside this row should be
+
+    :param rows: list of rows
+    :type rows: []
+    :param queued_apps: list of
+    :type queued_apps: []
+    :returns: true if pod is overdue, false otherwise
+    :rtype: bool
+    """
+
+    for row in rows:
+        queued_app = next(
+            (app for app in queued_apps
+             if row.get('id') == marathon.get_app_or_pod_id(app)),
+            None)
+        row['overdue'] = queued_app.get('delay', {}) \
+            .get('overdue', False) if queued_app else False
+
+    return rows
 
 
 def _calculate_version(client, app_id, version):

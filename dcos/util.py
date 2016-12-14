@@ -9,6 +9,7 @@ import os
 import platform
 import re
 import shutil
+import stat
 import sys
 import tempfile
 import time
@@ -159,7 +160,48 @@ def read_file(path):
     :rtype: str
     """
     if not os.path.isfile(path):
+        raise DCOSException('path [{}] is not a file'.format(path))
+
+    with open_file(path) as file_:
+        return file_.read()
+
+
+def enforce_file_permissions(path):
+    """Enfore 600 permissions on file
+
+    :param path: Path to the TOML file
+    :type path: str
+    :rtype: None
+    """
+
+    if not os.path.isfile(path):
         raise DCOSException('Path [{}] is not a file'.format(path))
+
+    # Unix permissions are incompatible with windows
+    # TODO: https://github.com/dcos/dcos-cli/issues/662
+    if sys.platform == 'win32':
+        return
+    else:
+        permissions = oct(stat.S_IMODE(os.lstat(path).st_mode))
+        if permissions not in ['0o600', '0600']:
+            msg = (
+                "Permissions '{}' for configuration file '{}' are too open. "
+                "File must only be accessible by owner. "
+                "Aborting...".format(permissions, path))
+            raise DCOSException(msg)
+
+
+def read_file_secure(path):
+    """
+    Enfore 600 permissions when reading file
+
+    :param path: path to file
+    :type path: str
+    :returns: contents of file
+    :rtype: str
+    """
+
+    enforce_file_permissions(path)
 
     with open_file(path) as file_:
         return file_.read()

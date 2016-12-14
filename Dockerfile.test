@@ -7,6 +7,11 @@ RUN apt-get update && apt-get install -y \
   httpie \
   jq \
   make \
+  build-essential \
+  libssl-dev \
+  libffi-dev \
+  python-dev \
+  python3-pip \
   python3-venv \
   openssh-client \
   git \

@@ -187,13 +187,16 @@ def test_show_bad_app_version():
             'zero-instance-app',
             'tests/data/marathon/apps/update_zero_instance_sleep.json')
 
-        stderr = (b'Error: Invalid format: "20:39:32.972Z" is malformed at '
-                  b'":39:32.972Z"\n')
-        assert_command(
+        returncode, stdout, stderr = exec_command(
             ['dcos', 'marathon', 'app', 'show', '--app-version=20:39:32.972Z',
-             'zero-instance-app'],
-            returncode=1,
-            stderr=stderr)
+             'zero-instance-app'])
+        assert returncode == 1
+        assert stdout == b''
+        assert stderr.startswith(b'Error while fetching')
+        pattern = (b"""{"message":"Invalid format: """
+                   b"""\\"20:39:32.972Z\\" is malformed"""
+                   b""" at \\":39:32.972Z\\""}\n""")
+        assert stderr.endswith(pattern)
 
 
 def test_show_bad_relative_app_version():
@@ -656,7 +659,6 @@ def test_stop_task():
         _stop_task(task_id)
 
 
-@pytest.mark.skip(reason="https://mesosphere.atlassian.net/browse/DCOS-10325")
 def test_stop_task_wipe():
     with _zero_instance_app():
         _start_app('zero-instance-app', 1)
