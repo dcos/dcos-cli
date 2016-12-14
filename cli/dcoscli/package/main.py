@@ -252,7 +252,7 @@ def _describe(package_name,
         render = True
 
     # Fail early if options file isn't valid
-    user_options = _user_options(options_path)
+    user_options = util.read_file_json(options_path)
 
     package_manager = get_package_manager()
     pkg = package_manager.get_package_version(package_name, package_version)
@@ -279,24 +279,6 @@ def _describe(package_name,
         emitter.publish(pkg_json)
 
     return 0
-
-
-def _user_options(path):
-    """ Read the options at the given file path.
-
-    :param path: file path
-    :type path: str
-    :returns: options
-    :rtype: dict
-    """
-    if path is None:
-        return {}
-    else:
-        # Expand ~ in the path
-        path = os.path.expanduser(path)
-
-        with util.open_file(path) as options_file:
-            return util.load_json(options_file)
 
 
 def confirm(prompt, yes):
@@ -352,7 +334,7 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
         cli = app = True
 
     # Fail early if options file isn't valid
-    user_options = _user_options(options_path)
+    user_options = util.read_file_json(options_path)
 
     package_manager = get_package_manager()
     pkg = package_manager.get_package_version(package_name, package_version)
