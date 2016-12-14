@@ -19,8 +19,8 @@ def cosmos_error(fn):
 
     :param fn: function to check for errors from cosmos
     :type fn: function
-    :rtype: Response
-    :returns: Response
+    :rtype: requests.Response
+    :returns: requests.Response
     """
 
     @functools.wraps(fn)
@@ -28,7 +28,7 @@ def cosmos_error(fn):
         """Returns response from cosmos or raises exception
 
         :returns: Response or raises Exception
-        :rtype: valid response
+        :rtype: requests.Response
         """
         error_media_type = 'application/vnd.dcos.package.error+json;' \
                            'charset=utf-8;version=v1'
@@ -252,7 +252,7 @@ class PackageManager:
         :param dcos_package: path to the DC/OS package
         :type dcos_package: None | str
         :return: Response to the package add request
-        :rtype: Response
+        :rtype: requests.Response
         """
         try:
             with util.open_file(dcos_package, 'rb') as pkg:
@@ -280,7 +280,7 @@ class PackageManager:
         :param package_version: version of the remote package to add
         :type package_version: None | str
         :return: Response to the package add request
-        :rtype: Response
+        :rtype: requests.Response
         """
         try:
             json = {'packageName': package_name}
@@ -308,7 +308,7 @@ class PackageManager:
         :param data: a file object
         :type: file
         :returns: Response
-        :rtype: Response
+        :rtype: requests.Response
         """
 
         endpoint = 'package/{}'.format(request)
@@ -334,7 +334,7 @@ class PackageManager:
         :param params: body of request
         :type params: dict
         :returns: Response
-        :rtype: Response
+        :rtype: requests.Response
         """
 
         return self._post(request, params)

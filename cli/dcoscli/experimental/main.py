@@ -13,13 +13,12 @@ import pkg_resources
 import six
 
 import dcoscli
-from dcos import cmds, emitting, http, util
+from dcos import cmds, emitting, http, options, servicemanager, util
 from dcos.errors import DCOSException
 from dcos.package import get_package_manager
 from dcos.util import md5_hash_file
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage, formatted_cli_version
-
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -51,31 +50,46 @@ def _cmds():
     return [
         cmds.Command(
             hierarchy=['experimental', 'package', 'add'],
-            arg_keys=['--dcos-package',
+            arg_keys=['--json', '--dcos-package',
                       '--package-name', '--package-version'],
             function=_add),
-
         cmds.Command(
-            hierarchy=['package', 'build'],
+            hierarchy=['experimental', 'package', 'build'],
             arg_keys=['<build-definition>', '--output-directory'],
             function=_build,
         ),
+        cmds.Command(
+            hierarchy=['experimental', 'service', 'start'],
+            arg_keys=['--json', '<package-name>',
+                      '--package-version', '--options'],
+            function=_service_start),
+        cmds.Command(
+            hierarchy=['experimental'],
+            arg_keys=['--info'],
+            function=_experimental),
     ]
 
 
-def _info():
+def _experimental(info):
     """
     :returns: process status
     :rtype: int
     """
-    emitter.publish(default_command_info("experimental"))
+    if info:
+        emitter.publish(default_command_info("experimental"))
+    else:
+        doc = default_doc("package")
+        emitter.publish(options.make_generic_usage_message(doc))
+        return 1
     return 0
 
 
-def _add(dcos_package, package_name, package_version):
+def _add(json, dcos_package, package_name, package_version):
     """
     Adds a DC/OS package to DC/OS
 
+    :param json: wether to output json
+    :type json: bool
     :param dcos_package: path to the DC/OS package
     :type dcos_package: None | str
     :param package_name: the name of a remote DC/OS package
@@ -91,7 +105,17 @@ def _add(dcos_package, package_name, package_version):
     else:
         response = (package_manager
                     .package_add_remote(package_name, package_version))
-    emitter.publish(response.json())
+
+    response_json = response.json()
+
+    if json:
+        emitter.publish(response_json)
+    else:
+        message = (
+            'The package [{}] version [{}] has been added to DC/OS'.format(
+                response_json['name'], response_json['version']))
+        emitter.publish(message)
+
     return 0
 
 
@@ -343,3 +367,35 @@ def _is_local_reference(item):
     :rtype: bool
     """
     return isinstance(item, six.string_types) and item.startswith("@")
+
+
+def _service_start(json, package_name, package_version, options_path):
+    """Starts a DC/OS service from a package that has been added
+
+    :param json: wether to output json
+    :type json: bool
+    :param package_name:
+    :type package_name: str
+    :param package_version:
+    :type package_version: None | str
+    :param options_path:
+    :type options_path: None | str
+    :return: process status
+    :rtype: int
+    """
+    manager = servicemanager.ServiceManager()
+    options = util.read_file_json(options_path) if options_path else None
+    response = manager.start_service(
+        package_name, package_version, options)
+    response_json = response.json()
+
+    if json:
+        emitter.publish(response_json)
+    else:
+        message = (
+            "The service [{}] version [{}] has been started".format(
+                response_json['packageName'], response_json['packageVersion']
+            ))
+        emitter.publish(message)
+
+    return 0

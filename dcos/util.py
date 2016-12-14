@@ -634,3 +634,20 @@ def md5_hash_file(file):
         hasher.update(chunk)
     file.seek(0)
     return hasher.hexdigest()
+
+
+def read_file_json(path):
+    """ Read the options at the given file path.
+
+    :param path: file path
+    :type path: None | str
+    :returns: options
+    :rtype: dict
+    """
+    if path is None:
+        return {}
+    else:
+        # Expand ~ in the path
+        path = os.path.expanduser(path)
+        with open_file(path) as options_file:
+            return load_json(options_file)
