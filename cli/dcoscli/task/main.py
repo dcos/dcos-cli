@@ -1,4 +1,6 @@
+import os
 import posixpath
+import sys
 
 import docopt
 import six
@@ -22,12 +24,86 @@ def main(argv):
         return 1
 
 
+def docopt_wrapper(usage, real_usage, **keywords):
+    """ A wrapper around the real docopt parser.
+    Redirects a failed command to /dev/null and prints the proper
+    real_usage message, instead of just the usage string from usage.
+
+    :param usage: The simplified usage string to parse
+    :type usage: str
+    :param real_usage: The original usage string to parse
+    :type real_usage: str
+    :param keywords: The keyword arguments to pass to docopt
+    :type keywords: dict
+    :returns: The parsed arguments
+    :rtype: dict
+    """
+
+    base_subcommand = keywords.pop('base_subcommand')
+    subcommand = keywords.pop('subcommand')
+
+    try:
+        stdout = sys.stdout
+
+        # We run docopt twice (once with the real usage string and
+        # once with the modified usage string) in order to populate
+        # the 'real' arguments properly.
+        with open(os.devnull, 'w') as nullfile:
+            sys.stdout = nullfile
+            real_arguments = docopt.docopt(
+                real_usage,
+                argv=[base_subcommand])
+            arguments = docopt.docopt(
+                usage,
+                **keywords)
+            sys.stdout = stdout
+
+        real_arguments.update(arguments)
+        real_arguments[subcommand] = True
+        return real_arguments
+
+    except docopt.DocoptExit:
+        sys.stdout = stdout
+        print(real_usage.strip(), file=sys.stderr)
+        sys.exit(1)
+
+    except SystemExit:
+        sys.stdout = stdout
+
+        if "argv" in keywords and any(h in ("-h", "--help")
+                                      for h in keywords["argv"]):
+            print(real_usage.strip())
+        elif "version" in keywords and any(v in ("--version")
+                                           for v in keywords["argv"]):
+            print(keywords["version"].strip())
+
+        sys.exit()
+
+
 @decorate_docopt_usage
 def _main(argv):
-    args = docopt.docopt(
-        default_doc("task"),
-        argv=argv,
-        version="dcos-task version {}".format(dcoscli.version))
+    """The main function for the 'task' subcommand"""
+
+    # We must special case the 'dcos task exec' subcommand in order to
+    # allow us to pass arguments to docopt in a more user-friendly
+    # manner. Specifically, we need to be able to to pass arguments
+    # beginning with "-" to the command we are trying to launch with
+    # 'exec' without docopt trying to match them to a named parameter
+    # for the 'dcos' command itself.
+    if len(argv) > 1 and argv[1] == "exec":
+        args = docopt_wrapper(
+            default_doc("task_exec"),
+            default_doc("task"),
+            argv=argv[2:],
+            version="dcos-task version {}".format(dcoscli.version),
+            options_first=True,
+            base_subcommand="task",
+            subcommand="exec")
+    else:
+        args = docopt.docopt(
+            default_doc("task"),
+            argv=argv,
+            version="dcos-task version {}".format(dcoscli.version))
 
     return cmds.execute(_cmds(), args)
 
@@ -54,6 +130,11 @@ def _cmds():
             hierarchy=['task', 'ls'],
             arg_keys=['<task>', '<path>', '--long', '--completed'],
             function=_ls),
+
+        cmds.Command(
+            hierarchy=['task', 'exec'],
+            arg_keys=['<task>', '<cmd>', '<args>', '--interactive', '--tty'],
+            function=_exec),
 
         cmds.Command(
             hierarchy=['task'],
@@ -216,6 +297,28 @@ def _ls(task, path, long_, completed):
             emitter.publish(
                 '  '.join(posixpath.basename(file_['path'])
                           for file_ in files))
+
+
+def _exec(task, cmd, args=None, interactive=False, tty=False):
+    """ Launch a process inside a container with the given <task_id>
+
+    :param task: task ID pattern to match
+    :type task: str
+    :param cmd: The command to launch inside the task's container
+    :type args: cmd
+    :param args: Additional arguments for the command
+    :type args: list
+    :param interactive: attach stdin
+    :type interactive: bool
+    :param tty: attach a tty
+    :type tty: bool
+    :returns: process return code
+    :rtype int
+    """
+
+    task_io = mesos.TaskIO(task, cmd, args, interactive, tty)
+    task_io.run()
+    return 0
 
 
 def _mesos_files(tasks, file_, client):

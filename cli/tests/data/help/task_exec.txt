@@ -1,0 +1,22 @@
+Description:
+    Launch an arbitrary command inside a running DC/OS task.
+
+Usage:
+    dcos-task-exec [--interactive --tty] <task> <cmd> [<args>...]
+
+Command:
+    exec
+        Launch a process (<cmd>) inside of a container for a task (<task>).
+
+Options:
+    -i, --interactive
+        Attach a STDIN stream to the remote command for an interactive session.
+    -t, --tty
+        Attach a tty to the remote stream.
+
+Positional Arguments:
+    <cmd>
+        The command to run inside the remote task's container.
+        For example: `/bin/bash`.
+    <args>
+        Additional arguments to pass to the command (<cmd>).
