@@ -15,6 +15,11 @@
     },
     {
       "name": "thing-2",
+      "exec": {
+        "command": {
+          "shell": "sleep 1000"
+        }
+      },
       "resources": {
         "cpus": 0.1,
         "mem": 16.0

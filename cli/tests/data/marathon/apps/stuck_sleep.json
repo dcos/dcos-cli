@@ -1,0 +1,13 @@
+{
+  "id": "stuck-sleep",
+  "cmd": "sleep 1000",
+  "cpus": 0.1,
+  "mem": 16,
+  "instances": 10,
+  "constraints": [
+    [
+      "hostname",
+      "UNIQUE"
+    ]
+  ]
+}

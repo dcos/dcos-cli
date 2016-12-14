@@ -252,20 +252,20 @@ def package_install(package, deploy=False, args=[]):
         watch_all_deployments()
 
 
-def package_uninstall(package, args=[], stderr=b''):
+def package_uninstall(package_name, args=[], stderr=b''):
     """ Calls `dcos package uninstall`
 
-    :param package: name of the package to uninstall
-    :type package: str
+    :param package_name: name of the package to uninstall
+    :type package_name: str
     :param args: extra CLI args
     :type args: [str]
     :param stderr: expected string in stderr for package uninstall
-    :type stderr: str
+    :type stderr: bytes
     :rtype: None
     """
 
     assert_command(
-        ['dcos', 'package', 'uninstall', package] + args,
+        ['dcos', 'package', 'uninstall', package_name] + args,
         stderr=stderr)
 
 
@@ -676,7 +676,9 @@ def package(package_name, deploy=False, args=[]):
     try:
         yield
     finally:
-        package_uninstall(package_name)
+        command = ['dcos', 'package', 'uninstall', package_name]
+        returncode, _, _ = exec_command(command)
+        assert returncode == 0
         watch_all_deployments()
 
 

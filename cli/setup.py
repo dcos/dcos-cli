@@ -66,9 +66,11 @@ setup(
     install_requires=[
         'dcos=={}'.format(dcoscli.version),
         'docopt>=0.6, <1.0',
+        'PyJWT==1.4.2',
         'pkginfo==1.2.1',
         'toml>=0.9, <1.0',
         'virtualenv>=13.0, <16.0',
+        'cryptography==1.6'
     ],
 
     # If there are data files included in your packages that need to be

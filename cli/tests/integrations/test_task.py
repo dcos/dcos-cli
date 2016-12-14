@@ -122,8 +122,6 @@ def test_log_single_file():
     assert len(stdout.decode('utf-8').split('\n')) > 0
 
 
-@pytest.mark.skipif('DCOS_PODS_ENABLED' not in os.environ,
-                    reason="Requires pods")
 def test_log_pod_task():
     good_pod_file = 'tests/data/marathon/pods/good.json'
     with pod(good_pod_file, 'good-pod'):
@@ -132,11 +130,11 @@ def test_log_pod_task():
             ['dcos', 'task', 'log', 'good-container', 'stderr'])
 
         # pod task log are not executor logs, so normal executor stderr
-        # logs shouldn't be seen and this pod shoudn't have any logging
+        # logs shouldn't be seen and this pod shouldn't have any logging
         # to stderr
-        assert returncode == 1
-        assert stderr == b'No files exist. Exiting.\n'
-        assert stdout == b''
+        assert returncode == 0
+        assert stderr == b'No logs for this task\n'
+        assert stdout == b'\n'
 
 
 def test_log_missing_file():
@@ -298,7 +296,7 @@ def test_ls_completed():
     # create a completed task
     with app(SLEEP_COMPLETED1, 'test-app-completed1'):
         # get its task id
-        task_id_completed = _get_completed_task_id('test-app-completed1')
+        task_id_completed = _get_task_id('test-app-completed1')
 
     """ Test `dcos task ls --completed` """
     returncode, stdout, stderr = exec_command(
@@ -316,6 +314,34 @@ def test_ls_completed():
     assert returncode == 0
     assert stdout == out
     assert stderr == b''
+
+
+@pytest.mark.skipif('DCOS_DEBUGGING_ENABLED' not in os.environ,
+                    reason="Requires Agent Dbugging APIs")
+def test_exec_non_interactive():
+    with open('tests/data/tasks/lorem-ipsum.txt') as text:
+        content = text.read()
+
+    task_id = _get_task_id('test-app1')
+
+    with open('tests/data/tasks/lorem-ipsum.txt') as text:
+        assert_command(
+            ['dcos', 'task', 'exec', task_id, 'printf', content],
+            stdout=bytes(content, 'UTF-8'))
+
+
+@pytest.mark.skipif('DCOS_DEBUGGING_ENABLED' not in os.environ,
+                    reason="Requires Agent Dbugging APIs")
+def test_exec_interactive():
+    with open('tests/data/tasks/lorem-ipsum.txt') as text:
+        content = bytes(text.read(), 'UTF-8')
+
+    task_id = _get_task_id('test-app1')
+
+    with open('tests/data/tasks/lorem-ipsum.txt') as text:
+        assert_command(
+            ['dcos', 'task', 'exec', '--interactive', task_id, 'cat'],
+            stdout=content, stdin=text)
 
 
 def _mark_non_blocking(file_):
@@ -337,7 +363,7 @@ def _uninstall_sleep(app_id='test-app'):
     assert_command(['dcos', 'marathon', 'app', 'remove', app_id])
 
 
-def _get_completed_task_id(app_id='test-app-completed'):
+def _get_task_id(app_id):
     returncode, stdout, stderr = exec_command(
         ['dcos', 'task', '--json', app_id])
     assert returncode == 0

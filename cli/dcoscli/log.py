@@ -5,7 +5,7 @@ import time
 import six
 
 from dcos import emitting, util
-from dcos.errors import DCOSException
+from dcos.errors import DCOSException, DefaultError
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -116,6 +116,8 @@ def _output(curr_header, output_header, header, lines):
     if lines:
         if output_header and header != curr_header:
             emitter.publish('===> {} <==='.format(header))
+        if lines == ['']:
+            emitter.publish(DefaultError('No logs for this task'))
         for line in lines:
             emitter.publish(line)
     return header
