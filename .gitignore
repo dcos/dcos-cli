@@ -11,6 +11,8 @@ pydoc/_build/
 
 *.pyc
 
+.DS_Store
+
 Vagrantfile
 .vagrant
 .idea
