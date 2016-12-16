@@ -6,6 +6,7 @@ import os
 import re
 import subprocess
 import time
+import zipfile
 
 import six
 from six.moves import urllib
@@ -833,3 +834,9 @@ def teardown_universe_server():
         ['dcos', 'package', 'repo', 'add', 'Universe', UNIVERSE_REPO])
     assert_command(
         ['dcos', 'marathon', 'app', 'remove', '/universe', '--force'])
+
+
+def zip_contents_as_json(path, inner_file):
+    with zipfile.ZipFile(path) as zip_file:
+        inner_file_contents = zip_file.read(inner_file).decode()
+    return json.loads(inner_file_contents)

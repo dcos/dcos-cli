@@ -5,13 +5,14 @@ import re
 import shutil
 import tempfile
 import time
-import zipfile
 
 import pytest
 
 from dcos import util
 from dcoscli.util import formatted_cli_version
-from .common import assert_command, exec_command, watch_all_deployments
+from .common import (assert_command, exec_command,
+                     file_json_ast, watch_all_deployments,
+                     zip_contents_as_json)
 
 command_base = ['dcos', 'experimental']
 data_dir = os.path.join(
@@ -44,7 +45,7 @@ def test_version():
     assert_command(command, stdout=out)
 
 
-def test_package_build_with_only_resources_with_only_resources_reference():
+def test_package_build_with_only_resources():
     _successful_package_build_test(
         os.path.join(
             build_data_dir,
@@ -64,7 +65,7 @@ def test_package_build_with_only_config_with_no_references():
             "package_config_reference_expected.json"))
 
 
-def test_package_build_with_only_config_with_only_config_reference():
+def test_package_build_with_only_config():
     _successful_package_build_test(
         os.path.join(
             build_data_dir,
@@ -74,7 +75,7 @@ def test_package_build_with_only_config_with_only_config_reference():
             "package_config_reference_expected.json"))
 
 
-def test_package_build_with_only_marathon_with_only_marathon_reference():
+def test_package_build_with_only_marathon():
     _successful_package_build_test(
         os.path.join(
             build_data_dir,
@@ -84,7 +85,7 @@ def test_package_build_with_only_marathon_with_only_marathon_reference():
             "package_marathon_reference_expected.json"))
 
 
-def test_package_build_with_only_resource_reference():
+def test_package_build_with_only_resources_reference():
     _successful_package_build_test(
         os.path.join(
             build_data_dir,
@@ -368,9 +369,9 @@ def _package_add(package, expects_json=False):
     if expects_json:
         metadata = json.loads(out.decode())
         metadata.pop('releaseVersion')
-        assert metadata == _get_json_in_zip(package, 'metadata.json')
+        assert metadata == zip_contents_as_json(package, 'metadata.json')
     else:
-        metadata = _get_json_in_zip(package, 'metadata.json')
+        metadata = zip_contents_as_json(package, 'metadata.json')
         stdout = (
             'The package [{}] version [{}] has been added to DC/OS\n'.format(
                 metadata['name'], metadata['version'])).encode()
@@ -422,14 +423,14 @@ def _package_build(build_definition_path,
     assert os.path.exists(package_path)
 
     name, version, md5 = _decompose_name(package_path)
-    build_definition = _get_json(build_definition_path)
+    build_definition = file_json_ast(build_definition_path)
     assert name == build_definition['name']
     assert version == build_definition['version']
     assert md5 == _get_md5_hash(package_path)
     assert (manifest is None or
-            manifest == _get_json_in_zip(package_path, 'manifest.json'))
+            manifest == zip_contents_as_json(package_path, 'manifest.json'))
     assert (metadata is None or
-            metadata == _get_json_in_zip(package_path, 'metadata.json'))
+            metadata == zip_contents_as_json(package_path, 'metadata.json'))
 
     return package_path
 
@@ -456,7 +457,7 @@ def _wait_for_package_add_remote(package_name, package_version):
 
 def _wait_for_package_add_local(package):
     command = _package_add_cmd(dcos_package=package)
-    metadata = _get_json_in_zip(package, 'metadata.json')
+    metadata = zip_contents_as_json(package, 'metadata.json')
     name = metadata['name']
     version = metadata['version']
     _wait_for_package_add(command, name, version)
@@ -493,7 +494,7 @@ def _successful_package_build_test(
             "package_no_references.json"
         )):
     with _temporary_directory() as output_directory:
-        metadata = _get_json(expected_package_path)
+        metadata = file_json_ast(expected_package_path)
         manifest = _get_default_manifest()
         _package_build(build_definition_path,
                        output_directory,
@@ -512,18 +513,6 @@ def _decompose_name(package_path):
 def _get_md5_hash(path):
     with open(path, 'rb') as f:
         return util.md5_hash_file(f)
-
-
-def _get_json(path):
-    with open(path) as f:
-        file_contents = f.read()
-    return json.loads(file_contents)
-
-
-def _get_json_in_zip(path, inner_file):
-    with zipfile.ZipFile(path) as zip_file:
-        inner_file_contents = zip_file.read(inner_file).decode()
-    return json.loads(inner_file_contents)
 
 
 @contextlib.contextmanager
