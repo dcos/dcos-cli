@@ -1,10 +1,7 @@
-from __future__ import print_function
-
 import base64
 import json
 import os
 import shutil
-import sys
 import tempfile
 import zipfile
 
@@ -55,7 +52,7 @@ def _cmds():
             function=_add),
         cmds.Command(
             hierarchy=['experimental', 'package', 'build'],
-            arg_keys=['<build-definition>', '--output-directory'],
+            arg_keys=['--json', '<build-definition>', '--output-directory'],
             function=_build,
         ),
         cmds.Command(
@@ -119,10 +116,13 @@ def _add(json, dcos_package, package_name, package_version):
     return 0
 
 
-def _build(build_definition,
+def _build(output_json,
+           build_definition,
            output_directory):
     """ Creates a DC/OS Package from a DC/OS Package Build Definition
 
+    :param output_json: whether to output json
+    :type output_json: None | bool
     :param build_definition: The path to a DC/OS Package Build Definition
     :type build_definition: str
     :param output_directory: The directory where the DC/OS Package
@@ -240,9 +240,12 @@ def _build(build_definition,
         with util.open_file(dcos_package_path, 'w+b') as dcos_package:
             shutil.copyfileobj(temp_file.file, dcos_package)
 
-    print('Created DCOS Universe package: ', file=sys.stderr, end='')
-    sys.stderr.flush()
-    emitter.publish('{}'.format(dcos_package_path))
+    if output_json:
+        message = {'package_path': dcos_package_path}
+    else:
+        message = 'Created DC/OS Universe Package [{}]'.format(
+            dcos_package_path)
+    emitter.publish(message)
 
     return 0
 

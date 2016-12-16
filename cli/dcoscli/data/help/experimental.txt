@@ -8,7 +8,8 @@ Usage:
                                   (--dcos-package=<dcos-package> |
                                     (--package-name=<package-name>
                                       [--package-version=<package-version>]))
-    dcos experimental package build [--output-directory=<output-directory>]
+    dcos experimental package build [--json]
+                                    [--output-directory=<output-directory>]
                                     <build-definition>
     dcos experimental service start [--json]
                                     [--package-version=<package-version>]
