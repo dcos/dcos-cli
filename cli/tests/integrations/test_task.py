@@ -133,7 +133,7 @@ def test_log_pod_task():
         # logs shouldn't be seen and this pod shouldn't have any logging
         # to stderr
         assert returncode == 0
-        assert stderr == b'No logs for this task\n'
+        assert 'No logs for this task' in str(stderr)
         assert stdout == b'\n'
 
 
@@ -188,9 +188,7 @@ def test_log_two_tasks():
     assert stderr == b''
 
     lines = stdout.decode('utf-8').split('\n')
-    assert len(lines) == 17
-    assert re.match('===>.*<===', lines[0])
-    assert re.match('===>.*<===', lines[8])
+    assert len(lines) == 11
 
 
 @pytest.mark.skipif(sys.platform == 'win32',
@@ -244,7 +242,7 @@ def test_ls_no_params():
     assert returncode == 0
     assert stderr == b''
 
-    ls_line = 'stderr  stderr.logrotate.conf  stdout  stdout.logrotate.conf'
+    ls_line = 'stderr  stdout'
     lines = stdout.decode('utf-8').split('\n')
     assert len(lines) == 7
     assert re.match('===>.*<===', lines[0])
@@ -256,13 +254,13 @@ def test_ls_no_params():
 
 
 def test_ls():
-    stdout = b'stderr  stderr.logrotate.conf  stdout  stdout.logrotate.conf\n'
+    stdout = b'stderr  stdout\n'
     assert_command(['dcos', 'task', 'ls', 'test-app1'],
                    stdout=stdout)
 
 
 def test_ls_multiple_tasks():
-    ls_line = 'stderr  stderr.logrotate.conf  stdout  stdout.logrotate.conf'
+    ls_line = 'stderr  stdout'
     returncode, stdout, stderr = exec_command(
         ['dcos', 'task', 'ls', 'test-app'])
     lines = stdout.decode('utf-8').split('\n')
@@ -277,7 +275,7 @@ def test_ls_multiple_tasks():
 
 
 def test_ls_long():
-    assert_lines(['dcos', 'task', 'ls', '--long', 'test-app1'], 4)
+    assert_lines(['dcos', 'task', 'ls', '--long', 'test-app1'], 2)
 
 
 def test_ls_path():
@@ -310,7 +308,7 @@ def test_ls_completed():
     returncode, stdout, stderr = exec_command(
         ['dcos', 'task', 'ls', '--completed', task_id_completed])
 
-    out = b'stderr  stderr.logrotate.conf  stdout  stdout.logrotate.conf\n'
+    out = b'stderr  stdout\n'
     assert returncode == 0
     assert stdout == out
     assert stderr == b''
