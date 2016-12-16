@@ -343,6 +343,8 @@ def _dcos_log(follow, tasks, lines, file_, completed):
 
     for task in tasks:
         executor_info = task.executor()
+        if not executor_info:
+            continue
         if (tasks_field not in executor_info and
                 not isinstance(executor_info[tasks_field], list)):
             logger.debug('Executor info: {}'.format(executor_info))
