@@ -106,6 +106,14 @@ def test_package_build_with_all_references():
             "package_all_references.json"))
 
 
+def test_package_build_with_all_references_json():
+    _successful_package_build_test(
+        os.path.join(
+            build_data_dir,
+            "package_all_references.json"),
+        expects_json=True)
+
+
 def test_package_build_where_build_definition_does_not_exist():
     with _temporary_directory() as output_directory:
         build_definition_path = os.path.join(build_data_dir,
@@ -295,9 +303,12 @@ def _package_add_cmd(dcos_package=None,
                if package_version else []))
 
 
-def _package_build_cmd(build_definition, output_directory=None):
+def _package_build_cmd(build_definition,
+                       output_directory=None,
+                       expects_json=False):
     return (command_base
             + (['package', 'build'])
+            + (['--json'] if expects_json else [])
             + (['--output-directory', output_directory]
                if output_directory else [])
             + ([build_definition]))
@@ -411,18 +422,25 @@ def _package_add_universe(package_name,
 def _package_build(build_definition_path,
                    output_directory,
                    metadata=None,
-                   manifest=None):
+                   manifest=None,
+                   expects_json=False):
     command = _package_build_cmd(build_definition_path,
-                                 output_directory)
+                                 output_directory,
+                                 expects_json=expects_json)
 
     code, out, err = exec_command(command)
     assert code == 0
     assert err == b''
 
     out_str = out.decode()
-    assert out_str.startswith("Created DC/OS Universe Package")
+    if expects_json:
+        out_json = json.loads(out_str)
+        assert out_json, out_str
+        package_path = out_json.get('package_path')
+    else:
+        assert out_str.startswith("Created DC/OS Universe Package")
+        package_path = re.search("\[(.*)\]", out_str).group(1)
 
-    package_path = re.search("\[(.*)\]", out_str).group(1)
     assert package_path, out_str
     assert os.path.exists(package_path)
 
@@ -491,8 +509,8 @@ def _successful_package_build_test(
         build_definition_path,
         expected_package_path=os.path.join(
             build_data_dir,
-            "package_no_references.json"
-        )):
+            "package_no_references.json"),
+        expects_json=False):
     with _temporary_directory() as output_directory:
         metadata = file_json_ast(expected_package_path)
         manifest = {
@@ -501,7 +519,8 @@ def _successful_package_build_test(
         _package_build(build_definition_path,
                        output_directory,
                        metadata=metadata,
-                       manifest=manifest)
+                       manifest=manifest,
+                       expects_json=expects_json)
 
 
 def _decompose_name(package_path):
