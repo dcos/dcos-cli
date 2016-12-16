@@ -27,7 +27,7 @@ The example below installs every package available in the DC/OS repository::
 
     dcos package search --json | jq '.[0].packages[].name' | xargs -L 1 dcos package install --yes
 
-Developement Dependencies
+Development Dependencies
 -------------------------
 
 #. git_ must be installed to download the source code for the DC/OS CLI.
