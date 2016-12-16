@@ -417,9 +417,13 @@ def _package_build(build_definition_path,
 
     code, out, err = exec_command(command)
     assert code == 0
-    assert err == b'Created DCOS Universe package: '
+    assert err == b''
 
-    package_path = out.decode().rstrip()
+    out_str = out.decode()
+    assert out_str.startswith("Created DC/OS Universe Package")
+
+    package_path = re.search("\[(.*)\]", out_str).group(1)
+    assert package_path, out_str
     assert os.path.exists(package_path)
 
     name, version, md5 = _decompose_name(package_path)
