@@ -8,8 +8,8 @@ import time
 
 import pytest
 
+import dcoscli
 from dcos import util
-from dcoscli.util import formatted_cli_version
 from .common import (assert_command, exec_command,
                      file_json_ast, watch_all_deployments,
                      zip_contents_as_json)
@@ -483,10 +483,6 @@ def _wait_for_package_add(command, name, version):
         time.sleep(5)
 
 
-def _get_default_manifest():
-    return {'built-by': formatted_cli_version()}
-
-
 def _successful_package_build_test(
         build_definition_path,
         expected_package_path=os.path.join(
@@ -495,7 +491,9 @@ def _successful_package_build_test(
         )):
     with _temporary_directory() as output_directory:
         metadata = file_json_ast(expected_package_path)
-        manifest = _get_default_manifest()
+        manifest = {
+            'built-by': "dcoscli.version={}".format(dcoscli.version)
+        }
         _package_build(build_definition_path,
                        output_directory,
                        metadata=metadata,

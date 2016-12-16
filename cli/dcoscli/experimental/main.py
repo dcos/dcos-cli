@@ -18,7 +18,7 @@ from dcos.errors import DCOSException
 from dcos.package import get_package_manager
 from dcos.util import md5_hash_file
 from dcoscli.subcommand import default_command_info, default_doc
-from dcoscli.util import decorate_docopt_usage, formatted_cli_version
+from dcoscli.util import decorate_docopt_usage
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -200,7 +200,9 @@ def _build(build_definition,
                             '[{}]'.format(build_definition_path))
 
     # create the manifest
-    manifest_json = {'built-by': formatted_cli_version()}
+    manifest_json = {
+        'built-by': "dcoscli.version={}".format(dcoscli.version)
+    }
 
     # create the metadata
     metadata_json = build_definition_resolved
