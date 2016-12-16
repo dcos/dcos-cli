@@ -490,7 +490,7 @@ def _log(follow, lines, leader, slave, component, filters):
     :rtype: int
     """
 
-    if not (leader or slave):
+    if not (leader or slave) or (leader and slave):
         raise DCOSException(
             'You must choose one of --leader or --mesos-id.')
 

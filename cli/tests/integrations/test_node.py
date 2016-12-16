@@ -1,6 +1,5 @@
 import json
 import os
-import re
 import sys
 
 import pytest
@@ -68,21 +67,6 @@ def test_node_log_missing_slave():
     stderr_str = str(stderr)
     assert 'HTTP 404' in stderr_str
     assert 'No slave found with ID "bogus".' in stderr_str
-
-
-def test_node_log_leader_slave():
-    slave_id = _node()[0]['id']
-
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'node', 'log', '--leader', '--mesos-id={}'.format(slave_id)])
-
-    assert returncode == 0
-    assert stderr == b''
-
-    lines = stdout.decode('utf-8').split('\n')
-    assert len(lines) == 23
-    assert re.match('===>.*<===', lines[0])
-    assert re.match('===>.*<===', lines[11])
 
 
 def test_node_log_lines():
