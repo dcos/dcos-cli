@@ -548,7 +548,14 @@ class CosmosPackageVersion():
         response = Cosmos(self._cosmos_url).cosmos_post(
             "list-versions", params)
 
-        return list(response.json().get("results").keys())
+        return list(
+            version for (version, releaseVersion) in
+            sorted(
+                response.json().get("results").items(),
+                key=lambda item: int(item[1]),  # release version
+                reverse=True
+            )
+        )
 
 
 def _get_header(request_type, version):
