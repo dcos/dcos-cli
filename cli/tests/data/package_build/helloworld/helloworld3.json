@@ -3,7 +3,7 @@
     "description": "Example DCOS application package",
     "maintainer": "support@mesosphere.io",
     "marathon": {"v2AppMustacheTemplate": "@marathon.json.mustache"},
-    "name": "helloworld",
+    "name": "helloworld3",
     "packagingVersion": "3.0",
     "postInstallNotes": "A sample post-installation message",
     "postUninstallNotes": "A sample post-uninstall message",
