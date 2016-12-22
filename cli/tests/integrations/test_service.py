@@ -113,7 +113,7 @@ def test_log():
 
         assert returncode == 0
         assert len(stdout.decode('utf-8').split('\n')) > 1
-        assert stderr == b''
+        assert stderr == b'No logs for this task\n'
 
         returncode, stdout, stderr = exec_command(
             ['dcos', 'service', 'log', 'cassandra.dcos', 'stderr'])
