@@ -55,7 +55,10 @@ def test_node_log_leader():
 
 def test_node_log_slave():
     slave_id = _node()[0]['id']
-    assert_lines(['dcos', 'node', 'log', '--mesos-id={}'.format(slave_id)], 10, great_then=True)
+    assert_lines(
+        ['dcos', 'node', 'log', '--mesos-id={}'.format(slave_id)],
+        10,
+        great_then=True)
 
 
 def test_node_log_missing_slave():
@@ -72,7 +75,10 @@ def test_node_log_missing_slave():
 def test_node_log_lines():
     # since we are getting system logs, it's not guaranteed to get back
     # exactly 4 log entries. It must be >= 4
-    assert_lines(['dcos', 'node', 'log', '--leader', '--lines=4'], 4, great_then=True)
+    assert_lines(
+        ['dcos', 'node', 'log', '--leader', '--lines=4'],
+        4,
+        great_then=True)
 
 
 def test_node_log_invalid_lines():

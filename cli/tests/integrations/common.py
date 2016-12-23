@@ -471,7 +471,7 @@ def assert_lines(cmd, num_lines, great_then=False):
     :type cmd: [str]
     :param num_lines: expected number of lines for stdout
     :type num_lines: int
-    :param great_then: if True we assume there could be at least num_lines or more
+    :param great_then: if True assume there may be at least num_lines or more
     :type great_then: bool
     :rtype: None
     """
@@ -480,7 +480,7 @@ def assert_lines(cmd, num_lines, great_then=False):
 
     assert returncode == 0
     assert stderr == b''
-    lines =  len(stdout.decode('utf-8').split('\n')) - 1
+    lines = len(stdout.decode('utf-8').split('\n')) - 1
     if great_then:
         assert lines >= num_lines
         return

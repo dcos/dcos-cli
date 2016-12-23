@@ -113,7 +113,7 @@ def test_log():
 
         assert returncode == 0
         assert len(stdout.decode('utf-8').split('\n')) > 1
-        assert stderr == b'No logs for this task\n'
+        assert stderr == b''
 
         returncode, stdout, stderr = exec_command(
             ['dcos', 'service', 'log', 'cassandra.dcos', 'stderr'])
@@ -182,13 +182,19 @@ def test_log_follow():
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
     else:
+        # disable stdout/stderr buffering:
+        # https://docs.python.org/3/using/cmdline.html#cmdoption-u
+        my_env = os.environ.copy()
+        my_env['PYTHONUNBUFFERED'] = 'x'
+
         # os.setsid is only available for Unix:
         # https://docs.python.org/2/library/os.html#os.setsid
         proc = subprocess.Popen(
             args,
             preexec_fn=os.setsid,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+            stderr=subprocess.PIPE,
+            env=my_env)
 
     time.sleep(10)
 
