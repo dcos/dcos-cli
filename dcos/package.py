@@ -1,6 +1,6 @@
 import itertools
 
-from dcos import emitting, subcommand, util
+from dcos import cosmos, emitting, packagemanager, subcommand, util
 from dcos.errors import DCOSException
 
 logger = util.get_logger(__name__)
@@ -169,3 +169,20 @@ def merge_installed(apps, subcommands, app_only, cli_only):
         merged.extend(indexed_subcommands.values())
 
     return merged
+
+
+def get_package_manager():
+    """Returns type of package manager to use
+
+    :returns: PackageManager instance
+    :rtype: packagemanager.PackageManager
+    """
+    cosmos_url = cosmos.get_cosmos_url()
+    cosmos_manager = packagemanager.PackageManager(cosmos_url)
+    if cosmos_manager.enabled():
+        return cosmos_manager
+    else:
+        msg = ("This version of the DC/OS CLI is not supported for your "
+               "cluster. Please downgrade the CLI to an older version: "
+               "https://dcos.io/docs/usage/cli/update/#downgrade")
+        raise DCOSException(msg)
