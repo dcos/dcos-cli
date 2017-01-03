@@ -170,6 +170,8 @@ def test_log_config():
         returncode=1)
 
 
+@pytest.mark.skipif(os.environ.get('DCOS_ENABLE_LOG_TEST') != 1,
+                    reason='disable python buffering')
 def test_log_follow():
     package_install('chronos', deploy=True)
 
