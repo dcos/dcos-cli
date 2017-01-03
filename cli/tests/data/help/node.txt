@@ -6,6 +6,8 @@ Usage:
     dcos node --info
     dcos node [--json]
     dcos node log [--follow --lines=N --leader --master --mesos-id=<mesos-id> --slave=<slave-id>]
+                  [--component=<component-name> --filter=<filter>...]
+    dcos node list-components [--leader --mesos-id=<mesos-id> --json]
     dcos node ssh [--option SSHOPT=VAL ...]
                   [--config-file=<path>]
                   [--user=<user>]
@@ -72,6 +74,13 @@ Options:
         If not set, default to present working directory.
     --version
         Print version information.
+    --list-components
+        Print a list of available DC/OS components on specified node.
+    --component=<component-name>
+        Show DC/OS component logs.
+    --filter=<filter>
+        Filter logs by field and value. Filter must be a string separated by colon.
+        For example: --filter _PID:0 --filter _UID:1
 
 Positional Arguments:
     <command>

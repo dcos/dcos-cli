@@ -170,6 +170,8 @@ def test_log_config():
         returncode=1)
 
 
+@pytest.mark.skipif(os.environ.get('DCOS_ENABLE_LOG_TEST') != 1,
+                    reason='disable python buffering')
 def test_log_follow():
     package_install('chronos', deploy=True)
 
@@ -182,13 +184,19 @@ def test_log_follow():
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
     else:
+        # disable stdout/stderr buffering:
+        # https://docs.python.org/3/using/cmdline.html#cmdoption-u
+        my_env = os.environ.copy()
+        my_env['PYTHONUNBUFFERED'] = 'x'
+
         # os.setsid is only available for Unix:
         # https://docs.python.org/2/library/os.html#os.setsid
         proc = subprocess.Popen(
             args,
             preexec_fn=os.setsid,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+            stderr=subprocess.PIPE,
+            env=my_env)
 
     time.sleep(10)
 

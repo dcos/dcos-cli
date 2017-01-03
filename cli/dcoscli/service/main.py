@@ -3,10 +3,15 @@ import six
 
 import dcoscli
 from dcos import cmds, emitting, marathon, mesos, subprocess, util
-from dcos.errors import DCOSException, DefaultError
+from dcos.errors import (DCOSAuthenticationException,
+                         DCOSAuthorizationException,
+                         DCOSException,
+                         DefaultError)
 from dcoscli import log, tables
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
+
+from ..task import main as task_main
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -168,6 +173,21 @@ def _log_service(follow, lines, service, file_):
 
     if file_ is None:
         file_ = 'stdout'
+
+    task = _get_service_task(service)
+    try:
+        if 'id' not in task:
+            raise DCOSException('Missing `id` in task. {}'.format(task))
+
+        task_id = task['id']
+        task_main._log(follow, False, lines, task_id, file_)
+        return 0
+    except (DCOSAuthenticationException,
+            DCOSAuthorizationException):
+        raise
+    except DCOSException as e:
+        emitter.publish(DefaultError(e))
+        emitter.publish(DefaultError('Falling back to files API...'))
 
     task = _get_service_task(service)
     return _log_task(task['id'], follow, lines, file_)
