@@ -8,7 +8,9 @@ from six.moves import urllib
 import dcoscli
 from dcos import (cmds, config, cosmospackage, emitting, errors, http, mesos,
                   subprocess, util)
-from dcos.errors import DCOSException, DefaultError
+from dcos.errors import (DCOSAuthenticationException,
+                         DCOSAuthorizationException,
+                         DCOSException, DefaultError)
 from dcoscli import log, tables
 from dcoscli.package.main import confirm, get_cosmos_url
 from dcoscli.subcommand import default_command_info, default_doc
@@ -19,6 +21,7 @@ logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
 
 DIAGNOSTICS_BASE_URL = '/system/health/v1/report/diagnostics/'
+
 
 # if a bundle size if more then 100Mb then warn user.
 BUNDLE_WARN_SIZE = 1000000
@@ -65,8 +68,14 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['node', 'log'],
-            arg_keys=['--follow', '--lines', '--leader', '--mesos-id'],
+            arg_keys=['--follow', '--lines', '--leader', '--mesos-id',
+                      '--component', '--filter'],
             function=_log),
+
+        cmds.Command(
+            hierarchy=['node', 'list-components'],
+            arg_keys=['--leader', '--mesos-id', '--json'],
+            function=_list_components),
 
         cmds.Command(
             hierarchy=['node', 'ssh'],
@@ -462,7 +471,7 @@ def _list(json_):
             emitter.publish(errors.DefaultError('No slaves found.'))
 
 
-def _log(follow, lines, leader, slave):
+def _log(follow, lines, leader, slave, component, filters):
     """ Prints the contents of leader and slave logs.
 
     :param follow: same as unix tail's -f
@@ -473,22 +482,207 @@ def _log(follow, lines, leader, slave):
     :type leader: bool
     :param slave: the slave ID to print
     :type slave: str | None
+    :param component: DC/OS component name
+    :type component: string
+    :param filters: a list of filters ["key:value", ...]
+    :type filters: list
     :returns: process return code
     :rtype: int
     """
 
-    if not (leader or slave):
-        raise DCOSException('You must choose one of --leader or --mesos-id.')
+    if not (leader or slave) or (leader and slave):
+        raise DCOSException(
+            'You must choose one of --leader or --mesos-id.')
 
     if lines is None:
         lines = 10
+
     lines = util.parse_int(lines)
 
+    try:
+        _dcos_log(follow, lines, leader, slave, component, filters)
+        return 0
+    except (DCOSAuthenticationException,
+            DCOSAuthorizationException):
+            raise
+    except DCOSException as e:
+        emitter.publish(DefaultError(e))
+        emitter.publish(DefaultError('Falling back to files API...'))
+
+    if component or filters:
+        raise DCOSException('--component or --filter is not '
+                            'supported by files API')
+
+    # fail back to mesos files API.
     mesos_files = _mesos_files(leader, slave)
-
     log.log_files(mesos_files, follow, lines)
-
     return 0
+
+
+def _get_slave_ip(slave):
+    """ Get an agent IP address based on mesos id.
+        If slave parameter is empty, the function will return
+
+    :param slave: mesos node id
+    :type slave: str
+    :return: node ip address
+    :rtype: str
+    """
+    if not slave:
+        return
+
+    summary = mesos.DCOSClient().get_state_summary()
+    if 'slaves' not in summary:
+        raise DCOSException(
+            'Invalid summary report. '
+            'Missing field `slaves`. {}'.format(summary))
+
+    for s in summary['slaves']:
+        if 'hostname' not in s or 'id' not in s:
+            raise DCOSException(
+                'Invalid summary report. Missing field `id` '
+                'or `hostname`. {}'.format(summary))
+
+        if s['id'] == slave:
+            return s['hostname']
+
+    raise DCOSException('Agent `{}` not found'.format(slave))
+
+
+def _list_components(leader, slave, use_json):
+    """ List components for a leader or slave_ip node
+
+    :param leader: use leader ip flag
+    :type leader: bool
+    :param slave_ip: agent ip address
+    :type slave_ip: str
+    :param use_json: print components in json format
+    :type use_json: bool
+    """
+    if not (leader or slave):
+        raise DCOSException('--leader or --mesos-id must be provided')
+
+    if leader and slave:
+        raise DCOSException(
+            'Unable to use leader and mesos id at the same time')
+
+    slave_ip = _get_slave_ip(slave)
+    if slave_ip:
+        print_components(slave_ip, use_json)
+        return
+
+    leaders = mesos.MesosDNSClient().hosts('leader.mesos')
+    if len(leaders) != 1:
+        raise DCOSException('Expecting one leader. Got {}'.format(leaders))
+
+    if 'ip' not in leaders[0]:
+        raise DCOSException(
+            'Invalid leader response, missing field `ip`. '
+            'Got {}'.format(leaders[0]))
+
+    print_components(leaders[0]['ip'], use_json)
+
+
+def print_components(ip, use_json):
+    """ Print components for a given node ip.
+        The data is taked from 3dt endpoint:
+        /system/health/v1/nodes/<ip>/units
+
+    :param ip: DC/OS node ip address
+    :type ip: str
+    :param use_json: print components in json format
+    :type use_json: bool
+    """
+    dcos_url = config.get_config_val('core.dcos_url').rstrip("/")
+    if not dcos_url:
+        raise config.missing_config_exception(['core.dcos_url'])
+
+    url = dcos_url + '/system/health/v1/nodes/{}/units'.format(ip)
+    response = http.get(url).json()
+    if 'units' not in response:
+        raise DCOSException(
+            'Invalid response. Missing field `units`. {}'.format(response))
+
+    if use_json:
+        emitter.publish(response['units'])
+    else:
+        for component in response['units']:
+            emitter.publish(component['id'])
+
+
+def _get_unit_type(unit_name):
+    """ Get the full unit name including the type postfix
+        or default to service.
+
+    :param unit_name: unit name with or without type
+    :type unit_name: str
+    :return: unit name with type
+    :rtype: str
+    """
+    if not unit_name:
+        raise DCOSException('Empty systemd unit parameter')
+
+    # https://www.freedesktop.org/software/systemd/man/systemd.unit.html
+    unit_types = ['service', 'socket', 'device', 'mount', 'automount',
+                  'swap', 'target', 'path', 'timer', 'slice', 'scope']
+
+    for unit_type in unit_types:
+        if unit_name.endswith('.{}'.format(unit_type)):
+            return unit_name
+
+    return '{}.service'.format(unit_name)
+
+
+def _dcos_log(follow, lines, leader, slave, component, filters):
+    """ Print logs from dcos-log backend.
+
+    :param follow: same as unix tail's -f
+    :type follow: bool
+    :param lines: number of lines to print
+    :type lines: int
+    :param leader: whether to print the leading master's log
+    :type leader: bool
+    :param slave: the slave ID to print
+    :type slave: str | None
+    :param component: DC/OS component name
+    :type component: string
+    :param filters: a list of filters ["key:value", ...]
+    :type filters: list
+    """
+    if not log.dcos_log_enabled():
+        raise DCOSException('dcos-log is not supported')
+
+    filter_query = ''
+    if component:
+        filters.append('_SYSTEMD_UNIT:{}'.format(_get_unit_type(component)))
+
+    for f in filters:
+        key_value = f.split(':')
+        if len(key_value) != 2:
+            raise SystemExit('Invalid filter parameter {}. '
+                             'Must be --filter=key:value'.format(f))
+        filter_query += '&filter={}'.format(f)
+
+    endpoint = '/system/v1'
+    if leader:
+        endpoint += '/logs/v1/'
+    if slave:
+        endpoint += '/agent/{}/logs/v1/'.format(slave)
+
+    endpoint_type = 'range'
+    if follow:
+        endpoint_type = 'stream'
+
+    dcos_url = config.get_config_val('core.dcos_url').rstrip("/")
+    if not dcos_url:
+        raise config.missing_config_exception(['core.dcos_url'])
+
+    url = (dcos_url + endpoint + endpoint_type +
+           '/?skip_prev={}'.format(lines) + filter_query)
+
+    if follow:
+        return log.follow_logs(url)
+    return log.print_logs_range(url)
 
 
 def _mesos_files(leader, slave_id):

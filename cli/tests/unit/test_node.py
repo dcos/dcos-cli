@@ -189,3 +189,108 @@ def test_node_diagnostics_download(mock_get_diagnostics_list, mock_do_request,
     mock_do_request.assert_called_with(
         '/system/health/v1/report/diagnostics/serve/bundle.zip', 'GET',
         stream=True)
+
+
+@mock.patch('dcos.config.get_config_val')
+@mock.patch('dcos.http.get')
+@mock.patch('dcoscli.log.dcos_log_enabled')
+def test_dcos_log(mocked_dcos_log_enabked, mocked_http_get,
+                  mocked_get_config_val):
+    mocked_dcos_log_enabked.return_value = True
+
+    m = mock.MagicMock()
+    m.status_code = 200
+    mocked_http_get.return_value = m
+
+    mocked_get_config_val.return_value = 'http://127.0.0.1'
+
+    main._dcos_log(False, 10, True, '', None, [])
+    mocked_http_get.assert_called_with(
+        'http://127.0.0.1/system/v1/logs/v1/range/?skip_prev=10',
+        headers={'Accept': 'text/plain'})
+
+
+@mock.patch('dcoscli.log.follow_logs')
+@mock.patch('dcos.config.get_config_val')
+@mock.patch('dcos.http.get')
+@mock.patch('dcoscli.log.dcos_log_enabled')
+def test_dcos_log_stream(mocked_dcos_log_enabked, mocked_http_get,
+                         mocked_get_config_val, mocked_follow_logs):
+    mocked_dcos_log_enabked.return_value = True
+
+    m = mock.MagicMock()
+    m.status_code = 200
+    mocked_http_get.return_value = m
+
+    mocked_get_config_val.return_value = 'http://127.0.0.1'
+
+    main._dcos_log(True, 20, False, 'mesos-id', None, [])
+    mocked_follow_logs.assert_called_with(
+        'http://127.0.0.1/system/v1/agent/mesos-id/logs'
+        '/v1/stream/?skip_prev=20')
+
+
+@mock.patch('dcoscli.log.follow_logs')
+@mock.patch('dcos.config.get_config_val')
+@mock.patch('dcos.http.get')
+@mock.patch('dcoscli.log.dcos_log_enabled')
+def test_dcos_log_filters(mocked_dcos_log_enabked, mocked_http_get,
+                          mocked_get_config_val, mocked_follow_logs):
+    mocked_dcos_log_enabked.return_value = True
+
+    m = mock.MagicMock()
+    m.status_code = 200
+    mocked_http_get.return_value = m
+
+    mocked_get_config_val.return_value = 'http://127.0.0.1'
+
+    main._dcos_log(True, 20, False, 'mesos-id', 'dcos-mesos-master',
+                   ['key1:value1', 'key2:value2'])
+
+    mocked_follow_logs.assert_called_with(
+        'http://127.0.0.1/system/v1/agent/mesos-id/logs/v1/stream/'
+        '?skip_prev=20&filter=key1:value1&filter=key2:value2&'
+        'filter=_SYSTEMD_UNIT:dcos-mesos-master.service')
+
+
+@mock.patch('dcos.config.get_config_val')
+@mock.patch('dcoscli.node.main._get_slave_ip')
+@mock.patch('dcos.http.get')
+def test_list_components(mocked_get, mocked_get_slave_ip,
+                         mocked_get_config_val):
+    m = mock.MagicMock()
+    m.json.return_value = {
+        'units': [
+            {
+                'id': 'dcos-component.service',
+            }
+        ]
+    }
+    mocked_get.return_value = m
+    mocked_get_slave_ip.return_value = '127.0.0.1'
+    mocked_get_config_val.return_value = 'http://10.10.10.10'
+    main._list_components(None, 'slave-id', False)
+    mocked_get.assert_called_with(
+        'http://10.10.10.10/system/health/v1/nodes/127.0.0.1/units')
+
+
+@mock.patch('dcos.config.get_config_val')
+@mock.patch('dcos.mesos.MesosDNSClient')
+@mock.patch('dcos.http.get')
+def test_list_components_leader(mocked_get, mocked_dns,
+                                mocked_get_config_val):
+    m = mock.MagicMock()
+    m.json.return_value = {
+        'units': [
+            {
+                'id': 'dcos-component.service',
+            }
+        ]
+    }
+    mocked_dns().hosts.return_value = [{'ip': '10.10.0.1'}]
+    mocked_get_config_val.return_value = 'http://10.10.10.10'
+
+    mocked_get.return_value = m
+    main._list_components(True, False, False)
+    mocked_get.assert_called_with(
+        'http://10.10.10.10/system/health/v1/nodes/10.10.0.1/units')

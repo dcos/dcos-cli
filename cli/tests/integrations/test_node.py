@@ -1,6 +1,5 @@
 import json
 import os
-import re
 import sys
 
 import pytest
@@ -51,12 +50,15 @@ def test_node_log_empty():
 
 
 def test_node_log_leader():
-    assert_lines(['dcos', 'node', 'log', '--leader'], 10)
+    assert_lines(['dcos', 'node', 'log', '--leader'], 10, great_then=True)
 
 
 def test_node_log_slave():
     slave_id = _node()[0]['id']
-    assert_lines(['dcos', 'node', 'log', '--mesos-id={}'.format(slave_id)], 10)
+    assert_lines(
+        ['dcos', 'node', 'log', '--mesos-id={}'.format(slave_id)],
+        10,
+        great_then=True)
 
 
 def test_node_log_missing_slave():
@@ -65,26 +67,18 @@ def test_node_log_missing_slave():
 
     assert returncode == 1
     assert stdout == b''
-    assert stderr == b'No slave found with ID "bogus".\n'
-
-
-def test_node_log_leader_slave():
-    slave_id = _node()[0]['id']
-
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'node', 'log', '--leader', '--mesos-id={}'.format(slave_id)])
-
-    assert returncode == 0
-    assert stderr == b''
-
-    lines = stdout.decode('utf-8').split('\n')
-    assert len(lines) == 23
-    assert re.match('===>.*<===', lines[0])
-    assert re.match('===>.*<===', lines[11])
+    stderr_str = str(stderr)
+    assert 'HTTP 404' in stderr_str
+    assert 'No slave found with ID "bogus".' in stderr_str
 
 
 def test_node_log_lines():
-    assert_lines(['dcos', 'node', 'log', '--leader', '--lines=4'], 4)
+    # since we are getting system logs, it's not guaranteed to get back
+    # exactly 4 log entries. It must be >= 4
+    assert_lines(
+        ['dcos', 'node', 'log', '--leader', '--lines=4'],
+        4,
+        great_then=True)
 
 
 def test_node_log_invalid_lines():
