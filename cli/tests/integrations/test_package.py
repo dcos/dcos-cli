@@ -220,9 +220,9 @@ def test_describe_package_version_missing():
 
 def test_describe_package_versions():
     stdout = file_bytes(
-        'tests/data/package/json/test_describe_marathon_package_versions.json')
+        'tests/data/package/json/test_describe_kafka_package_versions.json')
     assert_command(
-        ['dcos', 'package', 'describe', 'marathon', '--package-versions'],
+        ['dcos', 'package', 'describe', 'kafka', '--package-versions'],
         stdout=stdout)
 
 
