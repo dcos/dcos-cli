@@ -27,14 +27,14 @@ Options:
     --password=<password>
         Specify password on the command line (insecure).
     --password-env=<password_env>
-        Specify environment variable name that contains the password.
+        Specify an environment variable name that contains the password.
     --password-file=<password_file>
-        Specify path to a file that contains the password.
+        Specify the path to a file that contains the password.
     --provider=<provider_id>
-        Specify authentication provider to use for login.
+        Specify the authentication provider to use for login.
     --private-key=<key_path>
-        Specify path to file that contains the private key.
+        Specify the path to a file that contains the private key.
     --username=<username>
-        Specify username for login.
+        Specify the username for login.
     --version
         Print version information.
