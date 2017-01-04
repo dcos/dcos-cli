@@ -214,7 +214,8 @@ def dcos_log_enabled():
     :return: does cosmos have LOGGING capability.
     :rtype: bool
     """
-    return packagemanager.PackageManager(get_cosmos_url()).has_capability('LOGGING')
+    return packagemanager.PackageManager(
+        get_cosmos_url()).has_capability('LOGGING')
 
 
 def follow_logs(url):
