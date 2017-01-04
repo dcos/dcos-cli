@@ -144,7 +144,11 @@ compare_version()
 
 # Let's first setup a virtualenv: we are assuming that the path is absolute
 mkdir -p "$VIRTUAL_ENV_PATH"
-virtualenv "$VIRTUAL_ENV_PATH"
+if ! [ "$(python -c 'import sys; print("%i" % (sys.hexversion<0x03000000))')" == 0 ]; then
+    virtualenv "$VIRTUAL_ENV_PATH"
+else
+    virtualenv -p /usr/bin/python2.7 "$VIRTUAL_ENV_PATH"
+fi
 
 
 # Install the DC/OS CLI package, using version if set
