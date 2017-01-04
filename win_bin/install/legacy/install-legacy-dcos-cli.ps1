@@ -100,7 +100,7 @@ dcos config set core.reporting true
 dcos config set core.dcos_url $dcos_url
 dcos config set core.timeout 5
 dcos config set package.cache $env:temp\dcos\package-cache
-dcos config set package.sources '[\"https://github.com/mesosphere/universe/archive/version-1.x.zip\"]'
+dcos config set package.sources '[\"https://universe.mesosphere.com/repo\"]'
 
 dcos package update
 
