@@ -7,10 +7,9 @@ import time
 
 import six
 
-from dcos import cosmospackage, emitting, http, sse, util
+from dcos import emitting, http, packagemanager, sse, util
+from dcos.cosmos import get_cosmos_url
 from dcos.errors import DCOSException, DefaultError
-
-from dcoscli.package.main import get_cosmos_url
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -215,7 +214,7 @@ def dcos_log_enabled():
     :return: does cosmos have LOGGING capability.
     :rtype: bool
     """
-    return cosmospackage.Cosmos(get_cosmos_url()).has_capability('LOGGING')
+    return packagemanager.PackageManager(get_cosmos_url()).has_capability('LOGGING')
 
 
 def follow_logs(url):

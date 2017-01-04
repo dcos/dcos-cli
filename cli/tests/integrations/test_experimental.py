@@ -253,7 +253,7 @@ def test_service_start_by_starting_same_service_twice():
     _wait_for_package_add_remote(name, version)
     try:
         _service_start(name, version)
-        stderr = b'Package is already installed\n'
+        stderr = b'The DC/OS service has already been started\n'
         _service_start_failure(name, version, stderr=stderr)
     finally:
         _service_stop(name)
