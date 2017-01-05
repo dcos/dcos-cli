@@ -634,6 +634,33 @@ def _get_unit_type(unit_name):
     return '{}.service'.format(unit_name)
 
 
+def _build_leader_url(component):
+    """ Return a leader URL based on passed component name.
+
+    :param component: DC/OS component name
+    :type component: str
+    :return: leader logs url
+    :rtype: str
+    """
+
+    leaders_map = {
+        'dcos-marathon.service': 'marathon',
+        'dcos-mesos-master.service': 'mesos',
+    }
+
+    # set default leader to 'mesos' to be consistent with files API
+    leader_prefix = 'mesos'
+
+    if component:
+        component_name = _get_unit_type(component)
+        leader_prefix = leaders_map.get(component_name)
+        if not leader_prefix:
+            raise DCOSException('Component {} does not have a leader'.format(
+                component))
+
+    return '/leader/{}/logs/v1/'.format(leader_prefix)
+
+
 def _dcos_log(follow, lines, leader, slave, component, filters):
     """ Print logs from dcos-log backend.
 
@@ -666,8 +693,8 @@ def _dcos_log(follow, lines, leader, slave, component, filters):
 
     endpoint = '/system/v1'
     if leader:
-        endpoint += '/logs/v1/'
-    if slave:
+        endpoint += _build_leader_url(component)
+    elif slave:
         endpoint += '/agent/{}/logs/v1/'.format(slave)
 
     endpoint_type = 'range'

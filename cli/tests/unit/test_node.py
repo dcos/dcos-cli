@@ -194,8 +194,8 @@ def test_node_diagnostics_download(mock_get_diagnostics_list, mock_do_request,
 @mock.patch('dcos.config.get_config_val')
 @mock.patch('dcos.http.get')
 @mock.patch('dcoscli.log.dcos_log_enabled')
-def test_dcos_log(mocked_dcos_log_enabked, mocked_http_get,
-                  mocked_get_config_val):
+def test_dcos_log_leader_mesos(mocked_dcos_log_enabked, mocked_http_get,
+                               mocked_get_config_val):
     mocked_dcos_log_enabked.return_value = True
 
     m = mock.MagicMock()
@@ -206,7 +206,27 @@ def test_dcos_log(mocked_dcos_log_enabked, mocked_http_get,
 
     main._dcos_log(False, 10, True, '', None, [])
     mocked_http_get.assert_called_with(
-        'http://127.0.0.1/system/v1/logs/v1/range/?skip_prev=10',
+        'http://127.0.0.1/system/v1/leader/mesos/logs/v1/range/?skip_prev=10',
+        headers={'Accept': 'text/plain'})
+
+
+@mock.patch('dcos.config.get_config_val')
+@mock.patch('dcos.http.get')
+@mock.patch('dcoscli.log.dcos_log_enabled')
+def test_dcos_log_leader_marathon(mocked_dcos_log_enabked, mocked_http_get,
+                                  mocked_get_config_val):
+    mocked_dcos_log_enabked.return_value = True
+
+    m = mock.MagicMock()
+    m.status_code = 200
+    mocked_http_get.return_value = m
+
+    mocked_get_config_val.return_value = 'http://127.0.0.1'
+
+    main._dcos_log(False, 10, True, '', 'dcos-marathon', [])
+    mocked_http_get.assert_called_with(
+        'http://127.0.0.1/system/v1/leader/marathon/logs/v1/range/'
+        '?skip_prev=10&filter=_SYSTEMD_UNIT:dcos-marathon.service',
         headers={'Accept': 'text/plain'})
 
 
