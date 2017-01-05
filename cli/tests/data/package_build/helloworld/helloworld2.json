@@ -1,0 +1,14 @@
+{
+    "config": "@config.json",
+    "description": "Example DCOS application package",
+    "maintainer": "support@mesosphere.io",
+    "marathon": {"v2AppMustacheTemplate": "@marathon.json.mustache"},
+    "name": "helloworld2",
+    "packagingVersion": "3.0",
+    "postInstallNotes": "A sample post-installation message",
+    "postUninstallNotes": "A sample post-uninstall message",
+    "preInstallNotes": "A sample pre-installation message",
+    "tags": ["mesosphere", "example", "subcommand"],
+    "version": "0.1.0",
+    "website": "https://github.com/mesosphere/dcos-helloworld"
+}

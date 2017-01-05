@@ -6,9 +6,9 @@ import docopt
 import pkg_resources
 
 import dcoscli
-from dcos import (cmds, config, cosmospackage, emitting, http, options,
-                  package, subcommand, util)
+from dcos import cmds, emitting, http, options, package, subcommand, util
 from dcos.errors import DCOSException
+from dcos.package import get_package_manager
 from dcoscli import tables
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
@@ -140,7 +140,7 @@ def _update():
     :rtype: str
     """
 
-    _get_package_manager()
+    get_package_manager()
     notice = ("This command has been deprecated. "
               "Repositories will be automatically updated after they are added"
               " by `dcos package repo add`")
@@ -150,13 +150,13 @@ def _update():
 def _list_repos(is_json):
     """List configured package repositories.
 
-    :param json_: output json if True
-    :type json_: bool
+    :param is_json: output json if True
+    :type is_json: bool
     :returns: Process status
     :rtype: int
     """
 
-    package_manager = _get_package_manager()
+    package_manager = get_package_manager()
     repos = package_manager.get_repos()
 
     if is_json:
@@ -185,7 +185,7 @@ def _add_repo(repo_name, repo_url, index):
     :rtype: None
     """
 
-    package_manager = _get_package_manager()
+    package_manager = get_package_manager()
     package_manager.add_repo(repo_name, repo_url, index)
 
     return 0
@@ -200,7 +200,7 @@ def _remove_repo(repo_name):
     :rtype: int
     """
 
-    package_manager = _get_package_manager()
+    package_manager = get_package_manager()
     package_manager.remove_repo(repo_name)
 
     return 0
@@ -240,7 +240,8 @@ def _describe(package_name,
     """
 
     if package_versions and \
-       (app or cli or options_path or render or package_version or config):
+            (app or cli or options_path
+             or render or package_version or config):
         raise DCOSException(
             'If --package-versions is provided, no other option can be '
             'provided')
@@ -251,9 +252,9 @@ def _describe(package_name,
         render = True
 
     # Fail early if options file isn't valid
-    user_options = _user_options(options_path)
+    user_options = util.read_file_json(options_path)
 
-    package_manager = _get_package_manager()
+    package_manager = get_package_manager()
     pkg = package_manager.get_package_version(package_name, package_version)
 
     pkg_json = pkg.package_json()
@@ -278,24 +279,6 @@ def _describe(package_name,
         emitter.publish(pkg_json)
 
     return 0
-
-
-def _user_options(path):
-    """ Read the options at the given file path.
-
-    :param path: file path
-    :type path: str
-    :returns: options
-    :rtype: dict
-    """
-    if path is None:
-        return {}
-    else:
-        # Expand ~ in the path
-        path = os.path.expanduser(path)
-
-        with util.open_file(path) as options_file:
-            return util.load_json(options_file)
 
 
 def confirm(prompt, yes):
@@ -351,9 +334,9 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
         cli = app = True
 
     # Fail early if options file isn't valid
-    user_options = _user_options(options_path)
+    user_options = util.read_file_json(options_path)
 
-    package_manager = _get_package_manager()
+    package_manager = get_package_manager()
     pkg = package_manager.get_package_version(package_name, package_version)
 
     pkg_json = pkg.package_json()
@@ -413,14 +396,14 @@ def _list(json_, app_id, cli_only, package_name):
     :param app_id: App ID of app to show
     :type app_id: str
     :param cli_only: if True, only show packages with installed subcommands
-    :type cli: bool
+    :type cli_only: bool
     :param package_name: The package to show
     :type package_name: str
     :returns: process return code
     :rtype: int
     """
 
-    package_manager = _get_package_manager()
+    package_manager = get_package_manager()
     if app_id is not None:
         app_id = util.normalize_marathon_id_path(app_id)
     results = package.installed_packages(
@@ -478,7 +461,7 @@ def _search(json_, query):
     if not query:
         query = ''
 
-    package_manager = _get_package_manager()
+    package_manager = get_package_manager()
     results = package_manager.search_sources(query)
 
     if json_ or results['packages']:
@@ -504,7 +487,7 @@ def _uninstall(package_name, remove_all, app_id, cli, app):
     :rtype: int
     """
 
-    package_manager = _get_package_manager()
+    package_manager = get_package_manager()
     err = package.uninstall(
         package_manager, package_name, remove_all, app_id, cli, app)
     if err is not None:
@@ -512,36 +495,3 @@ def _uninstall(package_name, remove_all, app_id, cli, app):
         return 1
 
     return 0
-
-
-def get_cosmos_url():
-    """
-    :returns: cosmos base url
-    :rtype: str
-    """
-    toml_config = config.get_config()
-    cosmos_url = config.get_config_val("package.cosmos_url", toml_config)
-    if cosmos_url is None:
-        cosmos_url = config.get_config_val("core.dcos_url", toml_config)
-        if cosmos_url is None:
-            raise config.missing_config_exception(["core.dcos_url"])
-    return cosmos_url
-
-
-def _get_package_manager():
-    """Returns type of package manager to use
-
-    :returns: PackageManager instance
-    :rtype: PackageManager
-    """
-
-    cosmos_url = get_cosmos_url()
-    cosmos_manager = cosmospackage.Cosmos(cosmos_url)
-    if cosmos_manager.enabled():
-        return cosmos_manager
-    else:
-        msg = ("This version of the DC/OS CLI is not supported for your "
-               "cluster. Please downgrade the CLI to an older version: "
-               "https://dcos.io/docs/usage/cli/update/#downgrade"
-               )
-        raise DCOSException(msg)

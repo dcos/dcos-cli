@@ -11,7 +11,6 @@ from dcos.errors import DCOSException
 from dcoscli.help.main import dcos_help
 from dcoscli.subcommand import default_doc, SubcommandMain
 
-
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
 

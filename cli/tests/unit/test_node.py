@@ -5,7 +5,7 @@ import dcoscli.node.main as main
 from dcos.errors import DCOSException
 
 
-@mock.patch('dcos.cosmospackage.Cosmos')
+@mock.patch('dcos.packagemanager.PackageManager')
 def test_check_version_fail(mock_cosmos):
     """
     Test _check_3dt_version(), should throw DCOSException exception.
@@ -21,7 +21,7 @@ def test_check_version_fail(mock_cosmos):
         'version. Must be DC/OS >= 1.8')
 
 
-@mock.patch('dcos.cosmospackage.Cosmos')
+@mock.patch('dcos.packagemanager.PackageManager')
 @mock.patch('dcos.http.get')
 def test_check_version_success(mock_get, mock_cosmos):
     """
@@ -37,7 +37,7 @@ def test_check_version_success(mock_get, mock_cosmos):
     main._check_3dt_version()
 
 
-@mock.patch('dcos.cosmospackage.Cosmos')
+@mock.patch('dcos.packagemanager.PackageManager')
 @mock.patch('dcos.http.get')
 @mock.patch('dcoscli.node.main._do_diagnostics_request')
 def test_node_diagnostics_create(mock_do_diagnostics_request, mock_get,
@@ -65,7 +65,7 @@ def test_node_diagnostics_create(mock_do_diagnostics_request, mock_get,
         json={'nodes': ['10.10.0.1']})
 
 
-@mock.patch('dcos.cosmospackage.Cosmos')
+@mock.patch('dcos.packagemanager.PackageManager')
 @mock.patch('dcos.http.get')
 @mock.patch('dcoscli.node.main._do_diagnostics_request')
 def test_node_diagnostics_delete(mock_do_diagnostics_request, mock_get,
@@ -90,7 +90,7 @@ def test_node_diagnostics_delete(mock_do_diagnostics_request, mock_get,
     )
 
 
-@mock.patch('dcos.cosmospackage.Cosmos')
+@mock.patch('dcos.packagemanager.PackageManager')
 @mock.patch('dcos.http.get')
 @mock.patch('dcoscli.node.main._do_diagnostics_request')
 def test_node_diagnostics_list(mock_do_diagnostics_request, mock_get,
@@ -122,7 +122,7 @@ def test_node_diagnostics_list(mock_do_diagnostics_request, mock_get,
     )
 
 
-@mock.patch('dcos.cosmospackage.Cosmos')
+@mock.patch('dcos.packagemanager.PackageManager')
 @mock.patch('dcos.http.get')
 @mock.patch('dcoscli.node.main._do_diagnostics_request')
 def test_node_diagnostics_status(mock_do_diagnostics_request, mock_get,
@@ -151,7 +151,7 @@ def test_node_diagnostics_status(mock_do_diagnostics_request, mock_get,
     )
 
 
-@mock.patch('dcos.cosmospackage.Cosmos')
+@mock.patch('dcos.packagemanager.PackageManager')
 @mock.patch('dcos.http.get')
 @mock.patch('dcoscli.node.main._do_diagnostics_request')
 def test_node_diagnostics_cancel(mock_do_diagnostics_request, mock_get,
@@ -178,7 +178,7 @@ def test_node_diagnostics_cancel(mock_do_diagnostics_request, mock_get,
     )
 
 
-@mock.patch('dcos.cosmospackage.Cosmos')
+@mock.patch('dcos.packagemanager.PackageManager')
 @mock.patch('dcoscli.node.main._do_request')
 @mock.patch('dcoscli.node.main._get_bundle_list')
 def test_node_diagnostics_download(mock_get_diagnostics_list, mock_do_request,

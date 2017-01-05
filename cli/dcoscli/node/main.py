@@ -6,13 +6,14 @@ import six
 from six.moves import urllib
 
 import dcoscli
-from dcos import (cmds, config, cosmospackage, emitting, errors, http, mesos,
-                  subprocess, util)
+from dcos import (cmds, config, emitting, errors,
+                  http, mesos, packagemanager, subprocess, util)
+from dcos.cosmos import get_cosmos_url
 from dcos.errors import (DCOSAuthenticationException,
                          DCOSAuthorizationException,
                          DCOSException, DefaultError)
 from dcoscli import log, tables
-from dcoscli.package.main import confirm, get_cosmos_url
+from dcoscli.package.main import confirm
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
 
@@ -134,7 +135,7 @@ def _check_3dt_version():
     :raises: DCOSException if cluster does not have diagnostics capability
     """
 
-    cosmos = cosmospackage.Cosmos(get_cosmos_url())
+    cosmos = packagemanager.PackageManager(get_cosmos_url())
     if not cosmos.has_capability('SUPPORT_CLUSTER_REPORT'):
         raise DCOSException(
             'DC/OS backend does not support diagnostics capabilities in this '

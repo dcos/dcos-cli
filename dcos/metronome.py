@@ -1,10 +1,8 @@
 import json
 
-
-from dcoscli.package.main import get_cosmos_url
 from six.moves import urllib
 
-from dcos import config, cosmospackage, http, rpcclient, util
+from dcos import config, cosmos, http, packagemanager, rpcclient, util
 from dcos.errors import DCOSException
 
 logger = util.get_logger(__name__)
@@ -392,8 +390,8 @@ def _check_capability():
     :raises: DCOSException if cluster does not have metronome capability
     """
 
-    cosmos = cosmospackage.Cosmos(get_cosmos_url())
-    if not cosmos.has_capability('METRONOME'):
+    manager = packagemanager.PackageManager(cosmos.get_cosmos_url())
+    if not manager.has_capability('METRONOME'):
         raise DCOSException(
             'DC/OS backend does not support metronome capabilities in this '
             'version. Must be DC/OS >= 1.8')

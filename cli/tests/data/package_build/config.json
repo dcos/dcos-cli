@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "properties": {
+    "bitbucket": {
+      "properties": {
+        "name": {
+          "default": "bitbucket",
+          "description": "name",
+          "type": "string"
+        }
+      },
+      "required": ["name"],
+      "type": "object"
+    }
+  },
+  "type": "object"
+}
