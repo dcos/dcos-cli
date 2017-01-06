@@ -1,6 +1,6 @@
 # This image runs the dcos-cli test suite.
 
-FROM ubuntu:15.04
+FROM ubuntu:16.04
 MAINTAINER support@mesosphere.com
 
 RUN apt-get update && apt-get install -y \
