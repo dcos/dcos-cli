@@ -4,7 +4,7 @@
 #   CLUSTER_NAME
 #   CCM_AUTH_TOKEN
 #   DCOS_CHANNEL
-#   CF_TEMPLATE_NAME
+#   CF_TEMPLATE_URL
 
 set -e
 
@@ -17,7 +17,7 @@ CLUSTER_ID=$(http --ignore-stdin \https://ccm.mesosphere.com/api/cluster/ \
      time=120 \
      channel=$DCOS_CHANNEL \
      cluster_desc="DC/OS CLI testing cluster" \
-     template=$CF_TEMPLATE_NAME \
+     template_url=$CF_TEMPLATE_URL \
      adminlocation=0.0.0.0/0 \
      public_agents=1 \
      private_agents=1 | \
