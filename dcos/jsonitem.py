@@ -283,8 +283,8 @@ def _parse_url(value):
     if value_regex is None:
         scheme_match = re.match(scheme_pattern, value, re.IGNORECASE)
         if scheme_match is None:
-            msg = 'Please check url {!r}. Missing http(s)://'.format(value)
-            raise DCOSException(msg)
+            logger.debug("Defaulting URL to https scheme")
+            return "https://" + value
         else:
             raise DCOSException(
                 'Unable to parse {!r} as a url'.format(value))
