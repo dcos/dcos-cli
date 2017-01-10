@@ -289,6 +289,13 @@ def get_nested_container_id(task):
         container_status = status.get('container_status')
         if not container_status:
             logger.debug('Full task state: {}'.format(task))
+
+            # if task status is TASK_FAILED and no container_id
+            # available then the executor has never started and no
+            # logs available for this task.
+            if status.get('state') == 'TASK_FAILED':
+                raise DCOSException('No available logs found. '
+                                    'Please check your executor status')
             raise DCOSException('Invalid executor info. '
                                 'Missing field `container_status`')
 
