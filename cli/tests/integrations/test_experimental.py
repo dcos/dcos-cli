@@ -39,7 +39,7 @@ def test_experimental():
 
 def test_info():
     command = command_base + ['--info']
-    out = b'Try experimental commands that are under development\n'
+    out = b'Try experimental commands under development\n'
     assert_command(command, stdout=out)
 
 
