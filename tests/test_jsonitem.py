@@ -61,16 +61,6 @@ def bad_array(request):
 
 
 @pytest.fixture(params=[
-    'www.test.com',
-    'http:/hi.com',
-    'https//www.hi.com',
-    'http://bad.port:here'
-    ])
-def bad_url(request):
-    return request.param
-
-
-@pytest.fixture(params=[
     ('string', 'this is a string', 'this is a string'),
     ('string', 'null', None),
     ('object', '{"key":"value"}', {'key': 'value'}),
@@ -212,11 +202,6 @@ def test_parse_invalid_arrays(bad_array):
 
 def test_parse_url():
     assert jsonitem._parse_url('http://test.com:12') == 'http://test.com:12'
-
-
-def test_parse_invalid_url(bad_url):
-    with pytest.raises(DCOSException):
-        jsonitem._parse_url(bad_url)
 
 
 def test_find_parser(schema, jsonitem_tuple):

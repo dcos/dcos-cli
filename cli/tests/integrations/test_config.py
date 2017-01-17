@@ -66,12 +66,15 @@ def test_get_missing_property(env):
     _get_missing_value('missing.property', env)
 
 
-def test_invalid_dcos_url(env):
-    stderr = b'Please check url \'abc.com\'. Missing http(s)://\n'
-    assert_command(['dcos', 'config', 'set', 'core.dcos_url', 'abc.com'],
-                   stderr=stderr,
-                   returncode=1,
+def test_dcos_url_without_scheme(env):
+    old = b'http://dcos.snakeoil.mesosphere.com'
+    new = b"abc.com"
+    out = b"[core.dcos_url]: changed from '%s' to 'https://%s'\n" % (old, new)
+    assert_command(['dcos', 'config', 'set', 'core.dcos_url', new],
+                   returncode=0,
+                   stderr=out,
                    env=env)
+    config_set('core.dcos_url', old, env)
 
 
 def test_get_top_property(env):
