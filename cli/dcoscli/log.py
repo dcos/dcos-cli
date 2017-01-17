@@ -254,20 +254,12 @@ def follow_logs(url):
             raise DCOSException(
                 'Missing `realtime_timestamp` in log entry: {}'.format(entry))
 
-        # text format: `date _HOSTNAME SYSLOG_IDENTIFIER[_PID]: MESSAGE`
         # entry.RealtimeTimestamp returns a unix time in microseconds
         # https://www.freedesktop.org/software/systemd/man/sd_journal_get_realtime_usec.html
-        t = int(entry_json['realtime_timestamp'] / 1000000)
-        l = [datetime.datetime.fromtimestamp(t).ctime()]
-
-        optional_fields = ['_HOSTNAME', 'SYSLOG_IDENTIFIER']
-        for optional_field in optional_fields:
-            if optional_field in entry_json['fields']:
-                l.append(entry_json['fields'][optional_field])
-        if '_PID' in entry_json['fields']:
-            l.append('[' + entry_json['fields']['_PID'] + ']')
-        line = ' '.join(l)
-        line += ': {}'.format(entry_json['fields']['MESSAGE'])
+        timestamp = int(entry_json['realtime_timestamp'] / 1000000)
+        t = datetime.datetime.fromtimestamp(timestamp).strftime(
+            '%Y-%m-%d %H:%m:%S')
+        line = '{}: {}'.format(t, entry_json['fields']['MESSAGE'])
         emitter.publish(line)
 
 
