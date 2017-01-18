@@ -1,6 +1,5 @@
 Description:
-    Experimental commands. These commands are under development and are subject
-    to change.
+    Commands under development and subject to change.
 
 Usage:
     dcos experimental --help
