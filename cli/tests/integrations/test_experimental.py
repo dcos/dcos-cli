@@ -39,8 +39,7 @@ def test_experimental():
 
 def test_info():
     command = command_base + ['--info']
-    out = b'Experimental commands. These commands ' \
-          b'are under development and are subject to change\n'
+    out = b'Commands under development and subject to change\n'
     assert_command(command, stdout=out)
 
 
@@ -301,37 +300,37 @@ def _service_start_cmd(package_name,
                        package_version=None,
                        options=None,
                        json=False):
-    return (command_base
-            + (['service', 'start'])
-            + (['--json'] if json else [])
-            + ([package_name])
-            + (['--package-version', package_version]
-               if package_version else [])
-            + (['--options', options] if options else []))
+    return (command_base +
+            (['service', 'start']) +
+            (['--json'] if json else []) +
+            ([package_name]) +
+            (['--package-version', package_version]
+             if package_version else []) +
+            (['--options', options] if options else []))
 
 
 def _package_add_cmd(dcos_package=None,
                      package_name=None,
                      package_version=None,
                      json=False):
-    return (command_base
-            + (['package', 'add'])
-            + (['--json'] if json else [])
-            + (['--dcos-package', dcos_package] if dcos_package else [])
-            + (['--package-name', package_name] if package_name else [])
-            + (['--package-version', package_version]
-               if package_version else []))
+    return (command_base +
+            (['package', 'add']) +
+            (['--json'] if json else []) +
+            (['--dcos-package', dcos_package] if dcos_package else []) +
+            (['--package-name', package_name] if package_name else []) +
+            (['--package-version', package_version]
+             if package_version else []))
 
 
 def _package_build_cmd(build_definition,
                        output_directory=None,
                        expects_json=False):
-    return (command_base
-            + (['package', 'build'])
-            + (['--json'] if expects_json else [])
-            + (['--output-directory', output_directory]
-               if output_directory else [])
-            + ([build_definition]))
+    return (command_base +
+            (['package', 'build']) +
+            (['--json'] if expects_json else []) +
+            (['--output-directory', output_directory]
+             if output_directory else []) +
+            ([build_definition]))
 
 
 def _service_stop(package_name):
