@@ -6,7 +6,7 @@ Usage:
     dcos package --help
     dcos package --info
     dcos package describe <package-name>
-                          [--app --cli --config --render --options=<file>]
+                          [(--app [--render]) --cli --config --options=<file>]
                           [--package-version=<package-version>]
     dcos package describe <package-name> --package-versions
     dcos package install <package-name>
