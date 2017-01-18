@@ -114,23 +114,12 @@ def _package(config_schema, info):
                 'data/config-schema/package.json').decode('utf-8'))
         emitter.publish(schema)
     elif info:
-        _info()
+        emitter.publish(default_command_info("package"))
     else:
         doc = default_doc("package")
         emitter.publish(options.make_generic_usage_message(doc))
         return 1
 
-    return 0
-
-
-def _info():
-    """Print package cli information.
-
-    :returns: Process status
-    :rtype: int
-    """
-
-    emitter.publish(default_command_info("package"))
     return 0
 
 
@@ -239,9 +228,9 @@ def _describe(package_name,
     :rtype: int
     """
 
-    if package_versions and \
-            (app or cli or options_path
-             or render or package_version or config):
+    if (package_versions and
+        (app or cli or options_path or
+         render or package_version or config)):
         raise DCOSException(
             'If --package-versions is provided, no other option can be '
             'provided')

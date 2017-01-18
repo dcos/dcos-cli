@@ -5,24 +5,22 @@ Usage:
     dcos package --config-schema
     dcos package --help
     dcos package --info
-    dcos package describe [--app --cli --config]
-                          [--render]
-                          [--package-versions]
-                          [--options=<file>]
+    dcos package describe <package-name>
+                          [--app --cli --config --render --options=<file>]
                           [--package-version=<package-version>]
-                          <package-name>
-    dcos package install [--cli | [--app --app-id=<app-id>]]
+    dcos package describe <package-name> --package-versions
+    dcos package install <package-name>
+                         [--cli | [--app --app-id=<app-id>]]
                          [--package-version=<package-version>]
                          [--options=<file>]
                          [--yes]
-                         <package-name>
-    dcos package list [--json --app-id=<app-id> --cli <package-name>]
-    dcos package search [--json <query>]
-    dcos package repo add [--index=<index>] <repo-name> <repo-url>
+    dcos package list [<package-name> --json --app-id=<app-id> --cli]
+    dcos package search [<query> --json]
+    dcos package repo add <repo-name> <repo-url> [--index=<index>]
     dcos package repo remove <repo-name>
     dcos package repo list [--json]
-    dcos package uninstall [--cli | [--app --app-id=<app-id> --all]]
-                           <package-name>
+    dcos package uninstall <package-name>
+                           [--cli | [--app --app-id=<app-id> --all]]
     dcos package update
 
 Commands:

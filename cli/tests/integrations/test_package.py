@@ -38,7 +38,7 @@ def zk_znode(request):
 
 
 def test_package():
-    with open('tests/data/help/package.txt') as content:
+    with open('dcoscli/data/help/package.txt') as content:
         assert_command(['dcos', 'package', '--help'],
                        stdout=content.read().encode('utf-8'))
 

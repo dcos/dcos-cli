@@ -1,5 +1,6 @@
 Description:
-    Experimental commands. These commands are under development and are subject to change.
+    Experimental commands. These commands are under development and are subject
+    to change.
 
 Usage:
     dcos experimental --help
@@ -8,21 +9,23 @@ Usage:
                                   (--dcos-package=<dcos-package> |
                                     (--package-name=<package-name>
                                       [--package-version=<package-version>]))
-    dcos experimental package build [--json]
+    dcos experimental package build <build-definition>
+                                    [--json]
                                     [--output-directory=<output-directory>]
-                                    <build-definition>
-    dcos experimental service start [--json]
+    dcos experimental service start <package-name>
+                                    [--json]
                                     [--package-version=<package-version>]
                                     [--options=<options-file>]
-                                    <package-name>
 
 Commands:
     package add
         Adds a DC/OS package to DC/OS.
     package build
-        Build a package locally to install to DC/OS or share with Universe.
+        Build a package locally to add to DC/OS or share with Universe.
     service start
-        Starts a DC/OS package previously added with `dcos experimental package add`
+        Starts a service from a DC/OS package. See
+        `dcos experimental package add` for information on how to add a
+        package to DC/OS.
 
 Options:
     --dcos-package=<dcos-package>
