@@ -67,6 +67,10 @@ class PackageManager:
         try:
             response = self.cosmos.call_endpoint(
                 'capabilities').json()
+        except DCOSAuthenticationException:
+            raise
+        except DCOSAuthorizationException:
+            raise
         except Exception as e:
             logger.exception(e)
             return False
