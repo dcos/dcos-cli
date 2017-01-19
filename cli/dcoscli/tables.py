@@ -115,8 +115,9 @@ def app_table(apps, deployments):
         ("CMD", get_cmd)
     ])
 
-    limits = {}
-    limits["CMD"] = 35
+    limits = {
+        "CMD": 35
+    }
 
     tb = truncate_table(fields, apps, limits, sortby="ID")
     tb.align["CMD"] = "l"
@@ -272,12 +273,17 @@ def job_table(job_list):
     fields = OrderedDict([
         ('id', lambda s: s['id']),
         ('Description', lambda s:
-            _truncate_desc(s['description'] if 'description' in s else '')),
+            s['description'] if 'description' in s else ''),
         ('Status', lambda s: _job_status(s)),
         ('Last Succesful Run', lambda s: s['history']['lastSuccessAt']
             if 'history' in s else 'N/A'),
     ])
-    tb = table(fields, job_list, sortby="ID")
+
+    limits = {
+        "Description": 35
+    }
+
+    tb = truncate_table(fields, job_list, limits, sortby="ID")
     tb.align['ID'] = 'l'
     tb.align["DESCRIPTION"] = 'l'
     tb.align["STATUS"] = 'l'
@@ -345,21 +351,6 @@ def job_runs_table(runs_list):
     tb.align['JOB ID'] = 'l'
 
     return tb
-
-
-def _truncate_desc(description, truncation_size=35):
-    """Utility function that truncates a string for formatting.
-
-    :param description: description
-    :type description: str
-    :rtype: str
-
-    """
-
-    if(len(description) > truncation_size):
-        return description[:truncation_size] + '..'
-    else:
-        return description
 
 
 def _job_status(job):
@@ -940,7 +931,8 @@ def truncate_table(fields, objs, limits, **kwargs):
         """
         result = str(function(obj))
         if (limits is not None and limits.get(key) is not None):
-            result = textwrap.shorten(result, width=limits.get(key), placeholder='...')
+            result = textwrap.\
+                shorten(result, width=limits.get(key), placeholder='...')
         return result
 
     for obj in objs:
