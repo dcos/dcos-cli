@@ -20,9 +20,10 @@ Commands:
     package add
         Adds a DC/OS package to DC/OS.
     package build
-        Build a package locally to be added to DC/OS or to share with Universe.
+        Build a package locally to be added to DC/OS or to be shared with
+        Universe.
     service start
-        Starts a service from a DC/OS package. See
+        Starts a service from a DC/OS package that was added to DC/OS. See
         `dcos experimental package add` for information on how to add a
         package to DC/OS.
 
