@@ -229,11 +229,14 @@ def test_describe_package_versions():
 def test_describe_package_versions_others():
     stderr = (b'If --package-versions is provided, no other option can be '
               b'provided\n')
-    assert_command(
+    returncode, stdout, stderr = assert_command(
         ['dcos', 'package', 'describe', 'marathon', '--package-versions',
-         '--app'],
-        returncode=1,
-        stderr=stderr)
+         '--app']
+    )
+
+    assert returncode == 1, returncode
+    assert stdout.decode('utf-8').startswith('Command not recognized'), stdout
+    assert stderr == b'', stderr
 
 
 def test_describe_options():

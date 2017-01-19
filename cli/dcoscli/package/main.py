@@ -228,13 +228,6 @@ def _describe(package_name,
     :rtype: int
     """
 
-    if (package_versions and
-        (app or cli or options_path or
-         render or package_version or config)):
-        raise DCOSException(
-            'If --package-versions is provided, no other option can be '
-            'provided')
-
     # If the user supplied template options, they definitely want to
     # render the template
     if options_path:
