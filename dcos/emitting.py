@@ -155,6 +155,7 @@ def _page(output, pager_command=None):
 
     if not sys.stdout.isatty() or util.is_windows_platform():
         print(output)
+        sys.stdout.flush()
         return
 
     num_lines = output.count('\n')
