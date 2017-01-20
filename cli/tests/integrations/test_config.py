@@ -69,12 +69,13 @@ def test_get_missing_property(env):
 def test_dcos_url_without_scheme(env):
     old = b'http://dcos.snakeoil.mesosphere.com'
     new = b"abc.com"
-    out = b"[core.dcos_url]: changed from '%s' to 'https://%s'\n" % (old, new)
-    assert_command(['dcos', 'config', 'set', 'core.dcos_url', new],
-                   returncode=0,
-                   stderr=out,
-                   env=env)
-    config_set('core.dcos_url', old, env)
+    out = b"[core.dcos_url]: changed from '%b' to 'https://%b'\n" % (old, new)
+    assert_command(
+            ['dcos', 'config', 'set', 'core.dcos_url', new.decode('utf-8')],
+            returncode=0,
+            stderr=out,
+            env=env)
+    config_set('core.dcos_url', old.decode('utf-8'), env)
 
 
 def test_get_top_property(env):

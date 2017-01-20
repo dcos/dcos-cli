@@ -242,7 +242,7 @@ def test_ls_no_params():
     assert returncode == 0
     assert stderr == b''
 
-    ls_line = 'stderr  stdout'
+    ls_line = 'stderr.*stdout'
     lines = stdout.decode('utf-8').split('\n')
     assert len(lines) == 7
     assert re.match('===>.*<===', lines[0])
@@ -254,13 +254,15 @@ def test_ls_no_params():
 
 
 def test_ls():
-    stdout = b'stderr  stdout\n'
+    stderr_log = b'stderr  stderr.logrotate.conf  stderr.logrotate.state'
+    stdout_log = b'stdout  stdout.logrotate.conf  stdout.logrotate.state'
+    log_line = stderr_log + b'  ' + stdout_log + b'\n'
     assert_command(['dcos', 'task', 'ls', 'test-app1'],
-                   stdout=stdout)
+                   stdout=log_line)
 
 
 def test_ls_multiple_tasks():
-    ls_line = 'stderr  stdout'
+    ls_line = 'stderr.*stdout'
     returncode, stdout, stderr = exec_command(
         ['dcos', 'task', 'ls', 'test-app'])
     lines = stdout.decode('utf-8').split('\n')
@@ -275,7 +277,7 @@ def test_ls_multiple_tasks():
 
 
 def test_ls_long():
-    assert_lines(['dcos', 'task', 'ls', '--long', 'test-app1'], 2)
+    assert_lines(['dcos', 'task', 'ls', '--long', 'test-app1'], 6)
 
 
 def test_ls_path():
@@ -308,14 +310,17 @@ def test_ls_completed():
     returncode, stdout, stderr = exec_command(
         ['dcos', 'task', 'ls', '--completed', task_id_completed])
 
-    out = b'stderr  stdout\n'
+    ls_line = 'stderr.*stdout'
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'task', 'ls', 'test-app'])
+    lines = stdout.decode('utf-8').split('\n')
     assert returncode == 0
-    assert stdout == out
+    assert re.match(ls_line, lines[1])
     assert stderr == b''
 
 
 @pytest.mark.skipif('DCOS_DEBUGGING_ENABLED' not in os.environ,
-                    reason="Requires Agent Dbugging APIs")
+                    reason="Requires Agent Debugging APIs")
 def test_exec_non_interactive():
     with open('tests/data/tasks/lorem-ipsum.txt') as text:
         content = text.read()
@@ -329,7 +334,7 @@ def test_exec_non_interactive():
 
 
 @pytest.mark.skipif('DCOS_DEBUGGING_ENABLED' not in os.environ,
-                    reason="Requires Agent Dbugging APIs")
+                    reason="Requires Agent Debugging APIs")
 def test_exec_interactive():
     with open('tests/data/tasks/lorem-ipsum.txt') as text:
         content = bytes(text.read(), 'UTF-8')
