@@ -918,7 +918,7 @@ def truncate_table(fields, objs, limits, **kwargs):
     tb._left_padding_width = 0
     tb._right_padding_width = 2
 
-    def format(obj, key, function):
+    def format_table(obj, key, function):
         """Formats the given object for the given function
 
         :param object: object to format
@@ -936,7 +936,7 @@ def truncate_table(fields, objs, limits, **kwargs):
         return result
 
     for obj in objs:
-        row = [format(obj, key, fields.get(key)) for key in fields.keys()]
+        row = [format_table(obj, key, fields.get(key)) for key in fields.keys()]
         tb.add_row(row)
 
     return tb
