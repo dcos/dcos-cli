@@ -1103,9 +1103,8 @@ class TaskIO(object):
         oldtermios = termios.tcgetattr(fd)
 
         try:
-            tty.setraw(fd, when=termios.TCSANOW)
-
             if self.interactive:
+                tty.setraw(fd, when=termios.TCSANOW)
                 self._window_resize(signal.SIGWINCH, None)
                 signal.signal(signal.SIGWINCH, self._window_resize)
 
