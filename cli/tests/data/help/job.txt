@@ -2,10 +2,10 @@ Description:
     Deploy and manage jobs in DC/OS.
 
     Usage:
-        dcos job [--help]
-        dcos job [--version]
-        dcos job [--config-schema]
-        dcos job [--info]
+        dcos job --help
+        dcos job --version
+        dcos job --config-schema
+        dcos job --info
         dcos job add <job-file>
         dcos job remove <job-id> [--stop-current-job-runs]
         dcos job show <job-id>
