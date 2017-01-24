@@ -13,7 +13,7 @@ Detailed help and usage information is available through the :code:`dcos help`
 command and for specific subcommands through :code:`dcos <subcommand> --help`.
 
 Additional documentation for the CLI and for the DC/OS in general is available
-in the `Mesosphere docs`_.
+in the `DCOS docs`_.
 
 Parsing CLI Output
 ------------------
@@ -176,7 +176,7 @@ These packages are available to be installed by the DC/OS CLI installation scrip
 .. _jq: http://stedolan.github.io/jq/
 .. _git: http://git-scm.com
 .. _installation instructions: https://dcos.io/docs/usage/cli/install/
-.. _Mesosphere docs: https://docs.mesosphere.com
+.. _DCOS docs: https://dcos.io/docs/
 .. _mesosphere/install-scripts: https://github.com/mesosphere/install-scripts
 .. _packages: https://packaging.python.org/en/latest/installing.html#installing-requirements
 .. _PEP-440 version scheme: https://www.python.org/dev/peps/pep-0440/

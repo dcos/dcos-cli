@@ -2,6 +2,8 @@ import json
 import re
 import time
 
+import pytest
+
 from .common import (add_pod, assert_command, exec_command,
                      file_json_ast, pod, pods, remove_pod,
                      watch_all_deployments)
@@ -76,6 +78,8 @@ def test_pod_update_from_stdin():
         watch_all_deployments()
 
 
+@pytest.mark.skipif(
+    True, reason='https://mesosphere.atlassian.net/browse/DCOS-13368')
 def test_pod_kill():
     with pod(POD_KILL_FILE_PATH, POD_KILL_ID):
         kill_1, keep, kill_2 = _get_pod_instance_ids(POD_KILL_ID, 3)

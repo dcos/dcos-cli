@@ -1,6 +1,9 @@
 import copy
 import datetime
 import posixpath
+
+import textwrap
+
 from collections import OrderedDict
 
 import prettytable
@@ -112,7 +115,11 @@ def app_table(apps, deployments):
         ("CMD", get_cmd)
     ])
 
-    tb = table(fields, apps, sortby="ID")
+    limits = {
+        "CMD": 35
+    }
+
+    tb = truncate_table(fields, apps, limits, sortby="ID")
     tb.align["CMD"] = "l"
     tb.align["ID"] = "l"
     tb.align["WAITING"] = "l"
@@ -266,12 +273,17 @@ def job_table(job_list):
     fields = OrderedDict([
         ('id', lambda s: s['id']),
         ('Description', lambda s:
-            _truncate_desc(s['description'] if 'description' in s else '')),
+            s['description'] if 'description' in s else ''),
         ('Status', lambda s: _job_status(s)),
         ('Last Succesful Run', lambda s: s['history']['lastSuccessAt']
             if 'history' in s else 'N/A'),
     ])
-    tb = table(fields, job_list, sortby="ID")
+
+    limits = {
+        "Description": 35
+    }
+
+    tb = truncate_table(fields, job_list, limits, sortby="ID")
     tb.align['ID'] = 'l'
     tb.align["DESCRIPTION"] = 'l'
     tb.align["STATUS"] = 'l'
@@ -339,21 +351,6 @@ def job_runs_table(runs_list):
     tb.align['JOB ID'] = 'l'
 
     return tb
-
-
-def _truncate_desc(description, truncation_size=35):
-    """Utility function that truncates a string for formatting.
-
-    :param description: description
-    :type description: str
-    :rtype: str
-
-    """
-
-    if(len(description) > truncation_size):
-        return description[:truncation_size] + '..'
-    else:
-        return description
 
 
 def _job_status(job):
@@ -887,7 +884,7 @@ def ls_long_table(files):
     return tb
 
 
-def table(fields, objs, **kwargs):
+def truncate_table(fields, objs, limits, **kwargs):
     """Returns a PrettyTable.  `fields` represents the header schema of
     the table.  `objs` represents the objects to be rendered into
     rows.
@@ -899,6 +896,8 @@ def table(fields, objs, **kwargs):
     :type fields: OrderdDict(str, function)
     :param objs: objects to render into rows
     :type objs: [object]
+    :param limits: limits for truncating for each row
+    :type limits: [object]
     :param **kwargs: kwargs to pass to `prettytable.PrettyTable`
     :type **kwargs: dict
     :rtype: PrettyTable
@@ -919,8 +918,46 @@ def table(fields, objs, **kwargs):
     tb._left_padding_width = 0
     tb._right_padding_width = 2
 
+    def format_table(obj, key, function):
+        """Formats the given object for the given function
+
+        :param object: object to format
+        :type object: object
+        :param key: value which should be checked
+        :type key: string
+        :param function: function to format the cell
+        :type function: function
+        :rtype: PrettyTable
+        """
+        result = str(function(obj))
+        if (limits is not None and limits.get(key) is not None):
+            result = textwrap.\
+                shorten(result, width=limits.get(key), placeholder='...')
+        return result
+
     for obj in objs:
-        row = [fn(obj) for fn in fields.values()]
+        row = [format_table(obj, key, fields.get(key))
+               for key in fields.keys()]
         tb.add_row(row)
 
     return tb
+
+
+def table(fields, objs, **kwargs):
+    """Returns a PrettyTable.  `fields` represents the header schema of
+    the table.  `objs` represents the objects to be rendered into
+    rows.
+
+    :param fields: An OrderedDict, where each element represents a
+                   column.  The key is the column header, and the
+                   value is the function that transforms an element of
+                   `objs` into a value for that column.
+    :type fields: OrderdDict(str, function)
+    :param objs: objects to render into rows
+    :type objs: [object]
+    :param **kwargs: kwargs to pass to `prettytable.PrettyTable`
+    :type **kwargs: dict
+    :rtype: PrettyTable
+    """
+
+    return truncate_table(fields, objs, None, **kwargs)
