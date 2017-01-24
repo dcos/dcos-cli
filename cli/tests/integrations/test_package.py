@@ -226,19 +226,6 @@ def test_describe_package_versions():
         stdout=stdout)
 
 
-def test_describe_package_versions_others():
-    stderr = (b'If --package-versions is provided, no other option can be '
-              b'provided\n')
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'package', 'describe', 'marathon', '--package-versions',
-         '--app']
-    )
-
-    assert returncode == 1, returncode
-    assert stdout.decode('utf-8').startswith('Command not recognized'), stdout
-    assert stderr == b'', stderr
-
-
 def test_describe_options():
     stdout = file_json(
         'tests/data/package/json/test_describe_app_options.json')
