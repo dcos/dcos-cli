@@ -936,7 +936,8 @@ def truncate_table(fields, objs, limits, **kwargs):
         return result
 
     for obj in objs:
-        row = [format_table(obj, key, fields.get(key)) for key in fields.keys()]
+        row = [format_table(obj, key, fields.get(key))
+               for key in fields.keys()]
         tb.add_row(row)
 
     return tb
