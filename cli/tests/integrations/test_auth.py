@@ -1,3 +1,4 @@
+import json
 import os
 
 import pytest
@@ -28,6 +29,27 @@ def test_version():
     stdout = b'dcos-auth version SNAPSHOT\n'
     assert_command(['dcos', 'auth', '--version'],
                    stdout=stdout)
+
+
+def test_about_with_env(env):
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'marathon', 'about'], env=env)
+
+    assert returncode == 0
+    assert stderr == b''
+
+    result = json.loads(stdout.decode('utf-8'))
+    assert result['name'] == "marathon"
+
+
+def test_about_no_env():
+    returncode, stdout, stderr = exec_command(['dcos', 'marathon', 'about'])
+
+    assert returncode == 0
+    assert stderr == b''
+
+    result = json.loads(stdout.decode('utf-8'))
+    assert result['name'] == "marathon"
 
 
 def test_logout_no_token(env):
