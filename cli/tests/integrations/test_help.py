@@ -42,7 +42,7 @@ def test_help_node():
 
 
 def test_help_package():
-    with open('tests/data/help/package.txt') as content:
+    with open('dcoscli/data/help/package.txt') as content:
         assert_command(['dcos', 'help', 'package'],
                        stdout=content.read().encode('utf-8'))
 

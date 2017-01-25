@@ -38,7 +38,7 @@ def zk_znode(request):
 
 
 def test_package():
-    with open('tests/data/help/package.txt') as content:
+    with open('dcoscli/data/help/package.txt') as content:
         assert_command(['dcos', 'package', '--help'],
                        stdout=content.read().encode('utf-8'))
 
@@ -224,16 +224,6 @@ def test_describe_package_versions():
     assert_command(
         ['dcos', 'package', 'describe', 'kafka', '--package-versions'],
         stdout=stdout)
-
-
-def test_describe_package_versions_others():
-    stderr = (b'If --package-versions is provided, no other option can be '
-              b'provided\n')
-    assert_command(
-        ['dcos', 'package', 'describe', 'marathon', '--package-versions',
-         '--app'],
-        returncode=1,
-        stderr=stderr)
 
 
 def test_describe_options():
