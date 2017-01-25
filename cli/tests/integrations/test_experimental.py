@@ -14,7 +14,7 @@ from .common import (assert_command, exec_command,
                      file_json_ast, watch_all_deployments,
                      zip_contents_as_json)
 
-_COSMOS_PACKAGE_ADD_ENABLED = 'COSMOS_ADD_ENABLED' in os.environ
+_DCOS_PACKAGE_ADD_ENABLED = 'DCOS_PACKAGE_ADD_ENABLED' in os.environ
 
 command_base = ['dcos', 'experimental']
 data_dir = os.path.join(
@@ -39,8 +39,7 @@ def test_experimental():
 
 def test_info():
     command = command_base + ['--info']
-    out = b'Experimental commands. These commands ' \
-          b'are under development and are subject to change\n'
+    out = b'Try experimental commands under development\n'
     assert_command(command, stdout=out)
 
 
@@ -196,7 +195,7 @@ def test_package_build_where_build_definition_has_badly_formed_reference():
 
 
 @pytest.mark.skipif(
-    not _COSMOS_PACKAGE_ADD_ENABLED,
+    not _DCOS_PACKAGE_ADD_ENABLED,
     reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
 def test_package_add_argument_exclussion():
     command = command_base + ['package', 'add',
@@ -212,7 +211,7 @@ def test_package_add_argument_exclussion():
 
 
 @pytest.mark.skipif(
-    not _COSMOS_PACKAGE_ADD_ENABLED,
+    not _DCOS_PACKAGE_ADD_ENABLED,
     reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
 def test_service_start_happy_path():
     with _temporary_directory() as output_directory:
@@ -227,7 +226,7 @@ def test_service_start_happy_path():
 
 
 @pytest.mark.skipif(
-    not _COSMOS_PACKAGE_ADD_ENABLED,
+    not _DCOS_PACKAGE_ADD_ENABLED,
     reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
 def test_service_start_happy_path_json():
     with _temporary_directory() as output_directory:
@@ -242,7 +241,7 @@ def test_service_start_happy_path_json():
 
 
 @pytest.mark.skipif(
-    not _COSMOS_PACKAGE_ADD_ENABLED,
+    not _DCOS_PACKAGE_ADD_ENABLED,
     reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
 def test_service_start_happy_path_from_universe():
     package_name = 'linkerd'
@@ -255,7 +254,7 @@ def test_service_start_happy_path_from_universe():
 
 
 @pytest.mark.skipif(
-    not _COSMOS_PACKAGE_ADD_ENABLED,
+    not _DCOS_PACKAGE_ADD_ENABLED,
     reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
 def test_service_start_happy_path_from_universe_json():
     package_name = 'cassandra'
@@ -268,7 +267,7 @@ def test_service_start_happy_path_from_universe_json():
 
 
 @pytest.mark.skipif(
-    not _COSMOS_PACKAGE_ADD_ENABLED,
+    not _DCOS_PACKAGE_ADD_ENABLED,
     reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
 def test_service_start_by_starting_same_service_twice():
     name, version = _package_add_universe('kafka')
@@ -282,7 +281,7 @@ def test_service_start_by_starting_same_service_twice():
 
 
 @pytest.mark.skipif(
-    not _COSMOS_PACKAGE_ADD_ENABLED,
+    not _DCOS_PACKAGE_ADD_ENABLED,
     reason="https://mesosphere.atlassian.net/browse/DCOS-11989")
 def test_service_start_by_starting_service_not_added():
     stderr = b'Package [foo] not found\n'
