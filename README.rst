@@ -1,5 +1,5 @@
 DC/OS Command Line Interface
-===========================
+============================
 The DC/OS Command Line Interface (CLI) is a cross-platform command line utility
 that provides a user-friendly yet powerful way to manage DC/OS clusters.
 
@@ -28,7 +28,7 @@ The example below installs every package available in the DC/OS repository::
     dcos package search --json | jq '.[0].packages[].name' | xargs -L 1 dcos package install --yes
 
 Development Dependencies
--------------------------
+------------------------
 
 #. git_ must be installed to download the source code for the DC/OS CLI.
 
@@ -80,19 +80,19 @@ Configure Environment and Run
     dcos help
 
 Running Tests
---------------
+-------------
 
 Setup
 #####
 
-Tox, our test runner, tests against Python 3.4. We have a set of tests in
+Tox, our test runner, tests against Python 3.5. We have a set of tests in
 the :code:`dcos` package (root directory) and in the :code:`dcoscli` package
-(:code:`cli` directory). When running the tests describe below change
+(:code:`cli` directory). When running the tests described below, change
 directory to one of those two and follow the instructions.
 
 
 Initialization
-#######
+##############
 
 The `config` integration tests use static config files. To run these tests
 make sure you set owner only permissions on these files:
@@ -114,12 +114,15 @@ to test SSL certs. To run this test suite be sure to add this resolution to your
 Running
 #######
 
-Tox will run unit and integration tests in Python 3.4 using a temporarily
+Tox will run unit and integration tests in Python 3.5 using a temporarily
 created virtualenv.
 
 You can set :code:`DCOS_CONFIG` to a config file that points to a DC/OS
 cluster you want to use for integration tests. This defaults to
 :code:`~/.dcos/dcos.toml`
+
+Note that in order for all the integration tests to pass, your DC/OS cluster
+must have the experimental packaging features enabled.
 
 There are two ways to run tests, you can either use the virtualenv created by
 :code:`make env` above::
