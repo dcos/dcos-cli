@@ -110,6 +110,72 @@ def _unset(name):
     return 0
 
 
+def _format_config(file_value, effective_value, name=None, envvar_name=None):
+    """
+    Construct a string to show on a terminal, indicating the value and
+    possibly other useful things such as the setting name and whether
+    it is being controlled by an environment variable.
+
+    >>> _format_config('x', 'x')
+    'x'
+    >>> _format_config('x', 'x', 'setting.name') ->
+    'setting.name x'
+    >>> _format_config('x', 'y', envvar_name='ENVVAR')
+    'y # overwritten by ENVVAR; config file value: x'
+    >>> _format_config('x', 'y', 'setting.name', envvar_name='ENVVAR')
+    'setting.name y   # overwritten by ENVVAR; config file value: x'
+
+    :param file_value: config value present in the toml file
+    :type file_value: str
+
+    :param effective_value: config value either from file or as overwritten
+                            from the environment
+    :type effective_value: str
+    :param name: config key (not used for single value show)
+    :type name: str|None
+    :param envvar_name: name of environment variable that overwote the value
+    :type envvar_name: str|None
+    :returns: formatted string for terminal
+    :rtype: str
+    """
+
+    # when declaring that vars are overwritten by the environment,
+    # line up those messages to this column (unless the var name is long)
+    overwite_msg_display_column = 35
+
+    # When showing all values, don't print the token value;
+    if name == "core.dcos_acs_token":
+        print_value = "*"*8
+    else:
+        print_value = effective_value
+
+    if file_value == effective_value:
+        if name:
+            return '%s %s' % (name, print_value)
+        else:
+            return effective_value
+    else:
+        if not envvar_name:
+            envvar_name = "N/A"  # this should never happen
+        if name:
+            s = '%s %s' % (name, print_value)
+        else:
+            s = effective_value
+
+        left_pad_fmt = '%-{}s'.format(overwite_msg_display_column)  # '%-35s'
+
+        msg_start = left_pad_fmt + ' # overwritten by environment var %s; '
+
+        if print_value != effective_value:
+            # We're obscuring the effective security token
+            # so don't report the file value either
+            msg = msg_start + "config file value differs"
+            return msg % (s, envvar_name)
+
+        msg = msg_start + 'config file value: %s'
+        return msg % (s, envvar_name, file_value)
+
+
 def _show(name):
     """
     :returns: process status
@@ -119,19 +185,35 @@ def _show(name):
     toml_config = config.get_config(True)
 
     if name is not None:
-        value = toml_config.get(name)
-        if value is None:
+        file_value = toml_config.get(name)
+        try:
+            # If the user presented a partial key name, eg 'core' when
+            # we have 'core.xyz'; we will get an exception here
+            effective_value, envvar_name = config.get_config_val_envvar(name)
+        except DCOSException as e:
+            # The expected case of a partial key name has special
+            # handling via this mechanism.
+            if isinstance(file_value, collections.Mapping):
+                exc_msg = config.generate_choice_msg(name, file_value)
+                raise DCOSException(exc_msg)
+            raise  # Unexpected errors, pass right along
+
+        if effective_value is None:
             raise DCOSException("Property {!r} doesn't exist".format(name))
-        elif isinstance(value, collections.Mapping):
-            raise DCOSException(config.generate_choice_msg(name, value))
         else:
-            emitter.publish(value)
+            msg = _format_config(file_value, effective_value,
+                                 envvar_name=envvar_name)
+            emitter.publish(msg)
+
     else:
         # Let's list all of the values
         for key, value in sorted(toml_config.property_items()):
-            if key == "core.dcos_acs_token":
-                value = "*"*8
-            emitter.publish('{} {}'.format(key, value))
+            file_value = toml_config.get(key)
+            effective_value, envvar_name = config.get_config_val_envvar(key)
+
+            msg = _format_config(file_value, effective_value, key,
+                                 envvar_name=envvar_name)
+            emitter.publish(msg)
 
     return 0
 

@@ -55,9 +55,13 @@ def get_config(mutable=False):
     return load_from_path(path, mutable)
 
 
-def get_config_val(name, config=None):
-    """Returns the config value for the specified key. Looks for corresponding
-    environment variable first, and if it doesn't exist, uses the config value.
+def get_config_val_envvar(name, config=None):
+    """Returns a tuple of the config value for the specified key and
+    the name of any environment variable which overwrote the value
+    from the configuration.  If no environment variable applies, None
+    is returned for the environment variable name.
+    Looks for corresponding environment variable first, and if it
+    doesn't exist, uses the config value.
     - "core" properties get resolved to env variable DCOS_SUBKEY. With the
     exception of subkeys that already start with DCOS, in which case we look
     for SUBKEY first, and "DCOS_SUBKEY" second, and finally the config value.
@@ -68,7 +72,7 @@ def get_config_val(name, config=None):
     :param config: config
     :type config: Toml
     :returns: value of 'name' parameter
-    :rtype: str | None
+    :rtype: (str | None, str | None)
     """
 
     if config is None:
@@ -85,7 +89,26 @@ def get_config_val(name, config=None):
     else:
         env_var = "DCOS_{}_{}".format(section, subkey)
 
-    return os.environ.get(env_var) or config.get(name)
+    return os.environ.get(env_var) or config.get(name), env_var or None
+
+
+def get_config_val(name, config=None):
+    """Returns the config value for the specified key. Looks for corresponding
+    environment variable first, and if it doesn't exist, uses the config value.
+    - "core" properties get resolved to env variable DCOS_SUBKEY. With the
+    exception of subkeys that already start with DCOS, in which case we look
+    for SUBKEY first, and "DCOS_SUBKEY" second, and finally the config value.
+    - everything else gets resolved to DCOS_SECTION_SUBKEY
+
+    :param name: name of paramater
+    :type name: str
+    :param config: config
+    :type config: Toml
+    :returns: value of 'name' parameter
+    :rtype: str | None
+    """
+    val, _ = get_config_val_envvar(name, config=None)
+    return val
 
 
 def missing_config_exception(keys):
