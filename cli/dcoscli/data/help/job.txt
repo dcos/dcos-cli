@@ -30,7 +30,7 @@ Commands:
     job update
         Update the job.
     job kill
-        Show the job.
+        Kill the job.
     job run
         Run a job now.
     job list
