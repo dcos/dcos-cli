@@ -129,6 +129,11 @@ def set_val(name, value):
     value_exists = name in toml_config
     old_value = toml_config.get(name)
 
+    # remove token when core.dcos_url is changed
+    token_unset = False
+    if value_exists and old_value != new_value and name == "core.dcos_url":
+        token_unset = bool(toml_config.pop("core.dcos_acs_token", False))
+
     toml_config[name] = new_value
 
     check_config(toml_config_pre, toml_config, section)
@@ -149,6 +154,10 @@ def set_val(name, value):
         msg += "already set to '{}'".format(old_value)
     else:
         msg += "changed from '{}' to '{}'".format(old_value, new_value)
+
+    if token_unset:
+        msg += ("\n[core.dcos_acs_token]: removed\n"
+                "Please run `dcos auth login` to authenticate to new dcos_url")
 
     return toml_config, msg
 
@@ -220,13 +229,20 @@ def unset(name):
     if section not in toml_config_pre._dictionary:
         toml_config_pre._dictionary[section] = {}
     value = toml_config.pop(name, None)
+
     if value is None:
         raise DCOSException("Property {!r} doesn't exist".format(name))
     elif isinstance(value, collections.Mapping):
         raise DCOSException(_generate_choice_msg(name, value))
     else:
+        msg = "Removed [{}]".format(name)
+        # dcos_acs_token is coupled to a specific dcos_url
+        if name == "core.dcos_url":
+            unset_token = bool(toml_config.pop("core.dcos_acs_token", None))
+            if unset_token:
+                msg += " and [core.dcos_acs_token]"
         save(toml_config)
-        return "Removed [{}]".format(name)
+        return msg
 
 
 def _generate_choice_msg(name, value):
