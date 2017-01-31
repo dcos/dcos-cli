@@ -84,7 +84,7 @@ Commands:
     group update
         Update a group.
     pod add
-        Create a new pod.
+        Add a pod.
     pod kill
         Kill one or more running pod instances.
     pod list
@@ -107,7 +107,7 @@ Commands:
     task list
         List all tasks.
     task stop
-        Stop a task. Wipe persistent data if `--wipe` is set.
+        Stop a task.
     task show
         List a specific task.
 
@@ -142,6 +142,8 @@ Options:
         Scale the app down after performing the the operation.
     --version
         Print version information.
+    --wipe
+        Wipe persistent data.
 
 Positional Arguments:
     <app-id>
