@@ -152,7 +152,7 @@ Positional Arguments:
         Path to a file or HTTP(S) URL that contains the app's JSON definition.
         If omitted, the definition is read from stdin. For a detailed
         description see
-        https://mesosphere.github.io/marathon/docs/rest-api.html#post-v2-apps.
+        https://docs.mesosphere.com/usage/marathon/rest-api/.
     <deployment-id>
         The deployment ID.
     <group-id>
