@@ -24,10 +24,10 @@ Commands:
         View the details of diagnostics bundles.
     diagnostics create
         Create a diagnostics bundle.
-    diagnostics download
-        Download a diagnostics bundle.
     diagnostics delete
         Delete a diagnostics bundle.
+    diagnostics download
+        Download a diagnostics bundle.
     log
         Print the Mesos logs for the leading master node, agent nodes, or both.
     ssh
