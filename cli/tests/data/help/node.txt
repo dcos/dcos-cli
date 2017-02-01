@@ -1,5 +1,5 @@
 Description:
-    Administer and manage DC/OS cluster nodes.
+    View DC/OS node information.
 
 Usage:
     dcos node --help
