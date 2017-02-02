@@ -10,7 +10,7 @@ Usage:
     dcos node diagnostics delete <bundle>
     dcos node diagnostics download <bundle> [--location=<location>]
     dcos node list-components [--leader --mesos-id=<mesos-id> --json]
-    dcos node log [--follow --lines=N --leader --master --mesos-id=<mesos-id> --slave=<slave-id>]
+    dcos node log [--follow --lines=N --leader --master --mesos-id=<mesos-id> --slave=<agent-id>]
                   [--component=<component-name> --filter=<filter>...]
     dcos node ssh [--option SSHOPT=VAL ...]
                   [--config-file=<path>]
@@ -64,18 +64,19 @@ Options:
         Download the diagnostics bundle to a specific location. If not set, the
         default location is your current working directory.
     --master
-        Deprecated. Please use --leader.
-    --master-proxy
+        This option is deprecated and is replaced by `--leader`.
         Proxy the SSH connection through a master node. This can be useful when
         accessing DC/OS from a separate network. For example, in the default AWS
-        configuration, the private slaves are unreachable from the public
-        internet. You can access them using this option, which will first hop
-        from the publicly available master.
+        configuration, the private agents are unreachable from the public
+        internet. You can access them using this option, which will proxy the SSH
+        connection through the publicly reachable master.
+    --mesos-id=<mesos-id>
+        The agent ID of a node
     --option SSHOPT=VAL
         The SSH options. For information, enter `man ssh_config` in your
         terminal.
     --slave=<agent-id>
-        Agent node with the provided ID.
+        This option is deprecated and is replaced by `--mesos-id`.
     --status
         Print diagnostics job status.
     --user=<user>
