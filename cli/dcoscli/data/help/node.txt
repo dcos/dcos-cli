@@ -61,8 +61,8 @@ Options:
     --list-components
         Print a list of available DC/OS components on specified node.
     --location=<location>
-        Download a diagnostics bundle to a particular location.
-        If not set, default to present working directory.
+        Download the diagnostics bundle to a specific location. If not set, the
+        default location is your current working directory.
     --master
         Deprecated. Please use --leader.
     --master-proxy
