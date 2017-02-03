@@ -15,10 +15,10 @@ Usage:
                          [--options=<file>]
                          [--yes]
     dcos package list [<package-name> --json --app-id=<app-id> --cli]
-    dcos package search [<query> --json]
     dcos package repo add <repo-name> <repo-url> [--index=<index>]
-    dcos package repo remove <repo-name>
     dcos package repo list [--json]
+    dcos package repo remove <repo-name>
+    dcos package search [<query> --json]
     dcos package uninstall <package-name>
                            [--cli | [--app --app-id=<app-id> --all]]
     dcos package update
@@ -30,8 +30,6 @@ Commands:
         Install a package.
     list
         Print a list of the installed DC/OS packages.
-    search
-        Search the package repository.
     repo add
         Add a package repository to DC/OS.
     repo remove
@@ -39,11 +37,13 @@ Commands:
     repo list
         Print the package repository sources. Possible sources include a local
         file, HTTPS, and Git.
+    search
+        Search the package repository.
     uninstall
         Uninstall a package.
     update
         This command has been deprecated. Repositories are dynamically updated
-        as they are added by `dcos package repo add`.
+        when they are added by the `dcos package repo add` command.
 
 Options:
     --all

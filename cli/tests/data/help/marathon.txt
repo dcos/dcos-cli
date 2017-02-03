@@ -5,6 +5,7 @@ Usage:
     dcos marathon --config-schema
     dcos marathon --help
     dcos marathon --info
+    dcos marathon --version
     dcos marathon about
     dcos marathon app add [<app-resource>]
     dcos marathon app list [--json]

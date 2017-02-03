@@ -4,6 +4,7 @@ Description:
 Usage:
     dcos experimental --help
     dcos experimental --info
+    dcos experimental --version
     dcos experimental package add [--json]
                                   (--dcos-package=<dcos-package> |
                                     (--package-name=<package-name>
