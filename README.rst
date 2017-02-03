@@ -85,7 +85,7 @@ Running Tests
 Setup
 #####
 
-Tox, our test runner, tests against Python 3.5. We have a set of tests in
+Tox, our test runner, tests against Python 3.4. We have a set of tests in
 the :code:`dcos` package (root directory) and in the :code:`dcoscli` package
 (:code:`cli` directory). When running the tests described below, change
 directory to one of those two and follow the instructions.
@@ -114,7 +114,7 @@ to test SSL certs. To run this test suite be sure to add this resolution to your
 Running
 #######
 
-Tox will run unit and integration tests in Python 3.5 using a temporarily
+Tox will run unit and integration tests in Python 3.4 using a temporarily
 created virtualenv.
 
 You can set :code:`DCOS_CONFIG` to a config file that points to a DC/OS
@@ -122,7 +122,10 @@ cluster you want to use for integration tests. This defaults to
 :code:`~/.dcos/dcos.toml`
 
 Note that in order for all the integration tests to pass, your DC/OS cluster
-must have the experimental packaging features enabled.
+must have the experimental packaging features enabled. In order to enable
+these features the :code:`staged_package_storage_uri` and :code:`package_storage_uri`
+confiuguration paramenters must be set at cluster setup.
+See `dcos configuration parameters`_ for more information.
 
 There are two ways to run tests, you can either use the virtualenv created by
 :code:`make env` above::
@@ -175,6 +178,7 @@ These packages are available to be installed by the DC/OS CLI installation scrip
 
 .. _automated TeamCity build: https://teamcity.mesosphere.io/viewType.html?buildTypeId=DcosIo_DcosCli_Release
 .. _dcos: https://pypi.python.org/pypi/dcos
+.. _dcos configuration parameters: https://dcos.io/docs/1.9/administration/installing/custom/configuration-parameters/
 .. _dcoscli: https://pypi.python.org/pypi/dcoscli
 .. _jq: http://stedolan.github.io/jq/
 .. _git: http://git-scm.com
