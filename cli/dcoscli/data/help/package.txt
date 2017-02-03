@@ -8,7 +8,7 @@ Usage:
     dcos package describe <package-name>
                           [(--app [--render]) --cli --config --options=<file>]
                           [--package-version=<package-version>]
-    dcos package describe <package-name> --package-versions
+                          [--package-versions]
     dcos package install <package-name>
                          [--cli | [--app --app-id=<app-id>]]
                          [--package-version=<package-version>]
@@ -55,7 +55,7 @@ Options:
     --cli
         Command line only.
     --config
-        Print the the configurable properties for the `marathon.json` file.
+        Print the configurable properties of the `marathon.json` file.
     --index=<index>
         The numerical position in the package repository list. Package
         repositories are searched in descending order. By default the Universe
@@ -71,8 +71,8 @@ Options:
     --package-versions
         Print all versions for this package.
     --render
-        Collate the marathon.json package template with the values from
-        config.json and --options. If not provided, print the raw templates.
+        Collate the `marathon.json` package template with values from the
+        `config.json` and `--options`. If not provided, print the raw templates.
     --version
         Print version information.
     --yes
