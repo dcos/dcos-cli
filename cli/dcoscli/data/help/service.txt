@@ -45,6 +45,6 @@ Positional Arguments:
     <file>
         The service log filename for the Mesos sandbox. The default is stdout.
     <service>
-        The DC/OS Service name.
+        The DC/OS service name.
     <service-id>
-        The DC/OS Service ID.
+        The DC/OS service ID.
