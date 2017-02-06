@@ -1,12 +1,13 @@
 import base64
 import contextlib
 import json
+import os
 import sys
 
 import pytest
 import six
 
-from dcos import subcommand
+from dcos import constants, subcommand
 
 from .common import (assert_command, assert_lines, base64_to_dict,
                      delete_zk_node, delete_zk_nodes, exec_command, file_json,
@@ -16,6 +17,17 @@ from .common import (assert_command, assert_lines, base64_to_dict,
                      UNIVERSE_TEST_REPO, update_config, wait_for_service,
                      watch_all_deployments)
 from ..common import file_bytes
+
+
+@pytest.fixture
+def env():
+    r = os.environ.copy()
+    r.update({
+        constants.PATH_ENV: os.environ[constants.PATH_ENV],
+        constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "dcos.toml"),
+    })
+
+    return r
 
 
 def setup_module(module):
@@ -648,11 +660,12 @@ def test_list_cli():
     _uninstall_cli_helloworld()
 
 
-def test_list_cli_only():
+def test_list_cli_only(env):
     helloworld_path = 'tests/data/package/json/test_list_helloworld_cli.json'
     helloworld_json = file_json(helloworld_path)
 
-    with _helloworld_cli(), update_config('core.dcos_url', 'http://nohost'):
+    with _helloworld_cli(), \
+            update_config('core.dcos_url', 'http://nohost', env):
         assert_command(
             cmd=['dcos', 'package', 'list', '--json', '--cli'],
             stdout=helloworld_json)

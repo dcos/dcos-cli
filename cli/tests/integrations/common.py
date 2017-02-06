@@ -645,6 +645,15 @@ def update_config(name, value, env=None):
     returncode, stdout, _ = exec_command(
         ['dcos', 'config', 'show', name], env)
 
+    # when we change the dcos_url we remove the acs_token
+    # we need to also restore the token if this occurs
+    token = None
+    if name == "core.dcos_url":
+        returncode, token_val, _ = exec_command(
+            ['dcos', 'config', 'show', "core.dcos_acs_token"], env)
+        if returncode == 0:
+            token = token_val.decode('utf-8').strip()
+
     result = None
     # config param already exists
     if returncode == 0:
@@ -665,6 +674,9 @@ def update_config(name, value, env=None):
             config_set(name, result, env)
         else:
             exec_command(['dcos', 'config', 'unset', name], env)
+
+        if token:
+            config_set("core.dcos_acs_token", token, env)
 
 
 @contextlib.contextmanager

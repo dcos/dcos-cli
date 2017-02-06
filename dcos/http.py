@@ -1,11 +1,14 @@
 import requests
 from requests.auth import AuthBase
 
+from six.moves.urllib.parse import urlparse
+
 from dcos import config, util
 from dcos.errors import (DCOSAuthenticationException,
                          DCOSAuthorizationException, DCOSBadRequest,
                          DCOSException, DCOSHTTPException,
                          DCOSUnprocessableException)
+
 
 logger = util.get_logger(__name__)
 
@@ -144,12 +147,19 @@ def request(method,
     :rtype: Response
     """
 
-    auth_token = config.get_config_val(
-        "core.dcos_acs_token", config.get_config())
-    if auth_token is None:
-        auth = None
-    else:
+    toml_config = config.get_config()
+    auth_token = config.get_config_val("core.dcos_acs_token", toml_config)
+    dcos_url = urlparse(config.get_config_val("core.dcos_url", toml_config))
+    parsed_url = urlparse(url)
+
+    # only request with DC/OS Auth if request is to DC/OS cluster
+    # request should match scheme + netloc
+    scheme_eq = parsed_url.scheme == dcos_url.scheme
+    netloc_eq = parsed_url.netloc == dcos_url.netloc
+    if auth_token and scheme_eq and netloc_eq:
         auth = DCOSAcsAuth(auth_token)
+    else:
+        auth = None
     response = _request(method, url, is_success, timeout,
                         auth=auth, verify=verify, **kwargs)
 
