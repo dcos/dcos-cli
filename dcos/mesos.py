@@ -1103,9 +1103,8 @@ class TaskIO(object):
         oldtermios = termios.tcgetattr(fd)
 
         try:
-            tty.setraw(fd, when=termios.TCSANOW)
-
             if self.interactive:
+                tty.setraw(fd, when=termios.TCSANOW)
                 self._window_resize(signal.SIGWINCH, None)
                 signal.signal(signal.SIGWINCH, self._window_resize)
 
@@ -1315,19 +1314,28 @@ class TaskIO(object):
         # `_process_output_stream` function signals us that it's ready.
         self.attach_input_event.wait()
 
-        # Send an intial "Test" message to ensure that we can establish a
-        # connection with the agent at all. If we can't we will throw an
-        # exception and break out of this thread.
-        http.post(
-            self.agent_url,
-            data=_initial_input_streamer(),
-            **req_extra_args)
+        # Send an intial "Test" message to ensure that we are able to
+        # establish a connection with the agent. If we aren't we will throw
+        # an exception and break out of this thread. However, in cases where
+        # we receive a 500 response from the agent, we actually want to
+        # continue without throwing an exception. A 500 error indicates that
+        # we can't connect to the container because it has already finished
+        # running. In that case we continue running to allow the output queue
+        # to be flushed.
+        try:
+            http.post(
+                self.agent_url,
+                data=_initial_input_streamer(),
+                **req_extra_args)
+        except DCOSHTTPException as e:
+            if not e.response.status_code == 500:
+                raise e
 
         # If we succeeded with that connection, unblock process_output_stream()
         # from sending output data to the output thread.
         self.print_output_event.set()
 
-        # Begin streaming the the input.
+        # Begin streaming the input.
         http.post(
             self.agent_url,
             data=_input_streamer(),
