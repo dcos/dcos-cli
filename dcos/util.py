@@ -167,7 +167,7 @@ def read_file(path):
 
 
 def enforce_file_permissions(path):
-    """Enfore 600 permissions on file
+    """Enforce 400 or 600 permissions on file
 
     :param path: Path to the TOML file
     :type path: str
@@ -193,7 +193,7 @@ def enforce_file_permissions(path):
 
 def read_file_secure(path):
     """
-    Enfore 600 permissions when reading file
+    Enforce 400 or 600 permissions when reading file
 
     :param path: path to file
     :type path: str
