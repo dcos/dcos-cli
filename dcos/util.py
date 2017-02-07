@@ -183,7 +183,7 @@ def enforce_file_permissions(path):
         return
     else:
         permissions = oct(stat.S_IMODE(os.lstat(path).st_mode))
-        if permissions not in ['0o600', '0600']:
+        if permissions not in ['0o600', '0600', '0o400', '0400']:
             msg = (
                 "Permissions '{}' for configuration file '{}' are too open. "
                 "File must only be accessible by owner. "
