@@ -74,14 +74,14 @@ Options:
     --mesos-id=<mesos-id>
         The agent ID of a node
     --option SSHOPT=VAL
-        The SSH options. For information, enter `man ssh_config` in your
+        The SSH options. For more information, enter `man ssh_config` in your
         terminal.
     --slave=<agent-id>
         This option is deprecated and is replaced by `--mesos-id`.
     --status
         Print diagnostics job status.
     --user=<user>
-        The SSH user, where the default user [default: core].
+        The SSH user [default: core].
     --version
         Print version information.
 

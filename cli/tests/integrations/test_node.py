@@ -20,7 +20,7 @@ def test_help():
 
 
 def test_info():
-    stdout = b"Administer and manage DC/OS cluster nodes\n"
+    stdout = b"View DC/OS node information\n"
     assert_command(['dcos', 'node', '--info'], stdout=stdout)
 
 
@@ -151,7 +151,7 @@ def test_node_ssh_master_proxy():
 
 
 def test_master_arg_deprecation_notice():
-    stderr = b"--master has been deprecated. Please use --leader.\n"
+    stderr = b"--master is deprecated and replaced by --leader..\n"
     assert_command(['dcos', 'node', 'log', '--master'],
                    stderr=stderr,
                    returncode=1)
