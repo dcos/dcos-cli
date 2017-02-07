@@ -8,7 +8,7 @@ Usage:
     dcos package describe <package-name>
                           [(--app [--render]) --cli --config --options=<file>]
                           [--package-version=<package-version>]
-                          [--package-versions]
+    dcos package describe <package-name> --package-versions
     dcos package install <package-name>
                          [--cli | [--app --app-id=<app-id>]]
                          [--package-version=<package-version>]
