@@ -1,5 +1,5 @@
 Description:
-    Manage commands that are    under development.
+    Manage commands that are under development.
 
 Usage:
     dcos experimental --help

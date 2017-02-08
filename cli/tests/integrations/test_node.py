@@ -151,7 +151,7 @@ def test_node_ssh_master_proxy():
 
 
 def test_master_arg_deprecation_notice():
-    stderr = b"--master is deprecated and replaced by --leader..\n"
+    stderr = b"--master is deprecated and replaced by --leader.\n"
     assert_command(['dcos', 'node', 'log', '--master'],
                    stderr=stderr,
                    returncode=1)
