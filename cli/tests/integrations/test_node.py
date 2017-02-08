@@ -14,7 +14,7 @@ from ..fixtures.node import slave_fixture
 
 
 def test_help():
-    with open('tests/data/help/node.txt') as content:
+    with open('dcoscli/data/help/node.txt') as content:
         stdout = six.b(content.read())
     assert_command(['dcos', 'node', '--help'], stdout=stdout)
 

@@ -45,7 +45,7 @@ def teardown_module():
 
 
 def test_help():
-    with open('tests/data/help/task.txt') as content:
+    with open('dcoscli/data/help/task.txt') as content:
         assert_command(['dcos', 'task', '--help'],
                        stdout=content.read().encode('utf-8'))
 

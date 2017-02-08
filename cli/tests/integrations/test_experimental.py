@@ -13,18 +13,13 @@ from .common import (assert_command, exec_command,
                      zip_contents_as_json)
 
 command_base = ['dcos', 'experimental']
-data_dir = os.path.join(
-    os.getcwd(), 'tests', 'data'
-)
-build_data_dir = os.path.join(
-    data_dir, 'package_build'
-)
+data_dir = os.path.join(os.getcwd(), 'tests', 'data')
+build_data_dir = os.path.join(data_dir, 'package_build')
 
 
 def runnable_package_path(index):
     return os.path.join(
-        build_data_dir, 'helloworld', 'helloworld{}.json'.format(index)
-    )
+        build_data_dir, 'helloworld', 'helloworld{}.json'.format(index))
 
 
 def test_experimental():
