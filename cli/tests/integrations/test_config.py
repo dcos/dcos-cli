@@ -21,12 +21,6 @@ def env():
     return r
 
 
-def test_help():
-    with open('tests/data/help/config.txt') as content:
-        assert_command(['dcos', 'config', '--help'],
-                       stdout=content.read().encode('utf-8'))
-
-
 def test_info():
     stdout = b'Manage the DC/OS configuration file\n'
     assert_command(['dcos', 'config', '--info'],
@@ -67,15 +61,14 @@ def test_get_missing_property(env):
 
 
 def test_dcos_url_without_scheme(env):
-    old = b'http://dcos.snakeoil.mesosphere.com'
-    new = b"abc.com"
-    out = b"[core.dcos_url]: changed from '%b' to 'https://%b'\n" % (old, new)
-    assert_command(
+    with update_config("core.dcos_url", None, env):
+        new = b"abc.com"
+        out = b"[core.dcos_url]: set to 'https://%b'\n" % (new)
+        assert_command(
             ['dcos', 'config', 'set', 'core.dcos_url', new.decode('utf-8')],
-            returncode=0,
             stderr=out,
+            returncode=0,
             env=env)
-    config_set('core.dcos_url', old.decode('utf-8'), env)
 
 
 def test_get_top_property(env):
@@ -105,11 +98,10 @@ def test_set_core_email_property():
 
 
 def test_set_existing_string_property(env):
-    config_set('core.dcos_url',
-               'http://dcos.snakeoil.mesosphere.com:5081', env)
-    _get_value('core.dcos_url',
-               'http://dcos.snakeoil.mesosphere.com:5081', env)
-    config_set('core.dcos_url', 'http://dcos.snakeoil.mesosphere.com', env)
+    new_value = 'http://dcos.snakeoil.mesosphere.com:5081'
+    with update_config('core.dcos_url', new_value, env):
+        _get_value('core.dcos_url',
+                   'http://dcos.snakeoil.mesosphere.com:5081', env)
 
 
 def test_set_existing_boolean_property(env):
@@ -126,33 +118,27 @@ def test_set_existing_number_property(env):
 
 def test_set_change_output(env):
     assert_command(
-        ['dcos', 'config', 'set', 'core.dcos_url',
-         'http://dcos.snakeoil.mesosphere.com:5081'],
-        stderr=(b"[core.dcos_url]: changed from "
-                b"'http://dcos.snakeoil.mesosphere.com' to "
-                b"'http://dcos.snakeoil.mesosphere.com:5081'\n"),
+        ['dcos', 'config', 'set', 'core.timeout', '10'],
+        stderr=b"[core.timeout]: changed from '5' to '10'\n",
         env=env)
-    config_set('core.dcos_url', 'http://dcos.snakeoil.mesosphere.com', env)
+    config_set('core.timeout', '5', env)
 
 
 def test_set_same_output(env):
     assert_command(
-        ['dcos', 'config', 'set', 'core.dcos_url',
-            'http://dcos.snakeoil.mesosphere.com'],
-        stderr=(b"[core.dcos_url]: already set to "
-                b"'http://dcos.snakeoil.mesosphere.com'\n"),
+        ['dcos', 'config', 'set', 'core.timeout', '5'],
+        stderr=b"[core.timeout]: already set to '5'\n",
         env=env)
 
 
 def test_set_new_output(env):
-    config_unset('core.dcos_url', env)
-    assert_command(
-        ['dcos', 'config', 'set', 'core.dcos_url',
-         'http://dcos.snakeoil.mesosphere.com:5081'],
-        stderr=(b"[core.dcos_url]: set to "
-                b"'http://dcos.snakeoil.mesosphere.com:5081'\n"),
-        env=env)
-    config_set('core.dcos_url', 'http://dcos.snakeoil.mesosphere.com', env)
+    with update_config("core.dcos_url", None, env):
+        assert_command(
+            ['dcos', 'config', 'set', 'core.dcos_url',
+                'http://dcos.snakeoil.mesosphere.com:5081'],
+            stderr=(b"[core.dcos_url]: set to "
+                    b"'http://dcos.snakeoil.mesosphere.com:5081'\n"),
+            env=env)
 
 
 def test_set_nonexistent_subcommand(env):
@@ -175,9 +161,8 @@ def test_set_when_extra_section():
 
 
 def test_unset_property(env):
-    config_unset('core.reporting', env)
-    _get_missing_value('core.reporting', env)
-    config_set('core.reporting', 'false', env)
+    with update_config("core.reporting", None, env):
+        _get_missing_value('core.reporting', env)
 
 
 def test_unset_missing_property(env):
@@ -233,35 +218,33 @@ def test_set_core_property(env):
 
 
 def test_url_validation(env):
-    key = 'core.dcos_url'
-    default_value = 'http://dcos.snakeoil.mesosphere.com'
+    with update_config('core.dcos_url', None, env):
+        key = 'core.dcos_url'
+        key2 = 'package.cosmos_url'
 
-    key2 = 'package.cosmos_url'
+        config_set(key, 'http://localhost', env)
+        config_set(key, 'https://localhost', env)
+        config_set(key, 'http://dcos-1234', env)
+        config_set(key2, 'http://dcos-1234.mydomain.com', env)
 
-    config_set(key, 'http://localhost', env)
-    config_set(key, 'https://localhost', env)
-    config_set(key, 'http://dcos-1234', env)
-    config_set(key2, 'http://dcos-1234.mydomain.com', env)
+        config_set(key, 'http://localhost:5050', env)
+        config_set(key, 'https://localhost:5050', env)
+        config_set(key, 'http://mesos-1234:5050', env)
+        config_set(key2, 'http://mesos-1234.mydomain.com:5050', env)
 
-    config_set(key, 'http://localhost:5050', env)
-    config_set(key, 'https://localhost:5050', env)
-    config_set(key, 'http://mesos-1234:5050', env)
-    config_set(key2, 'http://mesos-1234.mydomain.com:5050', env)
+        config_set(key, 'http://localhost:8080', env)
+        config_set(key, 'https://localhost:8080', env)
+        config_set(key, 'http://marathon-1234:8080', env)
+        config_set(key2, 'http://marathon-1234.mydomain.com:5050', env)
 
-    config_set(key, 'http://localhost:8080', env)
-    config_set(key, 'https://localhost:8080', env)
-    config_set(key, 'http://marathon-1234:8080', env)
-    config_set(key2, 'http://marathon-1234.mydomain.com:5050', env)
+        config_set(key, 'http://user@localhost:8080', env)
+        config_set(key, 'http://u-ser@localhost:8080', env)
+        config_set(key, 'http://user123_@localhost:8080', env)
+        config_set(key, 'http://user:p-ssw_rd@localhost:8080', env)
+        config_set(key, 'http://user123:password321@localhost:8080', env)
+        config_set(key2, 'http://us%r1$3:pa#sw*rd321@localhost:8080', env)
 
-    config_set(key, 'http://user@localhost:8080', env)
-    config_set(key, 'http://u-ser@localhost:8080', env)
-    config_set(key, 'http://user123_@localhost:8080', env)
-    config_set(key, 'http://user:p-ssw_rd@localhost:8080', env)
-    config_set(key, 'http://user123:password321@localhost:8080', env)
-    config_set(key2, 'http://us%r1$3:pa#sw*rd321@localhost:8080', env)
-
-    config_set(key, default_value, env)
-    config_unset(key2, env)
+        config_unset(key2, env)
 
 
 def test_fail_url_validation(env):

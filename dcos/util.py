@@ -167,7 +167,7 @@ def read_file(path):
 
 
 def enforce_file_permissions(path):
-    """Enfore 600 permissions on file
+    """Enforce 400 or 600 permissions on file
 
     :param path: Path to the TOML file
     :type path: str
@@ -183,7 +183,7 @@ def enforce_file_permissions(path):
         return
     else:
         permissions = oct(stat.S_IMODE(os.lstat(path).st_mode))
-        if permissions not in ['0o600', '0600']:
+        if permissions not in ['0o600', '0600', '0o400', '0400']:
             msg = (
                 "Permissions '{}' for configuration file '{}' are too open. "
                 "File must only be accessible by owner. "
@@ -193,7 +193,7 @@ def enforce_file_permissions(path):
 
 def read_file_secure(path):
     """
-    Enfore 600 permissions when reading file
+    Enforce 400 or 600 permissions when reading file
 
     :param path: path to file
     :type path: str

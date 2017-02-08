@@ -11,7 +11,7 @@ from .common import (assert_command, exec_command, job, show_job,
 
 
 def test_help():
-    with open('tests/data/help/job.txt') as content:
+    with open('dcoscli/data/help/job.txt') as content:
         assert_command(['dcos', 'job', '--help'],
                        stdout=content.read().encode('utf-8'))
 

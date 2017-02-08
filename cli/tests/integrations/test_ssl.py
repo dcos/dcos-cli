@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from dcos import constants
+from dcos import config, constants
 
 from .common import config_set, exec_command, update_config
 
@@ -22,11 +22,15 @@ def env():
 
 @pytest.yield_fixture(autouse=True)
 def setup_env(env):
+    # token will be removed when we change dcos_url
+    token = config.get_config_val('core.dcos_acs_token')
     config_set("core.dcos_url", "https://dcos.snakeoil.mesosphere.com", env)
+    config_set("core.dcos_acs_token", token, env)
     try:
         yield
     finally:
         config_set("core.dcos_url", "http://dcos.snakeoil.mesosphere.com", env)
+        config_set("core.dcos_acs_token", token, env)
 
 
 def test_dont_verify_ssl_with_env_var(env):
