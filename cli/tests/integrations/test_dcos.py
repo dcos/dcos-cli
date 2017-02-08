@@ -8,13 +8,13 @@ def test_default():
 
 
 def test_help():
-    with open('tests/data/help/dcos.txt') as content:
+    with open('dcoscli/data/help/dcos.txt') as content:
         assert_command(['dcos', '--help'],
                        stdout=content.read().encode('utf-8'))
 
 
 def test_dcos_help():
-    with open('tests/data/help/dcos.txt') as content:
+    with open('dcoscli/data/help/dcos.txt') as content:
         assert_command(['dcos', 'help'],
                        stdout=content.read().encode('utf-8'))
 

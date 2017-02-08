@@ -21,12 +21,6 @@ def env():
     return r
 
 
-def test_help():
-    with open('tests/data/help/config.txt') as content:
-        assert_command(['dcos', 'config', '--help'],
-                       stdout=content.read().encode('utf-8'))
-
-
 def test_info():
     stdout = b'Manage the DC/OS configuration file\n'
     assert_command(['dcos', 'config', '--info'],
