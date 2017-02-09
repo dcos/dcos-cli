@@ -11,7 +11,7 @@ Usage:
     dcos node diagnostics delete <bundle>
     dcos node diagnostics download <bundle> [--location=<location>]
     dcos node list-components [--leader --mesos-id=<mesos-id> --json]
-    dcos node log [--follow --lines=N --leader --master --mesos-id=<mesos-id> --slave=<slave-id>]
+    dcos node log [--follow --lines=N --leader --master --mesos-id=<mesos-id> --slave=<agent-id>]
                   [--component=<component-name> --filter=<filter>...]
     dcos node ssh [--option SSHOPT=VAL ...]
                   [--config-file=<path>]
