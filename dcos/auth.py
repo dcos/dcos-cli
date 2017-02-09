@@ -13,15 +13,18 @@ from dcos import config, http, util
 from dcos.errors import (DCOSAuthenticationException, DCOSException,
                          DCOSHTTPException)
 
+logger = util.get_logger(__name__)
+
 
 def _get_auth_scheme(response):
     """Return authentication scheme requested by server for
-       'acsjwt' (DC/OS acs auth) or 'oauthjwt' (DC/OS acs oauth) type
+       'acsjwt' (DC/OS acs auth), 'oauthjwt' (DC/OS acs oauth), or
+       None (no auth)
 
     :param response: requests.response
     :type response: requests.Response
     :returns: auth_scheme
-    :rtype: str
+    :rtype: str | None
     """
 
     if 'www-authenticate' in response.headers:
@@ -40,9 +43,8 @@ def _get_auth_scheme(response):
                        response.headers['www-authenticate']))
             raise DCOSException(msg)
     else:
-        msg = ("Invalid HTTP response: server returned an HTTP 401 response "
-               "with no 'www-authenticate' field")
-        raise DCOSException(msg)
+        logger.debug("HTTP response: no www-authenticate field found")
+        return
 
 
 def _prompt_user_for_token(url, token_type):
@@ -315,8 +317,9 @@ def header_challenge_auth(dcos_url):
                 token = _get_dcostoken_by_dcos_uid_password_auth(dcos_url)
 
             if token is not None:
-                response.status_code = 200
                 break
+        elif response.status_code == 200:
+            break
     else:
         raise DCOSAuthenticationException(response)
 

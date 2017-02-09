@@ -9,14 +9,11 @@ from dcos.errors import DCOSException
 def test_get_auth_scheme():
     _get_auth_scheme({'www-authenticate': 'acsjwt'}, scheme='acsjwt')
     _get_auth_scheme({'www-authenticate': 'oauthjwt'}, scheme='oauthjwt')
+    _get_auth_scheme({}, scheme=None)
 
     msg = ("Server responded with an HTTP 'www-authenticate' field of "
            "'foobar', DC/OS only supports ['oauthjwt', 'acsjwt']")
     _get_auth_scheme_exception({'www-authenticate': 'foobar'}, msg)
-
-    msg = ("Invalid HTTP response: server returned an HTTP 401 response "
-           "with no 'www-authenticate' field")
-    _get_auth_scheme_exception({}, msg)
 
 
 def _get_auth_scheme(header, scheme):
