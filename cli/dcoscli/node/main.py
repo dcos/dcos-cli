@@ -45,7 +45,7 @@ def _main(argv):
 
     if args.get('--master'):
         raise DCOSException(
-            '--master deprecated and is replaced by --leader.'
+            '--master has been deprecated. Please use --leader.'
         )
     elif args.get('--slave'):
         raise DCOSException(
