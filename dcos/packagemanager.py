@@ -596,6 +596,9 @@ def _format_json_schema_mismatch_message(error):
         if err.get("found"):
             found = "Found: {}".format(err["found"])
             error_messages += [found]
+        if err.get("minimum"):
+            found = "Required minimum: {}".format(err["minimum"])
+            error_messages += [found]
         if err.get("expected"):
             expected = "Expected: {}".format(",".join(err["expected"]))
             error_messages += [expected]
