@@ -2,12 +2,13 @@ import json
 import mock
 import requests
 
-from dcos import packagemanager
+from dcos import cosmos, packagemanager
 
 
-describe_response_content_type = 'application/vnd.dcos.package.describe-response+json;charset=utf-8;version=v2'
-install_request_content_type = 'application/vnd.dcos.package.install-request+json;charset=utf-8;version=v1'
-install_response_content_type = 'application/vnd.dcos.package.install-response+json;charset=utf-8;version=v2'
+cosmos_obj = cosmos.Cosmos()
+describe_response_content_type = cosmos_obj._get_accept('package.describe', 'v2')
+install_request_content_type = cosmos_obj._get_content_type('package.install')
+install_response_content_type = cosmos_obj._get_accept('package.install', 'v2')
 
 
 def make_response(status_code, headers, body=None):
