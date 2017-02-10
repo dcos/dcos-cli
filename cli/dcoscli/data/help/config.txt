@@ -4,6 +4,7 @@ Description:
 Usage:
     dcos config --help
     dcos config --info
+    dcos config --version
     dcos config set <name> <value>
     dcos config show [<name>]
     dcos config unset <name>
