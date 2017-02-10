@@ -6,15 +6,12 @@ import requests
 from dcos import packagemanager
 
 
-pkg_mgr = packagemanager.PackageManager('http://testserver/cosmos')
-
-
-def describe_response_headers():
+def describe_response_headers(pkg_mgr):
     content_type = pkg_mgr.cosmos._get_accept('package.describe', 'v2')
     return {'Content-Type': content_type}
 
 
-def install_response_headers():
+def install_response_headers(pkg_mgr):
     content_type = pkg_mgr.cosmos._get_accept('package.install', 'v2')
     return {'Content-Type': content_type}
 
@@ -29,9 +26,14 @@ def mock_response(status_code, headers, body=None):
 
 
 @pytest.fixture
-def fake_pkg():
+def pkg_mgr():
+    return packagemanager.PackageManager('http://testserver/cosmos')
+
+
+@pytest.fixture
+def fake_pkg(pkg_mgr):
     with mock.patch('dcos.http.post') as post_fn:
-        post_fn.return_value = mock_response(200, describe_response_headers())
+        post_fn.return_value = mock_response(200, describe_response_headers(pkg_mgr))
         yield pkg_mgr.get_package_version('fake_pkg', '0.0.1')
 
 
@@ -80,8 +82,8 @@ def test_format_error_message_marathon_bad_response():
 
 
 @mock.patch('dcos.http.post')
-def test_install(post_fn, fake_pkg):
-    post_fn.return_value = mock_response(200, install_response_headers())
+def test_install(post_fn, pkg_mgr, fake_pkg):
+    post_fn.return_value = mock_response(200, install_response_headers(pkg_mgr))
     pkg_mgr.install_app(fake_pkg, options=None, app_id=None)
     post_fn.assert_called_with(
         'http://testserver/package/install',
