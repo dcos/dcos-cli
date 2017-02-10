@@ -7,7 +7,6 @@ from dcos import packagemanager
 
 pkg_mgr = packagemanager.PackageManager('http://testserver/cosmos')
 describe_response_content_type = pkg_mgr.cosmos._get_accept('package.describe', 'v2')
-install_request_content_type = pkg_mgr.cosmos._get_content_type('package.install')
 install_response_content_type = pkg_mgr.cosmos._get_accept('package.install', 'v2')
 
 
