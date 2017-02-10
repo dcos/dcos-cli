@@ -750,6 +750,7 @@ def _ssh(leader, slave, option, config_file, user, master_proxy, proxy_ip, comma
     if command is None:
         command = ''
 
+    proxy_ip = proxy_ip or config.get_config_val('core.dcos_proxy_ip')
     if proxy_ip:
         master_public_ip = proxy_ip
     else:
