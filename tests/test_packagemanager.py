@@ -71,10 +71,8 @@ def test_install(post_fn):
         make_response(200, {'Content-Type': install_response_content_type}),
     ]
 
-    pkg = packagemanager.CosmosPackageVersion(
-        name='pkg', package_version='0.0.1', url='http://url/to/package')
-    pkg_mgr.install_app(pkg=pkg, options=None, app_id=None)
-    assert post_fn.mock_calls[0][1][0] == 'http://url/to/package/describe'
+    pkg = pkg_mgr.get_package_version('pkg', '0.0.1')
+    pkg_mgr.install_app(pkg, options=None, app_id=None)
     post_fn.assert_called_with(
         'http://testserver/package/install',
         data=None,
