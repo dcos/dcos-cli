@@ -71,14 +71,14 @@ def test_install(post_fn):
         make_response(200, {'Content-Type': install_response_content_type}),
     ]
 
-    cosmos_url = 'http://127.0.0.1/cosmos'
+    cosmos_url = 'http://testserver/cosmos'
     package_manager = packagemanager.PackageManager(cosmos_url)
     pkg = packagemanager.CosmosPackageVersion(
         name='pkg', package_version='0.0.1', url='http://url/to/package')
     package_manager.install_app(pkg=pkg, options=None, app_id=None)
     assert post_fn.mock_calls[0][1][0] == 'http://url/to/package/describe'
     post_fn.assert_called_with(
-        mock.ANY,
+        'http://testserver/package/install',
         data=None,
         headers=mock.ANY,
         json={'packageName': 'pkg', 'packageVersion': '0.0.1'},
