@@ -51,18 +51,25 @@ def test_format_error_message_multiple_framework_ids():
     assert "Manually shut them down using 'dcos service shutdown'" in ret
 
 
-def test_format_error_message_json_schema_mismatch_unwanted():
+def test_format_error_message_json_schema_mismatch():
     error_dict = {
         'type': 'JsonSchemaMismatch',
         'message': '<fake message>',
         'data': {
             'errors': [
                 {'unwanted': ['x', 'y']},
+                {'found': 128, 'minimum': 256,
+                 'instance': {'pointer': 'service.mem'}},
+                {'expected': ['yes', 'no']},
             ],
         },
     }
     ret = packagemanager._format_error_message(error_dict)
     assert '<fake message>' in ret
+    assert 'Found: 128' in ret
+    assert 'minimum: 256' in ret
+    assert 'Path: service.mem' in ret
+    assert 'Expected: yes,no' in ret
     assert "Unexpected properties: ['x', 'y']" in ret
 
 
