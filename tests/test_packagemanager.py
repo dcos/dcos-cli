@@ -2,13 +2,13 @@ import json
 import mock
 import requests
 
-from dcos import cosmos, packagemanager
+from dcos import packagemanager
 
 
-cosmos_obj = cosmos.Cosmos()
-describe_response_content_type = cosmos_obj._get_accept('package.describe', 'v2')
-install_request_content_type = cosmos_obj._get_content_type('package.install')
-install_response_content_type = cosmos_obj._get_accept('package.install', 'v2')
+pkg_mgr = packagemanager.PackageManager('http://testserver/cosmos')
+describe_response_content_type = pkg_mgr.cosmos._get_accept('package.describe', 'v2')
+install_request_content_type = pkg_mgr.cosmos._get_content_type('package.install')
+install_response_content_type = pkg_mgr.cosmos._get_accept('package.install', 'v2')
 
 
 def make_response(status_code, headers, body=None):
@@ -71,11 +71,9 @@ def test_install(post_fn):
         make_response(200, {'Content-Type': install_response_content_type}),
     ]
 
-    cosmos_url = 'http://testserver/cosmos'
-    package_manager = packagemanager.PackageManager(cosmos_url)
     pkg = packagemanager.CosmosPackageVersion(
         name='pkg', package_version='0.0.1', url='http://url/to/package')
-    package_manager.install_app(pkg=pkg, options=None, app_id=None)
+    pkg_mgr.install_app(pkg=pkg, options=None, app_id=None)
     assert post_fn.mock_calls[0][1][0] == 'http://url/to/package/describe'
     post_fn.assert_called_with(
         'http://testserver/package/install',
