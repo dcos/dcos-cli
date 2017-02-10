@@ -11,13 +11,13 @@ install_request_content_type = pkg_mgr.cosmos._get_content_type('package.install
 install_response_content_type = pkg_mgr.cosmos._get_accept('package.install', 'v2')
 
 
-def make_response(status_code, headers, body=None):
-    mock_response = mock.create_autospec(requests.Response)
-    mock_response.status_code = status_code
-    mock_response.headers = headers
+def mock_response(status_code, headers, body=None):
+    res = mock.create_autospec(requests.Response)
+    res.status_code = status_code
+    res.headers = headers
     if body is not None:
-        mock_response.body = body
-    return mock_response
+        res.body = body
+    return res
 
 
 def test_format_error_message_ambiguous_app_id():
@@ -67,8 +67,8 @@ def test_format_error_message_marathon_bad_response():
 @mock.patch('dcos.http.post')
 def test_install(post_fn):
     post_fn.side_effect = [
-        make_response(200, {'Content-Type': describe_response_content_type}),
-        make_response(200, {'Content-Type': install_response_content_type}),
+        mock_response(200, {'Content-Type': describe_response_content_type}),
+        mock_response(200, {'Content-Type': install_response_content_type}),
     ]
 
     pkg = pkg_mgr.get_package_version('pkg', '0.0.1')
