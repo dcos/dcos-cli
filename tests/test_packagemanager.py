@@ -1,5 +1,6 @@
 import json
 import mock
+import pytest
 import requests
 
 from dcos import packagemanager
@@ -25,6 +26,13 @@ def mock_response(status_code, headers, body=None):
     if body is not None:
         res.body = body
     return res
+
+
+@pytest.fixture
+def fake_pkg():
+    with mock.patch('dcos.http.post') as post_fn:
+        post_fn.return_value = mock_response(200, describe_response_headers())
+        yield pkg_mgr.get_package_version('fake_pkg', '0.0.1')
 
 
 def test_format_error_message_ambiguous_app_id():
@@ -72,17 +80,13 @@ def test_format_error_message_marathon_bad_response():
 
 
 @mock.patch('dcos.http.post')
-def test_install(post_fn):
-    post_fn.side_effect = [
-        mock_response(200, describe_response_headers()),
-        mock_response(200, install_response_headers()),
-    ]
-
-    pkg = pkg_mgr.get_package_version('pkg', '0.0.1')
-    pkg_mgr.install_app(pkg, options=None, app_id=None)
+def test_install(post_fn, fake_pkg):
+    post_fn.return_value = mock_response(200, install_response_headers())
+    pkg_mgr.install_app(fake_pkg, options=None, app_id=None)
     post_fn.assert_called_with(
         'http://testserver/package/install',
         data=None,
         headers=pkg_mgr.cosmos._get_header('package/install', 'v2'),
-        json={'packageName': pkg.name(), 'packageVersion': pkg.version()},
+        json={'packageName': fake_pkg.name(),
+              'packageVersion': fake_pkg.version()},
     )
