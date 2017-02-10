@@ -77,5 +77,5 @@ def test_install(post_fn):
         'http://testserver/package/install',
         data=None,
         headers=pkg_mgr.cosmos._get_header('package.install', 'v2'),
-        json={'packageName': 'pkg', 'packageVersion': '0.0.1'},
+        json={'packageName': pkg.name(), 'packageVersion': pkg.version()},
     )
