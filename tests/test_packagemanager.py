@@ -6,8 +6,16 @@ from dcos import packagemanager
 
 
 pkg_mgr = packagemanager.PackageManager('http://testserver/cosmos')
-describe_response_content_type = pkg_mgr.cosmos._get_accept('package.describe', 'v2')
-install_response_content_type = pkg_mgr.cosmos._get_accept('package.install', 'v2')
+
+
+def describe_response_headers():
+    content_type = pkg_mgr.cosmos._get_accept('package.describe', 'v2')
+    return {'Content-Type': content_type}
+
+
+def install_response_headers():
+    content_type = pkg_mgr.cosmos._get_accept('package.install', 'v2')
+    return {'Content-Type': content_type}
 
 
 def mock_response(status_code, headers, body=None):
@@ -66,8 +74,8 @@ def test_format_error_message_marathon_bad_response():
 @mock.patch('dcos.http.post')
 def test_install(post_fn):
     post_fn.side_effect = [
-        mock_response(200, {'Content-Type': describe_response_content_type}),
-        mock_response(200, {'Content-Type': install_response_content_type}),
+        mock_response(200, describe_response_headers()),
+        mock_response(200, install_response_headers()),
     ]
 
     pkg = pkg_mgr.get_package_version('pkg', '0.0.1')
