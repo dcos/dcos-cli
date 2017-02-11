@@ -134,9 +134,10 @@ def test_node_ssh_master_proxy_no_agent():
     env.pop('SSH_AUTH_SOCK', None)
     stderr = (b"There is no SSH_AUTH_SOCK env variable, which likely means "
               b"you aren't running `ssh-agent`.  `dcos node ssh "
-              b"--master-proxy` depends on `ssh-agent` to safely use your "
-              b"private key to hop between nodes in your cluster.  Please "
-              b"run `ssh-agent`, then add your private key with `ssh-add`.\n")
+              b"--master-proxy/--proxy-ip` depends on `ssh-agent` to safely "
+              b"use your private key to hop between nodes in your cluster.  "
+              b"Please run `ssh-agent`, then add your private key with "
+              b"`ssh-add`.\n")
 
     assert_command(['dcos', 'node', 'ssh', '--master-proxy', '--leader'],
                    stderr=stderr,
