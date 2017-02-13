@@ -17,7 +17,12 @@ Usage:
                   [--config-file=<path>]
                   [--user=<user>]
                   [--master-proxy]
+<<<<<<< HEAD
                   (--leader | --master | --mesos-id=<mesos-id> | --slave=<agent-id>)
+=======
+                  [--proxy-ip=<proxy-ip>]
+                  (--leader | --master | --mesos-id=<mesos-id> | --slave=<slave-id>)
+>>>>>>> master
                   [<command>]
 
 Commands:
@@ -77,6 +82,8 @@ Options:
     --option SSHOPT=VAL
         The SSH options. For more information, enter `man ssh_config` in your
         terminal.
+    --proxy-ip=<proxy-ip>
+        Proxy the SSH connection through a different IP address.
     --slave=<agent-id>
         This option is deprecated and is replaced by `--mesos-id`.
     --status
