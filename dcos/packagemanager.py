@@ -602,6 +602,11 @@ def _format_json_schema_mismatch_message(error):
         if err.get("expected"):
             expected = "Expected: {}".format(",".join(err["expected"]))
             error_messages += [expected]
+        if err.get("missing"):
+            missing = "Required parameter missing: {}".format(
+                ",".join(err["missing"]),
+            )
+            error_messages += [missing]
         if err.get("instance"):
             pointer = err["instance"].get("pointer")
             formatted_path = pointer.lstrip("/").replace("/", ".")
