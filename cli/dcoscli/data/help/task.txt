@@ -4,6 +4,7 @@ Description:
 Usage:
     dcos task --help
     dcos task --info
+    dcos task --version
     dcos task exec [--interactive --tty] <task> <cmd> [<args>...]
     dcos task log [--completed --follow --lines=N] [<task>] [<file>]
     dcos task ls [--long --completed] [<task>] [<path>]

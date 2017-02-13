@@ -5,6 +5,7 @@ Usage:
     dcos marathon --config-schema
     dcos marathon --help
     dcos marathon --info
+    dcos marathon --version
     dcos marathon about
     dcos marathon app add [<app-resource>]
     dcos marathon app list [--json]
@@ -72,7 +73,7 @@ Commands:
     deployment watch
         Monitor deployments.
     group add
-        Create a new group.
+        Add a group.
     group list
         Print the list of groups.
     group scale
@@ -84,7 +85,7 @@ Commands:
     group update
         Update a group.
     pod add
-        Create a new pod.
+        Add a pod.
     pod kill
         Kill one or more running pod instances.
     pod list
@@ -107,7 +108,7 @@ Commands:
     task list
         List all tasks.
     task stop
-        Stop a task. Wipe persistent data if `--wipe` is set.
+        Stop a task.
     task show
         List a specific task.
 
@@ -142,6 +143,8 @@ Options:
         Scale the app down after performing the the operation.
     --version
         Print version information.
+    --wipe
+        Wipe persistent data.
 
 Positional Arguments:
     <app-id>
@@ -150,7 +153,7 @@ Positional Arguments:
         Path to a file or HTTP(S) URL that contains the app's JSON definition.
         If omitted, the definition is read from stdin. For a detailed
         description see
-        https://mesosphere.github.io/marathon/docs/rest-api.html#post-v2-apps.
+        https://docs.mesosphere.com/usage/marathon/rest-api/.
     <deployment-id>
         The deployment ID.
     <group-id>
@@ -170,8 +173,8 @@ Positional Arguments:
         Path to a file or HTTP(S) URL that contains the pod's JSON definition.
         If omitted, the definition is read from stdin.
     <properties>
-        List of space-separated JSON object properties to update.  The list
-        must be formatted as <key>=<value>. For example, `cpus=2.0 mem=308`.
+        List of one or more JSON object properties which are separated by a space.
+        The list must be formatted as <key>=<value>. For example, `cpus=2.0 mem=308`.
         If omitted, properties are read from a JSON object provided on stdin.
     <task-id>
         The task ID.

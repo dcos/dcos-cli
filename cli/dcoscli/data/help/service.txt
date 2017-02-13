@@ -4,6 +4,7 @@ Description:
 Usage:
     dcos service --help
     dcos service --info
+    dcos service --version
     dcos service [--completed --inactive --json]
     dcos service log [--follow --lines=N --ssh-config-file=<path>]
                      <service> [<file>]
@@ -44,6 +45,6 @@ Positional Arguments:
     <file>
         The service log filename for the Mesos sandbox. The default is stdout.
     <service>
-        The DC/OS Service name.
+        The DC/OS service name.
     <service-id>
-        The DC/OS Service ID.
+        The DC/OS service ID.

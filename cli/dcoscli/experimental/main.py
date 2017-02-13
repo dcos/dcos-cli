@@ -83,7 +83,7 @@ def _experimental(info):
 
 def _add(json, dcos_package, package_name, package_version):
     """
-    Adds a DC/OS package to DC/OS
+    Add a DC/OS package to DC/OS
 
     :param json: wether to output json
     :type json: bool
@@ -123,7 +123,7 @@ def _build(output_json,
 
     :param output_json: whether to output json
     :type output_json: None | bool
-    :param build_definition: The path to a DC/OS Package Build Definition
+    :param build_definition: The Path to a DC/OS package build definition
     :type build_definition: str
     :param output_directory: The directory where the DC/OS Package
     will be stored
