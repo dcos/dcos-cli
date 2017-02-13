@@ -12,6 +12,7 @@ Usage:
                   [--config-file=<path>]
                   [--user=<user>]
                   [--master-proxy]
+                  [--proxy-ip=<proxy-ip>]
                   (--leader | --master | --mesos-id=<mesos-id> | --slave=<slave-id>)
                   [<command>]
     dcos node diagnostics create (<nodes>)...
@@ -56,6 +57,8 @@ Options:
         configuration, the private slaves are unreachable from the public
         internet. You can access them using this option, which will first hop
         from the publicly available master.
+    --proxy-ip=<proxy-ip>
+        Proxy the SSH connection through a different IP address.
     --option SSHOPT=VAL
         The SSH options. For information, enter `man ssh_config` in your
         terminal.
