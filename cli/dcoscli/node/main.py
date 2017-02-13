@@ -750,13 +750,16 @@ def _ssh(leader, slave, option, config_file, user, master_proxy, proxy_ip, comma
     if command is None:
         command = ''
 
-    proxy_ip = proxy_ip or config.get_config_val('core.dcos_proxy_ip')
-    if proxy_ip:
-        master_public_ip = proxy_ip
-    else:
-        master_public_ip = dcos_client.metadata().get('PUBLIC_IPV4')
+    master_public_ip = dcos_client.metadata().get('PUBLIC_IPV4')
 
-    if master_proxy or proxy_ip:
+    if master_proxy:
+        if not master_public_ip:
+            raise DCOSException(("Cannot use --master-proxy.  Failed to find "
+                                 "'PUBLIC_IPV4' at {}").format(
+                                     dcos_client.get_dcos_url('metadata')))
+        proxy_ip = master_public_ip
+
+    if proxy_ip:
         if not os.environ.get('SSH_AUTH_SOCK'):
             raise DCOSException(
                 "There is no SSH_AUTH_SOCK env variable, which likely means "
@@ -765,14 +768,10 @@ def _ssh(leader, slave, option, config_file, user, master_proxy, proxy_ip, comma
                 "use your private key to hop between nodes in your cluster.  "
                 "Please run `ssh-agent`, then add your private key with "
                 "`ssh-add`.")
-        if not master_public_ip:
-            raise DCOSException(("Cannot use --master-proxy.  Failed to find "
-                                 "'PUBLIC_IPV4' at {}").format(
-                                     dcos_client.get_dcos_url('metadata')))
         cmd = "ssh -A -t {0}{1}@{2} ssh -A -t {0}{1}@{3} {4}".format(
             ssh_options,
             user,
-            master_public_ip,
+            proxy_ip,
             host,
             command)
     else:
