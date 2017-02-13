@@ -707,7 +707,8 @@ def _mesos_files(leader, slave_id):
     return files
 
 
-def _ssh(leader, slave, option, config_file, user, master_proxy, proxy_ip, command):
+def _ssh(leader, slave, option, config_file, user, master_proxy, proxy_ip,
+         command):
     """SSH into a DC/OS node using the IP addresses found in master's
        state.json
 
