@@ -1,4 +1,3 @@
-import json
 import mock
 import pytest
 import requests
@@ -33,7 +32,9 @@ def pkg_mgr():
 @pytest.fixture
 def fake_pkg(pkg_mgr):
     with mock.patch('dcos.http.post') as post_fn:
-        post_fn.return_value = mock_response(200, describe_response_headers(pkg_mgr))
+        post_fn.return_value = mock_response(
+            200, describe_response_headers(pkg_mgr),
+        )
         yield pkg_mgr.get_package_version('fake_pkg', '0.0.1')
 
 
@@ -41,7 +42,7 @@ def test_format_error_message_ambiguous_app_id():
     error_dict = {'type': 'AmbiguousAppId', 'message': '<fake message>'}
     ret = packagemanager._format_error_message(error_dict)
     assert '<fake message>' in ret
-    assert 'Please use --app-id to specify the ID of the app to uninstall' in ret
+    assert 'the ID of the app to uninstall' in ret
 
 
 def test_format_error_message_multiple_framework_ids():
@@ -90,7 +91,9 @@ def test_format_error_message_marathon_bad_response():
 
 @mock.patch('dcos.http.post')
 def test_install(post_fn, pkg_mgr, fake_pkg):
-    post_fn.return_value = mock_response(200, install_response_headers(pkg_mgr))
+    post_fn.return_value = mock_response(
+        200, install_response_headers(pkg_mgr),
+    )
     pkg_mgr.install_app(fake_pkg, options=None, app_id=None)
     post_fn.assert_called_with(
         'http://testserver/package/install',
