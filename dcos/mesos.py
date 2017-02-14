@@ -1214,8 +1214,8 @@ class TaskIO(object):
             'stream': True,
             'headers': {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json+recordio',
-                'connection': 'keep-alive'}}
+                'Accept': 'application/recordio',
+                'Message-Accept': 'application/json'}}
 
         response = http.post(
             self.agent_url,
@@ -1302,7 +1302,8 @@ class TaskIO(object):
 
         req_extra_args = {
             'headers': {
-                'Content-Type': 'application/json+recordio',
+                'Content-Type': 'application/recordio',
+                'Message-Content-Type': 'application/json',
                 'Accept': 'application/json',
                 'Connection': 'close',
                 'Transfer-Encoding': 'chunked'
