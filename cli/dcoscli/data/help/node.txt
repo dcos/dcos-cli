@@ -14,6 +14,7 @@ Usage:
     dcos node log [--follow --lines=N --leader --master --mesos-id=<mesos-id> --slave=<agent-id>]
                   [--component=<component-name> --filter=<filter>...]
     dcos node ssh (--leader | --master | --mesos-id=<mesos-id> | --slave=<agent-id>)
+                  [<command>]
                   [--config-file=<path>]
                   [--user=<user>]
                   [--master-proxy]
