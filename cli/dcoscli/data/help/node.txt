@@ -13,17 +13,12 @@ Usage:
     dcos node list-components [--leader --mesos-id=<mesos-id> --json]
     dcos node log [--follow --lines=N --leader --master --mesos-id=<mesos-id> --slave=<agent-id>]
                   [--component=<component-name> --filter=<filter>...]
-    dcos node ssh [--option SSHOPT=VAL ...]
+    dcos node ssh (--leader | --master | --mesos-id=<mesos-id> | --slave=<agent-id>)
                   [--config-file=<path>]
                   [--user=<user>]
                   [--master-proxy]
-<<<<<<< HEAD
-                  (--leader | --master | --mesos-id=<mesos-id> | --slave=<agent-id>)
-=======
+                  [--option SSHOPT=VAL ...]
                   [--proxy-ip=<proxy-ip>]
-                  (--leader | --master | --mesos-id=<mesos-id> | --slave=<slave-id>)
->>>>>>> master
-                  [<command>]
 
 Commands:
     diagnostics
