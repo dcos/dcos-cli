@@ -11,6 +11,7 @@ Usage:
     dcos node diagnostics delete <bundle>
     dcos node diagnostics download <bundle> [--location=<location>]
     dcos node list-components [--leader --mesos-id=<mesos-id> --json]
+    dcos node metrics (--mesos-id=<mesos-id>)
     dcos node log [--follow --lines=N --leader --master --mesos-id=<mesos-id> --slave=<agent-id>]
                   [--component=<component-name> --filter=<filter>...]
     dcos node ssh (--leader | --master | --mesos-id=<mesos-id> | --private-ip=<private-ip> | --slave=<agent-id>)
@@ -33,7 +34,9 @@ Commands:
     list-components
         Print a list of available DC/OS components on specified node.
     log
-        Print the Mesos logs for the leading master node, agent nodes, or both.
+        Prints the Mesos logs for the leading master node, agent nodes, or both.
+    metrics
+        Prints a table of metrics for the specified agent node.
     ssh
         Establish an SSH connection to the master or agent nodes of your DC/OS
         cluster.

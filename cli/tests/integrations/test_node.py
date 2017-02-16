@@ -87,6 +87,15 @@ def test_node_log_invalid_lines():
                    returncode=1)
 
 
+def test_node_metrics_agent():
+    first_node_id = _node()[0]['id']
+    assert_lines(
+        ['dcos', 'node', 'metrics', '--mesos-id={}'.format(first_node_id)],
+        1,
+        great_then=True
+    )
+
+
 @pytest.mark.skipif(sys.platform == 'win32',
                     reason='No pseudo terminal on windows')
 def test_node_ssh_leader():

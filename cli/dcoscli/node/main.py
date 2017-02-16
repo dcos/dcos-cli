@@ -10,7 +10,7 @@ from dcos import (cmds, config, emitting, errors,
                   http, mesos, packagemanager, subprocess, util)
 from dcos.cosmos import get_cosmos_url
 from dcos.errors import DCOSException, DefaultError
-from dcoscli import log, tables
+from dcoscli import log, metrics, tables
 from dcoscli.package.main import confirm
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
@@ -70,6 +70,11 @@ def _cmds():
             arg_keys=['--follow', '--lines', '--leader', '--mesos-id',
                       '--component', '--filter'],
             function=_log),
+
+        cmds.Command(
+            hierarchy=['node', 'metrics'],
+            arg_keys=['--mesos-id'],
+            function=_metrics),
 
         cmds.Command(
             hierarchy=['node', 'list-components'],
@@ -518,6 +523,24 @@ def _log(follow, lines, leader, slave, component, filters):
     # if journald logging enabled.
     _dcos_log(follow, lines, leader, slave, component, filters)
     return 0
+
+
+def _metrics(mesos_id):
+    """ Get metrics from the specified agent.
+
+    :param mesos_id: mesos node id
+    :type mesos_id: str
+    """
+
+    endpoint = '/system/v1/agent/{}/metrics/v0/node'.format(mesos_id)
+
+    dcos_url = config.get_config_val('core.dcos_url').rstrip('/')
+    if not dcos_url:
+        raise config.missing_config_exception(['core.dcos_url'])
+
+    url = dcos_url + endpoint
+
+    return metrics.print_node_metrics_table(url)
 
 
 def _get_slave_ip(slave):
