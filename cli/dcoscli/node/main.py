@@ -73,7 +73,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['node', 'metrics'],
-            arg_keys=['--mesos-id'],
+            arg_keys=['--mesos-id', '--json'],
             function=_metrics),
 
         cmds.Command(
@@ -525,11 +525,13 @@ def _log(follow, lines, leader, slave, component, filters):
     return 0
 
 
-def _metrics(mesos_id):
+def _metrics(mesos_id, json_=False):
     """ Get metrics from the specified agent.
 
     :param mesos_id: mesos node id
     :type mesos_id: str
+    :param json_: print raw JSON
+    :type json_: bool
     """
 
     endpoint = '/system/v1/agent/{}/metrics/v0/node'.format(mesos_id)
@@ -539,6 +541,9 @@ def _metrics(mesos_id):
         raise config.missing_config_exception(['core.dcos_url'])
 
     url = dcos_url + endpoint
+
+    if json_:
+        return metrics.print_node_metrics_json(url)
 
     return metrics.print_node_metrics_table(url)
 

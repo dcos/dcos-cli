@@ -96,6 +96,16 @@ def test_node_metrics_agent():
     )
 
 
+def test_node_metrics_agent_json():
+    first_node_id = _node()[0]['id']
+    assert_lines(
+        ['dcos', 'node', 'metrics', '--mesos-id={}'.format(first_node_id),
+         '--json'],
+        1,
+        greater_than=True
+    )
+
+
 @pytest.mark.skipif(sys.platform == 'win32',
                     reason='No pseudo terminal on windows')
 def test_node_ssh_leader():

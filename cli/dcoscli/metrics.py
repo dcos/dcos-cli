@@ -10,7 +10,7 @@ emitter = emitting.FlatEmitter()
 
 
 def _fetch_node_metrics(url):
-    """Retrieve the output from`dcos-metrics`' `node` endpoint.
+    """Retrieve the metrics data from `dcos-metrics`' `node` endpoint.
 
     :param url: `dcos-metrics` `node` endpoint
     :type url: str
@@ -23,7 +23,17 @@ def _fetch_node_metrics(url):
                 'Error getting metrics. Url: {};'
                 'response code: {}'.format(url, r.status_code))
 
-        return r.json()
+        return r.json().get('datapoints', [])
+
+
+def print_node_metrics_json(url):
+    """Retrieve and print the raw output from `dcos-metrics`' `node` endpoint.
+
+    :param url: `dcos-metrics` `node` endpoint
+    :type url: str
+    """
+    datapoints = _fetch_node_metrics(url)
+    return emitter.publish(datapoints)
 
 
 def print_node_metrics_table(url):
@@ -33,12 +43,10 @@ def print_node_metrics_table(url):
     :param url: `dcos-metrics` `node` endpoint
     :type url: str
     """
-    node_json = _fetch_node_metrics(url)
-    datapoints = node_json.get('datapoints', [])
-
     fields = OrderedDict([
         ('NAME', lambda a: a['name']),
         ('VALUE', lambda a: a['value'])
     ])
+    datapoints = _fetch_node_metrics(url)
     table = tables.table(fields, datapoints)
     return emitter.publish(table)
