@@ -50,7 +50,7 @@ def test_node_log_empty():
 
 
 def test_node_log_leader():
-    assert_lines(['dcos', 'node', 'log', '--leader'], 10, great_then=True)
+    assert_lines(['dcos', 'node', 'log', '--leader'], 10, greater_than=True)
 
 
 def test_node_log_slave():
@@ -58,7 +58,7 @@ def test_node_log_slave():
     assert_lines(
         ['dcos', 'node', 'log', '--mesos-id={}'.format(slave_id)],
         10,
-        great_then=True)
+        greater_than=True)
 
 
 def test_node_log_missing_slave():
@@ -77,7 +77,7 @@ def test_node_log_lines():
     assert_lines(
         ['dcos', 'node', 'log', '--leader', '--lines=4'],
         4,
-        great_then=True)
+        greater_than=True)
 
 
 def test_node_log_invalid_lines():
@@ -92,7 +92,7 @@ def test_node_metrics_agent():
     assert_lines(
         ['dcos', 'node', 'metrics', '--mesos-id={}'.format(first_node_id)],
         1,
-        great_then=True
+        greater_than=True
     )
 
 
