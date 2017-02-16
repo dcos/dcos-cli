@@ -36,7 +36,7 @@ Commands:
     log
         Prints the Mesos logs for the leading master node, agent nodes, or both.
     metrics
-        Prints a table of metrics for the specified agent node.
+        Prints a table of metrics for the agent node specified by <mesos-id>.
     ssh
         Establish an SSH connection to the master or agent nodes of your DC/OS
         cluster.
