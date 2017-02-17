@@ -11,7 +11,10 @@ Usage:
 
 Commands:
     set
-        Add or set a DC/OS configuration property.
+        Add or set a DC/OS configuration property. The available configuration properties
+        are: core.dcos_acs_token, core.dcos_url, core.ssl_verify, dcos_acs_token, dcos_url,
+        mesos_master_url, pagination, reporting, ssl_verify, and timeout.
+
     show
         Print the DC/OS configuration file contents.
     unset
@@ -37,7 +40,7 @@ Environment Variables:
     Configuration properties all have corresponding environment variables. If a
     property is in the "core" section (ex. "core.foo"), it corresponds to
     environment variable DCOS_FOO. All other properties (ex "foo.bar")
-    correspond to enviroment variable DCOS_FOO_BAR.
+    correspond to environment variable DCOS_FOO_BAR.
 
-    Environment variables take precendence over corresponding configuration
+    Environment variables take precedence over corresponding configuration
     property.
