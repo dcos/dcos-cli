@@ -68,7 +68,6 @@ def test_node_log_missing_slave():
     assert returncode == 1
     assert stdout == b''
     stderr_str = str(stderr)
-    assert 'HTTP 404' in stderr_str
     assert 'No slave found with ID "bogus".' in stderr_str
 
 

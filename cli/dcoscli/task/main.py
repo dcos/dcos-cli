@@ -7,9 +7,7 @@ import six
 
 import dcoscli
 from dcos import cmds, config, emitting, mesos, util
-from dcos.errors import (DCOSAuthenticationException,
-                         DCOSAuthorizationException,
-                         DCOSException, DCOSHTTPException, DefaultError)
+from dcos.errors import DCOSException, DCOSHTTPException, DefaultError
 from dcoscli import log, tables
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
@@ -232,28 +230,27 @@ def _log(follow, completed, lines, task, file_):
                 raise DCOSException(msg)
         raise DCOSException('No matching tasks. Exiting.')
 
-    if file_ in ('stdout', 'stderr') and log.dcos_log_enabled():
-        try:
-            _dcos_log(follow, tasks, lines, file_, completed)
-            return 0
-        except (DCOSAuthenticationException,
-                DCOSAuthorizationException):
-            raise
-        except DCOSException as e:
-            emitter.publish(DefaultError(e))
-            emitter.publish(DefaultError('Falling back to files API...'))
+    # if journald logging is disabled, read files API and exit.
+    if not log.dcos_log_enabled():
+        mesos_files = _mesos_files(tasks, file_, client)
+        if not mesos_files:
+            if fltr is None:
+                msg = "No tasks found. Exiting."
+            else:
+                msg = "No matching tasks. Exiting."
+            raise DCOSException(msg)
 
-    mesos_files = _mesos_files(tasks, file_, client)
-    if not mesos_files:
-        if fltr is None:
-            msg = "No tasks found. Exiting."
-        else:
-            msg = "No matching tasks. Exiting."
-        raise DCOSException(msg)
+        log.log_files(mesos_files, follow, lines)
+        return 0
 
-    log.log_files(mesos_files, follow, lines)
+    # otherwise
+    if file_ in ('stdout', 'stderr'):
+        _dcos_log(follow, tasks, lines, file_, completed)
+        return 0
 
-    return 0
+    raise DCOSException('Invalid file {}. dcos-log only '
+                        'supports stdout/stderr'.format(file_))
+    return 1
 
 
 def get_nested_container_id(task):

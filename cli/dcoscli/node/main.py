@@ -9,9 +9,7 @@ import dcoscli
 from dcos import (cmds, config, emitting, errors,
                   http, mesos, packagemanager, subprocess, util)
 from dcos.cosmos import get_cosmos_url
-from dcos.errors import (DCOSAuthenticationException,
-                         DCOSAuthorizationException,
-                         DCOSException, DefaultError)
+from dcos.errors import DCOSException, DefaultError
 from dcoscli import log, tables
 from dcoscli.package.main import confirm
 from dcoscli.subcommand import default_command_info, default_doc
@@ -491,32 +489,32 @@ def _log(follow, lines, leader, slave, component, filters):
     :rtype: int
     """
 
-    if not (leader or slave) or (leader and slave):
-        raise DCOSException(
-            'You must choose one of --leader or --mesos-id.')
+    if not (leader or slave):
+        raise DCOSException('You must choose one of --leader or --mesos-id.')
 
     if lines is None:
         lines = 10
 
     lines = util.parse_int(lines)
 
-    try:
-        _dcos_log(follow, lines, leader, slave, component, filters)
+    # if journald logging is disabled. Read from files API and exit.
+    if not log.dcos_log_enabled():
+        if component or filters:
+            raise DCOSException('--component or --filter is not '
+                                'supported by files API')
+
+        # fail back to mesos files API.
+        mesos_files = _mesos_files(leader, slave)
+        log.log_files(mesos_files, follow, lines)
         return 0
-    except (DCOSAuthenticationException,
-            DCOSAuthorizationException):
-            raise
-    except DCOSException as e:
-        emitter.publish(DefaultError(e))
-        emitter.publish(DefaultError('Falling back to files API...'))
 
-    if component or filters:
-        raise DCOSException('--component or --filter is not '
-                            'supported by files API')
+    # dcos-log does not support logs from leader and agent.
+    if leader and slave:
+        raise DCOSException(
+            'You must choose one of --leader or --mesos-id.')
 
-    # fail back to mesos files API.
-    mesos_files = _mesos_files(leader, slave)
-    log.log_files(mesos_files, follow, lines)
+    # if journald logging enabled.
+    _dcos_log(follow, lines, leader, slave, component, filters)
     return 0
 
 

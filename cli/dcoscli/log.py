@@ -6,10 +6,14 @@ import sys
 import time
 
 import six
+from six.moves import urllib
 
-from dcos import emitting, http, packagemanager, sse, util
+from dcos import config, emitting, http, packagemanager, sse, util
 from dcos.cosmos import get_cosmos_url
-from dcos.errors import DCOSException, DefaultError
+from dcos.errors import (DCOSAuthenticationException,
+                         DCOSAuthorizationException,
+                         DCOSException,
+                         DefaultError)
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -214,8 +218,34 @@ def dcos_log_enabled():
     :return: does cosmos have LOGGING capability.
     :rtype: bool
     """
-    return packagemanager.PackageManager(
+    has_capability = packagemanager.PackageManager(
         get_cosmos_url()).has_capability('LOGGING')
+
+    if not has_capability:
+        return False
+
+    base_url = config.get_config_val("core.dcos_url")
+    url = urllib.parse.urljoin(base_url, '/dcos-metadata/ui-config.json')
+
+    if not base_url:
+        raise config.missing_config_exception(['core.dcos_url'])
+
+    try:
+        response = http.get(url).json()
+    except (DCOSAuthenticationException, DCOSAuthorizationException):
+        raise
+    except DCOSException:
+        emitter.publish('Unable to determine logging mechanism for '
+                        'your cluster. Defaulting to files API.')
+        return False
+
+    try:
+        strategy = response['uiConfiguration']['plugins']['mesos']['logging-strategy']  # noqa: ignore=F403,E501
+    except KeyError:
+        return False
+
+    # https://github.com/dcos/dcos/blob/master/gen/calc.py#L151
+    return strategy == 'journald'
 
 
 def follow_logs(url):
