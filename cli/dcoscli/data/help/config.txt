@@ -12,8 +12,8 @@ Usage:
 Commands:
     set
         Add or set a DC/OS configuration property. The available configuration properties
-        are: core.dcos_acs_token, core.dcos_url, core.ssl_verify, dcos_acs_token, dcos_url,
-        mesos_master_url, pagination, reporting, ssl_verify, and timeout.
+        are: core.dcos_acs_token, core.dcos_url, core.mesos_master_url, core.pagination,
+        core.ssl_verify, and core.timeout.
 
     show
         Print the DC/OS configuration file contents.
