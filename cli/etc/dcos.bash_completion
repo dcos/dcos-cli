@@ -1,0 +1,66 @@
+#!/bin/bash
+
+_dcos()
+{
+    declare -A SUBCOMMANDS
+    declare -A OPTS
+
+    OPTS["config_append"]=""
+    OPTS["config"]="--help --info"
+    OPTS["config_set"]=""
+    OPTS["config_show"]=""
+    OPTS["config_unset"]=""
+    OPTS["config_prepend"]=""
+    OPTS["config_validate"]=""
+    OPTS["marathon"]="--config-schema --info"
+    OPTS["marathon_app"]="add list remove restart show start stop update version"
+    OPTS["marathon_deployment"]="list rollback watch stop"
+    OPTS["marathon_group"]="add list show remove"
+    OPTS["marathon_task"]="list show"
+    OPTS["node"]="--help --info --json"
+    OPTS["node_log"]="--follow --lines --master --slave"
+    OPTS["node_ssh"]="--option --config-file --user --master --slave"
+    OPTS["package"]="--config-schema --help --info"
+    OPTS["package_install"]="--options --app-id --cli --app"
+    OPTS["package_list"]="--endpoints --app-id"
+    OPTS["package_search"]=""
+    OPTS["package_sources"]=""
+    OPTS["package_uninstall"]="--all --app-id"
+    OPTS["package_update"]="--validate"
+    OPTS["service"]="--help --info --inactive --json --version"
+    OPTS["service_log"]="--follow --lines --ssh-config-file"
+    OPTS["task"]="--help --info --completed --json"
+    OPTS["task_log"]="--completed --follow --lines"
+
+
+    for OPT in ${!OPTS[*]} ; do
+        CMD=${OPT%%_*}
+        CMDSUB=${OPT#*_}
+        SUBCOMMANDS[${CMD}]+="${CMDSUB} "
+    done
+
+    COMMANDS="${!SUBCOMMANDS[*]}"
+    COMPREPLY=()
+
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    if [[ $cur =~ (\.|\~|\/).* ]] ; then
+        _filedir
+    elif [ $COMP_CWORD == "1" ] ; then
+        COMPREPLY=($(compgen -W "$COMMANDS" -- ${cur}))
+    elif [ $COMP_CWORD == "2" ] ; then
+        COMPREPLY=($(compgen -W "${SUBCOMMANDS[${prev}]}" -- ${cur}))
+    else
+        if [ $prev == "--config-file" ] ; then
+            _filedir "@(json)"
+        elif [ $prev == "--ssh-config-file" ] || [ $prev == "--option" ]; then
+            _filedir
+        else
+            COMMAND="${COMP_WORDS[1]}_${COMP_WORDS[2]}"
+            COMPREPLY=($(compgen -W "${OPTS[$COMMAND]}" -- ${cur}))
+        fi
+    fi
+    return 0
+}
+complete -F _dcos dcos
