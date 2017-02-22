@@ -498,7 +498,8 @@ def _log(follow, lines, leader, slave, component, filters):
     lines = util.parse_int(lines)
 
     # if journald logging is disabled. Read from files API and exit.
-    if not log.dcos_log_enabled():
+    # https://github.com/dcos/dcos/blob/master/gen/calc.py#L151
+    if 'journald' not in log.logging_strategy():
         if component or filters:
             raise DCOSException('--component or --filter is not '
                                 'supported by files API')
@@ -675,8 +676,6 @@ def _dcos_log(follow, lines, leader, slave, component, filters):
     :param filters: a list of filters ["key:value", ...]
     :type filters: list
     """
-    if not log.dcos_log_enabled():
-        raise DCOSException('dcos-log is not supported')
 
     filter_query = ''
     if component:

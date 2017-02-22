@@ -218,11 +218,25 @@ def dcos_log_enabled():
     :return: does cosmos have LOGGING capability.
     :rtype: bool
     """
+
+    # https://github.com/dcos/dcos/blob/master/gen/calc.py#L151
+    return logging_strategy() == 'journald'
+
+
+def logging_strategy():
+    """ function returns logging strategy
+
+    :return: does cosmos have LOGGING capability.
+    :rtype: str
+    """
+    # default strategy is sandbox logging.
+    strategy = 'logrotate'
+
     has_capability = packagemanager.PackageManager(
         get_cosmos_url()).has_capability('LOGGING')
 
     if not has_capability:
-        return False
+        return strategy
 
     base_url = config.get_config_val("core.dcos_url")
     url = urllib.parse.urljoin(base_url, '/dcos-metadata/ui-config.json')
@@ -237,15 +251,14 @@ def dcos_log_enabled():
     except DCOSException:
         emitter.publish('Unable to determine logging mechanism for '
                         'your cluster. Defaulting to files API.')
-        return False
+        return strategy
 
     try:
         strategy = response['uiConfiguration']['plugins']['mesos']['logging-strategy']  # noqa: ignore=F403,E501
     except KeyError:
-        return False
+        pass
 
-    # https://github.com/dcos/dcos/blob/master/gen/calc.py#L151
-    return strategy == 'journald'
+    return strategy
 
 
 def follow_logs(url):
