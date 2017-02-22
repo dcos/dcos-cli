@@ -118,4 +118,5 @@ def _ssl_error_msg():
     return (
         "An SSL error occurred. To configure your SSL settings, please run: "
         "`dcos config set core.ssl_verify <value>`\n"
-        "<value>: Whether to verify SSL certs for HTTPS or path to certs\n")
+        "<value>: Whether to verify SSL certs for HTTPS or path to certs. "
+        "Valid values are True, False, or a path to a CA_BUNDLE.\n")

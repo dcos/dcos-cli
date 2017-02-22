@@ -32,7 +32,7 @@ Development Dependencies
 
 #. git_ must be installed to download the source code for the DC/OS CLI.
 
-#. python_ version 3.4.x must be installed.
+#. python_ version 3.5.x must be installed.
 
 #. virtualenv_ must be installed and on the system path in order to install
    legacy subcommands. New subcommands are packaged as platform specific
@@ -85,7 +85,7 @@ Running Tests
 Setup
 #####
 
-Tox, our test runner, tests against Python 3.4. We have a set of tests in
+Tox, our test runner, tests against Python 3.5. We have a set of tests in
 the :code:`dcos` package (root directory) and in the :code:`dcoscli` package
 (:code:`cli` directory). When running the tests described below, change
 directory to one of those two and follow the instructions.
@@ -114,7 +114,7 @@ to test SSL certs. To run this test suite be sure to add this resolution to your
 Running
 #######
 
-Tox will run unit and integration tests in Python 3.4 using a temporarily
+Tox will run unit and integration tests in Python 3.5 using a temporarily
 created virtualenv.
 
 You can set :code:`DCOS_CONFIG` to a config file that points to a DC/OS
