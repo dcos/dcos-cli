@@ -13,7 +13,7 @@ Usage:
     dcos node list-components [--leader --mesos-id=<mesos-id> --json]
     dcos node log [--follow --lines=N --leader --master --mesos-id=<mesos-id> --slave=<agent-id>]
                   [--component=<component-name> --filter=<filter>...]
-    dcos node ssh (--leader | --master | --mesos-id=<mesos-id> | --slave=<slave-id> | --private-ip=<private-ip>)
+    dcos node ssh (--leader | --master | --mesos-id=<mesos-id> | --private-ip=<private-ip> | --slave=<agent-id>)
                   [--config-file=<path>]
                   [--user=<user>]
                   [--master-proxy]
@@ -70,24 +70,16 @@ Options:
     --master-proxy
         Proxy the SSH connection through a master node. This can be useful when
         accessing DC/OS from a separate network. For example, in the default AWS
-<<<<<<< HEAD
         configuration, the private agents are unreachable from the public
         internet. You can access them using this option, which will proxy the SSH
         connection through the publicly reachable master.
     --mesos-id=<mesos-id>
         The agent ID of a node.
-=======
-        configuration, the private slaves are unreachable from the public
-        internet. You can access them using this option, which will first hop
-        from the publicly available master.
-    --private-ip=<private-ip>
-        Agent node with the provided private IP.
-    --proxy-ip=<proxy-ip>
-        Proxy the SSH connection through a different IP address.
->>>>>>> dcos node ssh --private-ip=<private-ip>
     --option SSHOPT=VAL
         The SSH options. For more information, enter `man ssh_config` in your
         terminal.
+    --private-ip=<private-ip>
+        Agent node with the provided private IP.
     --proxy-ip=<proxy-ip>
         Proxy the SSH connection through a different IP address.
     --slave=<agent-id>
