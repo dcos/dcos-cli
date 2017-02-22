@@ -7,11 +7,11 @@ Available DC/OS commands:
 
 	auth           	Authenticate to DC/OS cluster
 	config         	Manage the DC/OS configuration file
-	experimental   	Commands under development and subject to change
+	experimental   	Manage commands that are under development
 	help           	Display help information about DC/OS
 	job            	Deploy and manage jobs in DC/OS
 	marathon       	Deploy and manage applications to DC/OS
-	node           	Administer and manage DC/OS cluster nodes
+	node           	View DC/OS node information
 	package        	Install and manage DC/OS software packages
 	service        	Manage DC/OS services
 	task           	Manage DC/OS tasks

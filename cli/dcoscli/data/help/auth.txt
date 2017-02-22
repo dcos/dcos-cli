@@ -4,6 +4,7 @@ Description:
 Usage:
     dcos auth --help
     dcos auth --info
+    dcos auth --version
     dcos auth list-providers [--json]
     dcos auth login
         [--provider=<provider_id>] [--username=<username>]

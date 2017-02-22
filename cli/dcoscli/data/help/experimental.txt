@@ -1,9 +1,10 @@
 Description:
-    Commands under development and subject to change.
+    Manage commands that are under development.
 
 Usage:
     dcos experimental --help
     dcos experimental --info
+    dcos experimental --version
     dcos experimental package add [--json]
                                   (--dcos-package=<dcos-package> |
                                     (--package-name=<package-name>
@@ -18,18 +19,18 @@ Usage:
 
 Commands:
     package add
-        Adds a DC/OS package to DC/OS.
+        Add a DC/OS package to DC/OS.
     package build
         Build a package locally to be added to DC/OS or to be shared with
         Universe.
     service start
-        Starts a service from a DC/OS package that was added to DC/OS. See
+        Start a service from a non-native DC/OS package. See
         `dcos experimental package add` for information on how to add a
         package to DC/OS.
 
 Options:
     --dcos-package=<dcos-package>
-        Path to a DC/OS Package.
+        Path to a DC/OS package.
     -h, --help
         Print usage.
     --info
@@ -42,7 +43,7 @@ Options:
         Path to the directory where the data should be stored.
         Defaults to the current working directory.
     --package-name=<package-name>
-        Name of the DC/OS package in the package repository.
+        Name of the DC/OS package.
     --package-version=<package-version>
         The package version to add.
     --version
@@ -50,6 +51,6 @@ Options:
 
 Positional Arguments:
     <build-definition>
-        Path to a DC/OS Package Build Definition.
+        Path to a DC/OS package build definition.
     <package-name>
         Name of a DC/OS package that has been added to DC/OS.

@@ -1,42 +1,53 @@
 Description:
-    Administer and manage DC/OS cluster nodes.
+    View DC/OS node information.
 
 Usage:
     dcos node --help
     dcos node --info
     dcos node [--json]
-    dcos node log [--follow --lines=N --leader --master --mesos-id=<mesos-id> --slave=<slave-id>]
-                  [--component=<component-name> --filter=<filter>...]
-    dcos node list-components [--leader --mesos-id=<mesos-id> --json]
-    dcos node ssh [--option SSHOPT=VAL ...]
-                  [--config-file=<path>]
-                  [--user=<user>]
-                  [--master-proxy]
-                  [--proxy-ip=<proxy-ip>]
-                  (--leader | --master | --mesos-id=<mesos-id> | --slave=<slave-id>)
-                  [<command>]
+    dcos node --version
+    dcos node diagnostics (--list | --status | --cancel) [--json]
     dcos node diagnostics create (<nodes>)...
     dcos node diagnostics delete <bundle>
     dcos node diagnostics download <bundle> [--location=<location>]
-    dcos node diagnostics (--list | --status | --cancel) [--json]
+    dcos node list-components [--leader --mesos-id=<mesos-id> --json]
+    dcos node log [--follow --lines=N --leader --master --mesos-id=<mesos-id> --slave=<agent-id>]
+                  [--component=<component-name> --filter=<filter>...]
+    dcos node ssh (--leader | --master | --mesos-id=<mesos-id> | --slave=<agent-id>)
+                  [--config-file=<path>]
+                  [--user=<user>]
+                  [--master-proxy]
+                  [--option SSHOPT=VAL ...]
+                  [--proxy-ip=<proxy-ip>]
+                  [<command>]
 
 Commands:
+    diagnostics
+        View the details of diagnostics bundles.
+    diagnostics create
+        Create a diagnostics bundle.
+    diagnostics delete
+        Delete a diagnostics bundle.
+    diagnostics download
+        Download a diagnostics bundle.
+    list-components
+        Print a list of available DC/OS components on specified node.
     log
-        Prints the Mesos logs for the leading master node, agent nodes, or both.
+        Print the Mesos logs for the leading master node, agent nodes, or both.
     ssh
         Establish an SSH connection to the master or agent nodes of your DC/OS
         cluster.
-    diagnostics create
-        Create a diagnostics bundle. Nodes can be: ip address, hostname, mesos ID
-        or keywords "all", "masters", "agents" (notice the quotes around the keywords).
-    diagnostics download
-        Download a diagnostics bundle.
-    diagnostics delete
-        Delete a diagnostics bundle.
 
 Options:
+    --cancel
+        Cancel a running diagnostics job.
+    --component=<component-name>
+        Show DC/OS component logs.
     --config-file=<path>
         Path to SSH configuration file.
+    --filter=<filter>
+        Filter logs by field and value. Filter must be a string separated by colon.
+        For example: --filter _PID:0 --filter _UID:1.
     --follow
         Dynamically update the log.
     -h, --help
@@ -49,42 +60,41 @@ Options:
         The leading master.
     --lines=N
         Print the last N lines, where 10 is the default.
+    --list
+        List available diagnostics bundles.
+    --location=<location>
+        Download the diagnostics bundle to a specific location. If not set, the
+        default location is your current working directory.
     --master
-        Deprecated. Please use --leader.
+        This option is deprecated and is replaced by `--leader`.
     --master-proxy
         Proxy the SSH connection through a master node. This can be useful when
         accessing DC/OS from a separate network. For example, in the default AWS
-        configuration, the private slaves are unreachable from the public
-        internet. You can access them using this option, which will first hop
-        from the publicly available master.
+        configuration, the private agents are unreachable from the public
+        internet. You can access them using this option, which will proxy the SSH
+        connection through the publicly reachable master.
+    --mesos-id=<mesos-id>
+        The agent ID of a node.
+    --option SSHOPT=VAL
+        The SSH options. For more information, enter `man ssh_config` in your
+        terminal.
     --proxy-ip=<proxy-ip>
         Proxy the SSH connection through a different IP address.
-    --option SSHOPT=VAL
-        The SSH options. For information, enter `man ssh_config` in your
-        terminal.
     --slave=<agent-id>
-        Agent node with the provided ID.
-    --user=<user>
-        The SSH user, where the default user [default: core].
-    --list
-        List available diagnostics bundles.
+        This option is deprecated and is replaced by `--mesos-id`.
     --status
         Print diagnostics job status.
-    --cancel
-        Cancel a running diagnostics job.
-    --location=<location>
-        Download a diagnostics bundle to a particular location.
-        If not set, default to present working directory.
+    --user=<user>
+        The SSH user [default: core].
     --version
         Print version information.
-    --list-components
-        Print a list of available DC/OS components on specified node.
-    --component=<component-name>
-        Show DC/OS component logs.
-    --filter=<filter>
-        Filter logs by field and value. Filter must be a string separated by colon.
-        For example: --filter _PID:0 --filter _UID:1
 
 Positional Arguments:
+    <bundle>
+        The bundle filename. For example, `bundle-2017-02-01T00:33:48-110930856.zip`.
     <command>
         Command to execute on the DCOS cluster node.
+    <nodes>
+        Node to run command upon. A node can be any of the following: IP address,
+        hostname, Mesos ID, or the keywords "all", "masters", "agents". You must use
+        quotation marks around keywords.
