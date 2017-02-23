@@ -1015,8 +1015,21 @@ class TaskIO(object):
         client = DCOSClient()
         master = get_master(client)
 
-        # Get the URL to the agent running the task.
+        # Get the task and make sure its container was launched by the UCR.
+        # Since task's containers are launched by the UCR by default, we want
+        # to allow most tasks to pass through unchecked. The only exception is
+        # when a task has an explicit container specified and it is not of type
+        # "MESOS". Having a type of "MESOS" implies that it was launched by the
+        # UCR -- all other types imply it was not.
         task_obj = master.task(task_id)
+        if "container" in task_obj.dict():
+            if "type" in task_obj.dict()["container"]:
+                if task_obj.dict()["container"]["type"] != "MESOS":
+                    raise DCOSException(
+                        "This command is only supported for tasks"
+                        " launched by the Universal Container Runtime (UCR).")
+
+        # Get the URL to the agent running the task.
         if client._mesos_master_url:
             self.agent_url = client.slave_url(
                 slave_id="",
