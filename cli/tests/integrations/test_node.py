@@ -103,6 +103,13 @@ def test_node_ssh_slave():
 
 @pytest.mark.skipif(sys.platform == 'win32',
                     reason='No pseudo terminal on windows')
+def test_node_ssh_slave_with_private_ip():
+    slave_ip = mesos.DCOSClient().get_state_summary()['slaves'][0]['hostname']
+    _node_ssh(['--private-ip={}'.format(slave_ip), '--master-proxy'])
+
+
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='No pseudo terminal on windows')
 def test_node_ssh_option():
     stdout, stderr, _ = _node_ssh_output(
         ['--leader', '--option', 'Protocol=0'])
@@ -184,7 +191,7 @@ def test_node_ssh_with_command():
 def test_node_ssh_slave_with_command():
     slave = mesos.DCOSClient().get_state_summary()['slaves'][0]
     _node_ssh(['--mesos-id={}'.format(slave['id']), '--master-proxy',
-              '/opt/mesosphere/bin/detect_ip'], 0, slave['hostname'])
+               '/opt/mesosphere/bin/detect_ip'], 0, slave['hostname'])
 
 
 def _node_ssh_output(args):

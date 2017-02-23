@@ -81,7 +81,8 @@ def _cmds():
         cmds.Command(
             hierarchy=['node', 'ssh'],
             arg_keys=['--leader', '--mesos-id', '--option', '--config-file',
-                      '--user', '--master-proxy', '--proxy-ip', '<command>'],
+                      '--user', '--master-proxy', '--proxy-ip', '--private-ip',
+                      '<command>'],
             function=_ssh),
 
         cmds.Command(
@@ -735,7 +736,7 @@ def _mesos_files(leader, slave_id):
 
 
 def _ssh(leader, slave, option, config_file, user, master_proxy, proxy_ip,
-         command):
+         private_ip, command):
     """SSH into a DC/OS node using the IP addresses found in master's
        state.json
 
@@ -754,6 +755,8 @@ def _ssh(leader, slave, option, config_file, user, master_proxy, proxy_ip,
     :type master_proxy: bool | None
     :param proxy_ip: If set, SSH-hop from this IP address
     :type proxy_ip: str | None
+    :param private_ip: The private IP address of the node we want to SSH to.
+    :type private_ip: str | None
     :param command: Command to run on the node
     :type command: str | None
     :rtype: int
@@ -765,6 +768,8 @@ def _ssh(leader, slave, option, config_file, user, master_proxy, proxy_ip,
 
     if leader:
         host = mesos.MesosDNSClient().hosts('leader.mesos.')[0]['ip']
+    elif private_ip:
+        host = private_ip
     else:
         summary = dcos_client.get_state_summary()
         slave_obj = next((slave_ for slave_ in summary['slaves']
