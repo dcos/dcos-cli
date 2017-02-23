@@ -6,10 +6,14 @@ import sys
 import time
 
 import six
+from six.moves import urllib
 
-from dcos import emitting, http, packagemanager, sse, util
+from dcos import config, emitting, http, packagemanager, sse, util
 from dcos.cosmos import get_cosmos_url
-from dcos.errors import DCOSException, DefaultError
+from dcos.errors import (DCOSAuthenticationException,
+                         DCOSAuthorizationException,
+                         DCOSException,
+                         DefaultError)
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -214,8 +218,47 @@ def dcos_log_enabled():
     :return: does cosmos have LOGGING capability.
     :rtype: bool
     """
-    return packagemanager.PackageManager(
+
+    # https://github.com/dcos/dcos/blob/master/gen/calc.py#L151
+    return logging_strategy() == 'journald'
+
+
+def logging_strategy():
+    """ function returns logging strategy
+
+    :return: does cosmos have LOGGING capability.
+    :rtype: str
+    """
+    # default strategy is sandbox logging.
+    strategy = 'logrotate'
+
+    has_capability = packagemanager.PackageManager(
         get_cosmos_url()).has_capability('LOGGING')
+
+    if not has_capability:
+        return strategy
+
+    base_url = config.get_config_val("core.dcos_url")
+    url = urllib.parse.urljoin(base_url, '/dcos-metadata/ui-config.json')
+
+    if not base_url:
+        raise config.missing_config_exception(['core.dcos_url'])
+
+    try:
+        response = http.get(url).json()
+    except (DCOSAuthenticationException, DCOSAuthorizationException):
+        raise
+    except DCOSException:
+        emitter.publish('Unable to determine logging mechanism for '
+                        'your cluster. Defaulting to files API.')
+        return strategy
+
+    try:
+        strategy = response['uiConfiguration']['plugins']['mesos']['logging-strategy']  # noqa: ignore=F403,E501
+    except KeyError:
+        pass
+
+    return strategy
 
 
 def follow_logs(url):

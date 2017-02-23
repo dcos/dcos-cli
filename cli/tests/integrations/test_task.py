@@ -188,7 +188,7 @@ def test_log_two_tasks():
     assert stderr == b''
 
     lines = stdout.decode('utf-8').split('\n')
-    assert len(lines) == 11
+    assert len(lines) == 23
 
 
 @pytest.mark.skipif(sys.platform == 'win32',
