@@ -127,8 +127,7 @@ class RpcClient(object):
             return method_fn(url, *args, **kwargs)
         except DCOSHTTPException as e:
             text = _get_response_text(e.response)
-            logger.error('DCOS Error: %s\n%s',
-                         e.response.reason, text)
+            logger.exception('DCOS Error: %s\n%s', e.response.reason, text)
 
             try:
                 json_body = e.response.json()
