@@ -9,8 +9,8 @@ import dcos.util as util
 from dcos import mesos
 from dcos.util import create_schema
 
-from .common import assert_command, assert_lines, exec_command, \
-    fetch_valid_json, ssh_output
+from .helpers.common import (assert_command, assert_lines, exec_command,
+                             fetch_valid_json, ssh_output)
 from ..fixtures.node import slave_fixture
 
 

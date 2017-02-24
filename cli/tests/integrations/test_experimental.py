@@ -8,9 +8,9 @@ import time
 
 import dcoscli
 from dcos import util
-from .common import (assert_command, exec_command,
-                     file_json_ast, watch_all_deployments,
-                     zip_contents_as_json)
+from .helpers.common import (assert_command, exec_command, file_json_ast,
+                             zip_contents_as_json)
+from .helpers.marathon import watch_all_deployments
 
 command_base = ['dcos', 'experimental']
 data_dir = os.path.join(os.getcwd(), 'tests', 'data')

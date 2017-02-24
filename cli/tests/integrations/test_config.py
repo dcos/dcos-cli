@@ -6,8 +6,8 @@ import six
 
 from dcos import constants
 
-from .common import (assert_command, config_set, config_unset,
-                     exec_command, update_config)
+from .helpers.common import (assert_command, config_set, config_unset,
+                             exec_command, update_config)
 
 
 @pytest.fixture
@@ -150,8 +150,7 @@ def test_set_nonexistent_subcommand(env):
         env=env)
 
 
-def test_set_when_extra_section():
-    env = os.environ.copy()
+def test_set_when_extra_section(env):
     path = os.path.join('tests', 'data', 'config', 'invalid_section.toml')
     env['DCOS_CONFIG'] = path
     os.chmod(path, 0o600)
@@ -298,8 +297,7 @@ def test_timeout(env):
             assert "(connect timeout=1)".encode('utf-8') in stderr
 
 
-def test_parse_error():
-    env = os.environ.copy()
+def test_parse_error(env):
     path = os.path.join('tests', 'data', 'config', 'parse_error.toml')
     os.chmod(path, 0o600)
     env['DCOS_CONFIG'] = path

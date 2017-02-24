@@ -4,12 +4,11 @@ import time
 
 import pytest
 
-from .common import (add_pod, assert_command, exec_command,
-                     file_json_ast, pod, pods, remove_pod,
-                     watch_all_deployments)
+from .helpers.common import assert_command, exec_command
+from .helpers.marathon import (add_pod, pod, pod_spec_json, pods, remove_pod,
+                               watch_all_deployments)
 from ..fixtures.marathon import (DOUBLE_POD_FILE_PATH, DOUBLE_POD_ID,
                                  GOOD_POD_FILE_PATH, GOOD_POD_ID,
-                                 GOOD_POD_STATUS_FILE_PATH,
                                  POD_KILL_FILE_PATH, POD_KILL_ID,
                                  pod_list_fixture, TRIPLE_POD_FILE_PATH,
                                  TRIPLE_POD_ID, UNGOOD_POD_FILE_PATH,
@@ -30,12 +29,6 @@ def test_pod_add_from_file():
     watch_all_deployments()
 
 
-def test_pod_add_from_stdin():
-    _pod_add_from_stdin(GOOD_POD_FILE_PATH)
-    remove_pod(GOOD_POD_ID)
-    watch_all_deployments()
-
-
 def test_pod_list():
     expected_json = pod_list_fixture()
 
@@ -45,13 +38,6 @@ def test_pod_list():
 
         _assert_pod_list_json(expected_json)
         _assert_pod_list_table()
-
-
-def test_pod_show():
-    expected_json = file_json_ast(GOOD_POD_STATUS_FILE_PATH)
-
-    with pod(GOOD_POD_FILE_PATH, GOOD_POD_ID):
-        _assert_pod_show(GOOD_POD_ID, expected_json)
 
 
 def test_pod_update_does_not_support_properties():
@@ -123,72 +109,9 @@ def _assert_pod_list_json_subset(expected_json, actual_json):
     for expected_pod in expected_json:
         pod_id = expected_pod['id']
         actual_pod = actual_pods_by_id[pod_id]
-        _assert_pod_spec_json(expected_pod['spec'], actual_pod['spec'])
+        pod_spec_json(expected_pod['spec'], actual_pod['spec'])
 
     assert len(actual_json) == len(expected_json)
-
-
-def _assert_pod_status_json(expected_pod_status, actual_pod_status):
-    """Checks that the "actual" pod status JSON matched the "expected" JSON.
-
-    The comparison only looks at specific fields that are present in the
-    test data used by this module.
-
-    :param expected_pod_status: contains the baseline values for the comparison
-    :type expected_pod_status: {}
-    :param actual_pod_status: has its fields checked against expected's fields
-    :type actual_pod_status: {}
-    :rtype: None
-    """
-
-    assert actual_pod_status['id'] == expected_pod_status['id']
-    assert actual_pod_status['status'] == expected_pod_status['status']
-    assert len(actual_pod_status['instances']) == \
-        len(expected_pod_status['instances'])
-
-    _assert_pod_spec_json(expected_pod_status['spec'],
-                          actual_pod_status['spec'])
-
-    expected_instance = expected_pod_status['instances'][0]
-    expected_container_statuses = {container['name']: container['status']
-                                   for container
-                                   in expected_instance['containers']}
-
-    for actual_instance in actual_pod_status['instances']:
-        assert actual_instance['status'] == expected_instance['status']
-
-        actual_container_statuses = {container['name']: container['status']
-                                     for container
-                                     in actual_instance['containers']}
-
-        assert actual_container_statuses == expected_container_statuses
-
-
-def _assert_pod_spec_json(expected_pod_spec, actual_pod_spec):
-    """Checks that the "actual" pod spec JSON matches the "expected" JSON.
-
-    The comparison only looks at specific fields that are present in the
-    test data used by this module.
-
-    :param expected_pod_spec: contains the baseline values for the comparison
-    :type expected_pod_spec: {}
-    :param actual_pod_spec: has its fields checked against the expected fields
-    :type actual_pod_spec: {}
-    :rtype: None
-    """
-
-    expected_containers = expected_pod_spec['containers']
-    actual_containers = actual_pod_spec['containers']
-    actual_containers_by_name = {c['name']: c for c in actual_containers}
-
-    for expected_container in expected_containers:
-        container_name = expected_container['name']
-        actual_container = actual_containers_by_name[container_name]
-
-        for k, v in expected_container['resources'].items():
-            assert actual_container['resources'][k] == v
-
-    assert len(actual_containers) == len(expected_containers)
 
 
 def _assert_pod_list_table():
@@ -215,17 +138,6 @@ def _assert_pod_list_table():
 
     assert stdout_lines[10] == ''
     assert len(stdout_lines) == 11
-
-
-def _assert_pod_show(pod_id, expected_json):
-    cmd = _POD_SHOW_CMD + [pod_id]
-    returncode, stdout, stderr = exec_command(cmd)
-
-    assert returncode == 0
-    assert stderr == b''
-
-    pod_status_json = json.loads(stdout.decode('utf-8'))
-    _assert_pod_status_json(expected_json, pod_status_json)
 
 
 def _assert_pod_update_from_stdin(extra_args, pod_json_file_path):
