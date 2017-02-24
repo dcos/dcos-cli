@@ -40,12 +40,14 @@ def task_table(tasks):
         ("USER", lambda t: t.user()),
         ("STATE", lambda t: t["state"].split("_")[-1][0]),
         ("ID", lambda t: t["id"]),
+        ("MESOS ID", lambda t: t["slave_id"]),
     ])
 
     tb = table(fields, tasks, sortby="NAME")
     tb.align["NAME"] = "l"
     tb.align["HOST"] = "l"
     tb.align["ID"] = "l"
+    tb.align["MESOS ID"] = "l"
 
     return tb
 
