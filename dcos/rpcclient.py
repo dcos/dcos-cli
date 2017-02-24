@@ -145,7 +145,8 @@ class RpcClient(object):
                 request_method=e.response.request.method,
                 request_url=e.response.request.url,
                 json_body=json_body)
-            raise DCOSException(message)
+
+            raise DCOSException(message) from e
 
 
 def _get_response_text(response):
