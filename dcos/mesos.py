@@ -481,7 +481,7 @@ class Master(object):
         def _get_container_id(container_status):
             if 'container_id' in container_status:
                 if 'value' in container_status['container_id']:
-                    return container_status['container_id']['value']
+                    return container_status['container_id']
 
             raise DCOSException(
                 "No container found for the specified task."
@@ -1206,9 +1206,7 @@ class TaskIO(object):
             'type': "LAUNCH_NESTED_CONTAINER_SESSION",
             'launch_nested_container_session': {
                 'container_id': {
-                    'parent': {
-                       'value': self.parent_id
-                     },
+                    'parent': self.parent_id,
                     'value': self.container_id
                 },
                 'command': {
@@ -1289,9 +1287,7 @@ class TaskIO(object):
                 'attach_container_input': {
                     'type': 'CONTAINER_ID',
                     'container_id': {
-                        'parent': {
-                           'value': self.parent_id
-                         },
+                        'parent': self.parent_id,
                         'value': self.container_id}}}
 
             yield self.encoder.encode(message)
