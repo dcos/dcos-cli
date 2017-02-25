@@ -15,6 +15,7 @@ from ..fixtures.marathon import (app_fixture, app_task_fixture,
                                  pod_list_without_instances_fixture,
                                  pod_list_without_spec_version_fixture)
 from ..fixtures.node import slave_fixture
+from ..fixtures.metrics import agent_metrics_node_fixture
 from ..fixtures.package import package_fixture, search_result_fixture
 from ..fixtures.service import framework_fixture
 from ..fixtures.task import browse_fixture, task_fixture
@@ -123,6 +124,12 @@ def test_ls_long_table():
         _test_table(tables.ls_long_table,
                     browse_fixture(),
                     'tests/unit/data/ls_long.txt')
+
+
+def test_metrics_summary_table():
+    _test_table(tables.metrics_summary_table,
+                agent_metrics_node_fixture()['datapoints'],
+                'tests/unit/data/metrics_summary.txt')
 
 
 def _test_table(table_fn, fixture_fn, path):

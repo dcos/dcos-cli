@@ -886,6 +886,56 @@ def ls_long_table(files):
     return tb
 
 
+def metrics_summary_table(datapoints):
+    """Prints a table of CPU, Memory and Disk for the given data.
+
+    :param datapoints: A raw list of datapoints.
+    :type [dict]:
+    """
+
+    def _to_gib(n):
+        return n * pow(2, -30)
+
+    def _summarise_datapoints(datapoints):
+        names = [d['name'] for d in datapoints]
+        values = [d['value'] for d in datapoints]
+        indexed_datapoints = dict(zip(names, values))
+
+        cpu_used = indexed_datapoints['load.1min']
+        cpu_used_pc = indexed_datapoints['cpu.total']
+
+        mem_total = indexed_datapoints['memory.total']
+        mem_free = indexed_datapoints['memory.free']
+        mem_used = mem_total - mem_free
+        mem_used_gib = _to_gib(mem_used)
+        mem_used_pc = mem_used / mem_total * 100
+
+        disk_total = indexed_datapoints['filesystem.capacity.total']
+        disk_used = indexed_datapoints['filesystem.capacity.used']
+        disk_used_gib = _to_gib(disk_used)
+        disk_used_pc = disk_used / disk_total * 100
+
+        return {
+            'cpu': '{:0.2f} ({:0.2f}%)'.format(cpu_used, cpu_used_pc),
+            'mem': '{:0.2f}GiB ({:0.2f}%)'.format(mem_used_gib, mem_used_pc),
+            'disk': '{:0.2f}GiB ({:0.2f}%)'.format(disk_used_gib, disk_used_pc)
+        }
+
+    fields = OrderedDict([
+        ('CPU', lambda d: d['cpu']),
+        ('MEM', lambda d: d['mem']),
+        ('DISK', lambda d: d['disk'])
+    ])
+
+    # table has a single row
+    metrics_table = table(fields, [_summarise_datapoints(datapoints)])
+    metrics_table.align['CPU'] = 'l'
+    metrics_table.align['MEM'] = 'l'
+    metrics_table.align['DISK'] = 'l'
+
+    return metrics_table
+
+
 def truncate_table(fields, objs, limits, **kwargs):
     """Returns a PrettyTable.  `fields` represents the header schema of
     the table.  `objs` represents the objects to be rendered into

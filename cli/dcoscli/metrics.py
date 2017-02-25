@@ -1,5 +1,4 @@
 import contextlib
-from collections import OrderedDict
 
 from dcos import emitting, http, util
 from dcos.errors import DCOSException
@@ -37,16 +36,14 @@ def print_node_metrics_json(url):
 
 
 def print_node_metrics_table(url):
-    """Retrieve and pretty-print the output from `dcos-metrics`' `node`
+    """Retrieve and pretty-print key fields from the `dcos-metrics`' `node`
     endpoint.
 
     :param url: `dcos-metrics` `node` endpoint
     :type url: str
     """
-    fields = OrderedDict([
-        ('NAME', lambda a: a['name']),
-        ('VALUE', lambda a: a['value'])
-    ])
+
     datapoints = _fetch_node_metrics(url)
-    table = tables.table(fields, datapoints)
+
+    table = tables.metrics_summary_table(datapoints)
     return emitter.publish(table)
