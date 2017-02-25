@@ -1,8 +1,7 @@
 import getpass
-
 import sys
-
 import time
+import webbrowser
 
 import jwt
 
@@ -58,10 +57,16 @@ def _prompt_user_for_token(url, token_type):
     :rtype: str
     """
 
-    msg = "\n{}\n\n    {}\n\nEnter {}:".format(
-          "Please go to the following link in your browser:",
+    msg = "\n{}\n\n{}\n\n    {}\n\nEnter {}:".format(
+          "Attempting to automatically open a page in your browser...",
+          "If it doesn't work, open the following link:",
           url,
           token_type)
+
+    try:
+        webbrowser.open(url)
+    except:
+        pass
     sys.stderr.write(msg)
     sys.stderr.flush()
     token = sys.stdin.readline().strip()
