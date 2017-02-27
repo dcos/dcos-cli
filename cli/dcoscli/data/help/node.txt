@@ -13,7 +13,7 @@ Usage:
     dcos node log [--follow --lines=N --leader --master --mesos-id=<mesos-id> --slave=<slave-id>]
                   [--component=<component-name> --filter=<filter>...]
     dcos node list-components [--leader --mesos-id=<mesos-id> --json]
-    dcos node metrics (--mesos-id=<mesos-id>) [--json]
+    dcos node metrics (--mesos-id=<mesos-id>) [--field=<name>... | --json]
     dcos node log [--follow --lines=N --leader --master --mesos-id=<mesos-id> --slave=<agent-id>]
                   [--component=<component-name> --filter=<filter>...]
     dcos node ssh (--leader | --master | --mesos-id=<mesos-id> | --private-ip=<private-ip> | --slave=<agent-id>)
@@ -50,6 +50,9 @@ Options:
         Show DC/OS component logs.
     --config-file=<path>
         Path to SSH configuration file.
+    --field=<name>
+        Specify the field from the metrics dataset which you want to be output.
+        For example: --field swap.total --field memory.total
     --filter=<filter>
         Filter logs by field and value. Filter must be a string separated by colon.
         For example: --filter _PID:0 --filter _UID:1.

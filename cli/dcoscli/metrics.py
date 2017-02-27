@@ -35,7 +35,7 @@ def print_node_metrics_json(url):
     return emitter.publish(datapoints)
 
 
-def print_node_metrics_table(url):
+def print_node_metrics_summary(url):
     """Retrieve and pretty-print key fields from the `dcos-metrics`' `node`
     endpoint.
 
@@ -46,4 +46,31 @@ def print_node_metrics_table(url):
     datapoints = _fetch_node_metrics(url)
 
     table = tables.metrics_summary_table(datapoints)
+    return emitter.publish(table)
+
+
+def print_node_metrics_fields(url, fields):
+    """Retrieve and pretty-print selected fields from the `dcos-metrics`' `node`
+    endpoint.
+
+    :param url: `dcos-metrics` `node` endpoint
+    :type url: str
+    :param fields: a list of field names
+    :type fields: [str]
+    """
+
+    all_datapoints = _fetch_node_metrics(url)
+
+    names = [d['name'] for d in all_datapoints]
+    indexed_datapoints = dict(zip(names, all_datapoints))
+
+    datapoints = []
+    for field in sorted(fields):
+        if field in names:
+            datapoints.append(indexed_datapoints[field])
+        else:
+            raise DCOSException(
+                'Could not find metrics data for field: {}'.format(field))
+
+    table = tables.metrics_fields_table(datapoints)
     return emitter.publish(table)

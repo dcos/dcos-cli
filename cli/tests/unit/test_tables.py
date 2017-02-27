@@ -132,6 +132,16 @@ def test_metrics_summary_table():
                 'tests/unit/data/metrics_summary.txt')
 
 
+def test_metrics_fields_table():
+    fields = ['swap.total', 'memory.total']
+    all_datapoints = agent_metrics_node_fixture()['datapoints']
+    some_datapoints = filter(lambda x: x['name'] in fields, all_datapoints)
+
+    _test_table(tables.metrics_fields_table,
+                some_datapoints,
+                'tests/unit/data/metrics_fields.txt')
+
+
 def _test_table(table_fn, fixture_fn, path):
     table = table_fn(fixture_fn)
     with open(path) as f:

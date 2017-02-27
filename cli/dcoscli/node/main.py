@@ -73,7 +73,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['node', 'metrics'],
-            arg_keys=['--mesos-id', '--json'],
+            arg_keys=['--mesos-id', '--field', '--json'],
             function=_metrics),
 
         cmds.Command(
@@ -525,11 +525,13 @@ def _log(follow, lines, leader, slave, component, filters):
     return 0
 
 
-def _metrics(mesos_id, json_=False):
+def _metrics(mesos_id, fields, json_=False):
     """ Get metrics from the specified agent.
 
     :param mesos_id: mesos node id
     :type mesos_id: str
+    :param fields: a list of fields
+    :type fields: [str]
     :param json_: print raw JSON
     :type json_: bool
     """
@@ -542,10 +544,13 @@ def _metrics(mesos_id, json_=False):
 
     url = dcos_url + endpoint
 
+    if fields:
+        return metrics.print_node_metrics_fields(url, fields)
+
     if json_:
         return metrics.print_node_metrics_json(url)
 
-    return metrics.print_node_metrics_table(url)
+    return metrics.print_node_metrics_summary(url)
 
 
 def _get_slave_ip(slave):

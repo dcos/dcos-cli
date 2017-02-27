@@ -890,7 +890,7 @@ def metrics_summary_table(datapoints):
     """Prints a table of CPU, Memory and Disk for the given data.
 
     :param datapoints: A raw list of datapoints.
-    :type [dict]:
+    :type datapoints: [dict]
     """
 
     def _to_gib(n):
@@ -933,6 +933,26 @@ def metrics_summary_table(datapoints):
     metrics_table.align['MEM'] = 'l'
     metrics_table.align['DISK'] = 'l'
 
+    return metrics_table
+
+
+def metrics_fields_table(datapoints):
+    """Prints a table of all passed metrics
+
+    :param datapoints: A raw list of datapoints
+    :type datapoints: [dict]
+    """
+
+    fields = OrderedDict([
+        ('NAME', lambda d: d['name']),
+        ('VALUE', lambda d: d['value']),
+        ('UNIT', lambda d: d['unit'])
+    ])
+
+    metrics_table = table(fields, datapoints)
+    metrics_table.align['NAME'] = 'l'
+    metrics_table.align['VALUE'] = 'l'
+    metrics_table.align['UNIT'] = 'l'
     return metrics_table
 
 

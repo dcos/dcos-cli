@@ -1,0 +1,3 @@
+NAME          VALUE        UNIT   
+memory.total  15773708288  bytes  
+swap.total    0            bytes  
