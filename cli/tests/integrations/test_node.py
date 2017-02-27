@@ -9,7 +9,8 @@ import dcos.util as util
 from dcos import mesos
 from dcos.util import create_schema
 
-from .common import assert_command, assert_lines, exec_command, ssh_output
+from .common import assert_command, assert_lines, assert_valid_json, \
+    exec_command, ssh_output
 from ..fixtures.node import slave_fixture
 
 
@@ -87,22 +88,20 @@ def test_node_log_invalid_lines():
                    returncode=1)
 
 
-def test_node_metrics_agent():
+def test_node_metrics_agent_summary():
     first_node_id = _node()[0]['id']
     assert_lines(
         ['dcos', 'node', 'metrics', '--mesos-id={}'.format(first_node_id)],
-        1,
-        greater_than=True
+        2
     )
 
 
 def test_node_metrics_agent_json():
     first_node_id = _node()[0]['id']
-    assert_lines(
+
+    assert_valid_json(
         ['dcos', 'node', 'metrics', '--mesos-id={}'.format(first_node_id),
-         '--json'],
-        1,
-        greater_than=True
+         '--json']
     )
 
 

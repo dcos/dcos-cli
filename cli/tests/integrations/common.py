@@ -488,6 +488,24 @@ def assert_lines(cmd, num_lines, greater_than=False):
     assert lines == num_lines
 
 
+def assert_valid_json(cmd):
+    """Assert stdout contains valid JSON
+
+    :param cmd: program and arguments
+    :type cmd: [str]
+    :rtype: None
+    """
+    returncode, stdout, stderr = exec_command(cmd)
+
+    assert returncode == 0
+    assert stderr == b''
+    try:
+        json.loads(stdout.decode('utf-8'))
+    except json.JSONDecodeError:
+        error_text = 'Command {} returned invalid JSON'.format(cmd.join(' '))
+        raise Exception(error_text)
+
+
 def file_json_ast(path):
     """Returns the JSON AST parsed from file
     :param path: path to file
