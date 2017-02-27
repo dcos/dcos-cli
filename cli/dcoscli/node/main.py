@@ -73,7 +73,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['node', 'metrics'],
-            arg_keys=['--mesos-id', '--field', '--json'],
+            arg_keys=['--mesos-id', '--filter', '--json'],
             function=_metrics),
 
         cmds.Command(

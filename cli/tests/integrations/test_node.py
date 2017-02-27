@@ -100,7 +100,7 @@ def test_node_metrics_agent_fields():
     first_node_id = _node()[0]['id']
     assert_lines(
         ['dcos', 'node', 'metrics', '--mesos-id={}'.format(first_node_id),
-         '--field', 'memory.total', '--field', 'swap.total'],
+         '--filter', 'memory.total', '--filter', 'swap.total'],
         3
     )
 
@@ -109,7 +109,7 @@ def test_node_metrics_agent_bad_fields():
     first_node_id = _node()[0]['id']
     assert_command(
         ['dcos', 'node', 'metrics', '--mesos-id={}'.format(first_node_id),
-         '--field', 'not-a-real-field'],
+         '--filter', 'not-a-real-field'],
         stdout=b'',
         stderr=b'Could not find metrics data for field: not-a-real-field\n',
         returncode=1
