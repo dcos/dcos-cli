@@ -103,7 +103,7 @@ class RpcClient(object):
         return 'Error: {}'.format(message)
 
     def http_req(self, method_fn, path, *args, **kwargs):
-        """Make an HTTP request, and raise a DCOS-specific exception for
+        """Make an HTTP request, and raise a DC/OS-specific exception for
         HTTP error codes.
 
         :param method_fn: function to call that invokes a specific HTTP method
@@ -127,7 +127,7 @@ class RpcClient(object):
             return method_fn(url, *args, **kwargs)
         except DCOSHTTPException as e:
             text = _get_response_text(e.response)
-            logger.exception('DCOS Error: %s\n%s', e.response.reason, text)
+            logger.exception('DC/OS Error: %s\n%s', e.response.reason, text)
 
             try:
                 json_body = e.response.json()
