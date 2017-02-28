@@ -59,7 +59,7 @@ def _prompt_user_for_token(url, token_type):
     """
 
     msg = textwrap.dedent("""\
-        If your browser didn't open it, please go to the following link:
+        If your browser didn't open, please go to the following link:
 
             {url}
 
