@@ -8,6 +8,7 @@ pydoc/_build/
 .ropeproject/
 .tox/
 .coverage
+.cache
 
 *.pyc
 
