@@ -1,4 +1,0 @@
-NAME          VALUE     
-cpu.total     74.94%    
-memory.total  14.69GiB  
-uptime        1245      

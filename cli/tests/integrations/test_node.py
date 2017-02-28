@@ -91,28 +91,19 @@ def test_node_log_invalid_lines():
 def test_node_metrics_agent_summary():
     first_node_id = _node()[0]['id']
     assert_lines(
-        ['dcos', 'node', 'metrics', '--mesos-id={}'.format(first_node_id)],
+        ['dcos', 'node', 'metrics', 'summary',
+         '--mesos-id={}'.format(first_node_id)],
         2
     )
 
 
-def test_node_metrics_agent_fields():
+def test_node_metrics_agent_details():
     first_node_id = _node()[0]['id']
     assert_lines(
-        ['dcos', 'node', 'metrics', '--mesos-id={}'.format(first_node_id),
-         '--filter', 'memory.total', '--filter', 'swap.total'],
+        ['dcos', 'node', 'metrics', 'details',
+         '--mesos-id={}'.format(first_node_id), '--filter', 'memory.total',
+         '--filter', 'swap.total'],
         3
-    )
-
-
-def test_node_metrics_agent_bad_fields():
-    first_node_id = _node()[0]['id']
-    assert_command(
-        ['dcos', 'node', 'metrics', '--mesos-id={}'.format(first_node_id),
-         '--filter', 'not-a-real-field'],
-        stdout=b'',
-        stderr=b'Could not find metrics data for field: not-a-real-field\n',
-        returncode=1
     )
 
 
@@ -120,8 +111,8 @@ def test_node_metrics_agent_json():
     first_node_id = _node()[0]['id']
 
     node_json = fetch_valid_json(
-        ['dcos', 'node', 'metrics', '--mesos-id={}'.format(first_node_id),
-         '--json']
+        ['dcos', 'node', 'metrics', 'details',
+         '--mesos-id={}'.format(first_node_id), '--json']
     )
 
     names = [d['name'] for d in node_json]

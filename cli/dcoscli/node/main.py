@@ -1,5 +1,5 @@
-import functools
 import os
+from functools import partial, wraps
 
 import docopt
 import six
@@ -72,9 +72,14 @@ def _cmds():
             function=_log),
 
         cmds.Command(
-            hierarchy=['node', 'metrics'],
-            arg_keys=['--mesos-id', '--filter', '--json'],
-            function=_metrics),
+            hierarchy=['node', 'metrics', 'details'],
+            arg_keys=['--mesos-id', '--json'],
+            function=partial(_metrics, False)),
+
+        cmds.Command(
+            hierarchy=['node', 'metrics', 'summary'],
+            arg_keys=['--mesos-id'],
+            function=partial(_metrics, True)),
 
         cmds.Command(
             hierarchy=['node', 'list-components'],
@@ -116,7 +121,7 @@ def _cmds():
 
 
 def diagnostics_error(fn):
-    @functools.wraps(fn)
+    @wraps(fn)
     def check_for_diagnostics_error(*args, **kwargs):
         response = fn(*args, **kwargs)
         if response.status_code != 200:
@@ -525,13 +530,13 @@ def _log(follow, lines, leader, slave, component, filters):
     return 0
 
 
-def _metrics(mesos_id, fields, json_):
+def _metrics(summary, mesos_id, json_=False):
     """ Get metrics from the specified agent.
 
+    :param summary: summarise output if true, output all if false
+    :type summary: bool
     :param mesos_id: mesos node id
     :type mesos_id: str
-    :param fields: a list of fields
-    :type fields: [str]
     :param json_: print raw JSON
     :type json_: bool
     :returns: Process status
@@ -545,7 +550,7 @@ def _metrics(mesos_id, fields, json_):
         raise config.missing_config_exception(['core.dcos_url'])
 
     url = dcos_url + endpoint
-    return metrics.print_node_metrics(url, fields, json_)
+    return metrics.print_node_metrics(url, summary, json_)
 
 
 def _get_slave_ip(slave):

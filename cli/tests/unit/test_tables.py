@@ -132,15 +132,10 @@ def test_metrics_summary_table():
                 'tests/unit/data/metrics_summary.txt')
 
 
-def test_metrics_fields_table():
-    fields = ['cpu.total', 'memory.total', 'uptime']
-    all_datapoints = agent_metrics_node_fixture()['datapoints']
-    some_datapoints = filter(lambda x: x['name'] in fields, all_datapoints)
-    some_datapoints = sorted(some_datapoints, key=lambda d: d['name'])
-
-    _test_table(tables.metrics_fields_table,
-                some_datapoints,
-                'tests/unit/data/metrics_fields.txt')
+def test_metrics_details_table():
+    _test_table(tables.metrics_details_table,
+                agent_metrics_node_fixture()['datapoints'],
+                'tests/unit/data/metrics_details.txt')
 
 
 def _test_table(table_fn, fixture_fn, path):

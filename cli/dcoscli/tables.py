@@ -951,19 +951,28 @@ def metrics_summary_table(datapoints):
     return metrics_table
 
 
-def metrics_fields_table(datapoints):
+def metrics_details_table(datapoints):
     """Prints a table of all passed metrics
 
     :param datapoints: A raw list of datapoints
     :type datapoints: [dict]
     """
 
+    def _format_tags(tags):
+        if tags is None:
+            return ""
+        pairs = []
+        for k, v in tags.items():
+            pairs.append("{}: {}".format(k, v))
+        return ", ".join(pairs)
+
     fields = OrderedDict([
         ('NAME', lambda d: d['name']),
-        ('VALUE', lambda d: d['value'])
+        ('VALUE', lambda d: d['value']),
+        ('TAGS', lambda d: _format_tags(d.get('tags', {})))
     ])
 
-    for datapoint in datapoints:
+    for datapoint in sorted(datapoints, key=lambda d: d['name']):
         if datapoint['unit'] == 'bytes':
             datapoint['value'] = '{:0.2f}GiB'.format(
                 datapoint['value'] * pow(2, -30))
@@ -973,6 +982,7 @@ def metrics_fields_table(datapoints):
     metrics_table = table(fields, datapoints)
     metrics_table.align['NAME'] = 'l'
     metrics_table.align['VALUE'] = 'l'
+    metrics_table.align['TAGS'] = 'l'
     return metrics_table
 
 
