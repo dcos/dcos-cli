@@ -1,3 +1,4 @@
-NAME          VALUE        UNIT   
-memory.total  15773708288  bytes  
-swap.total    0            bytes  
+NAME          VALUE     
+cpu.total     74.94%    
+memory.total  14.69GiB  
+uptime        1245      

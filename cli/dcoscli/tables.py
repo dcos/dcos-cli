@@ -960,14 +960,19 @@ def metrics_fields_table(datapoints):
 
     fields = OrderedDict([
         ('NAME', lambda d: d['name']),
-        ('VALUE', lambda d: d['value']),
-        ('UNIT', lambda d: d['unit'])
+        ('VALUE', lambda d: d['value'])
     ])
+
+    for datapoint in datapoints:
+        if datapoint['unit'] == 'bytes':
+            datapoint['value'] = '{:0.2f}GiB'.format(
+                datapoint['value'] * pow(2, -30))
+        if datapoint['unit'] == 'percent':
+            datapoint['value'] = '{:0.2f}%'.format(datapoint['value'])
 
     metrics_table = table(fields, datapoints)
     metrics_table.align['NAME'] = 'l'
     metrics_table.align['VALUE'] = 'l'
-    metrics_table.align['UNIT'] = 'l'
     return metrics_table
 
 

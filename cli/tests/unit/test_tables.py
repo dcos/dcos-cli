@@ -133,9 +133,10 @@ def test_metrics_summary_table():
 
 
 def test_metrics_fields_table():
-    fields = ['swap.total', 'memory.total']
+    fields = ['cpu.total', 'memory.total', 'uptime']
     all_datapoints = agent_metrics_node_fixture()['datapoints']
     some_datapoints = filter(lambda x: x['name'] in fields, all_datapoints)
+    some_datapoints = sorted(some_datapoints, key=lambda d: d['name'])
 
     _test_table(tables.metrics_fields_table,
                 some_datapoints,

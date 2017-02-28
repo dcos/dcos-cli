@@ -7,19 +7,22 @@ def agent_metrics_node_fixture():
     return {
         "datapoints": [
 
+            {"name": "uptime", "value": 1245, "unit": "count",
+             "timestamp": "2017-02-25T00:06:28.51132503Z"},
+
             {"name": "cpu.cores", "value": 4, "unit": "count",
              "timestamp": "2017-02-25T00:06:28.51132503Z"},
             {"name": "cpu.total", "value": 74.94,
-             "unit": "count",
+             "unit": "percent",
              "timestamp": "2017-02-25T00:06:28.51132503Z"},
-            {"name": "cpu.user", "value": 15.67, "unit": "count",
+            {"name": "cpu.user", "value": 15.67, "unit": "percent",
              "timestamp": "2017-02-25T00:06:28.51132503Z"},
             {"name": "cpu.system", "value": 59.27,
-             "unit": "count",
+             "unit": "percent",
              "timestamp": "2017-02-25T00:06:28.51132503Z"},
-            {"name": "cpu.idle", "value": 24.38, "unit": "count",
+            {"name": "cpu.idle", "value": 24.38, "unit": "percent",
              "timestamp": "2017-02-25T00:06:28.51132503Z"},
-            {"name": "cpu.wait", "value": 0.03, "unit": "count",
+            {"name": "cpu.wait", "value": 0.03, "unit": "percent",
              "timestamp": "2017-02-25T00:06:28.51132503Z"},
             {"name": "load.1min", "value": 2.85, "unit": "count",
              "timestamp": "2017-02-25T00:06:28.511847442Z"},
@@ -63,4 +66,3 @@ def agent_metrics_node_fixture():
              "timestamp": "2017-02-25T00:06:28.512323579Z"}
         ]
     }
-
