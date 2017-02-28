@@ -525,7 +525,7 @@ def _log(follow, lines, leader, slave, component, filters):
     return 0
 
 
-def _metrics(mesos_id, fields, json_=False):
+def _metrics(mesos_id, fields, json_):
     """ Get metrics from the specified agent.
 
     :param mesos_id: mesos node id
@@ -534,6 +534,8 @@ def _metrics(mesos_id, fields, json_=False):
     :type fields: [str]
     :param json_: print raw JSON
     :type json_: bool
+    :returns: Process status
+    :rtype: int
     """
 
     endpoint = '/system/v1/agent/{}/metrics/v0/node'.format(mesos_id)

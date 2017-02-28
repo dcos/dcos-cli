@@ -908,12 +908,16 @@ def metrics_summary_table(datapoints):
         mem_free = indexed_datapoints['memory.free']
         mem_used = mem_total - mem_free
         mem_used_gib = _to_gib(mem_used)
-        mem_used_pc = mem_used / mem_total * 100
+        mem_used_pc = 0
+        if mem_total > 0:
+            mem_used_pc = mem_used / mem_total * 100
 
         disk_total = indexed_datapoints['filesystem.capacity.total']
         disk_used = indexed_datapoints['filesystem.capacity.used']
         disk_used_gib = _to_gib(disk_used)
-        disk_used_pc = disk_used / disk_total * 100
+        disk_used_pc = 0
+        if disk_total > 0:
+            disk_used_pc = disk_used / disk_total * 100
 
         return {
             'cpu': '{:0.2f} ({:0.2f}%)'.format(cpu_used, cpu_used_pc),

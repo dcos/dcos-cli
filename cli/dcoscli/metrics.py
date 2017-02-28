@@ -1,7 +1,7 @@
 import contextlib
 
 from dcos import emitting, http, util
-from dcos.errors import DCOSException
+from dcos.errors import DCOSException, DCOSHTTPException
 from dcoscli import tables
 
 logger = util.get_logger(__name__)
@@ -13,14 +13,16 @@ def _fetch_node_metrics(url):
 
     :param url: `dcos-metrics` `node` endpoint
     :type url: str
+    :returns: List of metrics datapoints
+    :rtype: [dict]
     """
     with contextlib.closing(http.get(url)) as r:
 
-        # No need to guard against 204; metrics should never be empty
+        if r.status_code == 204:
+            raise DCOSException('No metrics found')
+
         if r.status_code != 200:
-            raise DCOSException(
-                'Error getting metrics. Url: {};'
-                'response code: {}'.format(url, r.status_code))
+            raise DCOSHTTPException(r)
 
         return r.json().get('datapoints', [])
 
@@ -30,6 +32,8 @@ def print_node_metrics_json(url):
 
     :param url: `dcos-metrics` `node` endpoint
     :type url: str
+    :returns: Process status
+    :rtype: int
     """
     datapoints = _fetch_node_metrics(url)
     return emitter.publish(datapoints)
@@ -41,6 +45,8 @@ def print_node_metrics_summary(url):
 
     :param url: `dcos-metrics` `node` endpoint
     :type url: str
+    :returns: Process status
+    :rtype: int
     """
 
     datapoints = _fetch_node_metrics(url)
@@ -57,6 +63,8 @@ def print_node_metrics_fields(url, fields):
     :type url: str
     :param fields: a list of field names
     :type fields: [str]
+    :returns: Process status
+    :rtype: int
     """
 
     all_datapoints = _fetch_node_metrics(url)
