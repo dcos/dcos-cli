@@ -9,7 +9,7 @@ import dcos.util as util
 from dcos import mesos
 from dcos.util import create_schema
 
-from .common import assert_command, assert_lines, assert_valid_json, \
+from .common import assert_command, assert_lines, fetch_valid_json, \
     exec_command, ssh_output
 from ..fixtures.node import slave_fixture
 
@@ -119,10 +119,14 @@ def test_node_metrics_agent_bad_fields():
 def test_node_metrics_agent_json():
     first_node_id = _node()[0]['id']
 
-    assert_valid_json(
+    node_json = fetch_valid_json(
         ['dcos', 'node', 'metrics', '--mesos-id={}'.format(first_node_id),
          '--json']
     )
+
+    names = [d['name'] for d in node_json]
+    assert 'uptime' in names
+    assert 'cpu.cores' in names
 
 
 @pytest.mark.skipif(sys.platform == 'win32',
