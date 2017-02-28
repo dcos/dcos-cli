@@ -59,11 +59,12 @@ def _prompt_user_for_token(url, token_type):
     """
 
     msg = textwrap.dedent("""\
-        If you were not redirected to your browser, please go to the following link:
+        If your browser didn't open it, please go to the following link:
 
             {url}
 
-        Enter {token_type}: """).lstrip().format(url=url, token_type=token_type)
+        Enter {token_type}: """)
+    msg = msg.lstrip().format(url=url, token_type=token_type)
 
     try:
         webbrowser.open_new_tab(url)
