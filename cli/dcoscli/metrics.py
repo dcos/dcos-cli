@@ -27,48 +27,7 @@ def _fetch_node_metrics(url):
         return r.json().get('datapoints', [])
 
 
-def print_node_metrics_json(url):
-    """Retrieve and print the raw output from `dcos-metrics`' `node` endpoint.
-
-    :param url: `dcos-metrics` `node` endpoint
-    :type url: str
-    :returns: Process status
-    :rtype: int
-    """
-    datapoints = _fetch_node_metrics(url)
-    return emitter.publish(datapoints)
-
-
-def print_node_metrics_summary(url):
-    """Retrieve and pretty-print key fields from the `dcos-metrics`' `node`
-    endpoint.
-
-    :param url: `dcos-metrics` `node` endpoint
-    :type url: str
-    :returns: Process status
-    :rtype: int
-    """
-
-    datapoints = _fetch_node_metrics(url)
-
-    table = tables.metrics_summary_table(datapoints)
-    return emitter.publish(table)
-
-
-def print_node_metrics_fields(url, fields):
-    """Retrieve and pretty-print selected fields from the `dcos-metrics`' `node`
-    endpoint.
-
-    :param url: `dcos-metrics` `node` endpoint
-    :type url: str
-    :param fields: a list of field names
-    :type fields: [str]
-    :returns: Process status
-    :rtype: int
-    """
-
-    all_datapoints = _fetch_node_metrics(url)
-
+def _filter_datapoints(all_datapoints, fields):
     names = [d['name'] for d in all_datapoints]
     indexed_datapoints = dict(zip(names, all_datapoints))
 
@@ -80,5 +39,32 @@ def print_node_metrics_fields(url, fields):
             raise DCOSException(
                 'Could not find metrics data for field: {}'.format(field))
 
-    table = tables.metrics_fields_table(datapoints)
+    return datapoints
+
+
+def print_node_metrics(url, fields, json):
+    """Retrieve and pretty-print key fields from the `dcos-metrics`' `node`
+    endpoint.
+
+    :param url: `dcos-metrics` `node` endpoint
+    :type url: str
+    :param fields: list of metrics fields to print
+    :type fields: [str]
+    :param json: print json list if true
+    :type json: bool
+    :returns: Process status
+    :rtype: int
+    """
+
+    datapoints = _fetch_node_metrics(url)
+
+    if json:
+        return emitter.publish(datapoints)
+
+    if len(fields) > 0:
+        filtered_datapoints = _filter_datapoints(datapoints, fields)
+        table = tables.metrics_fields_table(filtered_datapoints)
+    else:
+        table = tables.metrics_summary_table(datapoints)
+
     return emitter.publish(table)

@@ -545,14 +545,7 @@ def _metrics(mesos_id, fields, json_):
         raise config.missing_config_exception(['core.dcos_url'])
 
     url = dcos_url + endpoint
-
-    if fields:
-        return metrics.print_node_metrics_fields(url, fields)
-
-    if json_:
-        return metrics.print_node_metrics_json(url)
-
-    return metrics.print_node_metrics_summary(url)
+    return metrics.print_node_metrics(url, fields, json_)
 
 
 def _get_slave_ip(slave):
