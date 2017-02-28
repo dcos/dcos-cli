@@ -896,24 +896,35 @@ def metrics_summary_table(datapoints):
     def _to_gib(n):
         return n * pow(2, -30)
 
-    def _summarise_datapoints(datapoints):
-        names = [d['name'] for d in datapoints]
-        values = [d['value'] for d in datapoints]
-        indexed_datapoints = dict(zip(names, values))
+    def _find_datapoint_value(name, tags=None):
+        for datapoint in datapoints:
+            if datapoint['name'] == name:
+                match = True
+                if tags is None:
+                    return datapoint['value']
 
-        cpu_used = indexed_datapoints['load.1min']
-        cpu_used_pc = indexed_datapoints['cpu.total']
+                dtags = datapoint.get('tags', {})
+                for k, v in tags.items():
+                    match = match and dtags.get(k) == v
+                if match:
+                    return datapoint['value']
 
-        mem_total = indexed_datapoints['memory.total']
-        mem_free = indexed_datapoints['memory.free']
+    def _summarise_datapoints():
+        cpu_used = _find_datapoint_value('load.1min')
+        cpu_used_pc = _find_datapoint_value('cpu.total')
+
+        mem_total = _find_datapoint_value('memory.total')
+        mem_free = _find_datapoint_value('memory.free')
         mem_used = mem_total - mem_free
         mem_used_gib = _to_gib(mem_used)
         mem_used_pc = 0
         if mem_total > 0:
             mem_used_pc = mem_used / mem_total * 100
 
-        disk_total = indexed_datapoints['filesystem.capacity.total']
-        disk_used = indexed_datapoints['filesystem.capacity.used']
+        disk_total = _find_datapoint_value('filesystem.capacity.total',
+                                           {'path': '/'})
+        disk_used = _find_datapoint_value('filesystem.capacity.used',
+                                          {'path': '/'})
         disk_used_gib = _to_gib(disk_used)
         disk_used_pc = 0
         if disk_total > 0:
@@ -932,7 +943,7 @@ def metrics_summary_table(datapoints):
     ])
 
     # table has a single row
-    metrics_table = table(fields, [_summarise_datapoints(datapoints)])
+    metrics_table = table(fields, [_summarise_datapoints()])
     metrics_table.align['CPU'] = 'l'
     metrics_table.align['MEM'] = 'l'
     metrics_table.align['DISK'] = 'l'
