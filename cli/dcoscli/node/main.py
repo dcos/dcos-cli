@@ -73,12 +73,12 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['node', 'metrics', 'details'],
-            arg_keys=['--mesos-id', '--json'],
+            arg_keys=['<mesos-id>', '--json'],
             function=partial(_metrics, False)),
 
         cmds.Command(
             hierarchy=['node', 'metrics', 'summary'],
-            arg_keys=['--mesos-id'],
+            arg_keys=['<mesos-id>'],
             function=partial(_metrics, True)),
 
         cmds.Command(

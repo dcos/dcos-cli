@@ -92,7 +92,7 @@ def test_node_metrics_agent_summary():
     first_node_id = _node()[0]['id']
     assert_lines(
         ['dcos', 'node', 'metrics', 'summary',
-         '--mesos-id={}'.format(first_node_id)],
+         first_node_id],
         2
     )
 
@@ -100,19 +100,18 @@ def test_node_metrics_agent_summary():
 def test_node_metrics_agent_details():
     first_node_id = _node()[0]['id']
     assert_lines(
-        ['dcos', 'node', 'metrics', 'details',
-         '--mesos-id={}'.format(first_node_id), '--filter', 'memory.total',
-         '--filter', 'swap.total'],
-        3
+        ['dcos', 'node', 'metrics', 'details', first_node_id],
+        100,
+        greater_than=True
     )
 
 
-def test_node_metrics_agent_json():
+def test_node_metrics_agent_details_json():
     first_node_id = _node()[0]['id']
 
     node_json = fetch_valid_json(
         ['dcos', 'node', 'metrics', 'details',
-         '--mesos-id={}'.format(first_node_id), '--json']
+         first_node_id, '--json']
     )
 
     names = [d['name'] for d in node_json]
