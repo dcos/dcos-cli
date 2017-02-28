@@ -64,7 +64,7 @@ def _prompt_user_for_token(url, token_type):
           token_type)
 
     try:
-        webbrowser.open(url)
+        webbrowser.open_new_tab(url)
     except webbrowser.Error as exc:
         logger.warning(
             'Exception occurred while calling webbrowser.open(%r): %s',
