@@ -65,7 +65,11 @@ def _prompt_user_for_token(url, token_type):
 
     try:
         webbrowser.open(url)
-    except:
+    except webbrowser.Error as exc:
+        logger.warning(
+            'Exception occurred while calling webbrowser.open(%r): %s',
+            url, exc,
+        )
         pass
     sys.stderr.write(msg)
     sys.stderr.flush()
