@@ -1,5 +1,6 @@
 import getpass
 import sys
+import textwrap
 import time
 import webbrowser
 
@@ -57,11 +58,12 @@ def _prompt_user_for_token(url, token_type):
     :rtype: str
     """
 
-    msg = "\n{}\n\n{}\n\n    {}\n\nEnter {}:".format(
-          "Attempting to automatically open a page in your browser...",
-          "If it doesn't work, open the following link:",
-          url,
-          token_type)
+    msg = textwrap.dedent("""\
+        If you were not redirected to your browser, please go to the following link:
+
+            {url}
+
+        Enter {token_type}: """).lstrip().format(url=url, token_type=token_type)
 
     try:
         webbrowser.open_new_tab(url)
