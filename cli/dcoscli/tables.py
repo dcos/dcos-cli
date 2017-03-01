@@ -886,56 +886,12 @@ def ls_long_table(files):
     return tb
 
 
-def metrics_summary_table(datapoints):
+def metrics_summary_table(data):
     """Prints a table of CPU, Memory and Disk for the given data.
 
-    :param datapoints: A raw list of datapoints.
-    :type datapoints: [dict]
+    :param data: A dictionary of formatted summary values.
+    :type data: dict
     """
-
-    def _to_gib(n):
-        return n * pow(2, -30)
-
-    def _find_datapoint_value(name, tags=None):
-        for datapoint in datapoints:
-            if datapoint['name'] == name:
-                match = True
-                if tags is None:
-                    return datapoint['value']
-
-                dtags = datapoint.get('tags', {})
-                for k, v in tags.items():
-                    match = match and dtags.get(k) == v
-                if match:
-                    return datapoint['value']
-
-    def _summarise_datapoints():
-        cpu_used = _find_datapoint_value('load.1min')
-        cpu_used_pc = _find_datapoint_value('cpu.total')
-
-        mem_total = _find_datapoint_value('memory.total')
-        mem_free = _find_datapoint_value('memory.free')
-        mem_used = mem_total - mem_free
-        mem_used_gib = _to_gib(mem_used)
-        mem_used_pc = 0
-        if mem_total > 0:
-            mem_used_pc = mem_used / mem_total * 100
-
-        disk_total = _find_datapoint_value('filesystem.capacity.total',
-                                           {'path': '/'})
-        disk_used = _find_datapoint_value('filesystem.capacity.used',
-                                          {'path': '/'})
-        disk_used_gib = _to_gib(disk_used)
-        disk_used_pc = 0
-        if disk_total > 0:
-            disk_used_pc = disk_used / disk_total * 100
-
-        return {
-            'cpu': '{:0.2f} ({:0.2f}%)'.format(cpu_used, cpu_used_pc),
-            'mem': '{:0.2f}GiB ({:0.2f}%)'.format(mem_used_gib, mem_used_pc),
-            'disk': '{:0.2f}GiB ({:0.2f}%)'.format(disk_used_gib, disk_used_pc)
-        }
-
     fields = OrderedDict([
         ('CPU', lambda d: d['cpu']),
         ('MEM', lambda d: d['mem']),
@@ -943,7 +899,7 @@ def metrics_summary_table(datapoints):
     ])
 
     # table has a single row
-    metrics_table = table(fields, [_summarise_datapoints()])
+    metrics_table = table(fields, [data])
     metrics_table.align['CPU'] = 'l'
     metrics_table.align['MEM'] = 'l'
     metrics_table.align['DISK'] = 'l'
@@ -958,26 +914,11 @@ def metrics_details_table(datapoints):
     :type datapoints: [dict]
     """
 
-    def _format_tags(tags):
-        if tags is None:
-            return ""
-        pairs = []
-        for k, v in tags.items():
-            pairs.append("{}: {}".format(k, v))
-        return ", ".join(pairs)
-
     fields = OrderedDict([
         ('NAME', lambda d: d['name']),
         ('VALUE', lambda d: d['value']),
-        ('TAGS', lambda d: _format_tags(d.get('tags', {})))
+        ('TAGS', lambda d: d['tags'])
     ])
-
-    for datapoint in sorted(datapoints, key=lambda d: d['name']):
-        if datapoint['unit'] == 'bytes':
-            datapoint['value'] = '{:0.2f}GiB'.format(
-                datapoint['value'] * pow(2, -30))
-        if datapoint['unit'] == 'percent':
-            datapoint['value'] = '{:0.2f}%'.format(datapoint['value'])
 
     metrics_table = table(fields, datapoints)
     metrics_table.align['NAME'] = 'l'

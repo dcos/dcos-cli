@@ -78,7 +78,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['node', 'metrics', 'summary'],
-            arg_keys=['<mesos-id>'],
+            arg_keys=['<mesos-id>', '--json'],
             function=partial(_metrics, True)),
 
         cmds.Command(
@@ -530,7 +530,7 @@ def _log(follow, lines, leader, slave, component, filters):
     return 0
 
 
-def _metrics(summary, mesos_id, json_=False):
+def _metrics(summary, mesos_id, json_):
     """ Get metrics from the specified agent.
 
     :param summary: summarise output if true, output all if false

@@ -91,10 +91,20 @@ def test_node_log_invalid_lines():
 def test_node_metrics_agent_summary():
     first_node_id = _node()[0]['id']
     assert_lines(
-        ['dcos', 'node', 'metrics', 'summary',
-         first_node_id],
+        ['dcos', 'node', 'metrics', 'summary', first_node_id],
         2
     )
+
+
+def test_node_metrics_agent_summary_json():
+    first_node_id = _node()[0]['id']
+
+    node_json = fetch_valid_json(
+        ['dcos', 'node', 'metrics', 'summary', first_node_id, '--json']
+    )
+
+    names = [d['name'] for d in node_json]
+    assert names == ['cpu.total', 'memory.total', 'filesystem.capacity.used']
 
 
 def test_node_metrics_agent_details():
@@ -110,8 +120,7 @@ def test_node_metrics_agent_details_json():
     first_node_id = _node()[0]['id']
 
     node_json = fetch_valid_json(
-        ['dcos', 'node', 'metrics', 'details',
-         first_node_id, '--json']
+        ['dcos', 'node', 'metrics', 'details', first_node_id, '--json']
     )
 
     names = [d['name'] for d in node_json]

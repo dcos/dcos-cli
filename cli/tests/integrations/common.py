@@ -502,7 +502,7 @@ def fetch_valid_json(cmd):
     try:
         return json.loads(stdout.decode('utf-8'))
     except json.JSONDecodeError:
-        error_text = 'Command {} returned invalid JSON'.format(cmd.join(' '))
+        error_text = 'Command "{}" returned invalid JSON'.format(' '.join(cmd))
         raise Exception(error_text)
 
 
