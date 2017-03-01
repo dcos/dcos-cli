@@ -9,8 +9,8 @@ import dcos.util as util
 from dcos import mesos
 from dcos.util import create_schema
 
-from .common import assert_command, assert_lines, fetch_valid_json, \
-    exec_command, ssh_output
+from .common import assert_command, assert_lines, exec_command, \
+    fetch_valid_json, ssh_output
 from ..fixtures.node import slave_fixture
 
 
@@ -239,8 +239,8 @@ def _node_ssh_output(args):
 
     cmd = ('ssh-agent /bin/bash -c "ssh-add {} 2> /dev/null && ' +
            'dcos node ssh --option StrictHostKeyChecking=no {}"').format(
-               cli_test_ssh_key_path,
-               ' '.join(args))
+        cli_test_ssh_key_path,
+        ' '.join(args))
 
     return ssh_output(cmd)
 

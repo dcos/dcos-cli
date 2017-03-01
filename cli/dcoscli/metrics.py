@@ -89,7 +89,7 @@ def _node_summary_data(datapoints):
 
     cpu_used = _get_datapoint(datapoints, 'load.1min')['value']
     cpu_used_pc = _get_datapoint(datapoints, 'cpu.total')['value']
-    
+
     mem_total = _get_datapoint(datapoints, 'memory.total')['value']
     mem_free = _get_datapoint(datapoints, 'memory.free')['value']
     mem_used = mem_total - mem_free

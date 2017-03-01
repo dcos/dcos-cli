@@ -14,9 +14,9 @@ from ..fixtures.marathon import (app_fixture, app_task_fixture,
                                  group_fixture, pod_list_fixture,
                                  pod_list_without_instances_fixture,
                                  pod_list_without_spec_version_fixture)
-from ..fixtures.node import slave_fixture
 from ..fixtures.metrics import (agent_metrics_node_details_fixture,
                                 agent_metrics_node_summary_fixture)
+from ..fixtures.node import slave_fixture
 from ..fixtures.package import package_fixture, search_result_fixture
 from ..fixtures.service import framework_fixture
 from ..fixtures.task import browse_fixture, task_fixture
