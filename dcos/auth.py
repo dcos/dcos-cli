@@ -1,8 +1,8 @@
 import getpass
-
 import sys
-
+import textwrap
 import time
+import webbrowser
 
 import jwt
 
@@ -58,10 +58,22 @@ def _prompt_user_for_token(url, token_type):
     :rtype: str
     """
 
-    msg = "\n{}\n\n    {}\n\nEnter {}:".format(
-          "Please go to the following link in your browser:",
-          url,
-          token_type)
+    msg = textwrap.dedent("""\
+        If your browser didn't open, please go to the following link:
+
+            {url}
+
+        Enter {token_type}: """)
+    msg = msg.lstrip().format(url=url, token_type=token_type)
+
+    try:
+        webbrowser.open_new_tab(url)
+    except webbrowser.Error as exc:
+        logger.warning(
+            'Exception occurred while calling webbrowser.open(%r): %s',
+            url, exc,
+        )
+        pass
     sys.stderr.write(msg)
     sys.stderr.flush()
     token = sys.stdin.readline().strip()
