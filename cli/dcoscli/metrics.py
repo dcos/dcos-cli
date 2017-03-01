@@ -33,6 +33,17 @@ def _fetch_node_metrics(url):
 
 
 def _get_datapoint(datapoints, name, tags=None):
+    """Find a specific datapoint by name and tags
+
+    :param datapoints: a list of datapoints
+    :type datapoints: [dict]
+    :param name: the name of the required datapoint
+    :type name: str
+    :param tags: required tags by key and value
+    :type tags: dict
+    :return: a matching datapoint
+    :rtype: dict
+    """
     for datapoint in datapoints:
         if datapoint['name'] == name:
             if tags is None:
@@ -47,6 +58,13 @@ def _get_datapoint(datapoints, name, tags=None):
 
 
 def _node_summary_json(datapoints):
+    """Filters datapoints down to CPU, memory and root disk space fields.
+
+    :param datapoints: a list of datapoints
+    :type datapoints: [dict]
+    :return: JSON data
+    :rtype: str
+    """
     summary_datapoints = [
         _get_datapoint(datapoints, 'cpu.total'),
         _get_datapoint(datapoints, 'memory.total'),
@@ -56,6 +74,13 @@ def _node_summary_json(datapoints):
 
 
 def _node_summary_data(datapoints):
+    """Extracts CPU, memory and root disk space fields from node datapoints.
+
+    :param datapoints: a list of raw datapoints
+    :type datapoints: [dict]
+    :return: a dictionary of summary fields
+    :rtype: dict
+    """
 
     def _percentage(dividend, divisor):
         if divisor > 0:
@@ -85,6 +110,14 @@ def _node_summary_data(datapoints):
 
 
 def _format_datapoints(datapoints):
+    """Format raw datapoints for output by making values human-readable
+    according to their unit and formatting tags.
+
+    :param datapoints: a list of datapoints
+    :type datapoints: [dict]
+    :return: a list of formatted datapoints
+    :rtype: [dict]
+    """
 
     def _format_tags(tags):
         if tags is None:
