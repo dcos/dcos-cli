@@ -1,0 +1,21 @@
+NAME                       VALUE     TAGS     
+uptime                     1245               
+cpu.cores                  4                  
+cpu.total                  74.94%             
+cpu.user                   15.67%             
+cpu.system                 59.27%             
+cpu.idle                   24.38%             
+cpu.wait                   0.03%              
+load.1min                  2.85               
+load.5min                  2.92               
+load.15min                 2.74               
+filesystem.capacity.total  5.44GiB   path: /  
+filesystem.capacity.used   1.65GiB   path: /  
+filesystem.capacity.free   3.53GiB   path: /  
+memory.total               14.69GiB           
+memory.free                12.20GiB           
+memory.buffers             0.09GiB            
+memory.cached              1.72GiB            
+swap.total                 0.00GiB            
+swap.free                  0.00GiB            
+swap.used                  0.00GiB            

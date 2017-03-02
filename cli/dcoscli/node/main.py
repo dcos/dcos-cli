@@ -1,5 +1,5 @@
-import functools
 import os
+from functools import partial, wraps
 
 import docopt
 import six
@@ -10,7 +10,7 @@ from dcos import (cmds, config, emitting, errors,
                   http, mesos, packagemanager, subprocess, util)
 from dcos.cosmos import get_cosmos_url
 from dcos.errors import DCOSException, DefaultError
-from dcoscli import log, tables
+from dcoscli import log, metrics, tables
 from dcoscli.package.main import confirm
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
@@ -72,6 +72,16 @@ def _cmds():
             function=_log),
 
         cmds.Command(
+            hierarchy=['node', 'metrics', 'details'],
+            arg_keys=['<mesos-id>', '--json'],
+            function=partial(_metrics, False)),
+
+        cmds.Command(
+            hierarchy=['node', 'metrics', 'summary'],
+            arg_keys=['<mesos-id>', '--json'],
+            function=partial(_metrics, True)),
+
+        cmds.Command(
             hierarchy=['node', 'list-components'],
             arg_keys=['--leader', '--mesos-id', '--json'],
             function=_list_components),
@@ -111,7 +121,7 @@ def _cmds():
 
 
 def diagnostics_error(fn):
-    @functools.wraps(fn)
+    @wraps(fn)
     def check_for_diagnostics_error(*args, **kwargs):
         response = fn(*args, **kwargs)
         if response.status_code != 200:
@@ -518,6 +528,29 @@ def _log(follow, lines, leader, slave, component, filters):
     # if journald logging enabled.
     _dcos_log(follow, lines, leader, slave, component, filters)
     return 0
+
+
+def _metrics(summary, mesos_id, json_):
+    """ Get metrics from the specified agent.
+
+    :param summary: summarise output if true, output all if false
+    :type summary: bool
+    :param mesos_id: mesos node id
+    :type mesos_id: str
+    :param json_: print raw JSON
+    :type json_: bool
+    :returns: Process status
+    :rtype: int
+    """
+
+    endpoint = '/system/v1/agent/{}/metrics/v0/node'.format(mesos_id)
+
+    dcos_url = config.get_config_val('core.dcos_url').rstrip('/')
+    if not dcos_url:
+        raise config.missing_config_exception(['core.dcos_url'])
+
+    url = dcos_url + endpoint
+    return metrics.print_node_metrics(url, summary, json_)
 
 
 def _get_slave_ip(slave):
