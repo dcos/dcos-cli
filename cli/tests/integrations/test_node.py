@@ -9,7 +9,8 @@ import dcos.util as util
 from dcos import mesos
 from dcos.util import create_schema
 
-from .common import assert_command, assert_lines, exec_command, ssh_output
+from .common import assert_command, assert_lines, exec_command, \
+    fetch_valid_json, ssh_output
 from ..fixtures.node import slave_fixture
 
 
@@ -50,7 +51,7 @@ def test_node_log_empty():
 
 
 def test_node_log_leader():
-    assert_lines(['dcos', 'node', 'log', '--leader'], 10, great_then=True)
+    assert_lines(['dcos', 'node', 'log', '--leader'], 10, greater_than=True)
 
 
 def test_node_log_slave():
@@ -58,7 +59,7 @@ def test_node_log_slave():
     assert_lines(
         ['dcos', 'node', 'log', '--mesos-id={}'.format(slave_id)],
         10,
-        great_then=True)
+        greater_than=True)
 
 
 def test_node_log_missing_slave():
@@ -77,7 +78,7 @@ def test_node_log_lines():
     assert_lines(
         ['dcos', 'node', 'log', '--leader', '--lines=4'],
         4,
-        great_then=True)
+        greater_than=True)
 
 
 def test_node_log_invalid_lines():
@@ -85,6 +86,46 @@ def test_node_log_invalid_lines():
                    stdout=b'',
                    stderr=b'Error parsing string as int\n',
                    returncode=1)
+
+
+def test_node_metrics_agent_summary():
+    first_node_id = _node()[0]['id']
+    assert_lines(
+        ['dcos', 'node', 'metrics', 'summary', first_node_id],
+        2
+    )
+
+
+def test_node_metrics_agent_summary_json():
+    first_node_id = _node()[0]['id']
+
+    node_json = fetch_valid_json(
+        ['dcos', 'node', 'metrics', 'summary', first_node_id, '--json']
+    )
+
+    names = [d['name'] for d in node_json]
+    assert names == ['cpu.total', 'memory.total', 'filesystem.capacity.used']
+
+
+def test_node_metrics_agent_details():
+    first_node_id = _node()[0]['id']
+    assert_lines(
+        ['dcos', 'node', 'metrics', 'details', first_node_id],
+        100,
+        greater_than=True
+    )
+
+
+def test_node_metrics_agent_details_json():
+    first_node_id = _node()[0]['id']
+
+    node_json = fetch_valid_json(
+        ['dcos', 'node', 'metrics', 'details', first_node_id, '--json']
+    )
+
+    names = [d['name'] for d in node_json]
+    assert 'uptime' in names
+    assert 'cpu.cores' in names
 
 
 @pytest.mark.skipif(sys.platform == 'win32',
@@ -198,8 +239,8 @@ def _node_ssh_output(args):
 
     cmd = ('ssh-agent /bin/bash -c "ssh-add {} 2> /dev/null && ' +
            'dcos node ssh --option StrictHostKeyChecking=no {}"').format(
-               cli_test_ssh_key_path,
-               ' '.join(args))
+        cli_test_ssh_key_path,
+        ' '.join(args))
 
     return ssh_output(cmd)
 

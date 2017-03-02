@@ -13,6 +13,8 @@ Usage:
     dcos node list-components [--leader --mesos-id=<mesos-id> --json]
     dcos node log [--follow --lines=N --leader --master --mesos-id=<mesos-id> --slave=<agent-id>]
                   [--component=<component-name> --filter=<filter>...]
+    dcos node metrics details <mesos-id> [--json]
+    dcos node metrics summary <mesos-id> [--json]
     dcos node ssh (--leader | --master | --mesos-id=<mesos-id> | --private-ip=<private-ip> | --slave=<agent-id>)
                   [--config-file=<path>]
                   [--user=<user>]
@@ -34,6 +36,11 @@ Commands:
         Print a list of available DC/OS components on specified node.
     log
         Print the Mesos logs for the leading master node, agent nodes, or both.
+    metrics details
+        Print a table of all metrics for the agent node specified by <mesos-id>.
+    metrics summary
+        Print CPU, memory and disk metrics for the agent node specified by
+        <mesos-id>.
     ssh
         Establish an SSH connection to the master or agent nodes of your DC/OS
         cluster.

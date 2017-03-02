@@ -884,6 +884,47 @@ def ls_long_table(files):
     return tb
 
 
+def metrics_summary_table(data):
+    """Prints a table of CPU, Memory and Disk for the given data.
+
+    :param data: A dictionary of formatted summary values.
+    :type data: dict
+    """
+    fields = OrderedDict([
+        ('CPU', lambda d: d['cpu']),
+        ('MEM', lambda d: d['mem']),
+        ('DISK', lambda d: d['disk'])
+    ])
+
+    # table has a single row
+    metrics_table = table(fields, [data])
+    metrics_table.align['CPU'] = 'l'
+    metrics_table.align['MEM'] = 'l'
+    metrics_table.align['DISK'] = 'l'
+
+    return metrics_table
+
+
+def metrics_details_table(datapoints):
+    """Prints a table of all passed metrics
+
+    :param datapoints: A raw list of datapoints
+    :type datapoints: [dict]
+    """
+
+    fields = OrderedDict([
+        ('NAME', lambda d: d['name']),
+        ('VALUE', lambda d: d['value']),
+        ('TAGS', lambda d: d['tags'])
+    ])
+
+    metrics_table = table(fields, datapoints)
+    metrics_table.align['NAME'] = 'l'
+    metrics_table.align['VALUE'] = 'l'
+    metrics_table.align['TAGS'] = 'l'
+    return metrics_table
+
+
 def truncate_table(fields, objs, limits, **kwargs):
     """Returns a PrettyTable.  `fields` represents the header schema of
     the table.  `objs` represents the objects to be rendered into

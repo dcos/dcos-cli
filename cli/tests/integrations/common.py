@@ -465,15 +465,15 @@ def delete_zk_node(znode):
     http.delete(znode_url)
 
 
-def assert_lines(cmd, num_lines, great_then=False):
+def assert_lines(cmd, num_lines, greater_than=False):
     """ Assert stdout contains the expected number of lines
 
     :param cmd: program and arguments
     :type cmd: [str]
     :param num_lines: expected number of lines for stdout
     :type num_lines: int
-    :param great_then: if True assume there may be at least num_lines or more
-    :type great_then: bool
+    :param greater_than: if True assert that there are at least num_lines
+    :type greater_than: bool
     :rtype: None
     """
 
@@ -482,10 +482,28 @@ def assert_lines(cmd, num_lines, great_then=False):
     assert returncode == 0
     assert stderr == b''
     lines = len(stdout.decode('utf-8').split('\n')) - 1
-    if great_then:
+    if greater_than:
         assert lines >= num_lines
         return
     assert lines == num_lines
+
+
+def fetch_valid_json(cmd):
+    """Assert stdout contains valid JSON
+
+    :param cmd: program and arguments
+    :type cmd: [str]
+    :returns: parsed JSON AST
+    """
+    returncode, stdout, stderr = exec_command(cmd)
+
+    assert returncode == 0
+    assert stderr == b''
+    try:
+        return json.loads(stdout.decode('utf-8'))
+    except json.JSONDecodeError:
+        error_text = 'Command "{}" returned invalid JSON'.format(' '.join(cmd))
+        raise Exception(error_text)
 
 
 def file_json_ast(path):
