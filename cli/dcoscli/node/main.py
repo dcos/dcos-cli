@@ -115,7 +115,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['node'],
-            arg_keys=['--json'],
+            arg_keys=['--json', '--field'],
             function=_list)
     ]
 
@@ -458,7 +458,7 @@ def _info():
     return 0
 
 
-def _list(json_):
+def _list(json_, field_names):
     """List DC/OS nodes
 
     :param json_: If true, output json.
@@ -473,7 +473,7 @@ def _list(json_):
     if json_:
         emitter.publish(slaves)
     else:
-        table = tables.slave_table(slaves)
+        table = tables.slave_table(slaves, field_names)
         output = six.text_type(table)
         if output:
             emitter.publish(output)

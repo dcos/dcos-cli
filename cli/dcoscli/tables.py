@@ -1,5 +1,6 @@
 import copy
 import datetime
+import operator
 import posixpath
 
 import textwrap
@@ -839,7 +840,7 @@ def auth_provider_table(providers):
     return tb
 
 
-def slave_table(slaves):
+def slave_table(slaves, field_names=('HOSTNAME', 'IP', 'ID')):
     """Returns a PrettyTable representation of the provided DC/OS slaves
 
     :param slaves: slaves to render.  dicts from /mesos/state-summary
@@ -847,14 +848,30 @@ def slave_table(slaves):
     :rtype: PrettyTable
     """
 
-    fields = OrderedDict([
-        ('HOSTNAME', lambda s: s['hostname']),
-        ('IP', lambda s: mesos.parse_pid(s['pid'])[1]),
-        ('ID', lambda s: s['id'])
-    ])
+    fields = OrderedDict()
+    for field_name in field_names:
+        if field_name.lower() == 'ip':
+            fields[field_name.upper()] = lambda s: mesos.parse_pid(s['pid'])[1]
+        else:
+            if ':' in field_name:
+                heading, field_name = field_name.split(':', 1)
+            else:
+                heading = field_name
+            fields[heading.upper()] = _dotted_itemgetter(field_name.lower())
 
-    tb = table(fields, slaves, sortby="HOSTNAME")
+    sortby = list(fields.keys())[0]
+    kwargs = {}
+    if sortby.lower() == 'ip':
+        kwargs['sort_key'] = lambda d: tuple(int(x) for x in d[0].split('.'))
+    tb = table(fields, slaves, sortby=sortby, **kwargs)
     return tb
+
+
+def _dotted_itemgetter(field_name):
+    if '.' not in field_name:
+        return operator.itemgetter(field_name)
+    head, tail = field_name.split('.', 1)
+    return lambda d: _dotted_itemgetter(tail)(d[head])
 
 
 def _format_unix_timestamp(ts):
