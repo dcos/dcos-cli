@@ -4,7 +4,7 @@ Description:
 Usage:
     dcos node --help
     dcos node --info
-    dcos node [--json]
+    dcos node [--json] [--masters]
     dcos node --version
     dcos node diagnostics (--list | --status | --cancel) [--json]
     dcos node diagnostics create (<nodes>)...

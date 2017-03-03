@@ -853,6 +853,23 @@ def slave_table(slaves):
     return tb
 
 
+def master_table(masters):
+    """Returns a PrettyTable representation of the provided DC/OS masters
+
+    :param masters: masters to render.  dicts from /mesos/state-summary
+    :type masters: [dict]
+    :rtype: PrettyTable
+    """
+
+    fields = OrderedDict([
+        ('HOSTNAME', lambda s: s['host']),
+        ('IP', lambda s: s['ip']),
+    ])
+
+    tb = table(fields, masters, sortby="HOSTNAME")
+    return tb
+
+
 def _format_unix_timestamp(ts):
     """ Formats a unix timestamp in a `dcos task ls --long` format.
 
