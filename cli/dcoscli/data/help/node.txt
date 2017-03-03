@@ -53,8 +53,8 @@ Options:
     --config-file=<path>
         Path to SSH configuration file.
     --field=<field>
-        Name of field to include in the output of `dcos node`
-        [Default: HOSTNAME IP ID]
+        Name of extra field to include in the output of `dcos node`.
+        Can be repeated multiple times to add several fields.
     --filter=<filter>
         Filter logs by field and value. Filter must be a string separated by colon.
         For example: --filter _PID:0 --filter _UID:1.

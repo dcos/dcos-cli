@@ -840,7 +840,7 @@ def auth_provider_table(providers):
     return tb
 
 
-def slave_table(slaves, field_names=('HOSTNAME', 'IP', 'ID')):
+def slave_table(slaves, field_names=()):
     """Returns a PrettyTable representation of the provided DC/OS slaves
 
     :param slaves: slaves to render.  dicts from /mesos/state-summary
@@ -848,7 +848,12 @@ def slave_table(slaves, field_names=('HOSTNAME', 'IP', 'ID')):
     :rtype: PrettyTable
     """
 
-    fields = OrderedDict()
+    fields = OrderedDict([
+        ('HOSTNAME', lambda s: s['hostname']),
+        ('IP', lambda s: mesos.parse_pid(s['pid'])[1]),
+        ('ID', lambda s: s['id'])
+    ])
+
     for field_name in field_names:
         if field_name.lower() == 'ip':
             fields[field_name.upper()] = lambda s: mesos.parse_pid(s['pid'])[1]

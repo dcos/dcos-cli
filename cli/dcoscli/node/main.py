@@ -458,7 +458,7 @@ def _info():
     return 0
 
 
-def _list(json_, field_names):
+def _list(json_, extra_field_names):
     """List DC/OS nodes
 
     :param json_: If true, output json.
@@ -473,7 +473,7 @@ def _list(json_, field_names):
     if json_:
         emitter.publish(slaves)
     else:
-        table = tables.slave_table(slaves, field_names)
+        table = tables.slave_table(slaves, extra_field_names)
         output = six.text_type(table)
         if output:
             emitter.publish(output)
