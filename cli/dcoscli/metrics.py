@@ -173,19 +173,23 @@ def print_node_metrics(url, summary, json_):
     return emitter.publish(table)
 
 
-def print_task_metrics(url, json_):
+def print_task_metrics(url, app_url, json_):
     """Retrieve and pretty-print fields from the `dcos-metrics`' `containers/id`
-    endpoint.
+    endpoint and `containers/id/app` endpoint.
 
     :param url: `dcos-metrics` `containers/id` endpoint
     :type url: str
+    :param app_url: `dcos-metrics` `containers/id/app` endpoint
+    :type app_url: str
     :param json_: print json list if true
     :type json_: bool
     :return: Process status
     :rtype: int
     """
 
-    datapoints = _fetch_metrics_datapoints(url)
+    datapoints = _fetch_metrics_datapoints(url) + _fetch_metrics_datapoints(
+        app_url)
+
     if json_:
         return emitter.publish(datapoints)
     else:

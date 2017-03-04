@@ -582,4 +582,5 @@ def _metrics(task_id, json_):
         raise config.missing_config_exception(['core.dcos_url'])
 
     url = dcos_url + endpoint
-    return metrics.print_task_metrics(url, json_)
+    app_url = url + '/app'
+    return metrics.print_task_metrics(url, app_url, json_)
