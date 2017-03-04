@@ -13,10 +13,10 @@ def _gib(n):
     return n * pow(2, -30)
 
 
-def _fetch_node_metrics(url):
-    """Retrieve the metrics data from `dcos-metrics`' `node` endpoint.
+def _fetch_metrics_datapoints(url):
+    """Retrieve the metrics data from any `dcos-metrics` endpoint.
 
-    :param url: `dcos-metrics` `node` endpoint
+    :param url: `dcos-metrics` endpoint
     :type url: str
     :returns: List of metrics datapoints
     :rtype: [dict]
@@ -159,7 +159,7 @@ def print_node_metrics(url, summary, json_):
     :rtype: int
     """
 
-    datapoints = _fetch_node_metrics(url)
+    datapoints = _fetch_metrics_datapoints(url)
 
     if summary:
         if json_:
@@ -168,6 +168,27 @@ def print_node_metrics(url, summary, json_):
     else:
         if json_:
             return emitter.publish(datapoints)
+        table = tables.metrics_details_table(_format_datapoints(datapoints))
+
+    return emitter.publish(table)
+
+
+def print_task_metrics(url, json_):
+    """Retrieve and pretty-print fields from the `dcos-metrics`' `containers/id`
+    endpoint.
+
+    :param url: `dcos-metrics` `containers/id` endpoint
+    :type url: str
+    :param json_: print json list if true
+    :type json_: bool
+    :return: Process status
+    :rtype: int
+    """
+
+    datapoints = _fetch_metrics_datapoints(url)
+    if json_:
+        return emitter.publish(datapoints)
+    else:
         table = tables.metrics_details_table(_format_datapoints(datapoints))
 
     return emitter.publish(table)

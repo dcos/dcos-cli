@@ -9,6 +9,7 @@ import dcoscli
 from dcos import cmds, config, emitting, mesos, util
 from dcos.errors import DCOSException, DCOSHTTPException, DefaultError
 from dcoscli import log, tables
+from dcoscli import metrics
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
 
@@ -136,6 +137,11 @@ def _cmds():
             hierarchy=['task', 'exec'],
             arg_keys=['<task>', '<cmd>', '<args>', '--interactive', '--tty'],
             function=_exec),
+
+        cmds.Command(
+            hierarchy=['task', 'metrics', 'details'],
+            arg_keys=['<task-id>', '--json'],
+            function=_metrics),
 
         cmds.Command(
             hierarchy=['task'],
@@ -550,3 +556,30 @@ def _load_slaves_state(slaves):
                 DefaultError('Error accessing slave: {0}'.format(e)))
 
     return reachable_slaves
+
+
+def _metrics(task_id, json_):
+    """
+    Get metrics from the specified task.
+
+    :param task_id: mesos task id
+    :type task_id: str
+    :param json: print raw JSON
+    :type json: bool
+    :return: Process status
+    :rtype: int
+    """
+
+    master = mesos.get_master()
+    slave_id = master.task(task_id)['slave_id']
+    container_id = master.get_container_id(task_id)
+
+    endpoint = '/system/v1/agent/{}/metrics/v0/containers/{}'.format(
+        slave_id, container_id
+    )
+    dcos_url = config.get_config_val('core.dcos_url').rstrip('/')
+    if not dcos_url:
+        raise config.missing_config_exception(['core.dcos_url'])
+
+    url = dcos_url + endpoint
+    return metrics.print_task_metrics(url, json_)
