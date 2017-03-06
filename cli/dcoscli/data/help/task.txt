@@ -9,6 +9,7 @@ Usage:
     dcos task log [--all | --completed] [--follow --lines=N] [<task>] [<file>]
     dcos task ls [--all | --completed] [--long] [<task>] [<path>]
     dcos task metrics details <task-id> [--json]
+    dcos task metrics summary <task-id> [--json]
     dcos task [--all | --completed] [--json <task>]
 
 Command:
@@ -22,6 +23,8 @@ Command:
         Print the list of files in the Mesos task sandbox.
     metrics details
         Print a table of all metrics for the task specified by <task-id>
+    metrics summary
+        Print a table of key metrics for the task specified by <task-id>
 
 Options:
     --all

@@ -13,6 +13,12 @@ def _gib(n):
     return n * pow(2, -30)
 
 
+def _percentage(dividend, divisor):
+    if divisor > 0:
+        return dividend / divisor * 100
+    return 0
+
+
 def _fetch_metrics_datapoints(url):
     """Retrieve the metrics data from any `dcos-metrics` endpoint.
 
@@ -82,11 +88,6 @@ def _node_summary_data(datapoints):
     :rtype: dict
     """
 
-    def _percentage(dividend, divisor):
-        if divisor > 0:
-            return dividend / divisor * 100
-        return 0
-
     cpu_used = _get_datapoint(datapoints, 'load.1min')['value']
     cpu_used_pc = _get_datapoint(datapoints, 'cpu.total')['value']
 
@@ -100,6 +101,38 @@ def _node_summary_data(datapoints):
     disk_free = _get_datapoint(
         datapoints, 'filesystem.capacity.used', {'path': '/'})['value']
     disk_used = disk_total - disk_free
+    disk_used_pc = _percentage(disk_used, disk_total)
+
+    return {
+        'cpu': '{:0.2f} ({:0.2f}%)'.format(cpu_used, cpu_used_pc),
+        'mem': '{:0.2f}GiB ({:0.2f}%)'.format(_gib(mem_used), mem_used_pc),
+        'disk': '{:0.2f}GiB ({:0.2f}%)'.format(_gib(disk_used), disk_used_pc)
+    }
+
+
+def _task_summary_data(datapoints):
+    """Extracts CPU, memory and root disk space fields from task datapoints.
+
+    :param datapoints: a list of raw datapoints
+    :type datapoints: [dict]
+    :return: a dictionary of summary fields
+    :rtype: dict
+    """
+
+    cpu_user = _get_datapoint(datapoints, 'cpus_user_time_secs')['value']
+    cpu_system = _get_datapoint(datapoints, 'cpus_system_time_secs')['value']
+    cpu_throttled = _get_datapoint(datapoints, 'cpus_throttled_time_secs')[
+        'value']
+    cpu_used = cpu_user + cpu_system
+    cpu_total = cpu_used + cpu_throttled
+    cpu_used_pc = _percentage(cpu_used, cpu_total)
+
+    mem_total = _get_datapoint(datapoints, 'mem_limit_bytes')['value']
+    mem_used = _get_datapoint(datapoints, 'mem_total_bytes')['value']
+    mem_used_pc = _percentage(mem_used, mem_total)
+
+    disk_total = _get_datapoint(datapoints, 'disk_used_bytes')['value']
+    disk_used = _get_datapoint(datapoints, 'disk_limit_bytes')['value']
     disk_used_pc = _percentage(disk_used, disk_total)
 
     return {
@@ -173,7 +206,7 @@ def print_node_metrics(url, summary, json_):
     return emitter.publish(table)
 
 
-def print_task_metrics(url, app_url, json_):
+def print_task_metrics(url, app_url, summary, json_):
     """Retrieve and pretty-print fields from the `dcos-metrics`' `containers/id`
     endpoint and `containers/id/app` endpoint.
 
@@ -183,6 +216,8 @@ def print_task_metrics(url, app_url, json_):
     :type app_url: str
     :param json_: print json list if true
     :type json_: bool
+    :param summary: print summary if true, or all fields if false
+    :type summary: bool
     :return: Process status
     :rtype: int
     """
@@ -190,9 +225,12 @@ def print_task_metrics(url, app_url, json_):
     datapoints = _fetch_metrics_datapoints(url) + _fetch_metrics_datapoints(
         app_url)
 
-    if json_:
-        return emitter.publish(datapoints)
+    if summary:
+        table = tables.metrics_summary_table(_task_summary_data(datapoints))
     else:
-        table = tables.metrics_details_table(_format_datapoints(datapoints))
+        if json_:
+            return emitter.publish(datapoints)
+        else:
+            table = tables.metrics_details_table(_format_datapoints(datapoints))
 
     return emitter.publish(table)

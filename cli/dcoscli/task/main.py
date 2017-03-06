@@ -1,6 +1,7 @@
 import os
 import posixpath
 import sys
+from functools import partial
 
 import docopt
 import six
@@ -141,7 +142,12 @@ def _cmds():
         cmds.Command(
             hierarchy=['task', 'metrics', 'details'],
             arg_keys=['<task-id>', '--json'],
-            function=_metrics),
+            function=partial(_metrics, False)),
+
+        cmds.Command(
+            hierarchy=['task', 'metrics', 'summary'],
+            arg_keys=['<task-id>', '--json'],
+            function=partial(_metrics, True)),
 
         cmds.Command(
             hierarchy=['task'],
@@ -558,10 +564,12 @@ def _load_slaves_state(slaves):
     return reachable_slaves
 
 
-def _metrics(task_id, json_):
+def _metrics(summary, task_id, json_):
     """
     Get metrics from the specified task.
 
+    :param summary: summarise output if true, output all if false
+    :type summary: bool
     :param task_id: mesos task id
     :type task_id: str
     :param json: print raw JSON
@@ -583,4 +591,4 @@ def _metrics(task_id, json_):
 
     url = dcos_url + endpoint
     app_url = url + '/app'
-    return metrics.print_task_metrics(url, app_url, json_)
+    return metrics.print_task_metrics(url, app_url, summary, json_)
