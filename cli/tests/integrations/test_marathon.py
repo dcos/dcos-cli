@@ -10,10 +10,12 @@ from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 from dcos import constants
 
-from .common import (app, assert_command, assert_lines,
-                     exec_command, list_deployments, popen_tty,
-                     show_app, update_config, watch_all_deployments,
-                     watch_deployment)
+from .helpers.common import (assert_command, assert_lines, exec_command,
+                             popen_tty, update_config)
+from .helpers.marathon import (app, list_apps, list_deployments, show_app,
+                               start_app, watch_all_deployments,
+                               watch_deployment)
+
 
 _ZERO_INSTANCE_APP_ID = 'zero-instance-app'
 _ZERO_INSTANCE_APP_INSTANCES = 100
@@ -67,17 +69,12 @@ def test_missing_config(env):
 
 
 def test_empty_list():
-    _list_apps()
-
-
-def test_add_app():
-    with _zero_instance_app():
-        _list_apps('zero-instance-app')
+    list_apps()
 
 
 def test_add_app_through_http():
     with _zero_instance_app_through_http():
-        _list_apps('zero-instance-app')
+        list_apps('zero-instance-app')
 
 
 def test_add_app_bad_resource():
@@ -88,15 +85,10 @@ def test_add_app_bad_resource():
                    stderr=stderr)
 
 
-def test_add_app_with_filename():
-    with _zero_instance_app():
-        _list_apps('zero-instance-app')
-
-
 def test_remove_app():
     with _zero_instance_app():
         pass
-    _list_apps()
+    list_apps()
 
 
 def test_add_bad_json_app():
@@ -119,11 +111,6 @@ def test_add_existing_app():
                            returncode=1,
                            stderr=stderr,
                            stdin=fd)
-
-
-def test_show_app():
-    with _zero_instance_app():
-        show_app('zero-instance-app')
 
 
 def test_show_absolute_app_version():
@@ -219,14 +206,9 @@ def test_start_missing_app():
         stderr=b"Error: App '/missing-id' does not exist\n")
 
 
-def test_start_app():
-    with _zero_instance_app():
-        _start_app('zero-instance-app')
-
-
 def test_start_already_started_app():
     with _zero_instance_app():
-        _start_app('zero-instance-app')
+        start_app('zero-instance-app')
 
         stdout = (b"Application 'zero-instance-app' already "
                   b"started: 1 instances.\n")
@@ -244,7 +226,7 @@ def test_stop_missing_app():
 
 def test_stop_app():
     with _zero_instance_app():
-        _start_app('zero-instance-app', 3)
+        start_app('zero-instance-app', 3)
         watch_all_deployments()
 
         returncode, stdout, stderr = exec_command(
@@ -367,21 +349,9 @@ def test_restarting_missing_app():
                    stderr=b"Error: App '/missing-id' does not exist\n")
 
 
-def test_restarting_app():
-    with _zero_instance_app():
-        _start_app('zero-instance-app', 3)
-        watch_all_deployments()
-        returncode, stdout, stderr = exec_command(
-            ['dcos', 'marathon', 'app', 'restart', 'zero-instance-app'])
-
-        assert returncode == 0
-        assert stdout.decode().startswith('Created deployment ')
-        assert stderr == b''
-
-
 def test_killing_app():
     with _zero_instance_app():
-        _start_app('zero-instance-app', 3)
+        start_app('zero-instance-app', 3)
         watch_all_deployments()
         task_set_1 = set([task['id']
                           for task in _list_tasks(3, 'zero-instance-app')])
@@ -398,7 +368,7 @@ def test_killing_app():
 
 def test_killing_scaling_app():
     with _zero_instance_app():
-        _start_app('zero-instance-app', 3)
+        start_app('zero-instance-app', 3)
         watch_all_deployments()
         _list_tasks(3)
         command = ['dcos', 'marathon', 'app', 'kill', '--scale',
@@ -415,7 +385,7 @@ def test_killing_scaling_app():
 
 def test_killing_with_host_app():
     with _zero_instance_app():
-        _start_app('zero-instance-app', 3)
+        start_app('zero-instance-app', 3)
         watch_all_deployments()
         existing_tasks = _list_tasks(3, 'zero-instance-app')
         task_hosts = set([task['host'] for task in existing_tasks])
@@ -506,7 +476,7 @@ def test_list_empty_deployment():
 
 def test_list_deployment():
     with _zero_instance_app():
-        _start_app('zero-instance-app', _ZERO_INSTANCE_APP_INSTANCES)
+        start_app('zero-instance-app', _ZERO_INSTANCE_APP_INSTANCES)
         list_deployments(1)
 
 
@@ -517,19 +487,19 @@ def test_list_deployment_table():
     """
 
     with _zero_instance_app():
-        _start_app('zero-instance-app', _ZERO_INSTANCE_APP_INSTANCES)
+        start_app('zero-instance-app', _ZERO_INSTANCE_APP_INSTANCES)
         assert_lines(['dcos', 'marathon', 'deployment', 'list'], 2)
 
 
 def test_list_deployment_missing_app():
     with _zero_instance_app():
-        _start_app('zero-instance-app')
+        start_app('zero-instance-app')
         list_deployments(0, 'missing-id')
 
 
 def test_list_deployment_app():
     with _zero_instance_app():
-        _start_app('zero-instance-app', _ZERO_INSTANCE_APP_INSTANCES)
+        start_app('zero-instance-app', _ZERO_INSTANCE_APP_INSTANCES)
         list_deployments(1, 'zero-instance-app')
 
 
@@ -542,7 +512,7 @@ def test_rollback_missing_deployment():
 
 def test_rollback_deployment():
     with _zero_instance_app():
-        _start_app('zero-instance-app', _ZERO_INSTANCE_APP_INSTANCES)
+        start_app('zero-instance-app', _ZERO_INSTANCE_APP_INSTANCES)
         result = list_deployments(1, 'zero-instance-app')
 
         returncode, stdout, stderr = exec_command(
@@ -561,7 +531,7 @@ def test_rollback_deployment():
 
 def test_stop_deployment():
     with _zero_instance_app():
-        _start_app('zero-instance-app', _ZERO_INSTANCE_APP_INSTANCES)
+        start_app('zero-instance-app', _ZERO_INSTANCE_APP_INSTANCES)
         result = list_deployments(1, 'zero-instance-app')
 
         assert_command(
@@ -576,7 +546,7 @@ def test_watching_missing_deployment():
 
 def test_watching_deployment():
     with _zero_instance_app():
-        _start_app('zero-instance-app', _ZERO_INSTANCE_APP_INSTANCES)
+        start_app('zero-instance-app', _ZERO_INSTANCE_APP_INSTANCES)
         result = list_deployments(1, 'zero-instance-app')
         watch_deployment(result[0]['id'], 60)
         assert_command(
@@ -595,28 +565,28 @@ def test_list_empty_task_not_running_app():
 
 def test_list_tasks():
     with _zero_instance_app():
-        _start_app('zero-instance-app', 3)
+        start_app('zero-instance-app', 3)
         watch_all_deployments()
         _list_tasks(3)
 
 
 def test_list_tasks_table():
     with _zero_instance_app():
-        _start_app('zero-instance-app', 3)
+        start_app('zero-instance-app', 3)
         watch_all_deployments()
         assert_lines(['dcos', 'marathon', 'task', 'list'], 4)
 
 
 def test_list_app_tasks():
     with _zero_instance_app():
-        _start_app('zero-instance-app', 3)
+        start_app('zero-instance-app', 3)
         watch_all_deployments()
         _list_tasks(3, 'zero-instance-app')
 
 
 def test_list_missing_app_tasks():
     with _zero_instance_app():
-        _start_app('zero-instance-app', 3)
+        start_app('zero-instance-app', 3)
         watch_all_deployments()
         _list_tasks(0, 'missing-id')
 
@@ -635,7 +605,7 @@ def test_show_missing_task():
 
 def test_show_task():
     with _zero_instance_app():
-        _start_app('zero-instance-app', 3)
+        start_app('zero-instance-app', 3)
         watch_all_deployments()
         result = _list_tasks(3, 'zero-instance-app')
 
@@ -651,7 +621,7 @@ def test_show_task():
 
 def test_stop_task():
     with _zero_instance_app():
-        _start_app('zero-instance-app', 1)
+        start_app('zero-instance-app', 1)
         watch_all_deployments()
         task_list = _list_tasks(1, 'zero-instance-app')
         task_id = task_list[0]['id']
@@ -661,7 +631,7 @@ def test_stop_task():
 
 def test_stop_task_wipe():
     with _zero_instance_app():
-        _start_app('zero-instance-app', 1)
+        start_app('zero-instance-app', 1)
         watch_all_deployments()
         task_list = _list_tasks(1, 'zero-instance-app')
         task_id = task_list[0]['id']
@@ -671,7 +641,7 @@ def test_stop_task_wipe():
 
 def test_stop_unknown_task():
     with _zero_instance_app():
-        _start_app('zero-instance-app')
+        start_app('zero-instance-app')
         watch_all_deployments()
         task_id = 'unknown-task-id'
 
@@ -680,7 +650,7 @@ def test_stop_unknown_task():
 
 def test_stop_unknown_task_wipe():
     with _zero_instance_app():
-        _start_app('zero-instance-app')
+        start_app('zero-instance-app')
         watch_all_deployments()
         task_id = 'unknown-task-id'
 
@@ -725,36 +695,6 @@ def test_app_add_no_tty():
     assert stderr == (b"We currently don't support reading from the TTY. "
                       b"Please specify an application JSON.\n"
                       b"E.g.: dcos marathon app add < app_resource.json\n")
-
-
-def _list_apps(app_id=None):
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'marathon', 'app', 'list', '--json'])
-
-    result = json.loads(stdout.decode('utf-8'))
-
-    if app_id is None:
-        assert len(result) == 0
-    else:
-        assert len(result) == 1
-        assert result[0]['id'] == '/' + app_id
-
-    assert returncode == 0
-    assert stderr == b''
-
-    return result
-
-
-def _start_app(app_id, instances=None):
-    cmd = ['dcos', 'marathon', 'app', 'start', app_id]
-    if instances is not None:
-        cmd.append(str(instances))
-
-    returncode, stdout, stderr = exec_command(cmd)
-
-    assert returncode == 0
-    assert stdout.decode().startswith('Created deployment ')
-    assert stderr == b''
 
 
 def _update_app(app_id, file_path):

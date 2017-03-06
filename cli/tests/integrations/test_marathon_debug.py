@@ -2,8 +2,9 @@ import contextlib
 import json
 import re
 
-from .common import (app, exec_command, pod)
-from .test_marathon import (_list_tasks)
+from .helpers.common import exec_command
+from .helpers.marathon import app, pod
+from .test_marathon import _list_tasks
 
 list_regex = '/stuck-(?:sleep|pod)\W+[^Z]+Z\W+9\W+(?:True|False)' \
              '\W+\d\W+\d\W+[^Z]+Z\W+[^Z]+Z'

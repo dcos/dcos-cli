@@ -9,13 +9,14 @@ import six
 
 from dcos import constants, subcommand
 
-from .common import (assert_command, assert_lines, base64_to_dict,
-                     delete_zk_node, delete_zk_nodes, exec_command, file_json,
-                     get_services, package_install, package_uninstall,
-                     service_shutdown, setup_universe_server,
-                     teardown_universe_server, UNIVERSE_REPO,
-                     UNIVERSE_TEST_REPO, update_config, wait_for_service,
-                     watch_all_deployments)
+from .helpers.common import (assert_command, assert_lines, base64_to_dict,
+                             delete_zk_node, delete_zk_nodes, exec_command,
+                             file_json, update_config)
+from .helpers.marathon import watch_all_deployments
+from .helpers.package import (package_install, package_uninstall,
+                              setup_universe_server, teardown_universe_server,
+                              UNIVERSE_REPO, UNIVERSE_TEST_REPO)
+from .helpers.service import get_services, service_shutdown
 from ..common import file_bytes
 
 
@@ -81,13 +82,6 @@ def test_repo_list():
     assert_command(['dcos', 'package', 'repo', 'list'], stdout=repo_list)
 
 
-def test_repo_list_json():
-    repo_list = file_json(
-        'tests/data/package/json/test_repo_list.json')
-    assert_command(
-        ['dcos', 'package', 'repo', 'list', '--json'], stdout=repo_list)
-
-
 def test_repo_add():
     repo_list = bytes("test-universe: {}\nUniverse: {}\n".format(
         UNIVERSE_TEST_REPO, UNIVERSE_REPO), 'utf-8')
@@ -146,19 +140,6 @@ def test_describe_nonexistent_version():
                     '--package-version=a.b.c'],
                    stderr=stderr,
                    returncode=1)
-
-
-def test_describe():
-    stdout = file_json(
-        'tests/data/package/json/test_describe_marathon.json')
-
-    returncode_, stdout_, stderr_ = exec_command(
-        ['dcos', 'package', 'describe', 'marathon'])
-
-    assert returncode_ == 0
-    output = json.loads(stdout_.decode('utf-8'))
-    assert output == json.loads(stdout.decode('utf-8'))
-    assert stderr_ == b''
 
 
 def test_describe_cli():
@@ -297,15 +278,6 @@ Please create a JSON file with the appropriate options, and pass the \
     _install_bad_chronos(args=args,
                          stdout=stdout,
                          stderr=stderr)
-
-
-def test_install(zk_znode):
-    with _chronos_package():
-        watch_all_deployments()
-        wait_for_service('chronos')
-    services = get_services(args=['--inactive'])
-    assert len([service for service in services
-                if service['name'] == 'chronos']) == 0
 
 
 def test_bad_install_marathon_msg():

@@ -1,6 +1,6 @@
 import os
 
-from ..integrations.common import file_json_ast
+from ..integrations.helpers.common import file_json_ast
 
 PODS_FILE_PATH_BASE = 'tests/data/marathon/pods'
 
@@ -10,8 +10,6 @@ UNGOOD_POD_FILE_PATH = \
     os.path.join(PODS_FILE_PATH_BASE, 'ungood.json')
 UPDATED_GOOD_POD_FILE_PATH = \
     os.path.join(PODS_FILE_PATH_BASE, 'updated_good.json')
-GOOD_POD_STATUS_FILE_PATH = \
-    os.path.join(PODS_FILE_PATH_BASE, 'good_status.json')
 
 DOUBLE_POD_ID = 'double-pod'
 DOUBLE_POD_FILE_PATH = os.path.join(PODS_FILE_PATH_BASE, 'double.json')
