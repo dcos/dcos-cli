@@ -152,7 +152,7 @@ Positional Arguments:
     <app-resource>
         Path to a file or HTTP(S) URL that contains the app's JSON definition.
         If omitted, the definition is read from stdin. For a detailed
-        description see
+        description, see
         https://docs.mesosphere.com/usage/marathon/rest-api/.
     <deployment-id>
         The deployment ID.
@@ -161,7 +161,7 @@ Positional Arguments:
     <group-resource>
         Path to a file or HTTP(S) URL that contains the group's JSON definition.
         If omitted, the definition is read from stdin. For a detailed
-        description see
+        description, see
         https://mesosphere.github.io/marathon/docs/rest-api.html#post-v2-groups.
     <instance-ids>
         List of one or more space-separated pod instance IDs.
