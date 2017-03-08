@@ -864,10 +864,7 @@ def slave_table(slaves, field_names=()):
         fields[heading.upper()] = _dotted_itemgetter(field_name.lower())
 
     sortby = list(fields.keys())[0]
-    kwargs = {}
-    if sortby.lower() == 'ip':
-        kwargs['sort_key'] = lambda d: tuple(int(x) for x in d[0].split('.'))
-    tb = table(fields, slaves, sortby=sortby, **kwargs)
+    tb = table(fields, slaves, sortby=sortby)
     return tb
 
 
