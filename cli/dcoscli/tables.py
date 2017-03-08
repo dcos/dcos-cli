@@ -1019,7 +1019,7 @@ def truncate_table(fields, objs, limits, **kwargs):
         try:
             result = str(function(obj))
         except KeyError:
-            result = '???'
+            result = 'N/A'
         if (limits is not None and limits.get(key) is not None):
             result = textwrap.\
                 shorten(result, width=limits.get(key), placeholder='...')
