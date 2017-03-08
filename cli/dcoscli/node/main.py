@@ -464,6 +464,9 @@ def _list(json_, extra_field_names):
     :param json_: If true, output json.
         Otherwise, output a human readable table.
     :type json_: bool
+    :param extra_field_names: List of additional field names to include in
+        table output
+    :type extra_field_names: [str]
     :returns: process return code
     :rtype: int
     """
