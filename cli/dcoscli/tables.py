@@ -855,14 +855,13 @@ def slave_table(slaves, field_names=()):
     ])
 
     for field_name in field_names:
-        if field_name.lower() == 'ip':
-            fields[field_name.upper()] = lambda s: mesos.parse_pid(s['pid'])[1]
+        if field_name.upper() in fields:
+            continue
+        if ':' in field_name:
+            heading, field_name = field_name.split(':', 1)
         else:
-            if ':' in field_name:
-                heading, field_name = field_name.split(':', 1)
-            else:
-                heading = field_name
-            fields[heading.upper()] = _dotted_itemgetter(field_name.lower())
+            heading = field_name
+        fields[heading.upper()] = _dotted_itemgetter(field_name.lower())
 
     sortby = list(fields.keys())[0]
     kwargs = {}
