@@ -873,6 +873,25 @@ def slave_table(slaves, field_names=()):
 
 
 def _dotted_itemgetter(field_name):
+    """Returns a func that gets the value in a nested dict where the
+    `field_name` is a dotted path to the key.
+
+    Example:
+
+      >>> from dcoscli.tables import _dotted_itemgetter
+      >>> d1 = {'a': {'b': {'c': 21}}}
+      >>> d2 = {'a': {'b': {'c': 22}}}
+      >>> func = _dotted_itemgetter('a.b.c')
+      >>> func(d1)
+      21
+      >>> func(d2)
+      22
+
+    :param field_name: dotted path to key in nested dict
+    :type field_name: str
+    :rtype: callable
+    """
+
     if '.' not in field_name:
         return operator.itemgetter(field_name)
     head, tail = field_name.split('.', 1)
