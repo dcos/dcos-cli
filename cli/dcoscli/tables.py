@@ -1017,7 +1017,10 @@ def truncate_table(fields, objs, limits, **kwargs):
         :type function: function
         :rtype: PrettyTable
         """
-        result = str(function(obj))
+        try:
+            result = str(function(obj))
+        except KeyError:
+            result = '???'
         if (limits is not None and limits.get(key) is not None):
             result = textwrap.\
                 shorten(result, width=limits.get(key), placeholder='...')
