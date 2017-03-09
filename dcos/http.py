@@ -7,6 +7,7 @@ from requests.auth import AuthBase
 from six.moves.urllib.parse import urlparse
 
 from dcos import config, util
+from dcos.auth import header_challenge_auth
 from dcos.errors import (DCOSAuthenticationException,
                          DCOSAuthorizationException, DCOSBadRequest,
                          DCOSException, DCOSHTTPException,
@@ -177,9 +178,7 @@ def request(method,
                        "Please run: `dcos auth login`")
                 raise DCOSAuthenticationException(msg)
             else:
-                Subproc().call(
-                     [sys.argv[0], 'auth', 'login'])
-                os.execl(sys.argv[0], *sys.argv)
+                header_challenge_auth(dcos_url.geturl())
         else:
             raise DCOSAuthenticationException(response)
     elif response.status_code == 422:
