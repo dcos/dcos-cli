@@ -46,11 +46,13 @@ def test_node_table():
 
 
 def test_node_table_field_option():
-    returncode, stdout, stderr = exec_command(['dcos', 'node', '--field=disk used:used_resources.disk'])
+    returncode, stdout, stderr = exec_command(['dcos', 'node', '--field=disk_used:used_resources.disk'])
 
     assert returncode == 0
     assert stderr == b''
-    assert len(stdout.decode('utf-8').split('\n')) > 2
+    lines = stdout.decode('utf-8').splitlines()
+    assert len(lines) > 2
+    assert lines[0].split() == ['HOSTNAME', 'IP', 'ID', 'DISK_USED']
 
 
 def test_node_log_empty():
