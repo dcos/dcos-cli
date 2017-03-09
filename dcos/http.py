@@ -153,7 +153,7 @@ def request(method,
 
     toml_config = config.get_config()
     auth_token = config.get_config_val("core.dcos_acs_token", toml_config)
-    auth_token_auto_login = config.get_config_val("core.dcos_auto_login", toml_config)
+    prompt_login = config.get_config_val("core.prompt_login", toml_config)
     dcos_url = urlparse(config.get_config_val("core.dcos_url", toml_config))
     parsed_url = urlparse(url)
 
@@ -172,13 +172,14 @@ def request(method,
         return response
     elif response.status_code == 401:
         if auth_token is not None:
-            msg = ("Your core.dcos_acs_token is invalid. "
-                   "Please run: `dcos auth login`")
-            if auth_token_auto_login:
+            if prompt_login:
+                msg = ("Your core.dcos_acs_token is invalid. "
+                       "Please run: `dcos auth login`")
+                raise DCOSAuthenticationException(msg)
+            else:
                 Subproc().call(
                      [sys.argv[0], 'auth', 'login'])
                 os.execl(sys.argv[0], *sys.argv)
-            raise DCOSAuthenticationException(msg)
         else:
             raise DCOSAuthenticationException(response)
     elif response.status_code == 422:
