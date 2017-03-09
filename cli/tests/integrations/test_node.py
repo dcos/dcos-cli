@@ -46,7 +46,7 @@ def test_node_table():
 
 
 def test_node_table_field_option():
-    returncode, stdout, stderr = exec_command(['dcos', 'node', '--field="disk used:used_resources.disk"'])
+    returncode, stdout, stderr = exec_command(['dcos', 'node', '--field=disk used:used_resources.disk'])
 
     assert returncode == 0
     assert stderr == b''
