@@ -478,12 +478,13 @@ def _list(json_, extra_field_names):
     else:
         for extra_field_name in extra_field_names:
             field_name = extra_field_name.split(':')[-1]
-            try:
-                tables._dotted_itemgetter(field_name)(slaves[0])
-            except KeyError:
-                emitter.publish(errors.DefaultError(
-                    'Field "%s" is invalid.' % field_name))
-                return
+            if len(slaves) > 0:
+                try:
+                    tables._dotted_itemgetter(field_name)(slaves[0])
+                except KeyError:
+                    emitter.publish(errors.DefaultError(
+                        'Field "%s" is invalid.' % field_name))
+                    return
         table = tables.slave_table(slaves, extra_field_names)
         output = six.text_type(table)
         if output:
