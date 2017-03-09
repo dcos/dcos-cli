@@ -65,7 +65,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['package', 'repo', 'remove'],
-            arg_keys=['<repo-name>'],
+            arg_keys=['<repo-names>'],
             function=_remove_repo),
 
         cmds.Command(
@@ -232,17 +232,25 @@ def _raise_invalid_repos_file():
         '{"repositories": [{"name": "Universe", "uri": "uri-here"}]}')
 
 
-def _remove_repo(repo_name):
+def _remove_repo(repo_names):
     """Remove package repo and update repo with new repo
 
-    :param repo_name: name to call repo
-    :type repo_name: str
+    :param repo_names: names of repos
+    :type repo_name: str or [str]
     :returns: Process status
     :rtype: int
     """
 
+    try:
+        # Try treating repo_name as a string
+        repo_names = repo_names.split(',')
+    except AttributeError:
+        # Not a string, let's hope it's a list, tuple, etc.
+        pass
+
     package_manager = get_package_manager()
-    package_manager.remove_repo(repo_name)
+    for repo_name in repo_names:
+        package_manager.remove_repo(repo_name)
 
     return 0
 
