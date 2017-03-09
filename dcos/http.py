@@ -1,3 +1,6 @@
+import os
+import sys
+
 import requests
 from requests.auth import AuthBase
 
@@ -8,6 +11,7 @@ from dcos.errors import (DCOSAuthenticationException,
                          DCOSAuthorizationException, DCOSBadRequest,
                          DCOSException, DCOSHTTPException,
                          DCOSUnprocessableException)
+from dcos.subprocess import Subproc
 
 
 logger = util.get_logger(__name__)
@@ -149,6 +153,7 @@ def request(method,
 
     toml_config = config.get_config()
     auth_token = config.get_config_val("core.dcos_acs_token", toml_config)
+    auth_token_auto_login = config.get_config_val("core.dcos_auto_login", toml_config)
     dcos_url = urlparse(config.get_config_val("core.dcos_url", toml_config))
     parsed_url = urlparse(url)
 
@@ -169,6 +174,10 @@ def request(method,
         if auth_token is not None:
             msg = ("Your core.dcos_acs_token is invalid. "
                    "Please run: `dcos auth login`")
+            if auth_token_auto_login:
+                Subproc().call(
+                     [sys.argv[0], 'auth', 'login'])
+                os.execl(sys.argv[0], *sys.argv)
             raise DCOSAuthenticationException(msg)
         else:
             raise DCOSAuthenticationException(response)
