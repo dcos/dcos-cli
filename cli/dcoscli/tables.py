@@ -765,7 +765,7 @@ def package_table(packages):
          lambda p: '\n'.join(p['apps']) if p.get('apps') else EMPTY_ENTRY),
         ('COMMAND',
          lambda p: p['command']['name'] if 'command' in p else EMPTY_ENTRY),
-        ('DESCRIPTION', lambda p: p['description'])
+        ('DESCRIPTION', lambda p: textwrap.fill(p['description']))
     ])
 
     tb = table(fields, packages, sortby="NAME")
