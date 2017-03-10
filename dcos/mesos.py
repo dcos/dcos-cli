@@ -25,6 +25,13 @@ if not util.is_windows_platform():
 logger = util.get_logger(__name__)
 
 
+COMPLETED_TASK_STATES = [
+    "TASK_FINISHED", "TASK_KILLED", "TASK_FAILED", "TASK_LOST", "TASK_ERROR",
+    "TASK_GONE", "TASK_GONE_BY_OPERATOR", "TASK_DROPPED", "TASK_UNREACHABLE",
+    "TASK_UNKNOWN"
+]
+
+
 def get_master(dcos_client=None):
     """Create a Master object using the url stored in the
     'core.mesos_master_url' property if it exists.  Otherwise, we use
@@ -415,25 +422,33 @@ class Master(object):
                 for slave in self.state()['slaves']
                 if fltr in slave['id']]
 
-    def tasks(self, fltr=None, completed=False):
+    def tasks(self, fltr=None, completed=False, all_=False):
         """Returns tasks running under the master
 
         :param fltr: May be None, a substring or regex. None returns all tasks,
                      else return tasks whose 'id' matches `fltr`.
         :type fltr: str | None
-        :param completed: also include completed tasks
+        :param completed: completed tasks only
         :type completed: bool
+        :param all_: If True, include all tasks
+        :type all_: bool
         :returns: a list of tasks
         :rtype: [Task]
         """
 
         keys = ['tasks']
-        if completed:
+        show_completed = completed or all_
+        if show_completed:
             keys.extend(['completed_tasks'])
 
         tasks = []
-        for framework in self._framework_dicts(completed, completed):
+        # get all frameworks
+        for framework in self._framework_dicts(True, True, True):
             for task in _merge(framework, keys):
+                state = task.get("state")
+                if completed and state not in COMPLETED_TASK_STATES:
+                        continue
+
                 if fltr is None or \
                         fltr in task['id'] or \
                         fnmatch.fnmatchcase(task['id'], fltr):
@@ -552,13 +567,15 @@ class Master(object):
             self._frameworks[framework['id']] = Framework(framework, self)
         return self._frameworks[framework['id']]
 
-    def _framework_dicts(self, inactive=False, completed=False):
+    def _framework_dicts(self, inactive=False, completed=False, active=True):
         """Returns a list of all frameworks as their raw dictionaries
 
-        :param inactive: also include inactive frameworks
+        :param inactive: include inactive frameworks
         :type inactive: bool
-        :param completed: also include completed frameworks
+        :param completed: include completed frameworks
         :type completed: bool
+        :param active: include active frameworks
+        :type active: bool
         :returns: a list of frameworks
         """
 
@@ -567,7 +584,8 @@ class Master(object):
                 yield framework
 
         for framework in self.state()['frameworks']:
-            if inactive or framework['active']:
+            active_state = framework['active']
+            if (active_state and active) or (not active_state and inactive):
                 yield framework
 
 

@@ -79,17 +79,17 @@ def test_task_table():
 
 
 def test_task_completed():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'task', '--completed', '--json', '*-app*'])
-    assert returncode == 0
-    assert stderr == b''
-    assert len(json.loads(stdout.decode('utf-8'))) > NUM_TASKS
+    assert_lines(
+        ['dcos', 'task', '--completed', '--json', 'test-app-completed*'],
+        1,
+        greater_than=True)
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'task', '--json', '*-app*'])
-    assert returncode == 0
-    assert stderr == b''
-    assert len(json.loads(stdout.decode('utf-8'))) == NUM_TASKS
+
+def test_task_all():
+    assert_lines(
+        ['dcos', 'task', '--json', '*-app*'],
+        NUM_TASKS,
+        greater_than=True)
 
 
 def test_task_none():
@@ -98,12 +98,7 @@ def test_task_none():
 
 
 def test_filter():
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'task', 'test-app2', '--json'])
-
-    assert returncode == 0
-    assert stderr == b''
-    assert len(json.loads(stdout.decode('utf-8'))) == 1
+    assert_lines(['dcos', 'task', 'test-app2', '--json'], 1, greater_than=True)
 
 
 def test_log_no_files():
@@ -231,6 +226,12 @@ def test_log_completed():
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'task', 'log', '--completed', 'test-app-completed'])
+    assert returncode == 0
+    assert stderr == b''
+    assert len(stdout.decode('utf-8').split('\n')) > 4
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'task', 'log', '--all', 'test-app-completed'])
     assert returncode == 0
     assert stderr == b''
     assert len(stdout.decode('utf-8').split('\n')) > 4
