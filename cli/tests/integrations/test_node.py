@@ -124,7 +124,7 @@ def test_node_metrics_agent_details_json():
     )
 
     names = [d['name'] for d in node_json]
-    assert 'uptime' in names
+    assert 'system.uptime' in names
     assert 'cpu.cores' in names
 
 
