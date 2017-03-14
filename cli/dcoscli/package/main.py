@@ -4,10 +4,6 @@ import sys
 
 import docopt
 import pkg_resources
-try:
-    import yaml
-except ImportError:
-    yaml = None
 
 import dcoscli
 from dcos import cmds, emitting, http, options, package, subcommand, util
@@ -192,8 +188,7 @@ def _add_repo(repo_name, repo_url, index):
 def _import_repos(repos_file):
     """Add package repos from a JSON file
 
-    :param repos_file: path to JSON file containing repos. A YAML file can
-        be used if PyYAML is installed.
+    :param repos_file: path to JSON file containing repos.
     :type repos_file: str
     :rtype: int
     """
@@ -201,10 +196,7 @@ def _import_repos(repos_file):
     package_manager = get_package_manager()
 
     with open(repos_file) as f:
-        if yaml:
-            data = yaml.load(f)
-        else:
-            data = json.load(f)
+        data = json.load(f)
 
         for index, repo in enumerate(data['repositories']):
             package_manager.add_repo(repo['name'], repo['uri'], index)
