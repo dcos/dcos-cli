@@ -172,15 +172,24 @@ def request(method,
     if is_success(response.status_code):
         return response
     elif response.status_code == 401:
-        if auth_token is not None:
-            if prompt_login:
+        if prompt_login:
+            header_challenge_auth(dcos_url.geturl())
+            auth_token = config.get_config_val("core.dcos_acs_token", toml_config)
+            if auth_token and scheme_eq and netloc_eq:
+                auth = DCOSAcsAuth(auth_token)
+            else:
+                auth = None
+            response = _request(method, url, is_success, timeout,
+                                auth=auth, verify=verify, **kwargs)
+            if is_success(response.status_code):
+                return response
+        else:
+            if auth_token is not None:
                 msg = ("Your core.dcos_acs_token is invalid. "
                        "Please run: `dcos auth login`")
                 raise DCOSAuthenticationException(msg)
             else:
-                header_challenge_auth(dcos_url.geturl())
-        else:
-            raise DCOSAuthenticationException(response)
+                raise DCOSAuthenticationException(response)
     elif response.status_code == 422:
         raise DCOSUnprocessableException(response)
     elif response.status_code == 403:
