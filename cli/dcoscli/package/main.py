@@ -226,8 +226,8 @@ def _import_repos(repos_file):
 def _raise_invalid_repos_file():
     raise DCOSException(
         'No repositories found to import. '
-        'You should provide a JSON file containing package '
-        'repositories, listed in the format of `dcos package list`. '
+        'You should provide a file containing package '
+        'repositories, listed in the format of `dcos package list --json`.'
         '\nExample: '
         '{"repositories": [{"name": "Universe", "uri": "uri-here"}]}')
 
