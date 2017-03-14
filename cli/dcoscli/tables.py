@@ -963,7 +963,7 @@ def metrics_details_table(datapoints):
         ('TAGS', lambda d: d['tags'])
     ])
 
-    metrics_table = table(fields, datapoints)
+    metrics_table = truncate_table(fields, datapoints, {'TAGS': 80})
     metrics_table.align['NAME'] = 'l'
     metrics_table.align['VALUE'] = 'l'
     metrics_table.align['TAGS'] = 'l'
