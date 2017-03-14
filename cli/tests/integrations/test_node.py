@@ -52,7 +52,7 @@ def test_node_table_field_option():
     assert returncode == 0
     assert stderr == b''
     lines = stdout.decode('utf-8').splitlines()
-    assert len(lines) > 2
+    assert len(lines) > 1
     assert lines[0].split() == ['HOSTNAME', 'IP', 'ID', 'DISK_USED']
 
 
