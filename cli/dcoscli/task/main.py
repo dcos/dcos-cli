@@ -123,13 +123,13 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['task', 'log'],
-            arg_keys=['--follow', '--completed', '--lines', '<task>',
+            arg_keys=['--all', '--follow', '--completed', '--lines', '<task>',
                       '<file>'],
             function=_log),
 
         cmds.Command(
             hierarchy=['task', 'ls'],
-            arg_keys=['<task>', '<path>', '--long', '--completed'],
+            arg_keys=['<task>', '<path>', '--all', '--long', '--completed'],
             function=_ls),
 
         cmds.Command(
@@ -139,7 +139,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['task'],
-            arg_keys=['<task>', '--completed', '--json'],
+            arg_keys=['<task>', '--all', '--completed', '--json'],
             function=_task),
     ]
 
@@ -155,12 +155,14 @@ def _info():
     return 0
 
 
-def _task(task, completed, json_):
+def _task(task, all_, completed, json_):
     """List DCOS tasks
 
     :param task: task id filter
     :type task: str
-    :param completed: If True, include completed tasks
+    :param all_: If True, include all tasks
+    :type all_: bool
+    :param completed: If True, include only completed tasks
     :type completed: bool
     :param json_: If True, output json.  Otherwise, output a human
                   readable table.
@@ -168,7 +170,8 @@ def _task(task, completed, json_):
     :returns: process return code
     """
 
-    tasks = sorted(mesos.get_master().tasks(completed=completed, fltr=task),
+    tasks = sorted(mesos.get_master().tasks(
+                   fltr=task, completed=completed, all_=all_),
                    key=lambda t: t['name'])
 
     if json_:
@@ -182,9 +185,11 @@ def _task(task, completed, json_):
     return 0
 
 
-def _log(follow, completed, lines, task, file_):
+def _log(all_, follow, completed, lines, task, file_):
     """ Tail a file in the task's sandbox.
 
+    :param all_: If True, include all tasks
+    :type all_: bool
     :param follow: same as unix tail's -f
     :type follow: bool
     :param completed: whether to include completed tasks
@@ -211,7 +216,7 @@ def _log(follow, completed, lines, task, file_):
     # get tasks
     client = mesos.DCOSClient()
     master = mesos.Master(client.get_master_state())
-    tasks = master.tasks(completed=completed, fltr=fltr)
+    tasks = master.tasks(fltr=fltr, completed=completed, all_=all_)
 
     if not tasks:
         if not fltr:
@@ -413,7 +418,7 @@ def _dcos_log(follow, tasks, lines, file_, completed):
             return log.print_logs_range(url)
 
 
-def _ls(task, path, long_, completed):
+def _ls(task, path, all_, long_, completed):
     """ List files in a task's sandbox.
 
     :param task: task pattern to match
@@ -422,6 +427,8 @@ def _ls(task, path, long_, completed):
     :type path: str
     :param long_: whether to use a long listing format
     :type long_: bool
+    :param all_: If True, include all tasks
+    :type all_: bool
     :param completed: If True, include completed tasks
     :type completed: bool
     :returns: process return code
@@ -435,8 +442,7 @@ def _ls(task, path, long_, completed):
 
     dcos_client = mesos.DCOSClient()
     task_objects = mesos.get_master(dcos_client).tasks(
-        fltr=task,
-        completed=completed)
+        fltr=task, completed=completed, all_=all_)
 
     if len(task_objects) == 0:
         if task is None:
