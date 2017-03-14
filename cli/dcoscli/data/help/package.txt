@@ -93,5 +93,8 @@ Positional Arguments:
         URL of the package repository. For example,
         https://universe.mesosphere.com/repo.
     <repo-file>
-        A file containing package repositories. JSON files are acceptable,
-        including the output of `dcos package list --json`.
+        A file containing package repositories, listed in the format
+        of `dcos package list --json`.
+
+        Example:
+          {"repositories": [{"name": "Universe", "uri": "uri-here"}]}
