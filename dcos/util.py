@@ -182,8 +182,10 @@ def enforce_file_permissions(path):
     if sys.platform == 'win32':
         return
     else:
-        permissions = oct(stat.S_IMODE(os.lstat(path).st_mode))
+        permissions = oct(stat.S_IMODE(os.stat(path).st_mode))
         if permissions not in ['0o600', '0600', '0o400', '0400']:
+            if os.path.realpath(path) != path:
+                path = '%s (pointed to by %s)' % (os.path.realpath(path), path)
             msg = (
                 "Permissions '{}' for configuration file '{}' are too open. "
                 "File must only be accessible by owner. "
