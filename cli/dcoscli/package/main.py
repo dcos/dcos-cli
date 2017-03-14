@@ -196,14 +196,39 @@ def _import_repos(repos_file):
     package_manager = get_package_manager()
 
     with open(repos_file) as f:
-        data = json.load(f)
+        try:
+            data = json.load(f)
+        except json.JSONDecodeError:
+            _raise_invalid_repos_file()
+        repositories = data.get('repositories')
+        if not repositories:
+            _raise_invalid_repos_file()
 
         for index, repo in enumerate(data['repositories']):
-            package_manager.add_repo(repo['name'], repo['uri'], index)
-            emitter.publish('Added repo "%s" (%s) at index %d'
-                            % (repo['name'], repo['uri'], index))
+            repo_name = repo.get('name')
+            repo_uri = repo.get('uri')
+            if not repo_name or not repo_uri:
+                emitter.publish('Repo missing name or uri. Skipping.')
+                continue
+            try:
+                package_manager.add_repo(repo['name'], repo['uri'], index)
+                emitter.publish('Added repo "%s" (%s) at index %d'
+                                % (repo_name, repo_uri, index))
+            except Exception as e:
+                emitter.publish('Error while adding repo "%s" (%s). Skipping.'
+                                % (repo_name, repo_uri))
+                continue
 
     return 0
+
+
+def _raise_invalid_repos_file():
+    raise DCOSException(
+        'No repositories found to import. '
+        'You should provide a JSON file containing package '
+        'repositories, listed in the format of `dcos package list`. '
+        '\nExample: '
+        '{"repositories": [{"name": "Universe", "uri": "uri-here"}]}')
 
 
 def _remove_repo(repo_name):
