@@ -215,8 +215,9 @@ def _import_repos(repos_file):
                 emitter.publish('Added repo "%s" (%s) at index %d'
                                 % (repo_name, repo_uri, index))
             except Exception as e:
-                emitter.publish('Error while adding repo "%s" (%s). Skipping.'
-                                % (repo_name, repo_uri))
+                emitter.publish('Error (%s) while adding repo "%s" (%s). '
+                                'Skipping.'
+                                % (e, repo_name, repo_uri))
                 continue
 
     return 0
