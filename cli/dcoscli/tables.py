@@ -768,7 +768,11 @@ def package_table(packages):
         ('DESCRIPTION', lambda p: p['description'])
     ])
 
-    tb = table(fields, packages, sortby="NAME")
+    limits = {
+        "DESCRIPTION": 65
+    }
+
+    tb = truncate_table(fields, packages, limits, sortby="NAME")
     tb.align['NAME'] = 'l'
     tb.align['VERSION'] = 'l'
     tb.align['APP'] = 'l'
