@@ -214,7 +214,7 @@ def _import_repos(repos_file):
                 package_manager.add_repo(repo['name'], repo['uri'], index)
                 emitter.publish('Added repo "%s" (%s) at index %d'
                                 % (repo_name, repo_uri, index))
-            except Exception as e:
+            except DCOSException as e:
                 emitter.publish('Error (%s) while adding repo "%s" (%s). '
                                 'Skipping.'
                                 % (e, repo_name, repo_uri))
