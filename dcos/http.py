@@ -174,15 +174,12 @@ def request(method,
     elif response.status_code == 401:
         if prompt_login:
             header_challenge_auth(dcos_url.geturl())
-            auth_token = config.get_config_val("core.dcos_acs_token", toml_config)
-            if auth_token and scheme_eq and netloc_eq:
-                auth = DCOSAcsAuth(auth_token)
-            else:
-                auth = None
-            response = _request(method, url, is_success, timeout,
-                                auth=auth, verify=verify, **kwargs)
-            if is_success(response.status_code):
-                return response
+            # if header_challenge_auth succeeded, then we auth-ed correctly and
+            # thus can safely recursively call ourselves and not have to worry
+            # about an infinite loop
+            return request(method=method, url=url,
+                           is_success=is_success, timeout=timeout, verify=verify,
+                           **kwargs)
         else:
             if auth_token is not None:
                 msg = ("Your core.dcos_acs_token is invalid. "
