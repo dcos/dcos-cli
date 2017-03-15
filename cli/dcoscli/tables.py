@@ -845,6 +845,8 @@ def slave_table(slaves, field_names=()):
 
     :param slaves: slaves to render.  dicts from /mesos/state-summary
     :type slaves: [dict]
+    :param field_names: Extra fields to add to the table
+    :type slaves: [str]
     :rtype: PrettyTable
     """
 
