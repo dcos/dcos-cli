@@ -59,6 +59,11 @@ def _cmds():
             function=_add_repo),
 
         cmds.Command(
+            hierarchy=['package', 'repo', 'import'],
+            arg_keys=['<repos-file>'],
+            function=_import_repos),
+
+        cmds.Command(
             hierarchy=['package', 'repo', 'remove'],
             arg_keys=['<repo-name>'],
             function=_remove_repo),
@@ -178,6 +183,53 @@ def _add_repo(repo_name, repo_url, index):
     package_manager.add_repo(repo_name, repo_url, index)
 
     return 0
+
+
+def _import_repos(repos_file):
+    """Add package repos from a JSON file
+
+    :param repos_file: path to JSON file containing repos.
+    :type repos_file: str
+    :rtype: int
+    """
+
+    package_manager = get_package_manager()
+
+    with open(repos_file) as f:
+        try:
+            data = json.load(f)
+        except json.JSONDecodeError:
+            _raise_invalid_repos_file()
+        repositories = data.get('repositories')
+        if not repositories:
+            _raise_invalid_repos_file()
+
+        for index, repo in enumerate(data['repositories']):
+            repo_name = repo.get('name')
+            repo_uri = repo.get('uri')
+            if not repo_name or not repo_uri:
+                emitter.publish('Repo missing name or uri. Skipping.')
+                continue
+            try:
+                package_manager.add_repo(repo['name'], repo['uri'], index)
+                emitter.publish('Added repo "%s" (%s) at index %d'
+                                % (repo_name, repo_uri, index))
+            except DCOSException as e:
+                emitter.publish('Error (%s) while adding repo "%s" (%s). '
+                                'Skipping.'
+                                % (e, repo_name, repo_uri))
+                continue
+
+    return 0
+
+
+def _raise_invalid_repos_file():
+    raise DCOSException(
+        'No repositories found to import. '
+        'You should provide a file containing package '
+        'repositories, listed in the format of `dcos package list --json`.'
+        '\nExample: '
+        '{"repositories": [{"name": "Universe", "uri": "uri-here"}]}')
 
 
 def _remove_repo(repo_name):

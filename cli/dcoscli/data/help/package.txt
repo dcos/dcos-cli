@@ -16,6 +16,7 @@ Usage:
                          [--yes]
     dcos package list [<package-name> --json --app-id=<app-id> --cli]
     dcos package repo add <repo-name> <repo-url> [--index=<index>]
+    dcos package repo import <repos-file>
     dcos package repo list [--json]
     dcos package repo remove <repo-name>
     dcos package search [<query> --json]
@@ -91,3 +92,9 @@ Positional Arguments:
     <repo-url>
         URL of the package repository. For example,
         https://universe.mesosphere.com/repo.
+    <repo-file>
+        A file containing package repositories, listed in the format
+        of `dcos package list --json`.
+
+        Example:
+          {"repositories": [{"name": "Universe", "uri": "uri-here"}]}
