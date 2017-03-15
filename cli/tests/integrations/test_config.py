@@ -4,7 +4,7 @@ import os
 import pytest
 import six
 
-from dcos import constants
+from dcos import config, constants
 
 from .helpers.common import (assert_command, config_set, config_unset,
                              exec_command, update_config)
@@ -191,7 +191,10 @@ def test_unset_top_property(env):
 
 
 def test_validate(env):
-    stdout = b'Congratulations, your configuration is valid!\n'
+    os.environ['DCOS_CONFIG'] = env['DCOS_CONFIG']
+    stdout = 'Validating %s ...\n' % config.get_config_path() + \
+             'Congratulations, your configuration is valid!\n'
+    stdout = stdout.encode('utf-8')
     assert_command(['dcos', 'config', 'validate'],
                    env=env, stdout=stdout)
 
