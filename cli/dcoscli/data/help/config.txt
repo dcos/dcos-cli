@@ -9,6 +9,7 @@ Usage:
     dcos config show [<name>]
     dcos config unset <name>
     dcos config validate
+    dcos config edit
 
 Commands:
     set
@@ -22,6 +23,8 @@ Commands:
         Remove a property from the configuration file.
     validate
         Validate changes to the configuration file.
+    edit
+        Open configuration file with $EDITOR and then validate it.
 
 Options:
     -h, --help
