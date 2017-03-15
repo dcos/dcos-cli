@@ -337,8 +337,29 @@ def test_task_metrics_agent_details_json():
     )
 
     names = [d['name'] for d in task_json]
-    assert 'cpus_limit' in names
-    assert 'mem_total_bytes' in names
+    assert 'cpus.limit' in names
+    assert 'mem.total' in names
+
+
+def test_task_metrics_agent_summary():
+    task_id = _get_task_id('test-app1')
+    assert_lines(
+        ['dcos', 'task', 'metrics', 'summary', task_id],
+        5,
+        greater_than=True
+    )
+
+
+def test_task_metrics_agent_summary_json():
+    task_id = _get_task_id('test-app1')
+    task_json = fetch_valid_json(
+        ['dcos', 'task', 'metrics', 'summary', task_id, '--json']
+    )
+
+    names = [d['name'] for d in task_json]
+    assert 'cpus.user.time' in names
+    assert 'mem.total' in names
+    assert 'disk.used' in names
 
 
 @pytest.mark.skipif('DCOS_DEBUGGING_ENABLED' not in os.environ,

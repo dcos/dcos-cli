@@ -110,6 +110,22 @@ def _node_summary_data(datapoints):
     }
 
 
+def _task_summary_json(datapoints):
+    """Filters datapoints down to CPU, memory and disk space fields.
+
+    :param datapoints: a list of datapoints
+    :type datapoints: [dict]
+    :return: JSON data
+    :rtype: str
+    """
+    summary_datapoints = [
+        _get_datapoint(datapoints, 'cpus.user.time'),
+        _get_datapoint(datapoints, 'mem.total'),
+        _get_datapoint(datapoints, 'disk.used')
+    ]
+    return json.dumps(summary_datapoints)
+
+
 def _task_summary_data(datapoints):
     """Extracts CPU, memory and root disk space fields from task datapoints.
 
@@ -165,6 +181,8 @@ def _format_datapoints(datapoints):
             return '{:0.2f}GiB'.format(_gib(v))
         if u == 'percent':
             return '{:0.2f}%'.format(v)
+        if type(v) == float:
+            return '{:0.2f}'.format(v)
         return v
 
     formatted_datapoints = []
@@ -226,11 +244,12 @@ def print_task_metrics(url, app_url, summary, json_):
         app_url)
 
     if summary:
+        if json_:
+            return emitter.publish(_task_summary_json(datapoints))
         table = tables.metrics_summary_table(_task_summary_data(datapoints))
     else:
         if json_:
             return emitter.publish(datapoints)
-        else:
-            table = tables.metrics_details_table(_format_datapoints(datapoints))
+        table = tables.metrics_details_table(_format_datapoints(datapoints))
 
     return emitter.publish(table)
