@@ -174,8 +174,8 @@ def request(method,
             # thus can safely recursively call ourselves and not have to worry
             # about an infinite loop
             return request(method=method, url=url,
-                           is_success=is_success, timeout=timeout, verify=verify,
-                           **kwargs)
+                           is_success=is_success, timeout=timeout,
+                           verify=verify, **kwargs)
         else:
             if auth_token is not None:
                 msg = ("Your core.dcos_acs_token is invalid. "
