@@ -42,7 +42,11 @@ def test_node_table():
 
     assert returncode == 0
     assert stderr == b''
+    assert stdout
+    assert stdout.decode('utf-8')
     assert len(stdout.decode('utf-8').split('\n')) > 2
+    assert len(stdout.decode('utf-8').splitlines(keepends=True)) > 2
+    assert len(stdout.decode('utf-8').splitlines()) > 2
 
 
 def test_node_log_empty():
