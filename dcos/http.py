@@ -1,6 +1,3 @@
-import os
-import sys
-
 import requests
 from requests.auth import AuthBase
 
@@ -12,7 +9,6 @@ from dcos.errors import (DCOSAuthenticationException,
                          DCOSAuthorizationException, DCOSBadRequest,
                          DCOSException, DCOSHTTPException,
                          DCOSUnprocessableException)
-from dcos.subprocess import Subproc
 
 
 logger = util.get_logger(__name__)
