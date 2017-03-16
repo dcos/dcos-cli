@@ -211,11 +211,21 @@ def _strip_trailing_newline(s):
         return s[:-1] if s[-1] == '\n' else s
 
 
+def has_journald_capability():
+    """ functions checks LOGGING capability.
+
+    :return: does cosmos have LOGGING capability.
+    :rtype: bool
+    """
+    return packagemanager.PackageManager(
+        get_cosmos_url()).has_capability('LOGGING')
+
+
 def dcos_log_enabled():
     """ functions checks the cosmos capability LOGGING
         to know if `dcos-log` is enabled on the cluster.
 
-    :return: does cosmos have LOGGING capability.
+    :return: if journald logging enabled base on strategy.
     :rtype: bool
     """
 
@@ -226,16 +236,13 @@ def dcos_log_enabled():
 def logging_strategy():
     """ function returns logging strategy
 
-    :return: does cosmos have LOGGING capability.
+    :return: logging strategy.
     :rtype: str
     """
     # default strategy is sandbox logging.
     strategy = 'logrotate'
 
-    has_capability = packagemanager.PackageManager(
-        get_cosmos_url()).has_capability('LOGGING')
-
-    if not has_capability:
+    if not has_journald_capability():
         return strategy
 
     base_url = config.get_config_val("core.dcos_url")
