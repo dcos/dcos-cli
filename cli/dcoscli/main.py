@@ -70,9 +70,7 @@ def _main():
 
     util.configure_process_from_environ()
 
-    global_config = config.get_global_config()
-    clusters_config = config.get_clusters_path()
-    if not os.path.exists(clusters_config) and os.path.exists(global_config):
+    if config.uses_deprecated_config():
         cluster.create_cluster_config()
 
     if args['--version']:
