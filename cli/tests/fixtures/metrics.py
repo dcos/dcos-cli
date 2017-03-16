@@ -53,12 +53,7 @@ def agent_metrics_task_details_fixture():
 
     :rtype: [dict]"""
 
-    tags = "executor_id: consume-cpui.d3df66d3-08dc-11e7-8d53-7a0775d3c178, \
-            source: consume-cpui.d3df66d3-08dc-11e7-8d53-7a0775d3c178, \
-            container_id: 6acdec64-5d97-4aef-889a-7cf8534ef78c, \
-            executor_name: Command Executor (Task: consume-cpui.d3df66d3-08dc-1\
-            1e7-8d53-7a0775d3c178) (Command: sh -c 'dd if=/de...'), \
-            framework_id: 37bd18c6-eb60-4220-b7e0-cc775d4c7dd2-0000"
+    tags = "executor_id: abc-123, source: consume-cpui.d3df66d3-08dc-11e7-8d53"
 
     return [
         {"name": "cpus.user.time", "tags": tags, "value": 4902.86},

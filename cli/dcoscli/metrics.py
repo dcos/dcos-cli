@@ -250,6 +250,7 @@ def print_task_metrics(url, app_url, summary, json_):
     else:
         if json_:
             return emitter.publish(datapoints)
-        table = tables.metrics_details_table(_format_datapoints(datapoints))
+        table = tables.metrics_details_table(_format_datapoints(datapoints),
+                                             False)
 
     return emitter.publish(table)

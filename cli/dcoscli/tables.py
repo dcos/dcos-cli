@@ -950,23 +950,26 @@ def metrics_summary_table(data):
     return metrics_table
 
 
-def metrics_details_table(datapoints):
+def metrics_details_table(datapoints, show_tags=True):
     """Prints a table of all passed metrics
 
     :param datapoints: A raw list of datapoints
     :type datapoints: [dict]
     """
 
-    fields = OrderedDict([
+    field_defs = [
         ('NAME', lambda d: d['name']),
         ('VALUE', lambda d: d['value']),
-        ('TAGS', lambda d: d['tags'])
-    ])
+    ]
+    if show_tags:
+        field_defs.append(('TAGS', lambda d: d['tags']))
 
-    metrics_table = truncate_table(fields, datapoints, {'TAGS': 80})
-    metrics_table.align['NAME'] = 'l'
-    metrics_table.align['VALUE'] = 'l'
-    metrics_table.align['TAGS'] = 'l'
+    fields = OrderedDict(field_defs)
+
+    metrics_table = table(fields, datapoints)
+    for (k, v) in field_defs:
+        metrics_table.align[k] = 'l'
+
     return metrics_table
 
 

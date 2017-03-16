@@ -140,9 +140,11 @@ def test_metrics_details_table():
                 'tests/unit/data/metrics_node_details.txt')
 
 
-def test_metrics_details_long_tabs_table():
-    _test_table(tables.metrics_details_table,
-                agent_metrics_task_details_fixture(),
+def test_metrics_details_no_tags_table():
+    # Convenience wrapper to pass a second param
+    def _task_details_fn(datapoints):
+        return tables.metrics_details_table(datapoints, False)
+    _test_table(_task_details_fn, agent_metrics_task_details_fixture(),
                 'tests/unit/data/metrics_task_details.txt')
 
 
