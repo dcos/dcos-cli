@@ -1,6 +1,13 @@
 DCOS_DIR = ".dcos"
 """DC/OS data directory.  Can store subcommands and the config file."""
 
+DCOS_CLUSTERS_SUBDIR = "clusters"
+"""Name of the subdirectory containing the configuration of all configured
+clusters"""
+
+DCOS_CLUSTER_ATTACHED_FILE = "attached"
+"""Name of the file indicating the current attached cluster"""
+
 DCOS_SUBCOMMAND_ENV_SUBDIR = 'env'
 """In a package's directory, this is the cli contents subdirectory."""
 
