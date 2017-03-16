@@ -510,7 +510,7 @@ def _log(follow, lines, leader, slave, component, filters):
 
     # if journald logging is disabled. Read from files API and exit.
     # https://github.com/dcos/dcos/blob/master/gen/calc.py#L151
-    if 'journald' not in log.logging_strategy():
+    if not log.has_journald_capability():
         if component or filters:
             raise DCOSException('--component or --filter is not '
                                 'supported by files API')
