@@ -12,14 +12,53 @@ from dcos.errors import DCOSException
 logger = util.get_logger(__name__)
 
 
-def get_global_config():
+def uses_deprecated_config():
+    """Returns True if the configuration for the user's CLI
+    is the deprecated 'global' config instead of the cluster
+    specific config
+    """
+
+    global_config = get_global_config_path()
+    cluster_config = get_clusters_path()
+    return not os.path.exists(cluster_config) and os.path.exists(global_config)
+
+
+def get_global_config_path():
     """Returns the path to the deprecated global DCOS config file.
 
     :returns: path to the DCOS config file
     :rtype: str
     """
 
-    return os.environ.get(constants.DCOS_CONFIG_ENV, get_default_config_path())
+    default_path = os.path.join(get_config_dir_path(), "dcos.toml")
+    return os.environ.get(constants.DCOS_CONFIG_ENV, default_path)
+
+
+def get_global_config(mutable=False):
+    """Returns the deprecated global DCOS config file
+
+    :param mutable: True if the returned Toml object should be mutable
+    :type mutable: boolean
+    :returns: Configuration object
+    :rtype: Toml | MutableToml
+    """
+
+    return load_from_path(get_global_config_path(), mutable)
+
+
+def get_attached_cluster_path():
+    """
+    The attached cluster is denoted by a file named "attached" in one of the
+    cluster directories. Ex: $DCOS_DIR/clusters/CLUSTER_ID/attached
+
+    :returns: path to the director of the attached cluster
+    :rtype: str | None
+    """
+    for (cluster_path, dirnames, filenames) in os.walk(get_clusters_path()):
+        if "attached" in filenames:
+            return cluster_path
+
+    return None
 
 
 def get_clusters_path():
@@ -31,14 +70,21 @@ def get_clusters_path():
     return os.path.join(get_config_dir_path(), constants.DCOS_CLUSTERS_SUBDIR)
 
 
-def get_config_path():
-    """ Returns the path to the DCOS config file.
+def get_config_path(cluster_path=None):
+    """Returns the path to the DCOS config file of the attached cluster.
+    If still using "global" config return that toml instead
 
+    :param cluster_path: path to the attached cluster
+    :type cluser_path: str
     :returns: path to the DCOS config file
     :rtype: str
     """
 
-    return os.environ.get(constants.DCOS_CONFIG_ENV, get_default_config_path())
+    if uses_deprecated_config():
+        return get_global_config_path()
+
+    default_path = get_default_config_path(cluster_path)
+    return os.environ.get(constants.DCOS_CONFIG_ENV, default_path)
 
 
 def get_config_dir_path():
@@ -52,14 +98,18 @@ def get_config_dir_path():
     return os.path.expanduser(config_dir)
 
 
-def get_default_config_path():
-    """Returns the default path to the DCOS config file.
+def get_default_config_path(cluster_path=None):
+    """Returns the default path to the DCOS config file of the attached cluster
 
+    :param cluster_path: path to the attached cluster
+    :type cluster_path: str
     :returns: path to the DCOS config file
     :rtype: str
     """
 
-    return os.path.join(get_config_dir_path(), 'dcos.toml')
+    if cluster_path is None:
+        cluster_path = get_attached_cluster_path()
+    return os.path.join(cluster_path, "dcos.toml")
 
 
 def get_config(mutable=False):
@@ -74,11 +124,18 @@ def get_config(mutable=False):
     :rtype: Toml | MutableToml
     """
 
-    path = get_config_path()
-    default = get_default_config_path()
+    cluster_path = get_attached_cluster_path()
+    if cluster_path is None:
+        if uses_deprecated_config():
+            return get_global_config(mutable)
 
-    if path == default:
-        util.ensure_dir_exists(os.path.dirname(default))
+        msg = ("No cluster is attached. "
+               "Please run `dcos cluster attach <cluster-name>`")
+        raise DCOSException(msg)
+
+    path = get_config_path(cluster_path)
+    util.ensure_dir_exists(os.path.dirname(path))
+
     return load_from_path(path, mutable)
 
 
@@ -134,7 +191,8 @@ def get_config_val(name, config=None):
     :returns: value of 'name' parameter
     :rtype: str | None
     """
-    val, _ = get_config_val_envvar(name, config=None)
+
+    val, _ = get_config_val_envvar(name, config)
     return val
 
 
