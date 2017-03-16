@@ -934,6 +934,7 @@ def metrics_summary_table(data):
 
     :param data: A dictionary of formatted summary values.
     :type data: dict
+    :rtype: PrettyTable
     """
     fields = OrderedDict([
         ('CPU', lambda d: d['cpu']),
@@ -955,6 +956,9 @@ def metrics_details_table(datapoints, show_tags=True):
 
     :param datapoints: A raw list of datapoints
     :type datapoints: [dict]
+    :param show_tags: Show column for tags, unless False
+    :type show_tags: bool
+    :rtype: PrettyTable
     """
 
     field_defs = [
