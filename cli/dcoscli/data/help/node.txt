@@ -4,7 +4,7 @@ Description:
 Usage:
     dcos node --help
     dcos node --info
-    dcos node [--json]
+    dcos node [--json | --field=<field>...]
     dcos node --version
     dcos node diagnostics (--list | --status | --cancel) [--json]
     dcos node diagnostics create (<nodes>)...
@@ -52,6 +52,9 @@ Options:
         Show DC/OS component logs.
     --config-file=<path>
         Path to SSH configuration file.
+    --field=<field>
+        Name of extra field to include in the output of `dcos node`.
+        Can be repeated multiple times to add several fields.
     --filter=<filter>
         Filter logs by field and value. Filter must be a string separated by colon.
         For example: --filter _PID:0 --filter _UID:1.

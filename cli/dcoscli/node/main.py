@@ -115,7 +115,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['node'],
-            arg_keys=['--json'],
+            arg_keys=['--json', '--field'],
             function=_list)
     ]
 
@@ -458,12 +458,15 @@ def _info():
     return 0
 
 
-def _list(json_):
+def _list(json_, extra_field_names):
     """List DC/OS nodes
 
     :param json_: If true, output json.
         Otherwise, output a human readable table.
     :type json_: bool
+    :param extra_field_names: List of additional field names to include in
+        table output
+    :type extra_field_names: [str]
     :returns: process return code
     :rtype: int
     """
@@ -473,7 +476,16 @@ def _list(json_):
     if json_:
         emitter.publish(slaves)
     else:
-        table = tables.slave_table(slaves)
+        for extra_field_name in extra_field_names:
+            field_name = extra_field_name.split(':')[-1]
+            if len(slaves) > 0:
+                try:
+                    tables._dotted_itemgetter(field_name)(slaves[0])
+                except KeyError:
+                    emitter.publish(errors.DefaultError(
+                        'Field "%s" is invalid.' % field_name))
+                    return
+        table = tables.slave_table(slaves, extra_field_names)
         output = six.text_type(table)
         if output:
             emitter.publish(output)

@@ -45,6 +45,17 @@ def test_node_table():
     assert len(stdout.decode('utf-8').split('\n')) > 2
 
 
+def test_node_table_field_option():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'node', '--field=disk_used:used_resources.disk'])
+
+    assert returncode == 0
+    assert stderr == b''
+    lines = stdout.decode('utf-8').splitlines()
+    assert len(lines) > 2
+    assert lines[0].split() == ['HOSTNAME', 'IP', 'ID', 'DISK_USED']
+
+
 def test_node_log_empty():
     stderr = b"You must choose one of --leader or --mesos-id.\n"
     assert_command(['dcos', 'node', 'log'], returncode=1, stderr=stderr)

@@ -1,5 +1,6 @@
 import copy
 import datetime
+import operator
 import posixpath
 
 import textwrap
@@ -839,11 +840,13 @@ def auth_provider_table(providers):
     return tb
 
 
-def slave_table(slaves):
+def slave_table(slaves, field_names=()):
     """Returns a PrettyTable representation of the provided DC/OS slaves
 
     :param slaves: slaves to render.  dicts from /mesos/state-summary
     :type slaves: [dict]
+    :param field_names: Extra fields to add to the table
+    :type slaves: [str]
     :rtype: PrettyTable
     """
 
@@ -853,8 +856,44 @@ def slave_table(slaves):
         ('ID', lambda s: s['id'])
     ])
 
-    tb = table(fields, slaves, sortby="HOSTNAME")
+    for field_name in field_names:
+        if field_name.upper() in fields:
+            continue
+        if ':' in field_name:
+            heading, field_name = field_name.split(':', 1)
+        else:
+            heading = field_name
+        fields[heading.upper()] = _dotted_itemgetter(field_name.lower())
+
+    sortby = list(fields.keys())[0]
+    tb = table(fields, slaves, sortby=sortby)
     return tb
+
+
+def _dotted_itemgetter(field_name):
+    """Returns a func that gets the value in a nested dict where the
+    `field_name` is a dotted path to the key.
+
+    Example:
+
+      >>> from dcoscli.tables import _dotted_itemgetter
+      >>> d1 = {'a': {'b': {'c': 21}}}
+      >>> d2 = {'a': {'b': {'c': 22}}}
+      >>> func = _dotted_itemgetter('a.b.c')
+      >>> func(d1)
+      21
+      >>> func(d2)
+      22
+
+    :param field_name: dotted path to key in nested dict
+    :type field_name: str
+    :rtype: callable
+    """
+
+    if '.' not in field_name:
+        return operator.itemgetter(field_name)
+    head, tail = field_name.split('.', 1)
+    return lambda d: _dotted_itemgetter(tail)(d[head])
 
 
 def _format_unix_timestamp(ts):
@@ -976,7 +1015,10 @@ def truncate_table(fields, objs, limits, **kwargs):
         :type function: function
         :rtype: PrettyTable
         """
-        result = str(function(obj))
+        try:
+            result = str(function(obj))
+        except KeyError:
+            result = 'N/A'
         if (limits is not None and limits.get(key) is not None):
             result = textwrap.\
                 shorten(result, width=limits.get(key), placeholder='...')
