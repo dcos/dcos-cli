@@ -14,7 +14,6 @@ from dcoscli import metrics
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
 
-
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
 
@@ -183,8 +182,8 @@ def _task(task, all_, completed, json_):
     """
 
     tasks = sorted(mesos.get_master().tasks(
-                   fltr=task, completed=completed, all_=all_),
-                   key=lambda t: t['name'])
+        fltr=task, completed=completed, all_=all_),
+        key=lambda t: t['name'])
 
     if json_:
         emitter.publish([t.dict() for t in tasks])
@@ -579,7 +578,12 @@ def _metrics(summary, task_id, json_):
     """
 
     master = mesos.get_master()
-    slave_id = master.task(task_id)['slave_id']
+    task = master.task(task_id)
+    if 'slave_id' not in task:
+        raise DCOSException(
+            'Error finding agent associated with task: {}'.format(task_id))
+
+    slave_id = task['slave_id']
     container_id = master.get_container_id(task_id)
 
     endpoint = '/system/v1/agent/{}/metrics/v0/containers/{}'.format(
