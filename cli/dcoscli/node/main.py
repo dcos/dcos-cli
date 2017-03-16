@@ -115,7 +115,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['node'],
-            arg_keys=['--json'],
+            arg_keys=['--json', '--masters'],
             function=_list)
     ]
 
@@ -458,7 +458,7 @@ def _info():
     return 0
 
 
-def _list(json_):
+def _list(json_, masters):
     """List DC/OS nodes
 
     :param json_: If true, output json.
@@ -469,6 +469,18 @@ def _list(json_):
     """
 
     client = mesos.DCOSClient()
+    if masters:
+        masters = mesos.MesosDNSClient().hosts('master.mesos.')
+        if json_:
+            emitter.publish(masters)
+        else:
+            table = tables.master_table(masters)
+            output = six.text_type(table)
+            if output:
+                emitter.publish(output)
+            else:
+                emitter.publish(errors.DefaultError('No masters found.'))
+        return
     slaves = client.get_state_summary()['slaves']
     if json_:
         emitter.publish(slaves)
