@@ -12,6 +12,25 @@ from dcos.errors import DCOSException
 logger = util.get_logger(__name__)
 
 
+def get_global_config():
+    """Returns the path to the deprecated global DCOS config file.
+
+    :returns: path to the DCOS config file
+    :rtype: str
+    """
+
+    return os.environ.get(constants.DCOS_CONFIG_ENV, get_default_config_path())
+
+
+def get_clusters_path():
+    """
+    :returns: path to the directory of cluster configs
+    :rtype: str
+    """
+
+    return os.path.join(get_config_dir_path(), constants.DCOS_CLUSTERS_SUBDIR)
+
+
 def get_config_path():
     """ Returns the path to the DCOS config file.
 
