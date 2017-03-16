@@ -13,7 +13,7 @@ from distutils.version import LooseVersion
 
 import requests
 
-from dcos import constants, util
+from dcos import config, constants, util
 from dcos.errors import DCOSException
 from dcos.subprocess import Subproc
 
@@ -358,10 +358,10 @@ def install(pkg):
 
 
 def _subcommand_dir():
-    """ Returns ~/.dcos/subcommands """
-    return os.path.expanduser(os.path.join("~",
-                                           constants.DCOS_DIR,
-                                           constants.DCOS_SUBCOMMAND_SUBDIR))
+    """ Returns subcommand dir. defaults to ~/.dcos/subcommands """
+
+    return os.path.join(config.get_config_dir_path(),
+                        constants.DCOS_SUBCOMMAND_SUBDIR)
 
 
 def _package_dir(name):

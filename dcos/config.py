@@ -22,6 +22,17 @@ def get_config_path():
     return os.environ.get(constants.DCOS_CONFIG_ENV, get_default_config_path())
 
 
+def get_config_dir_path():
+    """
+    :returns: path to the DC/OS data directory
+    :rtype: str
+    """
+
+    config_dir = os.environ.get(constants.DCOS_DIR_ENV) or \
+        os.path.join("~", constants.DCOS_DIR)
+    return os.path.expanduser(config_dir)
+
+
 def get_default_config_path():
     """Returns the default path to the DCOS config file.
 
@@ -29,10 +40,7 @@ def get_default_config_path():
     :rtype: str
     """
 
-    return os.path.expanduser(
-        os.path.join("~",
-                     constants.DCOS_DIR,
-                     'dcos.toml'))
+    return os.path.join(get_config_dir_path(), 'dcos.toml')
 
 
 def get_config(mutable=False):

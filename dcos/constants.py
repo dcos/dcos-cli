@@ -1,5 +1,8 @@
 DCOS_DIR = ".dcos"
-"""DC/OS data directory.  Can store subcommands and the config file."""
+"""DC/OS data directory. Can store subcommands and the config file."""
+
+DCOS_DIR_ENV = 'DCOS_DIR'
+"""Name of the environment variable pointing to the DC/OS data directory"""
 
 DCOS_SUBCOMMAND_ENV_SUBDIR = 'env'
 """In a package's directory, this is the cli contents subdirectory."""
