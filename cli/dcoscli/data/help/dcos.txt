@@ -25,10 +25,13 @@ Options:
 Environment Variables:
     DCOS_CONFIG
         Set the path to the DC/OS configuration file. By default, this variable
-        is set to ~/.dcos/dcos.toml.
+        is set to $DCOS_DIR/dcos.toml.
     DCOS_DEBUG
         Indicates whether to print additional debug messages to stdout. By
         default this is set to false.
+    DCOS_DIR
+        Set the data directory for DC/OS configuration. By default, this
+        variable is set to ~/.dcos
     DCOS_LOG_LEVEL
         Prints log messages to stderr at or above the level indicated. This is
         equivalent to the --log-level command-line option.
