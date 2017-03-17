@@ -113,14 +113,13 @@ def _is_executable(path):
         not util.is_windows_platform() or path.endswith('.exe'))
 
 
-def distributions():
-    """List all of the installed subcommand packages
-
-    :returns: a list of packages
-    :rtype: list of str
+def _find_distributions(subcommand_dir):
     """
-
-    subcommand_dir = _subcommand_dir()
+    :param subcommand_dir: directory to find packaged in
+    :type subcommand_dir: path
+    :returns: list of all installed subcommands in given directory
+    :rtype: [str]
+    """
 
     if os.path.isdir(subcommand_dir):
         return [
@@ -133,6 +132,18 @@ def distributions():
         ]
     else:
         return []
+
+
+def distributions():
+    """Set of all of the installed subcommand packages
+
+    :returns: a set of packages
+    :rtype: Set[str]
+    """
+
+    cluster_packages = _find_distributions(_cluster_subcommand_dir())
+    global_packages = _find_distributions(_global_subcommand_dir())
+    return set(cluster_packages + global_packages)
 
 
 # must also add subcommand name to dcoscli.subcommand._default_modules
@@ -210,15 +221,15 @@ def noun(executable_path):
     return noun
 
 
-def _write_package_json(pkg):
+def _write_package_json(pkg, pkg_dir):
     """ Write package.json locally.
 
     :param pkg: the package being installed
     :type pkg: PackageVersion
+    :param pkg_dir: directory to install package
+    :type pkg_dir: str
     :rtype: None
     """
-
-    pkg_dir = _package_dir(pkg.name())
 
     package_path = os.path.join(pkg_dir, 'package.json')
 
@@ -305,15 +316,17 @@ def _get_cli_binary_info(cli_resources):
             cli_resources))
 
 
-def _install_cli(pkg):
+def _install_cli(pkg, pkg_dir):
     """Install subcommand cli
 
     :param pkg: the package to install
     :type pkg: PackageVersion
+    :param pkg_dir: directory to install package
+    :type pkg_dir: str
     :rtype: None
     """
 
-    with util.remove_path_on_error(_package_dir(pkg.name())) as pkg_dir:
+    with util.remove_path_on_error(pkg_dir) as pkg_dir:
         env_dir = os.path.join(pkg_dir, constants.DCOS_SUBCOMMAND_ENV_SUBDIR)
 
         resources = pkg.resource_json()
@@ -349,30 +362,68 @@ def install(pkg):
     :rtype: None
     """
 
-    pkg_dir = _package_dir(pkg.name())
+    if config.uses_deprecated_config():
+        pkg_dir = _global_package_dir(pkg.name())
+    else:
+        pkg_dir = _cluster_package_dir(pkg.name())
+
     util.ensure_dir_exists(pkg_dir)
 
-    _write_package_json(pkg)
+    _write_package_json(pkg, pkg_dir)
 
-    _install_cli(pkg)
+    _install_cli(pkg, pkg_dir)
 
 
-def _subcommand_dir():
-    """ Returns subcommand dir. defaults to ~/.dcos/subcommands """
+def _global_subcommand_dir():
+    """ Returns global subcommand dir. defaults to ~/.dcos/subcommands """
 
     return os.path.join(config.get_config_dir_path(),
                         constants.DCOS_SUBCOMMAND_SUBDIR)
 
 
-def _package_dir(name):
-    """ Returns ~/.dcos/subcommands/<name>
+def _cluster_subcommand_dir():
+    """Returns cluster specific subcommand dir"""
+
+    return os.path.join(config.get_attached_cluster_path(),
+                        constants.DCOS_SUBCOMMAND_SUBDIR)
+
+
+def _cluster_package_dir(name):
+    """Returns path to package directory for attached cluster
 
     :param name: package name
     :type name: str
     :rtype: str
     """
-    return os.path.join(_subcommand_dir(),
-                        name)
+
+    return os.path.join(_cluster_subcommand_dir(), name)
+
+
+def _global_package_dir(name):
+    """Returns path to package directory in global config
+
+    :param name: package name
+    :type name: str
+    :rtype: str
+    """
+
+    return os.path.join(_global_subcommand_dir(), name)
+
+
+def _package_dir(name):
+    """ Returns cluster subcommand dir for name if exists, and if not
+    returns path to global subcommand dir.
+
+    :param name: package name
+    :type name: str
+    :rtype: str
+    """
+
+    cluster_subcommand = _cluster_package_dir(name)
+    if os.path.exists(cluster_subcommand):
+        return cluster_subcommand
+    else:
+        return _global_package_dir(name)
 
 
 def uninstall(package_name):
@@ -625,24 +676,6 @@ class InstalledSubcommand(object):
         """
 
         return _package_dir(self.name)
-
-    def package_revision(self):
-        """
-        :returns: this subcommand's version.
-        :rtype: str
-        """
-
-        version_path = os.path.join(self._dir(), 'version')
-        return util.read_file(version_path)
-
-    def package_source(self):
-        """
-        :returns: this subcommand's source.
-        :rtype: str
-        """
-
-        source_path = os.path.join(self._dir(), 'source')
-        return util.read_file(source_path)
 
     def package_json(self):
         """
