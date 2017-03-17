@@ -325,8 +325,7 @@ def test_task_metrics_agent_details():
     task_id = _get_task_id('test-app1')
     assert_lines(
         ['dcos', 'task', 'metrics', 'details', task_id],
-        5,
-        greater_than=True
+        2
     )
 
 
@@ -345,8 +344,7 @@ def test_task_metrics_agent_summary():
     task_id = _get_task_id('test-app1')
     assert_lines(
         ['dcos', 'task', 'metrics', 'summary', task_id],
-        5,
-        greater_than=True
+        2
     )
 
 
