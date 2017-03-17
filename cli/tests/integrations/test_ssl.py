@@ -12,7 +12,6 @@ def env():
     r = os.environ.copy()
     r.update({
         constants.PATH_ENV: os.environ[constants.PATH_ENV],
-        constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "dcos.toml"),
         'DCOS_SNAKEOIL_CRT_PATH': os.environ.get(
             "DCOS_SNAKEOIL_CRT_PATH", "/dcos-cli/adminrouter/snakeoil.crt")
     })
