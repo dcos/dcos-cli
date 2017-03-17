@@ -24,17 +24,16 @@ def main():
         return 1
 
 
-def _get_versions(dcos_url):
+def _get_versions():
     """Print DC/OS and DC/OS-CLI versions
 
-    :param dcos_url: url to DC/OS cluster
-    :type dcos_url: str
     :returns: Process status
     :rtype: int
     """
 
     dcos_info = {}
     try:
+        dcos_url = config.get_config_val("core.dcos_url")
         url = urllib.parse.urljoin(
             dcos_url, 'dcos-metadata/dcos-version.json')
         res = http.get(url, timeout=1)
@@ -74,7 +73,7 @@ def _main():
         cluster.create_cluster_config()
 
     if args['--version']:
-        return _get_versions(config.get_config_val("core.dcos_url"))
+        return _get_versions()
 
     command = args['<command>']
 

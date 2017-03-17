@@ -164,7 +164,10 @@ def _page(output, pager_command=None):
     if pager_command is None:
         pager_command = 'less -R'
 
-    paginate = config.get_config_val("core.pagination") or True
+    try:
+        paginate = config.get_config_val("core.pagination")
+    except:
+        paginate = True
     if exceeds_tty_height and paginate and \
             spawn.find_executable(pager_command.split(' ')[0]) is not None:
         pydoc.pipepager(output, cmd=pager_command)
