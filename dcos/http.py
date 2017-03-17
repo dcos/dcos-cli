@@ -4,7 +4,6 @@ from requests.auth import AuthBase
 from six.moves.urllib.parse import urlparse
 
 from dcos import config, util
-from dcos.auth import header_challenge_auth
 from dcos.errors import (DCOSAuthenticationException,
                          DCOSAuthorizationException, DCOSBadRequest,
                          DCOSException, DCOSHTTPException,
@@ -169,6 +168,11 @@ def request(method,
         return response
     elif response.status_code == 401:
         if prompt_login:
+            # I don't like having imports that aren't at the top level, but
+            # this is to resolve a circular import issue between dcos.http and
+            # dcos.auth
+            from dcos.auth import header_challenge_auth
+
             header_challenge_auth(dcos_url.geturl())
             # if header_challenge_auth succeeded, then we auth-ed correctly and
             # thus can safely recursively call ourselves and not have to worry
