@@ -99,8 +99,6 @@ make sure you set owner only permissions on these files:
 
 :code:`chmod 600 cli/tests/data/dcos.toml`
 
-:code:`chmod 600 cli/tests/data/config/parse_error.toml`
-
 The :code:`node` integration tests use :code:`CLI_TEST_SSH_KEY_PATH` for ssh
 credentials to your cluster.
 
@@ -116,10 +114,6 @@ Running
 
 Tox will run unit and integration tests in Python 3.5 using a temporarily
 created virtualenv.
-
-You can set :code:`DCOS_CONFIG` to a config file that points to a DC/OS
-cluster you want to use for integration tests. This defaults to
-:code:`~/.dcos/dcos.toml`
 
 Note that in order for all the integration tests to pass, your DC/OS cluster
 must have the experimental packaging features enabled. In order to enable
