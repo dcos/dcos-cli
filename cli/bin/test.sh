@@ -11,6 +11,5 @@ fi
 echo "Virtualenv activated."
 
 chmod 600 $BASEDIR/tests/data/dcos.toml
-chmod 600 $BASEDIR/tests/data/config/parse_error.toml
 
 tox
