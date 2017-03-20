@@ -13,10 +13,7 @@ from .helpers.common import (assert_command, config_set, config_unset,
 @pytest.fixture
 def env():
     r = os.environ.copy()
-    r.update({
-        constants.PATH_ENV: os.environ[constants.PATH_ENV],
-        constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "dcos.toml"),
-    })
+    r.update({constants.PATH_ENV: os.environ[constants.PATH_ENV]})
 
     return r
 
@@ -148,15 +145,6 @@ def test_set_nonexistent_subcommand(env):
         stderr=b"'foo' is not a dcos command.\n",
         returncode=1,
         env=env)
-
-
-def test_set_when_extra_section(env):
-    path = os.path.join('tests', 'data', 'config', 'invalid_section.toml')
-    env['DCOS_CONFIG'] = path
-    os.chmod(path, 0o600)
-
-    config_set('core.dcos_url', 'http://dcos.snakeoil.mesosphere.com', env)
-    config_unset('core.dcos_url', env)
 
 
 def test_unset_property(env):
@@ -298,19 +286,6 @@ def test_timeout(env):
             assert returncode == 1
             assert stdout == b''
             assert "(connect timeout=1)".encode('utf-8') in stderr
-
-
-def test_parse_error(env):
-    path = os.path.join('tests', 'data', 'config', 'parse_error.toml')
-    os.chmod(path, 0o600)
-    env['DCOS_CONFIG'] = path
-
-    assert_command(['dcos', 'config', 'show'],
-                   returncode=1,
-                   stderr=six.b(("Error parsing config file at [{}]: Found "
-                                 "invalid character in key name: ']'. "
-                                 "Try quoting the key name.\n").format(path)),
-                   env=env)
 
 
 def _fail_url_validation(command, key, value, env):
