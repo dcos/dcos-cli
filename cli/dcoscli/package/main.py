@@ -1,6 +1,5 @@
 import json
 import os
-import sys
 
 import docopt
 import pkg_resources
@@ -11,9 +10,10 @@ from dcos.errors import DCOSException
 from dcos.package import get_package_manager
 from dcoscli import tables
 from dcoscli.subcommand import default_command_info, default_doc
-from dcoscli.util import decorate_docopt_usage
+from dcoscli.util import confirm, decorate_docopt_usage
 
 logger = util.get_logger(__name__)
+
 emitter = emitting.FlatEmitter()
 
 
@@ -313,32 +313,6 @@ def _describe(package_name,
         emitter.publish(pkg_json)
 
     return 0
-
-
-def confirm(prompt, yes):
-    """
-    :param prompt: message to display to the terminal
-    :type prompt: str
-    :param yes: whether to assume that the user responded with yes
-    :type yes: bool
-    :returns: True if the user responded with yes; False otherwise
-    :rtype: bool
-    """
-
-    if yes:
-        return True
-    else:
-        while True:
-            sys.stdout.write('{} [yes/no] '.format(prompt))
-            sys.stdout.flush()
-            response = sys.stdin.readline().strip().lower()
-            if response == 'yes' or response == 'y':
-                return True
-            elif response == 'no' or response == 'n':
-                return False
-            else:
-                emitter.publish(
-                    "'{}' is not a valid response.".format(response))
 
 
 def _install(package_name, package_version, options_path, app_id, cli, app,
