@@ -226,6 +226,7 @@ def _validate():
 
     toml_config = config.get_config(True)
 
+    emitter.publish('Validating %s ...' % config.get_config_path())
     errs = util.validate_json(toml_config._dictionary,
                               config.generate_root_schema(toml_config))
     if len(errs) != 0:
