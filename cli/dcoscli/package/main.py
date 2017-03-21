@@ -241,13 +241,6 @@ def _remove_repo(repo_names):
     :rtype: int
     """
 
-    try:
-        # Try treating repo_name as a string
-        repo_names = repo_names.split(',')
-    except AttributeError:
-        # Not a string, let's hope it's a list, tuple, etc.
-        pass
-
     package_manager = get_package_manager()
     for repo_name in repo_names:
         package_manager.remove_repo(repo_name)
