@@ -13,6 +13,12 @@
             "title": "DC/OS ACS token",
             "type": "string"
         },
+        "prompt_login": {
+            "description": "Whether to prompt the user to log in when token expired; otherwise automatically initiate login",
+            "title": "Prompt to log in",
+            "type": "boolean",
+            "default": false
+        },
         "mesos_master_url": {
             "description": "Mesos master URL. Must be set in format: \"http://host:port\"",
             "format": "uri",

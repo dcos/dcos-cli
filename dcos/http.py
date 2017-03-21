@@ -149,6 +149,7 @@ def request(method,
 
     toml_config = config.get_config()
     auth_token = config.get_config_val("core.dcos_acs_token", toml_config)
+    prompt_login = config.get_config_val("core.prompt_login", toml_config)
     dcos_url = urlparse(config.get_config_val("core.dcos_url", toml_config))
     parsed_url = urlparse(url)
 
@@ -166,12 +167,26 @@ def request(method,
     if is_success(response.status_code):
         return response
     elif response.status_code == 401:
-        if auth_token is not None:
-            msg = ("Your core.dcos_acs_token is invalid. "
-                   "Please run: `dcos auth login`")
-            raise DCOSAuthenticationException(msg)
+        if prompt_login:
+            # I don't like having imports that aren't at the top level, but
+            # this is to resolve a circular import issue between dcos.http and
+            # dcos.auth
+            from dcos.auth import header_challenge_auth
+
+            header_challenge_auth(dcos_url.geturl())
+            # if header_challenge_auth succeeded, then we auth-ed correctly and
+            # thus can safely recursively call ourselves and not have to worry
+            # about an infinite loop
+            return request(method=method, url=url,
+                           is_success=is_success, timeout=timeout,
+                           verify=verify, **kwargs)
         else:
-            raise DCOSAuthenticationException(response)
+            if auth_token is not None:
+                msg = ("Your core.dcos_acs_token is invalid. "
+                       "Please run: `dcos auth login`")
+                raise DCOSAuthenticationException(msg)
+            else:
+                raise DCOSAuthenticationException(response)
     elif response.status_code == 422:
         raise DCOSUnprocessableException(response)
     elif response.status_code == 403:
