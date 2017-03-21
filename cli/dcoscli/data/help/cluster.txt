@@ -6,6 +6,7 @@ Usage:
     dcos cluster --info
     dcos cluster --version
     dcos cluster setup <dcos_url>
+        [--insecure | --no-check | --ca-certs=<ca-certs>]
         [--provider=<provider_id>] [--username=<username>]
         [--password=<password> | --password-file=<password_file>
         | --password-env=<password_env> | --private-key=<key_path>]
@@ -15,10 +16,16 @@ Commands:
         setup the CLI to talk to your DC/OS cluster.
 
 Options:
+    --ca-certs=<ca-certs>
+        Specify the path to a list of trusted CAs to verify requests against.
     -h, --help
         Print usage.
     --info
         Print a short description of this subcommand.
+    --insecure
+        Allow requests to bypass SSL certificate verification (insecure).
+    --no-check
+        Do not check CA certficate downloaded from cluster (insecure).
     --password=<password>
         Specify password on the command line (insecure).
     --password-env=<password_env>

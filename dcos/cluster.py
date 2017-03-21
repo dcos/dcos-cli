@@ -1,9 +1,13 @@
 import contextlib
 import os
 import shutil
+import ssl
+
+from urllib.request import urlopen
 
 from dcos import config, constants, http, util
 from dcos.errors import DCOSException
+
 
 logger = util.get_logger(__name__)
 
@@ -74,11 +78,17 @@ def setup_directory():
         shutil.rmtree(temp_path, ignore_errors=True)
 
 
-def setup_cluster_config(dcos_url):
+def setup_cluster_config(dcos_url, temp_path, stored_cert):
     """
-    Create a cluster directory for cluster specified in "setup"
+    Create a cluster directory for cluster specified in "temp_path"
     directory.
 
+    :param dcos_url: url to DC/OS cluster
+    :type dcos_url: str
+    :param temp_path: path to temporary config dir
+    :type temp_path: str
+    :param stored_cert: whether we stored cert bundle in 'setup' dir
+    :type stored_cert: bool
     :returns: path to cluster specific directory
     :rtype: str
     """
@@ -104,8 +114,14 @@ def setup_cluster_config(dcos_url):
 
     util.ensure_dir_exists(cluster_path)
 
-    # move config file to new location
-    util.sh_move(config.get_config_path(), cluster_path)
+    # move contents of setup dir to new location
+    for (path, dirnames, filenames) in os.walk(temp_path):
+        for f in filenames:
+            util.sh_copy(os.path.join(path, f), cluster_path)
+
+    if stored_cert:
+        config.set_val("core.ssl_verify", os.path.join(
+            cluster_path, "dcos_ca.crt"))
 
     return cluster_path
 
@@ -134,3 +150,27 @@ def set_attached(cluster_path):
     else:
         util.ensure_file_exists(os.path.join(
             cluster_path, constants.DCOS_CLUSTER_ATTACHED_FILE))
+
+
+def get_cluster_cert(dcos_url):
+    """Get CA bundle from specified cluster.
+
+    This is an insecure request.
+
+    :param dcos_url: url to DC/OS cluster
+    :type dcos_url: str
+    :returns: cert
+    :rtype: str
+    """
+
+    cert_bundle_url = dcos_url.rstrip() + "/ca/dcos-ca.crt"
+
+    unverified = ssl.create_default_context()
+    unverified.check_hostname = False
+    unverified.verify_mode = ssl.CERT_NONE
+    try:
+        with urlopen(cert_bundle_url, context=unverified) as f:
+            return f.read().decode('utf-8')
+    except Exception as e:
+        msg = "Error downloading CA cert from cluster"
+        raise DCOSException("{}:\n{}".format(msg, e))
