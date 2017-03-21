@@ -520,14 +520,12 @@ def _log(follow, lines, leader, slave, component, filters):
 
     lines = util.parse_int(lines)
 
-    # if journald logging is disabled. Read from files API and exit.
-    # https://github.com/dcos/dcos/blob/master/gen/calc.py#L151
     if not log.has_journald_capability():
         if component or filters:
             raise DCOSException('--component or --filter is not '
                                 'supported by files API')
 
-        # fail back to mesos files API.
+        # fall back to mesos files API.
         mesos_files = _mesos_files(leader, slave)
         log.log_files(mesos_files, follow, lines)
         return 0

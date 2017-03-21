@@ -262,7 +262,7 @@ def logging_strategy():
 
     try:
         strategy = response['uiConfiguration']['plugins']['mesos']['logging-strategy']  # noqa: ignore=F403,E501
-    except KeyError:
+    except Exception:
         pass
 
     return strategy
