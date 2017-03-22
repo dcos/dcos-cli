@@ -216,7 +216,6 @@ def _kill(job_id, run_id, all=False):
     :returns: process return code
     :rtype: int
     """
-    response = None
     deadpool = []
     if run_id is None and all is True:
         deadpool = _get_ids(_get_runs(job_id))
@@ -234,9 +233,8 @@ def _kill(job_id, run_id, all=False):
             raise DCOSException("Unable stop run ID '{}' for job ID '{}'"
                                 .format(dead, job_id))
         else:
-            if response.status_code == 200:
-                emitter.publish("Run '{}' for job '{}' killed."
-                                .format(dead, job_id))
+            emitter.publish("Run '{}' for job '{}' killed."
+                            .format(dead, job_id))
     return 0
 
 
