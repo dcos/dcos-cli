@@ -226,7 +226,7 @@ def _kill(job_id, run_id, all=False):
     client = metronome.create_client()
     for dead in deadpool:
         try:
-            client.kill_run(job_id, run_id)
+            client.kill_run(job_id, dead)
         except DCOSHTTPException as e:
             if e.response.status_code == 404:
                 raise DCOSException("Job ID or Run ID does NOT exist.")
