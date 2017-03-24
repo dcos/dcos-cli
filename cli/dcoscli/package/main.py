@@ -236,7 +236,7 @@ def _remove_repo(repo_names):
     """Remove package repo and update repo with new repo
 
     :param repo_names: names of repos
-    :type repo_name: str or [str]
+    :type repo_name: [str]
     :returns: Process status
     :rtype: int
     """
