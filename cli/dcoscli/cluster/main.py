@@ -12,6 +12,7 @@ from dcos import cluster, cmds, config, emitting, http, util
 from dcos.errors import DCOSAuthenticationException, DCOSException
 from dcoscli.auth.main import login
 from dcoscli.subcommand import default_command_info, default_doc
+from dcoscli.tables import clusters_table
 from dcoscli.util import confirm, decorate_docopt_usage
 
 
@@ -55,6 +56,11 @@ def _cmds():
             function=_setup),
 
         cmds.Command(
+            hierarchy=['cluster', 'list'],
+            arg_keys=['--json'],
+            function=_list),
+
+        cmds.Command(
             hierarchy=['cluster'],
             arg_keys=['--info'],
             function=_info),
@@ -71,6 +77,25 @@ def _info(info):
 
     emitter.publish(default_command_info("cluster"))
     return 0
+
+
+def _list(json_):
+    """
+    List configured clusters.
+
+    :param json_: output json if True
+    :type json_: bool
+    :rtype: None
+    """
+
+    clusters = cluster.get_clusters()
+
+    if json_:
+        emitter.publish(clusters)
+    else:
+        emitter.publish(clusters_table(clusters))
+
+    return
 
 
 def _setup(dcos_url,

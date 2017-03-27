@@ -5,6 +5,7 @@ Usage:
     dcos cluster --help
     dcos cluster --info
     dcos cluster --version
+    dcos cluster list [--json]
     dcos cluster setup <dcos_url>
         [--insecure | --no-check | --ca-certs=<ca-certs>]
         [--provider=<provider_id>] [--username=<username>]
@@ -13,7 +14,9 @@ Usage:
 
 Commands:
     setup
-        setup the CLI to talk to your DC/OS cluster.
+        Setup the CLI to talk to your DC/OS cluster.
+    list
+        List CLI configured clusters.
 
 Options:
     --ca-certs=<ca-certs>

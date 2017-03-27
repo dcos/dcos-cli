@@ -123,6 +123,15 @@ def setup_cluster_config(dcos_url, temp_path, stored_cert):
         config.set_val("core.ssl_verify", os.path.join(
             cluster_path, "dcos_ca.crt"))
 
+    cluster_name = cluster_id
+    try:
+        url = dcos_url.rstrip('/') + '/mesos/state-summary'
+        cluster_name = http.get(url, timeout=1).json().get("cluster")
+    except DCOSException:
+        pass
+
+    config.set_val("cluster.name", cluster_name)
+
     return cluster_path
 
 
@@ -174,3 +183,57 @@ def get_cluster_cert(dcos_url):
     except Exception as e:
         msg = "Error downloading CA cert from cluster"
         raise DCOSException("{}:\n{}".format(msg, e))
+
+
+def get_clusters():
+    """
+    :returns: list of configured Clusters
+    :rtype: [{}]
+    """
+
+    for (_, dirnames, _) in os.walk(config.get_clusters_path()):
+        return [Cluster(cluster_id).dict() for cluster_id in dirnames]
+
+
+class Cluster():
+    """Interface for a configured cluster"""
+
+    def __init__(self, cluster_id):
+        self.cluster_id = cluster_id
+        self.cluster_path = os.path.join(
+            config.get_clusters_path(), cluster_id)
+
+    def get_cluster_id(self):
+        return self.cluster_id
+
+    def get_config(self):
+        config_file = os.path.join(self.cluster_path, "dcos.toml")
+        return config.load_from_path(config_file)
+
+    def get_name(self):
+        return config.get_config_val(
+            "cluster.name", self.get_config()) or self.cluster_id
+
+    def get_url(self):
+        return config.get_config_val("core.dcos_url", self.get_config())
+
+    def get_dcos_version(self):
+        dcos_url = self.get_url()
+        if dcos_url:
+            url = os.path.join(
+                self.get_url(), "dcos-metadata/dcos-version.json")
+            try:
+                resp = http.get(url, timeout=1, toml_config=self.get_config())
+                return resp.json().get("version", "N/A")
+            except DCOSException:
+                pass
+
+        return "N/A"
+
+    def dict(self):
+        return {
+            "cluster_id": self.get_cluster_id(),
+            "name": self.get_name(),
+            "url": self.get_url(),
+            "version": self.get_dcos_version()
+        }

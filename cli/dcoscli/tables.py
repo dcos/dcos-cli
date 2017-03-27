@@ -840,6 +840,27 @@ def auth_provider_table(providers):
     return tb
 
 
+def clusters_table(clusters):
+    """Returns a PrettyTable representation of the configured clusters
+
+    :param clusters: configured clusters
+    :type clusters: [Cluster]
+    :rtype: PrettyTable
+
+    """
+
+    fields = OrderedDict([
+        ('CLUSTER ID', lambda c: c['cluster_id']),
+        ('NAME', lambda c: c['name']),
+        ('VERSION', lambda c: c['version']),
+        ('URL', lambda c: c['url'] or "N/A")
+    ])
+
+    tb = table(fields, clusters, sortby="CLUSTER ID")
+
+    return tb
+
+
 def slave_table(slaves, field_names=()):
     """Returns a PrettyTable representation of the provided DC/OS slaves
 
