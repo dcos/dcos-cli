@@ -4,7 +4,7 @@ from mock import MagicMock, patch
 from dcos import mesos
 from dcos.errors import DCOSException
 from dcoscli.log import log_files
-from dcoscli.task.main import _dcos_log, main
+from dcoscli.task.main import _dcos_log, _metrics, main
 
 from .common import assert_mock
 
@@ -142,3 +142,52 @@ def test_dcos_log_stream(mocked_get_config_val, mocked_http_get,
         'http://127.0.0.1/system/v1/agent/slave-123/logs/v1/'
         'stream/framework/framework-123/executor/id-123/container/'
         'child-123?skip_prev=10&filter=STREAM:STDERR')
+
+
+@patch('dcos.http.get')
+@patch('dcos.mesos.get_master')
+@patch('dcos.config.get_config_val')
+def test_dcos_task_metrics_agent_details(mocked_get_config_val,
+                                         mocked_get_master,
+                                         mocked_http_get):
+    mocked_get_config_val.return_value = 'http://127.0.0.1'
+
+    mock_http_response = MagicMock()
+    mock_http_response.status_code = 200
+    mocked_http_get.return_value = mock_http_response
+
+    mock_master = MagicMock()
+    mock_master.task = lambda _: {'slave_id': 'slave_id'}
+    mock_master.get_container_id = lambda _: 'container_id'
+    mocked_get_master.return_value = mock_master
+
+    _metrics(True, 'task_id', False)
+
+    # Metrics should query both endpoints
+    mocked_http_get.assert_any_call('http://127.0.0.1/system/v1/agent/'
+                                    'slave_id/metrics/v0/containers/'
+                                    'container_id/app')
+    mocked_http_get.assert_any_call('http://127.0.0.1/system/v1/agent/'
+                                    'slave_id/metrics/v0/containers/'
+                                    'container_id')
+
+
+@patch('dcos.http.get')
+@patch('dcos.mesos.get_master')
+@patch('dcos.config.get_config_val')
+def test_dcos_task_metrics_agent_missing_slave(mocked_get_config_val,
+                                               mocked_get_master,
+                                               mocked_http_get):
+    mocked_get_config_val.return_value = 'http://127.0.0.1'
+
+    mock_http_response = MagicMock()
+    mock_http_response.status_code = 200
+    mocked_http_get.return_value = mock_http_response
+
+    mock_master = MagicMock()
+    mock_master.task = lambda _: {}
+    mocked_get_master.return_value = mock_master
+
+    # Should a task not have a slave ID, expect an error
+    with pytest.raises(DCOSException):
+        _metrics(True, 'task_id', False)
