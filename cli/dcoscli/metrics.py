@@ -63,6 +63,25 @@ def _get_datapoint(datapoints, name, tags=None):
                 return datapoint
 
 
+def _get_datapoint_value(datapoints, name, tags=None):
+    """Safely return only the value from a datapoint, defaulting to 0.
+
+    :param datapoints: a list of datapoints
+    :type datapoints: [dict]
+    :param name: the name of the required datapoint
+    :type name: str
+    :param tags: required tags by key and value
+    :type tags: dict
+    :return: a matching datapoint
+    :rtype: float
+    """
+    datapoint = _get_datapoint(datapoints, name, tags)
+    if datapoint is not None:
+        return datapoint.get('value', 0.0)
+
+    return 0.0
+
+
 def _node_summary_json(datapoints):
     """Filters datapoints down to CPU, memory and root disk space fields.
 
@@ -88,18 +107,18 @@ def _node_summary_data(datapoints):
     :rtype: dict
     """
 
-    cpu_used = _get_datapoint(datapoints, 'load.1min')['value']
-    cpu_used_pc = _get_datapoint(datapoints, 'cpu.total')['value']
+    cpu_used = _get_datapoint_value(datapoints, 'load.1min')
+    cpu_used_pc = _get_datapoint_value(datapoints, 'cpu.total')
 
-    mem_total = _get_datapoint(datapoints, 'memory.total')['value']
-    mem_free = _get_datapoint(datapoints, 'memory.free')['value']
+    mem_total = _get_datapoint_value(datapoints, 'memory.total')
+    mem_free = _get_datapoint_value(datapoints, 'memory.free')
     mem_used = mem_total - mem_free
     mem_used_pc = _percentage(mem_used, mem_total)
 
-    disk_total = _get_datapoint(
-        datapoints, 'filesystem.capacity.total', {'path': '/'})['value']
-    disk_free = _get_datapoint(
-        datapoints, 'filesystem.capacity.used', {'path': '/'})['value']
+    disk_total = _get_datapoint_value(
+        datapoints, 'filesystem.capacity.total', {'path': '/'})
+    disk_free = _get_datapoint_value(
+        datapoints, 'filesystem.capacity.used', {'path': '/'})
     disk_used = disk_total - disk_free
     disk_used_pc = _percentage(disk_used, disk_total)
 
@@ -135,20 +154,19 @@ def _task_summary_data(datapoints):
     :rtype: dict
     """
 
-    cpu_user = _get_datapoint(datapoints, 'cpus.user.time')['value']
-    cpu_system = _get_datapoint(datapoints, 'cpus.system.time')['value']
-    cpu_throttled = _get_datapoint(datapoints, 'cpus.throttled.time')[
-        'value']
+    cpu_user = _get_datapoint_value(datapoints, 'cpus.user.time')
+    cpu_system = _get_datapoint_value(datapoints, 'cpus.system.time')
+    cpu_throttled = _get_datapoint_value(datapoints, 'cpus.throttled.time')
     cpu_used = cpu_user + cpu_system
     cpu_total = cpu_used + cpu_throttled
     cpu_used_pc = _percentage(cpu_used, cpu_total)
 
-    mem_total = _get_datapoint(datapoints, 'mem.limit')['value']
-    mem_used = _get_datapoint(datapoints, 'mem.total')['value']
+    mem_total = _get_datapoint_value(datapoints, 'mem.limit')
+    mem_used = _get_datapoint_value(datapoints, 'mem.total')
     mem_used_pc = _percentage(mem_used, mem_total)
 
-    disk_total = _get_datapoint(datapoints, 'disk.used')['value']
-    disk_used = _get_datapoint(datapoints, 'disk.limit')['value']
+    disk_total = _get_datapoint_value(datapoints, 'disk.used')
+    disk_used = _get_datapoint_value(datapoints, 'disk.limit')
     disk_used_pc = _percentage(disk_used, disk_total)
 
     return {
