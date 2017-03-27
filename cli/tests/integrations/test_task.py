@@ -11,8 +11,7 @@ import pytest
 import dcos.util as util
 from dcos.util import create_schema
 
-from .helpers.common import (assert_command, assert_lines, exec_command,
-                             fetch_valid_json)
+from .helpers.common import (assert_command, assert_lines, exec_command)
 from .helpers.marathon import (add_app, app, pod, remove_app,
                                watch_all_deployments)
 from ..fixtures.task import task_fixture
@@ -319,45 +318,6 @@ def test_ls_completed():
     assert returncode == 0
     assert re.match(ls_line, lines[1])
     assert stderr == b''
-
-
-def test_task_metrics_agent_details():
-    task_id = _get_task_id('test-app1')
-    assert_lines(
-        ['dcos', 'task', 'metrics', 'details', task_id],
-        2
-    )
-
-
-def test_task_metrics_agent_details_json():
-    task_id = _get_task_id('test-app1')
-    task_json = fetch_valid_json(
-        ['dcos', 'task', 'metrics', 'details', task_id, '--json']
-    )
-
-    names = [d['name'] for d in task_json]
-    assert 'cpus.limit' in names
-    assert 'mem.total' in names
-
-
-def test_task_metrics_agent_summary():
-    task_id = _get_task_id('test-app1')
-    assert_lines(
-        ['dcos', 'task', 'metrics', 'summary', task_id],
-        2
-    )
-
-
-def test_task_metrics_agent_summary_json():
-    task_id = _get_task_id('test-app1')
-    task_json = fetch_valid_json(
-        ['dcos', 'task', 'metrics', 'summary', task_id, '--json']
-    )
-
-    names = [d['name'] for d in task_json]
-    assert 'cpus.user.time' in names
-    assert 'mem.total' in names
-    assert 'disk.used' in names
 
 
 @pytest.mark.skipif('DCOS_DEBUGGING_ENABLED' not in os.environ,
