@@ -11,9 +11,8 @@ from dcos import (cmds, config, emitting, errors,
 from dcos.cosmos import get_cosmos_url
 from dcos.errors import DCOSException, DefaultError
 from dcoscli import log, metrics, tables
-from dcoscli.package.main import confirm
 from dcoscli.subcommand import default_command_info, default_doc
-from dcoscli.util import decorate_docopt_usage
+from dcoscli.util import confirm, decorate_docopt_usage
 
 
 logger = util.get_logger(__name__)
@@ -379,9 +378,9 @@ def _bundle_download(bundle, location):
             bundle_location = location
 
     if bundle_size > BUNDLE_WARN_SIZE:
-        if not confirm('Diagnostics bundle size is {}, are you sure you want '
-                       'to download it?'.format(sizeof_fmt(bundle_size)),
-                       False):
+        msg = ('Diagnostics bundle size is {}, '
+               'are you sure you want to download it?')
+        if not confirm(msg.format(sizeof_fmt(bundle_size)), False):
             return 0
 
     r = _do_request(url, 'GET', stream=True)

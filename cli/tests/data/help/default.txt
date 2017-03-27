@@ -6,6 +6,7 @@ for easy management of a DC/OS installation.
 Available DC/OS commands:
 
 	auth           	Authenticate to DC/OS cluster
+	cluster        	Manage your DC/OS clusters
 	config         	Manage the DC/OS configuration file
 	experimental   	Manage commands that are under development
 	help           	Display help information about DC/OS

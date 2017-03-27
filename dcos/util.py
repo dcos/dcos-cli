@@ -117,6 +117,31 @@ def sh_copy(src, dst):
         raise DCOSException(e)
 
 
+def sh_move(src, dst):
+    """Move file src to the file or directory dst.
+
+    :param src: source file
+    :type src: str
+    :param dst: destination file or directory
+    :type dst: str
+    :rtype: None
+    """
+    try:
+        shutil.move(src, dst)
+    except EnvironmentError as e:
+        logger.exception('Unable to move [%s] to [%s]', src, dst)
+        if e.strerror:
+            if e.filename:
+                raise DCOSException("{}: {}".format(e.strerror, e.filename))
+            else:
+                raise DCOSException(e.strerror)
+        else:
+            raise DCOSException(e)
+    except Exception as e:
+        logger.exception('Unknown error while moving [%s] to [%s]', src, dst)
+        raise DCOSException(e)
+
+
 def ensure_dir_exists(directory):
     """If `directory` does not exist, create it.
 

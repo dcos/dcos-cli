@@ -70,7 +70,7 @@ def _main():
     util.configure_process_from_environ()
 
     if config.uses_deprecated_config():
-        cluster.create_cluster_config()
+        cluster.move_to_cluster_config()
 
     if args['--version']:
         return _get_versions()
