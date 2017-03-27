@@ -70,21 +70,19 @@ def get_clusters_path():
     return os.path.join(get_config_dir_path(), constants.DCOS_CLUSTERS_SUBDIR)
 
 
-def get_config_path(cluster_path=None):
+def get_config_path():
     """Returns the path to the DCOS config file of the attached cluster.
     If still using "global" config return that toml instead
 
-    :param cluster_path: path to the attached cluster
-    :type cluser_path: str
     :returns: path to the DCOS config file
     :rtype: str
     """
 
     if uses_deprecated_config():
         return get_global_config_path()
-
-    default_path = get_default_config_path(cluster_path)
-    return os.environ.get(constants.DCOS_CONFIG_ENV, default_path)
+    else:
+        cluster_path = get_attached_cluster_path()
+        return os.path.join(cluster_path, "dcos.toml")
 
 
 def get_config_dir_path():
@@ -96,20 +94,6 @@ def get_config_dir_path():
     config_dir = os.environ.get(constants.DCOS_DIR_ENV) or \
         os.path.join("~", constants.DCOS_DIR)
     return os.path.expanduser(config_dir)
-
-
-def get_default_config_path(cluster_path=None):
-    """Returns the default path to the DCOS config file of the attached cluster
-
-    :param cluster_path: path to the attached cluster
-    :type cluster_path: str
-    :returns: path to the DCOS config file
-    :rtype: str
-    """
-
-    if cluster_path is None:
-        cluster_path = get_attached_cluster_path()
-    return os.path.join(cluster_path, "dcos.toml")
 
 
 def get_config(mutable=False):
@@ -133,9 +117,9 @@ def get_config(mutable=False):
                "Please run `dcos cluster attach <cluster-name>`")
         raise DCOSException(msg)
 
-    path = get_config_path(cluster_path)
-    util.ensure_dir_exists(os.path.dirname(path))
+    util.ensure_dir_exists(os.path.dirname(cluster_path))
 
+    path = os.path.join(cluster_path, "dcos.toml")
     return load_from_path(path, mutable)
 
 

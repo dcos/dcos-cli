@@ -7,6 +7,7 @@ from dcos.mesos import Slave
 from dcoscli import tables
 
 from ..fixtures.auth_provider import auth_provider_fixture
+from ..fixtures.clusters import cluster_list_fixture
 from ..fixtures.marathon import (app_fixture, app_task_fixture,
                                  deployment_fixture_app_post_pods,
                                  deployment_fixture_app_pre_pods,
@@ -118,6 +119,12 @@ def test_node_table():
                 'tests/unit/data/node.txt')
 
 
+def test_clusters_tables():
+    _test_table(tables.clusters_table,
+                [cluster_list_fixture()],
+                'tests/unit/data/cluster.txt')
+
+
 def test_ls_long_table():
     with mock.patch('dcoscli.tables._format_unix_timestamp',
                     lambda ts: datetime.datetime.fromtimestamp(
@@ -142,4 +149,4 @@ def test_metrics_details_table():
 def _test_table(table_fn, fixture_fn, path):
     table = table_fn(fixture_fn)
     with open(path) as f:
-        assert str(table) == f.read()
+        assert str(table) == f.read().strip('\n')
