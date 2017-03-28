@@ -61,6 +61,11 @@ def _cmds():
             function=_list),
 
         cmds.Command(
+            hierarchy=['cluster', 'remove'],
+            arg_keys=['<name>'],
+            function=_remove),
+
+        cmds.Command(
             hierarchy=['cluster'],
             arg_keys=['--info'],
             function=_info),
@@ -95,6 +100,18 @@ def _list(json_):
     else:
         emitter.publish(clusters_table(clusters))
 
+    return
+
+
+def _remove(name):
+    """
+
+    :param name: name of cluster
+    :type name: str
+    :rtype: None
+    """
+
+    cluster.remove(name)
     return
 
 

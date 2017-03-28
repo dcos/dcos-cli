@@ -6,6 +6,7 @@ Usage:
     dcos cluster --info
     dcos cluster --version
     dcos cluster list [--json]
+    dcos cluster remove <name>
     dcos cluster setup <dcos_url>
         [--insecure | --no-check | --ca-certs=<ca-certs>]
         [--provider=<provider_id>] [--username=<username>]
@@ -13,10 +14,12 @@ Usage:
         | --password-env=<password_env> | --private-key=<key_path>]
 
 Commands:
-    setup
-        Setup the CLI to talk to your DC/OS cluster.
     list
         List CLI configured clusters.
+    remove
+        Remove a configured cluster from the CLI.
+    setup
+        Setup the CLI to talk to your DC/OS cluster.
 
 Options:
     --ca-certs=<ca-certs>
@@ -47,3 +50,5 @@ Options:
 Positional Arguments:
     dcos_url
         The public master of your DC/OS cluster.
+    name
+        The name of the cluster.

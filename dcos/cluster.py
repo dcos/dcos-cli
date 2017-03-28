@@ -195,6 +195,28 @@ def get_clusters():
         return [Cluster(cluster_id).dict() for cluster_id in dirnames]
 
 
+def remove(name):
+    """
+    Remove cluster `name` from the CLI.
+
+    :param name: name of cluster
+    :type name: str
+    :rtype: None
+    """
+
+    def onerror(func, path, excinfo):
+        raise DCOSException("Error trying to remove cluster")
+
+    for c in get_clusters():
+        if name == c['name'] or name == c['cluster_id']:
+            cluster_path = os.path.join(
+                config.get_clusters_path(), c['cluster_id'])
+            shutil.rmtree(cluster_path, onerror)
+            return
+    else:
+        raise DCOSException("Cluster [{}] does not exist".format(name))
+
+
 class Cluster():
     """Interface for a configured cluster"""
 
