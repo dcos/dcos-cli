@@ -34,9 +34,9 @@ Development Dependencies
 
 #. python_ version 3.5.x must be installed.
 
-#. cryptography_ will be installed by the :code:`make env` target. Before it
-   can be installed successfully follow their building instructions for your
-   platform.
+#. If :code:`make env` fails you may be missing required dependencies for
+   cryptography. See here_ for more information or use our dockerfile that
+   builds with all necessary dependencies.
 
 #. virtualenv_ must be installed and on the system path in order to install
    legacy subcommands. New subcommands are packaged as platform specific
@@ -195,4 +195,4 @@ These packages are available to be installed by the DC/OS CLI installation scrip
 .. _virtualenv: https://virtualenv.pypa.io/en/latest/
 .. _win_bash: https://sourceforge.net/projects/win-bash/files/shell-complete/latest
 .. _python: https://www.python.org/
-.. _cryptography: https://cryptography.io/en/latest/installation/
+.. _here: https://cryptography.io/en/latest/installation/
