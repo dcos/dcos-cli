@@ -140,7 +140,7 @@ def test_package_search_table():
 
 
 def test_node_table():
-    _test_table(tables.slave_table,
+    _test_table(tables.node_table,
                 [slave_fixture()],
                 'tests/unit/data/node.txt')
 
