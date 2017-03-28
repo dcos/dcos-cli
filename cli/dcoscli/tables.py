@@ -894,7 +894,7 @@ def node_table(nodes, field_names=()):
             heading, field_name = field_name.split(':', 1)
         else:
             heading = field_name
-        fields[heading.upper()] = _dotted_itemgetter(field_name.lower())
+        fields[heading.upper()] = _dotted_itemgetter(field_name)
 
     sortby = list(fields.keys())[0]
     tb = table(fields, nodes, sortby=sortby)
