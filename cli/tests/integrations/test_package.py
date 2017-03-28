@@ -110,6 +110,26 @@ def test_repo_remove():
     _repo_remove(['Universe'], repo_list)
 
 
+def test_repo_remove_multi():
+    # Add "Universe" repo so we can test removing it
+    repo_list = bytes("test-universe: {}\nUniverse: {}\n".format(
+        UNIVERSE_TEST_REPO, UNIVERSE_REPO), 'utf-8')
+    args = ["Universe", UNIVERSE_REPO]
+    _repo_add(args, repo_list)
+
+    # Add "1.7-universe" repo so we can test removing it
+    repo17 = "http://universe.mesosphere.com/repo-1.7"
+    repo_list = bytes(
+        "test-universe: {}\n1.7-universe: {}\nUniverse: {}\n".format(
+            UNIVERSE_TEST_REPO, repo17,  UNIVERSE_REPO), 'utf-8')
+    args = ["1.7-universe", repo17, '--index=1']
+    _repo_add(args, repo_list)
+
+    repo_list = bytes(
+        "test-universe: {}\n".format(UNIVERSE_TEST_REPO), 'utf-8')
+    _repo_remove(['1.7-universe', 'Universe'], repo_list)
+
+
 def test_repo_empty():
     assert_command(
         ['dcos', 'package', 'repo', 'remove', 'test-universe'])
