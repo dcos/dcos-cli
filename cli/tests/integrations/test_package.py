@@ -193,6 +193,7 @@ def test_describe_package_version():
     stdout = file_json(
         'tests/data/package/json/test_describe_marathon_package_version.json')
 
+    # TODO: Update this to use a newer version
     returncode_, stdout_, stderr_ = exec_command(
         ['dcos', 'package', 'describe', 'marathon',
             '--package-version=0.11.1'])
@@ -258,6 +259,8 @@ def test_describe_specific_version():
     stdout = file_bytes(
         'tests/data/package/json/test_describe_marathon_0.11.1.json')
 
+    # TODO: Use a different version. This looks like a duplicate of
+    # test_describe_package_version
     returncode_, stdout_, stderr_ = exec_command(
         ['dcos', 'package', 'describe', '--package-version=0.11.1',
          'marathon'])
@@ -280,6 +283,7 @@ Please create a JSON file with the appropriate options, and pass the \
                          stderr=stderr)
 
 
+# TODO: Change this test. It is called ...marathon_msg yet it uses helloworld
 def test_bad_install_marathon_msg():
     stdout = (b'A sample pre-installation message\n'
               b'Installing Marathon app for package [helloworld] version '
@@ -335,6 +339,7 @@ def test_install_specific_version():
         b'persisted state\n'
     )
 
+    # TODO: Change this to use a later version
     with _package(name='marathon',
                   args=['--yes', '--package-version=0.11.1'],
                   stdout=stdout,
@@ -356,6 +361,7 @@ def test_install_bad_package_version():
         stderr=stderr)
 
 
+# TODO: Update this test to use a 3.0 package
 def test_package_metadata():
     _install_helloworld()
 
@@ -449,6 +455,7 @@ def test_images_in_metadata():
     delete_zk_node('cassandra-mesos')
 
 
+# TODO: update this to stop using chronos!
 def test_install_with_id(zk_znode):
     args = ['--app-id=chronos-1', '--yes']
     stdout = (b'Installing Marathon app for package [chronos] version [2.4.0] '
@@ -468,10 +475,12 @@ def test_install_missing_package():
                    stderr=stderr)
 
 
+# TODO: update this to stop using chronos!
 def test_uninstall_with_id(zk_znode):
     _uninstall_chronos(args=['--app-id=chronos-1'])
 
 
+# TODO: update this to stop using chronos!
 def test_uninstall_all(zk_znode):
     _uninstall_chronos(args=['--all'])
 
@@ -652,6 +661,7 @@ def test_list_cli_only(env):
             stdout=helloworld_json)
 
 
+# TODO: Stop using Chronos
 def test_uninstall_multiple_frameworknames(zk_znode):
     _install_chronos(
         args=['--yes', '--options=tests/data/package/chronos-1.json'])
@@ -693,6 +703,7 @@ def test_uninstall_multiple_frameworknames(zk_znode):
 
 
 def test_search():
+    # TODO: update this to use db or database
     returncode, stdout, stderr = exec_command(
         ['dcos', 'package', 'search', 'cron', '--json'])
 
@@ -839,6 +850,7 @@ def _uninstall_cli_helloworld(
                    returncode=returncode)
 
 
+# TODO: use a different package chronos is really old
 def _uninstall_chronos(args=[], returncode=0, stdout=b'', stderr=''):
     result_returncode, result_stdout, result_stderr = exec_command(
         ['dcos', 'package', 'uninstall', 'chronos'] + args)
@@ -848,6 +860,7 @@ def _uninstall_chronos(args=[], returncode=0, stdout=b'', stderr=''):
     assert result_stderr.decode('utf-8').startswith(stderr)
 
 
+# TODO: use a different package chronos is really old
 def _install_bad_chronos(args=['--yes'],
                          stdout=b'',
                          stderr=''):
@@ -861,6 +874,7 @@ def _install_bad_chronos(args=['--yes'],
     assert stdout_ == pre_install_notes
 
 
+# TODO: use a different package chronos is really old
 def _install_chronos(
         args=['--yes'],
         returncode=0,
@@ -886,6 +900,7 @@ def _install_chronos(
         stdin=stdin)
 
 
+# TODO: use a different package chronos is really old
 @contextlib.contextmanager
 def _chronos_package(
         args=['--yes'],
