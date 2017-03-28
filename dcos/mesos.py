@@ -785,6 +785,17 @@ class Task(object):
 
         return self._task[name]
 
+    def __contains__(self, name):
+        """Supprt the `attr in task` syntax
+
+        :param name: attribute to test
+        :type name: str
+        :returns: True if attribute is present in the underlying dict
+        :rtype: bool
+        """
+
+        return name in self._task
+
 
 class MesosFile(object):
     """File-like object that is backed by a remote slave or master file.

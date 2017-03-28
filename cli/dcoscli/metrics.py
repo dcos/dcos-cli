@@ -13,10 +13,16 @@ def _gib(n):
     return n * pow(2, -30)
 
 
-def _fetch_node_metrics(url):
-    """Retrieve the metrics data from `dcos-metrics`' `node` endpoint.
+def _percentage(dividend, divisor):
+    if divisor > 0:
+        return dividend / divisor * 100
+    return 0
 
-    :param url: `dcos-metrics` `node` endpoint
+
+def _fetch_metrics_datapoints(url):
+    """Retrieve the metrics data from any `dcos-metrics` endpoint.
+
+    :param url: `dcos-metrics` endpoint
     :type url: str
     :returns: List of metrics datapoints
     :rtype: [dict]
@@ -57,6 +63,25 @@ def _get_datapoint(datapoints, name, tags=None):
                 return datapoint
 
 
+def _get_datapoint_value(datapoints, name, tags=None):
+    """Safely return only the value from a datapoint, defaulting to 0.
+
+    :param datapoints: a list of datapoints
+    :type datapoints: [dict]
+    :param name: the name of the required datapoint
+    :type name: str
+    :param tags: required tags by key and value
+    :type tags: dict
+    :return: a matching datapoint
+    :rtype: float
+    """
+    datapoint = _get_datapoint(datapoints, name, tags)
+    if datapoint is not None:
+        return datapoint.get('value', 0.0)
+
+    return 0.0
+
+
 def _node_summary_json(datapoints):
     """Filters datapoints down to CPU, memory and root disk space fields.
 
@@ -82,24 +107,66 @@ def _node_summary_data(datapoints):
     :rtype: dict
     """
 
-    def _percentage(dividend, divisor):
-        if divisor > 0:
-            return dividend / divisor * 100
-        return 0
+    cpu_used = _get_datapoint_value(datapoints, 'load.1min')
+    cpu_used_pc = _get_datapoint_value(datapoints, 'cpu.total')
 
-    cpu_used = _get_datapoint(datapoints, 'load.1min')['value']
-    cpu_used_pc = _get_datapoint(datapoints, 'cpu.total')['value']
-
-    mem_total = _get_datapoint(datapoints, 'memory.total')['value']
-    mem_free = _get_datapoint(datapoints, 'memory.free')['value']
+    mem_total = _get_datapoint_value(datapoints, 'memory.total')
+    mem_free = _get_datapoint_value(datapoints, 'memory.free')
     mem_used = mem_total - mem_free
     mem_used_pc = _percentage(mem_used, mem_total)
 
-    disk_total = _get_datapoint(
-        datapoints, 'filesystem.capacity.total', {'path': '/'})['value']
-    disk_free = _get_datapoint(
-        datapoints, 'filesystem.capacity.used', {'path': '/'})['value']
+    disk_total = _get_datapoint_value(
+        datapoints, 'filesystem.capacity.total', {'path': '/'})
+    disk_free = _get_datapoint_value(
+        datapoints, 'filesystem.capacity.used', {'path': '/'})
     disk_used = disk_total - disk_free
+    disk_used_pc = _percentage(disk_used, disk_total)
+
+    return {
+        'cpu': '{:0.2f} ({:0.2f}%)'.format(cpu_used, cpu_used_pc),
+        'mem': '{:0.2f}GiB ({:0.2f}%)'.format(_gib(mem_used), mem_used_pc),
+        'disk': '{:0.2f}GiB ({:0.2f}%)'.format(_gib(disk_used), disk_used_pc)
+    }
+
+
+def _task_summary_json(datapoints):
+    """Filters datapoints down to CPU, memory and disk space fields.
+
+    :param datapoints: a list of datapoints
+    :type datapoints: [dict]
+    :return: JSON data
+    :rtype: str
+    """
+    summary_datapoints = [
+        _get_datapoint(datapoints, 'cpus.user.time'),
+        _get_datapoint(datapoints, 'mem.total'),
+        _get_datapoint(datapoints, 'disk.used')
+    ]
+    return json.dumps(summary_datapoints)
+
+
+def _task_summary_data(datapoints):
+    """Extracts CPU, memory and root disk space fields from task datapoints.
+
+    :param datapoints: a list of raw datapoints
+    :type datapoints: [dict]
+    :return: a dictionary of summary fields
+    :rtype: dict
+    """
+
+    cpu_user = _get_datapoint_value(datapoints, 'cpus.user.time')
+    cpu_system = _get_datapoint_value(datapoints, 'cpus.system.time')
+    cpu_throttled = _get_datapoint_value(datapoints, 'cpus.throttled.time')
+    cpu_used = cpu_user + cpu_system
+    cpu_total = cpu_used + cpu_throttled
+    cpu_used_pc = _percentage(cpu_used, cpu_total)
+
+    mem_total = _get_datapoint_value(datapoints, 'mem.limit')
+    mem_used = _get_datapoint_value(datapoints, 'mem.total')
+    mem_used_pc = _percentage(mem_used, mem_total)
+
+    disk_total = _get_datapoint_value(datapoints, 'disk.used')
+    disk_used = _get_datapoint_value(datapoints, 'disk.limit')
     disk_used_pc = _percentage(disk_used, disk_total)
 
     return {
@@ -132,6 +199,8 @@ def _format_datapoints(datapoints):
             return '{:0.2f}GiB'.format(_gib(v))
         if u == 'percent':
             return '{:0.2f}%'.format(v)
+        if type(v) == float:
+            return '{:0.2f}'.format(v)
         return v
 
     formatted_datapoints = []
@@ -159,7 +228,7 @@ def print_node_metrics(url, summary, json_):
     :rtype: int
     """
 
-    datapoints = _fetch_node_metrics(url)
+    datapoints = _fetch_metrics_datapoints(url)
 
     if summary:
         if json_:
@@ -169,5 +238,37 @@ def print_node_metrics(url, summary, json_):
         if json_:
             return emitter.publish(datapoints)
         table = tables.metrics_details_table(_format_datapoints(datapoints))
+
+    return emitter.publish(table)
+
+
+def print_task_metrics(url, app_url, summary, json_):
+    """Retrieve and pretty-print fields from the `dcos-metrics`' `containers/id`
+    endpoint and `containers/id/app` endpoint.
+
+    :param url: `dcos-metrics` `containers/id` endpoint
+    :type url: str
+    :param app_url: `dcos-metrics` `containers/id/app` endpoint
+    :type app_url: str
+    :param json_: print json list if true
+    :type json_: bool
+    :param summary: print summary if true, or all fields if false
+    :type summary: bool
+    :return: Process status
+    :rtype: int
+    """
+
+    datapoints = _fetch_metrics_datapoints(url) + _fetch_metrics_datapoints(
+        app_url)
+
+    if summary:
+        if json_:
+            return emitter.publish(_task_summary_json(datapoints))
+        table = tables.metrics_summary_table(_task_summary_data(datapoints))
+    else:
+        if json_:
+            return emitter.publish(datapoints)
+        table = tables.metrics_details_table(_format_datapoints(datapoints),
+                                             False)
 
     return emitter.publish(table)

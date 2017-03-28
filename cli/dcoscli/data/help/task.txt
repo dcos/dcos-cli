@@ -8,6 +8,8 @@ Usage:
     dcos task exec [--interactive --tty] <task> <cmd> [<args>...]
     dcos task log [--completed --follow --lines=N] [<task>] [<file>]
     dcos task ls [--long --completed] [<task>] [<path>]
+    dcos task metrics details <task-id> [--json]
+    dcos task metrics summary <task-id> [--json]
     dcos task [--completed --json <task>]
 
 Command:
@@ -19,6 +21,10 @@ Command:
         are printed.
     ls
         Print the list of files in the Mesos task sandbox.
+    metrics details
+        Print a table of all metrics for the task specified by <task-id>
+    metrics summary
+        Print a table of key metrics for the task specified by <task-id>
 
 Options:
     --completed

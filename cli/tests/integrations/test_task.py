@@ -74,7 +74,7 @@ def test_task():
 
 
 def test_task_table():
-    assert_lines(['dcos', 'task'], NUM_TASKS+1)
+    assert_lines(['dcos', 'task'], NUM_TASKS + 1)
 
 
 def test_task_completed():
@@ -125,7 +125,6 @@ def test_log_single_file():
 def test_log_pod_task():
     good_pod_file = 'tests/data/marathon/pods/good.json'
     with pod(good_pod_file, 'good-pod'):
-
         returncode, stdout, stderr = exec_command(
             ['dcos', 'task', 'log', 'good-container', 'stderr'])
 

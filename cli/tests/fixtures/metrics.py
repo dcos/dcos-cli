@@ -46,3 +46,22 @@ def agent_metrics_node_summary_fixture():
         'mem': '2.49GiB (16.98%)',
         'disk': '1.65GiB (30.30%)'
     }
+
+
+def agent_metrics_task_details_fixture():
+    """Agent metrics /container fixture
+
+    :rtype: [dict]"""
+
+    tags = "executor_id: abc-123, source: consume-cpui.d3df66d3-08dc-11e7-8d53"
+
+    return [
+        {"name": "cpus.user.time", "tags": tags, "value": 4902.86},
+        {"name": "cpus.system.time", "tags": tags, "value": 8749.93},
+        {"name": "cpus.limit", "tags": tags, "value": 0.6},
+        {"name": "cpus.throttled.time", "tags": tags, "value": 100.01},
+        {"name": "mem.total", "tags": tags, "value": "0.01GiB"},
+        {"name": "mem.limit", "tags": tags, "value": "0.16GiB"},
+        {"name": "disk.limit", "tags": tags, "value": "0.00GiB"},
+        {"name": "disk.used", "tags": tags, "value": "0.00GiB"},
+    ]
