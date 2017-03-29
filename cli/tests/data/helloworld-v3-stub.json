@@ -22,7 +22,7 @@
       "portMappings": [
         {
           "protocol": "tcp",
-          "hostPort": 8085,
+          "hostPort": 8086,
           "containerPort": 80
         }
       ],
