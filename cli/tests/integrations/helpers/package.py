@@ -1,3 +1,4 @@
+import collections
 import contextlib
 import time
 
@@ -34,10 +35,12 @@ def package(package_name, deploy=False, args=[]):
 
 
 UNIVERSE_REPO = "https://universe.mesosphere.com/repo"
-UNIVERSE_TEST_REPOS = {
-    "test-universe": "http://universe.marathon.mesos:8085/repo",
-    "helloworld-universe": "http://universe.marathon.mesos:8086/repo"
-}
+UNIVERSE_TEST_REPOS = collections.OrderedDict(
+    [
+        ("test-universe", "http://universe.marathon.mesos:8085/repo"),
+        ("helloworld-universe", "http://universe.marathon.mesos:8086/repo")
+    ]
+)
 
 
 def setup_universe_server():
@@ -80,7 +83,8 @@ def teardown_universe_server():
     assert_command(
         ['dcos', 'marathon', 'app', 'remove', '/universe', '--force'])
     assert_command(
-        ['dcos', 'marathon', 'app', 'remove', '/helloworld-universe', '--force'])
+        ['dcos', 'marathon', 'app', 'remove', '/helloworld-universe', '--force']
+    )
 
     watch_all_deployments()
 
