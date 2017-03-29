@@ -141,6 +141,7 @@ def set_attached(cluster_path):
 
     :param cluster_path: path to cluster directory
     :type cluster_path: str
+    :rtype: None
     """
 
     # get currently attached cluster
@@ -188,11 +189,23 @@ def get_cluster_cert(dcos_url):
 def get_clusters():
     """
     :returns: list of configured Clusters
-    :rtype: [{}]
+    :rtype: [Clusters]
     """
 
     for (_, dirnames, _) in os.walk(config.get_clusters_path()):
-        return [Cluster(cluster_id).dict() for cluster_id in dirnames]
+        return [Cluster(cluster_id) for cluster_id in dirnames]
+
+
+def get_cluster(name):
+    """
+    :param name: name of cluster
+    :type name: str
+    :returns: Cluster identified by name
+    :rtype: Cluster
+    """
+
+    return next((c for c in get_clusters()
+                 if c.get_cluster_id() == name or c.get_name() == name), None)
 
 
 def remove(name):
@@ -207,12 +220,10 @@ def remove(name):
     def onerror(func, path, excinfo):
         raise DCOSException("Error trying to remove cluster")
 
-    for c in get_clusters():
-        if name == c['name'] or name == c['cluster_id']:
-            cluster_path = os.path.join(
-                config.get_clusters_path(), c['cluster_id'])
-            shutil.rmtree(cluster_path, onerror)
-            return
+    cluster = get_cluster(name)
+    if cluster:
+        shutil.rmtree(cluster.get_cluster_path(), onerror)
+        return
     else:
         raise DCOSException("Cluster [{}] does not exist".format(name))
 
@@ -224,6 +235,9 @@ class Cluster():
         self.cluster_id = cluster_id
         self.cluster_path = os.path.join(
             config.get_clusters_path(), cluster_id)
+
+    def get_cluster_path(self):
+        return self.cluster_path
 
     def get_cluster_id(self):
         return self.cluster_id
@@ -252,10 +266,15 @@ class Cluster():
 
         return "N/A"
 
+    def is_attached(self):
+        return os.path.exists(os.path.join(
+            self.cluster_path, constants.DCOS_CLUSTER_ATTACHED_FILE))
+
     def dict(self):
         return {
             "cluster_id": self.get_cluster_id(),
             "name": self.get_name(),
             "url": self.get_url(),
-            "version": self.get_dcos_version()
+            "version": self.get_dcos_version(),
+            "attached": self.is_attached()
         }

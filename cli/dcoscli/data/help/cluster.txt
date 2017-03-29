@@ -5,6 +5,7 @@ Usage:
     dcos cluster --help
     dcos cluster --info
     dcos cluster --version
+    dcos cluster attach <name>
     dcos cluster list [--json]
     dcos cluster remove <name>
     dcos cluster setup <dcos_url>
@@ -14,6 +15,8 @@ Usage:
         | --password-env=<password_env> | --private-key=<key_path>]
 
 Commands:
+    attach
+        Attach a configured cluster.
     list
         List CLI configured clusters.
     remove

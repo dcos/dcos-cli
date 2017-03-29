@@ -1,2 +1,2 @@
-             CLUSTER ID                    NAME      VERSION           URL           
-8c4f77ff-849c-456d-a480-c5cb6766c3f2  tamar-ytck1ge  1.9-dev  https://52.25.204.103  
+     NAME                   CLUSTER ID               VERSION           URL           
+tamar-ytck1ge  8c4f77ff-849c-456d-a480-c5cb6766c3f2  1.9-dev  https://52.25.204.103  

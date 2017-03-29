@@ -66,6 +66,11 @@ def _cmds():
             function=_remove),
 
         cmds.Command(
+            hierarchy=['cluster', 'attach'],
+            arg_keys=['<name>'],
+            function=_attach),
+
+        cmds.Command(
             hierarchy=['cluster'],
             arg_keys=['--info'],
             function=_info),
@@ -93,10 +98,13 @@ def _list(json_):
     :rtype: None
     """
 
-    clusters = cluster.get_clusters()
-
+    clusters = [c.dict() for c in cluster.get_clusters()]
     if json_:
         emitter.publish(clusters)
+    elif len(clusters) == 0:
+        msg = ("No clusters are currently configured. "
+               "To configure one, run `dcos cluster setup <dcos_url>`")
+        raise DCOSException(msg)
     else:
         emitter.publish(clusters_table(clusters))
 
@@ -111,8 +119,22 @@ def _remove(name):
     :rtype: None
     """
 
-    cluster.remove(name)
-    return
+    return cluster.remove(name)
+
+
+def _attach(name):
+    """
+
+    :param name: name of cluster
+    :type name: str
+    :rtype: None
+    """
+
+    c = cluster.get_cluster(name)
+    if c is not None:
+        return cluster.set_attached(c.get_cluster_path())
+    else:
+        raise DCOSException("Cluster [{}] does not exist".format(name))
 
 
 def _setup(dcos_url,

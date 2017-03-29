@@ -846,12 +846,17 @@ def clusters_table(clusters):
     :param clusters: configured clusters
     :type clusters: [Cluster]
     :rtype: PrettyTable
-
     """
 
+    def print_name(c):
+        msg = c['name']
+        if c['attached']:
+            msg += " (attached)"
+        return msg
+
     fields = OrderedDict([
+        ('NAME', lambda c: print_name(c)),
         ('CLUSTER ID', lambda c: c['cluster_id']),
-        ('NAME', lambda c: c['name']),
         ('VERSION', lambda c: c['version']),
         ('URL', lambda c: c['url'] or "N/A")
     ])
