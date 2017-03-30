@@ -7,8 +7,11 @@ from dcos.errors import DCOSException
 
 logger = util.get_logger(__name__)
 
-JOB_HISTORY_EMBEDS = ['activeRuns', 'schedules', 'history']
-JOBS_HISTORY_EMBEDS = ['activeRuns', 'historySummary']
+EMBED_ACTIVE_RUNS = 'activeRuns'
+EMBED_SCHEDULES = 'schedules'
+EMBED_HISTORY = 'history'
+EMBED_HISTORY_SUMMARY = 'historySummary'
+
 
 def create_client(toml_config=None):
     """Creates a Metronome client with the supplied configuration.
@@ -77,56 +80,35 @@ class Client(object):
 
         return response.json()
 
-    def get_job(self, job_id):
+    def get_job(self, job_id, embed_with=None):
         """Returns a representation of the requested job.
 
         :param job_id: the ID of the application
         :type job_id: str
+        :param embed_with: list of strings to ?embed=str&embed=str2...
+        :type embed_with: [str]
         :returns: the requested Metronome job
         :rtype: dict
         """
         # refactor util name it isn't marathon specific
         job_id = util.normalize_marathon_id_path(job_id)
-        path = 'v1/jobs{}'.format(job_id)
-
-        response = self._rpc.http_req(http.get, path)
+        embeds = _get_embed_query_string(embed_with) if embed_with else None
+        url = 'v1/jobs{}{}'.format(job_id, embeds) if embeds else 'v1/jobs{}'.format(job_id)
+        response = self._rpc.http_req(http.get, url)
         return response.json()
 
-    def get_job_history(self, job_id):
-        """Returns a representation of the requested job with embedded history.
 
-        :param job_id: the ID of the application
-        :type job_id: str
-        :returns: the requested Metronome job
-        :rtype: dict
-        """
-        # refactor util name it isn't marathon specific
-        job_id = util.normalize_marathon_id_path(job_id)
-        embeds = _get_embed_query_string(JOB_HISTORY_EMBEDS)
-        path = 'v1/jobs{}{}'.format(job_id, embeds)
-
-        response = self._rpc.http_req(http.get, path)
-        return response.json()
-
-    def get_jobs(self):
+    def get_jobs(self, embed_with=None):
         """Get a list of known jobs.
 
+        :param embed_with: list of strings to ?embed=str&embed=str2...
+        :type embed_with: [str]
         :returns: list of known jobs
         :rtype: [dict]
         """
-
-        response = self._rpc.http_req(http.get, 'v1/jobs')
-        return response.json()
-
-    def get_jobs_history(self):
-        """Get a list of known jobs with embedded history details.
-
-        :returns: list of known jobs
-        :rtype: [dict]
-        """
-        embeds = _get_embed_query_string(JOBS_HISTORY_EMBEDS)
-        response = self._rpc.http_req(
-            http.get, 'v1/jobs{}'.format(embeds))
+        embeds = _get_embed_query_string(embed_with) if embed_with else None
+        url = 'v1/jobs{}'.format(embeds) if embeds else 'v1/jobs'
+        response = self._rpc.http_req(http.get, url)
         return response.json()
 
     def add_job(self, job_resource):
