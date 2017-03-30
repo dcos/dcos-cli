@@ -243,20 +243,15 @@ def _list(json_flag=False):
     :rtype: int
     """
     client = metronome.create_client()
-    try:
-        json_list = client.get_jobs_history()
-    except DCOSHTTPException as e:
-        # remove
-        raise DCOSException("Job ID does NOT exist.")
-    else:
+    json_list = client.get_jobs_history()
 
-        if json_flag:
-            emitter.publish(json_list)
-        else:
-            table = tables.job_table(json_list)
-            output = six.text_type(table)
-            if output:
-                emitter.publish(output)
+    if json_flag:
+        emitter.publish(json_list)
+    else:
+        table = tables.job_table(json_list)
+        output = six.text_type(table)
+        if output:
+            emitter.publish(output)
 
     return 0
 
