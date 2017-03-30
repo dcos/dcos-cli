@@ -71,6 +71,11 @@ def _cmds():
             function=_attach),
 
         cmds.Command(
+            hierarchy=['cluster', 'rename'],
+            arg_keys=['<name>', '<new_name>'],
+            function=_rename),
+
+        cmds.Command(
             hierarchy=['cluster'],
             arg_keys=['--info'],
             function=_info),
@@ -113,7 +118,6 @@ def _list(json_):
 
 def _remove(name):
     """
-
     :param name: name of cluster
     :type name: str
     :rtype: None
@@ -124,7 +128,6 @@ def _remove(name):
 
 def _attach(name):
     """
-
     :param name: name of cluster
     :type name: str
     :rtype: None
@@ -135,6 +138,26 @@ def _attach(name):
         return cluster.set_attached(c.get_cluster_path())
     else:
         raise DCOSException("Cluster [{}] does not exist".format(name))
+
+
+def _rename(name, new_name):
+    """
+    :param name: name of cluster
+    :type name: str
+    :param new_name: new_name of cluster
+    :type new_name: str
+    :rtype: None
+    """
+
+    c = cluster.get_cluster(name)
+    other = cluster.get_cluster(new_name)
+    if c is None:
+        raise DCOSException("Cluster [{}] does not exist".format(name))
+    elif other and other != c:
+        msg = "A cluster with name [{}] already exists"
+        raise DCOSException(msg.format(new_name))
+    else:
+        config.set_val("cluster.name", new_name, c.get_config_path())
 
 
 def _setup(dcos_url,

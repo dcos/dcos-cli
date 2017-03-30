@@ -147,7 +147,7 @@ def set_attached(cluster_path):
     # get currently attached cluster
     attached_cluster_path = config.get_attached_cluster_path()
 
-    if attached_cluster_path is not None:
+    if attached_cluster_path and attached_cluster_path != cluster_path:
         # set cluster as attached
         attached_file = os.path.join(
             attached_cluster_path, constants.DCOS_CLUSTER_ATTACHED_FILE)
@@ -242,9 +242,11 @@ class Cluster():
     def get_cluster_id(self):
         return self.cluster_id
 
-    def get_config(self):
-        config_file = os.path.join(self.cluster_path, "dcos.toml")
-        return config.load_from_path(config_file)
+    def get_config_path(self):
+        return os.path.join(self.cluster_path, "dcos.toml")
+
+    def get_config(self, mutable=False):
+        return config.load_from_path(self.get_config_path(), mutable)
 
     def get_name(self):
         return config.get_config_val(
@@ -269,6 +271,10 @@ class Cluster():
     def is_attached(self):
         return os.path.exists(os.path.join(
             self.cluster_path, constants.DCOS_CLUSTER_ATTACHED_FILE))
+
+    def __eq__(self, other):
+        return isinstance(other, Cluster) and \
+            other.get_cluster_id() == self.get_cluster_id()
 
     def dict(self):
         return {
