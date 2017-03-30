@@ -21,7 +21,6 @@ logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
 
 DEFAULT_TIMEOUT = 180
-METRONOME_EMBEDDED = '?embed=activeRuns&embed=schedules&embed=history'
 
 
 def main(argv):
@@ -239,24 +238,25 @@ def _kill(job_id, run_id, all=False):
 
 
 def _list(json_flag=False):
-    """
+    """ Provides a list of jobs along with their history summary
     :returns: process return code
     :rtype: int
     """
-
+    client = metronome.create_client()
     try:
-        client = metronome.create_client()
-        json_list = client.get_jobs()
-    except DCOSException as e:
-        raise DCOSException(e)
-
-    if json_flag:
-        emitter.publish(json_list)
+        json_list = client.get_jobs_history()
+    except DCOSHTTPException as e:
+        # remove
+        raise DCOSException("Job ID does NOT exist.")
     else:
-        table = tables.job_table(json_list)
-        output = six.text_type(table)
-        if output:
-            emitter.publish(output)
+
+        if json_flag:
+            emitter.publish(json_list)
+        else:
+            table = tables.job_table(json_list)
+            output = six.text_type(table)
+            if output:
+                emitter.publish(output)
 
     return 0
 
@@ -266,21 +266,13 @@ def _history(job_id, json_flag=False, show_failures=False):
     :returns: process return code
     :rtype: int
     """
-    response = None
-    url = urllib.parse.urljoin(_get_api_url('v1/jobs/'),
-                               job_id + METRONOME_EMBEDDED)
+
+    client = metronome.create_client()
     try:
-        response = _do_request(url, 'GET')
+        json_history = client.get_job_history(job_id)
     except DCOSHTTPException as e:
         raise DCOSException("Job ID does NOT exist.")
-    except DCOSException as e:
-        raise DCOSException(e)
     else:
-
-        if response.status_code is not 200:
-            raise DCOSException("Job ID does NOT exist.")
-
-        json_history = _read_http_response_body(response)
 
         if 'history' not in json_history:
             return 0

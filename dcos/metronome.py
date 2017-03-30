@@ -7,6 +7,7 @@ from dcos.errors import DCOSException
 
 logger = util.get_logger(__name__)
 
+EMBEDDED_JOB_DETAILS = '?embed=activeRuns&embed=schedules&embed=history'
 
 def create_client(toml_config=None):
     """Creates a Metronome client with the supplied configuration.
@@ -72,19 +73,31 @@ class Client(object):
         return response.json()
 
     def get_job(self, job_id):
-        """Returns a representation of the requested application version. If
-        version is None the return the latest version.
+        """Returns a representation of the requested job.
 
-        :param app_id: the ID of the application
-        :type app_id: str
-        :param version: application version as a ISO8601 datetime
-        :type version: str
+        :param job_id: the ID of the application
+        :type job_id: str
         :returns: the requested Metronome job
         :rtype: dict
         """
         # refactor util name it isn't marathon specific
         job_id = util.normalize_marathon_id_path(job_id)
         path = 'v1/jobs{}'.format(job_id)
+
+        response = self._rpc.http_req(http.get, path)
+        return response.json()
+
+    def get_job_history(self, job_id):
+        """Returns a representation of the requested job with embedded history.
+
+        :param job_id: the ID of the application
+        :type job_id: str
+        :returns: the requested Metronome job
+        :rtype: dict
+        """
+        # refactor util name it isn't marathon specific
+        job_id = util.normalize_marathon_id_path(job_id)
+        path = 'v1/jobs{}{}'.format(job_id, EMBEDDED_JOB_DETAILS)
 
         response = self._rpc.http_req(http.get, path)
         return response.json()
@@ -97,6 +110,17 @@ class Client(object):
         """
 
         response = self._rpc.http_req(http.get, 'v1/jobs')
+        return response.json()
+
+    def get_jobs_history(self):
+        """Get a list of known jobs with embedded history details.
+
+        :returns: list of known jobs
+        :rtype: [dict]
+        """
+
+        response = self._rpc.http_req(
+            http.get, 'v1/jobs{}'.format(EMBEDDED_JOB_DETAILS))
         return response.json()
 
     def add_job(self, job_resource):
