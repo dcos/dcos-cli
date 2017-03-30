@@ -7,7 +7,8 @@ from dcos.errors import DCOSException
 
 logger = util.get_logger(__name__)
 
-EMBEDDED_JOB_DETAILS = '?embed=activeRuns&embed=schedules&embed=history'
+JOB_HISTORY_EMBEDS = ['activeRuns', 'schedules', 'history']
+JOBS_HISTORY_EMBEDS = ['activeRuns', 'historySummary']
 
 def create_client(toml_config=None):
     """Creates a Metronome client with the supplied configuration.
@@ -27,6 +28,10 @@ def create_client(toml_config=None):
 
     logger.info('Creating metronome client with: %r', metronome_url)
     return Client(rpc_client)
+
+
+def _get_embed_query_string(embed_list):
+    return '?{}'.format('&'.join('embed=%s' % (item) for item in embed_list))
 
 
 def _get_metronome_url(toml_config=None):
@@ -97,7 +102,8 @@ class Client(object):
         """
         # refactor util name it isn't marathon specific
         job_id = util.normalize_marathon_id_path(job_id)
-        path = 'v1/jobs{}{}'.format(job_id, EMBEDDED_JOB_DETAILS)
+        embeds = _get_embed_query_string(JOB_HISTORY_EMBEDS)
+        path = 'v1/jobs{}{}'.format(job_id, embeds)
 
         response = self._rpc.http_req(http.get, path)
         return response.json()
@@ -118,9 +124,9 @@ class Client(object):
         :returns: list of known jobs
         :rtype: [dict]
         """
-
+        embeds = _get_embed_query_string(JOBS_HISTORY_EMBEDS)
         response = self._rpc.http_req(
-            http.get, 'v1/jobs{}'.format(EMBEDDED_JOB_DETAILS))
+            http.get, 'v1/jobs{}'.format(embeds))
         return response.json()
 
     def add_job(self, job_resource):

@@ -373,8 +373,8 @@ def _last_run_status(job):
     :type job: dict
     :rtype: str
     """
-    last_success = _str_to_datetime(job['history']['lastSuccessAt'])
-    last_failure = _str_to_datetime(job['history']['lastFailureAt'])
+    last_success = _str_to_datetime(job['historySummary']['lastSuccessAt'])
+    last_failure = _str_to_datetime(job['historySummary']['lastFailureAt'])
     if not last_success and not last_failure:
         return 'N/A'
     elif ((last_success and not last_failure) or
