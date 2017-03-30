@@ -154,8 +154,8 @@ def default_subcommands():
     :rtype: [str]
     """
 
-    return ["auth", "config", "experimental", "help", "job", "marathon",
-            "node", "package", "service", "task"]
+    return ["auth", "cluster", "config", "experimental", "help", "job",
+            "marathon", "node", "package", "service", "task"]
 
 
 def documentation(executable_path):
@@ -391,7 +391,7 @@ def _cluster_subcommand_dir():
     attached_cluster = config.get_attached_cluster_path()
     if attached_cluster is not None:
         return os.path.join(
-                attached_cluster, constants.DCOS_SUBCOMMAND_SUBDIR)
+            attached_cluster, constants.DCOS_SUBCOMMAND_SUBDIR)
     else:
         return None
 
