@@ -496,7 +496,7 @@ class Master(object):
         def _get_container_id(container_status):
             if 'container_id' in container_status:
                 if 'value' in container_status['container_id']:
-                    return container_status['container_id']
+                    return container_status['container_id']['value']
 
             raise DCOSException(
                 "No container found for the specified task."
@@ -802,6 +802,17 @@ class Task(object):
         """
 
         return self._task[name]
+
+    def __contains__(self, name):
+        """Supprt the `attr in task` syntax
+
+        :param name: attribute to test
+        :type name: str
+        :returns: True if attribute is present in the underlying dict
+        :rtype: bool
+        """
+
+        return name in self._task
 
 
 class MesosFile(object):
