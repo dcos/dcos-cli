@@ -276,18 +276,13 @@ def job_table(job_list):
     fields = OrderedDict([
         ('id', lambda s: s['id']),
         ('Status', lambda s: _job_status(s)),
-        ('Last Run', lambda s: s['history']['lastSuccessAt']
-            if 'history' in s else 'N/A'),
+        ('Last Run', lambda s: _last_run_status(s)),
     ])
 
-    limits = {
-        "Description": 35
-    }
-
-    tb = truncate_table(fields, job_list, limits, sortby="ID")
+    tb = truncate_table(fields, job_list, None, sortby="ID")
     tb.align['ID'] = 'l'
-    tb.align["DESCRIPTION"] = 'l'
     tb.align["STATUS"] = 'l'
+    tb.align["LAST RUN"] = 'l'
 
     return tb
 
@@ -352,6 +347,41 @@ def job_runs_table(runs_list):
     tb.align['JOB ID'] = 'l'
 
     return tb
+
+
+def _str_to_datetime(datetime_str):
+    """ Takes a JSON date of `2017-03-30T15:50:16.187+0000` format and
+    Returns a datetime.
+
+    :param datetime_str: JSON date
+    :type datetime_str: str
+    :rtype: datetime
+    """
+    if not datetime_str:
+        return None
+    datetime_str = datetime_str.split('+')[0]
+    return datetime.datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%f")
+
+
+def _last_run_status(job):
+    """ Provided a job with embedded history it Returns a status based on the
+    following rules:
+        0 Runs = 'N/A'
+        last success is > last failure = 'Success' otherwise 'Failed'
+
+    :param job: JSON job with embedded history
+    :type job: dict
+    :rtype: str
+    """
+    last_success = _str_to_datetime(job['history']['lastSuccessAt'])
+    last_failure = _str_to_datetime(job['history']['lastFailureAt'])
+    if not last_success and not last_failure:
+        return 'N/A'
+    elif ((last_success and not last_failure) or
+          (last_success and last_success > last_failure)):
+        return 'Success'
+    else:
+        return 'Failed'
 
 
 def _job_status(job):
