@@ -280,7 +280,6 @@ def job_table(job_list):
     ])
 
     tb = truncate_table(fields, job_list, None, sortby="ID")
-    tb.align['ID'] = 'l'
     tb.align["STATUS"] = 'l'
     tb.align["LAST RUN"] = 'l'
 
@@ -301,7 +300,8 @@ def job_history_table(schedule_list):
         ('finished', lambda s: s['finishedAt']),
     ])
     tb = table(fields, schedule_list, sortby="STARTED")
-    tb.align['ID'] = 'l'
+    tb.align["STARTED"] = 'l'
+    tb.align["FINISHED"] = 'l'
 
     return tb
 
@@ -319,12 +319,14 @@ def schedule_table(schedule_list):
         ('id', lambda s: s['id']),
         ('cron', lambda s: s['cron']),
         ('enabled', lambda s: s['enabled']),
-        ('next run', lambda s: s['nextRunAt']),
         ('concurrency policy', lambda s: s['concurrencyPolicy']),
+        ('next run', lambda s: s['nextRunAt']),
     ])
     tb = table(fields, schedule_list)
-    tb.align['ID'] = 'l'
     tb.align['CRON'] = 'l'
+    tb.align['ENABLED'] = 'l'
+    tb.align['NEXT RUN'] = 'l'
+    tb.align['CONCURRENCY POLICY'] = 'l'
 
     return tb
 
@@ -338,13 +340,13 @@ def job_runs_table(runs_list):
     :rtype: PrettyTable
     """
     fields = OrderedDict([
-        ('job id', lambda s: s['jobId']),
         ('id', lambda s: s['id']),
+        ('job id', lambda s: s['jobId']),
         ('started at', lambda s: s['createdAt']),
     ])
     tb = table(fields, runs_list)
-    tb.align['ID'] = 'l'
     tb.align['JOB ID'] = 'l'
+    tb.align['STARTED AT'] = 'l'
 
     return tb
 
