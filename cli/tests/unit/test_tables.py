@@ -17,6 +17,7 @@ from ..fixtures.marathon import (app_fixture, app_task_fixture,
 from ..fixtures.metrics import (agent_metrics_node_details_fixture,
                                 agent_metrics_node_summary_fixture,
                                 agent_metrics_task_details_fixture)
+from ..fixtures.metronome import job_list_fixture
 from ..fixtures.node import slave_fixture
 from ..fixtures.package import package_fixture, search_result_fixture
 from ..fixtures.service import framework_fixture
@@ -81,6 +82,12 @@ def test_auth_providers_table():
     _test_table(tables.auth_provider_table,
                 auth_provider_fixture(),
                 'tests/unit/data/auth_provider.txt')
+
+
+def test_job_list_table():
+    _test_table(tables.job_table,
+                job_list_fixture(),
+                'tests/unit/data/job_list.txt')
 
 
 def test_pod_table():
