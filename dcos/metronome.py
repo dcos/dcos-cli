@@ -403,21 +403,7 @@ def _check_capability():
     """
 
     manager = packagemanager.PackageManager(cosmos.get_cosmos_url())
-    if _verified_connection(manager) and not manager.has_capability('METRONOME'):
+    if not manager.has_capability('METRONOME'):
         raise DCOSException(
             'DC/OS backend does not support metronome capabilities in this '
             'version. Must be DC/OS >= 1.8')
-
-
-def _verified_connection(manager):
-    """
-    Makes a simple request against the manager which must make a http request
-    to the server.   If a connection isn't possible an DCOSException will be raised
-    Previously a disconnected cluster would report it needed to be > 1.8
-    which is miss leading.
-
-    :param manager: connection to the package manager
-    :type manager: packagemanager.PackageManager
-    """
-
-    repos = manager.get_repos()

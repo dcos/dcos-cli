@@ -73,7 +73,7 @@ class PackageManager:
             raise
         except Exception as e:
             logger.exception(e)
-            return False
+            raise e
 
         if 'capabilities' not in response:
             logger.error(
