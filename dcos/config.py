@@ -54,9 +54,25 @@ def get_attached_cluster_path():
     :returns: path to the director of the attached cluster
     :rtype: str | None
     """
-    for (cluster_path, dirnames, filenames) in os.walk(get_clusters_path()):
-        if "attached" in filenames:
+
+    path = get_clusters_path()
+    if not os.path.exists(path):
+        return None
+
+    clusters = []
+    clusters = os.listdir(get_clusters_path())
+    for c in clusters:
+        cluster_path = os.path.join(path, c)
+        if os.path.exists(os.path.join(
+                cluster_path, constants.DCOS_CLUSTER_ATTACHED_FILE)):
             return cluster_path
+
+    # if only one cluster, set as attached
+    if len(clusters) == 1:
+        cluster = clusters[0]
+        util.ensure_file_exists(os.path.join(
+            cluster, constants.DCOS_CLUSTER_ATTACHED_FILE))
+        return cluster
 
     return None
 
