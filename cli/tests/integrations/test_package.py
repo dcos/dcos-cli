@@ -219,10 +219,9 @@ def test_describe_package_version():
     stdout = file_json(
         'tests/data/package/json/test_describe_marathon_package_version.json')
 
-    # TODO: Update this to use a newer version
     returncode_, stdout_, stderr_ = exec_command(
         ['dcos', 'package', 'describe', 'marathon',
-            '--package-version=0.11.1'])
+            '--package-version=1.3.10'])
 
     assert returncode_ == 0
     output = json.loads(stdout_.decode('utf-8'))
@@ -281,22 +280,6 @@ def test_describe_app_cli():
         stdout=stdout)
 
 
-def test_describe_specific_version():
-    stdout = file_bytes(
-        'tests/data/package/json/test_describe_marathon_0.11.1.json')
-
-    # TODO: Use a different version. This looks like a duplicate of
-    # test_describe_package_version
-    returncode_, stdout_, stderr_ = exec_command(
-        ['dcos', 'package', 'describe', '--package-version=0.11.1',
-         'marathon'])
-
-    assert returncode_ == 0
-    output = json.loads(stdout_.decode('utf-8'))
-    assert output == json.loads(stdout.decode('utf-8'))
-    assert stderr_ == b''
-
-
 def test_bad_install():
     args = ['--options=tests/data/package/chronos-bad.json', '--yes']
     stdout = b""
@@ -309,8 +292,7 @@ Please create a JSON file with the appropriate options, and pass the \
                          stderr=stderr)
 
 
-# TODO: Change this test. It is called ...marathon_msg yet it uses helloworld
-def test_bad_install_marathon_msg():
+def test_bad_install_helloworld_msg():
     stdout = (b'A sample pre-installation message\n'
               b'Installing Marathon app for package [helloworld] version '
               b'[0.1.0] with app id [/foo]\n'
@@ -355,7 +337,7 @@ def test_install_specific_version():
               b'version [0.11.1]\n'
               b'Marathon DCOS Service has been successfully installed!\n\n'
               b'\tDocumentation: https://mesosphere.github.io/marathon\n'
-              b'\tIssues: https:/github.com/mesosphere/marathon/issues\n\n')
+              b'\tIssues: https://github.com/mesosphere/marathon/issues\n\n')
 
     uninstall_stderr = (
         b'Uninstalled package [marathon] version [0.11.1]\n'
@@ -365,7 +347,6 @@ def test_install_specific_version():
         b'persisted state\n'
     )
 
-    # TODO: Change this to use a later version
     with _package(name='marathon',
                   args=['--yes', '--package-version=0.11.1'],
                   stdout=stdout,
@@ -387,7 +368,6 @@ def test_install_bad_package_version():
         stderr=stderr)
 
 
-# TODO: Update this test to use a 3.0 package
 def test_package_metadata():
     _install_helloworld()
 
@@ -397,7 +377,7 @@ def test_package_metadata():
         'framework': False,
         'name': 'helloworld',
         'version': '0.1.0',
-        'packagingVersion': '2.0',
+        'packagingVersion': '3.0',
         'preInstallNotes': 'A sample pre-installation message',
         'selected': False,
         'website': 'https://github.com/mesosphere/dcos-helloworld',
@@ -417,7 +397,7 @@ def test_package_metadata():
     expected_source = bytes(UNIVERSE_TEST_REPOS['helloworld-universe'], 'utf-8')
 
     expected_labels = {
-        'DCOS_PACKAGE_REGISTRY_VERSION': b'2.0',
+        'DCOS_PACKAGE_REGISTRY_VERSION': b'3.0',
         'DCOS_PACKAGE_NAME': b'helloworld',
         'DCOS_PACKAGE_VERSION': b'0.1.0',
         'DCOS_PACKAGE_SOURCE': expected_source,
@@ -439,7 +419,7 @@ def test_package_metadata():
         "framework": False,
         "maintainer": "support@mesosphere.io",
         "name": "helloworld",
-        "packagingVersion": "2.0",
+        "packagingVersion": "3.0",
         "postInstallNotes": "A sample post-installation message",
         "preInstallNotes": "A sample pre-installation message",
         "selected": False,
@@ -460,7 +440,7 @@ def test_package_metadata():
 def test_images_in_metadata():
     package_install('cassandra')
 
-    labels = _get_app_labels('/cassandra/dcos')
+    labels = _get_app_labels('/cassandra')
     dcos_package_metadata = labels.get("DCOS_PACKAGE_METADATA")
     images = json.loads(
         base64.b64decode(dcos_package_metadata).decode('utf-8'))["images"]
@@ -469,28 +449,32 @@ def test_images_in_metadata():
     assert images.get("icon-large") is not None
 
     # uninstall
-    stderr = (b'Uninstalled package [cassandra] version [0.2.0-1]\n'
-              b'The Apache Cassandra DCOS Service has been uninstalled and '
-              b'will no longer run.\n'
-              b'Please follow the instructions at http://docs.mesosphere.com/'
-              b'services/cassandra/#uninstall to clean up any persisted '
-              b'state\n')
+    stderr = (
+        b'Uninstalled package [cassandra] version [1.0.25-3.0.10]\n'
+        b'DC/OS Apache Cassandra service has been uninstalled.\n'
+        b'Please follow the instructions at https://docs.mesosphere.com/'
+        b'current/usage/service-guides/cassandra/uninstall to remove any '
+        b'persistent state if required.\n'
+    )
 
     package_uninstall('cassandra', stderr=stderr)
-    assert_command(['dcos', 'marathon', 'group', 'remove', '/cassandra'])
-    delete_zk_node('cassandra-mesos')
+    delete_zk_node('dcos-service-cassandra')
 
 
-# TODO: update this to stop using chronos!
 def test_install_with_id(zk_znode):
     args = ['--app-id=chronos-1', '--yes']
-    stdout = (b'Installing Marathon app for package [chronos] version [2.4.0] '
-              b'with app id [chronos-1]\n')
+    stdout = (
+        b'Installing Marathon app for package [chronos] version [3.0.1] with '
+        b'app id [chronos-1]\n'
+    )
+
     _install_chronos(args=args, stdout=stdout)
 
     args = ['--app-id=chronos-2', '--yes']
-    stdout = (b'Installing Marathon app for package [chronos] version [2.4.0] '
-              b'with app id [chronos-2]\n')
+    stdout = (
+        b'Installing Marathon app for package [chronos] version [3.0.1] with '
+        b'app id [chronos-2]\n'
+    )
     _install_chronos(args=args, stdout=stdout)
 
 
@@ -501,12 +485,10 @@ def test_install_missing_package():
                    stderr=stderr)
 
 
-# TODO: update this to stop using chronos!
 def test_uninstall_with_id(zk_znode):
     _uninstall_chronos(args=['--app-id=chronos-1'])
 
 
-# TODO: update this to stop using chronos!
 def test_uninstall_all(zk_znode):
     _uninstall_chronos(args=['--all'])
 
@@ -532,34 +514,33 @@ def test_uninstall_cli():
     _install_helloworld()
     _uninstall_cli_helloworld(args=['--cli'])
 
-    stdout = b"""
-  {
-    "apps": [
-      "/helloworld"
-    ],
-    "description": "Example DCOS application package",
-    "framework": false,
-    "maintainer": "support@mesosphere.io",
-    "name": "helloworld",
-    "packagingVersion": "2.0",
-    "postInstallNotes": "A sample post-installation message",
-    "preInstallNotes": "A sample pre-installation message",
-    "selected": false,
-    "tags": [
-      "mesosphere",
-      "example",
-      "subcommand"
-    ],
-    "version": "0.1.0",
-    "website": "https://github.com/mesosphere/dcos-helloworld"
-  }
-"""
+    stdout_json = {
+        "apps": [
+            "/helloworld"
+        ],
+        "description": "Example DCOS application package",
+        "framework": False,
+        "maintainer": "support@mesosphere.io",
+        "name": "helloworld",
+        "packagingVersion": "3.0",
+        "postInstallNotes": "A sample post-installation message",
+        "preInstallNotes": "A sample pre-installation message",
+        "selected": False,
+        "tags": [
+            "mesosphere",
+            "example",
+            "subcommand"
+        ],
+        "version": "0.1.0",
+        "website": "https://github.com/mesosphere/dcos-helloworld"
+    }
+
     returncode_, stdout_, stderr_ = exec_command(
         ['dcos', 'package', 'list', '--json'])
     assert stderr_ == b''
     assert returncode_ == 0
     output = json.loads(stdout_.decode('utf-8'))[0]
-    assert output == json.loads(stdout.decode('utf-8'))
+    assert output == stdout_json
     _uninstall_helloworld()
 
 
@@ -876,7 +857,6 @@ def _uninstall_cli_helloworld(
                    returncode=returncode)
 
 
-# TODO: use a different package chronos is really old
 def _uninstall_chronos(args=[], returncode=0, stdout=b'', stderr=''):
     result_returncode, result_stdout, result_stderr = exec_command(
         ['dcos', 'package', 'uninstall', 'chronos'] + args)
@@ -886,7 +866,6 @@ def _uninstall_chronos(args=[], returncode=0, stdout=b'', stderr=''):
     assert result_stderr.decode('utf-8').startswith(stderr)
 
 
-# TODO: use a different package chronos is really old
 def _install_bad_chronos(args=['--yes'],
                          stdout=b'',
                          stderr=''):
@@ -894,27 +873,27 @@ def _install_bad_chronos(args=['--yes'],
     returncode_, stdout_, stderr_ = exec_command(cmd)
     assert returncode_ == 1
     assert stderr in stderr_.decode('utf-8')
-    pre_install_notes = (b'We recommend a minimum of one node with at least 1 '
-                         b'CPU and 2GB of RAM available for the Chronos '
+    pre_install_notes = (b'We recommend a minimum of one node with at least 2 '
+                         b'CPUs and 2.5GiB of RAM available for the Chronos '
                          b'Service.\n')
     assert stdout_ == pre_install_notes
 
 
-# TODO: use a different package chronos is really old
 def _install_chronos(
         args=['--yes'],
         returncode=0,
         stdout=b'Installing Marathon app for package [chronos] '
-               b'version [2.4.0]\n',
+               b'version [3.0.1]\n',
         stderr=b'',
         pre_install_notes=b'We recommend a minimum of one node with at least '
-                          b'1 CPU and 2GB of RAM available for the Chronos '
-                          b'Service.\n',
+                          b'2 CPUs and 2.5GiB of RAM available for the '
+                          b'Chronos Service.\n',
         post_install_notes=b'Chronos DCOS Service has been successfully '
-                           b'''installed!
-
-\tDocumentation: http://mesos.github.io/chronos
-\tIssues: https://github.com/mesos/chronos/issues\n''',
+                           b'installed!\n\n'
+                           b'\tDocumentation: http://mesos.github.io/'
+                           b'chronos\n'
+                           b'\tIssues: https://github.com/mesos/chronos/'
+                           b'issues\n',
         stdin=None):
 
     cmd = ['dcos', 'package', 'install', 'chronos'] + args
@@ -926,22 +905,22 @@ def _install_chronos(
         stdin=stdin)
 
 
-# TODO: use a different package chronos is really old
 @contextlib.contextmanager
 def _chronos_package(
         args=['--yes'],
         returncode=0,
         stdout=b'Installing Marathon app for package [chronos] '
-               b'version [2.4.0]\n',
+               b'version [3.0.1]\n',
         stderr=b'',
         pre_install_notes=b'We recommend a minimum of one node with at least '
-                          b'1 CPU and 2GB of RAM available for the Chronos '
-                          b'Service.\n',
+                          b'2 CPUs and 2.5GiB of RAM available for the '
+                          b'Chronos Service.\n',
         post_install_notes=b'Chronos DCOS Service has been successfully '
-                           b'''installed!
-
-\tDocumentation: http://mesos.github.io/chronos
-\tIssues: https://github.com/mesos/chronos/issues\n''',
+                           b'installed!\n\n'
+                           b'\tDocumentation: http://mesos.github.io/'
+                           b'chronos\n'
+                           b'\tIssues: https://github.com/mesos/chronos/'
+                           b'issues\n',
         stdin=None):
 
     _install_chronos(

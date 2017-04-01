@@ -38,7 +38,10 @@ UNIVERSE_REPO = "https://universe.mesosphere.com/repo"
 UNIVERSE_TEST_REPOS = collections.OrderedDict(
     [
         ("test-universe", "http://universe.marathon.mesos:8085/repo"),
-        ("helloworld-universe", "http://universe.marathon.mesos:8086/repo")
+        (
+            "helloworld-universe",
+            "http://helloworld-universe.marathon.mesos:8086/repo"
+        )
     ]
 )
 

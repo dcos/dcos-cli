@@ -89,7 +89,7 @@ def delete_zk_nodes():
     :rtype: None
     """
 
-    for znode in ['universe', 'cassandra-mesos', 'chronos']:
+    for znode in ['universe', 'dcos-service-cassandra', 'chronos']:
         delete_zk_node(znode)
 
 
