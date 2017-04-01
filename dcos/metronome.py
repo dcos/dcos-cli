@@ -93,10 +93,10 @@ class Client(object):
         # refactor util name it isn't marathon specific
         job_id = util.normalize_marathon_id_path(job_id)
         embeds = _get_embed_query_string(embed_with) if embed_with else None
-        url = 'v1/jobs{}{}'.format(job_id, embeds) if embeds else 'v1/jobs{}'.format(job_id)
+        url = ('v1/jobs{}{}'.format(job_id, embeds)
+               if embeds else 'v1/jobs{}'.format(job_id))
         response = self._rpc.http_req(http.get, url)
         return response.json()
-
 
     def get_jobs(self, embed_with=None):
         """Get a list of known jobs.

@@ -70,6 +70,19 @@ class DCOSAuthorizationException(DCOSHTTPException):
         return "You are not authorized to perform this operation"
 
 
+class ConnectionError(DCOSException):
+    """An Error object for when a connection attempt fails.
+
+    :param url: URL for the Request
+    :type url: str
+    """
+    def __init__(self, url):
+        self.url = url
+
+    def __str__(self):
+        return 'URL [{0}] is unreachable.'.format(self.url)
+
+
 class DCOSBadRequest(DCOSHTTPException):
     """A wrapper around Response objects for HTTP Bad Request (400).
 
