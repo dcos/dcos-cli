@@ -70,7 +70,7 @@ class DCOSAuthorizationException(DCOSHTTPException):
         return "You are not authorized to perform this operation"
 
 
-class ConnectionError(DCOSException):
+class DCOSConnectionError(DCOSException):
     """An Error object for when a connection attempt fails.
 
     :param url: URL for the Request
