@@ -32,8 +32,9 @@ def test_node():
     assert stderr == b''
 
     nodes = json.loads(stdout.decode('utf-8'))
+    slave_nodes = [node for node in nodes if node['type'] == 'slave']
     schema = _get_schema(slave_fixture())
-    for node in nodes:
+    for node in slave_nodes:
         assert not util.validate_json(node, schema)
 
 
@@ -53,7 +54,7 @@ def test_node_table_field_option():
     assert stderr == b''
     lines = stdout.decode('utf-8').splitlines()
     assert len(lines) > 2
-    assert lines[0].split() == ['HOSTNAME', 'IP', 'ID', 'DISK_USED']
+    assert lines[0].split() == ['HOSTNAME', 'IP', 'ID', 'TYPE', 'DISK_USED']
 
 
 def test_node_log_empty():
@@ -291,4 +292,5 @@ def _node():
     assert returncode == 0
     assert stderr == b''
 
-    return json.loads(stdout.decode('utf-8'))
+    return [n for n in json.loads(stdout.decode('utf-8'))
+            if n['type'] == 'slave']
