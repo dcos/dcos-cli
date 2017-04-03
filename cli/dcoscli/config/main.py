@@ -84,14 +84,6 @@ def _set(name, value):
     :rtype: int
     """
 
-    if name == "package.sources":
-        notice = ("This config property has been deprecated. "
-                  "Please add your repositories with `dcos package repo add`")
-        return DCOSException(notice)
-    if name == "core.email":
-        notice = "This config property has been deprecated."
-        return DCOSException(notice)
-
     toml, msg = config.set_val(name, value)
     emitter.publish(DefaultError(msg))
 
