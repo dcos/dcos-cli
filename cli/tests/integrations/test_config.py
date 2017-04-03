@@ -60,7 +60,10 @@ def test_get_missing_property(env):
 def test_dcos_url_without_scheme(env):
     with update_config("core.dcos_url", None, env):
         new = b"abc.com"
-        out = b"[core.dcos_url]: set to 'https://%b'\n" % (new)
+        out = (b"This config property is being deprecated. "
+               b"To setup the CLI to talk to your cluster, please run "
+               b"`dcos cluster setup <dcos_url>`.\n"
+               b"[core.dcos_url]: set to 'https://%b'\n" % (new))
         assert_command(
             ['dcos', 'config', 'set', 'core.dcos_url', new.decode('utf-8')],
             stderr=out,
@@ -130,11 +133,14 @@ def test_set_same_output(env):
 
 def test_set_new_output(env):
     with update_config("core.dcos_url", None, env):
+        new = b"http://dcos.snakeoil.mesosphere.com:5081"
+        out = (b"This config property is being deprecated. "
+               b"To setup the CLI to talk to your cluster, please run "
+               b"`dcos cluster setup <dcos_url>`.\n"
+               b"[core.dcos_url]: set to '%b'\n" % (new))
         assert_command(
-            ['dcos', 'config', 'set', 'core.dcos_url',
-                'http://dcos.snakeoil.mesosphere.com:5081'],
-            stderr=(b"[core.dcos_url]: set to "
-                    b"'http://dcos.snakeoil.mesosphere.com:5081'\n"),
+            ['dcos', 'config', 'set', 'core.dcos_url', new.decode('utf-8')],
+            stderr=out,
             env=env)
 
 
@@ -294,8 +300,8 @@ def _fail_url_validation(command, key, value, env):
 
     assert returncode_ == 1
     assert stdout_ == b''
-    assert stderr_.startswith(str(
-        'Unable to parse {!r} as a url'.format(value)).encode('utf-8'))
+    err = str('Unable to parse {!r} as a url'.format(value)).encode('utf-8')
+    assert err in stderr_
 
 
 def _get_value(key, value, env):

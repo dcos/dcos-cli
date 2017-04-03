@@ -248,8 +248,7 @@ def set_val(name, value):
         msg += "changed from '{}' to '{}'".format(old_value, new_value)
 
     if token_unset:
-        msg += ("\n[core.dcos_acs_token]: removed\n"
-                "Please run `dcos auth login` to authenticate to new dcos_url")
+        msg += "\n[core.dcos_acs_token]: removed"
 
     return toml_config, msg
 
