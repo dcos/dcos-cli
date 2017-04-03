@@ -668,7 +668,6 @@ def test_list_cli_only(env):
             stdout=helloworld_json)
 
 
-# TODO: Stop using Chronos
 def test_uninstall_multiple_frameworknames(zk_znode):
     _install_chronos(
         args=['--yes', '--options=tests/data/package/chronos-1.json'])
@@ -691,7 +690,7 @@ def test_uninstall_multiple_frameworknames(zk_znode):
     _uninstall_chronos(
         args=['--app-id=chronos-user-1'],
         returncode=1,
-        stderr='Uninstalled package [chronos] version [2.4.0]\n'
+        stderr='Uninstalled package [chronos] version [3.0.1]\n'
                'Unable to shutdown [chronos] service framework with name '
                '[chronos-user] because there are multiple framework ids '
                'matching this name: ')
@@ -699,7 +698,7 @@ def test_uninstall_multiple_frameworknames(zk_znode):
     _uninstall_chronos(
         args=['--app-id=chronos-user-2'],
         returncode=1,
-        stderr='Uninstalled package [chronos] version [2.4.0]\n'
+        stderr='Uninstalled package [chronos] version [3.0.1]\n'
                'Unable to shutdown [chronos] service framework with name '
                '[chronos-user] because there are multiple framework ids '
                'matching this name: ')
@@ -710,7 +709,6 @@ def test_uninstall_multiple_frameworknames(zk_znode):
 
 
 def test_search():
-    # TODO: update this to use db or database
     returncode, stdout, stderr = exec_command(
         ['dcos', 'package', 'search', 'cron', '--json'])
 
