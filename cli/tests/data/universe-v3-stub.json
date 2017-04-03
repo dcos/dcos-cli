@@ -33,7 +33,7 @@
   },
   "requirePorts": true,
   "mem": 128,
-  "cpus": 0.25,
+  "cpus": 0.1,
   "instances": 1,
   "id": "/universe"
 }
