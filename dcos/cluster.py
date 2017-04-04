@@ -38,7 +38,7 @@ def move_to_cluster_config():
     # don't move cluster if dcos_url is not valid
     except DCOSException as e:
         logger.error(
-            "Error trying to find CLUSTER ID. {}".format(e))
+            "Error trying to find cluster id: {}".format(e))
         return
 
     # create cluster id dir
@@ -100,8 +100,8 @@ def setup_cluster_config(dcos_url, temp_path, stored_cert):
         cluster_id = res.json().get("CLUSTER_ID")
 
     except DCOSException as e:
-        msg = ("Error trying to find CLUSTER ID: {}\n "
-               "Please make sure the provided dcos_url is valid: {}".format(
+        msg = ("Error trying to find cluster id: {}\n "
+               "Please make sure the provided DC/OS URL is valid: {}".format(
                    e, dcos_url))
         raise DCOSException(msg)
 

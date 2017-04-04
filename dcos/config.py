@@ -59,7 +59,6 @@ def get_attached_cluster_path():
     if not os.path.exists(path):
         return None
 
-    clusters = []
     clusters = os.listdir(get_clusters_path())
     for c in clusters:
         cluster_path = os.path.join(path, c)
@@ -69,10 +68,10 @@ def get_attached_cluster_path():
 
     # if only one cluster, set as attached
     if len(clusters) == 1:
-        cluster = clusters[0]
+        cluster_path = os.path.join(path, clusters[0])
         util.ensure_file_exists(os.path.join(
-            cluster, constants.DCOS_CLUSTER_ATTACHED_FILE))
-        return cluster
+            cluster_path, constants.DCOS_CLUSTER_ATTACHED_FILE))
+        return cluster_path
 
     return None
 
