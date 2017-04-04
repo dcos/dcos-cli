@@ -154,7 +154,15 @@ def _page(output, pager_command=None):
     output = six.text_type(output)
 
     if not sys.stdout.isatty() or util.is_windows_platform():
-        print(output)
+        try:
+            print(output)
+        except UnicodeEncodeError as e:
+            print('--------------------')
+            print(output.encode('base64'))
+            print('--------------------')
+            sys.stdout.flush()
+            raise e
+
         sys.stdout.flush()
         return
 
