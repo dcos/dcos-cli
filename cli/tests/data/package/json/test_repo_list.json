@@ -3,6 +3,10 @@
     {
       "name": "test-universe",
       "uri": "http://universe.marathon.mesos:8085/repo"
+    },
+    {
+      "name": "helloworld-universe",
+      "uri": "http://helloworld-universe.marathon.mesos:8086/repo"
     }
   ]
 }
