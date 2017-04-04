@@ -151,21 +151,10 @@ def _page(output, pager_command=None):
     :type pager_command: str
     """
 
-    str_output = six.text_type(output)
+    output = six.text_type(output)
 
     if not sys.stdout.isatty() or util.is_windows_platform():
-        try:
-            print(str_output)
-        except UnicodeEncodeError as e:
-            print('--------------------')
-            print(type(str_output))
-            print(type(output))
-            print('--------------------')
-            print(str_output.encode('base64'))
-            print('--------------------')
-            sys.stdout.flush()
-            raise e
-
+        print(output)
         sys.stdout.flush()
         return
 
