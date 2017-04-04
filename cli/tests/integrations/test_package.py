@@ -788,7 +788,7 @@ def test_search_middle_with_wildcard():
     assert stderr == b''
 
     registries = json.loads(stdout.decode('utf-8'))
-    assert len(registries['packages']) == 1
+    assert len(registries['packages']) == 4
 
 
 def _get_app_labels(app_id):
