@@ -142,7 +142,7 @@ def distributions():
     """
 
     cluster_packages = _find_distributions(_cluster_subcommand_dir())
-    global_packages = _find_distributions(_global_subcommand_dir())
+    global_packages = _find_distributions(global_subcommand_dir())
     return set(cluster_packages + global_packages)
 
 
@@ -355,16 +355,18 @@ def _install_cli(pkg, pkg_dir):
                 "Could not find a CLI subcommand for your platform")
 
 
-def install(pkg):
+def install(pkg, global_=False):
     """Installs the dcos cli subcommand
 
     :param pkg: the package to install
     :type pkg: Package
+    :param global_: whether to install the CLI globally
+    :type global_: bool
     :rtype: None
     """
 
-    if config.uses_deprecated_config():
-        pkg_dir = _global_package_dir(pkg.name())
+    if global_ or config.uses_deprecated_config():
+        pkg_dir = global_package_dir(pkg.name())
     else:
         pkg_dir = _cluster_package_dir(pkg.name())
 
@@ -375,7 +377,7 @@ def install(pkg):
     _install_cli(pkg, pkg_dir)
 
 
-def _global_subcommand_dir():
+def global_subcommand_dir():
     """ Returns global subcommand dir. defaults to ~/.dcos/subcommands """
 
     return os.path.join(config.get_config_dir_path(),
@@ -412,7 +414,7 @@ def _cluster_package_dir(name):
         return None
 
 
-def _global_package_dir(name):
+def global_package_dir(name):
     """Returns path to package directory in global config
 
     :param name: package name
@@ -420,7 +422,7 @@ def _global_package_dir(name):
     :rtype: str
     """
 
-    return os.path.join(_global_subcommand_dir(), name)
+    return os.path.join(global_subcommand_dir(), name)
 
 
 def _package_dir(name):
@@ -436,7 +438,7 @@ def _package_dir(name):
     if cluster_subcommand and os.path.exists(cluster_subcommand):
         return cluster_subcommand
     else:
-        return _global_package_dir(name)
+        return global_package_dir(name)
 
 
 def uninstall(package_name):

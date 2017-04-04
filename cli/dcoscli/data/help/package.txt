@@ -10,7 +10,7 @@ Usage:
                           [--package-version=<package-version>]
     dcos package describe <package-name> --package-versions
     dcos package install <package-name>
-                         [--cli | [--app --app-id=<app-id>]]
+                         [(--cli [--global]) | [--app --app-id=<app-id>]]
                          [--package-version=<package-version>]
                          [--options=<file>]
                          [--yes]
@@ -57,6 +57,8 @@ Options:
         Command line only.
     --config
         Print the configurable properties of the `marathon.json` file.
+    --global
+        Install a subcommand for all configured clusters
     --index=<index>
         The numerical position in the package repository list. Package
         repositories are searched in descending order. By default, the Universe
