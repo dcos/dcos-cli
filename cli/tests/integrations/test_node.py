@@ -263,7 +263,9 @@ def _node_ssh(args, expected_returncode=None, expected_stdout=None):
         args.append('--master-proxy')
 
     stdout, stderr, returncode = _node_ssh_output(args)
-    assert returncode is expected_returncode
+    assert returncode is expected_returncode, \
+        'returncode = %r; stdout: = %s; stderr = %s' % (
+            returncode, stdout, stderr)
     if expected_stdout is not None:
         assert stdout.decode('utf-8').startswith(expected_stdout)
     assert b"Running `" in stderr
