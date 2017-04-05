@@ -14,7 +14,7 @@ def slave_fixture():
         "TASK_STAGING": 0,
         "TASK_STARTING": 0,
         "active": True,
-        "type": "slave",
+        "type": "agent",
         "attributes": {},
         "framework_ids": [],
         "hostname": "dcos-01",

@@ -153,7 +153,7 @@ def test_debug_details():
         assert stderr == b''
         agent_count = len(
           [n for n in json.loads(stdout.decode('utf-8'))
-           if n['type'] == 'slave']
+           if n['type'] == 'agent']
         )
 
         """The extra two lines come from the heading and the empty line at the
@@ -198,7 +198,7 @@ def test_debug_details_pod():
         assert stderr == b''
         agent_count = len(
           [n for n in json.loads(stdout.decode('utf-8'))
-           if n['type'] == 'slave']
+           if n['type'] == 'agent']
         )
 
         """The extra two lines come from the heading and the empty line at the

@@ -483,7 +483,7 @@ def _list(json_, extra_field_names):
         else:
             master['type'] = 'master'
     for slave in slaves:
-        slave['type'] = 'slave'
+        slave['type'] = 'agent'
     nodes = masters + slaves
     if json_:
         emitter.publish(nodes)

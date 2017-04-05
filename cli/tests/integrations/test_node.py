@@ -32,7 +32,7 @@ def test_node():
     assert stderr == b''
 
     nodes = json.loads(stdout.decode('utf-8'))
-    slave_nodes = [node for node in nodes if node['type'] == 'slave']
+    slave_nodes = [node for node in nodes if node['type'] == 'agent']
     schema = _get_schema(slave_fixture())
     for node in slave_nodes:
         assert not util.validate_json(node, schema)
@@ -295,4 +295,4 @@ def _node():
     assert stderr == b''
 
     return [n for n in json.loads(stdout.decode('utf-8'))
-            if n['type'] == 'slave']
+            if n['type'] == 'agent']
