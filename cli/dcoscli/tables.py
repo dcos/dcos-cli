@@ -870,20 +870,21 @@ def auth_provider_table(providers):
     return tb
 
 
-def slave_table(slaves, field_names=()):
-    """Returns a PrettyTable representation of the provided DC/OS slaves
+def node_table(nodes, field_names=()):
+    """Returns a PrettyTable representation of the provided DC/OS nodes
 
-    :param slaves: slaves to render.  dicts from /mesos/state-summary
-    :type slaves: [dict]
+    :param nodes: nodes to render.
+    :type nodes: [dict]
     :param field_names: Extra fields to add to the table
-    :type slaves: [str]
+    :type nodes: [str]
     :rtype: PrettyTable
     """
 
     fields = OrderedDict([
-        ('HOSTNAME', lambda s: s['hostname']),
-        ('IP', lambda s: mesos.parse_pid(s['pid'])[1]),
-        ('ID', lambda s: s['id'])
+        ('HOSTNAME', lambda s: s.get('host', s.get('hostname'))),
+        ('IP', lambda s: s.get('ip') or mesos.parse_pid(s['pid'])[1]),
+        ('ID', lambda s: s['id']),
+        ('TYPE', lambda s: s['type']),
     ])
 
     for field_name in field_names:
@@ -896,7 +897,8 @@ def slave_table(slaves, field_names=()):
         fields[heading.upper()] = _dotted_itemgetter(field_name.lower())
 
     sortby = list(fields.keys())[0]
-    tb = table(fields, slaves, sortby=sortby)
+    tb = table(fields, nodes, sortby=sortby)
+    tb.align['TYPE'] = 'l'
     return tb
 
 

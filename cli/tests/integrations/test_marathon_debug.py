@@ -151,7 +151,10 @@ def test_debug_details():
 
         assert returncode == 0
         assert stderr == b''
-        agent_count = len(json.loads(stdout.decode('utf-8')))
+        agent_count = len(
+          [n for n in json.loads(stdout.decode('utf-8'))
+           if n['type'] == 'agent']
+        )
 
         """The extra two lines come from the heading and the empty line at the
         end of the table.
@@ -193,7 +196,10 @@ def test_debug_details_pod():
 
         assert returncode == 0
         assert stderr == b''
-        agent_count = len(json.loads(stdout.decode('utf-8')))
+        agent_count = len(
+          [n for n in json.loads(stdout.decode('utf-8'))
+           if n['type'] == 'agent']
+        )
 
         """The extra two lines come from the heading and the empty line at the
         end of the table.
