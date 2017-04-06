@@ -209,26 +209,6 @@ def test_node_ssh_master_proxy():
     _node_ssh(['--leader', '--master-proxy'])
 
 
-def test_master_arg_deprecation_notice():
-    stderr = b"--master has been deprecated. Please use --leader.\n"
-    assert_command(['dcos', 'node', 'log', '--master'],
-                   stderr=stderr,
-                   returncode=1)
-    assert_command(['dcos', 'node', 'ssh', '--master'],
-                   stderr=stderr,
-                   returncode=1)
-
-
-def test_slave_arg_deprecation_notice():
-    stderr = b"--slave has been deprecated. Please use --mesos-id.\n"
-    assert_command(['dcos', 'node', 'log', '--slave=bogus'],
-                   stderr=stderr,
-                   returncode=1)
-    assert_command(['dcos', 'node', 'ssh', '--slave=bogus'],
-                   stderr=stderr,
-                   returncode=1)
-
-
 @pytest.mark.skipif(sys.platform == 'win32',
                     reason='No pseudo terminal on windows')
 def test_node_ssh_with_command():

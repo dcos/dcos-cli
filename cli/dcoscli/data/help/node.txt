@@ -11,11 +11,11 @@ Usage:
     dcos node diagnostics delete <bundle>
     dcos node diagnostics download <bundle> [--location=<location>]
     dcos node list-components [--leader --mesos-id=<mesos-id> --json]
-    dcos node log [--follow --lines=N --leader --master --mesos-id=<mesos-id> --slave=<agent-id>]
+    dcos node log [--follow --lines=N --leader --mesos-id=<mesos-id>]
                   [--component=<component-name> --filter=<filter>...]
     dcos node metrics details <mesos-id> [--json]
     dcos node metrics summary <mesos-id> [--json]
-    dcos node ssh (--leader | --master | --mesos-id=<mesos-id> | --private-ip=<private-ip> | --slave=<agent-id>)
+    dcos node ssh (--leader | --mesos-id=<mesos-id> | --private-ip=<private-ip>)
                   [--config-file=<path>]
                   [--user=<user>]
                   [--master-proxy]
@@ -75,8 +75,6 @@ Options:
     --location=<location>
         Download the diagnostics bundle to a specific location. If not set, the
         default location is your current working directory.
-    --master
-        This option is deprecated and is replaced by `--leader`.
     --master-proxy
         Proxy the SSH connection through a master node. This can be useful when
         accessing DC/OS from a separate network. For example, in the default AWS
@@ -92,8 +90,6 @@ Options:
         Agent node with the provided private IP.
     --proxy-ip=<proxy-ip>
         Proxy the SSH connection through a different IP address.
-    --slave=<agent-id>
-        This option is deprecated and is replaced by `--mesos-id`.
     --status
         Print diagnostics job status.
     --user=<user>

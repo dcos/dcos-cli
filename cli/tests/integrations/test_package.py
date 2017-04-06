@@ -67,15 +67,6 @@ def test_version():
                    stdout=b'dcos-package version SNAPSHOT\n')
 
 
-def test_update_deprecation_notice():
-    notice = (b"This command has been deprecated. "
-              b"Repositories will be automatically updated after they are"
-              b" added by `dcos package repo add`\n")
-    assert_command(['dcos', 'package', 'update'],
-                   stderr=notice,
-                   returncode=1)
-
-
 def test_repo_list():
     repo_list = bytes(
         "test-universe: {}\n".format(UNIVERSE_TEST_REPO), 'utf-8')

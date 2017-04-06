@@ -41,15 +41,6 @@ def _main(argv):
         argv=argv,
         version="dcos-node version {}".format(dcoscli.version))
 
-    if args.get('--master'):
-        raise DCOSException(
-            '--master has been deprecated. Please use --leader.'
-        )
-    elif args.get('--slave'):
-        raise DCOSException(
-            '--slave has been deprecated. Please use --mesos-id.'
-        )
-
     return cmds.execute(_cmds(), args)
 
 
