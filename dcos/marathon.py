@@ -8,7 +8,7 @@ from dcos.errors import DCOSException, DCOSHTTPException
 logger = util.get_logger(__name__)
 
 
-def create_client(toml_config=None):
+def create_client(toml_config=None, service_name="marathon"):
     """Creates a Marathon client with the supplied configuration.
 
     :param toml_config: configuration dictionary
@@ -20,7 +20,7 @@ def create_client(toml_config=None):
     if toml_config is None:
         toml_config = config.get_config()
 
-    marathon_url = _get_marathon_url(toml_config)
+    marathon_url = _get_marathon_url(toml_config. service_name)
     timeout = config.get_config_val('core.timeout') or http.DEFAULT_TIMEOUT
     rpc_client = rpcclient.create_client(marathon_url, timeout)
 
@@ -28,7 +28,7 @@ def create_client(toml_config=None):
     return Client(rpc_client)
 
 
-def _get_marathon_url(toml_config):
+def _get_marathon_url(toml_config, service_name):
     """
     :param toml_config: configuration dictionary
     :type toml_config: config.Toml
@@ -41,7 +41,8 @@ def _get_marathon_url(toml_config):
         dcos_url = config.get_config_val('core.dcos_url', toml_config)
         if dcos_url is None:
             raise config.missing_config_exception(['core.dcos_url'])
-        marathon_url = urllib.parse.urljoin(dcos_url, 'service/marathon/')
+        marathon_url = urllib.parse.urljoin(dcos_url,
+                                            'service/{}/'.format(service_name))
 
     return marathon_url
 
