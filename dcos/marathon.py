@@ -387,6 +387,40 @@ class Client(object):
         response = self._rpc.http_req(http.delete, path, params=params)
         return response.json()
 
+    def kill_and_scale_tasks(self, task_ids, scale=None, wipe=None):
+        """Kills the tasks for a given application,
+        and can target a given agent, with a future target scale
+
+        :param task_ids: a list of task ids to kill
+        :type task_ids: list
+        :param scale: Scale the app down after killing the specified tasks
+        :type scale: bool
+        :param wipe: whether remove reservations and persistent volumes.
+        :type wipe: bool
+        :returns: If scale=false, all tasks that were killed are returned.
+                  If scale=true, than a deployment is triggered and the
+                  deployment id and version returned.
+        :rtype: list | dict
+        """
+
+        params = {}
+        path = 'v2/tasks/delete'
+
+        if scale:
+            params['scale'] = scale
+        if wipe:
+            params['wipe'] = wipe
+
+        response = self._rpc.http_req(http.post,
+                                      path,
+                                      params=params,
+                                      json={'ids': task_ids})
+
+        if 'tasks' in response.json():
+            return response.json()['tasks']
+        else:
+            return response.json()
+
     def restart_app(self, app_id, force=False):
         """Performs a rolling restart of all of the tasks.
 

@@ -81,6 +81,11 @@ def _cmds():
             function=subcommand.task_stop),
 
         cmds.Command(
+            hierarchy=['marathon', 'task', 'kill'],
+            arg_keys=['<task-ids>', '--scale', '--wipe'],
+            function=subcommand.task_kill),
+
+        cmds.Command(
             hierarchy=['marathon', 'task', 'show'],
             arg_keys=['<task-id>'],
             function=subcommand.task_show),
@@ -858,6 +863,30 @@ class MarathonSubcommand(object):
             raise DCOSException("Task '{}' does not exist".format(task_id))
 
         emitter.publish(task)
+        return 0
+
+    def task_kill(self, task_ids, scale, wipe):
+        """Kill one or multiple Marathon tasks
+
+        :param task_ids: the id of the task
+        :type task_ids: [str]
+        :param scale: Scale the app down after killing the specified tasks
+        :type scale: bool
+        :param wipe: whether remove reservations and persistent volumes.
+        :type wipe: bool
+        :returns: process return code
+        :rtype: int
+        """
+
+        client = self._create_marathon_client()
+        payload = client.kill_and_scale_tasks(task_ids, scale, wipe)
+
+        # No deployment was started and no tasks were killed
+        if not scale and not payload:
+            emitter.publish('No tasks were killed and no deployment was triggered.')
+            return 1
+
+        emitter.publish(payload)
         return 0
 
     def task_show(self, task_id):
