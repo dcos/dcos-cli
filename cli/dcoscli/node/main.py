@@ -490,7 +490,7 @@ def _list(json_, extra_field_names):
         if output:
             emitter.publish(output)
         else:
-            emitter.publish(errors.DefaultError('No slaves found.'))
+            emitter.publish(errors.DefaultError('No agents found.'))
 
 
 def _log(follow, lines, leader, slave, component, filters):
