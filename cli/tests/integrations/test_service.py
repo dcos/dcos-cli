@@ -97,17 +97,20 @@ def test_service_inactive_and_completed():
 
 
 def test_log():
-    with package('cassandra', deploy=True, args=['--package-version=0.2.0-1']):
-
+    with package(
+        'cassandra',
+        deploy=True,
+        args=['--package-version=1.0.25-3.0.10']
+    ):
         returncode, stdout, stderr = exec_command(
-            ['dcos', 'service', 'log', 'cassandra.dcos'])
+            ['dcos', 'service', 'log', 'cassandra'])
 
         assert returncode == 0
         assert len(stdout.decode('utf-8').split('\n')) > 1
         assert stderr == b''
 
         returncode, stdout, stderr = exec_command(
-            ['dcos', 'service', 'log', 'cassandra.dcos', 'stderr'])
+            ['dcos', 'service', 'log', 'cassandra', 'stderr'])
 
         assert returncode == 0
         assert len(stdout.decode('utf-8').split('\n')) > 1
