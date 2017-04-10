@@ -50,16 +50,25 @@ def test_service_table():
     assert_lines(['dcos', 'service'], 3)
 
 
-def test_service_inactive():
+def test_service_inactive_and_completed():
     package_install('kafka', True, ['--app'])
     wait_for_service('kafka')
+
+    # get kafka's framework ID
+    kafka_id = None
+    for service in get_services():
+        if service['name'] == 'kafka':
+            kafka_id = service['id']
+            break
+
+    assert kafka_id is not None
 
     # assert kafka is listed
     services = get_services()
     assert any(
         service['name'] == 'kafka' for service in services)
 
-    # stop the kafka task
+    # kill scheduler and test for inactive...
     exec_command(['dcos', 'marathon', 'app', 'stop', '/kafka', '--force'])
 
     time.sleep(5)
@@ -71,38 +80,19 @@ def test_service_inactive():
     inactive = get_services(args=['--inactive'])
     assert any(service['name'] == 'kafka' for service in inactive)
 
-    delete_zk_node('kafka-mesos')
-    exec_command(['dcos', 'package', 'uninstall', 'kafka'])
-
-
-def test_service_completed():
-    package_install('kafka', True, ['--app'])
-    wait_for_service('kafka')
-
-    services = get_services()
-
-    # get kafka's framework ID
-    kafka_id = None
-    for service in services:
-        if service['name'] == 'kafka':
-            kafka_id = service['id']
-            break
-
-    assert kafka_id is not None
-
+    # teardown framework and test for completed...
     service_shutdown(kafka_id)
     delete_zk_node('kafka-mesos')
 
-    # assert kafka is not running
-    services = get_services()
-    assert not any(service['id'] == kafka_id for service in services)
+    # assert kafka is not listed
+    assert not any(
+        service['name'] == 'kafka' for service in get_services())
 
     # assert kafka is completed
     services = get_services(args=['--completed'])
     assert len(services) >= 3
     assert any(service['id'] == kafka_id for service in services)
 
-    delete_zk_node('kafka-mesos')
     exec_command(['dcos', 'package', 'uninstall', 'kafka'])
 
 
