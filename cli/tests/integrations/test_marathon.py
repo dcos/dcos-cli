@@ -823,7 +823,9 @@ def _kill_task(task_ids, scale=None, wipe=None, expect_success=True):
     if expect_success:
         assert returncode == 0
         assert stderr == b''
-        result = json.loads(stdout.decode('utf-8'))
+        stdout = stdout.decode('utf-8')
+        payload = stdout[stdout.find(':') + 1:]  # Strip away help message
+        result = json.loads(payload)
         if scale:
             assert 'deploymentId' in result
         else:

@@ -416,10 +416,7 @@ class Client(object):
                                       params=params,
                                       json={'ids': task_ids})
 
-        if 'tasks' in response.json():
-            return response.json()['tasks']
-        else:
-            return response.json()
+        return response.json()
 
     def restart_app(self, app_id, force=False):
         """Performs a rolling restart of all of the tasks.

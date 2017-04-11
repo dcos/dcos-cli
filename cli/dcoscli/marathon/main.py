@@ -882,11 +882,14 @@ class MarathonSubcommand(object):
         payload = client.kill_and_scale_tasks(task_ids, scale, wipe)
 
         # No deployment was started and no tasks were killed
-        if not scale and not payload:
-            emitter.publish('No tasks were killed and no deployment was triggered.')
-            return 1
-
-        emitter.publish(payload)
+        if scale:
+            emitter.publish("Started deployment: ")
+            emitter.publish(payload)
+        else:
+            emitter.publish('Killed tasks: ')
+            emitter.publish(payload['tasks'])
+            if len(payload['tasks']) == 0:
+                return 1
         return 0
 
     def task_show(self, task_id):
