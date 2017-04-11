@@ -680,6 +680,16 @@ def test_kill_unknown_task():
         _kill_task(task_id, expect_success=False)
 
 
+def test_kill_task_wipe():
+    with _zero_instance_app():
+        start_app('zero-instance-app', 1)
+        watch_all_deployments()
+        task_list = _list_tasks(1, 'zero-instance-app')
+        task_id = [task_list[0]['id']]
+
+        _kill_task(task_id, wipe=True)
+
+
 def test_stop_unknown_task():
     with _zero_instance_app():
         start_app('zero-instance-app')
