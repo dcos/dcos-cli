@@ -422,7 +422,10 @@ def test_package_metadata():
         ]
     }
 
-    expected_source = bytes(UNIVERSE_TEST_REPOS['helloworld-universe'], 'utf-8')
+    expected_source = bytes(
+        UNIVERSE_TEST_REPOS['helloworld-universe'],
+        'utf-8'
+    )
 
     expected_labels = {
         'DCOS_PACKAGE_REGISTRY_VERSION': b'3.0',

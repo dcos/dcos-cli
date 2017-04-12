@@ -86,7 +86,8 @@ def teardown_universe_server():
     assert_command(
         ['dcos', 'marathon', 'app', 'remove', '/universe', '--force'])
     assert_command(
-        ['dcos', 'marathon', 'app', 'remove', '/helloworld-universe', '--force']
+        ['dcos', 'marathon', 'app', 'remove', '/helloworld-universe',
+         '--force']
     )
 
     watch_all_deployments()
