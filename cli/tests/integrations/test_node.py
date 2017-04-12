@@ -57,6 +57,17 @@ def test_node_table_field_option():
     assert lines[0].split() == ['HOSTNAME', 'IP', 'ID', 'TYPE', 'DISK_USED']
 
 
+def test_node_table_uppercase_field_option():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'node', '--field=TASK_RUNNING'])
+
+    assert returncode == 0
+    assert stderr == b''
+    lines = stdout.decode('utf-8').splitlines()
+    assert len(lines) > 2
+    assert lines[0].split() == ['HOSTNAME', 'IP', 'ID', 'TYPE', 'TASK_RUNNING']
+
+
 def test_node_log_empty():
     stderr = b"You must choose one of --leader or --mesos-id.\n"
     assert_command(['dcos', 'node', 'log'], returncode=1, stderr=stderr)
