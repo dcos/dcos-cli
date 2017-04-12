@@ -82,7 +82,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['marathon', 'task', 'kill'],
-            arg_keys=['<task-ids>', '--scale', '--wipe'],
+            arg_keys=['<task-ids>', '--scale', '--wipe', '--json'],
             function=subcommand.task_kill),
 
         cmds.Command(
@@ -865,7 +865,7 @@ class MarathonSubcommand(object):
         emitter.publish(task)
         return 0
 
-    def task_kill(self, task_ids, scale, wipe):
+    def task_kill(self, task_ids, scale, wipe, json_):
         """Kill one or multiple Marathon tasks
 
         :param task_ids: the id of the task
@@ -874,6 +874,8 @@ class MarathonSubcommand(object):
         :type scale: bool
         :param wipe: whether remove reservations and persistent volumes.
         :type wipe: bool
+        :param json_: output JSON if true
+        :type json_: bool
         :returns: process return code
         :rtype: int
         """
@@ -881,15 +883,29 @@ class MarathonSubcommand(object):
         client = self._create_marathon_client()
         payload = client.kill_and_scale_tasks(task_ids, scale, wipe)
 
-        # No deployment was started and no tasks were killed
+        def print_deployment(deployment, json_):
+            if json_:
+                emitter.publish(deployment)
+            else:
+                emitter.publish('Created deployment: {}'.format(
+                    deployment['deploymentId']))
+
+        def print_killed_tasks(payload, json_):
+            if json_:
+                emitter.publish(payload)
+            else:
+                emitter.publish('Killed tasks: {}'.format(
+                    [task['id'] for task in payload['tasks']]))
+
         if scale:
-            emitter.publish("Started deployment: ")
-            emitter.publish(payload)
+            print_deployment(payload, json_)
         else:
-            emitter.publish('Killed tasks: ')
-            emitter.publish(payload['tasks'])
+            print_killed_tasks(payload, json_)
+
             if len(payload['tasks']) == 0:
-                return 1
+                raise DCOSException(
+                    'Failed to kill tasks. task-ids seems to be unknown')
+
         return 0
 
     def task_show(self, task_id):

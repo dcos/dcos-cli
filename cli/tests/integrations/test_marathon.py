@@ -813,7 +813,7 @@ def _stop_task(task_id, wipe=None, expect_success=True):
 
 
 def _kill_task(task_ids, scale=None, wipe=None, expect_success=True):
-    cmd = ['dcos', 'marathon', 'task', 'kill'] + task_ids
+    cmd = ['dcos', 'marathon', 'task', 'kill', '--json'] + task_ids
     if scale:
         cmd.append('--scale')
     if wipe:
@@ -823,13 +823,12 @@ def _kill_task(task_ids, scale=None, wipe=None, expect_success=True):
     if expect_success:
         assert returncode == 0
         assert stderr == b''
-        stdout = stdout.decode('utf-8')
-        payload = stdout[stdout.find(':') + 1:]  # Strip away help message
-        result = json.loads(payload)
+        result = json.loads(stdout.decode('utf-8'))
         if scale:
             assert 'deploymentId' in result
         else:
-            assert sorted([task['id'] for task in result]) == sorted(task_ids)
+            assert sorted(
+                [task['id'] for task in result['tasks']]) == sorted(task_ids)
 
     else:
         assert returncode == 1

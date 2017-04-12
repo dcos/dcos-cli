@@ -39,7 +39,7 @@ Usage:
     dcos marathon debug details <app-id> [--json]
     dcos marathon task list [--json <app-id>]
     dcos marathon task stop [--wipe] <task-id>
-    dcos marathon task kill [--scale] [--wipe] [<task-ids>...]
+    dcos marathon task kill [--scale] [--wipe] [--json] [<task-ids>...]
     dcos marathon task show <task-id>
 
 Commands:
