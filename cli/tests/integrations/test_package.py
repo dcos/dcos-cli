@@ -67,15 +67,6 @@ def test_version():
                    stdout=b'dcos-package version SNAPSHOT\n')
 
 
-def test_update_deprecation_notice():
-    notice = (b"This command has been deprecated. "
-              b"Repositories will be automatically updated after they are"
-              b" added by `dcos package repo add`\n")
-    assert_command(['dcos', 'package', 'update'],
-                   stderr=notice,
-                   returncode=1)
-
-
 def test_repo_list():
     repo_list = bytes(
         (
@@ -136,6 +127,26 @@ def test_repo_remove():
         'utf-8'
     )
     _repo_remove(['Universe'], repo_list)
+
+
+def test_repo_remove_multi():
+    # Add "Universe" repo so we can test removing it
+    repo_list = bytes("test-universe: {}\nUniverse: {}\n".format(
+        UNIVERSE_TEST_REPO, UNIVERSE_REPO), 'utf-8')
+    args = ["Universe", UNIVERSE_REPO]
+    _repo_add(args, repo_list)
+
+    # Add "1.7-universe" repo so we can test removing it
+    repo17 = "http://universe.mesosphere.com/repo-1.7"
+    repo_list = bytes(
+        "test-universe: {}\n1.7-universe: {}\nUniverse: {}\n".format(
+            UNIVERSE_TEST_REPO, repo17,  UNIVERSE_REPO), 'utf-8')
+    args = ["1.7-universe", repo17, '--index=1']
+    _repo_add(args, repo_list)
+
+    repo_list = bytes(
+        "test-universe: {}\n".format(UNIVERSE_TEST_REPO), 'utf-8')
+    _repo_remove(['1.7-universe', 'Universe'], repo_list)
 
 
 def test_repo_empty():

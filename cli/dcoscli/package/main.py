@@ -44,11 +44,6 @@ def _cmds():
 
     return [
         cmds.Command(
-            hierarchy=['package', 'update'],
-            arg_keys=[],
-            function=_update),
-
-        cmds.Command(
             hierarchy=['package', 'repo', 'list'],
             arg_keys=['--json'],
             function=_list_repos),
@@ -65,7 +60,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['package', 'repo', 'remove'],
-            arg_keys=['<repo-name>'],
+            arg_keys=['<repo-names>'],
             function=_remove_repo),
 
         cmds.Command(
@@ -126,19 +121,6 @@ def _package(config_schema, info):
         return 1
 
     return 0
-
-
-def _update():
-    """
-    :returns: Deprecation notice
-    :rtype: str
-    """
-
-    get_package_manager()
-    notice = ("This command has been deprecated. "
-              "Repositories will be automatically updated after they are added"
-              " by `dcos package repo add`")
-    raise DCOSException(notice)
 
 
 def _list_repos(is_json):
@@ -232,17 +214,18 @@ def _raise_invalid_repos_file():
         '{"repositories": [{"name": "Universe", "uri": "uri-here"}]}')
 
 
-def _remove_repo(repo_name):
+def _remove_repo(repo_names):
     """Remove package repo and update repo with new repo
 
-    :param repo_name: name to call repo
-    :type repo_name: str
+    :param repo_names: names of repos
+    :type repo_name: [str]
     :returns: Process status
     :rtype: int
     """
 
     package_manager = get_package_manager()
-    package_manager.remove_repo(repo_name)
+    for repo_name in repo_names:
+        package_manager.remove_repo(repo_name)
 
     return 0
 
