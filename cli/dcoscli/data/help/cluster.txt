@@ -8,6 +8,7 @@ Usage:
     dcos cluster attach <name>
     dcos cluster list [--json]
     dcos cluster remove <name>
+    dcos cluster rename <name> <new_name>
     dcos cluster setup <dcos_url>
         [--insecure | --no-check | --ca-certs=<ca-certs>]
         [--provider=<provider_id>] [--username=<username>]
@@ -19,6 +20,8 @@ Commands:
         Attach a configured cluster.
     list
         List CLI configured clusters.
+    rename
+        Rename a cluster name in the CLI.
     remove
         Remove a configured cluster from the CLI.
     setup
@@ -55,3 +58,5 @@ Positional Arguments:
         The public master of your DC/OS cluster.
     name
         The name of the cluster.
+    new_name
+        New name of cluster.

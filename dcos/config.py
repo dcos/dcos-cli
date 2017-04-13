@@ -196,17 +196,22 @@ def missing_config_exception(keys):
     return DCOSException(msg)
 
 
-def set_val(name, value):
+def set_val(name, value, config_path=None):
     """
     :param name: name of paramater
     :type name: str
     :param value: value to set to paramater `name`
     :type param: str
+    :param config_path: path to config to use
+    :type config_path: str
     :returns: Toml config, message of change
     :rtype: Toml, str
     """
 
-    toml_config = get_config(True)
+    if config_path:
+        toml_config = load_from_path(config_path, True)
+    else:
+        toml_config = get_config(True)
 
     section, subkey = split_key(name)
 
@@ -230,7 +235,7 @@ def set_val(name, value):
 
     check_config(toml_config_pre, toml_config, section)
 
-    save(toml_config)
+    save(toml_config, config_path)
 
     msg = "[{}]: ".format(name)
     if name == "core.dcos_acs_token":
@@ -276,18 +281,21 @@ def load_from_path(path, mutable=False):
         return (MutableToml if mutable else Toml)(toml_obj)
 
 
-def save(toml_config):
+def save(toml_config, config_path=None):
     """
     :param toml_config: TOML configuration object
     :type toml_config: MutableToml or Toml
+    :param config_path: path to config to use
+    :type config_path: str
     """
 
     serial = toml.dumps(toml_config._dictionary)
-    path = get_config_path()
+    if config_path is None:
+        config_path = get_config_path()
 
-    util.ensure_file_exists(path)
-    util.enforce_file_permissions(path)
-    with util.open_file(path, 'w') as config_file:
+    util.ensure_file_exists(config_path)
+    util.enforce_file_permissions(config_path)
+    with util.open_file(config_path, 'w') as config_file:
         config_file.write(serial)
 
 
