@@ -88,9 +88,14 @@ def _set(name, value):
         notice = ("This config property has been deprecated. "
                   "Please add your repositories with `dcos package repo add`")
         return DCOSException(notice)
-    if name == "core.email":
+    elif name == "core.email":
         notice = "This config property has been deprecated."
         return DCOSException(notice)
+    elif name == "core.dcos_url":
+        notice = ("This config property is being deprecated. "
+                  "To setup the CLI to talk to your cluster, please run "
+                  "`dcos cluster setup <dcos_url>`.")
+        emitter.publish(DefaultError(notice))
 
     toml, msg = config.set_val(name, value)
     emitter.publish(DefaultError(msg))
