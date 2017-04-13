@@ -669,6 +669,18 @@ def test_list_cli_only(env):
             stdout=helloworld_json)
 
 
+def test_cli_global():
+    helloworld_path = 'tests/data/package/json/test_list_helloworld_cli.json'
+    helloworld_json = file_json(helloworld_path)
+
+    with _helloworld_cli(global_=True):
+        assert os.path.exists(subcommand.global_package_dir("helloworld"))
+
+        assert_command(
+            cmd=['dcos', 'package', 'list', '--json', '--cli'],
+            stdout=helloworld_json)
+
+
 def test_uninstall_multiple_frameworknames(zk_znode):
     _install_chronos(
         args=['--yes', '--options=tests/data/package/chronos-1.json'])
@@ -959,9 +971,12 @@ def _helloworld():
                     uninstall_stderr=stderr)
 
 
-def _helloworld_cli():
+def _helloworld_cli(global_=False):
+    args = ['--yes', '--cli']
+    if global_:
+        args += ['--global']
     return _package(name='helloworld',
-                    args=['--yes', '--cli'],
+                    args=args,
                     stdout=HELLOWORLD_CLI_STDOUT,
                     uninstall_stderr=b'')
 
