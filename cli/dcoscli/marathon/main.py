@@ -5,14 +5,16 @@ import time
 
 import docopt
 import pkg_resources
+import retrying
 import six
 
 import dcoscli
-from dcos import cmds, emitting, http, jsonitem, marathon, options, util
+from dcos import cmds, emitting, http, jsonitem, marathon, mesos, options, util
 from dcos.errors import DCOSException
 from dcoscli import tables
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
+
 
 logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
@@ -164,6 +166,21 @@ def _cmds():
             hierarchy=['marathon', 'group', 'scale'],
             arg_keys=['<group-id>', '<scale-factor>', '--force'],
             function=subcommand.group_scale),
+
+        cmds.Command(
+            hierarchy=['marathon', 'leader', 'delete'],
+            arg_keys=[],
+            function=subcommand.delete_leader),
+
+        cmds.Command(
+            hierarchy=['marathon', 'leader', 'show'],
+            arg_keys=['--json'],
+            function=subcommand.show_leader),
+
+        cmds.Command(
+            hierarchy=['marathon', 'ping'],
+            arg_keys=['--once'],
+            function=subcommand.ping),
 
         cmds.Command(
             hierarchy=['marathon', 'pod', 'add'],
@@ -681,6 +698,80 @@ class MarathonSubcommand(object):
         scale_factor = util.parse_float(scale_factor)
         deployment = client.scale_group(group_id, scale_factor, force)
         emitter.publish('Created deployment {}'.format(deployment))
+        return 0
+
+    def delete_leader(self):
+        """
+        :returns: process return code
+        :rtype: int
+        """
+
+        client = self._create_marathon_client()
+        response = client.delete_leader()
+        emitter.publish(response['message'])
+        return 0
+
+    def show_leader(self, json_):
+        """
+        Returns the Marathon leader in the cluster
+
+        :param json_: output json if True
+        :type json_: bool
+        :returns: process return code
+        :rtype: int
+        """
+
+        hosts = mesos.MesosDNSClient().hosts('marathon.mesos')
+        leader = hosts[0]
+
+        if json_:
+            emitter.publish(leader)
+        else:
+            table = tables.dns_table(hosts)
+            emitter.publish(table)
+        return 0
+
+    def ping(self, once):
+        """ Pings the marathon client X times where X is the number of masters.
+
+        :param once: run ping once regardless of number of masters
+        :type once: bool
+        :returns: str response
+        :rtype: str
+        """
+        if once:
+            count = 1
+        else:
+            count = len(mesos.MesosDNSClient().masters())
+
+        consecutive_count = 0
+        client = self._create_marathon_client()
+        timeout = 10
+
+        @retrying.retry(stop_max_delay=timeout*1000)
+        def ping_for_each_master():
+            nonlocal consecutive_count
+            try:
+                response = client.ping()
+                consecutive_count = consecutive_count + 1
+            except:
+                consecutive_count = 0
+
+            if consecutive_count < count:
+                msg = 'The consecutive count: {} is less than master count: {}'
+                raise DCOSException(msg.format(consecutive_count, count))
+            else:
+                return response
+
+        try:
+            response = ping_for_each_master()
+        except:
+            response = 'Unable to get ping for all {} masters in {}s'.format(
+                count, timeout
+            )
+        emitter.publish('Marathon ping response[{}x]: {}'.format(
+            count, response
+        ))
         return 0
 
     def restart(self, app_id, force):
