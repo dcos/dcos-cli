@@ -39,6 +39,7 @@ Usage:
     dcos marathon debug details <app-id> [--json]
     dcos marathon task list [--json <app-id>]
     dcos marathon task stop [--wipe] <task-id>
+    dcos marathon task kill [--scale] [--wipe] [--json] [<task-ids>...]
     dcos marathon task show <task-id>
 
 Commands:
@@ -109,6 +110,8 @@ Commands:
         List all tasks.
     task stop
         Stop a task.
+    task kill
+        Kill one or more tasks.
     task show
         List a specific task.
 
@@ -178,5 +181,7 @@ Positional Arguments:
         If omitted, properties are read from a JSON object provided on stdin.
     <task-id>
         The task ID.
+    <task_ids>
+        List of task IDs.
     <scale-factor>
         The factor to scale an application group by.
