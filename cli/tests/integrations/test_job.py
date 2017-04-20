@@ -176,7 +176,11 @@ def test_show_runs():
 
 
 def _run_job(job_id):
-    assert_command(['dcos', 'job', 'run', job_id])
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'job', 'run', job_id])
+
+    assert returncode == 0
+    assert 'Run ID:' in stdout.decode('utf-8')
 
 
 @contextlib.contextmanager

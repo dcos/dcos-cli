@@ -297,7 +297,9 @@ class Client(object):
 
         job_id = util.normalize_marathon_id_path(job_id)
         path = '/v1/jobs{}/runs'.format(job_id)
-        self._rpc.http_req(http.post, path)
+        response = self._rpc.http_req(http.post, path)
+
+        return response.json()
 
     def get_runs(self, job_id):
         """Gets the schedules for a given job

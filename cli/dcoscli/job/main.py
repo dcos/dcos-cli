@@ -76,7 +76,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['job', 'run'],
-            arg_keys=['<job-id>'],
+            arg_keys=['<job-id>', '--json'],
             function=_run),
 
         cmds.Command(
@@ -398,7 +398,7 @@ def _get_runs(job_id, run_id=None):
         raise DCOSException(e)
 
 
-def _run(job_id):
+def _run(job_id, json_flag=False):
     """
     :param job_id: Id of the job
     :type job_id: str
@@ -408,12 +408,16 @@ def _run(job_id):
 
     try:
         client = metronome.create_client()
-        client.run_job(job_id)
+        run_job = client.run_job(job_id)
     except DCOSHTTPException as e:
         if e.response.status_code == 404:
             emitter.publish("Job ID: '{}' does not exist.".format(job_id))
         else:
             emitter.publish("Error running job: '{}'".format(job_id))
+    if json_flag:
+        emitter.publish(run_job)
+    else:
+        emitter.publish('Run ID: {}'.format(run_job['id']))
 
     return 0
 
