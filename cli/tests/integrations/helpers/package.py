@@ -1,3 +1,4 @@
+import collections
 import contextlib
 import time
 
@@ -34,19 +35,28 @@ def package(package_name, deploy=False, args=[]):
 
 
 UNIVERSE_REPO = "https://universe.mesosphere.com/repo"
-UNIVERSE_TEST_REPO = "http://universe.marathon.mesos:8085/repo"
+UNIVERSE_TEST_REPOS = collections.OrderedDict(
+    [
+        ("test-universe", "http://universe.marathon.mesos:8085/repo"),
+        (
+            "helloworld-universe",
+            "http://helloworld-universe.marathon.mesos:8086/repo"
+        )
+    ]
+)
 
 
 def setup_universe_server():
-    # add universe-server with static packages
+    # add both Unvierse servers with static packages
     add_app('tests/data/universe-v3-stub.json', True)
+    add_app('tests/data/helloworld-v3-stub.json', True)
 
     assert_command(
         ['dcos', 'package', 'repo', 'remove', 'Universe'])
 
-    assert_command(
-        ['dcos', 'package', 'repo', 'add', 'test-universe', UNIVERSE_TEST_REPO]
-    )
+    # Add the two test repos to Cosmos
+    for name, url in UNIVERSE_TEST_REPOS.items():
+        assert_command(['dcos', 'package', 'repo', 'add', name, url])
 
     watch_all_deployments()
     # Give the test universe some time to become available
@@ -65,12 +75,21 @@ def setup_universe_server():
 
 
 def teardown_universe_server():
-    assert_command(
-        ['dcos', 'package', 'repo', 'remove', 'test-universe'])
+    # Remove the test Universe repos from Cosmos
+    for name, url in UNIVERSE_TEST_REPOS.items():
+        assert_command(['dcos', 'package', 'repo', 'remove', name])
+
     assert_command(
         ['dcos', 'package', 'repo', 'add', 'Universe', UNIVERSE_REPO])
+
+    # Remove the Marathon tasks running our two test Universe
     assert_command(
         ['dcos', 'marathon', 'app', 'remove', '/universe', '--force'])
+    assert_command(
+        ['dcos', 'marathon', 'app', 'remove', '/helloworld-universe',
+         '--force']
+    )
+
     watch_all_deployments()
 
 

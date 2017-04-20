@@ -27,6 +27,9 @@ The example below installs every package available in the DC/OS repository::
 
     dcos package search --json | jq '.[0].packages[].name' | xargs -L 1 dcos package install --yes
 
+Note: The CLI output supports support UTF-8 encoding for stdout and stderr.
+Please follow your platform's instructions on how to do that.
+
 Development Dependencies
 ------------------------
 

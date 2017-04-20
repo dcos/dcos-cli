@@ -7,7 +7,7 @@
     "framework": false,
     "maintainer": "support@mesosphere.io",
     "name": "helloworld",
-    "packagingVersion": "2.0",
+    "packagingVersion": "3.0",
     "postInstallNotes": "A sample post-installation message",
     "preInstallNotes": "A sample pre-installation message",
     "selected": false,

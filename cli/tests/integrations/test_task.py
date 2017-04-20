@@ -184,6 +184,9 @@ def test_log_two_tasks():
 
     lines = stdout.decode('utf-8').split('\n')
     assert len(lines) == 19
+    assert len(
+        [line for line in lines if line.startswith('===> task:test-app')]
+    ) == 2
 
 
 @pytest.mark.skipif(sys.platform == 'win32',
