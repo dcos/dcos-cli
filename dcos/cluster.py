@@ -2,6 +2,7 @@ import contextlib
 import os
 import shutil
 import ssl
+import urllib
 
 from urllib.request import urlopen
 
@@ -178,12 +179,22 @@ def get_cluster_cert(dcos_url):
     unverified = ssl.create_default_context()
     unverified.check_hostname = False
     unverified.verify_mode = ssl.CERT_NONE
+
+    error_msg = ("Error downloading CA certificate from cluster. "
+                 "Please check the provided DC/OS URL.")
     try:
         with urlopen(cert_bundle_url, context=unverified) as f:
             return f.read().decode('utf-8')
+    except urllib.error.HTTPError as e:
+        # Open source DC/OS does not currently expose its root CA certificate
+        if e.code == 404:
+            return False
+        else:
+            logger.debug(e)
+            raise DCOSException(error_msg)
     except Exception as e:
-        msg = "Error downloading CA cert from cluster"
-        raise DCOSException("{}:\n{}".format(msg, e))
+        logger.debug(e)
+        raise DCOSException(error_msg)
 
 
 def get_clusters():

@@ -6,7 +6,7 @@ Usage:
     dcos cluster --info
     dcos cluster --version
     dcos cluster attach <name>
-    dcos cluster list [--json]
+    dcos cluster list [--attached --json]
     dcos cluster remove <name>
     dcos cluster rename <name> <new_name>
     dcos cluster setup <dcos_url>
@@ -17,7 +17,7 @@ Usage:
 
 Commands:
     attach
-        Attach a configured cluster.
+        List only the currently attached cluster.
     list
         List CLI configured clusters.
     rename
@@ -28,6 +28,8 @@ Commands:
         Setup the CLI to talk to your DC/OS cluster.
 
 Options:
+    --attached
+        List only attached cluster.
     --ca-certs=<ca-certs>
         Specify the path to a list of trusted CAs to verify requests against.
     -h, --help
@@ -37,7 +39,7 @@ Options:
     --insecure
         Allow requests to bypass SSL certificate verification (insecure).
     --no-check
-        Do not check CA certficate downloaded from cluster (insecure).
+        Do not check CA certficate downloaded from cluster (insecure). Applies to Enterprise DC/OS only.
     --password=<password>
         Specify password on the command line (insecure).
     --password-env=<password_env>

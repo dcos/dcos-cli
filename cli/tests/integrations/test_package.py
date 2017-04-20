@@ -654,7 +654,7 @@ def test_list_cli_only(env):
     helloworld_json = file_json(helloworld_path)
 
     with _helloworld_cli(), \
-            update_config('core.dcos_url', 'http://nohost', env):
+            update_config('package.cosmos_url', 'http://nohost', env):
         assert_command(
             cmd=['dcos', 'package', 'list', '--json', '--cli'],
             stdout=helloworld_json)

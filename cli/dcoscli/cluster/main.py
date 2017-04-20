@@ -53,11 +53,11 @@ def _cmds():
                       '--insecure', '--no-check', '--ca-certs',
                       '--password', '--password-env', '--password-file',
                       '--provider', '--username', '--private-key'],
-            function=_setup),
+            function=setup),
 
         cmds.Command(
             hierarchy=['cluster', 'list'],
-            arg_keys=['--json'],
+            arg_keys=['--json', '--attached'],
             function=_list),
 
         cmds.Command(
@@ -94,21 +94,28 @@ def _info(info):
     return 0
 
 
-def _list(json_):
+def _list(json_, attached):
     """
     List configured clusters.
 
     :param json_: output json if True
     :type json_: bool
+    :param attached: return only attached cluster
+    :type attached: True
     :rtype: None
     """
 
-    clusters = [c.dict() for c in cluster.get_clusters()]
+    clusters = [c.dict() for c in cluster.get_clusters()
+                if not attached or c.is_attached()]
     if json_:
         emitter.publish(clusters)
     elif len(clusters) == 0:
-        msg = ("No clusters are currently configured. "
-               "To configure one, run `dcos cluster setup <dcos_url>`")
+        if attached:
+            msg = ("No cluster is attached. "
+                   "Please run `dcos cluster attach <cluster-name>")
+        else:
+            msg = ("No clusters are currently configured. "
+                   "To configure one, run `dcos cluster setup <dcos_url>`")
         raise DCOSException(msg)
     else:
         emitter.publish(clusters_table(clusters))
@@ -160,10 +167,10 @@ def _rename(name, new_name):
         config.set_val("cluster.name", new_name, c.get_config_path())
 
 
-def _setup(dcos_url,
-           insecure, no_check, ca_certs,
-           password_str, password_env, password_file,
-           provider, username, key_path):
+def setup(dcos_url,
+          insecure=False, no_check=False, ca_certs=None,
+          password_str=None, password_env=None, password_file=None,
+          provider=None, username=None, key_path=None):
     """
     Setup the CLI to talk to your DC/OS cluster.
 
@@ -209,7 +216,11 @@ def _setup(dcos_url,
             config.set_val("core.ssl_verify", ca_certs)
         else:
             cert = cluster.get_cluster_cert(dcos_url)
-            stored_cert = _store_cluster_cert(cert, no_check)
+            # if we don't have a cert don't try to verify one
+            if cert is False:
+                config.set_val("core.ssl_verify", "false")
+            else:
+                stored_cert = _store_cluster_cert(cert, no_check)
 
         try:
             login(dcos_url,
