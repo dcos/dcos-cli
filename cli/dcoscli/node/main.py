@@ -23,7 +23,7 @@ DIAGNOSTICS_BASE_URL = '/system/health/v1/report/diagnostics/'
 
 
 # if a bundle size if more then 100Mb then warn user.
-BUNDLE_WARN_SIZE = 1000000
+BUNDLE_WARN_SIZE = 100 * 1000 * 1000
 
 
 def main(argv):
