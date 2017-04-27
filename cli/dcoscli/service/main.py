@@ -1,8 +1,13 @@
+import email
+import io
+import json
+import sys
+
 import docopt
 import six
 
 import dcoscli
-from dcos import cmds, emitting, marathon, mesos, subprocess, util
+from dcos import cmds, emitting, http, marathon, mesos, subprocess, util
 from dcos.errors import DCOSException, DefaultError
 from dcoscli import log, tables
 from dcoscli.subcommand import default_command_info, default_doc
@@ -39,6 +44,10 @@ def _cmds():
     """
 
     return [
+        cmds.Command(
+            hierarchy=['service', 'http'],
+            arg_keys=['--method', '--data', '--header', '--cookie', '--output', '<service>', '<request-path>'],
+            function=_http),
 
         cmds.Command(
             hierarchy=['service', 'log'],
@@ -111,6 +120,62 @@ def _shutdown(service_id):
     """
 
     mesos.DCOSClient().shutdown_framework(service_id)
+    return 0
+
+
+def _http(method, data, headers, cookie, output_file, service, path):
+    """Do HTTP request to a service
+
+    :param method: HTTP method (e.g.: "GET", "POST", "PUT", etc.)
+    :type method: str
+    :param data: Data for HTTP request body
+    :type method: str
+    :param cookie: Cookie data for HTTP request
+    :type method: str
+    :param service: the id for the service
+    :type service: str
+    :param path: path to include in request URL to service
+    :type path: str
+    :returns: process return code
+    :rtype: int
+    """
+
+    if not path.startswith('/'):
+        path = '/' + path
+    url = mesos.DCOSClient().get_dcos_url('service/' + service + path)
+    sys.stderr.write('>>> %s %s\n' % (method, url))
+    http_func = getattr(http, method.lower())
+    headers_dict = {}
+    kwargs = {'headers': headers_dict}
+    if data is not None:
+        if data == '-':
+            data = sys.stdin.read()
+        if data.startswith('@'):
+            with open(data[1:]) as f:
+                data = f.read()
+        kwargs['data'] = data
+    for header in headers:
+        message = email.message_from_file(io.StringIO(header))
+        for key, val in message.items():
+            headers_dict[key] = val
+    if cookie:
+        headers_dict['Cookie'] = cookie
+    response = http_func(url, **kwargs)
+
+    if output_file:
+        f = open(output_file, 'w')
+        sys.stdout = f
+
+    try:
+        emitter.publish(response.json())
+    except json.JSONDecodeError:
+        emitter.publish(response.text)
+    finally:
+        if output_file:
+            sys.stdout = sys.__stdout__
+            print('Output written to %s' % output_file)
+            f.close()
+
     return 0
 
 

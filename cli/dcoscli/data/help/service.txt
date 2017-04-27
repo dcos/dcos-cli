@@ -6,11 +6,18 @@ Usage:
     dcos service --info
     dcos service --version
     dcos service [--completed --inactive --json]
+    dcos service [--method=<method>] [--data=<data>]
+                 [--cookie=<data>] [--header=<header>]...
+                 [--output=<file>]
+                 http <service> <request-path>
     dcos service log [--follow --lines=N --ssh-config-file=<path>]
                      <service> [<file>]
     dcos service shutdown <service-id>
 
 Commands:
+    http
+        Do HTTP request to a service.
+
     log
         Print the service logs.
 
@@ -35,6 +42,18 @@ Options:
         Print JSON-formatted list of DC/OS services.
     --lines=N
         Print the last N lines, where 10 is the default.
+    --method=<method>, -X <method>
+        HTTP request method to use (e.g.: "GET", "POST", "PUT", etc.).
+        [default: GET]
+    --data=<data>, -d <data>
+        Data for HTTP POST/PUT/PATCH request body
+    --header=<line>, -H <line>
+        Pass custom header <line> to server
+    --cookie=<data>, -b <data>
+        Pass the data to the HTTP server in the Cookie header.
+        The data should be in the format "NAME1=VALUE1; NAME2=VALUE2".
+    --output=<file>, -o <file>
+        Write output to <file> instead of stdout.
     --ssh-config-file=<path>
         The path to the SSH config file. This is used to access the Marathon
         logs.
