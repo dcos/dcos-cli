@@ -18,6 +18,11 @@ def env():
     return r
 
 
+def test_about():
+    returncode, stdout, stderr = exec_command(['dcos', 'marathon', 'about'])
+    assert returncode == 0
+
+
 def test_info():
     stdout = b'Authenticate to DC/OS cluster\n'
     assert_command(['dcos', 'auth', '--info'],
