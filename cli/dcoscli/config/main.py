@@ -3,10 +3,10 @@ import collections
 import docopt
 
 import dcoscli
-from dcos import cmds, config, emitting, http, util
+from dcos import cmds, config, emitting, http, subprocess, util
 from dcos.errors import DCOSException, DefaultError
 from dcoscli.subcommand import default_command_info, default_doc
-from dcoscli.util import decorate_docopt_usage
+from dcoscli.util import decorate_docopt_usage, edit_file
 
 emitter = emitting.FlatEmitter()
 logger = util.get_logger(__name__)
@@ -58,6 +58,11 @@ def _cmds():
             hierarchy=['config', 'validate'],
             arg_keys=[],
             function=_validate),
+
+        cmds.Command(
+            hierarchy=['config', 'edit'],
+            arg_keys=[],
+            function=_edit),
 
         cmds.Command(
             hierarchy=['config'],
@@ -226,4 +231,25 @@ def _validate():
         return 1
 
     emitter.publish("Congratulations, your configuration is valid!")
+    return 0
+
+
+def _edit():
+    """
+    :returns: process status
+    :rtype: int
+    """
+
+    def validate(config_file_obj):
+        toml_config = config.load_from_path(config_file_obj.name)
+        schema = config.generate_root_schema(toml_config)
+        errs = util.validate_json(toml_config._dictionary, schema)
+        if len(errs) != 0:
+            emitter.publish(util.list_to_err(errs))
+            return False
+        return True
+
+    config_path = config.get_config_path()
+    edit_file(config_path, validate=validate)
+
     return 0
