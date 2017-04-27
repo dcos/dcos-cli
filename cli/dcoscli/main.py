@@ -6,7 +6,8 @@ import docopt
 from six.moves import urllib
 
 import dcoscli
-from dcos import config, constants, emitting, errors, http, subcommand, util
+from dcos import (cluster, config, constants, emitting, errors, http,
+                  subcommand, util)
 from dcos.errors import DCOSException
 from dcoscli.help.main import dcos_help
 from dcoscli.subcommand import default_doc, SubcommandMain
@@ -68,6 +69,11 @@ def _main():
         os.environ[constants.DCOS_DEBUG_ENV] = 'true'
 
     util.configure_process_from_environ()
+
+    global_config = config.get_config_path()
+    clusters_config = config.get_clusters_path()
+    if not os.path.exists(clusters_config) and os.path.exists(global_config):
+        cluster.create_cluster_config()
 
     if args['--version']:
         return _get_versions(config.get_config_val("core.dcos_url"))
