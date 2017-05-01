@@ -11,7 +11,7 @@ Description:
         dcos job show <job-id>
         dcos job update <job-file>
         dcos job kill <job-id> [<run-id>][--all]
-        dcos job run <job-id>
+        dcos job run <job-id> [--json]
         dcos job list [--json]
         dcos job schedule add <job-id> <schedule-file>
         dcos job schedule show <job-id> [--json]

@@ -275,21 +275,13 @@ def job_table(job_list):
 
     fields = OrderedDict([
         ('id', lambda s: s['id']),
-        ('Description', lambda s:
-            s['description'] if 'description' in s else ''),
         ('Status', lambda s: _job_status(s)),
-        ('Last Succesful Run', lambda s: s['history']['lastSuccessAt']
-            if 'history' in s else 'N/A'),
+        ('Last Run', lambda s: _last_run_status(s)),
     ])
 
-    limits = {
-        "Description": 35
-    }
-
-    tb = truncate_table(fields, job_list, limits, sortby="ID")
-    tb.align['ID'] = 'l'
-    tb.align["DESCRIPTION"] = 'l'
+    tb = truncate_table(fields, job_list, None, sortby="ID")
     tb.align["STATUS"] = 'l'
+    tb.align["LAST RUN"] = 'l'
 
     return tb
 
@@ -308,7 +300,8 @@ def job_history_table(schedule_list):
         ('finished', lambda s: s['finishedAt']),
     ])
     tb = table(fields, schedule_list, sortby="STARTED")
-    tb.align['ID'] = 'l'
+    tb.align["STARTED"] = 'l'
+    tb.align["FINISHED"] = 'l'
 
     return tb
 
@@ -326,12 +319,14 @@ def schedule_table(schedule_list):
         ('id', lambda s: s['id']),
         ('cron', lambda s: s['cron']),
         ('enabled', lambda s: s['enabled']),
-        ('next run', lambda s: s['nextRunAt']),
         ('concurrency policy', lambda s: s['concurrencyPolicy']),
+        ('next run', lambda s: s['nextRunAt']),
     ])
     tb = table(fields, schedule_list)
-    tb.align['ID'] = 'l'
     tb.align['CRON'] = 'l'
+    tb.align['ENABLED'] = 'l'
+    tb.align['NEXT RUN'] = 'l'
+    tb.align['CONCURRENCY POLICY'] = 'l'
 
     return tb
 
@@ -345,15 +340,50 @@ def job_runs_table(runs_list):
     :rtype: PrettyTable
     """
     fields = OrderedDict([
-        ('job id', lambda s: s['jobId']),
         ('id', lambda s: s['id']),
+        ('job id', lambda s: s['jobId']),
         ('started at', lambda s: s['createdAt']),
     ])
     tb = table(fields, runs_list)
-    tb.align['ID'] = 'l'
     tb.align['JOB ID'] = 'l'
+    tb.align['STARTED AT'] = 'l'
 
     return tb
+
+
+def _str_to_datetime(datetime_str):
+    """ Takes a JSON date of `2017-03-30T15:50:16.187+0000` format and
+    Returns a datetime.
+
+    :param datetime_str: JSON date
+    :type datetime_str: str
+    :rtype: datetime
+    """
+    if not datetime_str:
+        return None
+    datetime_str = datetime_str.split('+')[0]
+    return datetime.datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%f")
+
+
+def _last_run_status(job):
+    """ Provided a job with embedded history it Returns a status based on the
+    following rules:
+        0 Runs = 'N/A'
+        last success is > last failure = 'Success' otherwise 'Failed'
+
+    :param job: JSON job with embedded history
+    :type job: dict
+    :rtype: str
+    """
+    last_success = _str_to_datetime(job['historySummary']['lastSuccessAt'])
+    last_failure = _str_to_datetime(job['historySummary']['lastFailureAt'])
+    if not last_success and not last_failure:
+        return 'N/A'
+    elif ((last_success and not last_failure) or
+          (last_success and last_success > last_failure)):
+        return 'Success'
+    else:
+        return 'Failed'
 
 
 def _job_status(job):
@@ -866,20 +896,21 @@ def clusters_table(clusters):
     return tb
 
 
-def slave_table(slaves, field_names=()):
-    """Returns a PrettyTable representation of the provided DC/OS slaves
+def node_table(nodes, field_names=()):
+    """Returns a PrettyTable representation of the provided DC/OS nodes
 
-    :param slaves: slaves to render.  dicts from /mesos/state-summary
-    :type slaves: [dict]
+    :param nodes: nodes to render.
+    :type nodes: [dict]
     :param field_names: Extra fields to add to the table
-    :type slaves: [str]
+    :type nodes: [str]
     :rtype: PrettyTable
     """
 
     fields = OrderedDict([
-        ('HOSTNAME', lambda s: s['hostname']),
-        ('IP', lambda s: mesos.parse_pid(s['pid'])[1]),
-        ('ID', lambda s: s['id'])
+        ('HOSTNAME', lambda s: s.get('host', s.get('hostname'))),
+        ('IP', lambda s: s.get('ip') or mesos.parse_pid(s['pid'])[1]),
+        ('ID', lambda s: s['id']),
+        ('TYPE', lambda s: s['type']),
     ])
 
     for field_name in field_names:
@@ -889,10 +920,11 @@ def slave_table(slaves, field_names=()):
             heading, field_name = field_name.split(':', 1)
         else:
             heading = field_name
-        fields[heading.upper()] = _dotted_itemgetter(field_name.lower())
+        fields[heading.upper()] = _dotted_itemgetter(field_name)
 
     sortby = list(fields.keys())[0]
-    tb = table(fields, slaves, sortby=sortby)
+    tb = table(fields, nodes, sortby=sortby)
+    tb.align['TYPE'] = 'l'
     return tb
 
 

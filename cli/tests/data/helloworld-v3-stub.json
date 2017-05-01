@@ -22,11 +22,11 @@
       "portMappings": [
         {
           "protocol": "tcp",
-          "hostPort": 8085,
+          "hostPort": 8086,
           "containerPort": 80
         }
       ],
-      "image": "mesosphere/universe-server:20170326T170201Z-version-3.x-34bf4c095b",
+      "image": "mesosphere/universe-server:20170331T221320Z-cli-test-v3-helloworld-c3e49742c9",
       "network": "BRIDGE"
     },
     "type": "DOCKER"
@@ -35,5 +35,5 @@
   "mem": 128,
   "cpus": 0.1,
   "instances": 1,
-  "id": "/universe"
+  "id": "/helloworld-universe"
 }

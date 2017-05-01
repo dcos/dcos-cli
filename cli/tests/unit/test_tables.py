@@ -18,6 +18,8 @@ from ..fixtures.marathon import (app_fixture, app_task_fixture,
 from ..fixtures.metrics import (agent_metrics_node_details_fixture,
                                 agent_metrics_node_summary_fixture,
                                 agent_metrics_task_details_fixture)
+from ..fixtures.metronome import (job_history_fixture, job_list_fixture,
+                                  job_run_fixture, job_schedule_fixture)
 from ..fixtures.node import slave_fixture
 from ..fixtures.package import package_fixture, search_result_fixture
 from ..fixtures.service import framework_fixture
@@ -84,6 +86,30 @@ def test_auth_providers_table():
                 'tests/unit/data/auth_provider.txt')
 
 
+def test_job_list_table():
+    _test_table(tables.job_table,
+                job_list_fixture(),
+                'tests/unit/data/job_list.txt')
+
+
+def test_job_runs_table():
+    _test_table(tables.job_runs_table,
+                job_run_fixture(),
+                'tests/unit/data/job_runs.txt')
+
+
+def test_job_history_table():
+    _test_table(tables.job_history_table,
+                job_history_fixture(),
+                'tests/unit/data/job_history.txt')
+
+
+def test_job_schedule_table():
+    _test_table(tables.schedule_table,
+                job_schedule_fixture(),
+                'tests/unit/data/job_schedule.txt')
+
+
 def test_pod_table():
     _test_table(tables.pod_table,
                 pod_list_fixture(),
@@ -115,7 +141,7 @@ def test_package_search_table():
 
 
 def test_node_table():
-    _test_table(tables.slave_table,
+    _test_table(tables.node_table,
                 [slave_fixture()],
                 'tests/unit/data/node.txt')
 

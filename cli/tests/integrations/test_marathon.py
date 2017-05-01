@@ -626,6 +626,57 @@ def test_stop_task_wipe():
         _stop_task(task_id, '--wipe')
 
 
+def test_kill_one_task():
+    with _zero_instance_app():
+        start_app('zero-instance-app', 1)
+        watch_all_deployments()
+        task_list = _list_tasks(1, 'zero-instance-app')
+        task_id = [task_list[0]['id']]
+
+        _kill_task(task_id)
+
+
+def test_kill_two_tasks():
+    with _zero_instance_app():
+        start_app('zero-instance-app', 2)
+        watch_all_deployments()
+        task_list = _list_tasks(2, 'zero-instance-app')
+        task_ids = [task['id'] for task in task_list]
+
+        _kill_task(task_ids)
+
+
+def test_kill_and_scale_task():
+    with _zero_instance_app():
+        start_app('zero-instance-app', 2)
+        watch_all_deployments()
+        task_list = _list_tasks(2, 'zero-instance-app')
+        task_id = [task_list[0]['id']]
+
+        _kill_task(task_id, scale=True)
+
+        task_list = _list_tasks(1, 'zero-instance-app')
+
+
+def test_kill_unknown_task():
+    with _zero_instance_app():
+        start_app('zero-instance-app')
+        watch_all_deployments()
+        task_id = ['unknown-task-id']
+
+        _kill_task(task_id, expect_success=False)
+
+
+def test_kill_task_wipe():
+    with _zero_instance_app():
+        start_app('zero-instance-app', 1)
+        watch_all_deployments()
+        task_list = _list_tasks(1, 'zero-instance-app')
+        task_id = [task_list[0]['id']]
+
+        _kill_task(task_id, wipe=True)
+
+
 def test_stop_unknown_task():
     with _zero_instance_app():
         start_app('zero-instance-app')
@@ -744,6 +795,28 @@ def _stop_task(task_id, wipe=None, expect_success=True):
         assert stderr == b''
         result = json.loads(stdout.decode('utf-8'))
         assert result['id'] == task_id
+    else:
+        assert returncode == 1
+
+
+def _kill_task(task_ids, scale=None, wipe=None, expect_success=True):
+    cmd = ['dcos', 'marathon', 'task', 'kill', '--json'] + task_ids
+    if scale:
+        cmd.append('--scale')
+    if wipe:
+        cmd.append('--wipe')
+    returncode, stdout, stderr = exec_command(cmd)
+
+    if expect_success:
+        assert returncode == 0
+        assert stderr == b''
+        result = json.loads(stdout.decode('utf-8'))
+        if scale:
+            assert 'deploymentId' in result
+        else:
+            assert sorted(
+                [task['id'] for task in result['tasks']]) == sorted(task_ids)
+
     else:
         assert returncode == 1
 

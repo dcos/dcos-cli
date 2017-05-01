@@ -21,7 +21,17 @@ logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
 
 DEFAULT_TIMEOUT = 180
-METRONOME_EMBEDDED = '?embed=activeRuns&embed=schedules&embed=history'
+
+# single job, not a lot of data
+EMBEDS_FOR_JOB_HISTORY = [
+    metronome.EMBED_ACTIVE_RUNS,
+    metronome.EMBED_SCHEDULES,
+    metronome.EMBED_HISTORY]
+
+# unknown number of jobs, using history summary
+EMBEDS_FOR_JOBS_HISTORY = [
+    metronome.EMBED_ACTIVE_RUNS,
+    metronome.EMBED_HISTORY_SUMMARY]
 
 
 def main(argv):
@@ -66,7 +76,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['job', 'run'],
-            arg_keys=['<job-id>'],
+            arg_keys=['<job-id>', '--json'],
             function=_run),
 
         cmds.Command(
@@ -239,16 +249,12 @@ def _kill(job_id, run_id, all=False):
 
 
 def _list(json_flag=False):
-    """
+    """ Provides a list of jobs along with their active runs and history summary
     :returns: process return code
     :rtype: int
     """
-
-    try:
-        client = metronome.create_client()
-        json_list = client.get_jobs()
-    except DCOSException as e:
-        raise DCOSException(e)
+    client = metronome.create_client()
+    json_list = client.get_jobs(EMBEDS_FOR_JOBS_HISTORY)
 
     if json_flag:
         emitter.publish(json_list)
@@ -266,43 +272,31 @@ def _history(job_id, json_flag=False, show_failures=False):
     :returns: process return code
     :rtype: int
     """
-    response = None
-    url = urllib.parse.urljoin(_get_api_url('v1/jobs/'),
-                               job_id + METRONOME_EMBEDDED)
-    try:
-        response = _do_request(url, 'GET')
-    except DCOSHTTPException as e:
-        raise DCOSException("Job ID does NOT exist.")
-    except DCOSException as e:
-        raise DCOSException(e)
+
+    client = metronome.create_client()
+    json_history = client.get_job(job_id, EMBEDS_FOR_JOB_HISTORY)
+
+    if 'history' not in json_history:
+        return 0
+
+    if json_flag:
+        emitter.publish(json_history)
     else:
+        emitter.publish(_get_history_message(json_history, job_id))
+        table = tables.job_history_table(
+            json_history['history']['successfulFinishedRuns'])
+        output = six.text_type(table)
+        if output:
+            emitter.publish(output)
 
-        if response.status_code is not 200:
-            raise DCOSException("Job ID does NOT exist.")
-
-        json_history = _read_http_response_body(response)
-
-        if 'history' not in json_history:
-            return 0
-
-        if json_flag:
-            emitter.publish(json_history)
-        else:
-            emitter.publish(_get_history_message(json_history, job_id))
+        if show_failures:
+            emitter.publish(_get_history_message(
+                            json_history, job_id, False))
             table = tables.job_history_table(
-                json_history['history']['successfulFinishedRuns'])
+                json_history['history']['failedFinishedRuns'])
             output = six.text_type(table)
             if output:
                 emitter.publish(output)
-
-            if show_failures:
-                emitter.publish(_get_history_message(
-                                json_history, job_id, False))
-                table = tables.job_history_table(
-                    json_history['history']['failedFinishedRuns'])
-                output = six.text_type(table)
-                if output:
-                    emitter.publish(output)
 
     return 0
 
@@ -404,7 +398,7 @@ def _get_runs(job_id, run_id=None):
         raise DCOSException(e)
 
 
-def _run(job_id):
+def _run(job_id, json_flag=False):
     """
     :param job_id: Id of the job
     :type job_id: str
@@ -414,12 +408,16 @@ def _run(job_id):
 
     try:
         client = metronome.create_client()
-        client.run_job(job_id)
+        run_job = client.run_job(job_id)
     except DCOSHTTPException as e:
         if e.response.status_code == 404:
             emitter.publish("Job ID: '{}' does not exist.".format(job_id))
         else:
             emitter.publish("Error running job: '{}'".format(job_id))
+    if json_flag:
+        emitter.publish(run_job)
+    else:
+        emitter.publish('Run ID: {}'.format(run_job['id']))
 
     return 0
 

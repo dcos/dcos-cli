@@ -81,6 +81,11 @@ def _cmds():
             function=subcommand.task_stop),
 
         cmds.Command(
+            hierarchy=['marathon', 'task', 'kill'],
+            arg_keys=['<task-ids>', '--scale', '--wipe', '--json'],
+            function=subcommand.task_kill),
+
+        cmds.Command(
             hierarchy=['marathon', 'task', 'show'],
             arg_keys=['<task-id>'],
             function=subcommand.task_show),
@@ -858,6 +863,49 @@ class MarathonSubcommand(object):
             raise DCOSException("Task '{}' does not exist".format(task_id))
 
         emitter.publish(task)
+        return 0
+
+    def task_kill(self, task_ids, scale, wipe, json_):
+        """Kill one or multiple Marathon tasks
+
+        :param task_ids: the id of the task
+        :type task_ids: [str]
+        :param scale: Scale the app down after killing the specified tasks
+        :type scale: bool
+        :param wipe: whether remove reservations and persistent volumes.
+        :type wipe: bool
+        :param json_: output JSON if true
+        :type json_: bool
+        :returns: process return code
+        :rtype: int
+        """
+
+        client = self._create_marathon_client()
+        payload = client.kill_and_scale_tasks(task_ids, scale, wipe)
+
+        def print_deployment(deployment, json_):
+            if json_:
+                emitter.publish(deployment)
+            else:
+                emitter.publish('Created deployment: {}'.format(
+                    deployment['deploymentId']))
+
+        def print_killed_tasks(payload, json_):
+            if json_:
+                emitter.publish(payload)
+            else:
+                emitter.publish('Killed tasks: {}'.format(
+                    [task['id'] for task in payload['tasks']]))
+
+        if scale:
+            print_deployment(payload, json_)
+        else:
+            print_killed_tasks(payload, json_)
+
+            if len(payload['tasks']) == 0:
+                raise DCOSException(
+                    'Failed to kill tasks. task-ids seems to be unknown')
+
         return 0
 
     def task_show(self, task_id):

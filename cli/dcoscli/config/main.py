@@ -85,14 +85,7 @@ def _set(name, value):
     :rtype: int
     """
 
-    if name == "package.sources":
-        notice = ("This config property has been deprecated. "
-                  "Please add your repositories with `dcos package repo add`")
-        return DCOSException(notice)
-    elif name == "core.email":
-        notice = "This config property has been deprecated."
-        return DCOSException(notice)
-    elif name == "core.dcos_url":
+    if name == "core.dcos_url":
         return _cluster_setup(value)
 
     toml, msg = config.set_val(name, value)

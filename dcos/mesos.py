@@ -351,7 +351,7 @@ class Master(object):
         slaves = self.slaves(fltr)
 
         if len(slaves) == 0:
-            raise DCOSException('No slave found with ID "{}".'.format(fltr))
+            raise DCOSException('No agent found with ID "{}".'.format(fltr))
 
         elif len(slaves) > 1:
 
@@ -362,7 +362,7 @@ class Master(object):
             else:
                 matches = ['\t{0}'.format(s['id']) for s in slaves]
                 raise DCOSException(
-                    "There are multiple slaves with that ID. " +
+                    "There are multiple agents with that ID. " +
                     "Please choose one:\n{}".format('\n'.join(matches)))
 
         else:

@@ -1,4 +1,5 @@
 import requests
+
 from requests.auth import AuthBase
 
 from six.moves.urllib.parse import urlparse
@@ -6,7 +7,7 @@ from six.moves.urllib.parse import urlparse
 from dcos import config, util
 from dcos.errors import (DCOSAuthenticationException,
                          DCOSAuthorizationException, DCOSBadRequest,
-                         DCOSException, DCOSHTTPException,
+                         DCOSConnectionError, DCOSException, DCOSHTTPException,
                          DCOSUnprocessableException)
 
 
@@ -115,7 +116,7 @@ def _request(method,
         raise DCOSException(msg)
     except requests.exceptions.ConnectionError as e:
         logger.exception("HTTP Connection Error")
-        raise DCOSException('URL [{0}] is unreachable: {1}'.format(url, e))
+        raise DCOSConnectionError(url)
     except requests.exceptions.Timeout as e:
         logger.exception("HTTP Timeout")
         raise DCOSException('Request to URL [{0}] timed out.'.format(url))

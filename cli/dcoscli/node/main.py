@@ -22,7 +22,7 @@ DIAGNOSTICS_BASE_URL = '/system/health/v1/report/diagnostics/'
 
 
 # if a bundle size if more then 100Mb then warn user.
-BUNDLE_WARN_SIZE = 1000000
+BUNDLE_WARN_SIZE = 100 * 1000 * 1000
 
 
 def main(argv):
@@ -39,15 +39,6 @@ def _main(argv):
         default_doc("node"),
         argv=argv,
         version="dcos-node version {}".format(dcoscli.version))
-
-    if args.get('--master'):
-        raise DCOSException(
-            '--master has been deprecated. Please use --leader.'
-        )
-    elif args.get('--slave'):
-        raise DCOSException(
-            '--slave has been deprecated. Please use --mesos-id.'
-        )
 
     return cmds.execute(_cmds(), args)
 
@@ -471,9 +462,21 @@ def _list(json_, extra_field_names):
     """
 
     client = mesos.DCOSClient()
+    masters = mesos.MesosDNSClient().hosts('master.mesos.')
+    master_state = client.get_master_state()
     slaves = client.get_state_summary()['slaves']
+    for master in masters:
+        if master['ip'] == master_state['hostname']:
+            master['type'] = 'master (leader)'
+            for key in ('id', 'pid', 'version'):
+                master[key] = master_state.get(key)
+        else:
+            master['type'] = 'master'
+    for slave in slaves:
+        slave['type'] = 'agent'
+    nodes = masters + slaves
     if json_:
-        emitter.publish(slaves)
+        emitter.publish(nodes)
     else:
         for extra_field_name in extra_field_names:
             field_name = extra_field_name.split(':')[-1]
@@ -484,12 +487,12 @@ def _list(json_, extra_field_names):
                     emitter.publish(errors.DefaultError(
                         'Field "%s" is invalid.' % field_name))
                     return
-        table = tables.slave_table(slaves, extra_field_names)
+        table = tables.node_table(nodes, extra_field_names)
         output = six.text_type(table)
         if output:
             emitter.publish(output)
         else:
-            emitter.publish(errors.DefaultError('No slaves found.'))
+            emitter.publish(errors.DefaultError('No agents found.'))
 
 
 def _log(follow, lines, leader, slave, component, filters):

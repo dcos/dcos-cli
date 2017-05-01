@@ -32,8 +32,9 @@ def test_node():
     assert stderr == b''
 
     nodes = json.loads(stdout.decode('utf-8'))
+    slave_nodes = [node for node in nodes if node['type'] == 'agent']
     schema = _get_schema(slave_fixture())
-    for node in nodes:
+    for node in slave_nodes:
         assert not util.validate_json(node, schema)
 
 
@@ -53,7 +54,18 @@ def test_node_table_field_option():
     assert stderr == b''
     lines = stdout.decode('utf-8').splitlines()
     assert len(lines) > 2
-    assert lines[0].split() == ['HOSTNAME', 'IP', 'ID', 'DISK_USED']
+    assert lines[0].split() == ['HOSTNAME', 'IP', 'ID', 'TYPE', 'DISK_USED']
+
+
+def test_node_table_uppercase_field_option():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'node', '--field=TASK_RUNNING'])
+
+    assert returncode == 0
+    assert stderr == b''
+    lines = stdout.decode('utf-8').splitlines()
+    assert len(lines) > 2
+    assert lines[0].split() == ['HOSTNAME', 'IP', 'ID', 'TYPE', 'TASK_RUNNING']
 
 
 def test_node_log_empty():
@@ -209,26 +221,6 @@ def test_node_ssh_master_proxy():
     _node_ssh(['--leader', '--master-proxy'])
 
 
-def test_master_arg_deprecation_notice():
-    stderr = b"--master has been deprecated. Please use --leader.\n"
-    assert_command(['dcos', 'node', 'log', '--master'],
-                   stderr=stderr,
-                   returncode=1)
-    assert_command(['dcos', 'node', 'ssh', '--master'],
-                   stderr=stderr,
-                   returncode=1)
-
-
-def test_slave_arg_deprecation_notice():
-    stderr = b"--slave has been deprecated. Please use --mesos-id.\n"
-    assert_command(['dcos', 'node', 'log', '--slave=bogus'],
-                   stderr=stderr,
-                   returncode=1)
-    assert_command(['dcos', 'node', 'ssh', '--slave=bogus'],
-                   stderr=stderr,
-                   returncode=1)
-
-
 @pytest.mark.skipif(sys.platform == 'win32',
                     reason='No pseudo terminal on windows')
 def test_node_ssh_with_command():
@@ -262,7 +254,9 @@ def _node_ssh(args, expected_returncode=None, expected_stdout=None):
         args.append('--master-proxy')
 
     stdout, stderr, returncode = _node_ssh_output(args)
-    assert returncode is expected_returncode
+    assert returncode is expected_returncode, \
+        'returncode = %r; stdout: = %s; stderr = %s' % (
+            returncode, stdout, stderr)
     if expected_stdout is not None:
         assert stdout.decode('utf-8').startswith(expected_stdout)
     assert b"Running `" in stderr
@@ -291,4 +285,5 @@ def _node():
     assert returncode == 0
     assert stderr == b''
 
-    return json.loads(stdout.decode('utf-8'))
+    return [n for n in json.loads(stdout.decode('utf-8'))
+            if n['type'] == 'agent']

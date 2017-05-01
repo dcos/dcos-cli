@@ -89,7 +89,7 @@ def delete_zk_nodes():
     :rtype: None
     """
 
-    for znode in ['universe', 'cassandra-mesos', 'chronos']:
+    for znode in ['universe', 'dcos-service-cassandra', 'chronos']:
         delete_zk_node(znode)
 
 
@@ -204,9 +204,9 @@ def update_config(name, value, env=None):
     # we need to also restore the token if this occurs
     token = None
     if name == "core.dcos_url":
-        returncode, token_val, _ = exec_command(
+        returncode_, token_val, _ = exec_command(
             ['dcos', 'config', 'show', "core.dcos_acs_token"], env)
-        if returncode == 0:
+        if returncode_ == 0:
             token = token_val.decode('utf-8').strip()
 
     result = None

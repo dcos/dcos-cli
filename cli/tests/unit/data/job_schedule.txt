@@ -1,0 +1,2 @@
+   ID    CRON        ENABLED  CONCURRENCY POLICY  NEXT RUN                      
+nightly  20 0 * * *  True     ALLOW               2017-04-01T00:20:00.000+0000  
