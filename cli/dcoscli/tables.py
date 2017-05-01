@@ -851,7 +851,7 @@ def clusters_table(clusters):
     def print_name(c):
         msg = c['name']
         if c['attached']:
-            msg += " (attached)"
+            msg += "*"
         return msg
 
     fields = OrderedDict([

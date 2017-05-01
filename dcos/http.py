@@ -27,17 +27,22 @@ def _default_is_success(status_code):
     return 200 <= status_code < 300
 
 
-def _verify_ssl(verify=None):
+def _verify_ssl(verify=None, toml_config=None):
     """Returns whether to verify ssl
 
     :param verify: whether to verify SSL certs or path to cert(s)
     :type verify: bool | str
+    :param toml_config: cluster config to use
+    :type toml_config: Toml
     :return: whether to verify SSL certs or path to cert(s)
     :rtype: bool | str
     """
 
+    if toml_config is None:
+        toml_config = config.get_config()
+
     if verify is None:
-        verify = config.get_config_val("core.ssl_verify")
+        verify = config.get_config_val("core.ssl_verify", toml_config)
         if verify and verify.lower() == "true":
             verify = True
         elif verify and verify.lower() == "false":
@@ -53,6 +58,7 @@ def _request(method,
              timeout=DEFAULT_TIMEOUT,
              auth=None,
              verify=None,
+             toml_config=None,
              **kwargs):
     """Sends an HTTP request.
 
@@ -68,6 +74,8 @@ def _request(method,
     :type auth: AuthBase
     :param verify: whether to verify SSL certs or path to cert(s)
     :type verify: bool | str
+    :param toml_config: cluster config to use
+    :type toml_config: Toml
     :param kwargs: Additional arguments to requests.request
         (see http://docs.python-requests.org/en/latest/api/#requests.request)
     :type kwargs: dict
@@ -77,7 +85,7 @@ def _request(method,
     if 'headers' not in kwargs:
         kwargs['headers'] = {'Accept': 'application/json'}
 
-    verify = _verify_ssl(verify)
+    verify = _verify_ssl(verify, toml_config)
 
     # Silence 'Unverified HTTPS request' and 'SecurityWarning' for bad certs
     if verify is not None:
@@ -152,6 +160,7 @@ def request(method,
 
     if toml_config is None:
         toml_config = config.get_config()
+
     auth_token = config.get_config_val("core.dcos_acs_token", toml_config)
     prompt_login = config.get_config_val("core.prompt_login", toml_config)
     dcos_url = urlparse(config.get_config_val("core.dcos_url", toml_config))
@@ -165,8 +174,10 @@ def request(method,
         auth = DCOSAcsAuth(auth_token)
     else:
         auth = None
+
     response = _request(method, url, is_success, timeout,
-                        auth=auth, verify=verify, **kwargs)
+                        auth=auth, verify=verify, toml_config=toml_config,
+                        **kwargs)
 
     if is_success(response.status_code):
         return response

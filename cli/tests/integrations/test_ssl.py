@@ -2,9 +2,9 @@ import os
 
 import pytest
 
-from dcos import config, constants
+from dcos import constants
 
-from .helpers.common import config_set, exec_command, update_config
+from .helpers.common import exec_command, update_config
 
 
 @pytest.fixture
@@ -13,23 +13,11 @@ def env():
     r.update({
         constants.PATH_ENV: os.environ[constants.PATH_ENV],
         'DCOS_SNAKEOIL_CRT_PATH': os.environ.get(
-            "DCOS_SNAKEOIL_CRT_PATH", "/dcos-cli/adminrouter/snakeoil.crt")
+            "DCOS_SNAKEOIL_CRT_PATH", "/dcos-cli/adminrouter/snakeoil.crt"),
+        'DCOS_URL': 'https://dcos.snakeoil.mesosphere.com'
     })
 
     return r
-
-
-@pytest.yield_fixture(autouse=True)
-def setup_env(env):
-    # token will be removed when we change dcos_url
-    token = config.get_config_val('core.dcos_acs_token')
-    config_set("core.dcos_url", "https://dcos.snakeoil.mesosphere.com", env)
-    config_set("core.dcos_acs_token", token, env)
-    try:
-        yield
-    finally:
-        config_set("core.dcos_url", "http://dcos.snakeoil.mesosphere.com", env)
-        config_set("core.dcos_acs_token", token, env)
 
 
 def test_dont_verify_ssl_with_env_var(env):

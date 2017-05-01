@@ -6,8 +6,8 @@ import six
 
 from dcos import config, constants
 
-from .helpers.common import (assert_command, config_set, config_unset,
-                             exec_command, update_config)
+from .helpers.common import (assert_command, config_set, exec_command,
+                             update_config)
 
 
 @pytest.fixture
@@ -30,45 +30,18 @@ def test_version():
                    stdout=stdout)
 
 
-def _test_list_property(env):
-    stdout = b"""core.dcos_url http://dcos.snakeoil.mesosphere.com
-core.reporting False
-core.ssl_verify false
-core.timeout 5
-"""
-    assert_command(['dcos', 'config', 'show'],
-                   stdout=stdout,
-                   env=env)
-
-
-def test_get_existing_string_property(env):
-    _get_value('core.dcos_url', 'http://dcos.snakeoil.mesosphere.com', env)
-
-
 def test_get_existing_boolean_property(env):
-    _get_value('core.reporting', False, env)
+    with update_config("core.reporting", "false", env):
+        _get_value('core.reporting', False, env)
 
 
 def test_get_existing_number_property(env):
-    _get_value('core.timeout', 5, env)
+    with update_config("core.timeout", "5", env):
+        _get_value('core.timeout', 5, env)
 
 
 def test_get_missing_property(env):
     _get_missing_value('missing.property', env)
-
-
-def test_dcos_url_without_scheme(env):
-    with update_config("core.dcos_url", None, env):
-        new = b"abc.com"
-        out = (b"This config property is being deprecated. "
-               b"To setup the CLI to talk to your cluster, please run "
-               b"`dcos cluster setup <dcos_url>`.\n"
-               b"[core.dcos_url]: set to 'https://%b'\n" % (new))
-        assert_command(
-            ['dcos', 'config', 'set', 'core.dcos_url', new.decode('utf-8')],
-            stderr=out,
-            returncode=0,
-            env=env)
 
 
 def test_get_top_property(env):
@@ -97,13 +70,6 @@ def test_set_core_email_property():
                    returncode=1)
 
 
-def test_set_existing_string_property(env):
-    new_value = 'http://dcos.snakeoil.mesosphere.com:5081'
-    with update_config('core.dcos_url', new_value, env):
-        _get_value('core.dcos_url',
-                   'http://dcos.snakeoil.mesosphere.com:5081', env)
-
-
 def test_set_existing_boolean_property(env):
     config_set('core.reporting', 'true', env)
     _get_value('core.reporting', True, env)
@@ -129,19 +95,6 @@ def test_set_same_output(env):
         ['dcos', 'config', 'set', 'core.timeout', '5'],
         stderr=b"[core.timeout]: already set to '5'\n",
         env=env)
-
-
-def test_set_new_output(env):
-    with update_config("core.dcos_url", None, env):
-        new = b"http://dcos.snakeoil.mesosphere.com:5081"
-        out = (b"This config property is being deprecated. "
-               b"To setup the CLI to talk to your cluster, please run "
-               b"`dcos cluster setup <dcos_url>`.\n"
-               b"[core.dcos_url]: set to '%b'\n" % (new))
-        assert_command(
-            ['dcos', 'config', 'set', 'core.dcos_url', new.decode('utf-8')],
-            stderr=out,
-            env=env)
 
 
 def test_set_nonexistent_subcommand(env):
@@ -202,9 +155,9 @@ def test_set_property_key(env):
 
 
 def test_set_missing_property(env):
-    with update_config("core.dcos_url", None, env=env):
-        config_set('core.dcos_url', 'http://localhost:8080', env)
-        _get_value('core.dcos_url', 'http://localhost:8080', env)
+    with update_config("package.cosmos_url", None, env=env):
+        config_set('package.cosmos_url', 'http://localhost:8080', env)
+        _get_value('package.cosmos_url', 'http://localhost:8080', env)
 
 
 def test_set_core_property(env):
@@ -214,33 +167,30 @@ def test_set_core_property(env):
 
 
 def test_url_validation(env):
-    with update_config('core.dcos_url', None, env):
-        key = 'core.dcos_url'
-        key2 = 'package.cosmos_url'
+    key = 'package.cosmos_url'
+    with update_config(key, None, env):
 
         config_set(key, 'http://localhost', env)
         config_set(key, 'https://localhost', env)
         config_set(key, 'http://dcos-1234', env)
-        config_set(key2, 'http://dcos-1234.mydomain.com', env)
+        config_set(key, 'http://dcos-1234.mydomain.com', env)
 
         config_set(key, 'http://localhost:5050', env)
         config_set(key, 'https://localhost:5050', env)
         config_set(key, 'http://mesos-1234:5050', env)
-        config_set(key2, 'http://mesos-1234.mydomain.com:5050', env)
+        config_set(key, 'http://mesos-1234.mydomain.com:5050', env)
 
         config_set(key, 'http://localhost:8080', env)
         config_set(key, 'https://localhost:8080', env)
         config_set(key, 'http://marathon-1234:8080', env)
-        config_set(key2, 'http://marathon-1234.mydomain.com:5050', env)
+        config_set(key, 'http://marathon-1234.mydomain.com:5050', env)
 
         config_set(key, 'http://user@localhost:8080', env)
         config_set(key, 'http://u-ser@localhost:8080', env)
         config_set(key, 'http://user123_@localhost:8080', env)
         config_set(key, 'http://user:p-ssw_rd@localhost:8080', env)
         config_set(key, 'http://user123:password321@localhost:8080', env)
-        config_set(key2, 'http://us%r1$3:pa#sw*rd321@localhost:8080', env)
-
-        config_unset(key2, env)
+        config_set(key, 'http://us%r1$3:pa#sw*rd321@localhost:8080', env)
 
 
 def test_fail_url_validation(env):
