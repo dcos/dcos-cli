@@ -152,13 +152,20 @@ def request(method,
     auth_token = config.get_config_val("core.dcos_acs_token", toml_config)
     prompt_login = config.get_config_val("core.prompt_login", toml_config)
     dcos_url = urlparse(config.get_config_val("core.dcos_url", toml_config))
+    cosmos_url = urlparse(
+        config.get_config_val("package.cosmos_url", toml_config))
     parsed_url = urlparse(url)
 
     # only request with DC/OS Auth if request is to DC/OS cluster
     # request should match scheme + netloc
-    scheme_eq = parsed_url.scheme == dcos_url.scheme
-    netloc_eq = parsed_url.netloc == dcos_url.netloc
-    if auth_token and scheme_eq and netloc_eq:
+    def _request_match(expected_url, actual_url):
+        return expected_url.scheme == actual_url.scheme and \
+                    expected_url.netloc == actual_url.netloc
+
+    request_to_cluster = _request_match(dcos_url, parsed_url) or \
+        _request_match(cosmos_url, parsed_url)
+
+    if auth_token and request_to_cluster:
         auth = DCOSAcsAuth(auth_token)
     else:
         auth = None

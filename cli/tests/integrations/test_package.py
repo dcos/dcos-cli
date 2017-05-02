@@ -7,7 +7,7 @@ import sys
 import pytest
 import six
 
-from dcos import constants, subcommand
+from dcos import config, constants, subcommand
 
 from .helpers.common import (assert_command, assert_lines, base64_to_dict,
                              delete_zk_node, delete_zk_nodes, exec_command,
@@ -75,7 +75,13 @@ def test_repo_list():
         ).format(**UNIVERSE_TEST_REPOS),
         'utf-8'
     )
+
     assert_command(['dcos', 'package', 'repo', 'list'], stdout=repo_list)
+
+    # test again, but override the dcos_url with a cosmos_url config
+    dcos_url = config.get_config_val("core.dcos_url")
+    with update_config('package.cosmos_url', dcos_url):
+        assert_command(['dcos', 'package', 'repo', 'list'], stdout=repo_list)
 
 
 def test_repo_add():
