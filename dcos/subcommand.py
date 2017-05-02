@@ -40,8 +40,8 @@ def command_executables(subcommand):
     ]
 
     if len(executables) > 1:
-        msg = 'Found more than one executable for command {!r}.'
-        raise DCOSException(msg.format(subcommand))
+        msg = 'Found more than one executable for command {!r}. {!r}'
+        raise DCOSException(msg.format(subcommand, executables))
 
     if len(executables) == 0:
         msg = "{!r} is not a dcos command."
