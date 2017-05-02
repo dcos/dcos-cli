@@ -17,6 +17,7 @@ def env():
         constants.PATH_ENV: os.environ[constants.PATH_ENV],
         constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "dcos.toml"),
     })
+    os.chmod(r[constants.DCOS_CONFIG_ENV], 0o600)
 
     return r
 
