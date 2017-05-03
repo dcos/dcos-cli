@@ -10,10 +10,7 @@ from .helpers.common import assert_command, exec_command, update_config
 @pytest.fixture
 def env():
     r = os.environ.copy()
-    r.update({
-        constants.PATH_ENV: os.environ[constants.PATH_ENV],
-        constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "dcos.toml"),
-    })
+    r.update({constants.PATH_ENV: os.environ[constants.PATH_ENV]})
 
     return r
 

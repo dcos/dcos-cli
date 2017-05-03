@@ -1,0 +1,64 @@
+Description:
+   Manage your DC/OS clusters
+
+Usage:
+    dcos cluster --help
+    dcos cluster --info
+    dcos cluster --version
+    dcos cluster attach <name>
+    dcos cluster list [--attached --json]
+    dcos cluster remove <name>
+    dcos cluster rename <name> <new_name>
+    dcos cluster setup <dcos_url>
+        [--insecure | --no-check | --ca-certs=<ca-certs>]
+        [--provider=<provider_id>] [--username=<username>]
+        [--password=<password> | --password-file=<password_file>
+        | --password-env=<password_env> | --private-key=<key_path>]
+
+Commands:
+    attach
+        List only the currently attached cluster.
+    list
+        List CLI configured clusters.
+    rename
+        Rename a cluster name in the CLI.
+    remove
+        Remove a configured cluster from the CLI.
+    setup
+        Setup the CLI to talk to your DC/OS cluster.
+
+Options:
+    --attached
+        List only attached cluster.
+    --ca-certs=<ca-certs>
+        Specify the path to a list of trusted CAs to verify requests against.
+    -h, --help
+        Print usage.
+    --info
+        Print a short description of this subcommand.
+    --insecure
+        Allow requests to bypass SSL certificate verification (insecure).
+    --no-check
+        Do not check CA certficate downloaded from cluster (insecure). Applies to Enterprise DC/OS only.
+    --password=<password>
+        Specify password on the command line (insecure).
+    --password-env=<password_env>
+        Specify an environment variable name that contains the password.
+    --password-file=<password_file>
+        Specify the path to a file that contains the password.
+    --provider=<provider_id>
+        Specify the authentication provider to use for login.
+    --private-key=<key_path>
+        Specify the path to a file that contains the private key.
+    --username=<username>
+        Specify the username for login.
+    --version
+        Print version information.
+
+Positional Arguments:
+    dcos_url
+        The public master of your DC/OS cluster.
+    name
+        The name of the cluster.
+    new_name
+        New name of cluster.

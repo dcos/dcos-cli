@@ -12,14 +12,92 @@ from dcos.errors import DCOSException
 logger = util.get_logger(__name__)
 
 
-def get_config_path():
-    """ Returns the path to the DCOS config file.
+def uses_deprecated_config():
+    """Returns True if the configuration for the user's CLI
+    is the deprecated 'global' config instead of the cluster
+    specific config
+    """
+
+    global_config = get_global_config_path()
+    cluster_config = get_clusters_path()
+    return not os.path.exists(cluster_config) and os.path.exists(global_config)
+
+
+def get_global_config_path():
+    """Returns the path to the deprecated global DCOS config file.
 
     :returns: path to the DCOS config file
     :rtype: str
     """
 
-    return os.environ.get(constants.DCOS_CONFIG_ENV, get_default_config_path())
+    default_path = os.path.join(get_config_dir_path(), "dcos.toml")
+    return os.environ.get(constants.DCOS_CONFIG_ENV, default_path)
+
+
+def get_global_config(mutable=False):
+    """Returns the deprecated global DCOS config file
+
+    :param mutable: True if the returned Toml object should be mutable
+    :type mutable: boolean
+    :returns: Configuration object
+    :rtype: Toml | MutableToml
+    """
+
+    return load_from_path(get_global_config_path(), mutable)
+
+
+def get_attached_cluster_path():
+    """
+    The attached cluster is denoted by a file named "attached" in one of the
+    cluster directories. Ex: $DCOS_DIR/clusters/CLUSTER_ID/attached
+
+    :returns: path to the director of the attached cluster
+    :rtype: str | None
+    """
+
+    path = get_clusters_path()
+    if not os.path.exists(path):
+        return None
+
+    clusters = os.listdir(get_clusters_path())
+    for c in clusters:
+        cluster_path = os.path.join(path, c)
+        if os.path.exists(os.path.join(
+                cluster_path, constants.DCOS_CLUSTER_ATTACHED_FILE)):
+            return cluster_path
+
+    # if only one cluster, set as attached
+    if len(clusters) == 1:
+        cluster_path = os.path.join(path, clusters[0])
+        util.ensure_file_exists(os.path.join(
+            cluster_path, constants.DCOS_CLUSTER_ATTACHED_FILE))
+        return cluster_path
+
+    return None
+
+
+def get_clusters_path():
+    """
+    :returns: path to the directory of cluster configs
+    :rtype: str
+    """
+
+    return os.path.join(get_config_dir_path(), constants.DCOS_CLUSTERS_SUBDIR)
+
+
+def get_config_path():
+    """Returns the path to the DCOS config file of the attached cluster.
+    If still using "global" config return that toml instead
+
+    :returns: path to the DCOS config file
+    :rtype: str
+    """
+
+    if uses_deprecated_config():
+        return get_global_config_path()
+    else:
+        cluster_path = get_attached_cluster_path()
+        return os.path.join(cluster_path, "dcos.toml")
 
 
 def get_config_dir_path():
@@ -31,16 +109,6 @@ def get_config_dir_path():
     config_dir = os.environ.get(constants.DCOS_DIR_ENV) or \
         os.path.join("~", constants.DCOS_DIR)
     return os.path.expanduser(config_dir)
-
-
-def get_default_config_path():
-    """Returns the default path to the DCOS config file.
-
-    :returns: path to the DCOS config file
-    :rtype: str
-    """
-
-    return os.path.join(get_config_dir_path(), 'dcos.toml')
 
 
 def get_config(mutable=False):
@@ -55,11 +123,18 @@ def get_config(mutable=False):
     :rtype: Toml | MutableToml
     """
 
-    path = get_config_path()
-    default = get_default_config_path()
+    cluster_path = get_attached_cluster_path()
+    if cluster_path is None:
+        if uses_deprecated_config():
+            return get_global_config(mutable)
 
-    if path == default:
-        util.ensure_dir_exists(os.path.dirname(default))
+        msg = ("No cluster is attached. "
+               "Please run `dcos cluster attach <cluster-name>`")
+        raise DCOSException(msg)
+
+    util.ensure_dir_exists(os.path.dirname(cluster_path))
+
+    path = os.path.join(cluster_path, "dcos.toml")
     return load_from_path(path, mutable)
 
 
@@ -115,7 +190,8 @@ def get_config_val(name, config=None):
     :returns: value of 'name' parameter
     :rtype: str | None
     """
-    val, _ = get_config_val_envvar(name, config=None)
+
+    val, _ = get_config_val_envvar(name, config)
     return val
 
 
@@ -135,17 +211,22 @@ def missing_config_exception(keys):
     return DCOSException(msg)
 
 
-def set_val(name, value):
+def set_val(name, value, config_path=None):
     """
     :param name: name of paramater
     :type name: str
     :param value: value to set to paramater `name`
     :type param: str
+    :param config_path: path to config to use
+    :type config_path: str
     :returns: Toml config, message of change
     :rtype: Toml, str
     """
 
-    toml_config = get_config(True)
+    if config_path:
+        toml_config = load_from_path(config_path, True)
+    else:
+        toml_config = get_config(True)
 
     section, subkey = split_key(name)
 
@@ -169,7 +250,7 @@ def set_val(name, value):
 
     check_config(toml_config_pre, toml_config, section)
 
-    save(toml_config)
+    save(toml_config, config_path)
 
     msg = "[{}]: ".format(name)
     if name == "core.dcos_acs_token":
@@ -187,8 +268,7 @@ def set_val(name, value):
         msg += "changed from '{}' to '{}'".format(old_value, new_value)
 
     if token_unset:
-        msg += ("\n[core.dcos_acs_token]: removed\n"
-                "Please run `dcos auth login` to authenticate to new dcos_url")
+        msg += "\n[core.dcos_acs_token]: removed"
 
     return toml_config, msg
 
@@ -215,18 +295,21 @@ def load_from_path(path, mutable=False):
         return (MutableToml if mutable else Toml)(toml_obj)
 
 
-def save(toml_config):
+def save(toml_config, config_path=None):
     """
     :param toml_config: TOML configuration object
     :type toml_config: MutableToml or Toml
+    :param config_path: path to config to use
+    :type config_path: str
     """
 
     serial = toml.dumps(toml_config._dictionary)
-    path = get_config_path()
+    if config_path is None:
+        config_path = get_config_path()
 
-    util.ensure_file_exists(path)
-    util.enforce_file_permissions(path)
-    with util.open_file(path, 'w') as config_file:
+    util.ensure_file_exists(config_path)
+    util.enforce_file_permissions(config_path)
+    with util.open_file(config_path, 'w') as config_file:
         config_file.write(serial)
 
 

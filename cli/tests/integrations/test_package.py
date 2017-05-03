@@ -23,10 +23,7 @@ from ..common import file_bytes
 @pytest.fixture
 def env():
     r = os.environ.copy()
-    r.update({
-        constants.PATH_ENV: os.environ[constants.PATH_ENV],
-        constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "dcos.toml"),
-    })
+    r.update({constants.PATH_ENV: os.environ[constants.PATH_ENV]})
 
     return r
 
@@ -684,7 +681,7 @@ def test_list_cli_only(env):
     helloworld_json = file_json(helloworld_path)
 
     with _helloworld_cli(), \
-            update_config('core.dcos_url', 'http://nohost', env):
+            update_config('package.cosmos_url', 'http://nohost', env):
         assert_command(
             cmd=['dcos', 'package', 'list', '--json', '--cli'],
             stdout=helloworld_json)
@@ -696,6 +693,18 @@ def test_list_cli_only(env):
 
         assert_command(
             cmd=['dcos', 'package', 'list', '--json', '--cli', 'helloworld'],
+            stdout=helloworld_json)
+
+
+def test_cli_global():
+    helloworld_path = 'tests/data/package/json/test_list_helloworld_cli.json'
+    helloworld_json = file_json(helloworld_path)
+
+    with _helloworld_cli(global_=True):
+        assert os.path.exists(subcommand.global_package_dir("helloworld"))
+
+        assert_command(
+            cmd=['dcos', 'package', 'list', '--json', '--cli'],
             stdout=helloworld_json)
 
 
@@ -991,9 +1000,12 @@ def _helloworld():
                     uninstall_stderr=stderr)
 
 
-def _helloworld_cli():
+def _helloworld_cli(global_=False):
+    args = ['--yes', '--cli']
+    if global_:
+        args += ['--global']
     return _package(name='helloworld',
-                    args=['--yes', '--cli'],
+                    args=args,
                     stdout=HELLOWORLD_CLI_STDOUT,
                     uninstall_stderr=b'')
 

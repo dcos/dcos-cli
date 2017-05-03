@@ -6,7 +6,7 @@ import pytest
 
 from dcos import constants
 
-from .helpers.common import assert_command, exec_command, update_config
+from .helpers.common import assert_command, exec_command
 from .helpers.job import job, show_job, show_job_schedule
 
 
@@ -29,22 +29,9 @@ def test_info():
 @pytest.fixture
 def env():
     r = os.environ.copy()
-    r.update({
-        constants.PATH_ENV: os.environ[constants.PATH_ENV],
-        constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "dcos.toml"),
-    })
+    r.update({constants.PATH_ENV: os.environ[constants.PATH_ENV]})
 
     return r
-
-
-def test_missing_config(env):
-    with update_config("core.dcos_url", None, env):
-        assert_command(
-            ['dcos', 'job', 'list'],
-            returncode=1,
-            stderr=(b'Missing required config parameter: "core.dcos_url".  '
-                    b'Please run `dcos config set core.dcos_url <value>`.\n'),
-            env=env)
 
 
 def test_empty_list():

@@ -1,6 +1,5 @@
 import json
 import os
-import sys
 
 import docopt
 import pkg_resources
@@ -11,9 +10,10 @@ from dcos.errors import DCOSException
 from dcos.package import get_package_manager
 from dcoscli import tables
 from dcoscli.subcommand import default_command_info, default_doc
-from dcoscli.util import decorate_docopt_usage
+from dcoscli.util import confirm, decorate_docopt_usage
 
 logger = util.get_logger(__name__)
+
 emitter = emitting.FlatEmitter()
 
 
@@ -73,7 +73,7 @@ def _cmds():
         cmds.Command(
             hierarchy=['package', 'install'],
             arg_keys=['<package-name>', '--package-version', '--options',
-                      '--app-id', '--cli', '--app', '--yes'],
+                      '--app-id', '--cli', '--global', '--app', '--yes'],
             function=_install),
 
         cmds.Command(
@@ -298,34 +298,8 @@ def _describe(package_name,
     return 0
 
 
-def confirm(prompt, yes):
-    """
-    :param prompt: message to display to the terminal
-    :type prompt: str
-    :param yes: whether to assume that the user responded with yes
-    :type yes: bool
-    :returns: True if the user responded with yes; False otherwise
-    :rtype: bool
-    """
-
-    if yes:
-        return True
-    else:
-        while True:
-            sys.stdout.write('{} [yes/no] '.format(prompt))
-            sys.stdout.flush()
-            response = sys.stdin.readline().strip().lower()
-            if response == 'yes' or response == 'y':
-                return True
-            elif response == 'no' or response == 'n':
-                return False
-            else:
-                emitter.publish(
-                    "'{}' is not a valid response.".format(response))
-
-
-def _install(package_name, package_version, options_path, app_id, cli, app,
-             yes):
+def _install(package_name, package_version, options_path, app_id, cli,
+             global_, app, yes):
     """Install the specified package.
 
     :param package_name: the package to install
@@ -338,6 +312,8 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
     :type app_id: str
     :param cli: indicates if the cli should be installed
     :type cli: bool
+    :param global_: indicates that the cli should be installed globally
+    :type global_: bool
     :param app: indicate if the application should be installed
     :type app: bool
     :param yes: automatically assume yes to all prompts
@@ -386,7 +362,7 @@ def _install(package_name, package_version, options_path, app_id, cli, app,
             pkg.name(), pkg.version())
         emitter.publish(msg)
 
-        subcommand.install(pkg)
+        subcommand.install(pkg, global_)
 
         subcommand_paths = subcommand.get_package_commands(package_name)
         new_commands = [os.path.basename(p).replace('-', ' ', 1)

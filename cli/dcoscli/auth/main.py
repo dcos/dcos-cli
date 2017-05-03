@@ -144,37 +144,8 @@ def _login(password_str, password_env, password_file,
     # every call to login will generate a new token if applicable
     _logout()
 
-    password = _get_password(password_str, password_env, password_file)
-    if provider is None:
-        if username and password:
-            auth.dcos_uid_password_auth(dcos_url, username, password)
-        elif username and key_path:
-            auth.servicecred_auth(dcos_url, username, key_path)
-        else:
-            try:
-                providers = auth.get_providers()
-                # Let users know if they have non-default providers configured
-                # This is a weak check, we should check default versions per
-                # DC/OS version since defaults will change. jj
-                if len(providers) > 2:
-                    msg = ("\nYour cluster has several authentication "
-                           "providers enabled. Run `dcos auth "
-                           "list-providers` to see all providers and `dcos "
-                           "auth login --provider <provider-id>` to "
-                           "authenticate with a specific provider\n")
-                    emitter.publish(DefaultError(msg))
-            except DCOSException:
-                pass
-            finally:
-                auth.header_challenge_auth(dcos_url)
-    else:
-        providers = auth.get_providers()
-        if providers.get(provider):
-            _trigger_client_method(
-                provider, providers[provider], username, password, key_path)
-        else:
-            msg = "Provider [{}] not configured on your cluster"
-            raise DCOSException(msg.format(provider))
+    login(dcos_url, password_str, password_env, password_file,
+          provider, username, key_path)
 
     emitter.publish("Login successful!")
     return 0
@@ -231,4 +202,59 @@ def _logout():
 
     if config.get_config_val("core.dcos_acs_token") is not None:
         config.unset("core.dcos_acs_token")
+    return 0
+
+
+def login(dcos_url, password_str, password_env, password_file,
+          provider, username, key_path):
+    """
+    :param dcos_url: URL of DC/OS cluster
+    :type dcos_url: str
+    :param password_str: password
+    :type password_str: str
+    :param password_env: name of environment variable with password
+    :type password_env: str
+    :param password_file: path to file with password
+    :type password_file: bool
+    :param provider: name of provider to authentication with
+    :type provider: str
+    :param username: username
+    :type username: str
+    :param key_path: path to file with private key
+    :type param: str
+    :rtype: int
+    """
+
+    password = _get_password(password_str, password_env, password_file)
+    if provider is None:
+        if username and password:
+            auth.dcos_uid_password_auth(dcos_url, username, password)
+        elif username and key_path:
+            auth.servicecred_auth(dcos_url, username, key_path)
+        else:
+            try:
+                providers = auth.get_providers()
+                # Let users know if they have non-default providers configured
+                # This is a weak check, we should check default versions per
+                # DC/OS version since defaults will change. jj
+                if len(providers) > 2:
+                    msg = ("\nYour cluster has several authentication "
+                           "providers enabled. Run `dcos auth "
+                           "list-providers` to see all providers and `dcos "
+                           "auth login --provider <provider-id>` to "
+                           "authenticate with a specific provider\n")
+                    emitter.publish(DefaultError(msg))
+            except DCOSException:
+                pass
+            finally:
+                auth.header_challenge_auth(dcos_url)
+    else:
+        providers = auth.get_providers()
+        if providers.get(provider):
+            _trigger_client_method(
+                provider, providers[provider], username, password, key_path)
+        else:
+            msg = "Provider [{}] not configured on your cluster"
+            raise DCOSException(msg.format(provider))
+
     return 0

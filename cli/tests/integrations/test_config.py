@@ -6,17 +6,14 @@ import six
 
 from dcos import config, constants
 
-from .helpers.common import (assert_command, config_set, config_unset,
-                             exec_command, update_config)
+from .helpers.common import (assert_command, config_set, exec_command,
+                             update_config)
 
 
 @pytest.fixture
 def env():
     r = os.environ.copy()
-    r.update({
-        constants.PATH_ENV: os.environ[constants.PATH_ENV],
-        constants.DCOS_CONFIG_ENV: os.path.join("tests", "data", "dcos.toml"),
-    })
+    r.update({constants.PATH_ENV: os.environ[constants.PATH_ENV]})
 
     return r
 
@@ -33,42 +30,18 @@ def test_version():
                    stdout=stdout)
 
 
-def _test_list_property(env):
-    stdout = b"""core.dcos_url http://dcos.snakeoil.mesosphere.com
-core.reporting False
-core.ssl_verify false
-core.timeout 5
-"""
-    assert_command(['dcos', 'config', 'show'],
-                   stdout=stdout,
-                   env=env)
-
-
-def test_get_existing_string_property(env):
-    _get_value('core.dcos_url', 'http://dcos.snakeoil.mesosphere.com', env)
-
-
 def test_get_existing_boolean_property(env):
-    _get_value('core.reporting', False, env)
+    with update_config("core.reporting", "false", env):
+        _get_value('core.reporting', False, env)
 
 
 def test_get_existing_number_property(env):
-    _get_value('core.timeout', 5, env)
+    with update_config("core.timeout", "5", env):
+        _get_value('core.timeout', 5, env)
 
 
 def test_get_missing_property(env):
     _get_missing_value('missing.property', env)
-
-
-def test_dcos_url_without_scheme(env):
-    with update_config("core.dcos_url", None, env):
-        new = b"abc.com"
-        out = b"[core.dcos_url]: set to 'https://%b'\n" % (new)
-        assert_command(
-            ['dcos', 'config', 'set', 'core.dcos_url', new.decode('utf-8')],
-            stderr=out,
-            returncode=0,
-            env=env)
 
 
 def test_get_top_property(env):
@@ -80,13 +53,6 @@ def test_get_top_property(env):
     assert stderr.startswith(
         b"Property 'core' doesn't fully specify a value - "
         b"possible properties are:\n")
-
-
-def test_set_existing_string_property(env):
-    new_value = 'http://dcos.snakeoil.mesosphere.com:5081'
-    with update_config('core.dcos_url', new_value, env):
-        _get_value('core.dcos_url',
-                   'http://dcos.snakeoil.mesosphere.com:5081', env)
 
 
 def test_set_existing_boolean_property(env):
@@ -116,16 +82,6 @@ def test_set_same_output(env):
         env=env)
 
 
-def test_set_new_output(env):
-    with update_config("core.dcos_url", None, env):
-        assert_command(
-            ['dcos', 'config', 'set', 'core.dcos_url',
-                'http://dcos.snakeoil.mesosphere.com:5081'],
-            stderr=(b"[core.dcos_url]: set to "
-                    b"'http://dcos.snakeoil.mesosphere.com:5081'\n"),
-            env=env)
-
-
 def test_set_nonexistent_subcommand(env):
     assert_command(
         ['dcos', 'config', 'set', 'foo.bar', 'baz'],
@@ -133,15 +89,6 @@ def test_set_nonexistent_subcommand(env):
         stderr=b"'foo' is not a dcos command.\n",
         returncode=1,
         env=env)
-
-
-def test_set_when_extra_section(env):
-    path = os.path.join('tests', 'data', 'config', 'invalid_section.toml')
-    env['DCOS_CONFIG'] = path
-    os.chmod(path, 0o600)
-
-    config_set('core.dcos_url', 'http://dcos.snakeoil.mesosphere.com', env)
-    config_unset('core.dcos_url', env)
 
 
 def test_unset_property(env):
@@ -193,9 +140,9 @@ def test_set_property_key(env):
 
 
 def test_set_missing_property(env):
-    with update_config("core.dcos_url", None, env=env):
-        config_set('core.dcos_url', 'http://localhost:8080', env)
-        _get_value('core.dcos_url', 'http://localhost:8080', env)
+    with update_config("package.cosmos_url", None, env=env):
+        config_set('package.cosmos_url', 'http://localhost:8080', env)
+        _get_value('package.cosmos_url', 'http://localhost:8080', env)
 
 
 def test_set_core_property(env):
@@ -205,33 +152,30 @@ def test_set_core_property(env):
 
 
 def test_url_validation(env):
-    with update_config('core.dcos_url', None, env):
-        key = 'core.dcos_url'
-        key2 = 'package.cosmos_url'
+    key = 'package.cosmos_url'
+    with update_config(key, None, env):
 
         config_set(key, 'http://localhost', env)
         config_set(key, 'https://localhost', env)
         config_set(key, 'http://dcos-1234', env)
-        config_set(key2, 'http://dcos-1234.mydomain.com', env)
+        config_set(key, 'http://dcos-1234.mydomain.com', env)
 
         config_set(key, 'http://localhost:5050', env)
         config_set(key, 'https://localhost:5050', env)
         config_set(key, 'http://mesos-1234:5050', env)
-        config_set(key2, 'http://mesos-1234.mydomain.com:5050', env)
+        config_set(key, 'http://mesos-1234.mydomain.com:5050', env)
 
         config_set(key, 'http://localhost:8080', env)
         config_set(key, 'https://localhost:8080', env)
         config_set(key, 'http://marathon-1234:8080', env)
-        config_set(key2, 'http://marathon-1234.mydomain.com:5050', env)
+        config_set(key, 'http://marathon-1234.mydomain.com:5050', env)
 
         config_set(key, 'http://user@localhost:8080', env)
         config_set(key, 'http://u-ser@localhost:8080', env)
         config_set(key, 'http://user123_@localhost:8080', env)
         config_set(key, 'http://user:p-ssw_rd@localhost:8080', env)
         config_set(key, 'http://user123:password321@localhost:8080', env)
-        config_set(key2, 'http://us%r1$3:pa#sw*rd321@localhost:8080', env)
-
-        config_unset(key2, env)
+        config_set(key, 'http://us%r1$3:pa#sw*rd321@localhost:8080', env)
 
 
 def test_fail_url_validation(env):
@@ -285,27 +229,14 @@ def test_timeout(env):
             assert "(connect timeout=1)".encode('utf-8') in stderr
 
 
-def test_parse_error(env):
-    path = os.path.join('tests', 'data', 'config', 'parse_error.toml')
-    os.chmod(path, 0o600)
-    env['DCOS_CONFIG'] = path
-
-    assert_command(['dcos', 'config', 'show'],
-                   returncode=1,
-                   stderr=six.b(("Error parsing config file at [{}]: Found "
-                                 "invalid character in key name: ']'. "
-                                 "Try quoting the key name.\n").format(path)),
-                   env=env)
-
-
 def _fail_url_validation(command, key, value, env):
     returncode_, stdout_, stderr_ = exec_command(
         ['dcos', 'config', command, key, value], env=env)
 
     assert returncode_ == 1
     assert stdout_ == b''
-    assert stderr_.startswith(str(
-        'Unable to parse {!r} as a url'.format(value)).encode('utf-8'))
+    err = str('Unable to parse {!r} as a url'.format(value)).encode('utf-8')
+    assert err in stderr_
 
 
 def _get_value(key, value, env):
