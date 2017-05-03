@@ -80,7 +80,7 @@ Configure Environment and Run
 #. Configure the CLI, changing the values below as appropriate for your local
    installation of DC/OS::
 
-    dcos config set core.dcos_url http://dcos-ea-1234.us-west-2.elb.amazonaws.com
+    dcos cluster setup http://dcos-ea-1234.us-west-2.elb.amazonaws.com
 
 #. Get started by calling the DC/OS CLI help::
 
@@ -113,7 +113,7 @@ The :code:`ssl` integration tests resolve :code:`dcos.snakeoil.mesosphere.com`
 to test SSL certs. To run this test suite be sure to add this resolution to your
 :code:`/etc/hosts` file:
 
-:code:`echo "dcos/cluster/url dcos.snakeoil.mesosphere.com" >> /etc/hosts`
+:code:`echo "your/dcos/cluster/url dcos.snakeoil.mesosphere.com" >> /etc/hosts`
 
 
 Running
