@@ -120,18 +120,22 @@ def setup_cluster_config(dcos_url, temp_path, stored_cert):
         for f in filenames:
             util.sh_copy(os.path.join(path, f), cluster_path)
 
+    cluster = Cluster(cluster_id)
+    config_path = cluster.get_config_path()
     if stored_cert:
-        config.set_val("core.ssl_verify", os.path.join(
-            cluster_path, "dcos_ca.crt"))
+        cert_path = os.path.join(cluster_path, "dcos_ca.crt")
+        config.set_val("core.ssl_verify", cert_path, config_path=config_path)
 
     cluster_name = cluster_id
     try:
         url = dcos_url.rstrip('/') + '/mesos/state-summary'
-        cluster_name = http.get(url, timeout=1).json().get("cluster")
+        name_query = http.get(url, timeout=1, toml_config=cluster.get_config())
+        cluster_name = name_query.json().get("cluster")
+
     except DCOSException:
         pass
 
-    config.set_val("cluster.name", cluster_name)
+    config.set_val("cluster.name", cluster_name, config_path=config_path)
 
     return cluster_path
 
