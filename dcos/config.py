@@ -6,7 +6,7 @@ import os
 import pkg_resources
 import toml
 
-from dcos import constants, jsonitem, subcommand, util
+from dcos import constants, jsonitem, util
 from dcos.errors import DCOSException
 
 logger = util.get_logger(__name__)
@@ -424,6 +424,10 @@ def get_config_schema(command):
     :rtype: dict
     """
 
+    # import here to avoid circular import
+    from dcos.subcommand import (
+            command_executables, config_schema, default_subcommands)
+
     # core.* config variables are special.  They're valid, but don't
     # correspond to any particular subcommand, so we must handle them
     # separately.
@@ -432,14 +436,14 @@ def get_config_schema(command):
             pkg_resources.resource_string(
                 'dcos',
                 'data/config-schema/core.json').decode('utf-8'))
-    elif command in subcommand.default_subcommands():
+    elif command in default_subcommands():
         return json.loads(
             pkg_resources.resource_string(
                 'dcos',
                 'data/config-schema/{}.json'.format(command)).decode('utf-8'))
     else:
-        executable = subcommand.command_executables(command)
-        return subcommand.config_schema(executable, command)
+        executable = command_executables(command)
+        return config_schema(executable, command)
 
 
 def get_property_description(section, subkey):
