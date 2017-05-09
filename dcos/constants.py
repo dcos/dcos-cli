@@ -8,6 +8,9 @@ DCOS_CLUSTERS_SUBDIR = "clusters"
 """Name of the subdirectory containing the configuration of all configured
 clusters"""
 
+DCOS_CLUSTER = 'DCOS_CLUSTER'
+"""Name of the environment variable pointing to the DC/OS cluster id."""
+
 DCOS_CLUSTER_ATTACHED_FILE = "attached"
 """Name of the file indicating the current attached cluster"""
 
