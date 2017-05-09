@@ -59,12 +59,24 @@ def get_attached_cluster_path():
     if not os.path.exists(path):
         return None
 
+    attached = None
     clusters = os.listdir(get_clusters_path())
+    cluster_envvar = os.environ.get(constants.DCOS_CLUSTER)
+
     for c in clusters:
         cluster_path = os.path.join(path, c)
+        name = get_config_val("cluster.name",
+                              load_from_path(
+                                  os.path.join(cluster_path, "dcos.toml")))
+        if cluster_envvar is not None \
+           and (cluster_envvar == c or cluster_envvar == name):
+            return cluster_path
         if os.path.exists(os.path.join(
                 cluster_path, constants.DCOS_CLUSTER_ATTACHED_FILE)):
-            return cluster_path
+            attached = cluster_path
+
+    if attached is not None:
+        return attached
 
     # if only one cluster, set as attached
     if len(clusters) == 1:

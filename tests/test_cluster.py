@@ -54,12 +54,17 @@ def test_set_attached():
         assert cluster.set_attached(cluster_path) is None
         assert config.get_attached_cluster_path() == cluster_path
 
-        assert cluster.set_attached(cluster_path) is None
-        assert config.get_attached_cluster_path() == cluster_path
-
         cluster_path2 = add_cluster_dir("b", tempdir)
         # attach cluster already attached
         assert cluster.set_attached(cluster_path2) is None
+        assert config.get_attached_cluster_path() == cluster_path2
+
+        # attach cluster through environment
+        os.environ[constants.DCOS_CLUSTER] = "a"
+        assert config.get_attached_cluster_path() == cluster_path
+
+        # attach back to old cluster through environment
+        os.environ[constants.DCOS_CLUSTER] = "b"
         assert config.get_attached_cluster_path() == cluster_path2
 
 
