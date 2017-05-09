@@ -1,5 +1,5 @@
 DC/OS Command Line Interface
-===========================
+============================
 The DC/OS Command Line Interface (CLI) is a command line utility that
 provides a user-friendly yet powerful way to manage DC/OS installations.
 
