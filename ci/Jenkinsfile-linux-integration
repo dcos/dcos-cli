@@ -247,6 +247,8 @@ builders['linux-tests'] = testBuilder('linux', 'py35', '/workspace')({
                unset DCOS_ACS_TOKEN; \
                make test-binary'''
         }
+
+        sh 'bash dcos-cli/bin/install/test-install-binary-dcos-cli.sh "${DCOS_URL}"'
     }
 })
 

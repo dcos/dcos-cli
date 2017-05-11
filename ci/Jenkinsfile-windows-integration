@@ -245,6 +245,8 @@ builders['windows-tests'] = testBuilder('windows', 'windows', 'C:\\windows\\work
                 unset DCOS_ACS_TOKEN; \
                 make test-binary"'''
         }
+
+        bat 'bash dcos-cli/bin/install/test-install-binary-dcos-cli.sh "${DCOS_URL}"'
     }
 })
 
