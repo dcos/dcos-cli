@@ -481,7 +481,7 @@ class Master(object):
         def _get_container_id(container_status):
             if 'container_id' in container_status:
                 if 'value' in container_status['container_id']:
-                    return container_status['container_id']['value']
+                    return container_status['container_id']
 
             raise DCOSException(
                 "No container found for the specified task."

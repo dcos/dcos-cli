@@ -158,7 +158,10 @@ def test_dcos_task_metrics_agent_details(mocked_get_config_val,
 
     mock_master = MagicMock()
     mock_master.task = lambda _: {'slave_id': 'slave_id'}
-    mock_master.get_container_id = lambda _: 'container_id'
+    mock_master.get_container_id = lambda _: {
+        'parent': {},
+        'value': 'container_id'
+    }
     mocked_get_master.return_value = mock_master
 
     _metrics(True, 'task_id', False)

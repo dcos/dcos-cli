@@ -578,7 +578,7 @@ def _metrics(summary, task_id, json_):
             'Error finding agent associated with task: {}'.format(task_id))
 
     slave_id = task['slave_id']
-    container_id = master.get_container_id(task_id)
+    container_id = master.get_container_id(task_id)["value"]
 
     endpoint = '/system/v1/agent/{}/metrics/v0/containers/{}'.format(
         slave_id, container_id
