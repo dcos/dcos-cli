@@ -896,6 +896,30 @@ def clusters_table(clusters):
     return tb
 
 
+def backup_table(backups):
+    """Returns a PrettyTable representation of available DC/OS backups.
+
+    :param backups: backups to render
+    :type backups: [dict]
+    :rtype: PrettyTable
+    """
+
+    fields = OrderedDict([
+        ('BACKUP ID', lambda backup: backup['id']),
+        ('VERSION', lambda backup: backup['dcos_version']),
+        ('STATUS', lambda backup: backup['status']),
+        ('TIMESTAMP', lambda backup: backup['timestamp'])
+    ])
+
+    if 'backup_info' in backups:
+        backups = backups['backup_info']
+
+    tb = table(fields, backups, sortby='TIMESTAMP')
+    tb.align['BACKUP ID'] = 'l'
+
+    return tb
+
+
 def node_table(nodes, field_names=()):
     """Returns a PrettyTable representation of the provided DC/OS nodes
 

@@ -14,6 +14,7 @@ from dcos import cmds, emitting, http, options, servicemanager, util
 from dcos.errors import DCOSException
 from dcos.package import get_package_manager
 from dcos.util import md5_hash_file
+from dcoscli.experimental import backup
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
 
@@ -60,6 +61,30 @@ def _cmds():
             arg_keys=['--json', '<package-name>',
                       '--package-version', '--options'],
             function=_service_start),
+        cmds.Command(
+            hierarchy=['experimental', 'backup', 'save'],
+            arg_keys=['--label'],
+            function=backup.save),
+        cmds.Command(
+            hierarchy=['experimental', 'backup', 'restore'],
+            arg_keys=['<backup-id>'],
+            function=backup.restore),
+        cmds.Command(
+            hierarchy=['experimental', 'backup', 'list'],
+            arg_keys=['--prefix', '--json'],
+            function=backup.list),
+        cmds.Command(
+            hierarchy=['experimental', 'backup', 'remove'],
+            arg_keys=['<backup-id>'],
+            function=backup.remove),
+        cmds.Command(
+            hierarchy=['experimental', 'backup', 'download'],
+            arg_keys=['<backup-id>', '<backup-path>'],
+            function=backup.download),
+        cmds.Command(
+            hierarchy=['experimental', 'backup', 'upload'],
+            arg_keys=['<backup-path>'],
+            function=backup.upload),
         cmds.Command(
             hierarchy=['experimental'],
             arg_keys=['--info'],

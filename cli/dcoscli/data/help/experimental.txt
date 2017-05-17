@@ -16,6 +16,12 @@ Usage:
                                     [--json]
                                     [--package-version=<package-version>]
                                     [--options=<options-file>]
+    dcos experimental backup save --label=<label>
+    dcos experimental backup restore <backup-id>
+    dcos experimental backup list [--prefix=<prefix>] [--json]
+    dcos experimental backup remove <backup-id>
+    dcos experimental backup download <backup-id> <backup-path>
+    dcos experimental backup upload <backup-path>
 
 Commands:
     package add
@@ -27,6 +33,24 @@ Commands:
         Start a service from a non-native DC/OS package. See
         `dcos experimental package add` for information on how to add a
         package to DC/OS.
+    backup save
+        Initiate a backup of DC/OS to be saved within the cluster.
+        Subsequent calls to `backup list` can be used to examine the current
+        state of the backup.
+    backup restore
+        Initiate the restoration of a previously saved backup of DC/OS.
+        Subsequent calls to `backup list` can be used to examine the current
+        state of the backup.
+    backup list
+        Print a list of all DC/OS backups saved within the cluster.
+    backup remove
+        Initiate the removal of a DC/OS backup currently saved
+        within the cluster.
+    backup download
+        Download an opaque byte stream representing a DC/OS backup and save
+        it to a file.
+    backup upload
+        Upload a previously saved DC/OS backup and store it in the cluster.
 
 Options:
     --dcos-package=<dcos-package>
@@ -46,6 +70,10 @@ Options:
         Name of the DC/OS package.
     --package-version=<package-version>
         The package version to add.
+    --label=<label>
+        A label that will be prepended to the unique ID of a DC/OS backup.
+    --prefix=<prefix>
+        A prefix used to match against the unique IDs of previously saved DC/OS backups.
     --version
         Print version information.
 
@@ -54,3 +82,7 @@ Positional Arguments:
         Path to a DC/OS package build definition.
     <package-name>
         Name of a DC/OS package that has been added to DC/OS.
+    <backup-id>
+        Unique ID of a previously saved DC/OS backup.
+    <backup-path>
+        A path on the local filesystem to a backup of DC/OS.
