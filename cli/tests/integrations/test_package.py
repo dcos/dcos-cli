@@ -524,7 +524,7 @@ def test_uninstall_subcommand():
 
 def test_uninstall_cli():
     _install_helloworld()
-    _uninstall_cli_helloworld(args=['--cli'])
+    _uninstall_cli_helloworld()
 
     stdout_json = {
         "apps": [
@@ -860,7 +860,8 @@ def _uninstall_helloworld(
         stderr=b'',
         returncode=0,
         uninstalled=b'Uninstalled package [helloworld] version [0.1.0]\n'):
-    assert_command(['dcos', 'package', 'uninstall', 'helloworld'] + args,
+    assert_command(['dcos', 'package', 'uninstall', 'helloworld',
+                    '--yes'] + args,
                    stdout=stdout,
                    stderr=uninstalled+stderr,
                    returncode=returncode)
@@ -873,7 +874,8 @@ def _uninstall_cli_helloworld(
         stdout=b'',
         stderr=b'',
         returncode=0):
-    assert_command(['dcos', 'package', 'uninstall', 'helloworld'] + args,
+    assert_command(['dcos', 'package', 'uninstall', 'helloworld',
+                    '--cli'] + args,
                    stdout=stdout,
                    stderr=stderr,
                    returncode=returncode)
@@ -881,7 +883,7 @@ def _uninstall_cli_helloworld(
 
 def _uninstall_chronos(args=[], returncode=0, stdout=b'', stderr=''):
     result_returncode, result_stdout, result_stderr = exec_command(
-        ['dcos', 'package', 'uninstall', 'chronos'] + args)
+        ['dcos', 'package', 'uninstall', 'chronos', '--yes'] + args)
 
     assert result_returncode == returncode
     assert result_stdout == stdout
@@ -1027,7 +1029,7 @@ def _package(name,
     finally:
         if installed:
             assert_command(
-                ['dcos', 'package', 'uninstall', name],
+                ['dcos', 'package', 'uninstall', name, '--yes'],
                 stderr=uninstall_stderr)
             watch_all_deployments()
 

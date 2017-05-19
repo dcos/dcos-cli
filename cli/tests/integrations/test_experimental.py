@@ -254,7 +254,7 @@ def test_service_start_by_starting_service_not_added():
 
 
 def _service_stop_cmd(package_name):
-    return ['dcos', 'package', 'uninstall', package_name]
+    return ['dcos', 'package', 'uninstall', package_name, '--yes']
 
 
 def _service_list_cmd():

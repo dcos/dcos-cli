@@ -23,7 +23,7 @@ def package(package_name, deploy=False, args=[]):
     try:
         yield
     finally:
-        command = ['dcos', 'package', 'uninstall', package_name]
+        command = ['dcos', 'package', 'uninstall', package_name, '--yes']
         returncode, _, _ = exec_command(command)
         assert returncode == 0
         watch_all_deployments()
@@ -128,5 +128,5 @@ def package_uninstall(package_name, args=[], stderr=b''):
     """
 
     assert_command(
-        ['dcos', 'package', 'uninstall', package_name] + args,
+        ['dcos', 'package', 'uninstall', package_name, '--yes'] + args,
         stderr=stderr)
