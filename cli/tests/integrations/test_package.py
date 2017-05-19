@@ -417,25 +417,15 @@ def test_package_metadata():
         'postInstallNotes': 'A sample post-installation message'
     }
 
-    expected_command = {
-        'pip': [
-            'dcos<1.0',
-            'git+https://github.com/mesosphere/' +
-            'dcos-helloworld.git#dcos-helloworld=0.1.0'
-        ]
-    }
-
     expected_source = bytes(
         UNIVERSE_TEST_REPOS['helloworld-universe'],
         'utf-8'
     )
 
     expected_labels = {
-        'DCOS_PACKAGE_REGISTRY_VERSION': b'3.0',
         'DCOS_PACKAGE_NAME': b'helloworld',
         'DCOS_PACKAGE_VERSION': b'0.1.0',
         'DCOS_PACKAGE_SOURCE': expected_source,
-        'DCOS_PACKAGE_RELEASE': b'0',
     }
 
     app_labels = _get_app_labels('helloworld')
@@ -444,8 +434,6 @@ def test_package_metadata():
 
     assert expected_metadata == base64_to_dict(six.b(
         app_labels.get('DCOS_PACKAGE_METADATA')))
-    assert expected_command == base64_to_dict(six.b(
-        app_labels.get('DCOS_PACKAGE_COMMAND')))
 
     # test local package.json
     package = {
