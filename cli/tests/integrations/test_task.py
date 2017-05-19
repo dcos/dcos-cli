@@ -359,7 +359,8 @@ def _install_sleep_task(app_path=SLEEP1, app_name='test-app'):
 
 
 def _uninstall_helloworld(args=[]):
-    assert_command(['dcos', 'package', 'uninstall', 'helloworld'] + args)
+    assert_command(['dcos', 'package', 'uninstall', 'helloworld',
+                    '--yes'] + args)
 
 
 def _uninstall_sleep(app_id='test-app'):
