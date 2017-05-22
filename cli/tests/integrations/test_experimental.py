@@ -203,7 +203,6 @@ def test_service_start_happy_path():
         runnable_package = _package_build(
             runnable_package_path(2), output_directory)
         name, version = _package_add(runnable_package)
-        _wait_for_package_add_local(runnable_package)
         try:
             _service_start(name, version)
         finally:
@@ -215,7 +214,6 @@ def test_service_start_happy_path_json():
         runnable_package = _package_build(
             runnable_package_path(3), output_directory)
         name, version = _package_add(runnable_package, expects_json=True)
-        _wait_for_package_add_local(runnable_package)
         try:
             _service_start(name, version, expects_json=True)
         finally:
@@ -225,7 +223,6 @@ def test_service_start_happy_path_json():
 def test_service_start_happy_path_from_universe():
     package_name = 'linkerd'
     name, version = _package_add_universe(package_name)
-    _wait_for_package_add_remote(name, version)
     try:
         _service_start(name, version)
     finally:
@@ -235,7 +232,6 @@ def test_service_start_happy_path_from_universe():
 def test_service_start_happy_path_from_universe_json():
     package_name = 'cassandra'
     name, version = _package_add_universe(package_name, expects_json=True)
-    _wait_for_package_add_remote(name, version)
     try:
         _service_start(name, version)
     finally:
@@ -244,7 +240,6 @@ def test_service_start_happy_path_from_universe_json():
 
 def test_service_start_by_starting_same_service_twice():
     name, version = _package_add_universe('kafka')
-    _wait_for_package_add_remote(name, version)
     try:
         _service_start(name, version)
         stderr = b'The DC/OS service has already been started\n'
@@ -325,7 +320,16 @@ def _service_start(package_name,
                                  package_version,
                                  options,
                                  json=expects_json)
-    code, out, err = exec_command(command)
+    code = 1
+    max_retries = 10
+    retry_number = 0
+    while code != 0:
+        code, out, err = exec_command(command)
+        assert retry_number != max_retries, \
+            'Waiting for package add to complete took too long'
+        retry_number += 1
+        time.sleep(5)
+
     assert code == 0
     assert err == b''
 
@@ -458,40 +462,6 @@ def _package_build_failure(build_definition_path,
                    stdout=stdout,
                    stderr=stderr)
     assert len(os.listdir(output_directory)) == 0
-
-
-def _wait_for_package_add_remote(package_name, package_version):
-    command = _package_add_cmd(package_name=package_name,
-                               package_version=package_version)
-    _wait_for_package_add(command, package_name, package_version)
-
-
-def _wait_for_package_add_local(package):
-    command = _package_add_cmd(dcos_package=package)
-    metadata = zip_contents_as_json(package, 'metadata.json')
-    name = metadata['name']
-    version = metadata['version']
-    _wait_for_package_add(command, name, version)
-
-
-def _wait_for_package_add(command, name, version):
-    done_adding = False
-    max_retries = 10
-    retry_number = 0
-    while not done_adding:
-        code, out, err = exec_command(command)
-        change_in_progress_message = (
-            'A change to package '
-            '{}-{} is already in progress\n'.format(
-                name, version).encode())
-        done_adding = code == 0
-        assert (done_adding or
-                (code == 1 and
-                 err == change_in_progress_message))
-        assert retry_number != max_retries, \
-            'Waiting for package add to complete took too long'
-        retry_number += 1
-        time.sleep(5)
 
 
 def _successful_package_build_test(
