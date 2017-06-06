@@ -351,7 +351,6 @@ class CosmosPackageVersion():
     """Interface to a specific package version from cosmos"""
 
     def __init__(self, name, package_version, url):
-        self._name = name
         self._cosmos_url = url
 
         params = {"packageName": name}
@@ -359,39 +358,7 @@ class CosmosPackageVersion():
             params["packageVersion"] = package_version
         response = PackageManager(url).cosmos_post("describe", params)
 
-        package_info = response.json()
-
-        self._config_json = package_info.get("config")
-        self._command_json = package_info.get("command")
-        self._resource_json = package_info.get("resource")
-
-        if package_info.get("marathonMustache") is not None:
-            self._marathon_template = package_info["marathonMustache"]
-        else:
-            self._marathon_template = package_info.get("marathon")
-            if self._marathon_template is not None:
-                self._marathon_template = base64.b64decode(
-                    self._marathon_template.get("v2AppMustacheTemplate")
-                ).decode('utf-8')
-
-        if package_info.get("package") is not None:
-            self._package_json = package_info["package"]
-            self._package_version = self._package_json["version"]
-        else:
-            self._package_json = _v2_package_to_v1_package_json(package_info)
-            self._package_version = self._package_json["version"]
-
-        self._package_version = (package_version or
-                                 self._package_json.get("version"))
-
-    def registry(self):
-        """Cosmos only supports one registry right now, so default to cosmos
-
-        :returns: registry
-        :rtype: str
-        """
-
-        return "cosmos"
+        self._package_json = response.json()
 
     def version(self):
         """Returns the package version.
@@ -400,7 +367,7 @@ class CosmosPackageVersion():
         :rtype: str
         """
 
-        return self._package_version
+        return self._package_json["package"]["version"]
 
     def name(self):
         """Returns the package name.
@@ -409,26 +376,7 @@ class CosmosPackageVersion():
         :rtype: str
         """
 
-        return self._name
-
-    def revision(self):
-        """We aren't exposing revisions for cosmos right now, so make
-           custom string.
-
-        :returns: revision
-        :rtype: str
-        """
-        return "cosmos" + self._package_version
-
-    def cosmos_url(self):
-        """
-        Returns location of cosmos server
-
-        :returns: revision
-        :rtype: str
-        """
-
-        return self._cosmos_url
+        return self._package_json["package"]["name"]
 
     def package_json(self):
         """Returns the JSON content of the package.json file.
@@ -443,28 +391,32 @@ class CosmosPackageVersion():
         """Returns the JSON content of the config.json file.
 
         :returns: Package config schema
-        :rtype: dict
+        :rtype: dict | None
         """
 
-        return self._config_json
+        return self._package_json["package"].get("config")
 
     def resource_json(self):
         """Returns the JSON content of the resource.json file.
 
         :returns: Package resources
-        :rtype: dict
+        :rtype: dict | None
         """
 
-        return self._resource_json
+        return self._package_json["package"].get("resource")
 
     def marathon_template(self):
         """Returns raw data from marathon.json
 
         :returns: raw data from marathon.json
-        :rtype: str
+        :rtype: str | None
         """
 
-        return self._marathon_template
+        template = self._package_json["package"].get("marathon", {}).get(
+            "v2AppMustacheTemplate"
+        )
+
+        return base64.b64decode(template) if template else None
 
     def marathon_json(self, options):
         """Returns the JSON content of the marathon.json template, after
@@ -475,22 +427,14 @@ class CosmosPackageVersion():
         :rtype: dict
         """
 
-        params = {"packageName": self._name}
-        params["packageVersion"] = self._package_version
+        params = {"packageName": self.name()}
+        params["packageVersion"] = self.package_version()
         if options:
             params["options"] = options
         response = PackageManager(
             self._cosmos_url
         ).cosmos_post("render", params)
         return response.json().get("marathonJson")
-
-    def has_mustache_definition(self):
-        """Returns True if packages has a marathon template
-
-        :rtype: bool
-        """
-
-        return self._marathon_template is not None
 
     def options(self, user_options):
         """Makes sure user supplied options are valid
@@ -503,35 +447,27 @@ class CosmosPackageVersion():
         self.marathon_json(user_options)
         return None
 
-    def has_cli_definition(self):
-        """Returns true if the package defines a command; false otherwise.
-
-        :rtype: bool
-        """
-
-        return self._command_json is not None or (
-            self._resource_json and self._resource_json.get("cli"))
-
     def cli_definition(self):
         """Returns the JSON content that defines a cli subcommand. Looks for
         "cli" property in resource.json first and if that is None, checks for
         command.json
 
         :returns: Package data
-        :rtype: dict
+        :rtype: dict | None
         """
 
-        return (self._resource_json and self._resource_json.get("cli")) or (
-            self._command_json)
+        return (self.resource_json() and self.resource_json().get("cli")) or (
+            self.command_json()
+        )
 
     def command_json(self):
         """Returns the JSON content of the command.json file.
 
         :returns: Package data
-        :rtype: dict
+        :rtype: dict | None
         """
 
-        return self._command_json
+        return self._package_json["package"].get("command")
 
     def package_versions(self):
         """Returns a list of available versions for this package
@@ -635,24 +571,3 @@ def _format_marathon_bad_response_message(error):
                     isinstance(err["errors"], collections.Sequence):
                 error_messages += err["errors"]
     return "\n".join(error_messages)
-
-
-def _v2_package_to_v1_package_json(package_info):
-    """Convert v2 package information to only contain info consumed by
-    package.json
-
-    :param package_info: package information
-    :type package_info: dict
-    :rtype {}
-    """
-    package_json = package_info
-    if "command" in package_json:
-        del package_json["command"]
-    if "config" in package_json:
-        del package_json["config"]
-    if "marathon" in package_json:
-        del package_json["marathon"]
-    if "resource" in package_json:
-        del package_json["resource"]
-
-    return package_json

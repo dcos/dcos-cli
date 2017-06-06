@@ -45,8 +45,8 @@ class Cosmos(object):
         self._endpoint_data = {
             'capabilities': _data(['v1'], 'get'),
             'package/add': _data(['v1'], 'post'),
-            'package/describe': _data(['v2', 'v1'], 'post'),
-            'package/install': _data(['v2', 'v1'], 'post'),
+            'package/describe': _data(['v3'], 'post'),
+            'package/install': _data(['v2'], 'post'),
             'package/list': _data(['v1'], 'post'),
             'package/list-versions': _data(['v1'], 'post'),
             'package/render': _data(['v1'], 'post'),

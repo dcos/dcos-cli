@@ -340,7 +340,7 @@ def _install(package_name, package_version, options_path, app_id, cli,
             emitter.publish('Exiting installation.')
             return 0
 
-    if app and pkg.has_mustache_definition():
+    if app and pkg.marathon_template():
 
         # Even though package installation will check for template rendering
         # errors, we want to fail early, before trying to install.
@@ -356,7 +356,7 @@ def _install(package_name, package_version, options_path, app_id, cli,
 
         package_manager.install_app(pkg, user_options, app_id)
 
-    if cli and pkg.has_cli_definition():
+    if cli and pkg.cli_definition():
         # Install subcommand
         msg = 'Installing CLI subcommand for package [{}] version [{}]'.format(
             pkg.name(), pkg.version())
