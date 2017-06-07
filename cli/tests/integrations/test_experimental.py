@@ -221,7 +221,7 @@ def test_service_start_happy_path_json():
 
 
 def test_service_start_happy_path_from_universe():
-    package_name = 'linkerd'
+    package_name = 'hello-world'
     name, version = _package_add_universe(package_name)
     try:
         _service_start(name, version)
