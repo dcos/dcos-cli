@@ -6,7 +6,7 @@ from dcos import packagemanager
 
 
 def describe_response_headers(pkg_mgr):
-    content_type = pkg_mgr.cosmos._get_accept('package.describe', 'v2')
+    content_type = pkg_mgr.cosmos._get_accept('package.describe', 'v3')
     return {'Content-Type': content_type}
 
 
