@@ -246,18 +246,8 @@ def test_update_bad_type():
             ['dcos', 'marathon', 'app', 'update',
              'zero-instance-app', 'cpus="a string"'])
 
-        stderr_end = b"""{
-  "details": [
-    {
-      "errors": [
-        "error.expected.jsnumber"
-      ],
-      "path": "/cpus"
-    }
-  ],
-  "message": "Invalid JSON"
-}
-"""
+        stderr_end = b"""{"message":"Invalid JSON","details":[{"path":"/cpus","errors":["error.expected.jsnumber"]}]}"""  # noqa: E501
+
         assert returncode == 1
         assert stderr_end in stderr
         assert stdout == b''
@@ -282,24 +272,11 @@ def test_app_add_invalid_request():
     returncode, stdout, stderr = exec_command(
         ['dcos', 'marathon', 'app', 'add', path])
 
-    assert returncode == 1
-    assert stdout == b''
-    assert re.match(b"Error on request \[POST .*\]: HTTP 400: Bad Request:",
-                    stderr)
+    stderr_end = b"""{"message":"Invalid JSON","details":[{"path":"/container/docker/network","errors":["error.unknown.enum.literal"]}]}"""  # noqa: E501
 
-    stderr_end = b"""{
-  "details": [
-    {
-      "errors": [
-        "host is not a valid network type"
-      ],
-      "path": "/container/docker/network"
-    }
-  ],
-  "message": "Invalid JSON"
-}
-"""
-    assert stderr.endswith(stderr_end)
+    assert returncode == 1
+    assert stderr_end in stderr
+    assert stdout == b''
 
 
 def test_update_app():

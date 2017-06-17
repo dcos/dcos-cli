@@ -7,7 +7,7 @@
         "type": "DOCKER",
         "docker": {
             "image": "busybox",
-            "network": "host"
+            "network": "bogus"
         }
     }
 }

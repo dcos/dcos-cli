@@ -41,21 +41,11 @@ def test_add_bad_complicated_group():
             ['dcos', 'marathon', 'group', 'add'],
             stdin=fd)
 
-        err = b"""{
-  "details": [
-    {
-      "errors": [
-        "error.path.missing"
-      ],
-      "path": "/groups(0)/apps(0)/id"
-    }
-  ],
-  "message": "Invalid JSON"
-}
-"""
+        stderr_end = b"""{"message":"Invalid JSON","details":[{"path":"/groups(0)/apps(0)/id","errors":["\'id\' is undefined on object: {}"]}]}"""  # noqa: E501
+
         assert returncode == 1
+        assert stderr_end in stderr
         assert stdout == b''
-        assert err in stderr
 
 
 def test_update_group_from_stdin():
