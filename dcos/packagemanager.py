@@ -428,7 +428,7 @@ class CosmosPackageVersion():
         """
 
         params = {"packageName": self.name()}
-        params["packageVersion"] = self.package_version()
+        params["packageVersion"] = self.version()
         if options:
             params["options"] = options
         response = PackageManager(
