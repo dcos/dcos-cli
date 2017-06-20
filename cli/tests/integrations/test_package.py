@@ -436,19 +436,9 @@ def test_package_metadata():
         app_labels.get('DCOS_PACKAGE_METADATA')))
 
     # test local package.json
-    package = {
-        "description": "Example DCOS application package",
-        "framework": False,
-        "maintainer": "support@mesosphere.io",
-        "name": "helloworld",
-        "packagingVersion": "3.0",
-        "postInstallNotes": "A sample post-installation message",
-        "preInstallNotes": "A sample pre-installation message",
-        "selected": False,
-        "tags": ["mesosphere", "example", "subcommand"],
-        "version": "0.1.0",
-        "website": "https://github.com/mesosphere/dcos-helloworld",
-    }
+    package = file_json(
+        'tests/data/package/json/test_package_metadata.json')
+    package = json.loads(package.decode("UTF-8"))
 
     helloworld_subcommand = subcommand.InstalledSubcommand("helloworld")
 

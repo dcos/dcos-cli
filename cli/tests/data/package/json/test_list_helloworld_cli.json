@@ -3,14 +3,27 @@
     "command": {
       "name": "helloworld"
     },
+    "config": {
+      "$schema": "http://json-schema.org/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "port": {
+          "default": 8080,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
     "description": "Example DCOS application package",
-    "framework": false,
     "maintainer": "support@mesosphere.io",
+    "marathon": {
+      "v2AppMustacheTemplate": "ewogICJpZCI6ICJoZWxsb3dvcmxkIiwKICAiY3B1cyI6IDEuMCwKICAibWVtIjogNTEyLAogICJpbnN0YW5jZXMiOiAxLAogICJjbWQiOiAicHl0aG9uMyAtbSBodHRwLnNlcnZlciB7e3BvcnR9fSIsCiAgImNvbnRhaW5lciI6IHsKICAgICJ0eXBlIjogIkRPQ0tFUiIsCiAgICAiZG9ja2VyIjogewogICAgICAiaW1hZ2UiOiAicHl0aG9uOjMiLAogICAgICAibmV0d29yayI6ICJIT1NUIgogICAgfQogIH0KfQo="
+    },
     "name": "helloworld",
     "packagingVersion": "3.0",
     "postInstallNotes": "A sample post-installation message",
     "preInstallNotes": "A sample pre-installation message",
-    "selected": false,
+    "releaseVersion": 0,
     "tags": [
       "mesosphere",
       "example",
