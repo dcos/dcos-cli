@@ -285,7 +285,7 @@ def _describe(package_name,
             if render:
                 app_output = pkg.marathon_json(user_options)
             else:
-                app_output = pkg.marathon_template()
+                app_output = pkg.marathon_template().decode("UTF-8")
                 if app_output and app_output[-1] == '\n':
                     app_output = app_output[:-1]
             emitter.publish(app_output)
