@@ -427,8 +427,10 @@ class CosmosPackageVersion():
         :rtype: dict
         """
 
-        params = {"packageName": self.name()}
-        params["packageVersion"] = self.version()
+        params = {
+            "packageName": self.name(),
+            "packageVersion": self.version()
+        }
         if options:
             params["options"] = options
         response = PackageManager(
