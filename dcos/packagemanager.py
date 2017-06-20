@@ -385,7 +385,7 @@ class CosmosPackageVersion():
         :rtype: dict
         """
 
-        return self._package_json
+        return self._package_json["package"]
 
     def config_json(self):
         """Returns the JSON content of the config.json file.
