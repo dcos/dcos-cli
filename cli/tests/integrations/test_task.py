@@ -183,7 +183,7 @@ def test_log_two_tasks():
     assert stderr == b''
 
     lines = stdout.decode('utf-8').split('\n')
-    assert len(lines) == 19
+    assert len(lines) == 7
     assert len(
         [line for line in lines if line.startswith('===> task:test-app')]
     ) == 2
@@ -230,13 +230,13 @@ def test_log_completed():
         ['dcos', 'task', 'log', '--completed', 'test-app-completed'])
     assert returncode == 0
     assert stderr == b''
-    assert len(stdout.decode('utf-8').split('\n')) > 4
+    assert len(stdout.decode('utf-8').split('\n')) >= 3
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'task', 'log', '--all', 'test-app-completed'])
     assert returncode == 0
     assert stderr == b''
-    assert len(stdout.decode('utf-8').split('\n')) > 4
+    assert len(stdout.decode('utf-8').split('\n')) >= 3
 
 
 def test_ls_no_params():
