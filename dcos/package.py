@@ -156,7 +156,8 @@ def merge_installed(apps, subcommands, app_only, cli_only):
         del pkg['appId']
         indexed_apps[name] = pkg
 
-    indexed_subcommands = {subcmd['name']: subcmd for subcmd in subcommands}
+    indexed_subcommands = {subcmd['command']['name']: subcmd
+                           for subcmd in subcommands}
 
     merged = []
     for name, app in indexed_apps.items():
