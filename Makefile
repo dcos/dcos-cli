@@ -1,16 +1,34 @@
-all: env test packages
+all: env packages doc test
+all-docker: env-docker packages-docker doc-docker test-docker
 
 clean:
-	bin/clean.sh
+	@bash bin/clean.sh
+
+distclean: clean
+	@bash bin/distclean.sh
 
 env:
-	bin/env.sh
-
-test: env
-	bin/test.sh
-
-doc: env
-	bin/doc.sh
+	@bash bin/env.sh
 
 packages: env
-	bin/packages.sh
+	@bash bin/packages.sh
+
+doc: env
+	@bash bin/doc.sh
+
+test: env
+	@bash bin/test.sh
+
+env-docker:
+	@bash bin/docker.sh env
+
+packages-docker: env-docker
+	@bash bin/docker.sh packages
+
+doc-docker: env-docker
+	@bash bin/docker.sh doc
+
+test-docker: env-docker
+	@bash bin/docker.sh test
+
+.PHONY: env env-docker

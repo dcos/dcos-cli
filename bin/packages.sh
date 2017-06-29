@@ -1,15 +1,20 @@
-#!/bin/bash -e
+#!/bin/bash
 
-BASEDIR=`dirname $0`/..
-if [ -f "$BASEDIR/env/bin/python" ]; then
+CURRDIR=$(dirname "${0}")
+source ${CURRDIR}/common.sh
 
-	PYTHON="$BASEDIR/env/bin/python"
-else
-	PYTHON="$BASEDIR/env/Scripts/python.exe"
-fi
+cd ${BASEDIR}
+
+mkdir -p ${BUILDDIR}/${DIST}/build
+rm -rf ${BUILDDIR}/${DIST}/build/packages
 
 echo "Building wheel..."
-"$PYTHON" setup.py bdist_wheel
+${BUILDDIR}/${VENV}/${BIN}/python${EXE} setup.py bdist_wheel \
+    --dist-dir=${BUILDDIR}/${DIST}
 
 echo "Building egg..."
-"$PYTHON" setup.py sdist
+${BUILDDIR}/${VENV}/${BIN}/python${exe} setup.py sdist \
+    --dist-dir=${BUILDDIR}/${DIST}
+
+mv build ${BUILDDIR}/${DIST}/build/packages
+echo "Packages built."
