@@ -72,10 +72,10 @@ Setup
 Configure Environment and Run
 -----------------------------
 
-#. :code:`source` the setup file to add the :code:`dcos` command line
-   interface to your :code:`PATH` and create an empty configuration file::
+#. From the :code:`cli` directory, :code:`source` the virtualenv activation
+   script to add the :code:`dcos` command line interface to your :code:`PATH`::
 
-    source bin/env-setup-dev
+    source env/bin/activate
 
 #. Configure the CLI, changing the values below as appropriate for your local
    installation of DC/OS::
