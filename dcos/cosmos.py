@@ -180,7 +180,8 @@ class Cosmos(object):
                         response.headers.get('Content-Type')))
             return response
         except DCOSBadRequest as e:
-            if len(headers_preference) > 1:
+            error_type = e.response.json().get('type')
+            if error_type == 'not_valid' and len(headers_preference) > 1:
                 # reattempt with one less item in headers_preference
                 return self._cosmos_request(url,
                                             http_request_type,

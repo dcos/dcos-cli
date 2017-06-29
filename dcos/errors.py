@@ -87,7 +87,7 @@ class DCOSBadRequest(DCOSHTTPException):
     """A wrapper around Response objects for HTTP Bad Request (400).
 
     :param response: requests Response object
-    :type response: Response
+    :type response: requests.Response
     """
     def __init__(self, response):
         self.response = response
