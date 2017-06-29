@@ -92,9 +92,5 @@ setup(
         'console_scripts': [
             'dcos=dcoscli.main:main'
         ],
-    },
-
-    scripts=[
-        'bin/env-setup',
-    ]
+    }
 )
