@@ -1,7 +1,7 @@
 build/
 *.egg-info/
-dist/
-env/
+dist*/
+env*/
 tmp/
 pydoc/_build/
 
