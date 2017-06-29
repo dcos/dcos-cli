@@ -28,6 +28,19 @@ def env():
     return r
 
 
+def _prepend_terms(text, selected):
+    if selected:
+        disc = b"By Deploying, you agree to the Terms " \
+               b"and Conditions https://mesosphere.com/" \
+               b"catalog-terms-conditions/#certified-services"
+    else:
+        disc = b"By Deploying, you agree to the Terms " \
+               b"and Conditions https://mesosphere.com/" \
+               b"catalog-terms-conditions/#community-services"
+
+    return disc + b"\n\n" + text
+
+
 def setup_module(module):
     setup_universe_server()
 
@@ -324,21 +337,27 @@ Please create a JSON file with the appropriate options, and pass the \
 
 
 def test_bad_install_helloworld_msg():
-    stdout = (b'A sample pre-installation message\n'
-              b'Installing Marathon app for package [helloworld] version '
-              b'[0.1.0] with app id [/foo]\n'
-              b'Installing CLI subcommand for package [helloworld] '
-              b'version [0.1.0]\n'
-              b'New command available: dcos ' +
-              _executable_name(b'helloworld') +
-              b'\nA sample post-installation message\n')
+    stdout = _prepend_terms(
+        b'A sample pre-installation message\n'
+        b'Installing Marathon app for package [helloworld] version '
+        b'[0.1.0] with app id [/foo]\n'
+        b'Installing CLI subcommand for package [helloworld] '
+        b'version [0.1.0]\n'
+        b'New command available: dcos ' +
+        _executable_name(b'helloworld') +
+        b'\nA sample post-installation message\n',
+        selected=False
+    )
 
     _install_helloworld(['--yes', '--app-id=/foo'],
                         stdout=stdout)
 
-    stdout2 = (b'A sample pre-installation message\n'
-               b'Installing Marathon app for package [helloworld] version '
-               b'[0.1.0] with app id [/foo/bar]\n')
+    stdout2 = _prepend_terms(
+        b'A sample pre-installation message\n'
+        b'Installing Marathon app for package [helloworld] version '
+        b'[0.1.0] with app id [/foo/bar]\n',
+        selected=False
+    )
 
     stderr = (b'Object is not valid\n'
               b'Groups and Applications may not have the same '
@@ -362,13 +381,16 @@ def test_install_missing_options_file():
 
 
 def test_install_specific_version():
-    stdout = (b'We recommend a minimum of one node with at least 2 '
-              b'CPU\'s and 1GB of RAM available for the Marathon Service.\n'
-              b'Installing Marathon app for package [marathon] '
-              b'version [0.11.1]\n'
-              b'Marathon DCOS Service has been successfully installed!\n\n'
-              b'\tDocumentation: https://mesosphere.github.io/marathon\n'
-              b'\tIssues: https://github.com/mesosphere/marathon/issues\n\n')
+    stdout = _prepend_terms(
+        b'We recommend a minimum of one node with at least 2 '
+        b'CPU\'s and 1GB of RAM available for the Marathon Service.\n'
+        b'Installing Marathon app for package [marathon] '
+        b'version [0.11.1]\n'
+        b'Marathon DCOS Service has been successfully installed!\n\n'
+        b'\tDocumentation: https://mesosphere.github.io/marathon\n'
+        b'\tIssues: https://github.com/mesosphere/marathon/issues\n\n',
+        selected=True
+    )
 
     uninstall_stderr = (
         b'Uninstalled package [marathon] version [0.11.1]\n'
@@ -557,18 +579,24 @@ def test_uninstall_cli():
 
 
 def test_uninstall_multiple_apps():
-    stdout = (b'A sample pre-installation message\n'
-              b'Installing Marathon app for package [helloworld] version '
-              b'[0.1.0] with app id [/helloworld-1]\n'
-              b'A sample post-installation message\n')
+    stdout = _prepend_terms(
+        b'A sample pre-installation message\n'
+        b'Installing Marathon app for package [helloworld] version '
+        b'[0.1.0] with app id [/helloworld-1]\n'
+        b'A sample post-installation message\n',
+        selected=False
+    )
 
     _install_helloworld(['--yes', '--app-id=/helloworld-1', '--app'],
                         stdout=stdout)
 
-    stdout = (b'A sample pre-installation message\n'
-              b'Installing Marathon app for package [helloworld] version '
-              b'[0.1.0] with app id [/helloworld-2]\n'
-              b'A sample post-installation message\n')
+    stdout = _prepend_terms(
+        b'A sample pre-installation message\n'
+        b'Installing Marathon app for package [helloworld] version '
+        b'[0.1.0] with app id [/helloworld-2]\n'
+        b'A sample post-installation message\n',
+        selected=False
+    )
 
     _install_helloworld(['--yes', '--app-id=/helloworld-2', '--app'],
                         stdout=stdout)
@@ -618,15 +646,19 @@ def test_install_yes():
         _install_helloworld(
             args=[],
             stdin=yes_file,
-            stdout=b'A sample pre-installation message\n'
-                   b'Continue installing? [yes/no] '
-                   b'Installing Marathon app for package [helloworld] version '
-                   b'[0.1.0]\n'
-                   b'Installing CLI subcommand for package [helloworld] '
-                   b'version [0.1.0]\n'
-                   b'New command available: dcos ' +
-                   _executable_name(b'helloworld') +
-                   b'\nA sample post-installation message\n')
+            stdout=_prepend_terms(
+                b'A sample pre-installation message\n'
+                b'Continue installing? [yes/no] '
+                b'Installing Marathon app for package [helloworld] version '
+                b'[0.1.0]\n'
+                b'Installing CLI subcommand for package [helloworld] '
+                b'version [0.1.0]\n'
+                b'New command available: dcos ' +
+                _executable_name(b'helloworld') +
+                b'\nA sample post-installation message\n',
+                selected=False
+            )
+        )
         _uninstall_helloworld()
 
 
@@ -635,8 +667,12 @@ def test_install_no():
         _install_helloworld(
             args=[],
             stdin=no_file,
-            stdout=b'A sample pre-installation message\n'
-                   b'Continue installing? [yes/no] Exiting installation.\n')
+            stdout=_prepend_terms(
+                b'A sample pre-installation message\n'
+                b'Continue installing? [yes/no] Exiting installation.\n',
+                selected=False
+            )
+        )
 
 
 def test_list_cli():
@@ -646,11 +682,14 @@ def test_list_cli():
     _list(args=['--json'], stdout=stdout)
     _uninstall_helloworld()
 
-    stdout = (b"Installing CLI subcommand for package [helloworld] " +
-              b"version [0.1.0]\n"
-              b"New command available: dcos " +
-              _executable_name(b'helloworld') +
-              b"\n")
+    stdout = _prepend_terms(
+        b"Installing CLI subcommand for package [helloworld] " +
+        b"version [0.1.0]\n"
+        b"New command available: dcos " +
+        _executable_name(b'helloworld') +
+        b"\n",
+        selected=False
+    )
     _install_helloworld(args=['--cli', '--yes'], stdout=stdout)
 
     stdout = file_json(
@@ -835,14 +874,17 @@ def _executable_name(name):
 
 def _install_helloworld(
         args=['--yes'],
-        stdout=b'A sample pre-installation message\n'
-               b'Installing Marathon app for package [helloworld] '
-               b'version [0.1.0]\n'
-               b'Installing CLI subcommand for package [helloworld] '
-               b'version [0.1.0]\n'
-               b'New command available: dcos ' +
-               _executable_name(b'helloworld') +
-               b'\nA sample post-installation message\n',
+        stdout=_prepend_terms(
+            b'A sample pre-installation message\n'
+            b'Installing Marathon app for package [helloworld] '
+            b'version [0.1.0]\n'
+            b'Installing CLI subcommand for package [helloworld] '
+            b'version [0.1.0]\n'
+            b'New command available: dcos ' +
+            _executable_name(b'helloworld') +
+            b'\nA sample post-installation message\n',
+            selected=False
+        ),
         stderr=b'',
         returncode=0,
         stdin=None):
@@ -897,9 +939,12 @@ def _install_bad_chronos(args=['--yes'],
     returncode_, stdout_, stderr_ = exec_command(cmd)
     assert returncode_ == 1
     assert stderr in stderr_.decode('utf-8')
-    pre_install_notes = (b'We recommend a minimum of one node with at least 2 '
-                         b'CPUs and 2.5GiB of RAM available for the Chronos '
-                         b'Service.\n')
+    pre_install_notes = _prepend_terms(
+        b'We recommend a minimum of one node with at least 2 '
+        b'CPUs and 2.5GiB of RAM available for the Chronos '
+        b'Service.\n',
+        selected=False
+    )
     assert stdout_ == pre_install_notes
 
 
@@ -909,9 +954,12 @@ def _install_chronos(
         stdout=b'Installing Marathon app for package [chronos] '
                b'version [3.0.1]\n',
         stderr=b'',
-        pre_install_notes=b'We recommend a minimum of one node with at least '
-                          b'2 CPUs and 2.5GiB of RAM available for the '
-                          b'Chronos Service.\n',
+        pre_install_notes=_prepend_terms(
+            b'We recommend a minimum of one node with at least '
+            b'2 CPUs and 2.5GiB of RAM available for the '
+            b'Chronos Service.\n',
+            selected=False
+        ),
         post_install_notes=b'Chronos DCOS Service has been successfully '
                            b'installed!\n\n'
                            b'\tDocumentation: http://mesos.github.io/'
@@ -936,9 +984,12 @@ def _chronos_package(
         stdout=b'Installing Marathon app for package [chronos] '
                b'version [3.0.1]\n',
         stderr=b'',
-        pre_install_notes=b'We recommend a minimum of one node with at least '
-                          b'2 CPUs and 2.5GiB of RAM available for the '
-                          b'Chronos Service.\n',
+        pre_install_notes=_prepend_terms(
+            b'We recommend a minimum of one node with at least '
+            b'2 CPUs and 2.5GiB of RAM available for the '
+            b'Chronos Service.\n',
+            selected=False
+        ),
         post_install_notes=b'Chronos DCOS Service has been successfully '
                            b'installed!\n\n'
                            b'\tDocumentation: http://mesos.github.io/'
@@ -967,17 +1018,22 @@ def _list(args, stdout):
     assert_command(['dcos', 'package', 'list'] + args, stdout=stdout)
 
 
-HELLOWORLD_CLI_STDOUT = (b'Installing CLI subcommand for package [helloworld] '
-                         b'version [0.1.0]\n'
-                         b'New command available: dcos ' +
-                         _executable_name(b'helloworld') + b'\n')
+HELLOWORLD_CLI_STDOUT = (
+    b'Installing CLI subcommand for package [helloworld] '
+    b'version [0.1.0]\n'
+    b'New command available: dcos ' +
+    _executable_name(b'helloworld') + b'\n'
+)
 
 
 def _helloworld():
-    stdout = (b'A sample pre-installation message\n'
-              b'Installing Marathon app for package [helloworld] version '
-              b'[0.1.0]\n' + HELLOWORLD_CLI_STDOUT +
-              b'A sample post-installation message\n')
+    stdout = _prepend_terms(
+        b'A sample pre-installation message\n'
+        b'Installing Marathon app for package [helloworld] version '
+        b'[0.1.0]\n' + HELLOWORLD_CLI_STDOUT +
+        b'A sample post-installation message\n',
+        selected=False
+    )
 
     stderr = b'Uninstalled package [helloworld] version [0.1.0]\n'
     return _package(name='helloworld',
@@ -992,7 +1048,10 @@ def _helloworld_cli(global_=False):
         args += ['--global']
     return _package(name='helloworld',
                     args=args,
-                    stdout=HELLOWORLD_CLI_STDOUT,
+                    stdout=_prepend_terms(
+                        HELLOWORLD_CLI_STDOUT,
+                        selected=False
+                    ),
                     uninstall_stderr=b'')
 
 
