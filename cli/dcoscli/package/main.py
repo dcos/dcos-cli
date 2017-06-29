@@ -337,11 +337,14 @@ def _install(package_name, package_version, options_path, app_id, cli,
 
     selected = pkg_json.get('selected')
     if selected:
-        link = 'https://mesosphere.com/catalog-terms-conditions/#certified-services'
+        link = ('https://mesosphere.com/'
+                'catalog-terms-conditions/#certified-services')
     else:
-        link = 'https://mesosphere.com/catalog-terms-conditions/#community-services'
+        link = ('https://mesosphere.com/'
+                'catalog-terms-conditions/#community-services')
     emitter.publish(
-        'By Deploying, you agree to the Terms and Conditions ' + link + "\n"
+        ('By Deploying, you agree to '
+         'the Terms and Conditions ' + link + '\n')
     )
 
     pre_install_notes = pkg_json.get('preInstallNotes')
