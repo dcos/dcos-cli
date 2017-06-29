@@ -1,35 +1,52 @@
-#!/bin/bash -e
+#!/bin/bash
 
-BASEDIR=`dirname $0`/..
+CURRDIR=$(dirname "${0}")
+source ${CURRDIR}/common.sh
 
-if [ ! -d "$BASEDIR/env" ]; then
-
-    if [ ! "$(command -v pyvenv-3.5)" ]; then
-      echo "Cannot find supported python version 3.5. Exiting..."
+if [ ! -d "${BUILDDIR}/${VENV}" ]; then
+    # Check for required prerequisites.
+    echo "Checking prerequisites..."
+    if [ ! "$(command -v ${PYTHON})" ]; then
+      echo "Cannot find python. Exiting..."
       exit 1
     fi
 
-    pyvenv-3.5 $BASEDIR/env
-    echo "Virtualenv created."
+    PYTHON_MAJOR=$(${PYTHON} -c 'import sys; print(sys.version_info[0])')
+    PYTHON_MINOR=$(${PYTHON} -c 'import sys; print(sys.version_info[1])')
 
-    if [ -f "$BASEDIR/env/bin/activate" ]; then
-	    source $BASEDIR/env/bin/activate
-    else
-	    $BASEDIR/env/Scripts/activate
+    if [ "${PYTHON_MAJOR}" != "3" ] || [ "${PYTHON_MINOR}" != "5" ]; then
+        echo "Cannot find supported python version 3.5. Exiting..."
+        exit 1
     fi
-    echo "Virtualenv activated."
+    if [ "$(uname)" = "Windows_NT" ]; then
+      if [ ! "$(command -v ${VIRTUALENV})" ]; then
+          echo "Cannot find virtualenv. Exiting..."
+      fi
+    fi
+    echo "Prerequisite checks passed."
 
-    pip install -r $BASEDIR/requirements.txt
-    pip install -e $BASEDIR
-    echo "Requirements installed."
+    # Create the virtualenv.
+    echo "Creating virtualenv..."
+    if [ "$(uname)" = "Windows_NT" ]; then
+      mkdir -p ${BUILDDIR}/${VENV}; cd ${BUILDDIR}/${VENV}
+      ${VIRTUALENV} --python=$(which ${PYTHON}) --prompt="${PROMPT}" --no-site-packages ${BUILDDIR}/${VENV}
+      ${VIRTUALENV} --relocatable ${BUILDDIR}/${VENV}
+      cd -
+    else
+      ${PYTHON} -m venv ${BUILDDIR}/${VENV}
+      sed -i'' -e "s#(${VENV}) #${PROMPT}#g" ${BUILDDIR}/${VENV}/${BIN}/activate
+    fi
+    echo "Virtualenv created: ${BUILDDIR}/${VENV}"
 
-elif [ ! -f "$BASEDIR/env/bin/activate" -o "$BASEDIR/setup.py" -nt "$BASEDIR/env/bin/activate" ]; then
-
-    source $BASEDIR/env/bin/activate
-    echo "Virtualenv activated."
-
-    pip install -r $BASEDIR/requirements.txt
-    pip install -e $BASEDIR
-    echo "Requirements installed."
-
+    # Install all requirements into the virtualenv.
+    echo "Installing virtualenv requirements..."
+    ${BUILDDIR}/${VENV}/${BIN}/pip${EXE} install --upgrade pip
+    ${BUILDDIR}/${VENV}/${BIN}/pip${EXE} install -r ${BASEDIR}/requirements.txt
+    ${BUILDDIR}/${VENV}/${BIN}/pip${EXE} install -e ${BASEDIR}
+    if [ "$(uname)" = "Windows_NT" ]; then
+      ${VIRTUALENV} --relocatable ${BUILDDIR}/${VENV}
+    fi
+    echo "Virtualenv requirements installed."
+else
+    echo "Virtualenv already exists: '${BUILDDIR}/${VENV}'"
 fi

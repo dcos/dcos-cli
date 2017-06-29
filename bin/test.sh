@@ -1,13 +1,8 @@
-#!/bin/bash -e
+#!/bin/bash
 
-BASEDIR=`dirname $0`/..
+CURRDIR=$(dirname "${0}")
+source ${CURRDIR}/common.sh
 
-cd $BASEDIR
-if [ -f "$BASEDIR/env/bin/activate" ]; then
-	source $BASEDIR/env/bin/activate
-else
-	$BASEDIR/env/Scripts/activate
-fi
-echo "Virtualenv activated."
-
-tox
+echo "Running tests..."
+TOXWORKDIR=${BUILDDIR}/${TOX} ${BUILDDIR}/${VENV}/${BIN}/tox${EXE}
+echo "Tests completed."
