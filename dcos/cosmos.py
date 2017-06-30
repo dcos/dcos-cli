@@ -3,7 +3,6 @@ from six.moves import urllib
 from dcos import config, http, util
 from dcos.errors import (DCOSAuthenticationException,
                          DCOSAuthorizationException,
-                         DCOSBadRequest,
                          DCOSException,
                          DCOSHTTPException)
 
@@ -122,15 +121,12 @@ class Cosmos(object):
         """
         url = self._get_endpoint_url(endpoint)
         request_versions = self._get_request_version_preferences(endpoint)
-        headers_preference = list(map(
-            lambda version: self._get_header(
-                endpoint, version, headers),
-            request_versions))
+        headers = self._get_header(endpoint, request_versions, headers)
         http_request_type = self._get_http_method(endpoint)
         return self._cosmos_request(
             url,
             http_request_type,
-            headers_preference,
+            headers,
             data,
             json,
             **kwargs)
@@ -138,7 +134,7 @@ class Cosmos(object):
     def _cosmos_request(self,
                         url,
                         http_request_type,
-                        headers_preference,
+                        headers,
                         data=None,
                         json=None,
                         **kwargs):
@@ -149,10 +145,10 @@ class Cosmos(object):
 
         :param url: the url of a cosmos endpoint
         :type url: str
-        :param headers_preference: a list of request headers
+        :param headers: a list of request headers
         in order of preference. Each header
         will be attempted until they all fail or the request succeeds.
-        :type headers_preference: list[dict[str, str]]
+        :type headers: dict[str, str]
         :param data: the request's body
         :type data: dict | bytes | file-like object
         :param json: JSON request body
@@ -163,34 +159,20 @@ class Cosmos(object):
         :return: response returned by calling cosmos at url
         :rtype: requests.Response
         """
-        try:
-            headers = headers_preference[0]
-            if http_request_type is 'post':
-                response = http.post(
-                    url, data=data, json=json, headers=headers, **kwargs)
-            else:
-                response = http.get(
-                    url, data=data, json=json, headers=headers, **kwargs)
-            if not _matches_expected_response_header(headers,
-                                                     response.headers):
-                raise DCOSException(
-                    'Server returned incorrect response type, '
-                    'expected {} but got {}'.format(
-                        headers.get('Accept'),
-                        response.headers.get('Content-Type')))
-            return response
-        except DCOSBadRequest as e:
-            error_type = e.response.json().get('type')
-            if error_type == 'not_valid' and len(headers_preference) > 1:
-                # reattempt with one less item in headers_preference
-                return self._cosmos_request(url,
-                                            http_request_type,
-                                            headers_preference[1:],
-                                            data,
-                                            json,
-                                            **kwargs)
-            else:
-                raise e
+        if http_request_type is 'post':
+            response = http.post(
+                url, data=data, json=json, headers=headers, **kwargs)
+        else:
+            response = http.get(
+                url, data=data, json=json, headers=headers, **kwargs)
+        if not _matches_expected_response_header(headers,
+                                                 response.headers):
+            raise DCOSException(
+                'Server returned incorrect response type, '
+                'expected {} but got {}'.format(
+                    headers.get('Accept'),
+                    response.headers.get('Content-Type')))
+        return response
 
     def _get_endpoint_url(self, endpoint):
         """
@@ -228,7 +210,7 @@ class Cosmos(object):
         """
         return self._endpoint_data.get(endpoint).get('http_method')
 
-    def _get_header(self, endpoint, version, headers=None):
+    def _get_header(self, endpoint, versions, headers=None):
         """
         Given an cosmos endpoint, a version, and any extra header values,
         gets the header that can be used to query cosmos at endpoint.
@@ -238,16 +220,20 @@ class Cosmos(object):
         :param endpoint: a cosmos endpoint, of the form 'x/y',
         for example 'package/repo/add' or 'service/start'
         :type endpoint: str
-        :param version: The version of the request
-        :type version: str
+        :param versions: The possible versions of the
+        request in preference order
+        :type versions: list[str]
         :param headers: extra keys for the header
         :type headers: dict[str, str]
         :return: a header that can be used to query cosmos at endpoint
         :rtype: dict[str, str]
         """
+        types_accepted = ", ".join(
+            [self._get_accept(endpoint, version) for version in versions]
+        )
         simple_header = {
             'Content-Type': self._get_content_type(endpoint),
-            'Accept': self._get_accept(endpoint, version)
+            'Accept': types_accepted
         }
         return _merge_dict(simple_header, headers)
 
@@ -333,8 +319,13 @@ def _matches_expected_response_header(request_headers, response_headers):
     Accept value of the request header, false otherwise
     :rtype: bool
     """
-    return (request_headers.get('Accept')
-            in response_headers.get('Content-Type'))
+    accepted_types = (
+        [x.strip() for x in request_headers.get('Accept').split(",")]
+    )
+    actual_type = response_headers.get('Content-Type')
+    return any(
+        [(accepted_type in actual_type) for accepted_type in accepted_types]
+    )
 
 
 def get_cosmos_url():
