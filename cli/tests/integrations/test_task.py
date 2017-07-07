@@ -285,9 +285,6 @@ def test_ls_multiple_tasks():
     assert re.match('===>.*<===', lines[2])
     assert re.match(ls_line, lines[3])
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'task', 'ls', 'test-app'])
-
 
 def test_ls_long():
     assert_lines(['dcos', 'task', 'ls', '--long', 'test-app1'], 6)
