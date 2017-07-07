@@ -303,30 +303,28 @@ def test_ls_bad_path():
 
 
 def test_ls_completed():
-    # create a completed task
     with app(SLEEP_COMPLETED1, 'test-app-completed1'):
-        # get its task id
         task_id_completed = _get_task_id('test-app-completed1')
 
-    """ Test `dcos task ls --completed` """
     returncode, stdout, stderr = exec_command(
         ['dcos', 'task', 'ls', task_id_completed])
 
-    err = b'Cannot find a task with ID containing "test-app-completed1'
     assert returncode == 1
     assert stdout == b''
+
+    err = b'Cannot find a task with ID containing "test-app-completed1'
     assert stderr.startswith(err)
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'task', 'ls', '--completed', task_id_completed])
 
-    ls_line = 'stderr.*stdout'
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'task', 'ls', 'test-app'])
-    lines = stdout.decode('utf-8').split('\n')
     assert returncode == 0
-    assert re.match(ls_line, lines[1])
     assert stderr == b''
+
+    ls_line = '\.ssl.*stderr.*stdout.*'
+    lines = stdout.decode('utf-8').split('\n')
+    assert len(lines) == 2
+    assert re.match(ls_line, lines[0])
 
 
 def test_exec_non_interactive():
