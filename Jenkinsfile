@@ -28,7 +28,7 @@ launch_config_version: 1
 deployment_name: ${deploymentName}
 template_url: ${templateUrl}
 provider: aws
-aws_region: us-west-1
+aws_region: us-west-2
 template_parameters:
     KeyName: default
     AdminLocation: 0.0.0.0/0
@@ -115,7 +115,12 @@ class TestCluster implements Serializable {
                 throw e
             } catch(Exception e) {
                 destroy()
-                create()
+                if (createAttempts < 3) {
+                    create()
+                } else {
+                    script.echo("Maximum number of creation attempts exceeded. Exiting...")
+                    throw e
+                }
             }
         }
     }
