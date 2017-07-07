@@ -241,7 +241,7 @@ def test_ls_no_params():
     assert returncode == 0
     assert stderr == b''
 
-    ls_line = 'stderr.*stdout'
+    ls_line = '\.ssl.*stderr.*stdout.*'
     lines = stdout.decode('utf-8').split('\n')
     assert len(lines) == 7
     assert re.match('===>.*<===', lines[0])
