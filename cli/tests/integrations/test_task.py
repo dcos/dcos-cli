@@ -258,11 +258,16 @@ def test_ls_no_params():
 
 
 def test_ls():
-    stderr_log = b'stderr  stderr.logrotate.conf  stderr.logrotate.state'
-    stdout_log = b'stdout  stdout.logrotate.conf  stdout.logrotate.state'
-    log_line = stderr_log + b'  ' + stdout_log + b'\n'
-    assert_command(['dcos', 'task', 'ls', 'test-app1'],
-                   stdout=log_line)
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'task', 'ls', 'test-app1'])
+
+    assert returncode == 0
+    assert stderr == b''
+
+    ls_line = '\.ssl.*stderr.*stdout.*'
+    lines = stdout.decode('utf-8').split('\n')
+    assert len(lines) == 2
+    assert re.match(ls_line, lines[0])
 
 
 def test_ls_multiple_tasks():
