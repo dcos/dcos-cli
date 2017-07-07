@@ -266,9 +266,13 @@ def test_ls():
 
 
 def test_ls_multiple_tasks():
-    ls_line = 'stderr.*stdout'
     returncode, stdout, stderr = exec_command(
         ['dcos', 'task', 'ls', 'test-app'])
+
+    assert returncode == 0
+    assert stderr == b''
+
+    ls_line = '\.ssl.*stderr.*stdout.*'
     lines = stdout.decode('utf-8').split('\n')
     assert len(lines) == 5
     assert re.match('===>.*<===', lines[0])
