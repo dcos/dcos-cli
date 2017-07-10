@@ -406,6 +406,7 @@ node('py35') {
     stage ('Download dcos-launch') {
         sh 'wget https://downloads.dcos.io/dcos-test-utils/bin/linux/dcos-launch'
         sh 'chmod a+x dcos-launch'
+        sh 'ping leader.mesos'
     }
 
     stage ('Pull dcos-cli repository') {
