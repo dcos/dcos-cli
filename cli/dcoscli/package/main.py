@@ -344,15 +344,18 @@ def _install(package_name, package_version, options_path, app_id, cli,
                 'catalog-terms-conditions/#community-services')
     emitter.publish(
         ('By Deploying, you agree to '
-         'the Terms and Conditions ' + link + '\n')
+         'the Terms and Conditions ' + link)
     )
 
     pre_install_notes = pkg_json.get('preInstallNotes')
     if app and pre_install_notes:
         emitter.publish(pre_install_notes)
-        if not confirm('Continue installing?', yes):
-            emitter.publish('Exiting installation.')
-            return 0
+
+    if yes:
+        emitter.publish('Continue installing? [yes/no] yes')
+    if not confirm('Continue installing?', yes):
+        emitter.publish('Exiting installation.')
+        return 0
 
     if app and pkg.marathon_template():
 
