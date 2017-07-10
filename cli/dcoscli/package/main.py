@@ -352,7 +352,7 @@ def _install(package_name, package_version, options_path, app_id, cli,
         emitter.publish(pre_install_notes)
 
     if yes:
-        emitter.publish('Continue installing? [yes/no] yes')
+        emitter.publish('Continue installing? [yes/no] ')
     if not confirm('Continue installing?', yes):
         emitter.publish('Exiting installation.')
         return 0
