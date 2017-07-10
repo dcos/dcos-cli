@@ -327,7 +327,6 @@ def test_bad_install_helloworld_msg():
         b'and Conditions https://mesosphere.com/'
         b'catalog-terms-conditions/#community-services\n'
         b'A sample pre-installation message\n'
-        b'Continue installing? [yes/no] \n'
         b'Installing Marathon app for package [helloworld] version '
         b'[0.1.0] with app id [/foo]\n'
         b'Installing CLI subcommand for package [helloworld] '
@@ -345,7 +344,6 @@ def test_bad_install_helloworld_msg():
         b'and Conditions https://mesosphere.com/'
         b'catalog-terms-conditions/#community-services\n'
         b'A sample pre-installation message\n'
-        b'Continue installing? [yes/no] \n'
         b'Installing Marathon app for package [helloworld] version '
         b'[0.1.0] with app id [/foo/bar]\n'
     )
@@ -378,7 +376,6 @@ def test_install_specific_version():
         b'catalog-terms-conditions/#certified-services\n'
         b'We recommend a minimum of one node with at least 2 '
         b'CPU\'s and 1GB of RAM available for the Marathon Service.\n'
-        b'Continue installing? [yes/no] \n'
         b'Installing Marathon app for package [marathon] '
         b'version [0.11.1]\n'
         b'Marathon DCOS Service has been successfully installed!\n\n'
@@ -578,7 +575,6 @@ def test_uninstall_multiple_apps():
         b'and Conditions https://mesosphere.com/'
         b'catalog-terms-conditions/#community-services\n'
         b'A sample pre-installation message\n'
-        b'Continue installing? [yes/no] \n'
         b'Installing Marathon app for package [helloworld] version '
         b'[0.1.0] with app id [/helloworld-1]\n'
         b'A sample post-installation message\n'
@@ -592,7 +588,6 @@ def test_uninstall_multiple_apps():
         b'and Conditions https://mesosphere.com/'
         b'catalog-terms-conditions/#community-services\n'
         b'A sample pre-installation message\n'
-        b'Continue installing? [yes/no] \n'
         b'Installing Marathon app for package [helloworld] version '
         b'[0.1.0] with app id [/helloworld-2]\n'
         b'A sample post-installation message\n'
@@ -690,7 +685,6 @@ def test_list_cli():
         b'By Deploying, you agree to the Terms '
         b'and Conditions https://mesosphere.com/'
         b'catalog-terms-conditions/#community-services\n'
-        b'Continue installing? [yes/no] \n'
         b"Installing CLI subcommand for package [helloworld] " +
         b"version [0.1.0]\n"
         b"New command available: dcos " +
@@ -886,7 +880,6 @@ def _install_helloworld(
             b'and Conditions https://mesosphere.com/'
             b'catalog-terms-conditions/#community-services\n'
             b'A sample pre-installation message\n'
-            b'Continue installing? [yes/no] \n'
             b'Installing Marathon app for package [helloworld] '
             b'version [0.1.0]\n'
             b'Installing CLI subcommand for package [helloworld] '
@@ -951,7 +944,6 @@ def _install_bad_chronos(
             b'We recommend a minimum of one node with at least 2 '
             b'CPUs and 2.5GiB of RAM available for the Chronos '
             b'Service.\n'
-            b'Continue installing? [yes/no] \n'
         ),
         stderr=''):
     cmd = ['dcos', 'package', 'install', 'chronos'] + args
@@ -974,7 +966,6 @@ def _install_chronos(
             b'We recommend a minimum of one node with at least '
             b'2 CPUs and 2.5GiB of RAM available for the '
             b'Chronos Service.\n'
-            b'Continue installing? [yes/no] \n'
         ),
         post_install_notes=b'Chronos DCOS Service has been successfully '
                            b'installed!\n\n'
@@ -1007,7 +998,6 @@ def _chronos_package(
             b'We recommend a minimum of one node with at least '
             b'2 CPUs and 2.5GiB of RAM available for the '
             b'Chronos Service.\n'
-            b'Continue installing? [yes/no] \n'
         ),
         post_install_notes=b'Chronos DCOS Service has been successfully '
                            b'installed!\n\n'
@@ -1051,7 +1041,6 @@ def _helloworld():
         b'and Conditions https://mesosphere.com/'
         b'catalog-terms-conditions/#community-services\n'
         b'A sample pre-installation message\n'
-        b'Continue installing? [yes/no] \n'
         b'Installing Marathon app for package [helloworld] version '
         b'[0.1.0]\n' + HELLOWORLD_CLI_STDOUT +
         b'A sample post-installation message\n'
@@ -1073,8 +1062,7 @@ def _helloworld_cli(global_=False):
                     stdout=(
                         b'By Deploying, you agree to the Terms '
                         b'and Conditions https://mesosphere.com/'
-                        b'catalog-terms-conditions/#community-services\n'
-                        b'Continue installing? [yes/no] \n' +
+                        b'catalog-terms-conditions/#community-services\n' +
                         HELLOWORLD_CLI_STDOUT
                     ),
                     uninstall_stderr=b'')
