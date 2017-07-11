@@ -334,12 +334,26 @@ def _install(package_name, package_version, options_path, app_id, cli,
     pkg = package_manager.get_package_version(package_name, package_version)
 
     pkg_json = pkg.package_json()
+
+    selected = pkg_json.get('selected')
+    if selected:
+        link = ('https://mesosphere.com/'
+                'catalog-terms-conditions/#certified-services')
+    else:
+        link = ('https://mesosphere.com/'
+                'catalog-terms-conditions/#community-services')
+    emitter.publish(
+        ('By Deploying, you agree to '
+         'the Terms and Conditions ' + link)
+    )
+
     pre_install_notes = pkg_json.get('preInstallNotes')
     if app and pre_install_notes:
         emitter.publish(pre_install_notes)
-        if not confirm('Continue installing?', yes):
-            emitter.publish('Exiting installation.')
-            return 0
+
+    if not confirm('Continue installing?', yes):
+        emitter.publish('Exiting installation.')
+        return 0
 
     if app and pkg.marathon_template():
 
