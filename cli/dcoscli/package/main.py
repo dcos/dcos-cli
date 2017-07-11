@@ -369,6 +369,11 @@ def _install(package_name, package_version, options_path, app_id, cli,
 
         emitter.publish(msg)
 
+        if app_id is not None:
+            msg = "Usage of --app-id will be deprecated in future. " \
+                  "Use service.name instead of app-id"
+            emitter.publish(msg)
+
         package_manager.install_app(pkg, user_options, app_id)
 
     if cli and pkg.cli_definition():
