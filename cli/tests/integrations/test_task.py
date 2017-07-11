@@ -282,7 +282,7 @@ def test_ls_multiple_tasks():
 
 
 def test_ls_long():
-    assert_lines(['dcos', 'task', 'ls', '--long', 'test-app1'], 7)
+    assert_lines(['dcos', 'task', 'ls', '--long', 'test-app1'], 5)
 
 
 def test_ls_path():
