@@ -13,7 +13,7 @@ ${BUILDDIR}/${VENV}/${BIN}/python${EXE} setup.py bdist_wheel \
     --dist-dir=${BUILDDIR}/${DIST}
 
 echo "Building egg..."
-${BUILDDIR}/${VENV}/${BIN}/python${exe} setup.py sdist \
+${BUILDDIR}/${VENV}/${BIN}/python${EXE} setup.py sdist \
     --dist-dir=${BUILDDIR}/${DIST}
 
 mv build ${BUILDDIR}/${DIST}/build/packages
