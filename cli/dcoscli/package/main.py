@@ -370,8 +370,8 @@ def _install(package_name, package_version, options_path, app_id, cli,
         emitter.publish(msg)
 
         if app_id is not None:
-            msg = "Usage of --app-id is deprecated. " \
-                  "Use --options instead and specify a file that contains [service.name] property"
+            msg = "Usage of --app-id is deprecated. Use --options instead " \
+                  "and specify a file that contains [service.name] property"
             emitter.publish(msg)
 
         package_manager.install_app(pkg, user_options, app_id)
