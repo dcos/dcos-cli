@@ -246,7 +246,7 @@ def test_ls_no_params():
     assert returncode == 0
     assert stderr == b''
 
-    ls_line = 'stderr.*stdout'
+    ls_line = '\.ssl.*stderr.*stdout.*'
     lines = stdout.decode('utf-8').split('\n')
     assert len(lines) == 7
     assert re.match('===>.*<===', lines[0])
@@ -258,17 +258,26 @@ def test_ls_no_params():
 
 
 def test_ls():
-    stderr_log = b'stderr  stderr.logrotate.conf  stderr.logrotate.state'
-    stdout_log = b'stdout  stdout.logrotate.conf  stdout.logrotate.state'
-    log_line = stderr_log + b'  ' + stdout_log + b'\n'
-    assert_command(['dcos', 'task', 'ls', 'test-app1'],
-                   stdout=log_line)
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'task', 'ls', 'test-app1'])
+
+    assert returncode == 0
+    assert stderr == b''
+
+    ls_line = '\.ssl.*stderr.*stdout.*'
+    lines = stdout.decode('utf-8').split('\n')
+    assert len(lines) == 2
+    assert re.match(ls_line, lines[0])
 
 
 def test_ls_multiple_tasks():
-    ls_line = 'stderr.*stdout'
     returncode, stdout, stderr = exec_command(
         ['dcos', 'task', 'ls', 'test-app'])
+
+    assert returncode == 0
+    assert stderr == b''
+
+    ls_line = '\.ssl.*stderr.*stdout.*'
     lines = stdout.decode('utf-8').split('\n')
     assert len(lines) == 5
     assert re.match('===>.*<===', lines[0])
@@ -276,12 +285,9 @@ def test_ls_multiple_tasks():
     assert re.match('===>.*<===', lines[2])
     assert re.match(ls_line, lines[3])
 
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'task', 'ls', 'test-app'])
-
 
 def test_ls_long():
-    assert_lines(['dcos', 'task', 'ls', '--long', 'test-app1'], 6)
+    assert_lines(['dcos', 'task', 'ls', '--long', 'test-app1'], 5)
 
 
 def test_ls_path():
@@ -297,30 +303,28 @@ def test_ls_bad_path():
 
 
 def test_ls_completed():
-    # create a completed task
     with app(SLEEP_COMPLETED1, 'test-app-completed1'):
-        # get its task id
         task_id_completed = _get_task_id('test-app-completed1')
 
-    """ Test `dcos task ls --completed` """
     returncode, stdout, stderr = exec_command(
         ['dcos', 'task', 'ls', task_id_completed])
 
-    err = b'Cannot find a task with ID containing "test-app-completed1'
     assert returncode == 1
     assert stdout == b''
+
+    err = b'Cannot find a task with ID containing "test-app-completed1'
     assert stderr.startswith(err)
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'task', 'ls', '--completed', task_id_completed])
 
-    ls_line = 'stderr.*stdout'
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'task', 'ls', 'test-app'])
-    lines = stdout.decode('utf-8').split('\n')
     assert returncode == 0
-    assert re.match(ls_line, lines[1])
     assert stderr == b''
+
+    ls_line = '\.ssl.*stderr.*stdout.*'
+    lines = stdout.decode('utf-8').split('\n')
+    assert len(lines) == 2
+    assert re.match(ls_line, lines[0])
 
 
 def test_exec_non_interactive():
@@ -359,7 +363,8 @@ def _install_sleep_task(app_path=SLEEP1, app_name='test-app'):
 
 
 def _uninstall_helloworld(args=[]):
-    assert_command(['dcos', 'package', 'uninstall', 'helloworld'] + args)
+    assert_command(['dcos', 'package', 'uninstall', 'helloworld',
+                    '--yes'] + args)
 
 
 def _uninstall_sleep(app_id='test-app'):

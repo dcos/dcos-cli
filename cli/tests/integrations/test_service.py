@@ -93,7 +93,7 @@ def test_service_inactive_and_completed():
     assert len(services) >= 3
     assert any(service['id'] == kafka_id for service in services)
 
-    exec_command(['dcos', 'package', 'uninstall', 'kafka'])
+    exec_command(['dcos', 'package', 'uninstall', 'kafka', '--yes'])
 
 
 def test_log():
@@ -214,7 +214,7 @@ def test_log_follow():
 
     assert_lines(['dcos', 'service', 'log', 'chronos', '--lines=4'], 4)
 
-    exec_command(['dcos', 'package', 'uninstall', 'chronos'])
+    exec_command(['dcos', 'package', 'uninstall', 'chronos', '--yes'])
 
 
 @pytest.mark.skipif(True, reason='Broken Marathon but we need to release')

@@ -1,10 +1,5 @@
-#!/bin/bash -e
+#!/bin/bash
 
-set -o errexit -o nounset
-
-BASEDIR=`dirname $0`/..
-
-rm -rf $BASEDIR/.tox $BASEDIR/env $BASEDIR/dist $BASEDIR/build
-find $BASEDIR -name '*.pyc' -delete || true
-echo "Deleted virtualenv and test artifacts."
-
+CURRDIR=$(dirname "${0}")
+source ${CURRDIR}/common.sh
+source ${BUILDDIR}/../bin/clean.sh

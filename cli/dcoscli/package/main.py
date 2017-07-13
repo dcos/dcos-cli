@@ -10,7 +10,7 @@ from dcos.errors import DCOSException
 from dcos.package import get_package_manager
 from dcoscli import tables
 from dcoscli.subcommand import default_command_info, default_doc
-from dcoscli.util import confirm, decorate_docopt_usage
+from dcoscli.util import confirm, confirm_text, decorate_docopt_usage
 
 logger = util.get_logger(__name__)
 
@@ -88,7 +88,8 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['package', 'uninstall'],
-            arg_keys=['<package-name>', '--all', '--app-id', '--cli', '--app'],
+            arg_keys=['<package-name>', '--all', '--app-id', '--cli', '--app',
+                      '--yes'],
             function=_uninstall),
 
         cmds.Command(
@@ -331,12 +332,26 @@ def _install(package_name, package_version, options_path, app_id, cli,
     pkg = package_manager.get_package_version(package_name, package_version)
 
     pkg_json = pkg.package_json()
+
+    selected = pkg_json.get('selected')
+    if selected:
+        link = ('https://mesosphere.com/'
+                'catalog-terms-conditions/#certified-services')
+    else:
+        link = ('https://mesosphere.com/'
+                'catalog-terms-conditions/#community-services')
+    emitter.publish(
+        ('By Deploying, you agree to '
+         'the Terms and Conditions ' + link)
+    )
+
     pre_install_notes = pkg_json.get('preInstallNotes')
     if app and pre_install_notes:
         emitter.publish(pre_install_notes)
-        if not confirm('Continue installing?', yes):
-            emitter.publish('Exiting installation.')
-            return 0
+
+    if not confirm('Continue installing?', yes):
+        emitter.publish('Exiting installation.')
+        return 0
 
     if app and pkg.marathon_template():
 
@@ -465,7 +480,7 @@ def _search(json_, query):
     return 0
 
 
-def _uninstall(package_name, remove_all, app_id, cli, app):
+def _uninstall(package_name, remove_all, app_id, cli, app, skip_confirmation):
     """Uninstall the specified package.
 
     :param package_name: The package to uninstall
@@ -474,9 +489,20 @@ def _uninstall(package_name, remove_all, app_id, cli, app):
     :type remove_all: boolean
     :param app_id: App ID of the package instance to uninstall
     :type app_id: str
+    :param skip_confirmation: Skip confirmation for uninstall
+    :type skip_confirmation: boolean
     :returns: Process status
     :rtype: int
     """
+
+    # Don't gate CLI uninstalls.
+    # Don't gate uninstalls if the user wants to skip confirmation.
+    if not cli and not skip_confirmation and not _confirm_uninstall(
+        package_name,
+        remove_all,
+        app_id
+    ):
+        return 0
 
     package_manager = get_package_manager()
     err = package.uninstall(
@@ -486,3 +512,46 @@ def _uninstall(package_name, remove_all, app_id, cli, app):
         return 1
 
     return 0
+
+
+def _confirm_uninstall(package_name, remove_all, app_id):
+    """Interactively confirm the uninstall with the user.
+
+    :param package_name: The package to uninstall
+    :type package_name: str
+    :param remove_all: Whether to remove all instances of the named package
+    :type remove_all: boolean
+    :param app_id: App ID of the package instance to uninstall
+    :type app_id: str
+    :returns: Whether the uninstall should proceeed or not.
+    :rtype: bool
+    """
+
+    if remove_all:
+        confirm_cta = ("WARNING: This action cannot be undone. This will "
+                       "uninstall all instances of the [{package_name}] "
+                       "package, and delete all data for all {package_name} "
+                       "instances.").format(package_name=package_name)
+        confirm_prompt = "Please type 'uninstall all {}'".format(package_name)
+        expected_text = "uninstall all {}".format(package_name)
+    elif app_id:
+        confirm_cta = ("WARNING: This action cannot be undone. This will "
+                       "uninstall [{}] and delete all of its persistent "
+                       "(logs, configurations, database artifacts, "
+                       "everything).").format(app_id)
+        confirm_prompt = "Please type the name of the service to confirm"
+        expected_text = app_id
+    else:
+        confirm_cta = ("WARNING: This action cannot be undone. This will "
+                       "uninstall [{}] and delete all of its persistent "
+                       "data (logs, configurations, database artifacts, "
+                       "everything).").format(package_name)
+        confirm_prompt = "Please type the name of the service to confirm"
+        expected_text = package_name
+
+    emitter.publish(confirm_cta)
+    if not confirm_text(confirm_prompt, expected_text):
+        emitter.publish("Cancelling uninstall.")
+        return False
+    else:
+        return True

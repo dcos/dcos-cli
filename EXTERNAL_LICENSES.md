@@ -16,7 +16,7 @@ Sphinx (1.4.1)
     License: BSD
 
 alabaster (0.7.8)
-    License: UNKNOWN
+    License: BSD
 
 docopt (0.6.2)
     License: MIT
