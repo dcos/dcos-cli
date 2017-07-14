@@ -215,9 +215,9 @@ def get_clusters():
 
 def get_cluster(name):
     """
-    :param name: name of cluster
+    :param name: name or cluster_id of cluster
     :type name: str
-    :returns: Cluster identified by name
+    :returns: Cluster identified by name or cluster_id
     :rtype: Cluster
     """
 
