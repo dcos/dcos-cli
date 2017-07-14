@@ -127,6 +127,8 @@ def _remove(name, all=False):
     """
     :param name: name of cluster
     :type name: str
+    :param all: remove all clusters if True
+    :type all: bool
     :rtype: None
     """
     if all:
