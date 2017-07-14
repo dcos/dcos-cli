@@ -17,7 +17,7 @@ Usage:
 
 Commands:
     attach
-        List only the currently attached cluster.
+        Attaches the named cluster.
     list
         List CLI configured clusters.
     rename
