@@ -379,13 +379,22 @@ class CosmosPackageVersion():
         return self._package_json["package"]["name"]
 
     def package_json(self):
-        """Returns the JSON content of the package.json file.
+        """Returns the JSON content of the package definition.
 
         :returns: Package data
         :rtype: dict
         """
 
         return self._package_json["package"]
+
+    def package_response(self):
+        """Returns the JSON content of the describe response.
+
+        :returns: Package data
+        :rtype: dict
+        """
+
+        return self._package_json
 
     def config_json(self):
         """Returns the JSON content of the config.json file.

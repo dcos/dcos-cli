@@ -275,8 +275,6 @@ def _describe(package_name,
     package_manager = get_package_manager()
     pkg = package_manager.get_package_version(package_name, package_version)
 
-    pkg_json = pkg.package_json()
-
     if package_versions:
         emitter.publish(pkg.package_versions())
     elif cli or app or config:
@@ -294,7 +292,7 @@ def _describe(package_name,
             config_output = pkg.config_json()
             emitter.publish(config_output)
     else:
-        emitter.publish(pkg_json)
+        emitter.publish(pkg.package_response())
 
     return 0
 
