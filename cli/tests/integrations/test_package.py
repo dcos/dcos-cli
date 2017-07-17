@@ -329,6 +329,8 @@ def test_bad_install_helloworld_msg():
         b'A sample pre-installation message\n'
         b'Installing Marathon app for package [helloworld] version '
         b'[0.1.0] with app id [/foo]\n'
+        b'Usage of --app-id is deprecated. Use --options instead and specify '
+        b'a file that contains [service.name] property\n'
         b'Installing CLI subcommand for package [helloworld] '
         b'version [0.1.0]\n'
         b'New command available: dcos ' +
@@ -346,6 +348,8 @@ def test_bad_install_helloworld_msg():
         b'A sample pre-installation message\n'
         b'Installing Marathon app for package [helloworld] version '
         b'[0.1.0] with app id [/foo/bar]\n'
+        b'Usage of --app-id is deprecated. Use --options instead and specify '
+        b'a file that contains [service.name] property\n'
     )
 
     stderr = (b'Object is not valid\n'
@@ -491,6 +495,9 @@ def test_install_with_id(zk_znode):
     stdout = (
         b'Installing Marathon app for package [chronos] version [3.0.1] with '
         b'app id [chronos-1]\n'
+        b'Usage of --app-id is deprecated. Use --options instead and specify '
+        b'a file that contains [service.name] property\n'
+
     )
 
     _install_chronos(args=args, stdout=stdout)
@@ -499,6 +506,8 @@ def test_install_with_id(zk_znode):
     stdout = (
         b'Installing Marathon app for package [chronos] version [3.0.1] with '
         b'app id [chronos-2]\n'
+        b'Usage of --app-id is deprecated. Use --options instead and specify '
+        b'a file that contains [service.name] property\n'
     )
     _install_chronos(args=args, stdout=stdout)
 
@@ -577,6 +586,8 @@ def test_uninstall_multiple_apps():
         b'A sample pre-installation message\n'
         b'Installing Marathon app for package [helloworld] version '
         b'[0.1.0] with app id [/helloworld-1]\n'
+        b'Usage of --app-id is deprecated. Use --options instead and specify '
+        b'a file that contains [service.name] property\n'
         b'A sample post-installation message\n'
     )
 
@@ -590,6 +601,8 @@ def test_uninstall_multiple_apps():
         b'A sample pre-installation message\n'
         b'Installing Marathon app for package [helloworld] version '
         b'[0.1.0] with app id [/helloworld-2]\n'
+        b'Usage of --app-id is deprecated. Use --options instead and specify '
+        b'a file that contains [service.name] property\n'
         b'A sample post-installation message\n'
     )
 
