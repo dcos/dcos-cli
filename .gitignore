@@ -11,6 +11,7 @@ pydoc/_build/
 .cache
 
 *.pyc
+bundle.zip
 
 .DS_Store
 

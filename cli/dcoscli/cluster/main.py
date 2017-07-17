@@ -123,19 +123,19 @@ def _list(json_, attached):
     return
 
 
-def _remove(name, all=False):
+def _remove(name=None, all_clusters=False):
     """
     :param name: name of cluster
     :type name: str
-    :param all: remove all clusters if True
-    :type all: bool
+    :param all_clusters: remove all clusters if True
+    :type all_clusters: bool
     :rtype: None
     """
-    if all:
+    if all_clusters:
         for c in cluster.get_clusters():
             cluster.remove(c.get_name())
     else:
-        return cluster.remove(name)
+        cluster.remove(name)
 
 
 def _attach(name):
