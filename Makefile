@@ -1,34 +1,46 @@
-all: env packages doc test
-all-docker: env-docker packages-docker doc-docker test-docker
+all: env binary packages doc test
+all-docker: env-docker binary-docker packages-docker doc-docker test-docker
 
 clean:
-	@bash bin/clean.sh
+	@bash scripts/clean.sh
 
 distclean: clean
-	@bash bin/distclean.sh
+	@bash scripts/distclean.sh
 
 env:
-	@bash bin/env.sh
+	@bash scripts/env.sh
+
+binary: env
+	@bash scripts/binary.sh
 
 packages: env
-	@bash bin/packages.sh
+	@bash scripts/packages.sh
 
 doc: env
-	@bash bin/doc.sh
+	@bash scripts/doc.sh
 
 test: env
-	@bash bin/test.sh
+	@bash scripts/test.sh
+
+test-binary: env
+	@bash scripts/test-binary.sh
 
 env-docker:
-	@bash bin/docker.sh env
+	@bash scripts/docker.sh env
+
+binary-docker: env-docker
+	@bash scripts/docker.sh binary
 
 packages-docker: env-docker
-	@bash bin/docker.sh packages
+	@bash scripts/docker.sh packages
 
 doc-docker: env-docker
-	@bash bin/docker.sh doc
+	@bash scripts/docker.sh doc
 
 test-docker: env-docker
-	@bash bin/docker.sh test
+	@bash scripts/docker.sh test
+
+test-binary-docker: env-docker
+	@bash scripts/docker.sh test-binary
 
 .PHONY: env env-docker
