@@ -101,32 +101,58 @@ directory to one of those two and follow the instructions.
 Initialization
 ##############
 
-The `config` integration tests use static config files. To run these tests
-make sure you set owner only permissions on these files:
+Before you can run the DC/OS CLI integration tests, you need to modify your
+environment appropriately.
 
-:code:`chmod 600 cli/tests/data/dcos.toml`
+#. Create a temporary directory to hold your DC/OS configuration files for the
+   duration of the tests::
 
-The :code:`node` integration tests use :code:`CLI_TEST_SSH_KEY_PATH` for ssh
-credentials to your cluster.
+    $ mktemp -d
+    <dcos-config-folder>
 
-The :code:`ssl` integration tests resolve :code:`dcos.snakeoil.mesosphere.com`
-to test SSL certs. To run this test suite be sure to add this resolution to your
-:code:`/etc/hosts` file:
+   *NOTE:* You don't have to create a new directory every time you run the tests,
+   but make sure you clear out whatever folder you use each time to avoid
+   conflicts with previous runs.
 
-:code:`echo "your/dcos/cluster/url dcos.snakeoil.mesosphere.com" >> /etc/hosts`
 
+#. Copy a static :code:`dcos.toml` configuration file from the source repo into this
+   folder::
+
+    $ cp cli/tests/data/dcos.toml <dcos-config-folder>
+
+
+#. Set the proper permissions on this file so that it can be used by the CLI::
+
+    $ chmod 600 <dcos-config-folder>/dcos.toml 
+
+
+#. Export the proper environment variables so that the CLI knows to use this
+   file and this directory for storing DC/OS configs::
+
+    $ export DCOS_DIR=<dcos-config-folder>
+    $ export DCOS_CONFIG=<dcos-config-folder>/dcos.toml 
+
+
+#. Set the :code:`CLI_TEST_SSH_KEY_PATH` to point at appropriate ssh credentials to
+   your cluster. This is used by the :code:`node` integration tests::
+
+    $ export CLI_TEST_SSH_KEY_PATH=<path-to-ssh-key>
+
+
+#. Add the following resolution to your :code:`/etc/hosts` file. The :code:`ssl`
+   integration tests resolve :code:`dcos.snakeoil.mesosphere.com` to test SSL certs::
+
+    $ echo "<cluster-ip-or-url> dcos.snakeoil.mesosphere.com" >> /etc/hosts
+
+
+#. Finally, once all of this is set up, you need to launch a DC/OS cluster with
+   the appropriate capabilities (see below in the section on :code:`Running`) and
+   manually log into it::
+
+    $ dcos cluster setup <cluster-ip-or-url>
 
 Running
 #######
-
-Tox will run unit and integration tests in Python 3.5 using a temporarily
-created virtualenv.
-
-Note that in order for all the integration tests to pass, your DC/OS cluster
-must have the experimental packaging features enabled. In order to enable
-these features the :code:`staged_package_storage_uri` and :code:`package_storage_uri`
-confiuguration paramenters must be set at cluster setup.
-See `dcos configuration parameters`_ for more information.
 
 There are two ways to run tests, you can either use the virtualenv created by
 :code:`make env` above::
@@ -136,6 +162,50 @@ There are two ways to run tests, you can either use the virtualenv created by
 Or, assuming you have tox installed (via :code:`sudo pip install tox`)::
 
     tox
+
+Either way, tox will run unit and integration tests in Python 3.5 using a
+temporarily created virtualenv.
+
+*NOTE:* In order for all the integration tests to pass, your DC/OS cluster must
+have the experimental packaging features enabled. In order to enable these
+features the :code:`staged_package_storage_uri` and :code:`package_storage_uri`
+configuration paramenters must be set at cluster setup.  See `dcos
+configuration parameters`_ for more information.
+
+The easiest way to launch a cluster with these capabilities is to use
+`dcos-launch`_ with the configuration listed below::
+
+    launch_config_version: 1
+    deployment_name: ${DEPLOYMENT_NAME}
+    template_url: ${TEMPLATE_URL}
+    provider: aws
+    aws_region: us-west-2
+    template_parameters:
+        KeyName: default
+        AdminLocation: 0.0.0.0/0
+        PublicSlaveInstanceCount: 1
+        SlaveInstanceCount: 1
+
+
+Where :code:`DEPLOYMENT_NAME` is a custom name set by the user, and
+:code:`TEMPLATE_URL` is the URL of an appropriate EC2 cloud formation template
+for running the integration tests. Unfortunately, the full integration test
+suite can only be run against an Enterprise DC/OS cluster (which you need
+special permissions to launch).
+
+For Mesosphere employees the URL of this cloud formation template can be found
+here::
+
+    https://mesosphere.onelogin.com/notes/45791
+
+For everyone else, you can still run the integration test suite against a non
+EE cluster, but please be aware that some of the tests may fail.
+
+Assuming you have :code:`tox` installed, you can avoid running the full test
+suite by running a specific test (or any tests matching a specific pattern) by
+executing::
+
+    tox -e py35-integration /<test-file>.py -- -k <test-pattern>
 
 Other Useful Commands
 #####################
@@ -181,6 +251,7 @@ These packages are available to be installed by the DC/OS CLI installation scrip
 .. _dcos: https://pypi.python.org/pypi/dcos
 .. _dcos configuration parameters: https://dcos.io/docs/1.9/administration/installing/custom/configuration-parameters/
 .. _dcoscli: https://pypi.python.org/pypi/dcoscli
+.. _dcos-launch: https://github.com/mesosphere/dcos-launch 
 .. _jq: http://stedolan.github.io/jq/
 .. _git: http://git-scm.com
 .. _installation instructions: https://dcos.io/docs/usage/cli/install/
