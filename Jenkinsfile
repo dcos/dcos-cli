@@ -88,7 +88,7 @@ class TestCluster implements Serializable {
         script.writeFile([
             "file": "${platform}_config.yaml",
             "text" : script.generateConfig(
-                "dcos-cli-${platform}-${script.env.BRANCH_NAME}-${script.env.BUILD_ID}-${createAttempts}",
+                "dcos-cli-${platform}-${script.env.BRANCH_NAME.replace('.', '-')}-${script.env.BUILD_ID}-${createAttempts}",
                 "${script.env.CF_TEMPLATE_URL}")])
 
         launch_create()
@@ -424,7 +424,7 @@ node('py35') {
          accessKeyVariable: 'AWS_ACCESS_KEY_ID',
          secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'],
         [$class: 'StringBinding',
-         credentialsId: 'fd1fe0ae-113d-4096-87b2-15aa9606bb4e',
+         credentialsId: '542aa287-9464-49cb-bdd3-9e4ca457dd87',
          variable: 'CF_TEMPLATE_URL'],
         [$class: 'UsernamePasswordMultiBinding',
          credentialsId: '323df884-742b-4099-b8b7-d764e5eb9674',
