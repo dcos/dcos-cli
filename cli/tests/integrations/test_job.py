@@ -21,6 +21,12 @@ def test_version():
                    stdout=b'dcos-job version SNAPSHOT\n')
 
 
+def test_schema_config():
+    with open('tests/data/metronome/jobs/schema-config.json') as f:
+        returncode_, stdout_, stderr_ = exec_command(['dcos', 'job', '--config-schema'], env=None, stdin=None)
+        assert str(stdout_.decode("utf-8"))==f.read()
+
+
 def test_info():
     assert_command(['dcos', 'job', '--info'],
                    stdout=b'Deploy and manage jobs in DC/OS\n')
