@@ -216,6 +216,11 @@ def _cmds():
             function=subcommand.about),
 
         cmds.Command(
+            hierarchy=['marathon', 'plugins'],
+            arg_keys=['--json'],
+            function=subcommand.plugins),
+
+        cmds.Command(
             hierarchy=['marathon'],
             arg_keys=['--config-schema', '--info'],
             function=_marathon)
@@ -356,6 +361,24 @@ class MarathonSubcommand(object):
         client = self._create_marathon_client()
 
         emitter.publish(client.get_about())
+        return 0
+
+    def plugins(self, json_):
+        """
+        :returns: process return code
+        :rtype: int
+        """
+
+        client = self._create_marathon_client()
+        plugins = client.get_plugins()
+
+        if json_:
+            emitter.publish(plugins)
+        else:
+            table = tables.plugins_table(plugins.get('plugins'))
+            output = six.text_type(table)
+            if output:
+                emitter.publish(output)
         return 0
 
     def add(self, app_resource):

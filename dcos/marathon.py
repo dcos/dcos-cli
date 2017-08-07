@@ -752,6 +752,16 @@ class Client(object):
 
         return response.json().get('queue')
 
+    def get_plugins(self):
+        """Get a list of known plugins.
+
+        :returns: list of known plugins
+        :rtype: [dict]
+        """
+
+        response = self._rpc.http_req(http.get, 'v2/plugins')
+        return response.json()
+
     @staticmethod
     def _marathon_id_path_format(url_path_template, id_path):
         """Substitutes a Marathon "ID path" into a URL path format string,
