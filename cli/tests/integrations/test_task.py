@@ -11,7 +11,8 @@ import pytest
 import dcos.util as util
 from dcos.util import create_schema
 
-from .helpers.common import (assert_command, assert_lines, exec_command)
+from .helpers.common import (assert_command, assert_lines,
+                             assert_lines_range, exec_command)
 from .helpers.marathon import (add_app, app, pod, remove_app,
                                watch_all_deployments)
 from ..fixtures.task import task_fixture
@@ -287,7 +288,7 @@ def test_ls_multiple_tasks():
 
 
 def test_ls_long():
-    assert_lines(['dcos', 'task', 'ls', '--long', 'test-app1'], 7)
+    assert_lines_range(['dcos', 'task', 'ls', '--long', 'test-app1'], 5, 7)
 
 
 def test_ls_path():

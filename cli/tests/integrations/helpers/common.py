@@ -131,6 +131,27 @@ def assert_lines(cmd, num_lines, greater_than=False):
     assert lines == num_lines
 
 
+def assert_lines_range(cmd, num_lines_min, num_lines_max):
+    """ Assert stdout contains the expected number of lines in a range
+
+    :param cmd: program and arguments
+    :type cmd: [str]
+    :param num_lines_min: minimum expected number of lines for stdout
+    :param num_lines_max: maximum expected number of lines for stdout
+    :type num_lines_min: int
+    :type num_lines_max: int
+    :rtype: None
+    """
+
+    returncode, stdout, stderr = exec_command(cmd)
+
+    assert returncode == 0
+    assert stderr == b''
+    lines = len(stdout.decode('utf-8').split('\n')) - 1
+    assert lines >= num_lines_min
+    assert lines <= num_lines_max
+
+
 def file_json_ast(path):
     """Returns the JSON AST parsed from file
     :param path: path to file
