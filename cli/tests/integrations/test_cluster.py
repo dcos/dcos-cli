@@ -1,7 +1,10 @@
 import json
+import os
+import pytest
 import subprocess
 
 from .helpers.common import assert_command, exec_command
+from distutils.dir_util import copy_tree, remove_tree
 
 
 def test_info():
@@ -27,6 +30,57 @@ def test_list():
     assert info.get("attached")
     keys = ["attached", "cluster_id", "name", "url", "version"]
     assert sorted(info.keys()) == keys
+
+
+@pytest.fixture
+def cluster_backup():
+    dcos_dir = os.environ.get('DCOS_DIR')
+    assert dcos_dir is not None
+    cluster_dir = "{}/clusters".format(dcos_dir)
+    back_dir = "{}/backup".format(dcos_dir)
+    copy_tree(cluster_dir, back_dir)
+
+    yield cluster_dir
+    # return to order
+    remove_tree(cluster_dir)
+    copy_tree(back_dir, cluster_dir)
+    remove_tree(back_dir)
+
+
+def test_remove_all(cluster_backup):
+    cluster_dir = cluster_backup
+
+    # confirm 1
+    assert num_of_clusters() == 1
+
+
+    # integration tests assume 1 cluster setup.  updating to 2.
+    for root, dirs, files in os.walk(cluster_dir):
+        if len(dirs) > 0:
+            test_cluster = os.path.join(root, dirs[0])
+            break
+    # hacky way to create another cluster
+    test_cluster2 = "{}2".format(test_cluster)
+    copy_tree(test_cluster, test_cluster2)
+
+    # confirm 2
+    assert num_of_clusters() == 2
+
+    # actual test
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'cluster', 'remove', "--all"])
+    assert returncode == 0
+    assert stderr == b''
+    assert stdout == b''
+
+    assert num_of_clusters() == 0
+
+
+def num_of_clusters():
+    _, stdout, _ = exec_command(
+        ['dcos', 'cluster', 'list', '--json'])
+    cluster_list = json.loads(stdout.decode('utf-8'))
+    return len(cluster_list)
 
 
 def test_rename():
