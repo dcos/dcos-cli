@@ -1,8 +1,12 @@
 import json
+import os
 import subprocess
+from distutils.dir_util import copy_tree, remove_tree
+
+import pytest
 
 from .helpers.common import assert_command, exec_command
-from distutils.dir_util import copy_tree
+
 
 def test_info():
     stdout = b'Manage your DC/OS clusters\n'
@@ -29,21 +33,25 @@ def test_list():
     assert sorted(info.keys()) == keys
 
 
-def test_remove_all():
+@pytest.fixture
+def cluster_backup():
     dcos_dir = os.environ.get('DCOS_DIR')
     assert dcos_dir is not None
     cluster_dir = "{}/clusters".format(dcos_dir)
     back_dir = "{}/backup".format(dcos_dir)
     copy_tree(cluster_dir, back_dir)
-    for root, dirs, files in os.walk(cluster_dir):
-        assert dirs[0] is None
-        assert len(dirs) == 1
-    
 
+    yield cluster_dir
     # return to order
     copy_tree(back_dir, cluster_dir)
     remove_tree(back_dir)
 
+
+def test_remove_all(cluster_backup):
+    cluster_dir = cluster_backup
+    for root, dirs, files in os.walk(cluster_dir):
+        assert dirs[0] is None
+        assert len(dirs) == 1
 
 
 def test_rename():
