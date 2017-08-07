@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import hashlib
 import json
 import os
@@ -146,7 +144,7 @@ def distributions():
     return set(cluster_packages + global_packages)
 
 
-# must also add subcommand name to dcoscli.subcommand._default_modules
+# must also add subcommand name to dcos.cli.subcommand._default_modules
 def default_subcommands():
     """List the default dcos cli subcommands
 

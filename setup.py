@@ -23,7 +23,7 @@ setup(
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/mesosphere/dcos-cli',
+    url='https://github.com/dcos/dcos-cli',
 
     # Author details
     author='Mesosphere, Inc.',
@@ -36,7 +36,7 @@ setup(
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Beta',
 
         # Indicate who your project is intended for
         'Intended Audience :: Developers',
@@ -53,15 +53,22 @@ setup(
     ],
 
     # What does your project relate to?
-    keywords='mesos apache marathon mesosphere command datacenter',
+    keywords='dcos mesos apache marathon mesosphere command datacenter',
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=find_packages(exclude=['pydoc', 'tests', 'cli', 'bin']),
+    packages=find_packages(exclude=['pydoc', 'scripts', 'tests']),
 
+    # List run-time dependencies here. These will be installed by pip when
+    # your project is installed. For an analysis of "install_requires" vs pip's
+    # requirements files see:
+    # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
+        'cryptography==1.6',
+        'docopt>=0.6, <1.0',
         'jsonschema>=2.5, <3.0',
         'pager>=3.3, <4.0',
+        'pkginfo==1.2.1',
         'prettytable>=0.7, <1.0',
         'PyJWT==1.4.2',
         'pygments>=2.0, <3.0',
@@ -71,15 +78,25 @@ setup(
         'sseclient==0.0.14',
     ],
 
-    extras_require={
-        ':python_version=="2.7"': ['futures>=3.0, <4.0'],
-    },
-
+    # If there are data files included in your packages that need to be
+    # installed, specify them here.
     package_data={
         'dcos': [
             'data/config-schema/*.json',
             'data/marathon/*.json',
             'data/schemas/*.json'
+            'cli/data/*.json',
+            'cli/data/help/*.txt',
+            'cli/data/schemas/*.json'
         ],
     },
+
+    # To provide executable scripts, use entry points in preference to the
+    # "scripts" keyword. Entry points provide cross-platform support and allow
+    # pip to create the appropriate form of executable for the target platform.
+    entry_points={
+        'console_scripts': [
+            'dcos=dcos.cli.main:main'
+        ],
+    }
 )

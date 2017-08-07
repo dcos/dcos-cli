@@ -1,0 +1,5 @@
+[core]
+dcos_url = "http://dcos.snakeoil.mesosphere.com"
+reporting = false
+ssl_verify = "false"
+timeout = 5
