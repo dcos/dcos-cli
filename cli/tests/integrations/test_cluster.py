@@ -54,7 +54,7 @@ def cluster_backup():
     remove_tree(back_dir)
 
 
-def test_remove_all(cluster_backup):
+def test_remove(cluster_backup):
     cluster_dir = cluster_backup
 
     # confirm 1
