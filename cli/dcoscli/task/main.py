@@ -88,7 +88,7 @@ def _main(argv):
 
     # We must special case the 'dcos task exec' subcommand in order to
     # allow us to pass arguments to docopt in a more user-friendly
-    # manner. Specifically, we need to be able to to pass arguments
+    # manner. Specifically, we need to be able to pass arguments
     # beginning with "-" to the command we are trying to launch with
     # 'exec' without docopt trying to match them to a named parameter
     # for the 'dcos' command itself.
