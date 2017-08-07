@@ -289,6 +289,27 @@ def job_table(job_list):
     return tb
 
 
+def plugins_table(plugin_list):
+    """Returns a PrettyTable representation of the plugins list from Marathon.
+
+    :param plugin_list: plugins to render
+    :type plugin_list: [plugin]
+    :rtype: PrettyTable
+    """
+
+    fields = OrderedDict([
+        ('id', lambda s: s['id']),
+        ('Implementation', lambda s: s['implementation']),
+        ('Plugin', lambda s: s['plugin']),
+    ])
+
+    tb = truncate_table(fields, plugin_list, None, sortby="ID")
+    tb.align["implementation"] = 'l'
+    tb.align["plugin"] = 'l'
+
+    return tb
+
+
 def job_history_table(schedule_list):
     """Returns a PrettyTable representation of the job history from Metronome.
 
