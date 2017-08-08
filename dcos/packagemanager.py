@@ -359,6 +359,7 @@ class CosmosPackageVersion():
         response = PackageManager(url).cosmos_post("describe", params)
 
         self._package_json = response.json()
+        self._content_type = response.headers['content-type']
 
     def version(self):
         """Returns the package version.
@@ -367,7 +368,7 @@ class CosmosPackageVersion():
         :rtype: str
         """
 
-        return self._package_json["package"]["version"]
+        return self.package_json()["version"]
 
     def name(self):
         """Returns the package name.
@@ -376,7 +377,7 @@ class CosmosPackageVersion():
         :rtype: str
         """
 
-        return self._package_json["package"]["name"]
+        return self.package_json()["name"]
 
     def package_json(self):
         """Returns the JSON content of the package definition.
@@ -385,7 +386,10 @@ class CosmosPackageVersion():
         :rtype: dict
         """
 
-        return self._package_json["package"]
+        if 'version=v2' in self._content_type:
+            return self._package_json
+        else:
+            return self._package_json["package"]
 
     def package_response(self):
         """Returns the JSON content of the describe response.
@@ -403,7 +407,7 @@ class CosmosPackageVersion():
         :rtype: dict | None
         """
 
-        return self._package_json["package"].get("config")
+        return self.package_json().get("config")
 
     def resource_json(self):
         """Returns the JSON content of the resource.json file.
@@ -412,7 +416,7 @@ class CosmosPackageVersion():
         :rtype: dict | None
         """
 
-        return self._package_json["package"].get("resource")
+        return self.package_json().get("resource")
 
     def marathon_template(self):
         """Returns raw data from marathon.json
@@ -421,7 +425,7 @@ class CosmosPackageVersion():
         :rtype: str | None
         """
 
-        template = self._package_json["package"].get("marathon", {}).get(
+        template = self.package_json().get("marathon", {}).get(
             "v2AppMustacheTemplate"
         )
 
@@ -478,7 +482,7 @@ class CosmosPackageVersion():
         :rtype: dict | None
         """
 
-        return self._package_json["package"].get("command")
+        return self.package_json().get("command")
 
     def package_versions(self):
         """Returns a list of available versions for this package
