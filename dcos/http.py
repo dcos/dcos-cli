@@ -27,10 +27,40 @@ def _default_is_success(status_code):
 
     return 200 <= status_code < 300
 
+def _is_request_to_dcos(url, toml_config=None):
+    """Checks if a request is for the DC/OS cluster.
 
-def _verify_ssl(verify=None, toml_config=None):
-    """Returns whether to verify ssl
+    :param url: URL of the request
+    :type url: str
+    :param toml_config: cluster config to use
+    :type toml_config: Toml
+    :return: whether the request is for the cluster
+    :rtype: bool
+    """
 
+    if toml_config is None:
+        toml_config = config.get_config()
+
+    dcos_url = urlparse(config.get_config_val("core.dcos_url", toml_config))
+    cosmos_url = urlparse(
+        config.get_config_val("package.cosmos_url", toml_config))
+    parsed_url = urlparse(url)
+
+    # request should match scheme + netloc
+    def _request_match(expected_url, actual_url):
+        return expected_url.scheme == actual_url.scheme and \
+                    expected_url.netloc == actual_url.netloc
+
+    is_request_to_cluster = _request_match(dcos_url, parsed_url) or \
+        _request_match(cosmos_url, parsed_url)
+
+    return is_request_to_cluster
+
+def _verify_ssl(url, verify=None, toml_config=None):
+    """Returns whether to verify ssl for the given url
+
+    :param url: the target URL
+    :type url: str
     :param verify: whether to verify SSL certs or path to cert(s)
     :type verify: bool | str
     :param toml_config: cluster config to use
@@ -38,6 +68,11 @@ def _verify_ssl(verify=None, toml_config=None):
     :return: whether to verify SSL certs or path to cert(s)
     :rtype: bool | str
     """
+
+    if not _is_request_to_dcos(url, toml_config):
+        # Leave verify to None if URL is outside the DC/OS cluster
+        # https://jira.mesosphere.com/browse/DCOS_OSS-618
+        return None
 
     if toml_config is None:
         toml_config = config.get_config()
@@ -86,7 +121,7 @@ def _request(method,
     if 'headers' not in kwargs:
         kwargs['headers'] = {'Accept': 'application/json'}
 
-    verify = _verify_ssl(verify, toml_config)
+    verify = _verify_ssl(url, verify, toml_config)
 
     # Silence 'Unverified HTTPS request' and 'SecurityWarning' for bad certs
     if verify is not None:
@@ -165,20 +200,9 @@ def request(method,
     auth_token = config.get_config_val("core.dcos_acs_token", toml_config)
     prompt_login = config.get_config_val("core.prompt_login", toml_config)
     dcos_url = urlparse(config.get_config_val("core.dcos_url", toml_config))
-    cosmos_url = urlparse(
-        config.get_config_val("package.cosmos_url", toml_config))
-    parsed_url = urlparse(url)
 
     # only request with DC/OS Auth if request is to DC/OS cluster
-    # request should match scheme + netloc
-    def _request_match(expected_url, actual_url):
-        return expected_url.scheme == actual_url.scheme and \
-                    expected_url.netloc == actual_url.netloc
-
-    request_to_cluster = _request_match(dcos_url, parsed_url) or \
-        _request_match(cosmos_url, parsed_url)
-
-    if auth_token and request_to_cluster:
+    if auth_token and _is_request_to_dcos(url):
         auth = DCOSAcsAuth(auth_token)
     else:
         auth = None
