@@ -1,6 +1,7 @@
 import json
 import os
 import pytest
+import dcos
 import subprocess
 
 from .helpers.common import assert_command, exec_command
@@ -35,9 +36,11 @@ def test_list():
 @pytest.fixture
 def cluster_backup():
     dcos_dir = os.environ.get('DCOS_DIR')
+    if dcos_dir is None:
+        dcos_dir = dcos.config.get_config_dir_path()
     assert dcos_dir is not None
-    cluster_dir = "{}/clusters".format(dcos_dir)
-    back_dir = "{}/backup".format(dcos_dir)
+    cluster_dir = "{}clusters".format(dcos_dir)
+    back_dir = "{}backup".format(dcos_dir)
     copy_tree(cluster_dir, back_dir)
 
     yield cluster_dir
