@@ -49,12 +49,19 @@ class DCOSAuthenticationException(DCOSHTTPException):
 
     :param response: requests Response object
     :type response: Response
+    :param message: An optional message for the exception. This can be useful
+                    to provide the user with more meaningful information.
+    :type message: str
     """
-    def __init__(self, response):
+    def __init__(self, response, message=None):
+        if message is None:
+            message = "Authentication failed. Please run `dcos auth login`"
+
         self.response = response
+        self.message = message
 
     def __str__(self):
-        return "Authentication failed. Please run `dcos auth login`"
+        return self.message
 
 
 class DCOSAuthorizationException(DCOSHTTPException):
