@@ -4,6 +4,7 @@ import subprocess
 from distutils.dir_util import copy_tree, remove_tree
 
 import pytest
+import dcos
 
 from .helpers.common import assert_command, exec_command
 
@@ -42,6 +43,9 @@ def test_list():
 @pytest.fixture
 def cluster_backup():
     dcos_dir = os.environ.get('DCOS_DIR')
+    if dcos_dir is None:
+        dcos_dir = dcos.config.get_config_dir_path()
+
     assert dcos_dir is not None
     cluster_dir = os.path.join(dcos_dir, 'clusters')
     back_dir = os.path.join(dcos_dir, 'backup')
