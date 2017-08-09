@@ -1,11 +1,11 @@
 import json
 import os
+from distutils.dir_util import copy_tree, remove_tree
 import pytest
 import dcos
 import subprocess
 
 from .helpers.common import assert_command, exec_command
-from distutils.dir_util import copy_tree, remove_tree
 
 
 def test_info():
@@ -55,7 +55,6 @@ def test_remove_all(cluster_backup):
 
     # confirm 1
     assert num_of_clusters() == 1
-
 
     # integration tests assume 1 cluster setup.  updating to 2.
     for root, dirs, files in os.walk(cluster_dir):
