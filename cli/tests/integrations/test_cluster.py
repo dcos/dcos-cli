@@ -39,8 +39,8 @@ def cluster_backup():
     if dcos_dir is None:
         dcos_dir = dcos.config.get_config_dir_path()
     assert dcos_dir is not None
-    cluster_dir = "{}clusters".format(dcos_dir)
-    back_dir = "{}backup".format(dcos_dir)
+    cluster_dir = os.path.join(dcos_dir, 'clusters')
+    back_dir = os.path.join(dcos_dir, 'backup')
     copy_tree(cluster_dir, back_dir)
 
     yield cluster_dir
