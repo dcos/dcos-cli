@@ -43,8 +43,8 @@ def test_list():
 def cluster_backup():
     dcos_dir = os.environ.get('DCOS_DIR')
     assert dcos_dir is not None
-    cluster_dir = "{}/clusters".format(dcos_dir)
-    back_dir = "{}/backup".format(dcos_dir)
+    cluster_dir = os.path.join(dcos_dir, 'clusters')
+    back_dir = os.path.join(dcos_dir, 'backup')
     copy_tree(cluster_dir, back_dir)
 
     yield cluster_dir
