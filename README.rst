@@ -253,7 +253,7 @@ These packages are available to be installed by the DC/OS CLI installation scrip
 .. _dcos: https://pypi.python.org/pypi/dcos
 .. _dcos configuration parameters: https://dcos.io/docs/1.9/administration/installing/custom/configuration-parameters/
 .. _dcoscli: https://pypi.python.org/pypi/dcoscli
-.. _dcos-launch: https://github.com/mesosphere/dcos-launch
+.. _dcos-launch: https://github.com/dcos/dcos-launch
 .. _jq: http://stedolan.github.io/jq/
 .. _git: http://git-scm.com
 .. _installation instructions: https://dcos.io/docs/usage/cli/install/
