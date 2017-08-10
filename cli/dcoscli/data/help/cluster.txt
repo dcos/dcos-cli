@@ -23,7 +23,7 @@ Commands:
     rename
         Rename a cluster name in the CLI.
     remove
-        Remove a list of configured clusters from the CLI.
+        Remove configured cluster(s) from the CLI.
     setup
         Setup the CLI to talk to your DC/OS cluster.
 
