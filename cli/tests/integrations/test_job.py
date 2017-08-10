@@ -23,8 +23,9 @@ def test_version():
 
 def test_schema_config():
     with open('tests/data/metronome/jobs/schema-config.json') as f:
-        returncode_, stdout_, stderr_ = exec_command(['dcos', 'job', '--config-schema'], env=None, stdin=None)
-        assert str(stdout_.decode("utf-8"))==f.read()
+        returncode_, stdout_, stderr_ = exec_command(
+            ['dcos', 'job', '--config-schema'], env=None, stdin=None)
+        assert str(stdout_.decode("utf-8")) == f.read()
 
 
 def test_info():
