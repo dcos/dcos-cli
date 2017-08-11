@@ -45,7 +45,7 @@ def test_pod_update_does_not_support_properties():
     returncode, stdout, stderr = exec_command(cmd)
 
     assert returncode == 1
-    assert stdout.startswith(b'Command not recognized\n')
+    assert stdout.startswith(b'Invalid subcommand usage\n')
     assert stderr == b''
 
 

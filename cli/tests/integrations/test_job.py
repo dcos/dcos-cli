@@ -79,7 +79,7 @@ def test_show_job_with_blank_jobname():
         ['dcos', 'job', 'show'])
 
     assert returncode == 1
-    assert "Command not recognized" in stdout.decode('utf-8')
+    assert "Invalid subcommand usage" in stdout.decode('utf-8')
 
 
 def test_show_job_with_invalid_jobname():
@@ -103,7 +103,7 @@ def test_show_schedule_blank_jobname():
         ['dcos', 'job', 'schedule', 'show'])
 
     assert returncode == 1
-    assert stdout.decode('utf-8').startswith('Command not recognized')
+    assert stdout.decode('utf-8').startswith('Invalid subcommand usage')
 
 
 def test_show_schedule_invalid_jobname():

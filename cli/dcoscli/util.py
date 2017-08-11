@@ -23,7 +23,7 @@ def decorate_docopt_usage(func):
         try:
             result = func(*args, **kwargs)
         except docopt.DocoptExit as e:
-            emitter.publish("Command not recognized\n")
+            emitter.publish("Invalid subcommand usage\n")
             emitter.publish(e)
             return 1
         return result

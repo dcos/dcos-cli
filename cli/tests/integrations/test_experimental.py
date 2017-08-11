@@ -194,7 +194,7 @@ def test_package_add_argument_exclusion():
     assert err == b''
 
     stdout = out.decode()
-    not_recognized = 'Command not recognized'
+    not_recognized = 'Invalid subcommand usage'
     assert not_recognized in stdout
 
 
