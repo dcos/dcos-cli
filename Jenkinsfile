@@ -149,30 +149,6 @@ class TestCluster implements Serializable {
 
         return script.readFile("${platform}_dcos_url")
     }
-
-    /**
-     * Retreives the ACS Token of a cluster previously created using `create()`.
-     */
-    def getAcsToken() {
-        def dcosUrl = this.getDcosUrl()
-
-        /* In the future, consider doing the following with curl / jq instead
-           of inline python (however, jq is not installed on our windows
-           machines at the moment). */
-        script.sh """
-            python -c \
-                'import requests; \
-                 requests.packages.urllib3.disable_warnings(); \
-                 js={"uid":"${script.env.DCOS_ADMIN_USERNAME}", \
-                     "password": "${script.env.DCOS_ADMIN_PASSWORD}"}; \
-                 r=requests.post("http://${dcosUrl}/acs/api/v1/auth/login", \
-                                 json=js, \
-                                 verify=False); \
-                 print(r.json()["token"], end="")' \
-            > ${platform}_acs_token"""
-
-        return script.readFile("${platform}_acs_token")
-    }
 }
 
 
@@ -229,7 +205,6 @@ def testBuilder(String platform, String nodeId, String workspace = null) {
                 }
 
                 def dcosUrl = cluster.getDcosUrl()
-                def acsToken = cluster.getAcsToken()
 
                 node(nodeId) {
                     if (!workspace) {
@@ -253,8 +228,7 @@ def testBuilder(String platform, String nodeId, String workspace = null) {
                              credentialsId: '23743034-1ac4-49f7-b2e6-a661aee2d11b',
                              variable: 'CLI_TEST_SSH_KEY_PATH']]) {
 
-                            withEnv(["DCOS_URL=${dcosUrl}",
-                                     "DCOS_ACS_TOKEN=${acsToken}"]) {
+                            withEnv(["DCOS_URL=${dcosUrl}"]) {
                                 try {
                                     body()
                                 } catch (Exception e) {
@@ -330,12 +304,10 @@ builders['linux-tests'] = testBuilder('linux', 'py35', '/workspace')({
         dir('dcos-cli/cli') {
             sh '''
                export PYTHONIOENCODING=utf-8; \
-               export DCOS_CONFIG=tests/data/dcos.toml; \
-               chmod 600 ${DCOS_CONFIG}; \
-               echo dcos_acs_token = \\\"${DCOS_ACS_TOKEN}\\\" >> ${DCOS_CONFIG}; \
-               cat ${DCOS_CONFIG}; \
+               dcos cluster setup ${DCOS_URL} --insecure --username=${DCOS_ADMIN_USERNAME} --password-env=DCOS_ADMIN_PASSWORD; \
+               dcos config set core.timeout 5; \
+               dcos config set core.reporting false; \
                unset DCOS_URL; \
-               unset DCOS_ACS_TOKEN; \
                make test-binary'''
         }
     }
@@ -355,12 +327,10 @@ builders['mac-tests'] = testBuilder('mac', 'mac')({
         dir('dcos-cli/cli') {
             sh '''
                export PYTHONIOENCODING=utf-8; \
-               export DCOS_CONFIG=tests/data/dcos.toml; \
-               chmod 600 ${DCOS_CONFIG}; \
-               echo dcos_acs_token = \\\"${DCOS_ACS_TOKEN}\\\" >> ${DCOS_CONFIG}; \
-               cat ${DCOS_CONFIG}; \
+               dcos cluster setup ${DCOS_URL} --insecure --username=${DCOS_ADMIN_USERNAME} --password-env=DCOS_ADMIN_PASSWORD; \
+               dcos config set core.timeout 5; \
+               dcos config set core.reporting false; \
                unset DCOS_URL; \
-               unset DCOS_ACS_TOKEN; \
                make test-binary'''
         }
     }
@@ -371,18 +341,17 @@ builders['windows-tests'] = testBuilder('windows', 'windows', 'C:\\windows\\work
     stage ("Run dcos-cli tests") {
         bat '''
             bash -c "rm -rf ~/.dcos"'''
-        bat '''
-            echo %DCOS_URL% dcos.snakeoil.mesosphere.com >> C:\\windows\\system32\\drivers\\etc\\hosts &
-            echo dcos_acs_token = \"%DCOS_ACS_TOKEN%\" >> dcos-cli\\cli\\tests\\data\\dcos.toml'''
+
+        bat 'echo %DCOS_URL% dcos.snakeoil.mesosphere.com >> C:\\windows\\system32\\drivers\\etc\\hosts'
 
         dir('dcos-cli/cli') {
             bat '''
                 bash -c " \
                 export PYTHONIOENCODING=utf-8; \
-                export DCOS_CONFIG=tests/data/dcos.toml; \
-                cat ${DCOS_CONFIG}; \
+                dcos cluster setup ${DCOS_URL} --insecure --username=${DCOS_ADMIN_USERNAME} --password-env=DCOS_ADMIN_PASSWORD; \
+                dcos config set core.timeout 5; \
+                dcos config set core.reporting false; \
                 unset DCOS_URL; \
-                unset DCOS_ACS_TOKEN; \
                 make test-binary"'''
         }
     }
