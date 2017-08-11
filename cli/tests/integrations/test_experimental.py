@@ -185,7 +185,7 @@ def test_package_build_where_build_definition_has_badly_formed_reference():
                                stderr=stderr)
 
 
-def test_package_add_argument_exclussion():
+def test_package_add_argument_exclusion():
     command = command_base + ['package', 'add',
                               '--dcos-package', runnable_package_path(1),
                               '--package-version', '3.0']
