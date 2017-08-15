@@ -94,7 +94,7 @@ def test_scale_group_when_scale_factor_negative():
     with group(SCALE_GROUP, 'scale-group'):
         returncode, stdout, stderr = exec_command(
             ['dcos', 'marathon', 'group', 'scale', 'scale-group', '-2'])
-        assert b'Command not recognized' in stdout
+        assert b'Invalid subcommand usage' in stdout
         assert returncode == 1
 
 
