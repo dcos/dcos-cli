@@ -12,7 +12,7 @@ from six.moves import urllib
 from dcos import config, http
 
 
-def exec_command(cmd, env=None, stdin=None):
+def exec_command(cmd, env=None, stdin=None, timeout=None):
     """Execute CLI command
 
     :param cmd: Program and arguments
@@ -21,6 +21,10 @@ def exec_command(cmd, env=None, stdin=None):
     :type env: dict | None
     :param stdin: File to use for stdin
     :type stdin: file
+    :param timeout: If the process doesn't terminate after this timeout,
+                    it will get killed and a subprocess.TimeoutExpired
+                    exception will be raised. The timeout is in seconds.
+    :type timeout: int
     :returns: A tuple with the returncode, stdout and stderr
     :rtype: (int, bytes, bytes)
     """
@@ -34,9 +38,19 @@ def exec_command(cmd, env=None, stdin=None):
         stderr=subprocess.PIPE,
         env=env)
 
+    try:
+        streams = process.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        # The child process is not killed if the timeout expires, so in order
+        # to cleanup properly a well-behaved application should kill the child
+        # process and finish communication.
+        # https://docs.python.org/3.5/library/subprocess.html#subprocess.Popen.communicate
+        process.kill()
+        process.communicate()
+        raise
+
     # This is needed to get rid of '\r' from Windows's lines endings.
-    stdout, stderr = [std_stream.replace(b'\r', b'')
-                      for std_stream in process.communicate()]
+    stdout, stderr = [stream.replace(b'\r', b'') for stream in streams]
 
     # We should always print the stdout and stderr
     print('STDOUT: {}'.format(_truncate(stdout.decode('utf-8'))))
