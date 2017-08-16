@@ -132,7 +132,7 @@ environment appropriately.
 #. Export the :code:`DCOS_CONFIG` environment variable so that the CLI knows to
    use this file for its default config::
 
-    $ export DCOS_CONFIG=<dcos-config-folder>/dcos.toml
+    $ export DCOS_CONFIG=${DCOS_DIR}/dcos.toml
 
 
 #. Set the :code:`CLI_TEST_SSH_KEY_PATH` to point at appropriate ssh credentials to
