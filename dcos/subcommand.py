@@ -564,7 +564,7 @@ def _install_with_binary(
         raise
     except Exception as e:
         logger.exception(e)
-        raise _generic_error(package_name)
+        raise _generic_error(package_name, e.message)
 
     return None
 
@@ -660,18 +660,20 @@ def _execute_command(command):
     return stdout, stderr, process.returncode
 
 
-def _generic_error(package_name):
+def _generic_error(package_name, err=None):
     """
     :param package: package name
     :type: str
+    :param err: error message
+    :type err: str
     :returns: generic error when installing package
     :rtype: DCOSException
     """
 
-    return DCOSException(
-        ('Error installing {!r} package.\n'
-         'Run with `dcos --log-level=ERROR` to see the full output.').format(
-            package_name))
+    msg = 'Error installing {!r} package.'.format(package_name)
+    if err:
+        msg += ' {}'.format(err)
+    return DCOSException(msg)
 
 
 class InstalledSubcommand(object):
