@@ -45,69 +45,34 @@ template_parameters:
 class TestCluster implements Serializable {
     WorkflowScript script
     String platform
-    int createAttempts
 
     TestCluster(WorkflowScript script, String platform) {
         this.script = script
         this.platform = platform
-        this.createAttempts = 0
     }
 
     /**
-     * Creates a new DC/OS cluster for the given platform using `dcos_launch`.
-     */
-    def launch_create() {
-        script.sh "./dcos-launch create -c ${platform}_config.yaml -i ${platform}_cluster_info.json"
-    }
-
-    /**
-     * Waits for a cluster previously created with `dcos_launch` to come online.
-     */
-    def launch_wait() {
-        script.sh "./dcos-launch wait -i ${platform}_cluster_info.json"
-    }
-
-    /**
-     * Deletes a cluster previously created using `dcos_launch`.
-     */
-    def launch_delete() {
-        script.sh "./dcos-launch delete -i ${platform}_cluster_info.json"
-    }
-
-    /**
-     * Creates a new test cluster for the given platform.
-     *
-     * It first creates a custom config file with a new deployment name that
-     * matches the given platform and then uses `launch_create()` to actually
-     * create the cluster.
+     * Creates a new test cluster for the given platform using dcos-launch.
+     * Waits (blocks) for the cluster to be ready to use.
+     * Exits if interrupted by user.
+     * Retries 3 times.
+     * Destroys cluster on failure.
      */
     def create() {
-        script.sh "rm -rf ${platform}_config.yaml"
-        script.sh "rm -rf ${platform}_cluster_info.json"
-
-        script.writeFile([
-            "file": "${platform}_config.yaml",
-            "text" : script.generateConfig(
-                "dcos-cli-${platform}-${script.env.BRANCH_NAME}-${script.env.BUILD_ID}-${createAttempts}",
-                "${script.env.CF_TEMPLATE_URL}")])
-
-        launch_create()
-
-        createAttempts++
-    }
-
-    /**
-     * Blocks until a test cluster successfully comes online or a user
-     * interrupts the build.
-     *
-     * Under the hood, `launch_create()` will be re-executed anytime a previous
-     * creation attempt fails. The only way to exit this loop is to either
-     * create a cluster successfully, or interrupt the build manually.
-     */
-    def block() {
+        def createAttempts = 0
         while (true) {
             try {
-                launch_wait()
+                createAttempts++
+                script.sh "rm -rf ${platform}_config.yaml"
+                script.sh "rm -rf ${platform}_cluster_info.json"
+                script.writeFile([
+                        "file": "${platform}_config.yaml",
+                        "text" : script.generateConfig(
+                                "dcos-cli-${platform}-${script.env.BRANCH_NAME}-${script.env.BUILD_ID}-${createAttempts}",
+                                "${script.env.CF_TEMPLATE_URL}")])
+
+                script.sh "./dcos-launch create -c ${platform}_config.yaml -i ${platform}_cluster_info.json"
+                script.sh "./dcos-launch wait -i ${platform}_cluster_info.json"
                 break
             } catch(InterruptedException e) {
                 destroy()
@@ -115,9 +80,7 @@ class TestCluster implements Serializable {
                 throw e
             } catch(Exception e) {
                 destroy()
-                if (createAttempts < 3) {
-                    create()
-                } else {
+                if (createAttempts >= 3) {
                     script.echo("Maximum number of creation attempts exceeded. Exiting...")
                     throw e
                 }
@@ -129,11 +92,11 @@ class TestCluster implements Serializable {
      * Destroys a test cluster previously created using `create()`.
      */
     def destroy() {
-        launch_delete()
+        script.sh "./dcos-launch delete -i ${platform}_cluster_info.json"
     }
 
     /**
-     * Retreives the URL of a cluster previously created using `create()`.
+     * Retrieves the URL of a cluster previously created using `create()`.
      */
     def getDcosUrl() {
         /* In the future, consider doing the following with jq instead of
@@ -151,7 +114,7 @@ class TestCluster implements Serializable {
     }
 
     /**
-     * Retreives the ACS Token of a cluster previously created using `create()`.
+     * Retrieves the ACS Token of a cluster previously created using `create()`.
      */
     def getAcsToken() {
         def dcosUrl = this.getDcosUrl()
@@ -219,15 +182,11 @@ def testBuilder(String platform, String nodeId, String workspace = null) {
             def destroyCluster = true
             def cluster = new TestCluster(this, platform)
 
+            stage ("Create ${platform} cluster") {
+                cluster.create()
+            }
+
             try {
-                stage ("Create ${platform} cluster") {
-                    cluster.create()
-                }
-
-                stage ("Wait for ${platform} cluster") {
-                    cluster.block()
-                }
-
                 def dcosUrl = cluster.getDcosUrl()
                 def acsToken = cluster.getAcsToken()
 
