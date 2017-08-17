@@ -2,7 +2,7 @@
 
 /**
  * This Jenkinsfile runs a set of parallel builders for the dcos-cli across
- * multiple platforms (linux/mac/windows).
+ * multiple platforms (linux/mac/windows) and versions of DC/OS.
  *
  * One set of builders builds the CLI into a binary on each platform. The other
  * set of builders runs integration tests on each platform. Under the hood, the
@@ -14,9 +14,27 @@
  */
 
 /**
- * These are the platforms we are building against.
+ * These are global variables defining the
+ * parameterized platforms we are building against.
  */
-def platforms = ["linux", "mac", "windows"]
+def TEMPLATE_URLS = [:]
+def DCOS_VERSIONS = ["master", "stable", "legacy"]
+
+withCredentials(
+    [[$class: 'StringBinding',
+      credentialsId: 'fd1fe0ae-113d-4096-87b2-15aa9606bb4e',
+      variable: 'CF_TEMPLATE_URL_MASTER'],
+     [$class: 'StringBinding',
+      credentialsId: '542aa287-9464-49cb-bdd3-9e4ca457dd87',
+      variable: 'CF_TEMPLATE_URL_STABLE'],
+     [$class: 'StringBinding',
+      credentialsId: '1c2fb1a3-38a6-4289-a831-11da1b319412',
+      variable: 'CF_TEMPLATE_URL_LEGACY']]) {
+
+    TEMPLATE_URLS['master'] = "${env.CF_TEMPLATE_URL_MASTER}"
+    TEMPLATE_URLS['stable'] = "${env.CF_TEMPLATE_URL_STABLE}"
+    TEMPLATE_URLS['legacy'] = "${env.CF_TEMPLATE_URL_LEGACY}"
+}
 
 /**
  * This generates the `dcos_launch` config for a particular build.
@@ -44,12 +62,14 @@ template_parameters:
  */
 class TestCluster implements Serializable {
     WorkflowScript script
-    String platform
+    String label
+    String templateUrl
     int createAttempts
 
-    TestCluster(WorkflowScript script, String platform) {
+    TestCluster(WorkflowScript script, String label, String templateUrl) {
         this.script = script
-        this.platform = platform
+        this.label = label
+        this.templateUrl = templateUrl
         this.createAttempts = 0
     }
 
@@ -57,21 +77,21 @@ class TestCluster implements Serializable {
      * Creates a new DC/OS cluster for the given platform using `dcos_launch`.
      */
     def launch_create() {
-        script.sh "./dcos-launch create -c ${platform}_config.yaml -i ${platform}_cluster_info.json"
+        script.sh "./dcos-launch create -c ${label}_config.yaml -i ${label}_cluster_info.json"
     }
 
     /**
      * Waits for a cluster previously created with `dcos_launch` to come online.
      */
     def launch_wait() {
-        script.sh "./dcos-launch wait -i ${platform}_cluster_info.json"
+        script.sh "./dcos-launch wait -i ${label}_cluster_info.json"
     }
 
     /**
      * Deletes a cluster previously created using `dcos_launch`.
      */
     def launch_delete() {
-        script.sh "./dcos-launch delete -i ${platform}_cluster_info.json"
+        script.sh "./dcos-launch delete -i ${label}_cluster_info.json"
     }
 
     /**
@@ -82,17 +102,12 @@ class TestCluster implements Serializable {
      * create the cluster.
      */
     def create() {
-        script.sh "rm -rf ${platform}_config.yaml"
-        script.sh "rm -rf ${platform}_cluster_info.json"
-
         script.writeFile([
-            "file": "${platform}_config.yaml",
+            "file": "${label}_config.yaml",
             "text" : script.generateConfig(
-                "dcos-cli-${platform}-${script.env.BRANCH_NAME}-${script.env.BUILD_ID}-${createAttempts}",
-                "${script.env.CF_TEMPLATE_URL}")])
-
+                "dcos-cli-${label}-${script.env.BRANCH_NAME.replace('.', '-')}-${script.env.BUILD_ID}-${createAttempts}",
+                "${templateUrl}")])
         launch_create()
-
         createAttempts++
     }
 
@@ -130,6 +145,8 @@ class TestCluster implements Serializable {
      */
     def destroy() {
         launch_delete()
+        script.sh "rm -rf ${label}_config.yaml"
+        script.sh "rm -rf ${label}_cluster_info.json"
     }
 
     /**
@@ -140,14 +157,14 @@ class TestCluster implements Serializable {
            inline python (however, jq is not installed on our windows machines
            at the moment). */
         script.sh """
-            ./dcos-launch describe -i ${platform}_cluster_info.json \
+            ./dcos-launch describe -i ${label}_cluster_info.json \
             | python -c \
                 'import sys, json; \
                  contents = json.load(sys.stdin); \
                  print(contents["masters"][0]["public_ip"], end="")' \
-            > ${platform}_dcos_url"""
+            > ${label}_dcos_url"""
 
-        return script.readFile("${platform}_dcos_url")
+        return script.readFile("${label}_dcos_url")
     }
 
     /**
@@ -169,9 +186,9 @@ class TestCluster implements Serializable {
                                  json=js, \
                                  verify=False); \
                  print(r.json()["token"], end="")' \
-            > ${platform}_acs_token"""
+            > ${label}_acs_token"""
 
-        return script.readFile("${platform}_acs_token")
+        return script.readFile("${label}_acs_token")
     }
 }
 
@@ -211,13 +228,13 @@ def binaryBuilder(String platform, String nodeId, String workspace = null) {
  * This function returns a closure that prepares a test environment for a
  * specific platform on a specific node in a specific workspace.
  */
-def testBuilder(String platform, String nodeId, String workspace = null) {
+def testBuilder(String platform, String version, String templateUrl, String nodeId, String workspace = null) {
     return { Closure _body ->
         def body = _body
 
         return {
             def destroyCluster = true
-            def cluster = new TestCluster(this, platform)
+            def cluster = new TestCluster(this, "${platform}-${version.replace('.', '-')}", templateUrl)
 
             try {
                 stage ("Create ${platform} cluster") {
@@ -283,15 +300,16 @@ def testBuilder(String platform, String nodeId, String workspace = null) {
     }
 }
 
+
 /**
- * These are the builds that can be run in parallel.
+ * These are the binary builds that can be run in parallel.
  */
-def builders = [:]
+def binaryBuilders = [:]
 
-
-builders['linux-binary'] = binaryBuilder('linux', 'py35', '/workspace')({
+binaryBuilders['linux-binary'] = binaryBuilder('linux', 'py35', '/workspace')({
     stage ("Build dcos-cli binary") {
         dir('dcos-cli/cli') {
+            sh "rm -rf ~/.dcos"
             sh "make binary"
             sh "dist/dcos"
         }
@@ -299,9 +317,10 @@ builders['linux-binary'] = binaryBuilder('linux', 'py35', '/workspace')({
 })
 
 
-builders['mac-binary'] = binaryBuilder('mac', 'mac')({
+binaryBuilders['mac-binary'] = binaryBuilder('mac', 'mac')({
     stage ("Build dcos-cli binary") {
         dir('dcos-cli/cli') {
+            sh "rm -rf ~/.dcos"
             sh "make binary"
             sh "dist/dcos"
         }
@@ -309,9 +328,10 @@ builders['mac-binary'] = binaryBuilder('mac', 'mac')({
 })
 
 
-builders['windows-binary'] = binaryBuilder('windows', 'windows')({
+binaryBuilders['windows-binary'] = binaryBuilder('windows', 'windows')({
     stage ("Build dcos-cli binary") {
         dir('dcos-cli/cli') {
+            bat 'bash -c "rm -rf ~/.dcos"'
             bat 'bash -c "make binary"'
             bat 'dist\\dcos.exe'
         }
@@ -319,74 +339,89 @@ builders['windows-binary'] = binaryBuilder('windows', 'windows')({
 })
 
 
-builders['linux-tests'] = testBuilder('linux', 'py35', '/workspace')({
-    stage ("Run dcos-cli tests") {
-        sh '''
-           rm -rf ~/.dcos; \
-           grep -q "^.* dcos.snakeoil.mesosphere.com$" /etc/hosts && \
-           sed -iold "s/^.* dcos.snakeoil.mesosphere.com$/${DCOS_URL} dcos.snakeoil.mesosphere.com/" /etc/hosts || \
-           echo ${DCOS_URL} dcos.snakeoil.mesosphere.com >> /etc/hosts'''
-
-        dir('dcos-cli/cli') {
+/**
+ * These are the test builds that can be run in parallel.
+ */
+def linuxTestBuilder(String version, String templateUrl) {
+    return testBuilder('linux', version, templateUrl, 'py35', '/workspace')({
+        stage ("Run dcos-cli tests") {
             sh '''
-               export PYTHONIOENCODING=utf-8; \
-               export DCOS_CONFIG=tests/data/dcos.toml; \
-               chmod 600 ${DCOS_CONFIG}; \
-               echo dcos_acs_token = \\\"${DCOS_ACS_TOKEN}\\\" >> ${DCOS_CONFIG}; \
-               cat ${DCOS_CONFIG}; \
-               unset DCOS_URL; \
-               unset DCOS_ACS_TOKEN; \
-               make test-binary'''
+               rm -rf ~/.dcos; \
+               grep -q "^.* dcos.snakeoil.mesosphere.com$" /etc/hosts && \
+               sed -iold "s/^.* dcos.snakeoil.mesosphere.com$/${DCOS_URL} dcos.snakeoil.mesosphere.com/" /etc/hosts || \
+               echo ${DCOS_URL} dcos.snakeoil.mesosphere.com >> /etc/hosts'''
+    
+            dir('dcos-cli/cli') {
+                sh '''
+                   export PYTHONIOENCODING=utf-8; \
+                   export DCOS_CONFIG=tests/data/dcos.toml; \
+                   chmod 600 ${DCOS_CONFIG}; \
+                   echo dcos_acs_token = \\\"${DCOS_ACS_TOKEN}\\\" >> ${DCOS_CONFIG}; \
+                   unset DCOS_URL; \
+                   unset DCOS_ACS_TOKEN; \
+                   make test-binary'''
+            }
         }
-    }
-})
+    })
+}
 
-
-builders['mac-tests'] = testBuilder('mac', 'mac')({
-    stage ("Run dcos-cli tests") {
-        sh '''
-           rm -rf ~/.dcos; \
-           cp /etc/hosts hosts.local; \
-           grep -q "^.* dcos.snakeoil.mesosphere.com$" hosts.local && \
-           sed -iold "s/^.* dcos.snakeoil.mesosphere.com$/${DCOS_URL} dcos.snakeoil.mesosphere.com/" hosts.local || \
-           echo ${DCOS_URL} dcos.snakeoil.mesosphere.com >> hosts.local; \
-           sudo cp ./hosts.local /etc/hosts'''
-
-        dir('dcos-cli/cli') {
+def macTestBuilder(String version, String templateUrl) {
+    return testBuilder('mac', version, templateUrl, 'mac')({
+        stage ("Run dcos-cli tests") {
             sh '''
-               export PYTHONIOENCODING=utf-8; \
-               export DCOS_CONFIG=tests/data/dcos.toml; \
-               chmod 600 ${DCOS_CONFIG}; \
-               echo dcos_acs_token = \\\"${DCOS_ACS_TOKEN}\\\" >> ${DCOS_CONFIG}; \
-               cat ${DCOS_CONFIG}; \
-               unset DCOS_URL; \
-               unset DCOS_ACS_TOKEN; \
-               make test-binary'''
+               rm -rf ~/.dcos; \
+               cp /etc/hosts hosts.local; \
+               grep -q "^.* dcos.snakeoil.mesosphere.com$" hosts.local && \
+               sed -iold "s/^.* dcos.snakeoil.mesosphere.com$/${DCOS_URL} dcos.snakeoil.mesosphere.com/" hosts.local || \
+               echo ${DCOS_URL} dcos.snakeoil.mesosphere.com >> hosts.local; \
+               sudo cp ./hosts.local /etc/hosts'''
+    
+            dir('dcos-cli/cli') {
+                sh '''
+                   export PYTHONIOENCODING=utf-8; \
+                   export DCOS_CONFIG=tests/data/dcos.toml; \
+                   chmod 600 ${DCOS_CONFIG}; \
+                   echo dcos_acs_token = \\\"${DCOS_ACS_TOKEN}\\\" >> ${DCOS_CONFIG}; \
+                   unset DCOS_URL; \
+                   unset DCOS_ACS_TOKEN; \
+                   make test-binary'''
+            }
         }
-    }
-})
+    })
 
+}
 
-builders['windows-tests'] = testBuilder('windows', 'windows', 'C:\\windows\\workspace')({
-    stage ("Run dcos-cli tests") {
-        bat '''
-            bash -c "rm -rf ~/.dcos"'''
-        bat '''
-            echo %DCOS_URL% dcos.snakeoil.mesosphere.com >> C:\\windows\\system32\\drivers\\etc\\hosts &
-            echo dcos_acs_token = \"%DCOS_ACS_TOKEN%\" >> dcos-cli\\cli\\tests\\data\\dcos.toml'''
-
-        dir('dcos-cli/cli') {
+def windowsTestBuilder(String version, String templateUrl) {
+    return testBuilder('windows', version, templateUrl, 'windows', 'C:\\windows\\workspace')({
+        stage ("Run dcos-cli tests") {
             bat '''
-                bash -c " \
-                export PYTHONIOENCODING=utf-8; \
-                export DCOS_CONFIG=tests/data/dcos.toml; \
-                cat ${DCOS_CONFIG}; \
-                unset DCOS_URL; \
-                unset DCOS_ACS_TOKEN; \
-                make test-binary"'''
+                bash -c "rm -rf ~/.dcos"'''
+            bat '''
+                echo %DCOS_URL% dcos.snakeoil.mesosphere.com >> C:\\windows\\system32\\drivers\\etc\\hosts &
+                echo dcos_acs_token = \"%DCOS_ACS_TOKEN%\" >> dcos-cli\\cli\\tests\\data\\dcos.toml'''
+    
+            dir('dcos-cli/cli') {
+                bat '''
+                    bash -c " \
+                    export PYTHONIOENCODING=utf-8; \
+                    export DCOS_CONFIG=tests/data/dcos.toml; \
+                    unset DCOS_URL; \
+                    unset DCOS_ACS_TOKEN; \
+                    make test-binary"'''
+            }
         }
-    }
-})
+    })
+}
+
+def testBuilders = [:]
+
+for (version in DCOS_VERSIONS) {
+    def builders = [:]
+    builders["linux-tests-${version}"]  = linuxTestBuilder(version, TEMPLATE_URLS[version])
+    builders["mac-tests-${version}"]  = macTestBuilder(version, TEMPLATE_URLS[version])
+    builders["windows-tests-${version}"]  = windowsTestBuilder(version, TEMPLATE_URLS[version])
+    testBuilders[version] = builders
+}
 
 
 /**
@@ -438,14 +473,26 @@ node('py35') {
          credentialsId: '7155bd15-767d-4ae3-a375-e0d74c90a2c4',
          accessKeyVariable: 'AWS_ACCESS_KEY_ID',
          secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'],
-        [$class: 'StringBinding',
-         credentialsId: 'fd1fe0ae-113d-4096-87b2-15aa9606bb4e',
-         variable: 'CF_TEMPLATE_URL'],
         [$class: 'UsernamePasswordMultiBinding',
          credentialsId: '323df884-742b-4099-b8b7-d764e5eb9674',
          usernameVariable: 'DCOS_ADMIN_USERNAME',
          passwordVariable: 'DCOS_ADMIN_PASSWORD']]) {
 
-        parallel builders
+        parallel binaryBuilders
+
+        def exceptions = []
+        for (version in DCOS_VERSIONS) {
+            try {
+                parallel testBuilders[version]
+            } catch(Exception e) {
+                exceptions << e
+            }
+        }
+        if (exceptions.size() > 0) {
+            for (exception in exceptions) {
+                echo "${exception.getMessage()}"
+            }
+            assert false
+        }
     }
 }
