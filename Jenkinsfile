@@ -381,7 +381,7 @@ node('py35') {
                         shallow: true,
                         depth: 0,
                         noTags: true,
-                        timeout: 30
+                        timeout: 10
                     ]
                 ]
             ])
