@@ -410,7 +410,22 @@ node('py35') {
 
     stage ('Pull dcos-cli repository') {
         dir('dcos-cli') {
-            checkout scm
+            checkout([
+                $class: 'GitSCM',
+                userRemoteConfigs: scm.userRemoteConfigs,
+                branches: scm.branches,
+                doGenerateSubmoduleConfigurations: scm.doGenerateSubmoduleConfigurations,
+                submoduleCfg: scm.submoduleCfg,
+                extensions: [
+                    [
+                        $class: 'CloneOption',
+                        shallow: true,
+                        depth: 0,
+                        noTags: true,
+                        timeout: 30
+                    ]
+                ]
+            ])
         }
     }
 
