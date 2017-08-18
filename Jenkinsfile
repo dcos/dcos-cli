@@ -393,6 +393,7 @@ throttle(['dcos-cli']) {
                     ]
                 ])
             }
+        }
 
         stage ('Stash dcos-cli repository') {
             stash(['includes': 'dcos-cli/**', name: 'dcos-cli'])
@@ -412,7 +413,6 @@ throttle(['dcos-cli']) {
              passwordVariable: 'DCOS_ADMIN_PASSWORD']]) {
 
                 parallel builders
-            }
         }
     }
 }
