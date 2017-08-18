@@ -74,7 +74,7 @@ class TestCluster implements Serializable {
                 script.sh "./dcos-launch create -c ${platform}_config.yaml -i ${platform}_cluster_info.json"
                 script.sh "./dcos-launch wait -i ${platform}_cluster_info.json"
                 break
-            } catch(InterruptedException e) {
+            } catch(InterruptedException | hudson.AbortException e) {
                 script.echo("Build interrupted. Destroying cluster....")
                 destroy()
                 script.echo("Cluster destroyed. Exiting...")
@@ -220,7 +220,7 @@ def testBuilder(String platform, String nodeId, String workspace = null) {
                                      "DCOS_ACS_TOKEN=${acsToken}"]) {
                                 try {
                                     body()
-                                } catch(InterruptedException e) {
+                                } catch(InterruptedException | hudson.AbortException e) {
                                     echo(
                                         "Build interrupted. The DC/OS cluster at" +
                                         " ${dcosUrl} will be destroyed.")
