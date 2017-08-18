@@ -16,7 +16,7 @@
 /**
  * These are the platforms we are building against.
  */
-def platforms = ["linux", "mac", "windows"]
+def platforms = ["mac"]
 
 /**
  * This generates the `dcos_launch` config for a particular build.
@@ -68,7 +68,7 @@ class TestCluster implements Serializable {
                 script.writeFile([
                         "file": "${platform}_config.yaml",
                         "text" : script.generateConfig(
-                                "dcos-cli-${platform}-${script.env.BRANCH_NAME}-${script.env.BUILD_ID}-${createAttempts}",
+                                "dcos-cli-${platform}-${script.env.ghprbPullId}-${script.env.BUILD_ID}-${createAttempts}",
                                 "${script.env.CF_TEMPLATE_URL}")])
 
                 script.sh "./dcos-launch create -c ${platform}_config.yaml -i ${platform}_cluster_info.json"
@@ -139,37 +139,6 @@ class TestCluster implements Serializable {
             > ${platform}_acs_token"""
 
         return script.readFile("${platform}_acs_token")
-    }
-}
-
-
-/**
- * This function returns a closure that prepares binary builds for a specific
- * platform on a specific node in a specific workspace.
- */
-def binaryBuilder(String platform, String nodeId, String workspace = null) {
-    return { Closure _body ->
-        def body = _body
-
-        return {
-            node(nodeId) {
-                if (!workspace) {
-                    workspace = "${env.WORKSPACE}"
-                }
-
-                ws (workspace) {
-                    stage ('Cleanup workspace') {
-                        deleteDir()
-                    }
-
-                    stage ("Unstash dcos-cli repository") {
-                        unstash('dcos-cli')
-                    }
-
-                    body()
-                }
-            }
-        }
     }
 }
 
@@ -258,59 +227,6 @@ def testBuilder(String platform, String nodeId, String workspace = null) {
 def builders = [:]
 
 
-builders['linux-binary'] = binaryBuilder('linux', 'py35', '/workspace')({
-    stage ("Build dcos-cli binary") {
-        dir('dcos-cli/cli') {
-            sh "make binary"
-            sh "dist/dcos"
-        }
-    }
-})
-
-
-builders['mac-binary'] = binaryBuilder('mac', 'mac')({
-    stage ("Build dcos-cli binary") {
-        dir('dcos-cli/cli') {
-            sh "make binary"
-            sh "dist/dcos"
-        }
-    }
-})
-
-
-builders['windows-binary'] = binaryBuilder('windows', 'windows')({
-    stage ("Build dcos-cli binary") {
-        dir('dcos-cli/cli') {
-            bat 'bash -c "make binary"'
-            bat 'dist\\dcos.exe'
-        }
-    }
-})
-
-
-builders['linux-tests'] = testBuilder('linux', 'py35', '/workspace')({
-    stage ("Run dcos-cli tests") {
-        sh '''
-           rm -rf ~/.dcos; \
-           grep -q "^.* dcos.snakeoil.mesosphere.com$" /etc/hosts && \
-           sed -iold "s/^.* dcos.snakeoil.mesosphere.com$/${DCOS_URL} dcos.snakeoil.mesosphere.com/" /etc/hosts || \
-           echo ${DCOS_URL} dcos.snakeoil.mesosphere.com >> /etc/hosts'''
-
-        dir('dcos-cli/cli') {
-            sh '''
-               export PYTHONIOENCODING=utf-8; \
-               export DCOS_CONFIG=tests/data/dcos.toml; \
-               chmod 600 ${DCOS_CONFIG}; \
-               echo dcos_acs_token = \\\"${DCOS_ACS_TOKEN}\\\" >> ${DCOS_CONFIG}; \
-               cat ${DCOS_CONFIG}; \
-               unset DCOS_URL; \
-               unset DCOS_ACS_TOKEN; \
-               make test-binary'''
-        }
-    }
-})
-
-
 builders['mac-tests'] = testBuilder('mac', 'mac')({
     stage ("Run dcos-cli tests") {
         sh '''
@@ -331,28 +247,6 @@ builders['mac-tests'] = testBuilder('mac', 'mac')({
                unset DCOS_URL; \
                unset DCOS_ACS_TOKEN; \
                make test-binary'''
-        }
-    }
-})
-
-
-builders['windows-tests'] = testBuilder('windows', 'windows', 'C:\\windows\\workspace')({
-    stage ("Run dcos-cli tests") {
-        bat '''
-            bash -c "rm -rf ~/.dcos"'''
-        bat '''
-            echo %DCOS_URL% dcos.snakeoil.mesosphere.com >> C:\\windows\\system32\\drivers\\etc\\hosts &
-            echo dcos_acs_token = \"%DCOS_ACS_TOKEN%\" >> dcos-cli\\cli\\tests\\data\\dcos.toml'''
-
-        dir('dcos-cli/cli') {
-            bat '''
-                bash -c " \
-                export PYTHONIOENCODING=utf-8; \
-                export DCOS_CONFIG=tests/data/dcos.toml; \
-                cat ${DCOS_CONFIG}; \
-                unset DCOS_URL; \
-                unset DCOS_ACS_TOKEN; \
-                make test-binary"'''
         }
     }
 })
@@ -409,7 +303,7 @@ throttle(['dcos-cli']) {
              accessKeyVariable: 'AWS_ACCESS_KEY_ID',
              secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'],
             [$class: 'StringBinding',
-             credentialsId: 'fd1fe0ae-113d-4096-87b2-15aa9606bb4e',
+             credentialsId: '8d7d3d95-fc1f-42f4-941a-ad43487fcff7',
              variable: 'CF_TEMPLATE_URL'],
             [$class: 'UsernamePasswordMultiBinding',
              credentialsId: '323df884-742b-4099-b8b7-d764e5eb9674',

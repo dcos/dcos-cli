@@ -1,0 +1,130 @@
+#!/usr/bin/env groovy
+
+/**
+ * This Jenkinsfile runs a set of parallel builders for the dcos-cli across
+ * multiple platforms (linux/mac/windows).
+ *
+ * One set of builders builds the CLI into a binary on each platform. The other
+ * set of builders runs integration tests on each platform. Under the hood, the
+ * integration test builders use `dcos_launch` to create the DC/OS clusters for
+ * each platform to run their tests against. Unfortunately, `dcos_luanch` only
+ * works reliably on Linux, so we use a single linux instance to create all of
+ * the clusters and separate linux/mac/windows instances to run the actual
+ * tests.
+ */
+
+/**
+ * These are the platforms we are building against.
+ */
+def platforms = ["mac"]
+
+
+/**
+ * This function returns a closure that prepares binary builds for a specific
+ * platform on a specific node in a specific workspace.
+ */
+def binaryBuilder(String platform, String nodeId, String workspace = null) {
+    return { Closure _body ->
+        def body = _body
+
+        return {
+            node(nodeId) {
+                if (!workspace) {
+                    workspace = "${env.WORKSPACE}"
+                }
+
+                ws (workspace) {
+                    stage ('Cleanup workspace') {
+                        deleteDir()
+                    }
+
+                    stage ("Unstash dcos-cli repository") {
+                        unstash('dcos-cli')
+                    }
+
+                    body()
+                }
+            }
+        }
+    }
+}
+
+
+/**
+ * These are the builds that can be run in parallel.
+ */
+def builders = [:]
+
+
+builders['mac-binary'] = binaryBuilder('mac', 'mac')({
+    stage ("Build dcos-cli binary") {
+        dir('dcos-cli/cli') {
+            sh "make binary"
+            sh "dist/dcos"
+        }
+    }
+})
+
+
+/**
+ * This node bootstraps everything including creating all the test clusters,
+ * starting the builders, and finally destroying all the clusters once they
+ * are done.
+ */
+throttle(['dcos-cli']) {
+    node('py35') {
+        stage('Cleanup workspace') {
+            deleteDir()
+        }
+
+        stage ('Update node') {
+            sh 'pip install requests'
+        }
+
+        stage ('Download dcos-launch') {
+            sh 'wget https://downloads.dcos.io/dcos-test-utils/bin/linux/dcos-launch'
+            sh 'chmod a+x dcos-launch'
+        }
+
+        stage ('Pull dcos-cli repository') {
+            dir('dcos-cli') {
+                checkout([
+                    $class: 'GitSCM',
+                    userRemoteConfigs: scm.userRemoteConfigs,
+                    branches: scm.branches,
+                    doGenerateSubmoduleConfigurations: scm.doGenerateSubmoduleConfigurations,
+                    submoduleCfg: scm.submoduleCfg,
+                    extensions: [
+                        [
+                            $class: 'CloneOption',
+                            shallow: true,
+                            depth: 0,
+                            noTags: true,
+                            timeout: 10
+                        ]
+                    ]
+                ])
+            }
+        }
+
+        stage ('Stash dcos-cli repository') {
+            stash(['includes': 'dcos-cli/**', name: 'dcos-cli'])
+        }
+
+        withCredentials(
+            [[$class: 'AmazonWebServicesCredentialsBinding',
+             credentialsId: '7155bd15-767d-4ae3-a375-e0d74c90a2c4',
+             accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+             secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'],
+            [$class: 'StringBinding',
+             credentialsId: '8d7d3d95-fc1f-42f4-941a-ad43487fcff7',
+             variable: 'CF_TEMPLATE_URL'],
+            [$class: 'UsernamePasswordMultiBinding',
+             credentialsId: '323df884-742b-4099-b8b7-d764e5eb9674',
+             usernameVariable: 'DCOS_ADMIN_USERNAME',
+             passwordVariable: 'DCOS_ADMIN_PASSWORD']]) {
+
+                parallel builders
+        }
+    }
+}
