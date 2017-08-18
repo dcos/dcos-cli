@@ -80,7 +80,7 @@ class TestCluster implements Serializable {
                 script.echo("Cluster destroyed. Exiting...")
                 throw e
             } catch(Exception e) {
-                script.echo("Exception:" + ex.toString());
+                script.echo("Exception:" + e.toString());
                 script.echo("Cluster creation failed. Destroying cluster....");
                 destroy()
                 if (createAttempts >= 3) {
