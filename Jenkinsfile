@@ -216,6 +216,12 @@ def testBuilder(String platform, String nodeId, String workspace = null) {
                                      "DCOS_ACS_TOKEN=${acsToken}"]) {
                                 try {
                                     body()
+                                } catch(InterruptedException e) {
+                                    echo(
+                                        "Build interrupted. The DC/OS cluster at" +
+                                        " ${dcosUrl} will be destroyed.")
+                                    destroyCluster = true
+                                    throw e
                                 } catch (Exception e) {
                                     echo(
                                         "Build failed. The DC/OS cluster at" +
