@@ -75,15 +75,19 @@ class TestCluster implements Serializable {
                 script.sh "./dcos-launch wait -i ${platform}_cluster_info.json"
                 break
             } catch(InterruptedException e) {
+                script.echo("Build interrupted. Destroying cluster....")
                 destroy()
-                script.echo("Build interrupted. Exiting...")
+                script.echo("Cluster destroyed. Exiting...")
                 throw e
             } catch(Exception e) {
+                script.echo("Exception:" + ex.toString());
+                script.echo("Cluster creation failed. Destroying cluster....");
                 destroy()
                 if (createAttempts >= 3) {
-                    script.echo("Maximum number of creation attempts exceeded. Exiting...")
+                    script.echo("Cluster destroyed. Maximum number of creation attempts exceeded. Exiting...")
                     throw e
                 }
+                script.echo("Cluster destroyed. Retrying...")
             }
         }
     }
