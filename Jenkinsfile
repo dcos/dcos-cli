@@ -359,58 +359,60 @@ builders['windows-tests'] = testBuilder('windows', 'windows', 'C:\\windows\\work
  * starting the builders, and finally destroying all the clusters once they
  * are done.
  */
-node('py35') {
-    stage ('Cleanup workspace') {
-        deleteDir()
-    }
-
-    stage ('Update node') {
-        sh 'pip install requests'
-    }
-
-    stage ('Download dcos-launch') {
-        sh 'wget https://downloads.dcos.io/dcos-test-utils/bin/linux/dcos-launch'
-        sh 'chmod a+x dcos-launch'
-    }
-
-    stage ('Pull dcos-cli repository') {
-        dir('dcos-cli') {
-            checkout([
-                $class: 'GitSCM',
-                userRemoteConfigs: scm.userRemoteConfigs,
-                branches: scm.branches,
-                doGenerateSubmoduleConfigurations: scm.doGenerateSubmoduleConfigurations,
-                submoduleCfg: scm.submoduleCfg,
-                extensions: [
-                    [
-                        $class: 'CloneOption',
-                        shallow: true,
-                        depth: 0,
-                        noTags: true,
-                        timeout: 10
-                    ]
-                ]
-            ])
+throttle(['dcos-cli']) {
+    node('py35') {
+        stage('Cleanup workspace') {
+            deleteDir()
         }
-    }
 
-    stage ('Stash dcos-cli repository') {
-        stash(['includes': 'dcos-cli/**', name: 'dcos-cli'])
-    }
+        stage ('Update node') {
+            sh 'pip install requests'
+        }
 
-    withCredentials(
-        [[$class: 'AmazonWebServicesCredentialsBinding',
-         credentialsId: '7155bd15-767d-4ae3-a375-e0d74c90a2c4',
-         accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-         secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'],
-        [$class: 'StringBinding',
-         credentialsId: 'fd1fe0ae-113d-4096-87b2-15aa9606bb4e',
-         variable: 'CF_TEMPLATE_URL'],
-        [$class: 'UsernamePasswordMultiBinding',
-         credentialsId: '323df884-742b-4099-b8b7-d764e5eb9674',
-         usernameVariable: 'DCOS_ADMIN_USERNAME',
-         passwordVariable: 'DCOS_ADMIN_PASSWORD']]) {
+        stage ('Download dcos-launch') {
+            sh 'wget https://downloads.dcos.io/dcos-test-utils/bin/linux/dcos-launch'
+            sh 'chmod a+x dcos-launch'
+        }
 
-        parallel builders
+        stage ('Pull dcos-cli repository') {
+            dir('dcos-cli') {
+                checkout([
+                    $class: 'GitSCM',
+                    userRemoteConfigs: scm.userRemoteConfigs,
+                    branches: scm.branches,
+                    doGenerateSubmoduleConfigurations: scm.doGenerateSubmoduleConfigurations,
+                    submoduleCfg: scm.submoduleCfg,
+                    extensions: [
+                        [
+                            $class: 'CloneOption',
+                            shallow: true,
+                            depth: 0,
+                            noTags: true,
+                            timeout: 10
+                        ]
+                    ]
+                ])
+            }
+
+        stage ('Stash dcos-cli repository') {
+            stash(['includes': 'dcos-cli/**', name: 'dcos-cli'])
+        }
+
+        withCredentials(
+            [[$class: 'AmazonWebServicesCredentialsBinding',
+             credentialsId: '7155bd15-767d-4ae3-a375-e0d74c90a2c4',
+             accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+             secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'],
+            [$class: 'StringBinding',
+             credentialsId: 'fd1fe0ae-113d-4096-87b2-15aa9606bb4e',
+             variable: 'CF_TEMPLATE_URL'],
+            [$class: 'UsernamePasswordMultiBinding',
+             credentialsId: '323df884-742b-4099-b8b7-d764e5eb9674',
+             usernameVariable: 'DCOS_ADMIN_USERNAME',
+             passwordVariable: 'DCOS_ADMIN_PASSWORD']]) {
+
+                parallel builders
+            }
+        }
     }
 }
