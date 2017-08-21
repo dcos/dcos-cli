@@ -282,11 +282,14 @@ def popen_tty(cmd):
     return (proc, master)
 
 
-def ssh_output(cmd):
+def ssh_output(cmd, wait=False):
     """ Runs an SSH command and returns the stdout/stderr/returncode.
 
     :param cmd: command to run
     :type cmd: str
+    :param wait: whether to wait for the SSH command to finish, or kill it
+                 after 5 seconds.
+    :type wait: bool
     :rtype: (str, str, int)
     """
 
@@ -295,15 +298,19 @@ def ssh_output(cmd):
     # ssh must run with stdin attached to a tty
     proc, master = popen_tty(cmd)
 
-    # wait for the ssh command to finish
-    proc.wait(30)
-    returncode = proc.returncode
+    if wait:
+        # wait for the ssh command to finish
+        proc.wait(30)
+    else:
+        time.sleep(5)
+        proc.poll()
+        # kill the whole process group
+        try:
+            os.killpg(os.getpgid(proc.pid), 15)
+        except OSError:
+            pass
 
-    # kill the whole process group
-    try:
-        os.killpg(os.getpgid(proc.pid), 15)
-    except OSError:
-        pass
+    returncode = proc.returncode
 
     os.close(master)
     stdout, stderr = proc.communicate()
