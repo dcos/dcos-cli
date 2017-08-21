@@ -295,10 +295,8 @@ def ssh_output(cmd):
     # ssh must run with stdin attached to a tty
     proc, master = popen_tty(cmd)
 
-    # wait for the ssh connection
-    time.sleep(5)
-
-    proc.poll()
+    # wait for the ssh command to finish
+    proc.wait(30)
     returncode = proc.returncode
 
     # kill the whole process group
