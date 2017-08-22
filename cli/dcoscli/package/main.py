@@ -351,7 +351,7 @@ def _install(package_name, package_version, options_path, app_id, cli,
 
     if not confirm('Continue installing?', yes):
         emitter.publish('Exiting installation.')
-        return 0
+        return 1
 
     if app and pkg.marathon_template():
 

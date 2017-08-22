@@ -2,6 +2,7 @@ import base64
 import contextlib
 import json
 import os
+import subprocess
 import sys
 
 import pytest
@@ -416,6 +417,19 @@ def test_install_bad_package_version():
         stderr=stderr)
 
 
+def test_install_noninteractive():
+    try:
+        returncode, stdout, _ = exec_command(
+            ['dcos', 'package', 'install', 'hello-world'],
+            timeout=30,
+            stdin=subprocess.DEVNULL)
+    except subprocess.TimeoutExpired:
+        assert False, 'timed out waiting for process to exit'
+
+    assert returncode == 1
+    assert b"'' is not a valid response" in stdout
+
+
 def test_package_metadata():
     _install_helloworld()
 
@@ -683,7 +697,8 @@ def test_install_no():
                 b'catalog-terms-conditions/#community-services\n'
                 b'A sample pre-installation message\n'
                 b'Continue installing? [yes/no] Exiting installation.\n'
-            )
+            ),
+            returncode=1
         )
 
 
