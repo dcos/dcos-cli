@@ -372,7 +372,7 @@ def _bundle_download(bundle, location):
         msg = ('Diagnostics bundle size is {}, '
                'are you sure you want to download it?')
         if not confirm(msg.format(sizeof_fmt(bundle_size)), False):
-            return 0
+            return 1
 
     r = _do_request(url, 'GET', stream=True)
     try:

@@ -1,4 +1,5 @@
 import json
+import subprocess
 
 from .helpers.common import assert_command, exec_command
 
@@ -43,3 +44,24 @@ def test_rename():
 
     # rename back to original name
     assert_command(['dcos', 'cluster', 'rename', new_name, name])
+
+
+def test_setup_noninteractive():
+    """
+    Run "dcos cluster setup" command as non-interactive with a 30 sec timeout.
+    This makes sure the process doesn't prompt for input forever (DCOS-15590).
+    """
+
+    try:
+        returncode, stdout, _ = exec_command(
+            ['dcos',
+             'cluster',
+             'setup',
+             'https://dcos.snakeoil.mesosphere.com'],
+            timeout=30,
+            stdin=subprocess.DEVNULL)
+    except subprocess.TimeoutExpired:
+        assert False, 'timed out waiting for process to exit'
+
+    assert returncode == 1
+    assert b"'' is not a valid response" in stdout
