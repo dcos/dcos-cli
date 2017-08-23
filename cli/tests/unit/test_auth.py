@@ -7,13 +7,13 @@ from dcos.errors import DCOSException
 
 
 def test_get_auth_scheme():
-    _get_auth_scheme({'www-authenticate': 'acsjwt'}, scheme='acsjwt')
-    _get_auth_scheme({'www-authenticate': 'oauthjwt'}, scheme='oauthjwt')
+    _get_auth_scheme({'WWW-Authenticate': 'acsjwt'}, scheme='acsjwt')
+    _get_auth_scheme({'WWW-Authenticate': 'oauthjwt'}, scheme='oauthjwt')
     _get_auth_scheme({}, scheme=None)
 
     msg = ("Server responded with an HTTP 'www-authenticate' field of "
            "'foobar', DC/OS only supports ['oauthjwt', 'acsjwt']")
-    _get_auth_scheme_exception({'www-authenticate': 'foobar'}, msg)
+    _get_auth_scheme_exception({'WWW-Authenticate': 'foobar'}, msg)
 
 
 def _get_auth_scheme(header, scheme):
@@ -53,7 +53,7 @@ def test_get_dcostoken_by_post_with_creds(config, req):
 def test_header_challenge_auth(cred_auth, oidc_auth, req):
     resp = create_autospec(requests.Response)
     resp.status_code = 401
-    resp.headers = {"www-authenticate": "oauthjwt"}
+    resp.headers = {"WWW-Authenticate": "oauthjwt"}
     req.return_value = resp
 
     auth.header_challenge_auth("url")
@@ -61,7 +61,7 @@ def test_header_challenge_auth(cred_auth, oidc_auth, req):
 
     resp2 = create_autospec(requests.Response)
     resp2.status_code = 401
-    resp2.headers = {"www-authenticate": "acsjwt"}
+    resp2.headers = {"WWW-Authenticate": "acsjwt"}
     req.return_value = resp2
 
     auth.header_challenge_auth("url")

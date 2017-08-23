@@ -359,7 +359,7 @@ class CosmosPackageVersion():
         response = PackageManager(url).cosmos_post("describe", params)
 
         self._package_json = response.json()
-        self._content_type = response.headers['content-type']
+        self._content_type = response.headers['Content-Type']
 
     def version(self):
         """Returns the package version.

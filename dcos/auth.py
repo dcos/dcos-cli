@@ -27,8 +27,8 @@ def _get_auth_scheme(response):
     :rtype: str | None
     """
 
-    if 'www-authenticate' in response.headers:
-        auths = response.headers['www-authenticate'].split(',')
+    if 'WWW-Authenticate' in response.headers:
+        auths = response.headers['WWW-Authenticate'].split(',')
         scheme = next((auth_type.rstrip().lower() for auth_type in auths
                        if auth_type.rstrip().lower().startswith("acsjwt") or
                        auth_type.rstrip().lower().startswith("oauthjwt")),
@@ -40,7 +40,7 @@ def _get_auth_scheme(response):
         else:
             msg = ("Server responded with an HTTP 'www-authenticate' field of "
                    "'{}', DC/OS only supports ['oauthjwt', 'acsjwt']".format(
-                       response.headers['www-authenticate']))
+                       response.headers['WWW-Authenticate']))
             raise DCOSException(msg)
     else:
         logger.debug("HTTP response: no www-authenticate field found")
