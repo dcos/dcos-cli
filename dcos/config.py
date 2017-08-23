@@ -453,9 +453,14 @@ def get_config_schema(command):
             pkg_resources.resource_string(
                 'dcos',
                 'data/config-schema/{}.json'.format(command)).decode('utf-8'))
-    else:
+
+    try:
         executable = command_executables(command)
-        return config_schema(executable, command)
+    except DCOSException as e:
+        msg = "Config section '{}' is invalid: {}".format(command, e)
+        raise DCOSException(msg)
+
+    return config_schema(executable, command)
 
 
 def get_property_description(section, subkey):

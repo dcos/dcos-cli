@@ -86,7 +86,8 @@ def test_set_nonexistent_subcommand(env):
     assert_command(
         ['dcos', 'config', 'set', 'foo.bar', 'baz'],
         stdout=b'',
-        stderr=b"'foo' is not a dcos command.\n",
+        stderr=(b"Config section 'foo' is invalid:"
+                b" 'foo' is not a dcos command.\n"),
         returncode=1,
         env=env)
 
@@ -135,7 +136,8 @@ def test_set_property_key(env):
     assert_command(
         ['dcos', 'config', 'set', 'path.to.value', 'cool new value'],
         returncode=1,
-        stderr=b"'path' is not a dcos command.\n",
+        stderr=(b"Config section 'path' is invalid:"
+                b" 'path' is not a dcos command.\n"),
         env=env)
 
 
