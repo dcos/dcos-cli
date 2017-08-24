@@ -92,6 +92,15 @@ def test_set_nonexistent_subcommand(env):
         env=env)
 
 
+def test_set_nonconfigurable_subcommand(env):
+    assert_command(
+        ['dcos', 'config', 'set', 'help.bar', 'baz'],
+        stdout=b'',
+        stderr=(b"Subcommand 'help' is not configurable.\n"),
+        returncode=1,
+        env=env)
+
+
 def test_unset_property(env):
     with update_config("core.reporting", None, env):
         _get_missing_value('core.reporting', env)
