@@ -1,9 +1,10 @@
 import json
 import os
+import subprocess
 from distutils.dir_util import copy_tree, remove_tree
+
 import pytest
 import dcos
-import subprocess
 
 from .helpers.common import assert_command, exec_command
 
