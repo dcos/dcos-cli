@@ -231,7 +231,7 @@ def request(method,
             if auth_token is not None:
                 msg = ("Your core.dcos_acs_token is invalid. "
                        "Please run: `dcos auth login`")
-                raise DCOSAuthenticationException(msg)
+                raise DCOSAuthenticationException(response, msg)
             else:
                 raise DCOSAuthenticationException(response)
     elif response.status_code == 422:
