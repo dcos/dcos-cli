@@ -21,7 +21,7 @@ Usage:
     dcos package repo remove <repo-names>...
     dcos package search [<query> --json]
     dcos package uninstall <package-name>
-                           [--cli | [--app --app-id=<app-id> --all --yes]]
+                           [--cli | [--app [--app-id=<app-id> | --all] --yes]]
 
 Commands:
     describe
