@@ -44,7 +44,7 @@ Commands:
 
 Options:
     --all
-        All packages.
+        All applications.
     --app
         Application only.
     --app-id=<app-id>
