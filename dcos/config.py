@@ -440,19 +440,16 @@ def get_config_schema(command):
     from dcos.subcommand import (
             command_executables, config_schema, default_subcommands)
 
-    # core.* config variables are special.  They're valid, but don't
-    # correspond to any particular subcommand, so we must handle them
-    # separately.
-    if command == "core":
-        return json.loads(
-            pkg_resources.resource_string(
-                'dcos',
-                'data/config-schema/core.json').decode('utf-8'))
-    elif command in default_subcommands():
-        return json.loads(
-            pkg_resources.resource_string(
-                'dcos',
-                'data/config-schema/{}.json'.format(command)).decode('utf-8'))
+    # handle config schema for core.* properties and built-in subcommands
+    if command == "core" or command in default_subcommands():
+        try:
+            schema = pkg_resources.resource_string(
+                    'dcos', 'data/config-schema/{}.json'.format(command))
+        except FileNotFoundError:
+            msg = "Subcommand '{}' is not configurable.".format(command)
+            raise DCOSException(msg)
+
+        return json.loads(schema.decode('utf-8'))
 
     try:
         executable = command_executables(command)
