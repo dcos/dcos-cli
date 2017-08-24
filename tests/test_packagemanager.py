@@ -98,7 +98,7 @@ def test_install(post_fn, pkg_mgr, fake_pkg):
     post_fn.assert_called_with(
         'http://testserver/package/install',
         data=None,
-        headers=pkg_mgr.cosmos._get_header('package/install', 'v2'),
+        headers=pkg_mgr.cosmos._get_header('package/install', ['v2']),
         json={'packageName': fake_pkg.name(),
               'packageVersion': fake_pkg.version()},
     )
