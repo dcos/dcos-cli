@@ -377,11 +377,20 @@ def install(pkg, global_=False):
     _install_cli(pkg, pkg_dir)
 
 
-def global_subcommand_dir():
-    """ Returns global subcommand dir. defaults to ~/.dcos/subcommands """
+def deprecated_subcommand_dir():
+    """ Returns deprecated 'global' subcommand dir.
+        Defaults to ~/.dcos/subcommands """
 
     return os.path.join(config.get_config_dir_path(),
                         constants.DCOS_SUBCOMMAND_SUBDIR)
+
+
+def global_subcommand_dir():
+    """ Returns global subcommand dir.
+        Defaults to ~/.dcos/global_subcommands """
+
+    return os.path.join(config.get_config_dir_path(),
+                        constants.DCOS_GLOBAL_SUBCOMMAND_SUBDIR)
 
 
 def _cluster_subcommand_dir():
