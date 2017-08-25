@@ -18,13 +18,14 @@ def uses_deprecated_config():
     specific config
     """
 
-    global_config = get_global_config_path()
+    deprecated_config = get_deprecated_config_path()
     cluster_config = get_clusters_path()
-    return not os.path.exists(cluster_config) and os.path.exists(global_config)
+    return not os.path.exists(cluster_config) and \
+               os.path.exists(deprecated_config)
 
 
-def get_global_config_path():
-    """Returns the path to the deprecated global DCOS config file.
+def get_deprecated_config_path():
+    """Returns the path to the deprecated 'global' DCOS config file.
 
     :returns: path to the DCOS config file
     :rtype: str
@@ -34,8 +35,8 @@ def get_global_config_path():
     return os.environ.get(constants.DCOS_CONFIG_ENV, default_path)
 
 
-def get_global_config(mutable=False):
-    """Returns the deprecated global DCOS config file
+def get_deprecated_config(mutable=False):
+    """Returns the deprecated 'global' DCOS config file
 
     :param mutable: True if the returned Toml object should be mutable
     :type mutable: boolean
@@ -43,7 +44,7 @@ def get_global_config(mutable=False):
     :rtype: Toml | MutableToml
     """
 
-    return load_from_path(get_global_config_path(), mutable)
+    return load_from_path(get_deprecated_config_path(), mutable)
 
 
 def get_attached_cluster_path():
@@ -99,14 +100,14 @@ def get_clusters_path():
 
 def get_config_path():
     """Returns the path to the DCOS config file of the attached cluster.
-    If still using "global" config return that toml instead
+    If still using deprecated config return that toml instead
 
     :returns: path to the DCOS config file
     :rtype: str
     """
 
     if uses_deprecated_config():
-        return get_global_config_path()
+        return get_deprecated_config_path()
     else:
         cluster_path = get_attached_cluster_path()
         return os.path.join(cluster_path, "dcos.toml")
@@ -138,7 +139,7 @@ def get_config(mutable=False):
     cluster_path = get_attached_cluster_path()
     if cluster_path is None:
         if uses_deprecated_config():
-            return get_global_config(mutable)
+            return get_deprecated_config(mutable)
 
         msg = ("No cluster is attached. "
                "Please run `dcos cluster attach <cluster-name>`")
