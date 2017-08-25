@@ -117,6 +117,31 @@ def sh_copy(src, dst):
         raise DCOSException(e)
 
 
+def sh_copytree(src, dst):
+    """Copy src directory to dst directory.
+
+    :param src: source directory
+    :type src: str
+    :param dst: destination directory
+    :type dst: str
+    :rtype: None
+    """
+    try:
+        shutil.copytree(src, dst)
+    except EnvironmentError as e:
+        logger.exception('Unable to copy [%s] to [%s]', src, dst)
+        if e.strerror:
+            if e.filename:
+                raise DCOSException("{}: {}".format(e.strerror, e.filename))
+            else:
+                raise DCOSException(e.strerror)
+        else:
+            raise DCOSException(e)
+    except Exception as e:
+        logger.exception('Unknown error while coping [%s] to [%s]', src, dst)
+        raise DCOSException(e)
+
+
 def sh_move(src, dst):
     """Move file src to the file or directory dst.
 
