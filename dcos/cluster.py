@@ -6,7 +6,7 @@ import urllib
 
 from urllib.request import urlopen
 
-from dcos import config, constants, http, util
+from dcos import config, constants, http, subcommand, util
 from dcos.errors import DCOSException
 
 
@@ -52,6 +52,13 @@ def move_to_cluster_config():
     # copy config file to new location
     deprecated_config_path = config.get_deprecated_config_path()
     util.sh_copy(deprecated_config_path, cluster_path)
+
+    # copy subcommand directory to new location
+    deprecated_subcommand_dir = subcommand.deprecated_subcommand_dir()
+    if os.path.exists(deprecated_subcommand_dir):
+        subcommand_dir = os.path.join(
+            cluster_path, constants.DCOS_SUBCOMMAND_SUBDIR)
+        util.sh_copytree(deprecated_subcommand_dir, subcommand_dir)
 
     # set cluster as attached
     util.ensure_file_exists(os.path.join(
