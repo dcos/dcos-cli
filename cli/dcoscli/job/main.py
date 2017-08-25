@@ -31,6 +31,7 @@ EMBEDS_FOR_JOB_HISTORY = [
 # unknown number of jobs, using history summary
 EMBEDS_FOR_JOBS_HISTORY = [
     metronome.EMBED_ACTIVE_RUNS,
+    metronome.EMBED_SCHEDULES,
     metronome.EMBED_HISTORY_SUMMARY]
 
 
