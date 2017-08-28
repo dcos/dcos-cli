@@ -510,11 +510,8 @@ def _uninstall(package_name, remove_all, app_id, cli, app, skip_confirmation):
         return 0
 
     package_manager = get_package_manager()
-    err = package.uninstall(
+    package.uninstall(
         package_manager, package_name, remove_all, app_id, cli, app)
-    if err is not None:
-        emitter.publish(err)
-        return 1
 
     return 0
 
