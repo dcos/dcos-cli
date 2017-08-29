@@ -171,7 +171,7 @@ def _request(method,
 def request(method,
             url,
             is_success=_default_is_success,
-            timeout=None,
+            timeout=DEFAULT_TIMEOUT,
             verify=None,
             toml_config=None,
             **kwargs):
