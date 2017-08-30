@@ -15,7 +15,7 @@ if [[ -z "${1:-}" ]]; then
   exit 2
 fi
 
-project_dir=$(cd "$(dirname "${BASH_SOURCE}")/../.." && pwd -P)
+project_dir=$(cd "$(dirname "${BASH_SOURCE}")/.." && pwd -P)
 cd "${project_dir}"
 
 EXE_PATH="$(bin/install/install-binary-dcos-cli.sh "${DCOS_URL}")"

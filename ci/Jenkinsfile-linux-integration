@@ -236,6 +236,8 @@ builders['linux-tests'] = testBuilder('linux', 'py35', '/workspace')({
            sed -iold "s/^.* dcos.snakeoil.mesosphere.com$/${DCOS_URL} dcos.snakeoil.mesosphere.com/" /etc/hosts || \
            echo ${DCOS_URL} dcos.snakeoil.mesosphere.com >> /etc/hosts'''
 
+        sh 'bash dcos-cli/tests/test-install.sh "${DCOS_URL}"'
+
         dir('dcos-cli/cli') {
             sh '''
                export PYTHONIOENCODING=utf-8; \
@@ -247,8 +249,6 @@ builders['linux-tests'] = testBuilder('linux', 'py35', '/workspace')({
                unset DCOS_ACS_TOKEN; \
                make test-binary'''
         }
-
-        sh 'bash dcos-cli/bin/install/test-install-binary-dcos-cli.sh "${DCOS_URL}"'
     }
 })
 

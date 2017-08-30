@@ -235,6 +235,8 @@ builders['windows-tests'] = testBuilder('windows', 'windows', 'C:\\windows\\work
             echo %DCOS_URL% dcos.snakeoil.mesosphere.com >> C:\\windows\\system32\\drivers\\etc\\hosts &
             echo dcos_acs_token = \"%DCOS_ACS_TOKEN%\" >> dcos-cli\\cli\\tests\\data\\dcos.toml'''
 
+        bat 'bash dcos-cli/tests/test-install.sh "${DCOS_URL}"'
+
         dir('dcos-cli/cli') {
             bat '''
                 bash -c " \
@@ -245,8 +247,6 @@ builders['windows-tests'] = testBuilder('windows', 'windows', 'C:\\windows\\work
                 unset DCOS_ACS_TOKEN; \
                 make test-binary"'''
         }
-
-        bat 'bash dcos-cli/bin/install/test-install-binary-dcos-cli.sh "${DCOS_URL}"'
     }
 })
 

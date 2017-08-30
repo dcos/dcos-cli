@@ -237,6 +237,8 @@ builders['mac-tests'] = testBuilder('mac', 'mac')({
            echo ${DCOS_URL} dcos.snakeoil.mesosphere.com >> hosts.local; \
            sudo cp ./hosts.local /etc/hosts'''
 
+        sh 'bash dcos-cli/tests/test-install.sh "${DCOS_URL}"'
+
         dir('dcos-cli/cli') {
             sh '''
                export PYTHONIOENCODING=utf-8; \
@@ -248,8 +250,6 @@ builders['mac-tests'] = testBuilder('mac', 'mac')({
                unset DCOS_ACS_TOKEN; \
                make test-binary'''
         }
-
-        sh 'bash dcos-cli/bin/install/test-install-binary-dcos-cli.sh "${DCOS_URL}"'
     }
 })
 
