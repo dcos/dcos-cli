@@ -51,19 +51,24 @@ def tempdir():
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
 
-
 @contextlib.contextmanager
-def temptext():
+def temptext(content=None):
     """A context manager for temporary files.
 
     The lifetime of the returned temporary file corresponds to the
     lexical scope of the returned file descriptor.
 
+    :param content: Content to populate the file with.
+    :type content: bytes
     :return: reference to a temporary file
     :rtype: (fd, str)
     """
 
     fd, path = tempfile.mkstemp()
+
+    if content:
+        os.write(fd, content)
+
     try:
         yield (fd, path)
     finally:
