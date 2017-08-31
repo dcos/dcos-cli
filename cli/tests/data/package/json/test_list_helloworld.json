@@ -10,6 +10,10 @@
       "$schema": "http://json-schema.org/schema#",
       "additionalProperties": false,
       "properties": {
+        "name": {
+          "default": "helloworld",
+          "type": "string"
+        },
         "port": {
           "default": 8080,
           "type": "integer"
@@ -21,7 +25,7 @@
     "framework": false,
     "maintainer": "support@mesosphere.io",
     "marathon": {
-      "v2AppMustacheTemplate": "ewogICJpZCI6ICJoZWxsb3dvcmxkIiwKICAiY3B1cyI6IDEuMCwKICAibWVtIjogNTEyLAogICJpbnN0YW5jZXMiOiAxLAogICJjbWQiOiAicHl0aG9uMyAtbSBodHRwLnNlcnZlciB7e3BvcnR9fSIsCiAgImNvbnRhaW5lciI6IHsKICAgICJ0eXBlIjogIkRPQ0tFUiIsCiAgICAiZG9ja2VyIjogewogICAgICAiaW1hZ2UiOiAicHl0aG9uOjMiLAogICAgICAibmV0d29yayI6ICJIT1NUIgogICAgfQogIH0KfQo="
+      "v2AppMustacheTemplate": "ewogICJpZCI6ICJ7e25hbWV9fSIsCiAgImNwdXMiOiAxLjAsCiAgIm1lbSI6IDUxMiwKICAiaW5zdGFuY2VzIjogMSwKICAiY21kIjogInB5dGhvbjMgLW0gaHR0cC5zZXJ2ZXIge3twb3J0fX0iLAogICJjb250YWluZXIiOiB7CiAgICAidHlwZSI6ICJET0NLRVIiLAogICAgImRvY2tlciI6IHsKICAgICAgImltYWdlIjogInB5dGhvbjozIiwKICAgICAgIm5ldHdvcmsiOiAiSE9TVCIKICAgIH0KICB9Cn0K"
     },
     "name": "helloworld",
     "packagingVersion": "3.0",
