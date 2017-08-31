@@ -8,7 +8,7 @@ import sys
 import pytest
 import six
 
-from dcos import config, constants, subcommand
+from dcos import config, constants, errors, subcommand, util
 
 from .helpers.common import (assert_command, assert_lines, base64_to_dict,
                              delete_zk_node, delete_zk_nodes, exec_command,
@@ -362,6 +362,53 @@ def test_bad_install_helloworld_msg():
                         stderr=stderr,
                         returncode=1)
     _uninstall_helloworld()
+
+
+def test_uninstall_cli_only_when_no_apps_remain():
+    with util.temptext(b'{"name": "/hello1"}') as opts_hello1, \
+         util.temptext(b'{"name": "/hello2"}') as opts_hello2:
+
+        stdout = (
+            b'By Deploying, you agree to the Terms '
+            b'and Conditions https://mesosphere.com/'
+            b'catalog-terms-conditions/#community-services\n'
+            b'A sample pre-installation message\n'
+            b'Installing Marathon app for package [helloworld] version '
+            b'[0.1.0]\n'
+            b'Installing CLI subcommand for package [helloworld] '
+            b'version [0.1.0]\n'
+            b'New command available: dcos ' +
+            _executable_name(b'helloworld') +
+            b'\nA sample post-installation message\n'
+        )
+
+        stderr = b'Uninstalled package [helloworld] version [0.1.0]\n'
+        with _package(name='helloworld',
+                      args=['--yes', '--options='+opts_hello1[1]],
+                      stdout=stdout,
+                      uninstall_app_id='/hello1',
+                      uninstall_stderr=stderr):
+
+            with _package(name='helloworld',
+                          args=['--yes', '--options='+opts_hello2[1]],
+                          stdout=stdout,
+                          uninstall_app_id='/hello2',
+                          uninstall_stderr=stderr):
+
+                subcommand.command_executables('helloworld')
+
+            # helloworld subcommand should still be there as there is the
+            # /hello1 app installed
+            subcommand.command_executables('helloworld')
+
+        # helloworld subcommand should have been removed
+        try:
+            subcommand.command_executables('helloworld')
+        except errors.DCOSException as e:
+            assert str(e) == "'helloworld' is not a dcos command."
+            return
+
+        assert False, "expected command_executables('helloworld') to fail"
 
 
 def test_install_missing_options_file():
