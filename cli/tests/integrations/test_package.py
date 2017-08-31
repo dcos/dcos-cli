@@ -1100,6 +1100,7 @@ def _helloworld_cli(global_=False):
 def _package(name,
              args,
              stdout=b'',
+             uninstall_app_id='',
              uninstall_stderr=b''):
     """Context manager that installs a package on entrance, and uninstalls it on
     exit.
@@ -1110,6 +1111,8 @@ def _package(name,
     :type args: [str]
     :param stdout: Expected stdout
     :type stdout: bytes
+    :param uninstall_app_id: App id for uninstallation
+    :type uninstall_app_id: string
     :param uninstall_stderr: Expected stderr
     :type uninstall_stderr: bytes
     :rtype: None
@@ -1128,9 +1131,10 @@ def _package(name,
         yield
     finally:
         if installed:
-            assert_command(
-                ['dcos', 'package', 'uninstall', name, '--yes'],
-                stderr=uninstall_stderr)
+            command = ['dcos', 'package', 'uninstall', name, '--yes']
+            if uninstall_app_id:
+                command.append('--app-id='+uninstall_app_id)
+            assert_command(command, stderr=uninstall_stderr)
             watch_all_deployments()
 
 
