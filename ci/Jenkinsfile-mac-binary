@@ -50,3 +50,5 @@ def binaryBuilder = builder('mac')({
         }
     }
 })
+
+binaryBuilder()
