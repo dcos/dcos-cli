@@ -19,32 +19,20 @@ def uninstall(pkg, package_name, remove_all, app_id, cli, app):
     :type remove_all: boolean
     :param app_id: App ID of the app instance to uninstall
     :type app_id: str
-    :param init_client: The program to use to run the app
-    :type init_client: object
+    :param cli: Whether to remove the CLI only
+    :type cli: boolean
+    :param app: Whether to remove app only
+    :type app: boolean
     :rtype: None
     """
 
-    if cli is False and app is False:
-        cli = app = True
-
-    uninstalled = False
     installed = installed_packages(
-        pkg, app_id, package_name, cli_only=False)
-    installed_cli = next((True for installed_pkg in installed
-                          if installed_pkg.get("command")), False)
-    installed_app = next((True for installed_pkg in installed
-                          if installed_pkg.get("apps")), False)
+        pkg, None, package_name, cli_only=False)
+    installed_pkg = next(iter(installed), None)
 
-    if cli and installed_cli:
-        if subcommand.uninstall(package_name):
-            uninstalled = True
-
-    if app and installed_app:
-        if pkg.uninstall_app(package_name, remove_all, app_id):
-            uninstalled = True
-
-    if uninstalled:
-        return None
+    if installed_pkg:
+        installed_cli = installed_pkg.get("command")
+        installed_app = installed_pkg.get("apps") or []
     else:
         msg = 'Package [{}]'.format(package_name)
         if app_id is not None:
@@ -52,6 +40,43 @@ def uninstall(pkg, package_name, remove_all, app_id, cli, app):
             msg += " with id [{}]".format(app_id)
         msg += " is not installed"
         raise DCOSException(msg)
+
+    # Having `app == True` means that the user supplied an explicit `--app`
+    # flag on the command line. Having `cli == True` means that the user
+    # supplied an explicit `--cli` flag on the command line. If either of these
+    # is `True`, run the following.
+    if app or cli:
+        # This forces an unconditional uninstall of the app associated with the
+        # supplied package (with different semantics depending on the values of
+        # `remove_all` and `app_id` as described in the docstring for this
+        # function).
+        if app and installed_app:
+            if not pkg.uninstall_app(package_name, remove_all, app_id):
+                raise DCOSException("Couldn't uninstall package")
+
+        # This forces an unconditional uninstall of the CLI associated with the
+        # supplied package.
+        if cli and installed_cli:
+            if not subcommand.uninstall(package_name):
+                raise DCOSException("Couldn't uninstall subcommand")
+
+        return
+
+    # Having both `app == False` and `cli == False` means that the user didn't
+    # supply either `--app` or `--cli` on the command line. In this situation
+    # we uninstall the app associated with the supplied package (if it exists)
+    # just as if the user had explicitly passed `--app` on the command line.
+    # However, we only uninstall the CLI associated with the package if the app
+    # being uninstalled is the last one remaining on the system.  Otherwise, we
+    # leave the CLI in place so other instances of the app can continue to
+    # interact with it.
+    if installed_app:
+        if not pkg.uninstall_app(package_name, remove_all, app_id):
+            raise DCOSException("Couldn't uninstall package")
+
+    if installed_cli and (remove_all or len(installed_app) <= 1):
+        if not subcommand.uninstall(package_name):
+            raise DCOSException("Couldn't uninstall subcommand")
 
 
 def uninstall_subcommand(distribution_name):
