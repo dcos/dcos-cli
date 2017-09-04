@@ -545,41 +545,11 @@ def test_images_in_metadata():
     delete_zk_node('dcos-service-cassandra')
 
 
-def test_install_with_id(zk_znode):
-    args = ['--app-id=chronos-1', '--yes']
-    stdout = (
-        b'Installing Marathon app for package [chronos] version [3.0.1] with '
-        b'app id [chronos-1]\n'
-        b'Usage of --app-id is deprecated. Use --options instead and specify '
-        b'a file that contains [service.name] property\n'
-
-    )
-
-    _install_chronos(args=args, stdout=stdout)
-
-    args = ['--app-id=chronos-2', '--yes']
-    stdout = (
-        b'Installing Marathon app for package [chronos] version [3.0.1] with '
-        b'app id [chronos-2]\n'
-        b'Usage of --app-id is deprecated. Use --options instead and specify '
-        b'a file that contains [service.name] property\n'
-    )
-    _install_chronos(args=args, stdout=stdout)
-
-
 def test_install_missing_package():
     stderr = b'Package [missing-package] not found\n'
     assert_command(['dcos', 'package', 'install', 'missing-package'],
                    returncode=1,
                    stderr=stderr)
-
-
-def test_uninstall_with_id(zk_znode):
-    _uninstall_chronos(args=['--app-id=chronos-1'])
-
-
-def test_uninstall_all(zk_znode):
-    _uninstall_chronos(args=['--all'])
 
 
 def test_uninstall_missing():
