@@ -53,7 +53,7 @@ def test_setup_noninteractive():
     """
 
     try:
-        returncode, stdout, _ = exec_command(
+        returncode, stdout, stderr = exec_command(
             ['dcos',
              'cluster',
              'setup',
@@ -65,3 +65,4 @@ def test_setup_noninteractive():
 
     assert returncode == 1
     assert b"'' is not a valid response" in stdout
+    assert b"Couldn't get confirmation for the fingerprint." in stderr

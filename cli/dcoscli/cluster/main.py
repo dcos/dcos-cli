@@ -269,11 +269,8 @@ def _store_cluster_cert(cert, no_check):
     :rtype: bool
     """
 
-    if not no_check:
-        if not _user_cert_validation(cert):
-            # we don't have a cert, but we still want to validate SSL
-            config.set_val("core.ssl_verify", "true")
-            return False
+    if not no_check and not _user_cert_validation(cert):
+        raise DCOSException("Couldn't get confirmation for the fingerprint.")
 
     with util.temptext() as temp_file:
         _, temp_path = temp_file
