@@ -21,10 +21,10 @@ def exec_command(cmd, env=None, stdin=None, timeout=None):
     :type env: dict | None
     :param stdin: File to use for stdin
     :type stdin: file
-    :param timeout: If the process doesn't terminate after this timeout,
-                    it will get killed and a subprocess.TimeoutExpired
-                    exception will be raised. The timeout is in seconds.
+    :param timeout: The timeout for the process to terminate.
     :type timeout: int
+    :raises: subprocess.TimeoutExpired when the timeout is reached
+             before the process finished.
     :returns: A tuple with the returncode, stdout and stderr
     :rtype: (int, bytes, bytes)
     """
@@ -46,7 +46,9 @@ def exec_command(cmd, env=None, stdin=None, timeout=None):
         # process and finish communication.
         # https://docs.python.org/3.5/library/subprocess.html#subprocess.Popen.communicate
         process.kill()
-        process.communicate()
+        stdout, stderr = process.communicate()
+        print('STDOUT: {}'.format(_truncate(stdout.decode('utf-8'))))
+        print('STDERR: {}'.format(_truncate(stderr.decode('utf-8'))))
         raise
 
     # This is needed to get rid of '\r' from Windows's lines endings.
