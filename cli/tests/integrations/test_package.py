@@ -323,15 +323,17 @@ Please create a JSON file with the appropriate options, and pass the \
 
 
 def test_bad_install_helloworld_msg():
-    stdout = (
+    terms_conditions = (
         b'By Deploying, you agree to the Terms '
         b'and Conditions https://mesosphere.com/'
         b'catalog-terms-conditions/#community-services\n'
         b'A sample pre-installation message\n'
         b'Installing Marathon app for package [helloworld] version '
-        b'[0.1.0] with app id [/foo]\n'
-        b'Usage of --app-id is deprecated. Use --options instead and specify '
-        b'a file that contains [service.name] property\n'
+        b'[0.1.0]\n'
+    )
+
+    stdout = (
+        terms_conditions +
         b'Installing CLI subcommand for package [helloworld] '
         b'version [0.1.0]\n'
         b'New command available: dcos ' +
@@ -339,29 +341,20 @@ def test_bad_install_helloworld_msg():
         b'\nA sample post-installation message\n'
     )
 
-    _install_helloworld(['--yes', '--app-id=/foo'],
-                        stdout=stdout)
+    with util.temptext(b'{"name": "/foo"}') as foo, \
+            util.temptext(b'{"name": "/foo/bar"}') as foobar:
 
-    stdout2 = (
-        b'By Deploying, you agree to the Terms '
-        b'and Conditions https://mesosphere.com/'
-        b'catalog-terms-conditions/#community-services\n'
-        b'A sample pre-installation message\n'
-        b'Installing Marathon app for package [helloworld] version '
-        b'[0.1.0] with app id [/foo/bar]\n'
-        b'Usage of --app-id is deprecated. Use --options instead and specify '
-        b'a file that contains [service.name] property\n'
-    )
+        _install_helloworld(['--yes', '--options='+foo[1]], stdout=stdout)
 
-    stderr = (b'Object is not valid\n'
-              b'Groups and Applications may not have the same '
-              b'identifier.\n')
+        stderr = (b'Object is not valid\n'
+                  b'Groups and Applications may not have the same '
+                  b'identifier.\n')
 
-    _install_helloworld(['--yes', '--app-id=/foo/bar'],
-                        stdout=stdout2,
-                        stderr=stderr,
-                        returncode=1)
-    _uninstall_helloworld()
+        _install_helloworld(['--yes', '--options='+foobar[1]],
+                            stdout=terms_conditions,
+                            stderr=stderr,
+                            returncode=1)
+        _uninstall_helloworld()
 
 
 def test_uninstall_cli_only_when_no_apps_remain():
@@ -610,43 +603,29 @@ def test_uninstall_multiple_apps():
         b'catalog-terms-conditions/#community-services\n'
         b'A sample pre-installation message\n'
         b'Installing Marathon app for package [helloworld] version '
-        b'[0.1.0] with app id [/helloworld-1]\n'
-        b'Usage of --app-id is deprecated. Use --options instead and specify '
-        b'a file that contains [service.name] property\n'
+        b'[0.1.0]\n'
         b'A sample post-installation message\n'
     )
 
-    _install_helloworld(['--yes', '--app-id=/helloworld-1', '--app'],
-                        stdout=stdout)
+    with util.temptext(b'{"name": "/helloworld-1"}') as hello1, \
+            util.temptext(b'{"name": "/helloworld-2"}') as hello2:
 
-    stdout = (
-        b'By Deploying, you agree to the Terms '
-        b'and Conditions https://mesosphere.com/'
-        b'catalog-terms-conditions/#community-services\n'
-        b'A sample pre-installation message\n'
-        b'Installing Marathon app for package [helloworld] version '
-        b'[0.1.0] with app id [/helloworld-2]\n'
-        b'Usage of --app-id is deprecated. Use --options instead and specify '
-        b'a file that contains [service.name] property\n'
-        b'A sample post-installation message\n'
-    )
+        _install_helloworld(
+            ['--yes', '--options='+hello1[1], '--app'],
+            stdout=stdout)
 
-    _install_helloworld(['--yes', '--app-id=/helloworld-2', '--app'],
-                        stdout=stdout)
+        _install_helloworld(
+            ['--yes', '--options='+hello2[1], '--app'],
+            stdout=stdout)
 
-    stderr = (b"Multiple apps named [helloworld] are installed: "
-              b"[/helloworld-1, /helloworld-2].\n"
-              b"Please use --app-id to specify the ID of the app "
-              b"to uninstall, or use --all to uninstall all apps.\n")
-    returncode = 1
+        stderr = (b"Multiple apps named [helloworld] are installed: "
+                  b"[/helloworld-1, /helloworld-2].\n"
+                  b"Please use --app-id to specify the ID of the app "
+                  b"to uninstall, or use --all to uninstall all apps.\n")
 
-    _uninstall_helloworld(stderr=stderr,
-                          returncode=returncode,
-                          uninstalled=b'')
+        _uninstall_helloworld(stderr=stderr, returncode=1, uninstalled=b'')
 
-    _uninstall_helloworld(args=['--all'], stdout=b'', stderr=b'', returncode=0)
-
-    watch_all_deployments()
+        _uninstall_helloworld(args=['--all'])
 
 
 def test_list(zk_znode):

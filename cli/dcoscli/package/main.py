@@ -362,8 +362,6 @@ def _install(package_name, package_version, options_path, app_id, cli,
         # Install in Marathon
         msg = 'Installing Marathon app for package [{}] version [{}]'.format(
             pkg.name(), pkg.version())
-        if app_id is not None:
-            msg += ' with app id [{}]'.format(app_id)
 
         emitter.publish(msg)
 
@@ -371,6 +369,7 @@ def _install(package_name, package_version, options_path, app_id, cli,
             msg = "Usage of --app-id is deprecated. Use --options instead " \
                   "and specify a file that contains [service.name] property"
             emitter.publish(msg)
+            return 1
 
         package_manager.install_app(pkg, user_options, app_id)
 
