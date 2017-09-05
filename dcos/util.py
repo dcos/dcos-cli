@@ -51,6 +51,7 @@ def tempdir():
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
 
+
 @contextlib.contextmanager
 def temptext(content=None):
     """A context manager for temporary files.
