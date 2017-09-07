@@ -21,19 +21,31 @@ def platforms = ["windows"]
 /**
  * This generates the `dcos_launch` config for a particular build.
  */
-def generateConfig(deploymentName, templateUrl) {
+def generateConfig(deploymentName, installerUrl, sshKeyPath) {
     return """
 ---
 launch_config_version: 1
 deployment_name: ${deploymentName}
-template_url: ${templateUrl}
-provider: aws
+installer_url: ${installerUrl}
+platform: aws
+provider: onprem
 aws_region: us-west-2
-template_parameters:
-    KeyName: default
-    AdminLocation: 0.0.0.0/0
-    PublicSlaveInstanceCount: 1
-    SlaveInstanceCount: 1
+aws_key_name: default
+ssh_private_key_filename: ${sshKeyPath}
+os_name: cent-os-7
+instance_type: m4.xlarge
+num_masters: 1
+num_private_agents: 1
+num_public_agents: 1
+dcos_config:
+    cluster_name: DC/OS CLI Integration Tests
+    resolvers:
+        - 10.10.0.2
+    dns_search: us-west-2.compute.internal
+    master_discovery: static
+    cosmos_config:
+      staged_package_storage_uri: file:///var/lib/dcos/cosmos/staged-packages
+      package_storage_uri: file:///var/lib/dcos/cosmos/packages
 """
 }
 
@@ -69,7 +81,8 @@ class TestCluster implements Serializable {
                         "file": "${platform}_config.yaml",
                         "text" : script.generateConfig(
                                 "dcos-cli-${platform}-${script.env.ghprbPullId}-${script.env.BUILD_ID}-${createAttempts}",
-                                "${script.env.CF_TEMPLATE_URL}")])
+                                "${script.env.DCOS_INSTALLER_URL}",
+                                "${script.env.CLI_TEST_SSH_KEY_PATH}")])
 
                 script.sh "./dcos-launch create -c ${platform}_config.yaml -i ${platform}_cluster_info.json"
                 script.sh "./dcos-launch wait -i ${platform}_cluster_info.json"
@@ -179,11 +192,11 @@ def testBuilder(String platform, String nodeId, String workspace = null) {
 
                         withCredentials(
                             [[$class: 'FileBinding',
-                             credentialsId: '1c206779-acc0-4844-97f6-7b3ed081a456',
-                             variable: 'DCOS_SNAKEOIL_CRT_PATH'],
-                            [$class: 'FileBinding',
-                             credentialsId: '23743034-1ac4-49f7-b2e6-a661aee2d11b',
-                             variable: 'CLI_TEST_SSH_KEY_PATH']]) {
+                              credentialsId: '1c206779-acc0-4844-97f6-7b3ed081a456',
+                              variable: 'DCOS_SNAKEOIL_CRT_PATH'],
+                             [$class: 'FileBinding',
+                              credentialsId: '23743034-1ac4-49f7-b2e6-a661aee2d11b',
+                              variable: 'CLI_TEST_SSH_KEY_PATH']]) {
 
                             withEnv(["DCOS_URL=${dcosUrl}",
                                      "DCOS_ACS_TOKEN=${acsToken}"]) {
@@ -249,6 +262,7 @@ builders['windows-tests'] = testBuilder('windows', 'windows', 'C:\\windows\\work
             bat '''
                 bash -c " \
                 export PYTHONIOENCODING=utf-8; \
+                export CLI_TEST_SSH_USER=centos; \
                 export DCOS_CONFIG=tests/data/dcos.toml; \
                 cat ${DCOS_CONFIG}; \
                 unset DCOS_URL; \
@@ -309,9 +323,12 @@ throttle(['dcos-cli']) {
              credentialsId: '7155bd15-767d-4ae3-a375-e0d74c90a2c4',
              accessKeyVariable: 'AWS_ACCESS_KEY_ID',
              secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'],
+            [$class: 'FileBinding',
+             credentialsId: '23743034-1ac4-49f7-b2e6-a661aee2d11b',
+             variable: 'CLI_TEST_SSH_KEY_PATH'],
             [$class: 'StringBinding',
-             credentialsId: '8d7d3d95-fc1f-42f4-941a-ad43487fcff7',
-             variable: 'CF_TEMPLATE_URL'],
+             credentialsId: '0b513aad-e0e0-4a82-95f4-309a80a02ff9',
+             variable: 'DCOS_INSTALLER_URL'],
             [$class: 'UsernamePasswordMultiBinding',
              credentialsId: '323df884-742b-4099-b8b7-d764e5eb9674',
              usernameVariable: 'DCOS_ADMIN_USERNAME',
