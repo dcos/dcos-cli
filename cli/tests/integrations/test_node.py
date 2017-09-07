@@ -240,6 +240,10 @@ def test_node_ssh_slave_with_command():
 def _node_ssh_output(args):
     cli_test_ssh_key_path = os.environ['CLI_TEST_SSH_KEY_PATH']
 
+    if os.environ.get('CLI_TEST_SSH_USER') and \
+            not any("--user" in a for a in args):
+        args.extend(['--user', os.environ.get('CLI_TEST_SSH_USER')])
+
     if os.environ.get('CLI_TEST_MASTER_PROXY') and \
             '--master-proxy' not in args:
         args.append('--master-proxy')
