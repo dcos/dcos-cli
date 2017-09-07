@@ -240,6 +240,10 @@ def test_node_ssh_slave_with_command():
 def _node_ssh_output(args):
     cli_test_ssh_key_path = os.environ['CLI_TEST_SSH_KEY_PATH']
 
+    if os.environ.get('CLI_TEST_MASTER_PROXY') and \
+            '--master-proxy' not in args:
+        args.append('--master-proxy')
+
     cmd = ('ssh-agent /bin/bash -c "ssh-add {} 2> /dev/null && ' +
            'dcos node ssh --option StrictHostKeyChecking=no {}"').format(
         cli_test_ssh_key_path,
@@ -249,10 +253,6 @@ def _node_ssh_output(args):
 
 
 def _node_ssh(args, expected_returncode=None, expected_stdout=None):
-    if os.environ.get('CLI_TEST_MASTER_PROXY') and \
-            '--master-proxy' not in args:
-        args.append('--master-proxy')
-
     stdout, stderr, returncode = _node_ssh_output(args)
     assert returncode is expected_returncode, \
         'returncode = %r; stdout: = %s; stderr = %s' % (
