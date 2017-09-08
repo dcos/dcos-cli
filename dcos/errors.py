@@ -18,7 +18,7 @@ class DCOSHTTPException(DCOSException):
         return self.response.status_code
 
     def __str__(self):
-        return 'Error while fetching [{0}]: HTTP {1}: {2}'.format(
+        return 'Error while fetching [{0}]: HTTP {1}: "{2}".'.format(
             self.response.request.url,
             self.response.status_code,
             self.response.reason)
@@ -38,7 +38,7 @@ class DCOSUnprocessableException(DCOSException):
         return self.response.status_code
 
     def __str__(self):
-        return 'Error while fetching [{0}]: HTTP {1}: {2}'.format(
+        return 'Error while fetching [{0}]: HTTP {1}: "{2}".'.format(
             self.response.request.url,
             self.response.status_code,
             self.response.text)
@@ -55,7 +55,7 @@ class DCOSAuthenticationException(DCOSHTTPException):
     """
     def __init__(self, response, message=None):
         if message is None:
-            message = "Authentication failed. Please run `dcos auth login`"
+            message = "Authentication failed. Please run `dcos auth login`."
 
         self.response = response
         self.message = message
@@ -74,7 +74,7 @@ class DCOSAuthorizationException(DCOSHTTPException):
         self.response = response
 
     def __str__(self):
-        return "You are not authorized to perform this operation"
+        return "You are not authorized to perform this operation."
 
 
 class DCOSConnectionError(DCOSException):
@@ -100,7 +100,7 @@ class DCOSBadRequest(DCOSHTTPException):
         self.response = response
 
     def __str__(self):
-        return "Bad request"
+        return "Bad request."
 
 
 class Error(object):
