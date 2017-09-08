@@ -235,6 +235,10 @@ builders['windows-tests'] = testBuilder('windows', 'windows', 'C:\\windows\\work
             echo %DCOS_URL% dcos.snakeoil.mesosphere.com >> C:\\windows\\system32\\drivers\\etc\\hosts &
             echo dcos_acs_token = \"%DCOS_ACS_TOKEN%\" >> dcos-cli\\cli\\tests\\data\\dcos.toml'''
 
+        dir('dcos-cli') {
+            bat 'make test'
+        }
+
         dir('dcos-cli/cli') {
             bat '''
                 bash -c " \
