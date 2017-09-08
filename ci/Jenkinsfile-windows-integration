@@ -263,6 +263,7 @@ builders['windows-tests'] = testBuilder('windows', 'windows', 'C:\\windows\\work
                 bash -c " \
                 export PYTHONIOENCODING=utf-8; \
                 export CLI_TEST_SSH_USER=centos; \
+                export CLI_TEST_MASTER_PROXY=true; \
                 export DCOS_CONFIG=tests/data/dcos.toml; \
                 cat ${DCOS_CONFIG}; \
                 unset DCOS_URL; \
