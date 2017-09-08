@@ -249,7 +249,8 @@ def _node_ssh_output(args):
         args.append('--master-proxy')
 
     cmd = ('ssh-agent /bin/bash -c "ssh-add {} 2> /dev/null && ' +
-           'dcos node ssh --option StrictHostKeyChecking=no {}"').format(
+           'dcos node ssh --option StrictHostKeyChecking=no ' +
+           '    --option ConnectTimeout=5 {}"').format(
         cli_test_ssh_key_path,
         ' '.join(args))
 
