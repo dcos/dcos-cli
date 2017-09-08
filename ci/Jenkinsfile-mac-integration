@@ -258,6 +258,7 @@ builders['mac-tests'] = testBuilder('mac', 'mac')({
             sh '''
                export PYTHONIOENCODING=utf-8; \
                export CLI_TEST_SSH_USER=centos; \
+               export CLI_TEST_MASTER_PROXY=true; \
                export DCOS_CONFIG=tests/data/dcos.toml; \
                chmod 600 ${DCOS_CONFIG}; \
                echo dcos_acs_token = \\\"${DCOS_ACS_TOKEN}\\\" >> ${DCOS_CONFIG}; \
