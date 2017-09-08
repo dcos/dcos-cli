@@ -27,6 +27,7 @@ def _default_is_success(status_code):
 
     return 200 <= status_code < 300
 
+
 def _is_request_to_dcos(url, toml_config=None):
     """Checks if a request is for the DC/OS cluster.
 
@@ -55,6 +56,7 @@ def _is_request_to_dcos(url, toml_config=None):
         _request_match(cosmos_url, parsed_url)
 
     return is_request_to_cluster
+
 
 def _verify_ssl(url, verify=None, toml_config=None):
     """Returns whether to verify ssl for the given url
