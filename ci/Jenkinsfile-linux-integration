@@ -236,6 +236,10 @@ builders['linux-tests'] = testBuilder('linux', 'py35', '/workspace')({
            sed -iold "s/^.* dcos.snakeoil.mesosphere.com$/${DCOS_URL} dcos.snakeoil.mesosphere.com/" /etc/hosts || \
            echo ${DCOS_URL} dcos.snakeoil.mesosphere.com >> /etc/hosts'''
 
+        dir('dcos-cli') {
+            sh 'make test'
+        }
+
         dir('dcos-cli/cli') {
             sh '''
                export PYTHONIOENCODING=utf-8; \
