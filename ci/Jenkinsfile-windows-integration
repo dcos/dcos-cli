@@ -241,6 +241,8 @@ builders['windows-tests'] = testBuilder('windows', 'windows', 'C:\\windows\\work
 
         bat 'bash -c "cat /windows/system32/drivers/etc/hosts"'
 
+        bat 'bash dcos-cli/tests/test-install.sh "${DCOS_URL}"'
+
         dir('dcos-cli/cli') {
             bat '''
                 bash -c " \
