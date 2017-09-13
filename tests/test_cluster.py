@@ -85,7 +85,7 @@ def test_setup_cluster_config(mock_get):
             mock_get.return_value = mock_resp
             path = cluster.setup_cluster_config("fake_url", setup_temp, False)
             expected_path = os.path.join(
-                tempdir, constants.DCOS_CLUSTERS_SUBDIR + "/" + cluster_id)
+                tempdir, constants.DCOS_CLUSTERS_SUBDIR, cluster_id)
             assert path == expected_path
             assert os.path.exists(path)
             assert os.path.exists(os.path.join(path, "dcos.toml"))
