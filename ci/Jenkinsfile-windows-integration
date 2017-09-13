@@ -7,7 +7,7 @@
  * One set of builders builds the CLI into a binary on each platform. The other
  * set of builders runs integration tests on each platform. Under the hood, the
  * integration test builders use `dcos_launch` to create the DC/OS clusters for
- * each platform to run their tests against. Unfortunately, `dcos_luanch` only
+ * each platform to run their tests against. Unfortunately, `dcos_launch` only
  * works reliably on Linux, so we use a single linux instance to create all of
  * the clusters and separate linux/mac/windows instances to run the actual
  * tests.
