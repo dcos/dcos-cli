@@ -9,7 +9,7 @@ def test_dcos_auth_exception_as_string():
     exception = errors.DCOSAuthenticationException(response)
 
     assert (str(exception) ==
-            "Authentication failed. Please run `dcos auth login`")
+            "Authentication failed. Please run `dcos auth login`.")
 
 
 def test_dcos_auth_exception_with_message_as_string():
