@@ -5,7 +5,6 @@ import docopt
 import dcoscli
 from dcos import cmds, config, emitting, http, util
 from dcos.errors import DCOSException, DefaultError
-from dcoscli.cluster.main import setup
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
 
@@ -85,27 +84,17 @@ def _set(name, value):
     :rtype: int
     """
 
-    if name == "core.dcos_url":
-        return _cluster_setup(value)
-
     toml, msg = config.set_val(name, value)
     emitter.publish(DefaultError(msg))
 
+    if name == "core.dcos_url" and config.uses_deprecated_config():
+        notice = (
+            "Setting-up a cluster through this command is being deprecated. "
+            "To setup the CLI to talk to your cluster, please run "
+            "`dcos cluster setup <dcos_url>`.")
+        emitter.publish(DefaultError(notice))
+
     return 0
-
-
-def _cluster_setup(dcos_url):
-    """
-    Setup a cluster using "cluster" directory instead "global" directory, until
-    we deprecate "global" config command: `dcos config set core.dcos_url x`
-    """
-
-    notice = ("This config property is being deprecated. "
-              "To setup the CLI to talk to your cluster, please run "
-              "`dcos cluster setup <dcos_url>`.")
-    emitter.publish(DefaultError(notice))
-
-    return setup(dcos_url)
 
 
 def _unset(name):
