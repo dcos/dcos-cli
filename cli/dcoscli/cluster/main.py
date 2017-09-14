@@ -203,6 +203,13 @@ def setup(dcos_url,
         # set cluster as attached
         cluster.set_attached(temp_path)
 
+        # Make sure to ignore any environment variable.
+        # There is already a mandatory command argument for this.
+        if "DCOS_URL" in os.environ:
+            del os.environ["DCOS_URL"]
+        if "DCOS_DCOS_URL" in os.environ:
+            del os.environ["DCOS_DCOS_URL"]
+
         # authenticate
         config.set_val("core.dcos_url", dcos_url)
         # get validated dcos_url
