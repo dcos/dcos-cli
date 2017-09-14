@@ -177,9 +177,6 @@ integration tests against. In the future we hope to remove this limitation::
 
     # With the variables set above, run the script below verbatim
     export DCOS_DIR=$(mktemp -d)
-    cp cli/tests/data/dcos.toml ${DCOS_DIR}
-    chmod 600 ${DCOS_DIR}/dcos.toml
-    export DCOS_CONFIG=${DCOS_DIR}/dcos.toml
     export CLI_TEST_MASTER_PROXY=true
 
     deactivate > /dev/null 2>&1 || true
@@ -190,6 +187,8 @@ integration tests against. In the future we hope to remove this limitation::
         --insecure \
         --username=bootstrapuser \
         --password=deleteme
+    dcos config set core.reporting false
+    dcos config set core.timeout 5
     deactivate
     cd -
 

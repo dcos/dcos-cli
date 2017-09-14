@@ -123,7 +123,6 @@ def test_unset_top_property(env):
 
 
 def test_validate(env):
-    os.environ['DCOS_CONFIG'] = env['DCOS_CONFIG']
     stdout = 'Validating %s ...\n' % config.get_config_path() + \
              'Congratulations, your configuration is valid!\n'
     stdout = stdout.encode('utf-8')
