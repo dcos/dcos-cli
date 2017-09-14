@@ -232,22 +232,15 @@ def update_config(name, value, env=None):
     :rtype: None
     """
 
-    returncode, stdout, _ = exec_command(
-        ['dcos', 'config', 'show', name], env)
+    toml_config = config.get_config(True)
+
+    result = toml_config.get(name)
 
     # when we change the dcos_url we remove the acs_token
     # we need to also restore the token if this occurs
     token = None
     if name == "core.dcos_url":
-        returncode_, token_val, _ = exec_command(
-            ['dcos', 'config', 'show', "core.dcos_acs_token"], env)
-        if returncode_ == 0:
-            token = token_val.decode('utf-8').strip()
-
-    result = None
-    # config param already exists
-    if returncode == 0:
-        result = json.loads('"' + stdout.decode('utf-8').strip() + '"')
+        token = toml_config.get("core.dcos_acs_token")
 
     # if we are setting a value
     if value is not None:
@@ -261,7 +254,7 @@ def update_config(name, value, env=None):
     finally:
         # return config to previous state
         if result is not None:
-            config_set(name, result, env)
+            config_set(name, str(result), env)
         else:
             exec_command(['dcos', 'config', 'unset', name], env)
 
