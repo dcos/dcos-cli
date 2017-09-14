@@ -7,7 +7,6 @@ from mock import patch
 from test_util import add_cluster_dir, create_global_config, env
 
 from dcos import config, constants, util
-from dcos.errors import DCOSException
 
 
 @pytest.fixture
@@ -165,30 +164,29 @@ def test_get_config(load_path_mock):
         os.environ[constants.DCOS_DIR_ENV] = tempdir
 
         # no config file of any type
-        with pytest.raises(DCOSException) as e:
-            config.get_config()
-
-        msg = ("No cluster is attached. "
-               "Please run `dcos cluster attach <cluster-name>`")
-        assert str(e.value) == msg
-        load_path_mock.assert_not_called()
+        # this should create the global config
+        config.get_config()
+        global_toml = os.path.join(tempdir, "dcos.toml")
+        load_path_mock.assert_called_once_with(global_toml, False)
+        load_path_mock.reset_mock()
 
         # create old global config toml
         global_toml = create_global_config(tempdir)
         config.get_config()
         load_path_mock.assert_called_once_with(global_toml, False)
+        load_path_mock.reset_mock()
 
         # clusters dir, no clusters
         _create_clusters_dir(tempdir)
-        with pytest.raises(DCOSException) as e:
-            config.get_config()
-        assert str(e.value) == msg
+        config.get_config()
+        load_path_mock.assert_called_once_with(global_toml, False)
+        load_path_mock.reset_mock()
 
         cluster_id = "fake-cluster"
         cluster_path = add_cluster_dir(cluster_id, tempdir)
         cluster_toml = os.path.join(cluster_path, "dcos.toml")
         config.get_config(True)
-        load_path_mock.assert_any_call(cluster_toml, True)
+        load_path_mock.assert_called_with(cluster_toml, True)
 
 
 def _create_clusters_dir(dcos_dir):

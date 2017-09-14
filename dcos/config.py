@@ -137,12 +137,7 @@ def get_config(mutable=False):
 
     cluster_path = get_attached_cluster_path()
     if cluster_path is None:
-        if uses_deprecated_config():
-            return get_global_config(mutable)
-
-        msg = ("No cluster is attached. "
-               "Please run `dcos cluster attach <cluster-name>`")
-        raise DCOSException(msg)
+        return get_global_config(mutable)
 
     util.ensure_dir_exists(os.path.dirname(cluster_path))
 
@@ -296,6 +291,7 @@ def load_from_path(path, mutable=False):
     :rtype: Toml | MutableToml
     """
 
+    util.ensure_dir_exists(os.path.dirname(path))
     util.ensure_file_exists(path)
     util.enforce_file_permissions(path)
     with util.open_file(path, 'r') as config_file:
