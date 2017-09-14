@@ -237,7 +237,7 @@ def test_node_ssh_slave_with_command():
                '/opt/mesosphere/bin/detect_ip'], 0, slave['hostname'])
 
 
-def _node_ssh_output(args):
+def _node_ssh_output(args, wait=False):
     cli_test_ssh_key_path = os.environ['CLI_TEST_SSH_KEY_PATH']
 
     cmd = ('ssh-agent /bin/bash -c "ssh-add {} 2> /dev/null && ' +
@@ -245,7 +245,7 @@ def _node_ssh_output(args):
         cli_test_ssh_key_path,
         ' '.join(args))
 
-    return ssh_output(cmd)
+    return ssh_output(cmd, wait)
 
 
 def _node_ssh(args, expected_returncode=None, expected_stdout=None):
@@ -253,7 +253,8 @@ def _node_ssh(args, expected_returncode=None, expected_stdout=None):
             '--master-proxy' not in args:
         args.append('--master-proxy')
 
-    stdout, stderr, returncode = _node_ssh_output(args)
+    wait = expected_returncode is not None
+    stdout, stderr, returncode = _node_ssh_output(args, wait)
     assert returncode is expected_returncode, \
         'returncode = %r; stdout: = %s; stderr = %s' % (
             returncode, stdout, stderr)
