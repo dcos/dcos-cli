@@ -462,13 +462,10 @@ def test_install_bad_package_version():
 
 
 def test_install_noninteractive():
-    try:
-        returncode, stdout, _ = exec_command(
-            ['dcos', 'package', 'install', 'hello-world'],
-            timeout=30,
-            stdin=subprocess.DEVNULL)
-    except subprocess.TimeoutExpired:
-        assert False, 'timed out waiting for process to exit'
+    returncode, stdout, _ = exec_command(
+        ['dcos', 'package', 'install', 'hello-world'],
+        timeout=30,
+        stdin=subprocess.DEVNULL)
 
     assert returncode == 1
     assert b"'' is not a valid response" in stdout
