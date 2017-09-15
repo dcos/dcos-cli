@@ -402,13 +402,10 @@ def test_uninstall_cli_only_when_no_apps_remain():
             subcommand.command_executables('helloworld')
 
         # helloworld subcommand should have been removed
-        try:
+        with pytest.raises(errors.DCOSException) as exc_info:
             subcommand.command_executables('helloworld')
-        except errors.DCOSException as e:
-            assert str(e) == "'helloworld' is not a dcos command."
-            return
 
-        assert False, "expected command_executables('helloworld') to fail"
+        assert str(exc_info.value) == "'helloworld' is not a dcos command."
 
 
 def test_install_missing_options_file():
