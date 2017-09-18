@@ -1,9 +1,6 @@
-import contextlib
 import json
 import os
 import re
-import shutil
-import tempfile
 import time
 
 import dcoscli
@@ -110,7 +107,7 @@ def test_package_build_with_all_references_json():
 
 
 def test_package_build_where_build_definition_does_not_exist():
-    with _temporary_directory() as output_directory:
+    with util.tempdir() as output_directory:
         build_definition_path = os.path.join(build_data_dir,
                                              "does_not_exist.json")
         stderr = ("The file [{}] does not exist\n"
@@ -122,7 +119,7 @@ def test_package_build_where_build_definition_does_not_exist():
 
 
 def test_package_build_where_project_is_missing_references():
-    with _temporary_directory() as output_directory:
+    with util.tempdir() as output_directory:
         build_definition_path = (
             os.path.join(build_data_dir,
                          "package_missing_references.json"))
@@ -137,7 +134,7 @@ def test_package_build_where_project_is_missing_references():
 
 
 def test_package_build_where_reference_does_not_match_schema():
-    with _temporary_directory() as output_directory:
+    with util.tempdir() as output_directory:
         build_definition_path = os.path.join(
             build_data_dir,
             "package_reference_does_not_match_schema.json"
@@ -156,7 +153,7 @@ def test_package_build_where_reference_does_not_match_schema():
 
 
 def test_package_build_where_build_definition_does_not_match_schema():
-    with _temporary_directory() as output_directory:
+    with util.tempdir() as output_directory:
         bad_build_definition_path = os.path.join(
             build_data_dir,
             "package_no_match_schema.json"
@@ -171,7 +168,7 @@ def test_package_build_where_build_definition_does_not_match_schema():
 
 
 def test_package_build_where_build_definition_has_badly_formed_reference():
-    with _temporary_directory() as output_directory:
+    with util.tempdir() as output_directory:
         bad_build_definition_path = os.path.join(
             build_data_dir,
             "package_badly_formed_reference.json"
@@ -199,7 +196,7 @@ def test_package_add_argument_exclusion():
 
 
 def test_service_start_happy_path():
-    with _temporary_directory() as output_directory:
+    with util.tempdir() as output_directory:
         runnable_package = _package_build(
             runnable_package_path(2), output_directory)
         name, version = _package_add(runnable_package)
@@ -210,7 +207,7 @@ def test_service_start_happy_path():
 
 
 def test_service_start_happy_path_json():
-    with _temporary_directory() as output_directory:
+    with util.tempdir() as output_directory:
         runnable_package = _package_build(
             runnable_package_path(3), output_directory)
         name, version = _package_add(runnable_package, expects_json=True)
@@ -470,7 +467,7 @@ def _successful_package_build_test(
             build_data_dir,
             "package_no_references.json"),
         expects_json=False):
-    with _temporary_directory() as output_directory:
+    with util.tempdir() as output_directory:
         metadata = file_json_ast(expected_package_path)
         manifest = {
             'built-by': "dcoscli.version={}".format(dcoscli.version)
@@ -493,12 +490,3 @@ def _decompose_name(package_path):
 def _get_md5_hash(path):
     with open(path, 'rb') as f:
         return util.md5_hash_file(f)
-
-
-@contextlib.contextmanager
-def _temporary_directory():
-    tmp_dir = tempfile.mkdtemp()
-    try:
-        yield tmp_dir
-    finally:
-        shutil.rmtree(tmp_dir)
