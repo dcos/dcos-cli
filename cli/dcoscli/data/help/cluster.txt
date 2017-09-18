@@ -51,7 +51,7 @@ Options:
     --private-key=<key_path>
         Specify the path to a file that contains the private key.
     -q, --quiet
-        Only display cluster IDs
+        Only display cluster names.
     --username=<username>
         Specify the username for login.
     --version
