@@ -115,7 +115,7 @@ class TestCluster implements Serializable {
     /**
      * Retrieves the URL of a cluster previously created using `create()`.
      */
-    def getDcosUrl() {
+    def getDcosIp() {
         /* In the future, consider doing the following with jq instead of
            inline python (however, jq is not installed on our windows machines
            at the moment). */
@@ -149,7 +149,7 @@ def testBuilder(String platform, String nodeId, String workspace = null) {
             }
 
             try {
-                def dcosUrl = cluster.getDcosUrl()
+                def dcosIp = cluster.getDcosIp()
 
                 node(nodeId) {
                     if (!workspace) {
@@ -173,19 +173,19 @@ def testBuilder(String platform, String nodeId, String workspace = null) {
                               credentialsId: '23743034-1ac4-49f7-b2e6-a661aee2d11b',
                               variable: 'CLI_TEST_SSH_KEY_PATH']]) {
 
-                            withEnv(["DCOS_URL=${dcosUrl}"]) {
+                            withEnv(["DCOS_IP=${dcosIp}"]) {
                                 try {
                                     body()
                                 } catch(InterruptedException | hudson.AbortException e) {
                                     echo(
                                         "Build interrupted. The DC/OS cluster at" +
-                                        " ${dcosUrl} will be destroyed.")
+                                        " ${dcosIp} will be destroyed.")
                                     destroyCluster = true
                                     throw e
                                 } catch (Exception e) {
                                     echo(
                                         "Build failed. The DC/OS cluster at" +
-                                        " ${dcosUrl} will remain temporarily" +
+                                        " ${dcosIp} will remain temporarily" +
                                         " active so you can debug what went" +
                                         " wrong.")
                                     destroyCluster = false
@@ -220,8 +220,8 @@ builders['mac-tests'] = testBuilder('mac', 'mac')({
            rm -rf ~/.dcos; \
            cp /etc/hosts hosts.local; \
            grep -q "^.* dcos.snakeoil.mesosphere.com$" hosts.local && \
-           sed -iold "s/^.* dcos.snakeoil.mesosphere.com$/${DCOS_URL} dcos.snakeoil.mesosphere.com/" hosts.local || \
-           echo ${DCOS_URL} dcos.snakeoil.mesosphere.com >> hosts.local; \
+           sed -iold "s/^.* dcos.snakeoil.mesosphere.com$/${DCOS_IP} dcos.snakeoil.mesosphere.com/" hosts.local || \
+           echo ${DCOS_IP} dcos.snakeoil.mesosphere.com >> hosts.local; \
            sudo cp ./hosts.local /etc/hosts'''
 
         dir('dcos-cli') {
