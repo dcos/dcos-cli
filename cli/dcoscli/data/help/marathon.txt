@@ -28,7 +28,7 @@ Usage:
     dcos marathon group show [--group-version=<group-version>] <group-id>
     dcos marathon group remove [--force] <group-id>
     dcos marathon group update [--force] <group-id> [<properties>...]
-    dcos marathon plugins [--json]
+    dcos marathon plugin [--json]
     dcos marathon pod add [<pod-resource>]
     dcos marathon pod kill <pod-id> [<instance-ids>...]
     dcos marathon pod list [--json]
