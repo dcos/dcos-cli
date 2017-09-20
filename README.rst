@@ -251,12 +251,12 @@ These packages are available to be installed by the DC/OS CLI installation scrip
 
 .. _automated TeamCity build: https://teamcity.mesosphere.io/viewType.html?buildTypeId=DcosIo_DcosCli_Release
 .. _dcos: https://pypi.python.org/pypi/dcos
-.. _dcos configuration parameters: https://dcos.io/docs/1.9/administration/installing/custom/configuration-parameters/
+.. _dcos configuration parameters: https://dcos.io/docs/latest/installing/custom/configuration/configuration-parameters/
 .. _dcoscli: https://pypi.python.org/pypi/dcoscli
 .. _dcos-launch: https://github.com/dcos/dcos-launch
 .. _jq: http://stedolan.github.io/jq/
 .. _git: http://git-scm.com
-.. _installation instructions: https://dcos.io/docs/1.10/cli/install
+.. _installation instructions: https://dcos.io/docs/latest/cli/
 .. _DCOS docs: https://dcos.io/docs/
 .. _mesosphere/install-scripts: https://github.com/mesosphere/install-scripts
 .. _packages: https://packaging.python.org/en/latest/installing.html#installing-requirements
