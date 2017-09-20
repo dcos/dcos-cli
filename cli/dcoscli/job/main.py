@@ -627,7 +627,7 @@ def _cli_config_schema():
     """
     return json.loads(
         pkg_resources.resource_string(
-            'dcoscli',
+            'dcos',
             'data/config-schema/job.json').decode('utf-8'))
 
 
