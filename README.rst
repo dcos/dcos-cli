@@ -256,7 +256,7 @@ These packages are available to be installed by the DC/OS CLI installation scrip
 .. _dcos-launch: https://github.com/dcos/dcos-launch
 .. _jq: http://stedolan.github.io/jq/
 .. _git: http://git-scm.com
-.. _installation instructions: https://dcos.io/docs/latest/cli/
+.. _installation instructions: https://dcos.io/docs/latest/cli/install/
 .. _DCOS docs: https://dcos.io/docs/
 .. _mesosphere/install-scripts: https://github.com/mesosphere/install-scripts
 .. _packages: https://packaging.python.org/en/latest/installing.html#installing-requirements
