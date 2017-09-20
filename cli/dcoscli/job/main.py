@@ -500,7 +500,7 @@ def _update_schedules(job_id, schedules_file):
     :rtype: int
     """
     schedules = _get_resource(schedules_file)
-    schedule = schedules[0]  # 1 update
+    schedule = parse_schedule_json(schedules)
     schedule_id = schedule['id']
 
     return _update_schedule(job_id, schedule_id, schedule)
