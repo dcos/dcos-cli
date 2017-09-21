@@ -6,8 +6,8 @@ Usage:
     dcos cluster --info
     dcos cluster --version
     dcos cluster attach <name>
-    dcos cluster list [--attached --json]
-    dcos cluster remove <name>
+    dcos cluster list [--attached --json --quiet]
+    dcos cluster remove <names>...
     dcos cluster rename <name> <new_name>
     dcos cluster setup <dcos_url>
         [--insecure | --no-check | --ca-certs=<ca-certs>]
@@ -23,7 +23,7 @@ Commands:
     rename
         Rename a cluster name in the CLI.
     remove
-        Remove a configured cluster from the CLI.
+        Remove configured cluster(s) from the CLI.
     setup
         Setup the CLI to talk to your DC/OS cluster.
 
@@ -50,6 +50,8 @@ Options:
         Specify the authentication provider to use for login.
     --private-key=<key_path>
         Specify the path to a file that contains the private key.
+    -q, --quiet
+        Only display cluster names.
     --username=<username>
         Specify the username for login.
     --version
@@ -58,6 +60,8 @@ Options:
 Positional Arguments:
     dcos_url
         The public master of your DC/OS cluster.
+    names
+        List of names
     name
         The name of the cluster.
     new_name

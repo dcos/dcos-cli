@@ -1,5 +1,10 @@
 import json
+import os
 import subprocess
+from distutils.dir_util import copy_tree, remove_tree
+
+import pytest
+import dcos
 
 from .helpers.common import assert_command, exec_command
 
@@ -27,6 +32,67 @@ def test_list():
     assert info.get("attached")
     keys = ["attached", "cluster_id", "name", "url", "version"]
     assert sorted(info.keys()) == keys
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'cluster', 'list', '-q'])
+    assert returncode == 0
+    assert stderr == b''
+    assert stdout.decode('utf-8').rstrip() == info['cluster_id']
+
+
+@pytest.fixture
+def cluster_backup():
+    dcos_dir = os.environ.get('DCOS_DIR')
+    if dcos_dir is None:
+        dcos_dir = dcos.config.get_config_dir_path()
+
+    assert dcos_dir is not None
+    cluster_dir = os.path.join(dcos_dir, 'clusters')
+    back_dir = os.path.join(dcos_dir, 'backup')
+    copy_tree(cluster_dir, back_dir)
+
+    yield cluster_dir
+    # return to order
+    remove_tree(cluster_dir)
+    copy_tree(back_dir, cluster_dir)
+    remove_tree(back_dir)
+
+
+def test_remove(cluster_backup):
+    cluster_dir = cluster_backup
+
+    # confirm 1
+    assert num_of_clusters() == 1
+
+    # integration tests assume 1 cluster setup.  updating to 2.
+    for root, dirs, files in os.walk(cluster_dir):
+        if len(dirs) > 0:
+            test_cluster_name = dirs[0]
+            test_cluster = os.path.join(root, test_cluster_name)
+            break
+    # hacky way to create another cluster
+    test_cluster2_name = "{}2".format(test_cluster_name)
+    test_cluster2 = "{}2".format(test_cluster)
+    copy_tree(test_cluster, test_cluster2)
+
+    # confirm 2
+    assert num_of_clusters() == 2
+
+    # actual test
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'cluster', 'remove', test_cluster_name, test_cluster2_name])
+    assert returncode == 0
+    assert stderr == b''
+    assert stdout == b''
+
+    assert num_of_clusters() == 0
+
+
+def num_of_clusters():
+    _, stdout, _ = exec_command(
+        ['dcos', 'cluster', 'list', '--json'])
+    cluster_list = json.loads(stdout.decode('utf-8'))
+    return len(cluster_list)
 
 
 def test_rename():

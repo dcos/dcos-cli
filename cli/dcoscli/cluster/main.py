@@ -57,12 +57,12 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['cluster', 'list'],
-            arg_keys=['--json', '--attached'],
+            arg_keys=['--json', '--attached', '--quiet'],
             function=_list),
 
         cmds.Command(
             hierarchy=['cluster', 'remove'],
-            arg_keys=['<name>'],
+            arg_keys=['<names>'],
             function=_remove),
 
         cmds.Command(
@@ -94,7 +94,7 @@ def _info(info):
     return 0
 
 
-def _list(json_, attached):
+def _list(json_, attached, quiet=False):
     """
     List configured clusters.
 
@@ -102,12 +102,17 @@ def _list(json_, attached):
     :type json_: bool
     :param attached: return only attached cluster
     :type attached: True
+    :param quiet: output only cluster_id(s) if True
+    :type quiet: bool
     :rtype: None
     """
 
     clusters = [c.dict() for c in cluster.get_clusters()
                 if not attached or c.is_attached()]
-    if json_:
+    if quiet:
+        for c in clusters:
+            emitter.publish(c.get('cluster_id'))
+    elif json_:
         emitter.publish(clusters)
     elif len(clusters) == 0:
         if attached:
@@ -123,14 +128,14 @@ def _list(json_, attached):
     return
 
 
-def _remove(name):
+def _remove(names):
     """
-    :param name: name of cluster
-    :type name: str
+    :param names: list of names of clusters
+    :type name: list
     :rtype: None
     """
-
-    return cluster.remove(name)
+    for name in names:
+        cluster.remove(name)
 
 
 def _attach(name):
