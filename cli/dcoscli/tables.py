@@ -304,8 +304,9 @@ def plugins_table(plugin_list):
     ])
 
     tb = truncate_table(fields, plugin_list, None, sortby="ID")
-    tb.align["implementation"] = 'l'
-    tb.align["plugin"] = 'l'
+    tb.align["ID"] = 'l'
+    tb.align["IMPLEMENTATION"] = 'l'
+    tb.align["PLUGIN"] = 'l'
 
     return tb
 
