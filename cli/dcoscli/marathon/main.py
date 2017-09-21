@@ -216,9 +216,9 @@ def _cmds():
             function=subcommand.about),
 
         cmds.Command(
-            hierarchy=['marathon', 'plugins'],
+            hierarchy=['marathon', 'plugin', 'list'],
             arg_keys=['--json'],
-            function=subcommand.plugins),
+            function=subcommand.plugin_list),
 
         cmds.Command(
             hierarchy=['marathon'],
@@ -363,7 +363,7 @@ class MarathonSubcommand(object):
         emitter.publish(client.get_about())
         return 0
 
-    def plugins(self, json_):
+    def plugin_list(self, json_):
         """
         :returns: process return code
         :rtype: int
