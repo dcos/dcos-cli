@@ -295,11 +295,11 @@ def job_history_table(schedule_list):
     """
 
     fields = OrderedDict([
-        ('id', lambda s: s['id']),
+        ('task id', lambda s: s['id']),
         ('started', lambda s: s['createdAt']),
         ('finished', lambda s: s['finishedAt']),
     ])
-    tb = table(fields, schedule_list, sortby="STARTED")
+    tb = table(fields, schedule_list, sortby="FINISHED", reversesort=True)
     tb.align["STARTED"] = 'l'
     tb.align["FINISHED"] = 'l'
 
