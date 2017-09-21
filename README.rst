@@ -141,6 +141,13 @@ environment appropriately.
     $ export CLI_TEST_SSH_KEY_PATH=<path-to-ssh-key>
 
 
+#. (optional) Enable :code:`CLI_TEST_MASTER_PROXY` in case your private agents
+   are not reachable from the machine you're running tests on. This will proxy
+   the SSH connection throught the master node during integration tests.
+
+    $ export CLI_TEST_MASTER_PROXY=1
+
+
 #. Add the following resolution to your :code:`/etc/hosts` file. The :code:`ssl`
    integration tests resolve :code:`dcos.snakeoil.mesosphere.com` to test SSL certs::
 
