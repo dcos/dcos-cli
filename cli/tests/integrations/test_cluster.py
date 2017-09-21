@@ -1,11 +1,11 @@
 import json
 import os
 import subprocess
-from distutils.dir_util import copy_tree, remove_tree
+from distutils.dir_util import copy_tree
 
 import pytest
-import dcos
 
+from dcos import constants, util
 from .helpers.common import assert_command, exec_command
 
 
@@ -35,30 +35,30 @@ def test_list():
 
 
 @pytest.fixture
-def cluster_backup():
-    dcos_dir = os.environ.get('DCOS_DIR')
-    if dcos_dir is None:
-        dcos_dir = dcos.config.get_config_dir_path()
-    assert dcos_dir is not None
-    cluster_dir = os.path.join(dcos_dir, 'clusters')
-    back_dir = os.path.join(dcos_dir, 'backup')
-    copy_tree(cluster_dir, back_dir)
+def dcos_dir_backup():
 
-    yield cluster_dir
-    # return to order
-    remove_tree(cluster_dir)
-    copy_tree(back_dir, cluster_dir)
-    remove_tree(back_dir)
+    with util.tempdir() as tempdir:
+        old_dcos_dir = os.environ.get(constants.DCOS_DIR_ENV)
+        os.environ[constants.DCOS_DIR_ENV] = tempdir
+
+        copy_tree(old_dcos_dir, tempdir)
+
+        yield tempdir
+        # return to order
+        if old_dcos_dir is None:
+            os.environ.pop(constants.DCOS_DIR_ENV)
+        else:
+            os.environ[constants.DCOS_DIR_ENV] = old_dcos_dir
 
 
-def test_remove_all(cluster_backup):
-    cluster_dir = cluster_backup
+def test_remove_all(dcos_dir_backup):
+    dcos_dir = dcos_dir_backup
 
     # confirm 1
     assert num_of_clusters() == 1
 
     # integration tests assume 1 cluster setup.  updating to 2.
-    for root, dirs, files in os.walk(cluster_dir):
+    for root, dirs, files in os.walk(os.path.join(dcos_dir, "clusters")):
         if len(dirs) > 0:
             test_cluster = os.path.join(root, dirs[0])
             break
