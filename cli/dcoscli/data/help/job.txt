@@ -12,13 +12,13 @@ Description:
         dcos job update <job-file>
         dcos job kill <job-id> [<run-id>][--all]
         dcos job run <job-id> [--json]
-        dcos job list [--json]
+        dcos job list [--json|--quiet]
         dcos job schedule add <job-id> <schedule-file>
         dcos job schedule show <job-id> [--json]
         dcos job schedule remove <job-id> <schedule-id>
         dcos job schedule update <job-id> <schedule-file>
-        dcos job show runs <job-id> [--run-id <run-id>][--json][--q]
-        dcos job history <job-id> [--json][--show-failures]
+        dcos job show runs <job-id> [--run-id <run-id>][--json|--quiet]
+        dcos job history <job-id> [--json|--quiet] [--failures --last]
 
 Commands:
     job add
@@ -63,10 +63,12 @@ Options:
         Instead of specifying a run_id to kill, indicates all runs should be killed.
     --json
         Print JSON-formatted list instead of a table.
-    --q
+    -q, --quiet
         Indicates a quiet mode which results in just an array of run ids.
-    --show-failures
+    -f, --failures
         Indicates to show the failure table and statistics for history.
+    -l, --last
+        Shows the last ID for history job.
 
 Positional Arguments:
     <job-id>

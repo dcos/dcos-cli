@@ -102,7 +102,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['job', 'show', 'runs'],
-            arg_keys=['<job-id>', '<run-id>', '--json', '--q'],
+            arg_keys=['<job-id>', '<run-id>', '--json', '--quiet'],
             function=_show_runs),
 
         cmds.Command(
@@ -112,12 +112,12 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['job', 'list'],
-            arg_keys=['--json'],
+            arg_keys=['--json', '--quiet'],
             function=_list),
 
         cmds.Command(
             hierarchy=['job', 'history'],
-            arg_keys=['<job-id>', '--json', '--show-failures'],
+            arg_keys=['<job-id>', '--json', '--failures', '--last', '--quiet'],
             function=_history),
 
         cmds.Command(
@@ -249,7 +249,7 @@ def _kill(job_id, run_id, all=False):
     return 0
 
 
-def _list(json_flag=False):
+def _list(json_flag=False, quiet=False):
     """ Provides a list of jobs along with their active runs and history summary
     :returns: process return code
     :rtype: int
@@ -257,7 +257,10 @@ def _list(json_flag=False):
     client = metronome.create_client()
     json_list = client.get_jobs(EMBEDS_FOR_JOBS_HISTORY)
 
-    if json_flag:
+    if quiet:
+        for job in json_list:
+            emitter.publish(job.get('id'))
+    elif json_flag:
         emitter.publish(json_list)
     else:
         table = tables.job_table(json_list)
@@ -268,7 +271,7 @@ def _list(json_flag=False):
     return 0
 
 
-def _history(job_id, json_flag=False, show_failures=False):
+def _history(job_id, json_flag=False, failures=False, last=False, quiet=False):
     """
     :returns: process return code
     :rtype: int
@@ -280,29 +283,30 @@ def _history(job_id, json_flag=False, show_failures=False):
     if 'history' not in json_history:
         return 0
 
-    if json_flag:
-        emitter.publish(json_history)
+    if failures:
+        tasks = json_history['history']['failedFinishedRuns']
     else:
-        emitter.publish(_get_history_message(json_history, job_id))
-        table = tables.job_history_table(
-            json_history['history']['successfulFinishedRuns'])
+        tasks = json_history['history']['successfulFinishedRuns']
+
+    if quiet:
+        if last and len(tasks) > 0:
+            emitter.publish(tasks[0].get('id'))
+        else:
+            for task in tasks:
+                emitter.publish(task.get('id'))
+    elif json_flag:
+        emitter.publish(tasks)
+    else:
+        emitter.publish(_get_history_message(json_history, job_id, failures))
+        table = tables.job_history_table(tasks)
         output = six.text_type(table)
         if output:
             emitter.publish(output)
 
-        if show_failures:
-            emitter.publish(_get_history_message(
-                            json_history, job_id, False))
-            table = tables.job_history_table(
-                json_history['history']['failedFinishedRuns'])
-            output = six.text_type(table)
-            if output:
-                emitter.publish(output)
-
     return 0
 
 
-def _get_history_message(json_history, job_id, success=True):
+def _get_history_message(json_history, job_id, failures):
     """
     :param json_history: json of history
     :type json_history: json
@@ -311,14 +315,14 @@ def _get_history_message(json_history, job_id, success=True):
     :returns: history message
     :rtype: str
     """
-    if success is True:
-        return "'{}'  Successful runs: {} Last Success: {}".format(
-                job_id, json_history['history']['successCount'],
-                json_history['history']['lastSuccessAt'])
-    else:
+    if failures:
         return "'{}'  Failure runs: {} Last Failure: {}".format(
                 job_id, json_history['history']['failureCount'],
                 json_history['history']['lastFailureAt'])
+    else:
+        return "'{}'  Successful runs: {} Last Success: {}".format(
+                job_id, json_history['history']['successCount'],
+                json_history['history']['lastSuccessAt'])
 
 
 def _show(job_id):
@@ -343,7 +347,7 @@ def _show(job_id):
     return 0
 
 
-def _show_runs(job_id, run_id=None, json_flag=False, q=False):
+def _show_runs(job_id, run_id=None, json_flag=False, quiet=False):
     """
     :param job_id: Id of the job
     :type job_id: str
@@ -352,9 +356,10 @@ def _show_runs(job_id, run_id=None, json_flag=False, q=False):
     """
 
     json_runs = _get_runs(job_id, run_id)
-    if q is True:
+    if quiet is True:
         ids = _get_ids(json_runs)
-        emitter.publish(ids)
+        for run in ids:
+            emitter.publish(run)
     elif json_flag is True:
         emitter.publish(json_runs)
     else:
