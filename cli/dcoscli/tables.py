@@ -340,7 +340,7 @@ def job_runs_table(runs_list):
     :rtype: PrettyTable
     """
     fields = OrderedDict([
-        ('id', lambda s: s['id']),
+        ('task id', lambda s: s['id']),
         ('job id', lambda s: s['jobId']),
         ('started at', lambda s: s['createdAt']),
     ])
