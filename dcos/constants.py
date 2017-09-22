@@ -14,12 +14,16 @@ DCOS_CLUSTER = 'DCOS_CLUSTER'
 DCOS_CLUSTER_ATTACHED_FILE = "attached"
 """Name of the file indicating the current attached cluster"""
 
-DCOS_SUBCOMMAND_ENV_SUBDIR = 'env'
-"""In a package's directory, this is the cli contents subdirectory."""
+DCOS_GLOBAL_SUBCOMMAND_SUBDIR = 'global_subcommands'
+"""Name of the subdirectory that contains all of the global subcommands. This
+is relative to the location of the executable."""
 
 DCOS_SUBCOMMAND_SUBDIR = 'subcommands'
 """Name of the subdirectory that contains all of the subcommands. This is
 relative to the location of the executable."""
+
+DCOS_SUBCOMMAND_ENV_SUBDIR = 'env'
+"""In a package's directory, this is the cli contents subdirectory."""
 
 DCOS_CONFIG_ENV = 'DCOS_CONFIG'
 """Name of the environment variable pointing to the DC/OS config."""

@@ -6,7 +6,7 @@ import urllib
 
 from urllib.request import urlopen
 
-from dcos import config, constants, http, util
+from dcos import config, constants, http, subcommand, util
 from dcos.errors import DCOSException
 
 
@@ -23,8 +23,8 @@ def move_to_cluster_config():
     :rtype: None
     """
 
-    global_config = config.get_global_config()
-    dcos_url = config.get_config_val("core.dcos_url", global_config)
+    deprecated_config = config.get_deprecated_config()
+    dcos_url = config.get_config_val("core.dcos_url", deprecated_config)
 
     # if no cluster is set, do not move the cluster yet
     if dcos_url is None:
@@ -49,9 +49,16 @@ def move_to_cluster_config():
 
     util.ensure_dir_exists(cluster_path)
 
-    # move config file to new location
-    global_config_path = config.get_global_config_path()
-    util.sh_copy(global_config_path, cluster_path)
+    # copy config file to new location
+    deprecated_config_path = config.get_deprecated_config_path()
+    util.sh_copy(deprecated_config_path, cluster_path)
+
+    # copy subcommand directory to new location
+    deprecated_subcommand_dir = subcommand.deprecated_subcommand_dir()
+    if os.path.exists(deprecated_subcommand_dir):
+        subcommand_dir = os.path.join(
+            cluster_path, constants.DCOS_SUBCOMMAND_SUBDIR)
+        util.sh_copytree(deprecated_subcommand_dir, subcommand_dir)
 
     # set cluster as attached
     util.ensure_file_exists(os.path.join(
