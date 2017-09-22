@@ -5,7 +5,7 @@ from distutils.dir_util import copy_tree
 
 import pytest
 
-from dcos import constants, util
+from dcos import config, constants, util
 from .helpers.common import assert_command, exec_command
 
 
@@ -40,12 +40,15 @@ def dcos_dir_backup():
     with util.tempdir() as tempdir:
         old_dcos_dir = os.environ.get(constants.DCOS_DIR_ENV)
         os.environ[constants.DCOS_DIR_ENV] = tempdir
-
+        empty_env = False
+        if old_dcos_dir is None:
+            old_dcos_dir = config.get_config_dir_path()
+            empty_env = True
         copy_tree(old_dcos_dir, tempdir)
 
         yield tempdir
         # return to order
-        if old_dcos_dir is None:
+        if empty_env:
             os.environ.pop(constants.DCOS_DIR_ENV)
         else:
             os.environ[constants.DCOS_DIR_ENV] = old_dcos_dir
