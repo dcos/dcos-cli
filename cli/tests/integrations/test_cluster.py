@@ -52,16 +52,13 @@ def test_setup_noninteractive():
     This makes sure the process doesn't prompt for input forever (DCOS-15590).
     """
 
-    try:
-        returncode, stdout, stderr = exec_command(
-            ['dcos',
-             'cluster',
-             'setup',
-             'https://dcos.snakeoil.mesosphere.com'],
-            timeout=30,
-            stdin=subprocess.DEVNULL)
-    except subprocess.TimeoutExpired:
-        assert False, 'timed out waiting for process to exit'
+    returncode, stdout, stderr = exec_command(
+        ['dcos',
+         'cluster',
+         'setup',
+         'https://dcos.snakeoil.mesosphere.com'],
+        timeout=30,
+        stdin=subprocess.DEVNULL)
 
     assert returncode == 1
     assert b"'' is not a valid response" in stdout
