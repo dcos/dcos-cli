@@ -156,6 +156,17 @@ def test_no_history_with_job():
         assert returncode == 0
 
 
+def test_history_deprecated_show_failures():
+
+    with _no_schedule_instance_job():
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'job', 'history', 'pikachu', '--show-failures'])
+
+        assert returncode == 0
+        assert stderr.decode('utf-8').startswith(
+                "'--show-failures' is deprecated")
+
+
 def test_show_runs():
     with _no_schedule_instance_job():
 
