@@ -11,7 +11,7 @@ import dcoscli
 from dcos import (cmds, config, emitting, http,
                   metronome, options, packagemanager, util)
 from dcos.cosmos import get_cosmos_url
-from dcos.errors import DCOSException, DCOSHTTPException
+from dcos.errors import DCOSException, DCOSHTTPException, DefaultError
 from dcoscli import tables
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.util import decorate_docopt_usage
@@ -45,6 +45,14 @@ def main(argv):
 
 @decorate_docopt_usage
 def _main(argv):
+
+    for i, arg in enumerate(argv):
+        if arg == '--show-failures':
+            argv[i] = '--failures'
+            warning = ("'--show-failures' is deprecated, "
+                       "please use '--failures' instead.\n")
+            emitter.publish(DefaultError(warning))
+
     args = docopt.docopt(
         default_doc("job"),
         argv=argv,
