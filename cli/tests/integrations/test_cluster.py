@@ -9,6 +9,22 @@ from dcos import config, constants, util
 from .helpers.common import assert_command, exec_command
 
 
+@pytest.fixture
+def dcos_dir_tmp_copy():
+    with util.tempdir() as tempdir:
+        old_dcos_dir_env = os.environ.get(constants.DCOS_DIR_ENV)
+        old_dcos_dir = config.get_config_dir_path()
+        os.environ[constants.DCOS_DIR_ENV] = tempdir
+        copy_tree(old_dcos_dir, tempdir)
+
+        yield tempdir
+
+        if old_dcos_dir_env:
+            os.environ[constants.DCOS_DIR_ENV] = old_dcos_dir_env
+        else:
+            os.environ.pop(constants.DCOS_DIR_ENV)
+
+
 def test_info():
     stdout = b'Manage your DC/OS clusters\n'
     assert_command(['dcos', 'cluster', '--info'],
@@ -34,34 +50,12 @@ def test_list():
     assert sorted(info.keys()) == keys
 
 
-@pytest.fixture
-def dcos_dir_backup():
-
-    with util.tempdir() as tempdir:
-        old_dcos_dir = os.environ.get(constants.DCOS_DIR_ENV)
-        os.environ[constants.DCOS_DIR_ENV] = tempdir
-        empty_env = False
-        if old_dcos_dir is None:
-            old_dcos_dir = config.get_config_dir_path()
-            empty_env = True
-        copy_tree(old_dcos_dir, tempdir)
-
-        yield tempdir
-        # return to order
-        if empty_env:
-            os.environ.pop(constants.DCOS_DIR_ENV)
-        else:
-            os.environ[constants.DCOS_DIR_ENV] = old_dcos_dir
-
-
-def test_remove_all(dcos_dir_backup):
-    dcos_dir = dcos_dir_backup
-
+def test_remove_all(dcos_dir_tmp_copy):
     # confirm 1
-    assert num_of_clusters() == 1
+    assert _num_of_clusters() == 1
 
     # integration tests assume 1 cluster setup.  updating to 2.
-    for root, dirs, files in os.walk(os.path.join(dcos_dir, "clusters")):
+    for root, dirs, _ in os.walk(os.path.join(dcos_dir_tmp_copy, "clusters")):
         if len(dirs) > 0:
             test_cluster = os.path.join(root, dirs[0])
             break
@@ -70,7 +64,7 @@ def test_remove_all(dcos_dir_backup):
     copy_tree(test_cluster, test_cluster2)
 
     # confirm 2
-    assert num_of_clusters() == 2
+    assert _num_of_clusters() == 2
 
     # actual test
     returncode, stdout, stderr = exec_command(
@@ -79,14 +73,7 @@ def test_remove_all(dcos_dir_backup):
     assert stderr == b''
     assert stdout == b''
 
-    assert num_of_clusters() == 0
-
-
-def num_of_clusters():
-    _, stdout, _ = exec_command(
-        ['dcos', 'cluster', 'list', '--json'])
-    cluster_list = json.loads(stdout.decode('utf-8'))
-    return len(cluster_list)
+    assert _num_of_clusters() == 0
 
 
 def test_rename():
@@ -123,3 +110,10 @@ def test_setup_noninteractive():
     assert returncode == 1
     assert b"'' is not a valid response" in stdout
     assert b"Couldn't get confirmation for the fingerprint." in stderr
+
+
+def _num_of_clusters():
+    _, stdout, _ = exec_command(
+        ['dcos', 'cluster', 'list', '--json'])
+    cluster_list = json.loads(stdout.decode('utf-8'))
+    return len(cluster_list)
