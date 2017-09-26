@@ -62,7 +62,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['cluster', 'remove'],
-            arg_keys=['<name>'],
+            arg_keys=['<name>', '--all'],
             function=_remove),
 
         cmds.Command(
@@ -123,14 +123,19 @@ def _list(json_, attached):
     return
 
 
-def _remove(name):
+def _remove(name=None, all_clusters=False):
     """
     :param name: name of cluster
     :type name: str
+    :param all_clusters: remove all clusters if True
+    :type all_clusters: bool
     :rtype: None
     """
-
-    return cluster.remove(name)
+    if all_clusters:
+        for c in cluster.get_clusters():
+            cluster.remove(c.get_name())
+    else:
+        cluster.remove(name)
 
 
 def _attach(name):
