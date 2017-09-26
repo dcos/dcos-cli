@@ -7,7 +7,7 @@ Usage:
     dcos cluster --version
     dcos cluster attach <name>
     dcos cluster list [--attached --json]
-    dcos cluster remove <name>
+    dcos cluster remove [<name> | --all]
     dcos cluster rename <name> <new_name>
     dcos cluster setup <dcos_url>
         [--insecure | --no-check | --ca-certs=<ca-certs>]
