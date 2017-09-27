@@ -726,3 +726,19 @@ def read_file_json(path):
         path = os.path.expanduser(path)
         with open_file(path) as options_file:
             return load_json(options_file)
+
+
+def get_fault_domain(state):
+    """ Read mesos state json and return region and zone
+
+    :param state: mesos state json top level or a node item
+    :type state: dict
+    :returns: region and zone
+    :rtype: (str | None, str | None)
+    """
+    try:
+        region = state['domain']['fault_domain']['region']['name']
+        zone = state['domain']['fault_domain']['zone']['name']
+        return region, zone
+    except Exception:
+        return None, None
