@@ -9,12 +9,12 @@ from cryptography.hazmat.primitives import hashes
 import dcoscli
 
 from dcos import cluster, cmds, config, emitting, http, util
-from dcos.errors import DCOSAuthenticationException, DCOSException
+from dcos.errors import (DCOSAuthenticationException, DCOSException,
+                         DefaultError)
 from dcoscli.auth.main import login
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.tables import clusters_table
 from dcoscli.util import confirm, decorate_docopt_usage
-
 
 emitter = emitting.FlatEmitter()
 logger = util.get_logger(__name__)
@@ -208,11 +208,14 @@ def setup(dcos_url,
         # set cluster as attached
         cluster.set_attached(temp_path)
 
-        # Make sure to ignore any environment variable.
+        # Make sure to ignore any environment variable for the DCOS URL.
         # There is already a mandatory command argument for this.
+        env_warning = ("Ignoring '{}' environment variable.\n")
         if "DCOS_URL" in os.environ:
+            emitter.publish(DefaultError(env_warning.format('DCOS_URL')))
             del os.environ["DCOS_URL"]
         if "DCOS_DCOS_URL" in os.environ:
+            emitter.publish(DefaultError(env_warning.format('DCOS_DCOS_URL')))
             del os.environ["DCOS_DCOS_URL"]
 
         # authenticate
