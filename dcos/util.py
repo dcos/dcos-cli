@@ -1,6 +1,7 @@
 import collections
 import concurrent.futures
 import contextlib
+import ctypes
 import functools
 import hashlib
 import json
@@ -96,6 +97,52 @@ def remove_path_on_error(path):
     except:
         shutil.rmtree(path, ignore_errors=True)
         raise
+
+
+@contextlib.contextmanager
+def silent_output():
+    """A context manager for suppressing stdout / stderr, it sets their file
+    descriptors to os.devnull and then restores them.
+
+    This is helpful for inhibiting output from C code or subprocesses, as
+    replacing sys.stdout and sys.stderr wouldn't be enough.
+    """
+
+    libc = ctypes.CDLL(None)
+    c_stdout = ctypes.c_void_p.in_dll(libc, 'stdout')
+    c_stderr = ctypes.c_void_p.in_dll(libc, 'stderr')
+
+    # Original fds stdout/stderr point to. Usually 1 and 2 on POSIX systems.
+    original_stdout_fd = sys.stdout.fileno()
+    original_stderr_fd = sys.stderr.fileno()
+
+    # Save a copy of original outputs fds
+    saved_stdout_fd = os.dup(original_stdout_fd)
+    saved_stderr_fd = os.dup(original_stderr_fd)
+
+    # A fd for the null device
+    devnull = open(os.devnull, 'w')
+
+    def _redirect_outputs(stdout_to_fd, stderr_to_fd):
+        """Redirect stdout/stderr to the given file descriptors."""
+        # Flush outputs, including C-level buffers
+        libc.fflush(c_stdout)
+        libc.fflush(c_stderr)
+        sys.stderr.flush()
+        sys.stdout.flush()
+
+        # Make original stdout / stderr fds point to the same file as to_fd
+        os.dup2(stdout_to_fd, original_stdout_fd)
+        os.dup2(stderr_to_fd, original_stderr_fd)
+
+    try:
+        # Redirect outputs to os.devnull
+        _redirect_outputs(devnull.fileno(), devnull.fileno())
+        yield
+    finally:
+        # redirect outputs back to the original fds
+        _redirect_outputs(saved_stdout_fd, saved_stderr_fd)
+        devnull.close()
 
 
 def sh_copy(src, dst):
