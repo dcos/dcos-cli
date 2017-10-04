@@ -5,7 +5,6 @@ import time
 import webbrowser
 
 import jwt
-
 from six.moves import urllib
 from six.moves.urllib.parse import urlparse
 
@@ -67,7 +66,8 @@ def _prompt_user_for_token(url, token_type):
     msg = msg.lstrip().format(url=url, token_type=token_type)
 
     try:
-        webbrowser.open_new_tab(url)
+        with util.silent_output():
+            webbrowser.open_new_tab(url)
     except webbrowser.Error as exc:
         logger.warning(
             'Exception occurred while calling webbrowser.open(%r): %s',
