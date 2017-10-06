@@ -198,3 +198,5 @@ def testBuilder(String platform, String nodeId, String workspace = null) {
         }
     }
 }
+
+return this
