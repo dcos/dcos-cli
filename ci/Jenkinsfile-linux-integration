@@ -2,7 +2,7 @@
 
 // This Jenkinsfile runs integration tests for linux.
 
-evaluate(new File("./Jenkinsfile-base"))
+def helper = load 'Jenkinsfile-base'
 
 /**
  * These are the builds that can be run in parallel.
@@ -10,7 +10,7 @@ evaluate(new File("./Jenkinsfile-base"))
 def builders = [:]
 
 
-builders['linux-tests'] = testBuilder('linux', 'py35', '/workspace')({
+builders['linux-tests'] = helper.testBuilder('linux', 'py35', '/workspace')({
     stage ("Run dcos-cli tests") {
         sh '''
            rm -rf ~/.dcos; \
