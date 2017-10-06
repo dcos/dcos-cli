@@ -5,6 +5,8 @@
 def helper
 
 node {
+    sh 'ls'
+    sh 'pwd'
     helper = load 'Jenkinsfile-base'
 }
 
