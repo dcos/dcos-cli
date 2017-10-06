@@ -3,47 +3,7 @@
 // This Jenkinsfile runs integration tests for linux.
 
 def helper
-
-node {
-    sh 'ls'
-    sh 'pwd'
-    helper = load 'Jenkinsfile-base'
-}
-
-/**
- * These are the builds that can be run in parallel.
- */
 def builders = [:]
-
-
-builders['linux-tests'] = helper.testBuilder('linux', 'py35', '/workspace')({
-    stage ("Run dcos-cli tests") {
-        sh '''
-           rm -rf ~/.dcos; \
-           grep -q "^.* dcos.snakeoil.mesosphere.com$" /etc/hosts && \
-           sed -iold "s/^.* dcos.snakeoil.mesosphere.com$/${DCOS_IP} dcos.snakeoil.mesosphere.com/" /etc/hosts || \
-           echo ${DCOS_IP} dcos.snakeoil.mesosphere.com >> /etc/hosts'''
-
-        dir('dcos-cli') {
-            sh 'make test'
-        }
-
-        dir('dcos-cli/cli') {
-            sh '''
-               export PYTHONIOENCODING=utf-8; \
-               make binary; \
-               export CLI_TEST_SSH_USER=centos; \
-               export CLI_TEST_MASTER_PROXY=true; \
-               dist/dcos cluster setup dcos.snakeoil.mesosphere.com \
-                   --insecure --username=${DCOS_ADMIN_USERNAME} \
-                   --password-env=DCOS_ADMIN_PASSWORD; \
-               dist/dcos config set core.reporting false; \
-               dist/dcos config set core.timeout 5; \
-               make test-binary'''
-        }
-    }
-})
-
 
 /**
  * This node bootstraps everything including creating all the test clusters,
@@ -68,12 +28,41 @@ throttle(['dcos-cli']) {
         stage ('Pull dcos-cli repository') {
             dir('dcos-cli') {
                 checkout scm
+                helper = load 'ci/Jenkinsfile-base'
             }
         }
 
         stage ('Stash dcos-cli repository') {
             stash(['includes': 'dcos-cli/**', name: 'dcos-cli'])
         }
+
+        builders['linux-tests'] = helper.testBuilder('linux', 'py35', '/workspace')({
+            stage ("Run dcos-cli tests") {
+                sh '''
+                rm -rf ~/.dcos; \
+                grep -q "^.* dcos.snakeoil.mesosphere.com$" /etc/hosts && \
+                sed -iold "s/^.* dcos.snakeoil.mesosphere.com$/${DCOS_IP} dcos.snakeoil.mesosphere.com/" /etc/hosts || \
+                echo ${DCOS_IP} dcos.snakeoil.mesosphere.com >> /etc/hosts'''
+
+                dir('dcos-cli') {
+                    sh 'make test'
+                }
+
+                dir('dcos-cli/cli') {
+                    sh '''
+                    export PYTHONIOENCODING=utf-8; \
+                    make binary; \
+                    export CLI_TEST_SSH_USER=centos; \
+                    export CLI_TEST_MASTER_PROXY=true; \
+                    dist/dcos cluster setup dcos.snakeoil.mesosphere.com \
+                        --insecure --username=${DCOS_ADMIN_USERNAME} \
+                        --password-env=DCOS_ADMIN_PASSWORD; \
+                    dist/dcos config set core.reporting false; \
+                    dist/dcos config set core.timeout 5; \
+                    make test-binary'''
+                }
+            }
+        })
 
         withCredentials(
             [[$class: 'AmazonWebServicesCredentialsBinding',
