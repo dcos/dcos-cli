@@ -215,31 +215,43 @@ def builders = [:]
 
 
 builders['mac-tests'] = testBuilder('mac', 'mac')({
-    stage ("Run dcos-cli tests") {
-        sh '''
-           rm -rf ~/.dcos; \
-           cp /etc/hosts hosts.local; \
-           grep -q "^.* dcos.snakeoil.mesosphere.com$" hosts.local && \
-           sed -iold "s/^.* dcos.snakeoil.mesosphere.com$/${DCOS_IP} dcos.snakeoil.mesosphere.com/" hosts.local || \
-           echo ${DCOS_IP} dcos.snakeoil.mesosphere.com >> hosts.local; \
-           sudo cp ./hosts.local /etc/hosts'''
-
-        dir('dcos-cli') {
-            sh 'make test'
-        }
-
-        dir('dcos-cli/cli') {
+    try {
+        stage ("Run dcos-cli tests") {
             sh '''
-               export PYTHONIOENCODING=utf-8; \
-               make binary; \
-               export CLI_TEST_SSH_USER=centos; \
-               export CLI_TEST_MASTER_PROXY=true; \
-               dist/dcos cluster setup dcos.snakeoil.mesosphere.com \
-                   --insecure --username=${DCOS_ADMIN_USERNAME} \
-                   --password-env=DCOS_ADMIN_PASSWORD; \
-               dist/dcos config set core.reporting false; \
-               dist/dcos config set core.timeout 5; \
-               make test-binary'''
+               rm -rf ~/.dcos; \
+               cp /etc/hosts hosts.local; \
+               grep -q "^.* dcos.snakeoil.mesosphere.com$" hosts.local && \
+               sed -iold "s/^.* dcos.snakeoil.mesosphere.com$/${DCOS_IP} dcos.snakeoil.mesosphere.com/" hosts.local || \
+               echo ${DCOS_IP} dcos.snakeoil.mesosphere.com >> hosts.local; \
+               sudo cp ./hosts.local /etc/hosts'''
+
+            dir('dcos-cli') {
+                sh 'make test'
+            }
+
+            dir('dcos-cli/cli') {
+                sh '''
+                   export PYTHONIOENCODING=utf-8; \
+                   make binary; \
+                   export CLI_TEST_SSH_USER=centos; \
+                   export CLI_TEST_MASTER_PROXY=true; \
+                   dist/dcos cluster setup dcos.snakeoil.mesosphere.com \
+                     --insecure --username=${DCOS_ADMIN_USERNAME} \
+                     --password-env=DCOS_ADMIN_PASSWORD; \
+                   dist/dcos config set core.reporting false; \
+                   dist/dcos config set core.timeout 5; \
+                   make test-binary'''
+            }
+        }
+    } finally {
+        stage ("Cleaning up \$DCOS_DIR and /etc/hosts") {
+            sh '''
+               rm -rf ~/.dcos; \
+               cp /etc/hosts hosts.local; \
+               cat hosts.local; \
+               sed -i "" "/dcos.snakeoil.mesosphere.com/d" hosts.local; \
+               cat hosts.local; \
+               sudo cp ./hosts.local /etc/hosts'''
         }
     }
 })
