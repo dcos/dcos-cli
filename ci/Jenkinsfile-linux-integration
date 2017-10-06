@@ -2,7 +2,11 @@
 
 // This Jenkinsfile runs integration tests for linux.
 
-def helper = load 'Jenkinsfile-base'
+def helper
+
+node {
+    helper = load 'Jenkinsfile-base'
+}
 
 /**
  * These are the builds that can be run in parallel.
