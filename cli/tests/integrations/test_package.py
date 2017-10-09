@@ -1095,7 +1095,7 @@ def _package(name,
 
     installed = False
     try:
-        returncode_, stdout_, stderr_ = exec_command(command)
+        returncode_, stdout_, stderr_ = exec_command(command, timeout=30)
         installed = (returncode_ == 0)
 
         assert installed
