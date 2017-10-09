@@ -499,27 +499,33 @@ def _uninstall(package_name, remove_all, app_id, cli, app, skip_confirmation):
     :rtype: int
     """
 
+    package_manager = get_package_manager()
+
     # Don't gate CLI uninstalls.
     # Don't gate uninstalls if the user wants to skip confirmation.
-    if not cli and not skip_confirmation and not _confirm_uninstall(
-        package_name,
-        remove_all,
-        app_id
-    ):
-        return 0
+    if not cli and not skip_confirmation:
+        installed = package.installed_packages(
+            package_manager, None, package_name, cli_only=False)
+        installed_pkg = next(iter(installed), None)
+        if not installed_pkg or not installed_pkg.get('name'):
+            msg = "Package '{}' is not installed.".format(package_name)
+            emitter.publish(msg)
+            return 1
 
-    package_manager = get_package_manager()
+        if not _confirm_uninstall(installed_pkg, remove_all, app_id):
+            return 0
+
     package.uninstall(
         package_manager, package_name, remove_all, app_id, cli, app)
 
     return 0
 
 
-def _confirm_uninstall(package_name, remove_all, app_id):
+def _confirm_uninstall(installed_pkg, remove_all, app_id):
     """Interactively confirm the uninstall with the user.
 
-    :param package_name: The package to uninstall
-    :type package_name: str
+    :param installed_pkg: The currently installed package
+    :type installed_pkg: str
     :param remove_all: Whether to remove all instances of the named package
     :type remove_all: boolean
     :param app_id: App ID of the package instance to uninstall
@@ -528,7 +534,14 @@ def _confirm_uninstall(package_name, remove_all, app_id):
     :rtype: bool
     """
 
-    if remove_all:
+    package_name = installed_pkg.get('name')
+
+    if not installed_pkg.get("apps"):
+        confirm_cta = ("WARNING: This will uninstall [{}] and delete its "
+                       "subcommand(s).").format(package_name)
+        confirm_prompt = "Please type the name of the package to confirm"
+        expected_text = package_name
+    elif remove_all:
         confirm_cta = ("WARNING: This action cannot be undone. This will "
                        "uninstall all instances of the [{package_name}] "
                        "package, and delete all data for all {package_name} "
