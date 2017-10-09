@@ -1073,6 +1073,7 @@ def _helloworld_cli(global_=False):
 def _package(name,
              args,
              stdout=b'',
+             uninstall_confirmation=True,
              uninstall_app_id='',
              uninstall_stderr=b''):
     """Context manager that installs a package on entrance, and uninstalls it on
@@ -1104,7 +1105,9 @@ def _package(name,
         yield
     finally:
         if installed:
-            command = ['dcos', 'package', 'uninstall', name, '--yes']
+            command = ['dcos', 'package', 'uninstall', name]
+            if uninstall_confirmation:
+                command.append('--yes')
             if uninstall_app_id:
                 command.append('--app-id='+uninstall_app_id)
             assert_command(command, stderr=uninstall_stderr)
