@@ -283,6 +283,26 @@ class DCOSClient(object):
                              'files/browse.json')
         return http.get(url, params={'path': path}).json()
 
+    def mark_agent_gone(self, agent_id):
+        """Mark an agent as gone.
+
+        :param agent_id: agent ID
+        :type agent_id: str
+        """
+        message = {
+            'type': "MARK_AGENT_GONE",
+            'mark_agent_gone': {
+                'agent_id': {'value': agent_id}}}
+
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'}
+
+        http.post(
+            self.master_url('api/v1'),
+            data=json.dumps(message),
+            headers=headers)
+
 
 class MesosDNSClient(object):
     """ Mesos-DNS client

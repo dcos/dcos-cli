@@ -6,6 +6,7 @@ Usage:
     dcos node --info
     dcos node [--json | --field=<field>...]
     dcos node --version
+    dcos node decommission <mesos-id>
     dcos node diagnostics (--list | --status | --cancel) [--json]
     dcos node diagnostics create (<nodes>)...
     dcos node diagnostics delete <bundle>
@@ -25,6 +26,8 @@ Usage:
                   [<command>]
 
 Commands:
+    decommission
+        Mark an agent as gone.
     diagnostics
         View the details of diagnostics bundles.
     diagnostics create

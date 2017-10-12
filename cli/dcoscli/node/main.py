@@ -109,6 +109,11 @@ def _cmds():
             function=_dns_lookup),
 
         cmds.Command(
+            hierarchy=['node', 'decommission'],
+            arg_keys=['<mesos-id>'],
+            function=_decommission),
+
+        cmds.Command(
             hierarchy=['node'],
             arg_keys=['--json', '--field'],
             function=_list)
@@ -962,3 +967,15 @@ def _ssh(leader, slave, option, config_file, user, master_proxy, proxy_ip,
                          "`--master-proxy` or `--proxy-ip`"))
 
     return subprocess.Subproc().call(cmd, shell=True)
+
+
+def _decommission(mesos_id):
+    try:
+        mesos.DCOSClient().mark_agent_gone(mesos_id)
+    except errors.DCOSException as e:
+        emitter.publish(
+            DefaultError("Couldn't mark agent {} as gone :\n\n{}".format(
+                mesos_id, e)))
+        return 1
+
+    emitter.publish("Agent {} has been marked as gone.".format(mesos_id))

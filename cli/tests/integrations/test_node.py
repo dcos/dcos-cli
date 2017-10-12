@@ -251,6 +251,37 @@ def test_node_ssh_slave_with_command():
                '/opt/mesosphere/bin/detect_ip'], 0, slave['hostname'])
 
 
+@pytest.mark.skipif(True, reason='The agent should be recommissioned,'
+                                 ' but that feature does not exist yet.')
+def test_node_decommission():
+    agents = mesos.DCOSClient().get_state_summary()['slaves']
+    agents_count = len(agents)
+    assert agents_count > 0
+
+    agent_id = agents[0]['id']
+
+    returncode, stdout, stderr = exec_command([
+        'dcos', 'node', 'decommission', agent_id])
+
+    exp_stdout = "Agent {} has been marked as gone.\n".format(agent_id)
+
+    assert returncode == 0
+    assert stdout.decode('utf-8') == exp_stdout
+    assert stderr == b''
+
+    new_agents = mesos.DCOSClient().get_state_summary()['slaves']
+    assert (agents_count - 1) == len(new_agents)
+
+
+def test_node_decommission_unexisting_agent():
+    returncode, stdout, stderr = exec_command([
+        'dcos', 'node', 'decommission', 'not-a-mesos-id'])
+
+    assert returncode == 1
+    assert stdout == b''
+    assert stderr.startswith(b"Couldn't mark agent not-a-mesos-id as gone :")
+
+
 def _node_ssh_output(args):
     cli_test_ssh_key_path = os.environ['CLI_TEST_SSH_KEY_PATH']
 
