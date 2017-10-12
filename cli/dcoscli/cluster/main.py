@@ -1,6 +1,7 @@
 import os
 
 import docopt
+import requests
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -229,13 +230,14 @@ def setup(dcos_url,
             config.set_val("core.ssl_verify", "false")
         elif ca_certs:
             config.set_val("core.ssl_verify", ca_certs)
-        else:
+        elif _needs_cluster_cert(dcos_url):
             cert = cluster.get_cluster_cert(dcos_url)
-            # if we don't have a cert don't try to verify one
-            if cert is False:
-                config.set_val("core.ssl_verify", "false")
-            else:
+            if cert:
                 stored_cert = _store_cluster_cert(cert, no_check)
+            else:
+                config.set_val("core.ssl_verify", "false")
+        else:
+            config.set_val("core.ssl_verify", "false")
 
         try:
             login(dcos_url,
@@ -300,3 +302,24 @@ def _store_cluster_cert(cert, no_check):
 
     config.set_val("core.ssl_verify", cert_path)
     return True
+
+
+def _needs_cluster_cert(dcos_url):
+    """Checks whether the certificate bundle from the cluster should
+    be downloaded (when dcos_url uses HTTPS). This is done by making a request
+    to the cluster, it might work out of the box (when we're dealing with a
+    load-balancer or when a custom CA has already been added to the system).
+
+    :param dcos_url: URL of the DC/OS cluster
+    :type dcos_url: str
+    :returns: whether or not to download the cert bundle
+    :rtype: bool
+    """
+
+    if dcos_url.startswith('https://'):
+        try:
+            requests.get(dcos_url, timeout=http.DEFAULT_TIMEOUT)
+        except requests.exceptions.SSLError:
+            return True
+
+    return False
