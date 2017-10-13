@@ -69,6 +69,7 @@ setup(
         'six>=1.9, <2.0',
         'toml>=0.9, <1.0',
         'sseclient==0.0.14',
+        'retrying',
     ],
 
     extras_require={
