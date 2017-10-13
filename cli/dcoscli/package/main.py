@@ -442,7 +442,7 @@ def _matches_app_id(app_id, pkg_info):
     :param pkg_info: the package description
     :type pkg_info: dict
     :returns: True if the app id is not defined or the package matches that app
-              id; False otherwize
+              id; False otherwise
     :rtype: bool
     """
 
