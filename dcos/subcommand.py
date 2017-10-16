@@ -154,7 +154,7 @@ def default_subcommands():
     :rtype: [str]
     """
 
-    return ["auth", "cluster", "config", "experimental", "help", "job",
+    return ["auth", "cluster", "config", "help", "job",
             "marathon", "node", "package", "service", "task"]
 
 
