@@ -1,6 +1,7 @@
 import contextlib
 import json
 import re
+import time
 
 from .common import assert_command, exec_command
 
@@ -375,6 +376,29 @@ def watch_all_deployments(count=300):
     deps = list_deployments()
     for dep in deps:
         watch_deployment(dep['id'], count)
+
+
+def watch_for_overdue(max_count=300):
+    """Wait for overdue to be set to true.  Useful to test apps stuck in
+    deployment.
+
+    :param count: max number of seconds to wait
+    :type count: int
+    :rtype: None
+    """
+
+    count = 0
+    while count < max_count:
+        cmd = ['dcos', 'marathon', 'debug', 'list', '--json']
+        returncode, stdout, stderr = exec_command(cmd)
+        result = json.loads(stdout.decode('utf-8'))
+        if result[0]['delay']['overdue']:
+            break
+        else:
+            count = count + 1
+            time.sleep(1)
+
+        assert count < max_count, "Expired watch counter"
 
 
 def list_deployments(expected_count=None, app_id=None):
