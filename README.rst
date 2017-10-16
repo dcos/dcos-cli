@@ -125,9 +125,6 @@ capabilities is to use `dcos-launch`_ with the configuration listed below::
             - 10.10.0.2
         dns_search: us-west-2.compute.internal
         master_discovery: static
-        cosmos_config:
-          staged_package_storage_uri: file:///var/lib/dcos/cosmos/staged-packages
-          package_storage_uri: file:///var/lib/dcos/cosmos/packages
 
 Where :code:`CLI_TEST_DEPLOYMENT_NAME` is a custom name set by the user,
 :code:`CLI_TEST_INSTALLER_URL` is the URL of a
