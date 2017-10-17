@@ -409,7 +409,7 @@ class MarathonSubcommand(object):
 
         return 0
 
-    def list(self, json_, quiet_):
+    def list(self, json_, quiet_=False):
         """
         :param json_: output json if True
         :type json_: bool
@@ -763,7 +763,7 @@ class MarathonSubcommand(object):
         emitter.publish(versions)
         return 0
 
-    def deployment_list(self, app_id, json_, quiet_):
+    def deployment_list(self, app_id, json_, quiet_=False):
         """
         :param app_id: the application id
         :type app_id: str
@@ -859,7 +859,7 @@ class MarathonSubcommand(object):
 
         return 0
 
-    def task_list(self, app_id, json_, quiet_):
+    def task_list(self, app_id, json_, quiet_=False):
         """
         :param app_id: the id of the application
         :type app_id: str
@@ -992,7 +992,7 @@ class MarathonSubcommand(object):
         marathon_client.remove_pod(pod_id, force)
         return 0
 
-    def pod_list(self, json_, quiet_):
+    def pod_list(self, json_, quiet_=False):
         """
         :param json_: output JSON if true
         :type json_: bool
