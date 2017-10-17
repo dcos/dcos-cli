@@ -221,8 +221,16 @@ def get_cluster(name):
     :rtype: Cluster
     """
 
-    return next((c for c in get_clusters()
-                 if c.get_cluster_id() == name or c.get_name() == name), None)
+    clusters = [c for c in get_clusters()
+                if c.get_cluster_id().startswith(name)
+                or c.get_name().startswith(name)]
+
+    if len(clusters) == 0:
+        return None
+    elif len(clusters) == 1:
+        return clusters[0]
+    else:
+        raise DCOSException("Multiple clusters of [{}] exist".format(name))
 
 
 def remove(name):
