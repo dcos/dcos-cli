@@ -1,7 +1,6 @@
 import collections
 import concurrent.futures
 import contextlib
-import ctypes
 import functools
 import hashlib
 import json
@@ -104,13 +103,9 @@ def silent_output():
     """A context manager for suppressing stdout / stderr, it sets their file
     descriptors to os.devnull and then restores them.
 
-    This is helpful for inhibiting output from C code or subprocesses, as
+    This is helpful for inhibiting output from subprocesses, as
     replacing sys.stdout and sys.stderr wouldn't be enough.
     """
-
-    libc = ctypes.CDLL(None)
-    c_stdout = ctypes.c_void_p.in_dll(libc, 'stdout')
-    c_stderr = ctypes.c_void_p.in_dll(libc, 'stderr')
 
     # Original fds stdout/stderr point to. Usually 1 and 2 on POSIX systems.
     original_stdout_fd = sys.stdout.fileno()
@@ -125,9 +120,7 @@ def silent_output():
 
     def _redirect_outputs(stdout_to_fd, stderr_to_fd):
         """Redirect stdout/stderr to the given file descriptors."""
-        # Flush outputs, including C-level buffers
-        libc.fflush(c_stdout)
-        libc.fflush(c_stderr)
+        # Flush outputs buffers
         sys.stderr.flush()
         sys.stdout.flush()
 
