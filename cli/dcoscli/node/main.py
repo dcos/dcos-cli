@@ -104,6 +104,11 @@ def _cmds():
             function=_bundle_manage),
 
         cmds.Command(
+            hierarchy=['node', 'dns'],
+            arg_keys=['<dns-name>', '--json'],
+            function=_dns_lookup),
+
+        cmds.Command(
             hierarchy=['node'],
             arg_keys=['--json', '--field'],
             function=_list)
@@ -437,6 +442,30 @@ def _bundle_create(nodes):
     return 0
 
 
+def _dns_lookup(dns_name, json_):
+    """
+    Returns the IP of the dns-name in the cluster
+
+    :param dns_name: dns name to lookup
+    :type dns_name: string
+    :param json_: If true, output json.
+        Otherwise, output a human readable table.
+    :type json_: bool
+    """
+
+    ips = mesos.MesosDNSClient().hosts(dns_name)
+
+    if json_:
+        emitter.publish(ips)
+    else:
+        table = tables.dns_table(ips)
+        output = six.text_type(table)
+        if output:
+            emitter.publish(output)
+
+    return 0
+
+
 def _info():
     """Print node cli information.
 
@@ -462,7 +491,7 @@ def _list(json_, extra_field_names):
     """
 
     client = mesos.DCOSClient()
-    masters = mesos.MesosDNSClient().hosts('master.mesos.')
+    masters = mesos.MesosDNSClient().masters()
     master_state = client.get_master_state()
     slaves = client.get_state_summary()['slaves']
     for master in masters:
@@ -815,7 +844,7 @@ def _ssh(leader, slave, option, config_file, user, master_proxy, proxy_ip,
     dcos_client = mesos.DCOSClient()
 
     if leader:
-        host = mesos.MesosDNSClient().hosts('leader.mesos.')[0]['ip']
+        host = mesos.MesosDNSClient().leader()[0]['ip']
     elif private_ip:
         host = private_ip
     else:

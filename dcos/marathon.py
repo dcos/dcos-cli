@@ -67,6 +67,16 @@ class Client(object):
 
         return response.json()
 
+    def ping(self):
+        """Hits the Marathon ping endpoint
+
+        :returns Pong
+        :rtype: str
+        """
+
+        response = self._rpc.http_req(http.get, 'ping')
+        return response.text
+
     def get_app(self, app_id, version=None):
         """Returns a representation of the requested application version. If
         version is None the return the latest version.
@@ -615,6 +625,12 @@ class Client(object):
 
         response = self._rpc.http_req(http.get, 'v2/leader')
         return response.json().get('leader')
+
+    def delete_leader(self):
+        """ Delete the leading marathon instance.
+        """
+        response = self._rpc.http_req(http.delete, 'v2/leader')
+        return response.json()
 
     def add_pod(self, pod_json):
         """Add a new pod.
