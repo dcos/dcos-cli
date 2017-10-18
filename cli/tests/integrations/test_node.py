@@ -153,6 +153,18 @@ def test_node_metrics_agent_details_json():
     assert 'cpu.cores' in names
 
 
+def test_node_dns():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'node', 'dns', 'marathon.mesos', '--json'])
+
+    result = json.loads(stdout.decode('utf-8'))
+
+    assert returncode == 0
+    assert stderr == b''
+    assert result[0]['host'] == "marathon.mesos."
+    assert 'ip' in result[0]
+
+
 @pytest.mark.skipif(sys.platform == 'win32',
                     reason='No pseudo terminal on windows')
 def test_node_ssh_leader():

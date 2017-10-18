@@ -955,6 +955,26 @@ def node_table(nodes, field_names=()):
     return tb
 
 
+def dns_table(nodes, field_names=()):
+    """Returns a PrettyTable representation of the provided DC/OS nodes
+
+    :param nodes: nodes to render.
+    :type nodes: [dict]
+    :param field_names: Extra fields to add to the table
+    :type nodes: [str]
+    :rtype: PrettyTable
+    """
+
+    fields = OrderedDict([
+        ('HOST', lambda s: s.get('host')),
+        ('IP', lambda s: s.get('ip')),
+    ])
+
+    tb = table(fields, nodes)
+    tb.align['HOST'] = 'l'
+    return tb
+
+
 def _dotted_itemgetter(field_name):
     """Returns a func that gets the value in a nested dict where the
     `field_name` is a dotted path to the key.

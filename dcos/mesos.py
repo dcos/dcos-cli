@@ -315,6 +315,22 @@ class MesosDNSClient(object):
         url = self._path('v1/hosts/{}'.format(host))
         return http.get(url, headers={}).json()
 
+    def masters(self):
+        """ Returns ip addresses of all masters
+
+        :returns: {'ip', 'host'} dictionary
+        :rtype: dict(str, str)
+        """
+        return self.hosts('master.mesos')
+
+    def leader(self):
+        """ Returns ip addresses of the leader
+
+        :returns: {'ip', 'host'} dictionary
+        :rtype: dict(str, str)
+        """
+        return self.hosts('leader.mesos')
+
 
 class Master(object):
     """Mesos Master Model
