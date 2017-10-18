@@ -1,0 +1,202 @@
+#!/usr/bin/env groovy
+
+/*
+ * This file contains helper classes and functions for creating a cluster to
+ * run integration tests against, it uses `dcos-launch` under the hood.
+ * Unfortunately, `dcos-launch` only works reliably on Linux, so we use a
+ * single linux instance to create all of the clusters and separate
+ * linux/mac/windows instances to run the actual tests.
+ */
+
+/**
+ * This generates the `dcos_launch` config for a particular build.
+ */
+def generateConfig(deploymentName, installerUrl, sshKeyPath) {
+    return """
+---
+launch_config_version: 1
+deployment_name: ${deploymentName}
+installer_url: ${installerUrl}
+platform: aws
+provider: onprem
+aws_region: us-west-2
+aws_key_name: default
+ssh_private_key_filename: ${sshKeyPath}
+os_name: cent-os-7
+instance_type: m4.xlarge
+num_masters: 1
+num_private_agents: 1
+num_public_agents: 1
+dcos_config:
+    cluster_name: DC/OS CLI Integration Tests
+    resolvers:
+        - 10.10.0.2
+    dns_search: us-west-2.compute.internal
+    master_discovery: static
+    cosmos_config:
+      staged_package_storage_uri: file:///var/lib/dcos/cosmos/staged-packages
+      package_storage_uri: file:///var/lib/dcos/cosmos/packages
+"""
+}
+
+
+/**
+ * This class abstracts away the functions required to create a test cluster
+ * for each of our platforms.
+ */
+class TestCluster implements Serializable {
+    WorkflowScript script
+    String platform
+
+    TestCluster(WorkflowScript script, String platform) {
+        this.script = script
+        this.platform = platform
+    }
+
+    /**
+     * Creates a new test cluster for the given platform using dcos-launch.
+     * Waits (blocks) for the cluster to be ready to use.
+     * Exits if interrupted by user.
+     * Retries 3 times.
+     * Destroys cluster on failure.
+     */
+    def create() {
+        def createAttempts = 0
+        while (true) {
+            try {
+                createAttempts++
+                script.sh "rm -rf ${platform}_config.yaml"
+                script.sh "rm -rf ${platform}_cluster_info.json"
+                script.writeFile([
+                        "file": "${platform}_config.yaml",
+                        "text" : script.generateConfig(
+                                "dcos-cli-${platform}-${script.env.ghprbPullId}-${script.env.BUILD_ID}-${createAttempts}",
+                                "${script.env.DCOS_INSTALLER_URL}",
+                                "${script.env.CLI_TEST_SSH_KEY_PATH}")])
+
+                script.sh "./dcos-launch create -c ${platform}_config.yaml -i ${platform}_cluster_info.json"
+                script.sh "./dcos-launch wait -i ${platform}_cluster_info.json"
+                break
+            } catch(InterruptedException | hudson.AbortException e) {
+                script.echo("Build interrupted. Destroying cluster....")
+                destroy()
+                script.echo("Cluster destroyed. Exiting...")
+                throw e
+            } catch(Exception e) {
+                script.echo("Exception:" + e.toString());
+                script.echo("Cluster creation failed. Destroying cluster....");
+                destroy()
+                if (createAttempts >= 3) {
+                    script.echo("Cluster destroyed. Maximum number of creation attempts exceeded. Exiting...")
+                    throw e
+                }
+                script.echo("Cluster destroyed. Retrying...")
+            }
+        }
+    }
+
+    /**
+     * Destroys a test cluster previously created using `create()`.
+     */
+    def destroy() {
+        //script.sh "./dcos-launch delete -i ${platform}_cluster_info.json"
+    }
+
+    /**
+     * Retrieves the IP of a cluster previously created using `create()`.
+     */
+    def getDcosIp() {
+        /* In the future, consider doing the following with jq instead of
+           inline python (however, jq is not installed on our windows machines
+           at the moment). */
+        script.sh """
+            ./dcos-launch describe -i ${platform}_cluster_info.json \
+            | python -c \
+                'import sys, json; \
+                 contents = json.load(sys.stdin); \
+                 print(contents["masters"][0]["public_ip"], end="")' \
+            > ${platform}_dcos_url"""
+
+        return script.readFile("${platform}_dcos_url")
+    }
+}
+
+
+/**
+ * This function returns a closure that prepares a test environment for a
+ * specific platform on a specific node in a specific workspace.
+ */
+def testBuilder(String platform, String nodeId, String workspace = null) {
+    return { Closure _body ->
+        def body = _body
+
+        return {
+            def destroyCluster = true
+            def cluster = new TestCluster(this, platform)
+
+            stage ("Create ${platform} cluster") {
+                //cluster.create()
+            }
+
+            try {
+                //def dcosIp = cluster.getDcosIp()
+                def dcosIp = "127.0.0.1"
+
+                node(nodeId) {
+                    if (!workspace) {
+                        workspace = "${env.WORKSPACE}"
+                    }
+
+                    ws (workspace) {
+                        stage ('Cleanup workspace') {
+                            deleteDir()
+                        }
+
+                        stage ("Unstash dcos-cli repository") {
+                            unstash('dcos-cli')
+                        }
+
+                        withCredentials(
+                            [[$class: 'FileBinding',
+                              credentialsId: '1c206779-acc0-4844-97f6-7b3ed081a456',
+                              variable: 'DCOS_SNAKEOIL_CRT_PATH'],
+                             [$class: 'FileBinding',
+                              credentialsId: '23743034-1ac4-49f7-b2e6-a661aee2d11b',
+                              variable: 'CLI_TEST_SSH_KEY_PATH']]) {
+
+                            withEnv(["DCOS_IP=${dcosIp}"]) {
+                                try {
+                                    body()
+                                } catch(InterruptedException | hudson.AbortException e) {
+                                    echo(
+                                        "Build interrupted. The DC/OS cluster at" +
+                                        " ${dcosIp} will be destroyed.")
+                                    destroyCluster = true
+                                    throw e
+                                } catch (Exception e) {
+                                    echo(
+                                        "Build failed. The DC/OS cluster at" +
+                                        " ${dcosIp} will remain temporarily" +
+                                        " active so you can debug what went" +
+                                        " wrong.")
+                                    destroyCluster = false
+                                    throw e
+                                }
+                            }
+                        }
+                    }
+                }
+
+            } finally {
+                if (destroyCluster) {
+                    stage ("Destroy ${platform} cluster") {
+                        try { cluster.destroy() }
+                        catch (Exception e) {}
+                    }
+                }
+            }
+        }
+    }
+}
+
+return this
