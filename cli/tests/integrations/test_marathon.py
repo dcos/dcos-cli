@@ -5,7 +5,10 @@ import re
 import sys
 import threading
 
+from datetime import timedelta
 import pytest
+import retrying
+
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 from dcos import constants
@@ -692,6 +695,49 @@ def test_app_locked_error():
             ['dcos', 'marathon', 'app', 'stop', 'sleep-many-instances'],
             returncode=1,
             stderr=stderr)
+
+
+def test_ping():
+    assert_command(['dcos', 'marathon', 'ping'],
+                   stdout=b'Marathon ping response[1x]: "pong"\n')
+
+
+def test_leader_show():
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'marathon', 'leader', 'show', '--json'])
+
+    result = json.loads(stdout.decode('utf-8'))
+
+    assert returncode == 0
+    assert stderr == b''
+    assert result['host'] == "marathon.mesos."
+    assert 'ip' in result
+
+
+@pytest.fixture
+def marathon_up():
+    yield
+
+    def ignore_exception(exc):
+        return isinstance(exc, Exception)
+
+    @retrying.retry(stop_max_delay=timedelta(minutes=5).total_seconds() * 1000,
+                    retry_on_exception=ignore_exception)
+    def check_marathon_up():
+        # testing to see if marathon is up and can talk through the gateway
+        # ignore the exception until we have a successful reponse.
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'about'])
+
+        assert returncode == 0
+        assert stderr == b''
+
+    check_marathon_up()
+
+
+def test_leader_delete(marathon_up):
+    assert_command(['dcos', 'marathon', 'leader', 'delete'],
+                   stdout=b'Leadership abdicated\n')
 
 
 @pytest.mark.skipif(sys.platform == 'win32',

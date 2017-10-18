@@ -10,6 +10,7 @@ Usage:
     dcos node diagnostics create (<nodes>)...
     dcos node diagnostics delete <bundle>
     dcos node diagnostics download <bundle> [--location=<location>]
+    dcos node dns <dns-name> [--json]
     dcos node list-components [--leader --mesos-id=<mesos-id> --json]
     dcos node log [--follow --lines=N --leader --mesos-id=<mesos-id>]
                   [--component=<component-name> --filter=<filter>...]
