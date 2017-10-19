@@ -112,6 +112,25 @@ def test_setup_noninteractive():
     assert b"Couldn't get confirmation for the fingerprint." in stderr
 
 
+def test_setup_unreachable_url():
+    """
+    Run "dcos cluster setup" with an invalid URL.
+    This makes sure we don't print unexpected errors or hang for too long.
+    """
+
+    returncode, stdout, stderr = exec_command(
+        ['dcos',
+         'cluster',
+         'setup',
+         'https://will.never.exist.hopefully.BOFGY7tfb7doftd.mesosphere.com'],
+        timeout=10)
+
+    assert returncode == 1
+    msg = (b"Error downloading CA certificate from cluster."
+           b" Please check the provided DC/OS URL.\n")
+    assert msg == stderr
+
+
 def _num_of_clusters():
     _, stdout, _ = exec_command(
         ['dcos', 'cluster', 'list', '--json'])

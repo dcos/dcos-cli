@@ -321,5 +321,10 @@ def _needs_cluster_cert(dcos_url):
             requests.get(dcos_url, timeout=http.DEFAULT_TIMEOUT)
         except requests.exceptions.SSLError:
             return True
+        except Exception as e:
+            logger.warning(
+                'Unexpected exception occurred while calling %s: %s',
+                dcos_url, e)
+            return True
 
     return False
