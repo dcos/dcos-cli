@@ -12,6 +12,13 @@ def test_needs_cluster_cert_because_ssl_error(req_mock):
 
 
 @patch('requests.get')
+def test_needs_cluster_cert_because_other_error(req_mock):
+    req_mock.side_effect = Exception
+
+    assert _needs_cluster_cert('https://example.com')
+
+
+@patch('requests.get')
 def test_does_not_need_cluster_cert_because_non_https(req_mock):
     resp = create_autospec(requests.Response)
     resp.status_code = 200
