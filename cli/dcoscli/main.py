@@ -36,7 +36,7 @@ def _get_versions():
         dcos_url = config.get_config_val("core.dcos_url")
         url = urllib.parse.urljoin(
             dcos_url, 'dcos-metadata/dcos-version.json')
-        res = http.get(url, timeout=1)
+        res = http.get(url)
         if res.status_code == 200:
             dcos_info = res.json()
     except Exception as e:

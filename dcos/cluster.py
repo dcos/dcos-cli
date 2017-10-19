@@ -33,7 +33,7 @@ def move_to_cluster_config():
     try:
         # find cluster id
         cluster_url = dcos_url.rstrip('/') + '/metadata'
-        res = http.get(cluster_url, timeout=1)
+        res = http.get(cluster_url)
         cluster_id = res.json().get("CLUSTER_ID")
 
     # don't move cluster if dcos_url is not valid
@@ -129,7 +129,7 @@ def setup_cluster_config(dcos_url, temp_path, stored_cert):
     cluster_name = cluster_id
     try:
         url = dcos_url.rstrip('/') + '/mesos/state-summary'
-        name_query = http.get(url, timeout=1, toml_config=cluster.get_config())
+        name_query = http.get(url, toml_config=cluster.get_config())
         cluster_name = name_query.json().get("cluster")
 
     except DCOSException:
@@ -278,7 +278,7 @@ class Cluster():
             url = os.path.join(
                 self.get_url(), "dcos-metadata/dcos-version.json")
             try:
-                resp = http.get(url, timeout=1, toml_config=self.get_config())
+                resp = http.get(url, toml_config=self.get_config())
                 return resp.json().get("version", "N/A")
             except DCOSException:
                 pass
