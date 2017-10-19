@@ -4,7 +4,6 @@ import json
 import os
 import subprocess
 import time
-import zipfile
 
 import six
 from six.moves import urllib
@@ -370,9 +369,3 @@ def base64_to_dict(byte_string):
     :rtype dict
     """
     return json.loads(base64.b64decode(byte_string).decode('utf-8'))
-
-
-def zip_contents_as_json(path, inner_file):
-    with zipfile.ZipFile(path) as zip_file:
-        inner_file_contents = zip_file.read(inner_file).decode()
-    return json.loads(inner_file_contents)

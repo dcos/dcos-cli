@@ -96,13 +96,6 @@ Before you can run the DC/OS CLI integration tests, you need to get a cluster
 up and running to test against. Currently, the test suite only supports testing
 against Enterprise DC/OS.
 
-Additionally, the test suite requires a few experimental packaging features to
-be enabled, so a vanilla Enterprise DC/OS install will not suffice.  The
-experimental features required are the cosmos-specific
-:code:`staged_package_storage_uri` and :code:`package_storage_uri`
-configuration paramenters.  Please see `dcos configuration parameters`_ for
-more information.
-
 Given these constraints, the easiest way to launch a cluster with these
 capabilities is to use `dcos-launch`_ with the configuration listed below::
 
@@ -125,9 +118,6 @@ capabilities is to use `dcos-launch`_ with the configuration listed below::
             - 10.10.0.2
         dns_search: us-west-2.compute.internal
         master_discovery: static
-        cosmos_config:
-          staged_package_storage_uri: file:///var/lib/dcos/cosmos/staged-packages
-          package_storage_uri: file:///var/lib/dcos/cosmos/packages
 
 Where :code:`CLI_TEST_DEPLOYMENT_NAME` is a custom name set by the user,
 :code:`CLI_TEST_INSTALLER_URL` is the URL of a
