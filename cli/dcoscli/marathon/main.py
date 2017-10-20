@@ -54,7 +54,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['marathon', 'deployment', 'list'],
-            arg_keys=['<app-id>', '--json'],
+            arg_keys=['<app-id>', '--json', '--quiet'],
             function=subcommand.deployment_list),
 
         cmds.Command(
@@ -74,7 +74,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['marathon', 'task', 'list'],
-            arg_keys=['<app-id>', '--json'],
+            arg_keys=['<app-id>', '--json', '--quiet'],
             function=subcommand.task_list),
 
         cmds.Command(
@@ -99,7 +99,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['marathon', 'app', 'list'],
-            arg_keys=['--json'],
+            arg_keys=['--json', '--quiet'],
             function=subcommand.list),
 
         cmds.Command(
@@ -194,7 +194,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['marathon', 'pod', 'list'],
-            arg_keys=['--json'],
+            arg_keys=['--json', '--quiet'],
             function=subcommand.pod_list),
 
         cmds.Command(
@@ -426,7 +426,7 @@ class MarathonSubcommand(object):
 
         return 0
 
-    def list(self, json_):
+    def list(self, json_, quiet_=False):
         """
         :param json_: output json if True
         :type json_: bool
@@ -437,7 +437,10 @@ class MarathonSubcommand(object):
         client = self._create_marathon_client()
         apps = client.get_apps()
 
-        if json_:
+        if quiet_:
+            for app in apps:
+                emitter.publish(app.get('id'))
+        elif json_:
             emitter.publish(apps)
         else:
             deployments = client.get_deployments()
@@ -851,7 +854,7 @@ class MarathonSubcommand(object):
         emitter.publish(versions)
         return 0
 
-    def deployment_list(self, app_id, json_):
+    def deployment_list(self, app_id, json_, quiet_=False):
         """
         :param app_id: the application id
         :type app_id: str
@@ -871,10 +874,14 @@ class MarathonSubcommand(object):
                 msg += " for '{}'".format(app_id)
             raise DCOSException(msg)
 
-        emitting.publish_table(emitter,
-                               deployments,
-                               tables.deployment_table,
-                               json_)
+        if quiet_:
+            for deployment in deployments:
+                emitter.publish(deployment.get('id'))
+        else:
+            emitting.publish_table(emitter,
+                                   deployments,
+                                   tables.deployment_table,
+                                   json_)
         return 0
 
     def deployment_stop(self, deployment_id):
@@ -943,7 +950,7 @@ class MarathonSubcommand(object):
 
         return 0
 
-    def task_list(self, app_id, json_):
+    def task_list(self, app_id, json_, quiet_=False):
         """
         :param app_id: the id of the application
         :type app_id: str
@@ -956,7 +963,12 @@ class MarathonSubcommand(object):
         client = self._create_marathon_client()
         tasks = client.get_tasks(app_id)
 
-        emitting.publish_table(emitter, tasks, tables.app_task_table, json_)
+        if quiet_:
+            for task in tasks:
+                emitter.publish(task.get('id'))
+        else:
+            emitting.publish_table(emitter, tasks,
+                                   tables.app_task_table, json_)
         return 0
 
     def task_stop(self, task_id, wipe):
@@ -1071,7 +1083,7 @@ class MarathonSubcommand(object):
         marathon_client.remove_pod(pod_id, force)
         return 0
 
-    def pod_list(self, json_):
+    def pod_list(self, json_, quiet_=False):
         """
         :param json_: output JSON if true
         :type json_: bool
@@ -1085,7 +1097,12 @@ class MarathonSubcommand(object):
         pods = marathon_client.list_pod()
         queued_apps = marathon_client.get_queued_apps()
         _enhance_row_with_overdue_information(pods, queued_apps)
-        emitting.publish_table(emitter, pods, tables.pod_table, json_)
+
+        if quiet_:
+            for pod in pods:
+                emitter.publish(pod.get('id'))
+        else:
+            emitting.publish_table(emitter, pods, tables.pod_table, json_)
         return 0
 
     def pod_show(self, pod_id):
