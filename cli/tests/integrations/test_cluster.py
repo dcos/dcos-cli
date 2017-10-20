@@ -59,9 +59,13 @@ def test_remove_all(dcos_dir_tmp_copy):
         if len(dirs) > 0:
             test_cluster = os.path.join(root, dirs[0])
             break
+
     # hacky way to create another cluster
-    test_cluster2 = "{}2".format(test_cluster)
-    copy_tree(test_cluster, test_cluster2)
+    test_cluster_2 = os.path.join(
+        os.path.dirname(test_cluster),
+        "a8b53513-63d4-4068-8b08-fde4fe1f1a83")
+
+    copy_tree(test_cluster, test_cluster_2)
 
     # confirm 2
     assert _num_of_clusters() == 2
