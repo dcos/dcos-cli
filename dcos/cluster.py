@@ -1,5 +1,6 @@
 import contextlib
 import os
+import re
 import shutil
 import ssl
 import urllib
@@ -209,7 +210,15 @@ def get_clusters():
 
     clusters_path = config.get_clusters_path()
     util.ensure_dir_exists(clusters_path)
-    clusters = os.listdir(clusters_path)
+    clusters = []
+
+    uuid_regex = re.compile((r'^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-'
+                             r'[89ab][a-f0-9]{3}-[a-f0-9]{12}\Z'))
+    for entry in os.listdir(clusters_path):
+        entry_path = os.path.join(clusters_path, entry)
+        if os.path.isdir(entry_path) and uuid_regex.match(entry):
+            clusters.append(entry)
+
     return [Cluster(cluster_id) for cluster_id in clusters]
 
 
