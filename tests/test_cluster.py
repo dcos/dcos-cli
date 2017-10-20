@@ -39,9 +39,15 @@ def test_get_clusters():
         util.ensure_dir_exists(clusters_dir)
         assert cluster.get_clusters() == []
 
-        # one cluster
-        cluster_id = "fake_cluster"
+        # a valid cluster
+        cluster_id = "a8b53513-63d4-4059-8b08-fde4fe1f1a83"
         add_cluster_dir(cluster_id, tempdir)
+
+        # Make sure clusters dir can contain random files / folders
+        # cf. https://jira.mesosphere.com/browse/DCOS_OSS-1782
+        util.ensure_file_exists(os.path.join(clusters_dir, '.DS_Store'))
+        util.ensure_dir_exists(os.path.join(clusters_dir, 'not_a_cluster'))
+
         assert cluster.get_clusters() == [_cluster(cluster_id)]
 
 
