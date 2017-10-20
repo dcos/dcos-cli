@@ -8,7 +8,7 @@ Usage:
     dcos marathon --version
     dcos marathon about
     dcos marathon app add [<app-resource>]
-    dcos marathon app list [--json]
+    dcos marathon app list [--json|--quiet]
     dcos marathon app remove [--force] <app-id>
     dcos marathon app restart [--force] <app-id>
     dcos marathon app show [--app-version=<app-version>] <app-id>
@@ -17,7 +17,7 @@ Usage:
     dcos marathon app kill [--scale] [--host=<host>] <app-id>
     dcos marathon app update [--force] <app-id> [<properties>...]
     dcos marathon app version list [--max-count=<max-count>] <app-id>
-    dcos marathon deployment list [--json <app-id>]
+    dcos marathon deployment list [--json|--quiet] [<app-id>]
     dcos marathon deployment rollback <deployment-id>
     dcos marathon deployment stop <deployment-id>
     dcos marathon deployment watch [--max-count=<max-count>]
@@ -34,14 +34,14 @@ Usage:
     dcos marathon plugin list [--json]
     dcos marathon pod add [<pod-resource>]
     dcos marathon pod kill <pod-id> [<instance-ids>...]
-    dcos marathon pod list [--json]
+    dcos marathon pod list [--json|--quiet]
     dcos marathon pod remove [--force] <pod-id>
     dcos marathon pod show <pod-id>
     dcos marathon pod update [--force] <pod-id>
     dcos marathon debug list [--json]
     dcos marathon debug summary <app-id> [--json]
     dcos marathon debug details <app-id> [--json]
-    dcos marathon task list [--json <app-id>]
+    dcos marathon task list [--json|--quiet] [<app-id>]
     dcos marathon task stop [--wipe] <task-id>
     dcos marathon task kill [--scale] [--wipe] [--json] [<task-ids>...]
     dcos marathon task show <task-id>
@@ -146,6 +146,8 @@ Options:
         Print JSON-formatted data.
     --max-count=<max-count>
         Maximum number of entries to fetch and return.
+    -q, --quiet
+        Display IDs only for list.
     --scale
         Scale the app down after performing the the operation.
     --version
