@@ -166,7 +166,7 @@ def _page(output, pager_command=None):
 
     try:
         paginate = config.get_config_val("core.pagination")
-    except:
+    except Exception:
         paginate = True
     if exceeds_tty_height and paginate and \
             spawn.find_executable(pager_command.split(' ')[0]) is not None:

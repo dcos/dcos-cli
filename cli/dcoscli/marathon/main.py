@@ -757,7 +757,7 @@ class MarathonSubcommand(object):
             try:
                 response = client.ping()
                 consecutive_count = consecutive_count + 1
-            except:
+            except Exception:
                 consecutive_count = 0
 
             if consecutive_count < count:
@@ -768,7 +768,7 @@ class MarathonSubcommand(object):
 
         try:
             response = ping_for_each_master()
-        except:
+        except Exception:
             response = 'Unable to get ping for all {} masters in {}s'.format(
                 count, timeout
             )
