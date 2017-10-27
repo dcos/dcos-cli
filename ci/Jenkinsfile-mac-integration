@@ -296,7 +296,7 @@ throttle(['dcos-cli']) {
              credentialsId: '23743034-1ac4-49f7-b2e6-a661aee2d11b',
              variable: 'CLI_TEST_SSH_KEY_PATH'],
             [$class: 'StringBinding',
-             credentialsId: '0b513aad-e0e0-4a82-95f4-309a80a02ff9',
+             credentialsId: '84658f14-3944-4597-bca1-a00b89fcf938',
              variable: 'DCOS_INSTALLER_URL'],
             [$class: 'UsernamePasswordMultiBinding',
              credentialsId: '323df884-742b-4099-b8b7-d764e5eb9674',
