@@ -11,9 +11,7 @@ import sys
 import zipfile
 from distutils.version import LooseVersion
 
-import requests
-
-from dcos import config, constants, util
+from dcos import config, constants, http, util
 from dcos.errors import DCOSException
 from dcos.subprocess import Subproc
 
@@ -495,7 +493,7 @@ def _download_and_store(url, location):
     """
 
     with open(location, 'wb') as f:
-        r = requests.get(url, stream=True)
+        r = http.get(url, stream=True)
         for chunk in r.iter_content(1024):
             f.write(chunk)
 
