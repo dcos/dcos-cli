@@ -132,7 +132,7 @@ class RpcClient(object):
 
             try:
                 json_body = e.response.json()
-            except:
+            except Exception:
                 logger.exception(
                     'Unable to decode response body as a JSON value: %r',
                     e.response)
@@ -151,7 +151,7 @@ class RpcClient(object):
 def _get_response_text(response):
     try:
         return response.text
-    except:
+    except Exception:
         return ''
 
 

@@ -391,7 +391,7 @@ class Client(object):
 
         try:
             return response.json()
-        except:
+        except Exception:
             template = ('Error: Response from Metronome was not in expected '
                         'JSON format:\n{}')
             raise DCOSException(template.format(response.text))
