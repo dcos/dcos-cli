@@ -93,7 +93,7 @@ def remove_path_on_error(path):
 
     try:
         yield path
-    except:
+    except Exception:
         shutil.rmtree(path, ignore_errors=True)
         raise
 
@@ -404,7 +404,7 @@ def load_jsons(value):
 
     try:
         return json.loads(value)
-    except:
+    except Exception:
         logger.exception(
             'Unhandled exception while loading JSON: %r',
             value)
@@ -548,7 +548,7 @@ def parse_int(string):
 
     try:
         return int(string)
-    except:
+    except ValueError:
         logger.error(
             'Unhandled exception while parsing string as int: %r',
             string)
@@ -567,7 +567,7 @@ def parse_float(string):
 
     try:
         return float(string)
-    except:
+    except ValueError:
         logger.error(
             'Unhandled exception while parsing string as float: %r',
             string)
