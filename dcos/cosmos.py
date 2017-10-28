@@ -54,8 +54,7 @@ class Cosmos(object):
             'package/repository/delete': _data(['v1'], 'post'),
             'package/repository/list': _data(['v1'], 'post'),
             'package/search': _data(['v1'], 'post'),
-            'package/uninstall': _data(['v1'], 'post'),
-            'service/start': _data(['v1'], 'post')
+            'package/uninstall': _data(['v1'], 'post')
         }
 
         self._special_content_types = {
@@ -105,7 +104,7 @@ class Cosmos(object):
         Gets the Response object returned by comos at endpoint
 
         :param endpoint: a cosmos endpoint, of the form 'x/y',
-        for example 'package/repo/add' or 'service/start'
+        for example 'package/repo/add'
         :type endpoint: str
         :param headers: these header values will appear
         in the request headers.
@@ -196,7 +195,7 @@ class Cosmos(object):
         Gets the url for the cosmos endpoint 'endpoint'
 
         :param endpoint: a cosmos endpoint, of the form 'x/y',
-        for example 'package/repo/add' or 'service/start'
+        for example 'package/repo/add'
         :type endpoint: str
         :return: the url of endpoint
         :rtype: str
@@ -209,7 +208,7 @@ class Cosmos(object):
         The first item is most preferred, and last is least preferred.
 
         :param endpoint: a cosmos endpoint, of the form 'x/y',
-        for example 'package/repo/add' or 'service/start'
+        for example 'package/repo/add'
         :type endpoint: str
         :return: list of versions in preference order
         :rtype: list[str]
@@ -220,7 +219,7 @@ class Cosmos(object):
         """
         Gets the http method cosmos expects for the endpoint
         :param endpoint: a cosmos endpoint, of the form 'x/y',
-        for example 'package/repo/add' or 'service/start'
+        for example 'package/repo/add'
         :type endpoint: str
         :return: http method type
         :rtype: str
@@ -235,7 +234,7 @@ class Cosmos(object):
         user function can overwrite the default header.
 
         :param endpoint: a cosmos endpoint, of the form 'x/y',
-        for example 'package/repo/add' or 'service/start'
+        for example 'package/repo/add'
         :type endpoint: str
         :param version: The version of the request
         :type version: str
@@ -267,7 +266,7 @@ class Cosmos(object):
         the cosmos request at endpoint.
 
         :param endpoint: a cosmos endpoint, of the form 'x/y',
-        for example 'package/repo/add' or 'service/start'
+        for example 'package/repo/add'
         :type endpoint: str
         :param version: The version of the request
         :type version: str
@@ -284,7 +283,7 @@ class Cosmos(object):
         the cosmos request at endpoint.
 
         :param endpoint: a cosmos endpoint, of the form 'x/y',
-        for example 'package/repo/add' or 'service/start'
+        for example 'package/repo/add'
         :type endpoint: str
         :return: the value for the Content-Type header key for endpoint
         :rtype: str
@@ -300,7 +299,7 @@ def _format_media_type(endpoint, version, suffix):
     Formats a value for a cosmos Content-Type or Accept header key.
 
     :param endpoint: a cosmos endpoint, of the form 'x/y',
-    for example 'package/repo/add', 'service/start', or 'package/error'
+    for example 'package/repo/add', or 'package/error'
     :type endpoint: str
     :param version: The version of the request
     :type version: str
