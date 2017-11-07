@@ -9,6 +9,11 @@ logger = util.get_logger(__name__)
 emitter = emitting.FlatEmitter()
 
 
+class EmptyMetricsException(DCOSException):
+    def __init__(self):
+        super().__init__('No metrics found')
+
+
 def _gib(n):
     return n * pow(2, -30)
 
@@ -30,7 +35,7 @@ def _fetch_metrics_datapoints(url):
     with contextlib.closing(http.get(url)) as r:
 
         if r.status_code == 204:
-            raise DCOSException('No metrics found')
+            raise EmptyMetricsException()
 
         if r.status_code != 200:
             raise DCOSHTTPException(r)
