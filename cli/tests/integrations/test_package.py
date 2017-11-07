@@ -536,6 +536,7 @@ def test_images_in_metadata():
 
     package_uninstall('cassandra', stderr=stderr)
     delete_zk_node('dcos-service-cassandra')
+    watch_all_deployments()
 
 
 def test_install_missing_package():
