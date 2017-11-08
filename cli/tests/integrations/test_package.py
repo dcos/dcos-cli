@@ -193,8 +193,8 @@ def test_describe_nonexistent():
 
 
 def test_describe_nonexistent_version():
-    stderr = b'Version [a.b.c] of package [marathon] not found\n'
-    assert_command(['dcos', 'package', 'describe', 'marathon',
+    stderr = b'Version [a.b.c] of package [helloworld] not found\n'
+    assert_command(['dcos', 'package', 'describe', 'helloworld',
                     '--package-version=a.b.c'],
                    stderr=stderr,
                    returncode=1)
@@ -202,33 +202,33 @@ def test_describe_nonexistent_version():
 
 def test_describe_cli():
     stdout = file_json(
-        'tests/data/package/json/test_describe_cli_kafka.json')
-    assert_command(['dcos', 'package', 'describe', 'kafka', '--cli'],
+        'tests/data/package/json/test_describe_cli_helloworld.json')
+    assert_command(['dcos', 'package', 'describe', 'helloworld', '--cli'],
                    stdout=stdout)
 
 
 def test_describe_app():
     stdout = file_bytes(
-        'tests/data/package/json/test_describe_app_marathon.json')
-    assert_command(['dcos', 'package', 'describe', 'marathon', '--app'],
+        'tests/data/package/json/test_describe_app_helloworld.json')
+    assert_command(['dcos', 'package', 'describe', 'helloworld', '--app'],
                    stdout=stdout)
 
 
 def test_describe_config():
     stdout = file_json(
-        'tests/data/package/json/test_describe_marathon_config.json')
-    assert_command(['dcos', 'package', 'describe', 'marathon', '--config'],
+        'tests/data/package/json/test_describe_helloworld_config.json')
+    assert_command(['dcos', 'package', 'describe', 'helloworld', '--config'],
                    stdout=stdout)
 
 
 def test_describe_render():
     stdout = file_json(
-        'tests/data/package/json/test_describe_marathon_app_render.json')
+        'tests/data/package/json/test_describe_helloworld_app_render.json')
     stdout = json.loads(stdout.decode('utf-8'))
     expected_labels = stdout.pop("labels", None)
 
     returncode, stdout_, stderr = exec_command(
-        ['dcos', 'package', 'describe', 'marathon', '--app', '--render'])
+        ['dcos', 'package', 'describe', 'helloworld', '--app', '--render'])
 
     stdout_ = json.loads(stdout_.decode('utf-8'))
     actual_labels = stdout_.pop("labels", None)
@@ -249,11 +249,11 @@ def test_describe_render():
 
 def test_describe_package_version():
     stdout = file_json(
-        'tests/data/package/json/test_describe_marathon_package_version.json')
+        'tests/data/package/json/test_describe_helloworld.json')
 
     returncode_, stdout_, stderr_ = exec_command(
-        ['dcos', 'package', 'describe', 'marathon',
-            '--package-version=1.3.10'])
+        ['dcos', 'package', 'describe', 'helloworld',
+            '--package-version=0.1.0'])
 
     assert returncode_ == 0
     output = json.loads(stdout_.decode('utf-8'))
@@ -261,19 +261,11 @@ def test_describe_package_version():
     assert stderr_ == b''
 
 
-def test_describe_package_version_missing():
-    stderr = b'Version [bogus] of package [marathon] not found\n'
-    assert_command(
-        ['dcos', 'package', 'describe', 'marathon', '--package-version=bogus'],
-        returncode=1,
-        stderr=stderr)
-
-
 def test_describe_package_versions():
     stdout = file_bytes(
-        'tests/data/package/json/test_describe_kafka_package_versions.json')
+        'tests/data/package/json/test_describe_helloworld_versions.json')
     assert_command(
-        ['dcos', 'package', 'describe', 'kafka', '--package-versions'],
+        ['dcos', 'package', 'describe', 'helloworld', '--package-versions'],
         stdout=stdout)
 
 
@@ -283,15 +275,16 @@ def test_describe_options():
     stdout = json.loads(stdout.decode('utf-8'))
     expected_labels = stdout.pop("labels", None)
 
-    returncode, stdout_, stderr = exec_command(
-        ['dcos', 'package', 'describe', '--app', '--options',
-         'tests/data/package/marathon.json', 'marathon'])
+    with util.temptext(b'{"name": "hallo", "port": 80}') as options:
+        returncode, stdout_, stderr = exec_command(
+            ['dcos', 'package', 'describe', '--app', '--options',
+             options[1], 'helloworld'])
 
     stdout_ = json.loads(stdout_.decode('utf-8'))
     actual_labels = stdout_.pop("labels", None)
 
     for label, value in expected_labels.items():
-        if label == "DCOS_PACKAGE_METADATA":
+        if label in ["DCOS_PACKAGE_METADATA", "DCOS_PACKAGE_OPTIONS"]:
             # We covert the metadata into a dictionary
             # so that failures in equality are more descriptive
             assert base64_to_dict(value) == \
@@ -308,18 +301,18 @@ def test_describe_app_cli():
     stdout = file_bytes(
         'tests/data/package/json/test_describe_app_cli.json')
     assert_command(
-        ['dcos', 'package', 'describe', 'kafka', '--app', '--cli'],
+        ['dcos', 'package', 'describe', 'helloworld', '--app', '--cli'],
         stdout=stdout)
 
 
 def test_bad_install():
-    args = ['--options=tests/data/package/chronos-bad.json', '--yes']
     stderr = """\
 Please create a JSON file with the appropriate options, and pass the \
 /path/to/file as an --options argument.
 """
-    _install_bad_chronos(args=args,
-                         stderr=stderr)
+    with util.temptext(b'{"nom": "hallo"}') as options:
+        args = ['--options='+options[1], '--yes']
+        _install_bad_helloworld(args=args, stderr=stderr)
 
 
 def test_bad_install_helloworld_msg():
@@ -405,7 +398,7 @@ def test_install_missing_options_file():
     """Test that a missing options file results in the expected stderr
     message."""
     assert_command(
-        ['dcos', 'package', 'install', 'chronos', '--yes',
+        ['dcos', 'package', 'install', 'helloworld', '--yes',
          '--options=asdf.json'],
         returncode=1,
         stderr=b"Error opening file [asdf.json]: No such file or directory\n")
@@ -413,36 +406,28 @@ def test_install_missing_options_file():
 
 def test_install_specific_version():
     stdout = (
-        b'By Deploying, you agree to the Terms '
-        b'and Conditions https://mesosphere.com/'
-        b'catalog-terms-conditions/#certified-services\n'
-        b'We recommend a minimum of one node with at least 2 '
-        b'CPU\'s and 1GB of RAM available for the Marathon Service.\n'
-        b'Installing Marathon app for package [marathon] '
-        b'version [0.11.1]\n'
-        b'Marathon DCOS Service has been successfully installed!\n\n'
-        b'\tDocumentation: https://mesosphere.github.io/marathon\n'
-        b'\tIssues: https://github.com/mesosphere/marathon/issues\n\n'
+        b'By Deploying, you agree to the Terms and Conditions https://'
+        b'mesosphere.com/catalog-terms-conditions/#community-services\n'
+        b'A sample pre-installation message\n'
+        b'Installing Marathon app for package [helloworld] version [0.1.0]\n'
+        b'Installing CLI subcommand for package [helloworld] version [0.1.0]\n'
+        b'New command available: dcos ' +
+        _executable_name(b'helloworld') +
+        b'\nA sample post-installation message\n'
     )
 
-    uninstall_stderr = (
-        b'Uninstalled package [marathon] version [0.11.1]\n'
-        b'The Marathon DCOS Service has been uninstalled and will no '
-        b'longer run.\nPlease follow the instructions at http://docs.'
-        b'mesosphere.com/services/marathon/#uninstall to clean up any '
-        b'persisted state\n'
-    )
+    uninstall_stderr = b'Uninstalled package [helloworld] version [0.1.0]\n'
 
-    with _package(name='marathon',
-                  args=['--yes', '--package-version=0.11.1'],
+    with _package(name='helloworld',
+                  args=['--yes', '--package-version=0.1.0'],
                   stdout=stdout,
                   uninstall_stderr=uninstall_stderr):
 
         returncode, stdout, stderr = exec_command(
-            ['dcos', 'package', 'list', 'marathon', '--json'])
+            ['dcos', 'package', 'list', 'helloworld', '--json'])
         assert returncode == 0
         assert stderr == b''
-        assert json.loads(stdout.decode('utf-8'))[0]['version'] == "0.11.1"
+        assert json.loads(stdout.decode('utf-8'))[0]['version'] == "0.1.0"
 
 
 def test_install_bad_package_version():
@@ -527,10 +512,11 @@ def test_images_in_metadata():
 
     # uninstall
     stderr = (
-        b'Uninstalled package [cassandra] version [1.0.25-3.0.10]\n'
-        b'DC/OS Apache Cassandra service has been uninstalled.\n'
-        b'Please follow the instructions at https://docs.mesosphere.com/'
-        b'current/usage/service-guides/cassandra/uninstall to remove any '
+        b'Uninstalled package [cassandra] version [2.0.2-3.0.14]\n'
+        b'The DC/OS Apache Cassandra service is being uninstalled.\n\n'
+        b'For DC/OS versions from 1.10 no further action is required. '
+        b'For older DC/OS versions follow the instructions at https://docs.'
+        b'mesosphere.com/service-docs/cassandra/uninstall to remove any '
         b'persistent state if required.\n'
     )
 
@@ -773,7 +759,7 @@ def test_uninstall_multiple_frameworknames(zk_znode):
     _uninstall_chronos(
         args=['--app-id=chronos-user-1'],
         returncode=1,
-        stderr='Uninstalled package [chronos] version [3.0.1]\n'
+        stderr='Uninstalled package [chronos] version [2.5.0-1]\n'
                'Unable to shutdown [chronos] service framework with name '
                '[chronos-user] because there are multiple framework ids '
                'matching this name: ')
@@ -781,7 +767,7 @@ def test_uninstall_multiple_frameworknames(zk_znode):
     _uninstall_chronos(
         args=['--app-id=chronos-user-2'],
         returncode=1,
-        stderr='Uninstalled package [chronos] version [3.0.1]\n'
+        stderr='Uninstalled package [chronos] version [2.5.0-1]\n'
                'Unable to shutdown [chronos] service framework with name '
                '[chronos-user] because there are multiple framework ids '
                'matching this name: ')
@@ -871,7 +857,7 @@ def test_search_middle_with_wildcard():
     assert stderr == b''
 
     registries = json.loads(stdout.decode('utf-8'))
-    assert len(registries['packages']) == 4
+    assert len(registries['packages']) == 5
 
 
 def _get_app_labels(app_id):
@@ -954,18 +940,16 @@ def _uninstall_chronos(args=[], returncode=0, stdout=b'', stderr=''):
     assert result_stderr.decode('utf-8').startswith(stderr)
 
 
-def _install_bad_chronos(
+def _install_bad_helloworld(
         args=['--yes'],
         stdout=(
             b'By Deploying, you agree to the Terms '
             b'and Conditions https://mesosphere.com/'
             b'catalog-terms-conditions/#community-services\n'
-            b'We recommend a minimum of one node with at least 2 '
-            b'CPUs and 2.5GiB of RAM available for the Chronos '
-            b'Service.\n'
+            b'A sample pre-installation message\n'
         ),
         stderr=''):
-    cmd = ['dcos', 'package', 'install', 'chronos'] + args
+    cmd = ['dcos', 'package', 'install', 'helloworld'] + args
     returncode_, stdout_, stderr_ = exec_command(cmd)
     assert returncode_ == 1
     assert stderr in stderr_.decode('utf-8')
@@ -976,14 +960,14 @@ def _install_chronos(
         args=['--yes'],
         returncode=0,
         stdout=b'Installing Marathon app for package [chronos] '
-               b'version [3.0.1]\n',
+               b'version [2.5.0-1]\n',
         stderr=b'',
         pre_install_notes=(
             b'By Deploying, you agree to the Terms '
             b'and Conditions https://mesosphere.com/'
-            b'catalog-terms-conditions/#community-services\n'
+            b'catalog-terms-conditions/#certified-services\n'
             b'We recommend a minimum of one node with at least '
-            b'2 CPUs and 2.5GiB of RAM available for the '
+            b'1 CPU and 2GB of RAM available for the '
             b'Chronos Service.\n'
         ),
         post_install_notes=b'Chronos DCOS Service has been successfully '
@@ -1008,14 +992,14 @@ def _chronos_package(
         args=['--yes'],
         returncode=0,
         stdout=b'Installing Marathon app for package [chronos] '
-               b'version [3.0.1]\n',
+               b'version [2.5.0-1]\n',
         stderr=b'',
         pre_install_notes=(
             b'By Deploying, you agree to the Terms '
             b'and Conditions https://mesosphere.com/'
-            b'catalog-terms-conditions/#community-services\n'
+            b'catalog-terms-conditions/#certified-services\n'
             b'We recommend a minimum of one node with at least '
-            b'2 CPUs and 2.5GiB of RAM available for the '
+            b'1 CPU and 2GB of RAM available for the '
             b'Chronos Service.\n'
         ),
         post_install_notes=b'Chronos DCOS Service has been successfully '
