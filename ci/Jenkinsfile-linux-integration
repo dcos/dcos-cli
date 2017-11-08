@@ -32,7 +32,7 @@ provider: onprem
 aws_region: us-west-2
 aws_key_name: default
 ssh_private_key_filename: ${sshKeyPath}
-os_name: cent-os-7
+os_name: cent-os-7-dcos-prereqs
 instance_type: m4.xlarge
 num_masters: 1
 num_private_agents: 1
