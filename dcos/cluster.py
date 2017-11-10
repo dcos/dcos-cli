@@ -295,6 +295,10 @@ class Cluster():
         return "N/A"
 
     def is_attached(self):
+        cluster_envvar = os.environ.get(constants.DCOS_CLUSTER)
+        if cluster_envvar:
+            return cluster_envvar in [self.cluster_id, self.get_name()]
+
         return os.path.exists(os.path.join(
             self.cluster_path, constants.DCOS_CLUSTER_ATTACHED_FILE))
 
