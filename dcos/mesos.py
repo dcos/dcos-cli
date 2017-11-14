@@ -1302,6 +1302,7 @@ class TaskIO(object):
         response = http.post(
             self.agent_url,
             data=json.dumps(message),
+            timeout=None,
             **req_extra_args)
 
         self._process_output_stream(response)
@@ -1420,6 +1421,7 @@ class TaskIO(object):
         http.post(
             self.agent_url,
             data=_input_streamer(),
+            timeout=None,
             **req_extra_args)
 
     def _input_thread(self):
