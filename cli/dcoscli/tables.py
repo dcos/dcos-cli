@@ -42,9 +42,6 @@ def task_table(tasks):
         ("STATE", lambda t: t["state"].split("_")[-1][0]),
         ("ID", lambda t: t["id"]),
         ("MESOS ID", lambda t: t["slave_id"]),
-        ("REGION",
-            lambda t: util.get_fault_domain(t.slave())[0] or EMPTY_ENTRY),
-        ("ZONE", lambda t: util.get_fault_domain(t.slave())[1] or EMPTY_ENTRY),
     ])
 
     tb = table(fields, tasks, sortby="NAME")
@@ -936,8 +933,6 @@ def node_table(nodes, field_names=()):
         ('IP', lambda s: s.get('ip') or mesos.parse_pid(s['pid'])[1]),
         ('ID', lambda s: s['id']),
         ('TYPE', lambda s: s['type']),
-        ('REGION', lambda s: s['region']),
-        ('ZONE', lambda s: s['zone']),
     ])
 
     for field_name in field_names:

@@ -497,18 +497,12 @@ def _list(json_, extra_field_names):
     for master in masters:
         if master['ip'] == master_state['hostname']:
             master['type'] = 'master (leader)'
-            region, zone = util.get_fault_domain(master_state)
-            master['region'] = region
-            master['zone'] = zone
             for key in ('id', 'pid', 'version'):
                 master[key] = master_state.get(key)
         else:
             master['type'] = 'master'
     for slave in slaves:
-        region, zone = util.get_fault_domain(slave)
         slave['type'] = 'agent'
-        slave['region'] = region
-        slave['zone'] = zone
     nodes = masters + slaves
     if json_:
         emitter.publish(nodes)
