@@ -54,8 +54,7 @@ def test_node_table_field_option():
     assert stderr == b''
     lines = stdout.decode('utf-8').splitlines()
     assert len(lines) > 2
-    assert lines[0].split() == ['HOSTNAME', 'IP', 'ID', 'TYPE', 'REGION',
-                                'ZONE', 'DISK_USED']
+    assert lines[0].split() == ['HOSTNAME', 'IP', 'ID', 'TYPE', 'DISK_USED']
 
 
 def test_node_table_uppercase_field_option():
@@ -66,8 +65,7 @@ def test_node_table_uppercase_field_option():
     assert stderr == b''
     lines = stdout.decode('utf-8').splitlines()
     assert len(lines) > 2
-    assert lines[0].split() == ['HOSTNAME', 'IP', 'ID', 'TYPE', 'REGION',
-                                'ZONE', 'TASK_RUNNING']
+    assert lines[0].split() == ['HOSTNAME', 'IP', 'ID', 'TYPE', 'TASK_RUNNING']
 
 
 def test_node_log_empty():
