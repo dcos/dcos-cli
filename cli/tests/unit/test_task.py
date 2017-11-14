@@ -194,3 +194,26 @@ def test_dcos_task_metrics_agent_missing_slave(mocked_get_config_val,
     # Should a task not have a slave ID, expect an error
     with pytest.raises(DCOSException):
         _metrics(True, 'task_id', False)
+
+
+def test_task_fault_domain():
+    fd = {
+        'domain': {
+            'fault_domain': {
+                'region': {
+                    'name': 'us-west-2'
+                },
+                'zone': {
+                    'name': 'us-west-2a'
+                }
+            }
+        }
+    }
+
+    state = {'prop1': 'value1'}
+    state.update(fd)
+    slave = mesos.Slave(state, None, None)
+    assert slave.fault_domain() == fd
+
+    slave = mesos.Slave({}, None, None)
+    assert not slave.fault_domain()

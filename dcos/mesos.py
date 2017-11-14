@@ -664,6 +664,17 @@ class Slave(object):
                  for framework in self._framework_dicts()]
         return itertools.chain(*iters)
 
+    def fault_domain(self):
+        """ Fault domain for a given task e.g.
+
+        :returns: fault domain structure from state.json
+        :rtype: dict | None
+        """
+        if 'domain' not in self._short_state:
+            return None
+
+        return {'domain': self._short_state['domain']}
+
     def __getitem__(self, name):
         """Support the slave[attr] syntax
 
@@ -748,6 +759,13 @@ class Task(object):
         self._task = task
         self._master = master
 
+        if 'slave_id' not in self._task or not master:
+            return
+
+        fd = self.fault_domain()
+        if fd:
+            self._task.update(fd)
+
     def dict(self):
         """
         :returns: dictionary representation of this Task
@@ -806,6 +824,14 @@ class Task(object):
         """
 
         return self.executor()['directory']
+
+    def fault_domain(self):
+        """ Fault domain for a given task
+
+        :returns: fault domain structure
+        :rtype: dict | None
+        """
+        return self.slave().fault_domain()
 
     def __getitem__(self, name):
         """Support the task[attr] syntax
