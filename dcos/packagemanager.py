@@ -96,23 +96,19 @@ class PackageManager:
         """
         return self.cosmos.enabled()
 
-    def install_app(self, pkg, options, app_id):
+    def install_app(self, pkg, options):
         """Installs a package's application
 
         :param pkg: the package to install
         :type pkg: CosmosPackageVersion
         :param options: user supplied package parameters
         :type options: dict
-        :param app_id: app ID for installation of this package
-        :type app_id: str
         :rtype: None
         """
 
         params = {"packageName": pkg.name(), "packageVersion": pkg.version()}
         if options is not None:
             params["options"] = options
-        if app_id is not None:
-            params["appId"] = app_id
 
         self.cosmos_post("install", params)
 

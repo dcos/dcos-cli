@@ -73,7 +73,7 @@ def _cmds():
         cmds.Command(
             hierarchy=['package', 'install'],
             arg_keys=['<package-name>', '--package-version', '--options',
-                      '--app-id', '--cli', '--global', '--app', '--yes'],
+                      '--cli', '--global', '--app', '--yes'],
             function=_install),
 
         cmds.Command(
@@ -297,7 +297,7 @@ def _describe(package_name,
     return 0
 
 
-def _install(package_name, package_version, options_path, app_id, cli,
+def _install(package_name, package_version, options_path, cli,
              global_, app, yes):
     """Install the specified package.
 
@@ -307,8 +307,6 @@ def _install(package_name, package_version, options_path, app_id, cli,
     :type package_version: str
     :param options_path: path to file containing option values
     :type options_path: str
-    :param app_id: app ID for installation of this package
-    :type app_id: str
     :param cli: indicates if the cli should be installed
     :type cli: bool
     :param global_: indicates that the cli should be installed globally
@@ -365,13 +363,7 @@ def _install(package_name, package_version, options_path, app_id, cli,
 
         emitter.publish(msg)
 
-        if app_id is not None:
-            msg = "Usage of --app-id is deprecated. Use --options instead " \
-                  "and specify a file that contains [service.name] property"
-            emitter.publish(msg)
-            return 1
-
-        package_manager.install_app(pkg, user_options, app_id)
+        package_manager.install_app(pkg, user_options)
 
     if cli and pkg.cli_definition():
         # Install subcommand
