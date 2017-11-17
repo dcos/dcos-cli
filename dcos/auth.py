@@ -174,8 +174,6 @@ def dcos_uid_password_auth(dcos_url, username=None, password=None):
             dcos_url, username, password)
     if not dcos_token:
         raise DCOSException("Authentication failed")
-    else:
-        return
 
 
 def dcos_cred_auth(dcos_url, username=None, password=None):
@@ -197,8 +195,6 @@ def dcos_cred_auth(dcos_url, username=None, password=None):
             dcos_url, username, password)
     if not dcos_token:
         raise DCOSException("Authentication failed")
-    else:
-        return
 
 
 def oidc_implicit_flow_auth(dcos_url):
@@ -215,8 +211,6 @@ def oidc_implicit_flow_auth(dcos_url):
     dcos_auth_token = _get_dcostoken_by_oidc_implicit_flow(dcos_url)
     if not dcos_auth_token:
         raise DCOSException("Authentication failed")
-    else:
-        return
 
 
 def _get_dcostoken_by_oidc_implicit_flow(dcos_url):
@@ -267,8 +261,6 @@ def servicecred_auth(dcos_url, username, key_path):
     dcos_token = _get_dcostoken_by_post_with_creds(dcos_url, creds)
     if not dcos_token:
         raise DCOSException("Authentication failed")
-    else:
-        return
 
 
 def browser_prompt_auth(dcos_url, provider_info):
