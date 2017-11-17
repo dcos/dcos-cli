@@ -209,7 +209,7 @@ def noun(executable_path):
     """Extracts the subcommand single noun from the path to the executable.
     E.g for :code:`bin/dcos-subcommand` this method returns :code:`subcommand`.
 
-    :param executable_path: real pth to the dcos subcommand
+    :param executable_path: real path to the dcos subcommand
     :type executable_path: str
     :returns: the subcommand
     :rtype: str
