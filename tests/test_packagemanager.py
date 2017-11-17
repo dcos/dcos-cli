@@ -94,7 +94,7 @@ def test_install(post_fn, pkg_mgr, fake_pkg):
     post_fn.return_value = mock_response(
         200, install_response_headers(pkg_mgr),
     )
-    pkg_mgr.install_app(fake_pkg, options=None, app_id=None)
+    pkg_mgr.install_app(fake_pkg, options=None)
     post_fn.assert_called_with(
         'http://testserver/package/install',
         data=None,
