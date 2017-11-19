@@ -221,7 +221,19 @@ def has_journald_capability():
         get_cosmos_url()).has_capability('LOGGING')
 
 
-def dcos_log_enabled():
+def has_log_v2_capability():
+    """ function checks thec cosmos capability LOGGING_V2
+        to know if `dcos-log` suppports v2 on the cluster.
+
+        :return: cosmos has LOGGING_V2 capability.
+        :rtype: bool
+    """
+
+    return packagemanager.PackageManager(
+        get_cosmos_url()).has_capability('LOGGING_V2')
+
+
+def dcos_log_enabled(version=1):
     """ functions checks the cosmos capability LOGGING
         to know if `dcos-log` is enabled on the cluster.
 
@@ -230,7 +242,12 @@ def dcos_log_enabled():
     """
 
     # https://github.com/dcos/dcos/blob/master/gen/calc.py#L151
-    return logging_strategy() == 'journald'
+    if version == 1:
+        return logging_strategy() == 'journald'
+    elif version == 2:
+        return has_log_v2_capability()
+    raise DCOSException(
+        "invalid dcos-log version {}. Must be 1 or 2".format(version))
 
 
 def logging_strategy():
