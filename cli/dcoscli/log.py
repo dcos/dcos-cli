@@ -306,8 +306,9 @@ def follow_logs(url):
         try:
             entry_json = json.loads(entry.data)
         except ValueError:
-            raise DCOSException(
-                'Could not deserialize log entry to json: {}'.format(entry))
+            # if the SSE message is not a json, emit the raw data.
+            emitter.publish(entry.data)
+            continue
 
         if 'fields' not in entry_json:
             raise DCOSException(
@@ -317,16 +318,16 @@ def follow_logs(url):
         if 'MESSAGE' not in entry_json['fields']:
             continue
 
-        if 'realtime_timestamp' not in entry_json:
-            raise DCOSException(
-                'Missing `realtime_timestamp` in log entry: {}'.format(entry))
+        line = ''
+        if 'realtime_timestamp' in entry_json:
+            # entry.RealtimeTimestamp returns a unix time in microseconds
+            # https://www.freedesktop.org/software/systemd/man/sd_journal_get_realtime_usec.html
+            timestamp = int(entry_json['realtime_timestamp'] / 1000000)
+            line = '{}: '.format(
+                datetime.datetime.fromtimestamp(timestamp).strftime(
+                    '%Y-%m-%d %H:%m:%S'))
 
-        # entry.RealtimeTimestamp returns a unix time in microseconds
-        # https://www.freedesktop.org/software/systemd/man/sd_journal_get_realtime_usec.html
-        timestamp = int(entry_json['realtime_timestamp'] / 1000000)
-        t = datetime.datetime.fromtimestamp(timestamp).strftime(
-            '%Y-%m-%d %H:%m:%S')
-        line = '{}: {}'.format(t, entry_json['fields']['MESSAGE'])
+        line += entry_json['fields']['MESSAGE']
         emitter.publish(line)
 
 
