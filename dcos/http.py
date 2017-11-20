@@ -146,7 +146,7 @@ def _request(method,
     except requests.exceptions.SSLError as e:
         logger.exception("HTTP SSL Error")
         msg = ("An SSL error occurred. To configure your SSL settings, "
-               "please run: `dcos config set core.ssl_verify <value>`")
+               "please run: `export DCOS_SSL_VERIFY= <value>`")
         description = config.get_property_description("core", "ssl_verify")
         if description is not None:
             msg += "\n<value>: {}".format(description)
