@@ -43,7 +43,7 @@ def _cmds():
     return [
         cmds.Command(
             hierarchy=['auth', 'list-providers'],
-            arg_keys=['--json'],
+            arg_keys=['--json', '<dcos_url>'],
             function=_list_providers),
 
         cmds.Command(
@@ -76,13 +76,13 @@ def _info(info):
     return 0
 
 
-def _list_providers(json_):
+def _list_providers(json_, dcos_url):
     """
     :returns: providers available for configured cluster
     :rtype: dict
     """
 
-    providers = auth.get_providers()
+    providers = auth.get_providers(dcos_url)
     if providers or json_:
         emitting.publish_table(
             emitter, providers, tables.auth_provider_table, json_)

@@ -328,19 +328,32 @@ def header_challenge_auth(dcos_url):
         raise DCOSAuthenticationException(response)
 
 
-def get_providers():
+def get_providers(dcos_url=None):
     """
     Returns dict of providers configured on cluster
 
+    :param dcos_url: url to cluster
+    :type dcos_url: str
     :returns: configured providers
     :rtype: {}
     """
 
-    dcos_url = config.get_config_val("core.dcos_url").rstrip('/')
+    if dcos_url:
+        # If an URL is specified, set verify to False
+        # as the CA cert for the cluster is likely missing.
+        verify = False
+    else:
+        dcos_url = config.get_config_val("core.dcos_url")
+        if not dcos_url:
+            msg = "No cluster is configured, please provide a dcos_url."
+            raise DCOSException(msg)
+        verify = None
+
     endpoint = '/acs/api/v1/auth/providers'
     url = urllib.parse.urljoin(dcos_url, endpoint)
+
     try:
-        providers = http.get(url)
+        providers = http.get(url, verify=verify)
         return providers.json()
     # this endpoint should only have authentication in DC/OS 1.8
     except DCOSAuthenticationException:

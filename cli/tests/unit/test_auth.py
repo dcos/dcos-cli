@@ -78,14 +78,18 @@ def test_get_providers(config, req_mock):
 
     auth.get_providers()
     req_mock.assert_called_with(
-        "http://localhost/acs/api/v1/auth/providers")
+        "http://localhost/acs/api/v1/auth/providers", verify=None)
 
     # test url construction valid with trailing slash
     config.return_value = "http://localhost/"
 
     auth.get_providers()
     req_mock.assert_called_with(
-        "http://localhost/acs/api/v1/auth/providers")
+        "http://localhost/acs/api/v1/auth/providers", verify=None)
+
+    auth.get_providers("http://example.com/")
+    req_mock.assert_called_with(
+        "http://example.com/acs/api/v1/auth/providers", verify=False)
 
 
 @patch('dcos.http._request')
