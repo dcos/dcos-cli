@@ -71,15 +71,15 @@ def _verify_ssl(url, verify=None, toml_config=None):
     :rtype: bool | str
     """
 
-    if not _is_request_to_dcos(url, toml_config):
-        # Leave verify to None if URL is outside the DC/OS cluster
-        # https://jira.mesosphere.com/browse/DCOS_OSS-618
-        return None
-
-    if toml_config is None:
-        toml_config = config.get_config()
-
     if verify is None:
+        if toml_config is None:
+            toml_config = config.get_config()
+
+        if not _is_request_to_dcos(url, toml_config):
+            # Leave verify to None if URL is outside the DC/OS cluster
+            # https://jira.mesosphere.com/browse/DCOS_OSS-618
+            return None
+
         verify = config.get_config_val("core.ssl_verify", toml_config)
         if verify and verify.lower() == "true":
             verify = True
