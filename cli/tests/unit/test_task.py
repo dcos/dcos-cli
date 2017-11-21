@@ -4,7 +4,7 @@ from mock import MagicMock, patch
 from dcos import mesos
 from dcos.errors import DCOSException
 from dcoscli.log import log_files
-from dcoscli.task.main import _dcos_log, _metrics, main
+from dcoscli.task.main import _dcos_log, _dcos_log_v2, _metrics, main
 
 from .common import assert_mock
 
@@ -56,6 +56,19 @@ def test_log_file_unavailable():
 
 def _mock_exception(contents='exception'):
     return MagicMock(side_effect=DCOSException(contents))
+
+
+@patch('dcoscli.log.follow_logs')
+@patch('dcos.config.get_config_val')
+def test_dcos_log_v2(mocked_get_config_val, mocked_follow_logs):
+    mocked_get_config_val.return_value = 'http://127.0.0.1'
+
+    task = {'id': 'test-task'}
+
+    _dcos_log_v2(True, [task], 10, 'stdout')
+    mocked_follow_logs.assert_called_with(
+        'http://127.0.0.1/system/v1/logs/v2/task/test-task/file/stdout?'
+        'cursor=END&skip=-10')
 
 
 @patch('dcos.http.get')

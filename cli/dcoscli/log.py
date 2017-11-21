@@ -221,7 +221,19 @@ def has_journald_capability():
         get_cosmos_url()).has_capability('LOGGING')
 
 
-def dcos_log_enabled():
+def has_log_v2_capability():
+    """ function checks the cosmos capability LOGGING_V2
+        to know if `dcos-log` suppports v2 on the cluster.
+
+        :return: cosmos has LOGGING_V2 capability.
+        :rtype: bool
+    """
+
+    return packagemanager.PackageManager(
+        get_cosmos_url()).has_capability('LOGGING_V2')
+
+
+def dcos_log_enabled(version=1):
     """ functions checks the cosmos capability LOGGING
         to know if `dcos-log` is enabled on the cluster.
 
@@ -230,7 +242,12 @@ def dcos_log_enabled():
     """
 
     # https://github.com/dcos/dcos/blob/master/gen/calc.py#L151
-    return logging_strategy() == 'journald'
+    if version == 1:
+        return logging_strategy() == 'journald'
+    elif version == 2:
+        return has_log_v2_capability()
+    raise DCOSException(
+        "invalid dcos-log version {}. Must be 1 or 2".format(version))
 
 
 def logging_strategy():
@@ -289,8 +306,9 @@ def follow_logs(url):
         try:
             entry_json = json.loads(entry.data)
         except ValueError:
-            raise DCOSException(
-                'Could not deserialize log entry to json: {}'.format(entry))
+            # if the SSE message is not a json, emit the raw data.
+            emitter.publish(entry.data)
+            continue
 
         if 'fields' not in entry_json:
             raise DCOSException(
@@ -300,16 +318,16 @@ def follow_logs(url):
         if 'MESSAGE' not in entry_json['fields']:
             continue
 
-        if 'realtime_timestamp' not in entry_json:
-            raise DCOSException(
-                'Missing `realtime_timestamp` in log entry: {}'.format(entry))
+        line = ''
+        if 'realtime_timestamp' in entry_json:
+            # entry.RealtimeTimestamp returns a unix time in microseconds
+            # https://www.freedesktop.org/software/systemd/man/sd_journal_get_realtime_usec.html
+            timestamp = int(entry_json['realtime_timestamp'] / 1000000)
+            line = '{}: '.format(
+                datetime.datetime.fromtimestamp(timestamp).strftime(
+                    '%Y-%m-%d %H:%m:%S'))
 
-        # entry.RealtimeTimestamp returns a unix time in microseconds
-        # https://www.freedesktop.org/software/systemd/man/sd_journal_get_realtime_usec.html
-        timestamp = int(entry_json['realtime_timestamp'] / 1000000)
-        t = datetime.datetime.fromtimestamp(timestamp).strftime(
-            '%Y-%m-%d %H:%m:%S')
-        line = '{}: {}'.format(t, entry_json['fields']['MESSAGE'])
+        line += entry_json['fields']['MESSAGE']
         emitter.publish(line)
 
 

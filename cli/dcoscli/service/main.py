@@ -174,15 +174,16 @@ def _log_service(follow, lines, service, file_):
     task = _get_service_task(service)
 
     # if journald logging is disabled, read from files API.
-    if not log.dcos_log_enabled():
-        return _log_task(task['id'], follow, lines, file_)
+    if log.dcos_log_enabled() or log.dcos_log_enabled(version=2):
+        if 'id' not in task:
+            raise DCOSException('Missing `id` in task. {}'.format(task))
 
-    if 'id' not in task:
-        raise DCOSException('Missing `id` in task. {}'.format(task))
+        task_id = task['id']
+        task_main._log(True, follow, False, lines, task_id, file_)
+        return 0
 
-    task_id = task['id']
-    task_main._log(follow, False, lines, task_id, file_)
-    return 0
+    # else use the files API directly.
+    return _log_task(task['id'], follow, lines, file_)
 
 
 def _log_task(task_id, follow, lines, file_):

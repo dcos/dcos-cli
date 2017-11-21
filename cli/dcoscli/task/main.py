@@ -246,6 +246,11 @@ def _log(all_, follow, completed, lines, task, file_):
                 raise DCOSException(msg)
         raise DCOSException('No matching tasks. Exiting.')
 
+    # check for dcos-log v2
+    if log.dcos_log_enabled(version=2):
+        _dcos_log_v2(follow, tasks, lines, file_)
+        return 0
+
     # if journald logging is disabled, read files API and exit.
     if not log.dcos_log_enabled():
         mesos_files = _mesos_files(tasks, file_, client)
@@ -334,6 +339,45 @@ def get_nested_container_id(task):
             container_id = container_id['parent']
 
     return '.'.join(reversed(container_ids))
+
+
+def _dcos_log_v2(follow, tasks, lines, file_):
+    """ a client to dcos-log v2
+
+    :param follow: same as unix tail's -f
+    :type follow: bool
+    :param tasks: tasks pattern to match
+    :type tasks: list of str
+    :param lines: number of lines to print
+    :type lines: int
+    :param file_: file path to read
+    :type file_: str
+    """
+
+    if len(tasks) != 1:
+        raise DCOSException(
+            "found more than one task with the same name: {}. Please provide "
+            "a unique task name.".format([task['id'] for task in tasks]))
+
+    task = tasks[0]
+    endpoint = '/system/v1/logs/v2/task/{}/file/{}'.format(task['id'], file_)
+    dcos_url = config.get_config_val('core.dcos_url').rstrip('/')
+    if not dcos_url:
+        raise config.missing_config_exception(['core.dcos_url'])
+
+    if lines:
+        # according to dcos-log v2 API the skip parameter must be negative
+        # integer. dcos-cli uses positive int to limit the number of last lines
+        # use "lines * -1" to make it negative.
+        if lines > 0:
+            lines *= -1
+
+        endpoint += '?cursor=END&skip={}'.format(lines)
+
+    url = dcos_url + endpoint
+    if follow:
+        return log.follow_logs(url)
+    return log.print_logs_range(url)
 
 
 def _dcos_log(follow, tasks, lines, file_, completed):

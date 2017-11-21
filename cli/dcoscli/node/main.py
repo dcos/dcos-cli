@@ -557,6 +557,10 @@ def _log(follow, lines, leader, slave, component, filters):
 
     lines = util.parse_int(lines)
 
+    if log.dcos_log_enabled(version=2):
+        _dcos_log_v2(follow, lines, leader, slave, component, filters)
+        return 0
+
     if not log.has_journald_capability():
         if component or filters:
             raise DCOSException('--component or --filter is not '
@@ -714,14 +718,19 @@ def _get_unit_type(unit_name):
     return '{}.service'.format(unit_name)
 
 
-def _build_leader_url(component):
+def _build_leader_url(component, version=1):
     """ Return a leader URL based on passed component name.
 
     :param component: DC/OS component name
     :type component: str
+    :param version: Use logging API version. Default to 1.
+    :rtype: int
     :return: leader logs url
     :rtype: str
     """
+
+    if version < 1 or version > 2:
+        raise DCOSException('valid API versions: 1, 2.Used {}'.format(version))
 
     leaders_map = {
         'dcos-marathon.service': 'marathon',
@@ -730,15 +739,69 @@ def _build_leader_url(component):
 
     # set default leader to 'mesos' to be consistent with files API
     leader_prefix = 'mesos'
-
+    component_name = ''
     if component:
         component_name = _get_unit_type(component)
         leader_prefix = leaders_map.get(component_name)
         if not leader_prefix:
             raise DCOSException('Component {} does not have a leader'.format(
                 component))
+    endpoint = '/leader/{}/logs/v{}/'.format(leader_prefix, version)
+    if version == 1:
+        return endpoint
 
-    return '/leader/{}/logs/v1/'.format(leader_prefix)
+    if component_name:
+        return endpoint + 'component/{}'.format(component_name)
+    return endpoint + 'component'
+
+
+def _dcos_log_v2(follow, lines, leader, slave, component, filters):
+    """ Print logs from dcos-log v2 backend.
+
+    :param follow: same as unix tail's -f
+    :type follow: bool
+    :param lines: number of lines to print
+    :type lines: int
+    :param leader: whether to print the leading master's log
+    :type leader: bool
+    :param slave: the slave ID to print
+    :type slave: str | None
+    :param component: DC/OS component name
+    :type component: string
+    :param filters: a list of filters ["key:value", ...]
+    :type filters: list
+    """
+
+    filter_query = ''
+    for f in filters:
+        key_value = f.split(':')
+        if len(key_value) != 2:
+            raise DCOSException('Invalid filter parameter {}. '
+                                'Must be --filter=key:value'.format(f))
+        filter_query += '&filter={}'.format(f)
+
+    endpoint = '/system/v1'
+    if leader:
+        endpoint += _build_leader_url(component, version=2)
+    elif slave:
+        endpoint += '/agent/{}/logs/v2/component'.format(slave)
+        if component:
+            component_with_type = _get_unit_type(component)
+            endpoint += '/{}'.format(component_with_type)
+
+    dcos_url = config.get_config_val('core.dcos_url').rstrip("/")
+    if not dcos_url:
+        raise config.missing_config_exception(['core.dcos_url'])
+
+    # dcos-log v2 required the skip option be a negative integer
+    if lines > 0:
+        lines *= -1
+
+    url = dcos_url + endpoint + '?skip={}'.format(lines) + filter_query
+
+    if follow:
+        return log.follow_logs(url)
+    return log.print_logs_range(url)
 
 
 def _dcos_log(follow, lines, leader, slave, component, filters):
