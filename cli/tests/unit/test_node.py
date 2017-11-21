@@ -194,9 +194,9 @@ def test_node_diagnostics_download(mock_get_diagnostics_list, mock_do_request,
 @mock.patch('dcos.config.get_config_val')
 @mock.patch('dcos.http.get')
 @mock.patch('dcoscli.log.dcos_log_enabled')
-def test_dcos_log_v2_leader_mesos(mocked_dcos_log_enabked, mocked_http_get,
+def test_dcos_log_v2_leader_mesos(mocked_dcos_log_enabled, mocked_http_get,
                                   mocked_get_config_val):
-    mocked_dcos_log_enabked.return_value = True
+    mocked_dcos_log_enabled.return_value = True
 
     m = mock.MagicMock()
     m.status_code = 200
@@ -213,9 +213,9 @@ def test_dcos_log_v2_leader_mesos(mocked_dcos_log_enabked, mocked_http_get,
 @mock.patch('dcos.config.get_config_val')
 @mock.patch('dcos.http.get')
 @mock.patch('dcoscli.log.dcos_log_enabled')
-def test_dcos_log_v2_leader_marathon(mocked_dcos_log_enabked, mocked_http_get,
+def test_dcos_log_v2_leader_marathon(mocked_dcos_log_enabled, mocked_http_get,
                                      mocked_get_config_val):
-    mocked_dcos_log_enabked.return_value = True
+    mocked_dcos_log_enabled.return_value = True
 
     m = mock.MagicMock()
     m.status_code = 200
@@ -234,9 +234,9 @@ def test_dcos_log_v2_leader_marathon(mocked_dcos_log_enabked, mocked_http_get,
 @mock.patch('dcos.config.get_config_val')
 @mock.patch('dcos.http.get')
 @mock.patch('dcoscli.log.dcos_log_enabled')
-def test_dcos_log_v2_sse(mocked_dcos_log_enabked, mocked_http_get,
+def test_dcos_log_v2_sse(mocked_dcos_log_enabled, mocked_http_get,
                          mocked_get_config_val, mocked_follow_logs):
-    mocked_dcos_log_enabked.return_value = True
+    mocked_dcos_log_enabled.return_value = True
 
     m = mock.MagicMock()
     m.status_code = 200
@@ -253,9 +253,9 @@ def test_dcos_log_v2_sse(mocked_dcos_log_enabked, mocked_http_get,
 @mock.patch('dcos.config.get_config_val')
 @mock.patch('dcos.http.get')
 @mock.patch('dcoscli.log.dcos_log_enabled')
-def test_dcos_log_v2_filters(mocked_dcos_log_enabked, mocked_http_get,
+def test_dcos_log_v2_filters(mocked_dcos_log_enabled, mocked_http_get,
                              mocked_get_config_val, mocked_follow_logs):
-    mocked_dcos_log_enabked.return_value = True
+    mocked_dcos_log_enabled.return_value = True
 
     m = mock.MagicMock()
     m.status_code = 200
@@ -275,9 +275,9 @@ def test_dcos_log_v2_filters(mocked_dcos_log_enabked, mocked_http_get,
 @mock.patch('dcos.config.get_config_val')
 @mock.patch('dcos.http.get')
 @mock.patch('dcoscli.log.dcos_log_enabled')
-def test_dcos_log_leader_mesos(mocked_dcos_log_enabked, mocked_http_get,
+def test_dcos_log_leader_mesos(mocked_dcos_log_enabled, mocked_http_get,
                                mocked_get_config_val):
-    mocked_dcos_log_enabked.return_value = True
+    mocked_dcos_log_enabled.return_value = True
 
     m = mock.MagicMock()
     m.status_code = 200
@@ -294,9 +294,9 @@ def test_dcos_log_leader_mesos(mocked_dcos_log_enabked, mocked_http_get,
 @mock.patch('dcos.config.get_config_val')
 @mock.patch('dcos.http.get')
 @mock.patch('dcoscli.log.dcos_log_enabled')
-def test_dcos_log_leader_marathon(mocked_dcos_log_enabked, mocked_http_get,
+def test_dcos_log_leader_marathon(mocked_dcos_log_enabled, mocked_http_get,
                                   mocked_get_config_val):
-    mocked_dcos_log_enabked.return_value = True
+    mocked_dcos_log_enabled.return_value = True
 
     m = mock.MagicMock()
     m.status_code = 200
@@ -315,9 +315,9 @@ def test_dcos_log_leader_marathon(mocked_dcos_log_enabked, mocked_http_get,
 @mock.patch('dcos.config.get_config_val')
 @mock.patch('dcos.http.get')
 @mock.patch('dcoscli.log.dcos_log_enabled')
-def test_dcos_log_stream(mocked_dcos_log_enabked, mocked_http_get,
+def test_dcos_log_stream(mocked_dcos_log_enabled, mocked_http_get,
                          mocked_get_config_val, mocked_follow_logs):
-    mocked_dcos_log_enabked.return_value = True
+    mocked_dcos_log_enabled.return_value = True
 
     m = mock.MagicMock()
     m.status_code = 200
@@ -335,9 +335,9 @@ def test_dcos_log_stream(mocked_dcos_log_enabked, mocked_http_get,
 @mock.patch('dcos.config.get_config_val')
 @mock.patch('dcos.http.get')
 @mock.patch('dcoscli.log.dcos_log_enabled')
-def test_dcos_log_filters(mocked_dcos_log_enabked, mocked_http_get,
+def test_dcos_log_filters(mocked_dcos_log_enabled, mocked_http_get,
                           mocked_get_config_val, mocked_follow_logs):
-    mocked_dcos_log_enabked.return_value = True
+    mocked_dcos_log_enabled.return_value = True
 
     m = mock.MagicMock()
     m.status_code = 200

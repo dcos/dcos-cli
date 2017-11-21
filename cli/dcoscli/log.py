@@ -222,7 +222,7 @@ def has_journald_capability():
 
 
 def has_log_v2_capability():
-    """ function checks thec cosmos capability LOGGING_V2
+    """ function checks the cosmos capability LOGGING_V2
         to know if `dcos-log` suppports v2 on the cluster.
 
         :return: cosmos has LOGGING_V2 capability.

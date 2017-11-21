@@ -729,7 +729,7 @@ def _build_leader_url(component, version=1):
     :rtype: str
     """
 
-    if version < 1 and version > 2:
+    if version < 1 or version > 2:
         raise DCOSException('valid API versions: 1, 2.Used {}'.format(version))
 
     leaders_map = {

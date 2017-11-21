@@ -346,8 +346,8 @@ def _dcos_log_v2(follow, tasks, lines, file_):
 
     :param follow: same as unix tail's -f
     :type follow: bool
-    :param task: task pattern to match
-    :type task: str
+    :param tasks: tasks pattern to match
+    :type tasks: list of str
     :param lines: number of lines to print
     :type lines: int
     :param file_: file path to read
@@ -356,7 +356,7 @@ def _dcos_log_v2(follow, tasks, lines, file_):
 
     if len(tasks) != 1:
         raise DCOSException(
-            "found more then one task with the same name: {}. Please provide "
+            "found more than one task with the same name: {}. Please provide "
             "a unique task name.".format([task['id'] for task in tasks]))
 
     task = tasks[0]
