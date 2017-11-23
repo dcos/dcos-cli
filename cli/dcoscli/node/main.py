@@ -908,7 +908,6 @@ def _ssh(leader, slave, option, config_file, user, master_proxy, proxy_ip,
     :returns: process return code
     """
 
-    ssh_options = util.get_ssh_options(config_file, option)
     dcos_client = mesos.DCOSClient()
 
     if leader:
@@ -928,39 +927,11 @@ def _ssh(leader, slave, option, config_file, user, master_proxy, proxy_ip,
     if command is None:
         command = ''
 
-    master_public_ip = dcos_client.metadata().get('PUBLIC_IPV4')
-
-    if master_proxy:
-        if not master_public_ip:
-            raise DCOSException(("Cannot use --master-proxy.  Failed to find "
-                                 "'PUBLIC_IPV4' at {}").format(
-                                     dcos_client.get_dcos_url('metadata')))
-        proxy_ip = master_public_ip
-
-    if proxy_ip:
-        if not os.environ.get('SSH_AUTH_SOCK'):
-            raise DCOSException(
-                "There is no SSH_AUTH_SOCK env variable, which likely means "
-                "you aren't running `ssh-agent`.  `dcos node ssh "
-                "--master-proxy/--proxy-ip` depends on `ssh-agent` to safely "
-                "use your private key to hop between nodes in your cluster.  "
-                "Please run `ssh-agent`, then add your private key with "
-                "`ssh-add`.")
-        cmd = "ssh -A -t {0}{1}@{2} ssh -A -t {0}{1}@{3} {4}".format(
-            ssh_options,
-            user,
-            proxy_ip,
-            host,
-            command)
-    else:
-        cmd = "ssh -t {0}{1}@{2} {3}".format(
-            ssh_options,
-            user,
-            host,
-            command)
+    ssh_options = util.get_ssh_options(config_file, option, user, proxy_ip, master_proxy)
+    cmd = "ssh {0} {1} -- {2}".format(ssh_options, host, command)
 
     emitter.publish(DefaultError("Running `{}`".format(cmd)))
-    if (not master_proxy and not proxy_ip) and master_public_ip:
+    if not master_proxy and not proxy_ip:
         emitter.publish(
             DefaultError("If you are running this command from a separate "
                          "network than DC/OS, consider using "
