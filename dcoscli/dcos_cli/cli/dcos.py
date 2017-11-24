@@ -21,7 +21,7 @@ class DCOSCLI(click.MultiCommand):
 
     def list_commands(self, ctx):
         """Return the list of available DC/OS commands."""
-        return ['cluster', 'config']
+        return ['cluster', 'auth', 'config']
 
     def get_command(self, ctx, cmd_name):
         """Get a given command."""

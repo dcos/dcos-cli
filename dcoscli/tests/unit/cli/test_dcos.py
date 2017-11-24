@@ -17,6 +17,7 @@ Options:
 
 Commands:
   cluster  Manage your DC/OS clusters.
+  auth     Authenticate to your DC/OS cluster.
   config   Manage the DC/OS configuration file.
 """
 

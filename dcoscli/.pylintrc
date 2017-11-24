@@ -1,0 +1,7 @@
+[MESSAGES CONTROL]
+
+# Disabling similarities because it complains about the `cluster setup` and
+# `auth login` command definitions and I couldn't find a way to disable it at
+# file level.
+
+disable=similarities,missing-docstring
