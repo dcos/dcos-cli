@@ -6,7 +6,7 @@ from distutils.dir_util import copy_tree
 import pytest
 
 from dcos import config, constants, util
-from .helpers.common import assert_command, exec_command
+from dcoscli.test.common import assert_command, exec_command
 
 
 @pytest.fixture

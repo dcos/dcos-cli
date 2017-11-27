@@ -1,4 +1,4 @@
-from .helpers.common import assert_command, exec_command
+from dcoscli.test.common import assert_command, exec_command
 
 
 def test_default():

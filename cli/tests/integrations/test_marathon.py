@@ -13,11 +13,11 @@ from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 from dcos import constants
 
-from .helpers.common import (assert_command, assert_lines, exec_command,
-                             popen_tty, update_config)
-from .helpers.marathon import (app, list_apps, list_deployments, show_app,
-                               start_app, watch_all_deployments,
-                               watch_deployment)
+from dcoscli.test.common import (assert_command, assert_lines, exec_command,
+                                 popen_tty, update_config)
+from dcoscli.test.marathon import (app, list_apps, list_deployments, show_app,
+                                   start_app, watch_all_deployments,
+                                   watch_deployment)
 
 
 _ZERO_INSTANCE_APP_ID = 'zero-instance-app'

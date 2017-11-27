@@ -6,8 +6,8 @@ import six
 
 from dcos import config, constants
 
-from .helpers.common import (assert_command, config_set, exec_command,
-                             update_config)
+from dcoscli.test.common import (assert_command, config_set, exec_command,
+                                 update_config)
 
 
 @pytest.fixture
