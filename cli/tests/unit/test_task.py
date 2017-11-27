@@ -212,6 +212,8 @@ def test_dcos_task_metrics_agent_missing_container(
     mock_container_response.status_code = 204
     mock_app_response = MagicMock()
     mock_app_response.status_code = 200
+    mock_app_response.json = lambda: metrics_message
+
     mocked_http_get.side_effect = [mock_container_response, mock_app_response]
 
     mock_master = MagicMock()
