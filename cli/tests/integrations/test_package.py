@@ -10,14 +10,16 @@ import six
 
 from dcos import config, constants, errors, subcommand, util
 
-from .helpers.common import (assert_command, assert_lines, base64_to_dict,
-                             delete_zk_node, delete_zk_nodes, exec_command,
-                             file_json, update_config)
-from .helpers.marathon import watch_all_deployments
-from .helpers.package import (package_install, package_uninstall,
-                              setup_universe_server, teardown_universe_server,
-                              UNIVERSE_REPO, UNIVERSE_TEST_REPOS)
-from .helpers.service import get_services, service_shutdown
+from dcoscli.test.common import (assert_command, assert_lines, base64_to_dict,
+                                 delete_zk_node,
+                                 delete_zk_nodes, exec_command,
+                                 file_json, update_config)
+from dcoscli.test.marathon import watch_all_deployments
+from dcoscli.test.package import (package_install, package_uninstall,
+                                  setup_universe_server,
+                                  teardown_universe_server,
+                                  UNIVERSE_REPO, UNIVERSE_TEST_REPOS)
+from dcoscli.test.service import get_services, service_shutdown
 from ..common import file_bytes
 
 

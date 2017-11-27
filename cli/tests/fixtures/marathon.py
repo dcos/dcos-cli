@@ -1,6 +1,6 @@
 import os
 
-from ..integrations.helpers.common import file_json_ast
+from dcoscli.test.common import file_json_ast
 
 PODS_FILE_PATH_BASE = 'tests/data/marathon/pods'
 
