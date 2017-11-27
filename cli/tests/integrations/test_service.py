@@ -9,12 +9,14 @@ import pytest
 import dcos.util as util
 from dcos.util import create_schema
 
-from .helpers.common import (assert_command, assert_lines, delete_zk_node,
-                             delete_zk_nodes, exec_command, ssh_output)
-from .helpers.marathon import remove_app
-from .helpers.package import (package, package_install, setup_universe_server,
-                              teardown_universe_server)
-from .helpers.service import get_services, service_shutdown, wait_for_service
+from dcoscli.test.common import (assert_command, assert_lines, delete_zk_node,
+                                 delete_zk_nodes, exec_command, ssh_output)
+from dcoscli.test.marathon import remove_app
+from dcoscli.test.package import (package, package_install,
+                                  setup_universe_server,
+                                  teardown_universe_server)
+from dcoscli.test.service import (get_services, service_shutdown,
+                                  wait_for_service)
 from ..fixtures.service import framework_fixture
 
 

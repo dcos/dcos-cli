@@ -1,12 +1,13 @@
 import json
 
-from .helpers.common import (assert_command, delete_zk_nodes, exec_command,
-                             file_json, file_json_ast)
-from .helpers.marathon import (app, group, pod, show_app, show_group,
-                               show_pod, start_app, watch_all_deployments)
-from .helpers.package import (package, setup_universe_server,
-                              teardown_universe_server)
-from .helpers.service import get_services, wait_for_service
+from dcoscli.test.common import (assert_command, delete_zk_nodes,
+                                 exec_command, file_json,
+                                 file_json_ast)
+from dcoscli.test.marathon import (app, group, pod, show_app, show_group,
+                                   show_pod, start_app, watch_all_deployments)
+from dcoscli.test.package import (package, setup_universe_server,
+                                  teardown_universe_server)
+from dcoscli.test.service import get_services, wait_for_service
 
 
 def setup_module(module):

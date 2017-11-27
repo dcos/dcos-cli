@@ -11,10 +11,10 @@ import pytest
 import dcos.util as util
 from dcos.util import create_schema
 
-from .helpers.common import (assert_command, assert_lines,
-                             assert_lines_range, exec_command)
-from .helpers.marathon import (add_app, app, pod, remove_app,
-                               watch_all_deployments)
+from dcoscli.test.common import (assert_command, assert_lines,
+                                 assert_lines_range, exec_command)
+from dcoscli.test.marathon import (add_app, app, pod, remove_app,
+                                   watch_all_deployments)
 from ..fixtures.task import task_fixture
 
 SLEEP_COMPLETED = 'tests/data/marathon/apps/sleep-completed.json'

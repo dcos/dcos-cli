@@ -4,7 +4,7 @@ import pytest
 
 from dcos import constants
 
-from .helpers.common import exec_command, update_config
+from dcoscli.test.common import exec_command, update_config
 
 
 @pytest.fixture
