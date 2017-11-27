@@ -204,11 +204,10 @@ def test_dcos_url_env_var(env):
     env['DCOS_URL'] = 'http://foobar'
 
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'service'], env=env)
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr.startswith(
-        b'URL [http://foobar/mesos/master/state.json] is unreachable')
+        ['dcos', 'config', 'show', 'core.dcos_url'], env=env)
+    assert returncode == 0
+    assert stdout == b"http://foobar\n"
+    assert stderr == b''
 
     env.pop('DCOS_URL')
 
@@ -217,11 +216,10 @@ def test_dcos_dcos_url_env_var(env):
     env['DCOS_DCOS_URL'] = 'http://foobar'
 
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'service'], env=env)
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr.startswith(
-        b'URL [http://foobar/mesos/master/state.json] is unreachable')
+        ['dcos', 'config', 'show', 'core.dcos_url'], env=env)
+    assert returncode == 0
+    assert stdout == b"http://foobar\n"
+    assert stderr == b''
 
     env.pop('DCOS_DCOS_URL')
 

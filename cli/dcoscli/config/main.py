@@ -199,10 +199,8 @@ def _show(name):
 
         if effective_value is None:
             raise DCOSException("Property {!r} doesn't exist".format(name))
-        else:
-            msg = _format_config(file_value, effective_value,
-                                 envvar_name=envvar_name)
-            emitter.publish(msg)
+
+        emitter.publish(effective_value)
 
     else:
         # Let's list all of the values
