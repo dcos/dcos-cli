@@ -253,6 +253,35 @@ def test_dcos_task_metrics_agent_missing_app(
     _metrics(True, 'task_id', False)
 
 
+@patch('dcos.http.get')
+@patch('dcos.mesos.get_master')
+@patch('dcos.config.get_config_val')
+def test_dcos_task_metrics_agent_missing_both(
+    mocked_get_config_val, mocked_get_master, mocked_http_get
+):
+    mocked_get_config_val.return_value = 'http://127.0.0.1'
+
+    mock_response = MagicMock()
+    mock_response.status_code = 204
+
+    mock_master = MagicMock()
+    mock_master.task = lambda _: {'slave_id': 'slave_id'}
+    mock_master.get_container_id = lambda _: {
+        'parent': {},
+        'value': 'container_id'
+    }
+    mocked_get_master.return_value = mock_response
+
+    try:
+        _metrics(True, 'task_id', False)
+        raise Exception('Expected EmptyMetricsException was not raised')
+    except DCOSException:
+        pass
+
+
+@patch('dcos.http.get')
+@patch('dcos.mesos.get_master')
+@patch('dcos.config.get_config_val')
 def test_dcos_task_metrics_agent_missing_slave(mocked_get_config_val,
                                                mocked_get_master,
                                                mocked_http_get):
