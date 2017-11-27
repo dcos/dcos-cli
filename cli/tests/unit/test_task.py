@@ -9,6 +9,17 @@ from dcoscli.task.main import _dcos_log, _dcos_log_v2, _metrics, main
 from .common import assert_mock
 
 
+# metrics_messages is a minimal fixture for mocking non-empty API responses
+metrics_message = {
+    'datapoints': [
+        {
+            'name': 'statsd_tester.time.uptime',
+            'value': 1234,
+        }
+    ]
+}
+
+
 @patch('dcos.config.get_config')
 def test_log_master_unavailable(config_mock):
     config_mock.return_value = {'core.dcos_url': 'foo'}
@@ -167,6 +178,7 @@ def test_dcos_task_metrics_agent_details(mocked_get_config_val,
 
     mock_http_response = MagicMock()
     mock_http_response.status_code = 200
+    mock_http_response.json = lambda: metrics_message
     mocked_http_get.return_value = mock_http_response
 
     mock_master = MagicMock()
