@@ -228,6 +228,29 @@ def test_dcos_task_metrics_agent_missing_container(
 @patch('dcos.http.get')
 @patch('dcos.mesos.get_master')
 @patch('dcos.config.get_config_val')
+def test_dcos_task_metrics_agent_missing_app(
+    mocked_get_config_val, mocked_get_master, mocked_http_get
+):
+    mocked_get_config_val.return_value = 'http://127.0.0.1'
+
+    mock_container_response = MagicMock()
+    mock_container_response.status_code = 200
+    mock_container_response.json = lambda: metrics_message
+    mock_app_response = MagicMock()
+    mock_app_response.status_code = 204
+    mocked_http_get.side_effect = [mock_container_response, mock_app_response]
+
+    mock_master = MagicMock()
+    mock_master.task = lambda _: {'slave_id': 'slave_id'}
+    mock_master.get_container_id = lambda _: {
+        'parent': {},
+        'value': 'container_id'
+    }
+    mocked_get_master.return_value = mock_master
+
+    _metrics(True, 'task_id', False)
+
+
 def test_dcos_task_metrics_agent_missing_slave(mocked_get_config_val,
                                                mocked_get_master,
                                                mocked_http_get):
