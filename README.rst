@@ -192,12 +192,6 @@ integration tests against. In the future we hope to remove this limitation::
     deactivate
     cd -
 
-    cp /etc/hosts ${DCOS_DIR}/hosts.local
-    grep -q "^.* dcos.snakeoil.mesosphere.com$" ${DCOS_DIR}/hosts.local && \
-        sed -iold "s/^.* dcos.snakeoil.mesosphere.com$/${CLI_TEST_DCOS_URL} dcos.snakeoil.mesosphere.com/" ${DCOS_DIR}/hosts.local || \
-        echo ${CLI_TEST_DCOS_URL} dcos.snakeoil.mesosphere.com >> ${DCOS_DIR}/hosts.local
-    sudo mv ${DCOS_DIR}/hosts.local /etc/hosts
-
 **CLI_TEST_DCOS_URL**: Holds the URL or IP address of the cluster you
 are testing against. If you used :code:`dcos-launch` to launch the cluster,
 you can get the IP of the cluster by running :code:`dcos-launch describe`.

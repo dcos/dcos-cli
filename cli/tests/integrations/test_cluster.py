@@ -6,7 +6,9 @@ from distutils.dir_util import copy_tree
 import pytest
 
 from dcos import config, constants, util
-from dcoscli.test.common import assert_command, exec_command
+from dcoscli.test.common import (assert_command, exec_command,
+                                 skip_if_env_missing)
+from dcoscli.test.constants import (DCOS_TEST_URL_ENV)
 
 
 @pytest.fixture
@@ -103,11 +105,13 @@ def test_setup_noninteractive():
     This makes sure the process doesn't prompt for input forever (DCOS-15590).
     """
 
+    skip_if_env_missing([DCOS_TEST_URL_ENV])
+
     returncode, stdout, stderr = exec_command(
         ['dcos',
          'cluster',
          'setup',
-         'https://dcos.snakeoil.mesosphere.com'],
+         os.environ.get(DCOS_TEST_URL_ENV)],
         timeout=30,
         stdin=subprocess.DEVNULL)
 
