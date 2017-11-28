@@ -47,7 +47,7 @@ def _get_metronome_url(toml_config=None):
     if toml_config is None:
         toml_config = config.get_config()
 
-    metronome_url = config.get_config_val('metronome.url', toml_config)
+    metronome_url = config.get_config_val('job.url', toml_config)
     if metronome_url is None:
         # dcos must be capable to use dcos_url
         _check_capability()
