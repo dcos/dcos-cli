@@ -7,7 +7,7 @@ from six.moves import urllib
 
 import dcoscli
 from dcos import (cmds, config, emitting, errors,
-                  http, mesos, packagemanager, subprocess, util)
+                  http, mesos, packagemanager, ssh_util, subprocess, util)
 from dcos.cosmos import get_cosmos_url
 from dcos.errors import DCOSException, DefaultError
 from dcoscli import log, metrics, tables
@@ -927,7 +927,8 @@ def _ssh(leader, slave, option, config_file, user, master_proxy, proxy_ip,
     if command is None:
         command = ''
 
-    ssh_options = util.get_ssh_options(config_file, option, user, proxy_ip, master_proxy)
+    ssh_options = ssh_util.get_ssh_options(
+        config_file, option, user, proxy_ip, master_proxy)
     cmd = "ssh {0} {1} -- {2}".format(ssh_options, host, command)
 
     emitter.publish(DefaultError("Running `{}`".format(cmd)))

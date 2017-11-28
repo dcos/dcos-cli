@@ -2,7 +2,7 @@ import docopt
 import six
 
 import dcoscli
-from dcos import cmds, emitting, marathon, mesos, subprocess, util
+from dcos import cmds, emitting, marathon, mesos, ssh_util, subprocess, util
 from dcos.errors import DCOSException, DefaultError
 from dcoscli import log, tables
 from dcoscli.subcommand import default_command_info, default_doc
@@ -276,7 +276,7 @@ def _log_marathon(follow, lines, ssh_config_file):
     leader_ip = marathon.create_client().get_leader().split(':')[0]
     service = 'dcos-marathon'
 
-    ssh_options = util.get_ssh_options(
+    ssh_options = ssh_util.get_ssh_options(
         ssh_config_file,
         master_proxy=True)
     cmd = "ssh {0} {1} -- journalctl {2}-u {3}".format(
