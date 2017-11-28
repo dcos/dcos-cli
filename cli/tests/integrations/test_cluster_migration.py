@@ -6,7 +6,10 @@ import pytest
 
 from dcos import config, constants, util
 
-from dcoscli.test.common import assert_command, exec_command
+from dcoscli.test.common import (assert_command, exec_command,
+                                 skip_if_env_missing)
+from dcoscli.test.constants import (DCOS_TEST_PASS_ENV, DCOS_TEST_URL_ENV,
+                                    DCOS_TEST_USER_ENV)
 
 
 @pytest.fixture(scope="module")
@@ -27,8 +30,11 @@ def temp_dcos_dir():
 
 
 def test_dcos_dir_env_with_acs_token(acs_token, temp_dcos_dir):
+    skip_if_env_missing([DCOS_TEST_URL_ENV])
+
     _copy_config_to_dir('dcos.toml', temp_dcos_dir)
 
+    config.set_val('core.dcos_url', os.environ.get(DCOS_TEST_URL_ENV))
     config.set_val('core.dcos_acs_token', acs_token)
 
     returncode, stdout, _ = exec_command(['dcos', 'cluster', 'list', '--json'])
@@ -36,7 +42,7 @@ def test_dcos_dir_env_with_acs_token(acs_token, temp_dcos_dir):
 
     cluster_list = json.loads(stdout.decode('utf-8'))
     assert len(cluster_list) == 1
-    assert cluster_list[0]['url'] == "http://dcos.snakeoil.mesosphere.com"
+    assert cluster_list[0]['url'] == os.environ.get(DCOS_TEST_URL_ENV)
 
 
 def test_dcos_dir_env_without_acs_token(acs_token, temp_dcos_dir):
@@ -52,8 +58,11 @@ def test_dcos_dir_env_without_acs_token(acs_token, temp_dcos_dir):
 
 
 def test_dcos_config_env_with_acs_token(acs_token, temp_dcos_dir):
+    skip_if_env_missing([DCOS_TEST_URL_ENV])
+
     with _temp_dcos_config('dcos.toml', temp_dcos_dir):
 
+        config.set_val('core.dcos_url', os.environ.get(DCOS_TEST_URL_ENV))
         config.set_val('core.dcos_acs_token', acs_token)
 
         exp_stderr = (
@@ -68,7 +77,7 @@ def test_dcos_config_env_with_acs_token(acs_token, temp_dcos_dir):
 
         cluster_list = json.loads(stdout.decode('utf-8'))
         assert len(cluster_list) == 1
-        assert cluster_list[0]['url'] == "http://dcos.snakeoil.mesosphere.com"
+        assert cluster_list[0]['url'] == os.environ.get(DCOS_TEST_URL_ENV)
 
 
 def test_dcos_config_env_without_acs_token(temp_dcos_dir):
@@ -87,18 +96,23 @@ def test_dcos_config_env_without_acs_token(temp_dcos_dir):
 
 
 def test_setup_cluster_through_config_commands(acs_token, temp_dcos_dir):
+    skip_if_env_missing([DCOS_TEST_URL_ENV])
+
     returncode, _, stderr = exec_command(
         ['dcos',
          'config',
          'set',
          'core.dcos_url',
-         'http://dcos.snakeoil.mesosphere.com'])
+         os.environ.get(DCOS_TEST_URL_ENV)])
     assert returncode == 0
     assert stderr == (
-        b"[core.dcos_url]: set to 'http://dcos.snakeoil.mesosphere.com'\n"
+        b"[core.dcos_url]: set to '%s'\n"
         b"Setting-up a cluster through this command is being deprecated. "
         b"To setup the CLI to talk to your cluster, please run "
-        b"`dcos cluster setup <dcos_url>`.\n")
+        b"`dcos cluster setup <dcos_url>`.\n"
+        % (bytes(os.environ.get(DCOS_TEST_URL_ENV), 'utf-8'),))
+
+    config.set_val('core.ssl_verify', "false")
 
     returncode, _, _ = exec_command(
         ['dcos', 'config', 'set', 'core.dcos_acs_token', acs_token])
@@ -110,36 +124,36 @@ def test_setup_cluster_through_config_commands(acs_token, temp_dcos_dir):
 
     cluster_list = json.loads(stdout.decode('utf-8'))
     assert len(cluster_list) == 1
-    assert cluster_list[0]['url'] == "http://dcos.snakeoil.mesosphere.com"
+    assert cluster_list[0]['url'] == os.environ.get(DCOS_TEST_URL_ENV)
 
 
 def test_setup_cluster_through_auth_command(temp_dcos_dir):
-    if 'DCOS_ADMIN_USERNAME' not in os.environ:
-        pytest.skip('DCOS_ADMIN_USERNAME is not set.')
-
-    if 'DCOS_ADMIN_PASSWORD' not in os.environ:
-        pytest.skip('DCOS_ADMIN_PASSWORD is not set.')
+    skip_if_env_missing(
+        [DCOS_TEST_URL_ENV, DCOS_TEST_USER_ENV, DCOS_TEST_PASS_ENV])
 
     returncode, _, stderr = exec_command(
         ['dcos',
          'config',
          'set',
          'core.dcos_url',
-         'http://dcos.snakeoil.mesosphere.com'])
+         os.environ.get(DCOS_TEST_URL_ENV)])
     assert returncode == 0
     assert stderr == (
-        b"[core.dcos_url]: set to 'http://dcos.snakeoil.mesosphere.com'\n"
+        b"[core.dcos_url]: set to '%s'\n"
         b"Setting-up a cluster through this command is being deprecated. "
         b"To setup the CLI to talk to your cluster, please run "
-        b"`dcos cluster setup <dcos_url>`.\n")
+        b"`dcos cluster setup <dcos_url>`.\n"
+        % (bytes(os.environ.get(DCOS_TEST_URL_ENV), 'utf-8'),))
+
+    config.set_val('core.ssl_verify', "false")
 
     returncode, _, _ = exec_command(
         ['dcos',
          'auth',
          'login',
          '--username',
-         os.environ['DCOS_ADMIN_USERNAME'],
-         '--password-env=DCOS_ADMIN_PASSWORD'])
+         os.environ.get(DCOS_TEST_USER_ENV),
+         '--password-env='+DCOS_TEST_PASS_ENV])
     assert returncode == 0
 
     returncode, stdout, _ = exec_command(
@@ -148,7 +162,7 @@ def test_setup_cluster_through_auth_command(temp_dcos_dir):
 
     cluster_list = json.loads(stdout.decode('utf-8'))
     assert len(cluster_list) == 1
-    assert cluster_list[0]['url'] == "http://dcos.snakeoil.mesosphere.com"
+    assert cluster_list[0]['url'] == os.environ.get(DCOS_TEST_URL_ENV)
 
 
 def _copy_config_to_dir(name, dst_dir):
