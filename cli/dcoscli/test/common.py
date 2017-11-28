@@ -5,6 +5,7 @@ import os
 import subprocess
 import time
 
+import pytest
 import six
 from six.moves import urllib
 
@@ -369,3 +370,15 @@ def base64_to_dict(byte_string):
     :rtype dict
     """
     return json.loads(base64.b64decode(byte_string).decode('utf-8'))
+
+
+def skip_if_env_missing(env_vars):
+    """Skip a test if some environment variable are missing.
+
+    :param env_vars: environment variables that should be present
+    :type env_vars: list of str
+    """
+
+    for env_var in env_vars:
+        if env_var not in os.environ:
+            pytest.skip(env_var + ' is not set.')

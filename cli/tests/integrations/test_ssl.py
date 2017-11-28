@@ -2,22 +2,12 @@ import os
 
 import pytest
 
-from dcos import constants
-
 from dcoscli.test.common import exec_command, update_config
 
 
 @pytest.fixture
 def env():
-    r = os.environ.copy()
-    r.update({
-        constants.PATH_ENV: os.environ[constants.PATH_ENV],
-        'DCOS_SNAKEOIL_CRT_PATH': os.environ.get(
-            "DCOS_SNAKEOIL_CRT_PATH", "/dcos-cli/adminrouter/snakeoil.crt"),
-        'DCOS_URL': 'https://dcos.snakeoil.mesosphere.com'
-    })
-
-    return r
+    return os.environ.copy()
 
 
 def test_dont_verify_ssl_with_env_var(env):
@@ -76,29 +66,6 @@ def test_verify_ssl_with_bad_cert_config(env):
             ['dcos', 'marathon', 'app', 'list'], env)
         assert returncode == 1
         assert stderr.decode('utf-8') == _ssl_error_msg()
-
-
-@pytest.mark.skipif(True, reason='Need to resolve DCOS-9273 to validate certs')
-def test_verify_ssl_with_good_cert_env_var(env):
-    env['DCOS_SSL_VERIFY'] = env['DCOS_SNAKEOIL_CRT_PATH']
-
-    with update_config('core.ssl_verify', None, env):
-        returncode, stdout, stderr = exec_command(
-            ['dcos', 'marathon', 'app', 'list'], env)
-        assert returncode == 0
-        assert stderr == b''
-
-    env.pop('DCOS_SSL_VERIFY')
-
-
-@pytest.mark.skipif(True, reason='Need to resolve DCOS-9273 to validate certs')
-def test_verify_ssl_with_good_cert_config(env):
-    with update_config(
-            'core.ssl_verify', env['DCOS_SNAKEOIL_CRT_PATH'], env):
-        returncode, stdout, stderr = exec_command(
-            ['dcos', 'marathon', 'app', 'list'], env)
-        assert returncode == 0
-        assert stderr == b''
 
 
 def _ssl_error_msg():

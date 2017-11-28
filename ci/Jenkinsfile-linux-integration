@@ -165,13 +165,10 @@ def testBuilder(String platform, String nodeId, String workspace = null) {
 
                         withCredentials(
                             [[$class: 'FileBinding',
-                              credentialsId: '1c206779-acc0-4844-97f6-7b3ed081a456',
-                              variable: 'DCOS_SNAKEOIL_CRT_PATH'],
-                             [$class: 'FileBinding',
                               credentialsId: '23743034-1ac4-49f7-b2e6-a661aee2d11b',
                               variable: 'CLI_TEST_SSH_KEY_PATH']]) {
 
-                            withEnv(["DCOS_IP=${dcosIp}"]) {
+                            withEnv(["CLI_TEST_DCOS_URL=https://${dcosIp}"]) {
                                 try {
                                     body()
                                 } catch(InterruptedException | hudson.AbortException e) {
@@ -214,11 +211,7 @@ def builders = [:]
 
 builders['linux-tests'] = testBuilder('linux', 'py35', '/workspace')({
     stage ("Run dcos-cli tests") {
-        sh '''
-           rm -rf ~/.dcos; \
-           grep -q "^.* dcos.snakeoil.mesosphere.com$" /etc/hosts && \
-           sed -iold "s/^.* dcos.snakeoil.mesosphere.com$/${DCOS_IP} dcos.snakeoil.mesosphere.com/" /etc/hosts || \
-           echo ${DCOS_IP} dcos.snakeoil.mesosphere.com >> /etc/hosts'''
+        sh "rm -rf ~/.dcos"
 
         dir('dcos-cli') {
             sh 'make test'
@@ -230,7 +223,7 @@ builders['linux-tests'] = testBuilder('linux', 'py35', '/workspace')({
                make binary; \
                export CLI_TEST_SSH_USER=centos; \
                export CLI_TEST_MASTER_PROXY=true; \
-               dist/dcos cluster setup dcos.snakeoil.mesosphere.com \
+               dist/dcos cluster setup ${CLI_TEST_DCOS_URL} \
                    --insecure --username=${DCOS_ADMIN_USERNAME} \
                    --password-env=DCOS_ADMIN_PASSWORD; \
                dist/dcos config set core.reporting false; \
