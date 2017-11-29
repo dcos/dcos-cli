@@ -1,6 +1,10 @@
 """Defines the `dcos cluster setup` subcommand."""
 
+import sys
+
 import click
+
+from dcoscli.cluster.main import setup
 
 
 # pylint: disable=too-many-arguments
@@ -47,8 +51,12 @@ import click
     '--username',
     help='Specify the username for login.'
 )
-def cluster_setup(ca_certs, insecure, no_check, password, password_env,
+@click.argument('url')
+def cluster_setup(url, ca_certs, insecure, no_check, password, password_env,
                   password_file, private_key, provider, username):
     """Set up a cluster."""
-    # pylint: disable=unused-argument
-    print('Setup a cluster.')
+    return setup(url, insecure=insecure, no_check=no_check,
+                     ca_certs=ca_certs, password_str=password,
+                     password_env=password_env, password_file=password_file,
+                     provider=provider, username=username,
+                     key_path=private_key)

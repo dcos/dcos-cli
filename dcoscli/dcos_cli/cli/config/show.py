@@ -2,8 +2,11 @@
 
 import click
 
+from dcoscli.config.main import _show
+
 
 @click.command(name='show')
-def config_show():
+@click.argument('name', required=False)
+def config_show(name):
     """Print the configuration."""
-    print('Show a config.')
+    _show(name)

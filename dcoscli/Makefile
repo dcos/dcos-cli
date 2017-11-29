@@ -14,8 +14,8 @@ lint: check
 	pydocstyle --ignore=D104,D203 dcos_cli/
 .PHONY: lint
 
-test: lint
-	pytest --cov=dcos_cli --cov-fail-under=100  --cov-report term-missing tests/
+test:
+	$(PYTHON) ./scripts/test.py
 .PHONY: test
 
 build:

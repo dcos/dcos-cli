@@ -2,6 +2,8 @@
 
 import click
 
+from dcoscli.auth.main import _login
+
 
 # pylint: disable=too-many-arguments
 
@@ -35,5 +37,6 @@ import click
 def auth_login(password, password_env, password_file, private_key,
                provider, username):
     """Login to your DC/OS cluster."""
-    # pylint: disable=unused-argument
-    print('Login to your DC/OS cluster.')
+    return _login(password_str=password, password_env=password_env,
+           password_file=password_file, provider=provider, username=username,
+           key_path=private_key)

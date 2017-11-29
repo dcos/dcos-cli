@@ -2,8 +2,11 @@
 
 import click
 
+from dcoscli.cluster.main import _attach
+
 
 @click.command(name='attach')
-def cluster_attach():
+@click.argument('name')
+def cluster_attach(name):
     """Attach to a cluster."""
-    print('Attach to a cluster.')
+    return _attach(name)

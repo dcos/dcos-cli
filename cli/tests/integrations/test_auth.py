@@ -15,18 +15,6 @@ def env():
     return r
 
 
-def test_info():
-    stdout = b'Authenticate to DC/OS cluster\n'
-    assert_command(['dcos', 'auth', '--info'],
-                   stdout=stdout)
-
-
-def test_version():
-    stdout = b'dcos-auth version SNAPSHOT\n'
-    assert_command(['dcos', 'auth', '--version'],
-                   stdout=stdout)
-
-
 def test_logout_no_token(env):
     with update_config("core.dcos_acs_token", None, env):
         returncode, _, stderr = exec_command(

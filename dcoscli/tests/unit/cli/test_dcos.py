@@ -12,7 +12,7 @@ def test_help():
 
 Options:
   --debug    Enable debug mode.
-  --version  Print version information.
+  --version  Show the version and exit.
   --help     Show this message and exit.
 
 Commands:
@@ -34,7 +34,7 @@ def test_version():
     runner = CliRunner()
     result = runner.invoke(dcos, ['--version'])
     assert result.exit_code == 0
-    assert result.output == __version__ + '\n'
+    assert result.output == f"dcoscli.version={__version__}\n"
 
 
 def test_unexisting_command():

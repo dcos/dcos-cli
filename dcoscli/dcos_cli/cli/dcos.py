@@ -1,20 +1,19 @@
 """The CLI for DC/OS."""
 
 import importlib
+import logging
+import os
+import sys
 
 import click
 
+from dcos import (cluster, config, constants, emitting, errors)
+from dcos import errors
 from dcos_cli import __version__
 
 
-def print_version(ctx, param, value):
-    """Print the DC/OS CLI version."""
-    # pylint: disable=unused-argument
-    if not value or ctx.resilient_parsing:
-        return
-    click.echo(__version__)
-    ctx.exit()
-
+logger = logging.getLogger(__name__)
+emitter = emitting.FlatEmitter()
 
 class DCOSCLI(click.MultiCommand):
     """The main `dcos` command."""
@@ -32,17 +31,38 @@ class DCOSCLI(click.MultiCommand):
 
         return getattr(cmd, cmd_name, None)
 
+    def __call__(self, *args, **kwargs):
+        """
+        Invoke the CLI, it calls the command in `standalone_mode`.
+
+        Click exception handling is disabled, the return value of the command
+        is considered as the exit code.
+        """
+        try:
+            code = self.main(standalone_mode=False, *args, **kwargs)
+            sys.exit(code)
+        except errors.DCOSException as e:
+            click.echo(e, err=True)
+            sys.exit(1)
+        except click.ClickException as e:
+            e.show()
+            sys.exit(e.exit_code)
+        except (EOFError, KeyboardInterrupt):
+            sys.exit(1)
+
 
 @click.command(cls=DCOSCLI)
 @click.option('--debug', is_flag=True, help="Enable debug mode.")
-@click.option(
-    '--version',
-    is_flag=True,
-    callback=print_version,
-    expose_value=False,
-    is_eager=True,
-    help="Print version information.",
-)
+@click.version_option(__version__, message='dcoscli.version=%(version)s')
 def dcos(debug):
     """Run the dcos command."""
+    if config.uses_deprecated_config():
+        if constants.DCOS_CONFIG_ENV in os.environ:
+            msg = ('{} is deprecated, please consider using '
+                   '`dcos cluster setup <dcos_url>`.')
+            err = errors.DefaultError(msg.format(constants.DCOS_CONFIG_ENV))
+            emitter.publish(err)
+
+        cluster.move_to_cluster_config()
+
     assert isinstance(debug, bool)

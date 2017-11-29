@@ -2,8 +2,10 @@
 
 import click
 
+from dcoscli.config.main import _validate
+
 
 @click.command(name='validate')
 def config_validate():
     """Validate changes to the configuration."""
-    print('Validate configuration.')
+    _validate()

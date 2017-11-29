@@ -2,8 +2,12 @@
 
 import click
 
+from dcoscli.cluster.main import _rename
+
 
 @click.command(name='rename')
-def cluster_rename():
+@click.argument('name')
+@click.argument('new_name')
+def cluster_rename(name, new_name):
     """Rename a cluster."""
-    print('Rename a cluster.')
+    return _rename(name, new_name)

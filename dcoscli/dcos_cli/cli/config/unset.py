@@ -2,8 +2,11 @@
 
 import click
 
+from dcoscli.config.main import _unset
+
 
 @click.command(name='unset')
-def config_unset():
+@click.argument('name')
+def config_unset(name):
     """Remove a configuration property."""
-    print('Unset a config.')
+    _unset(name)
