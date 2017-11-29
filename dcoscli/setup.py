@@ -24,8 +24,8 @@ with open('README.md') as f:
 setup(
     name='DC/OS CLI',
     version=__version__,
-    author='Bilal Amarni',
-    author_email='bamarni@mesosphere.com',
+    author='Mesosphere, Inc.',
+    author_email='help@dcos.io',
     description='A command-line interface for DC/OS.',
     long_description=LONG_DESCRIPTION,
     packages=['dcos_cli'],
