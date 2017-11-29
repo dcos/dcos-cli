@@ -219,11 +219,11 @@ def _remove(job_id, stop_current_job_runs=False):
         if e.response.status_code == 500 and stop_current_job_runs:
             return _remove(job_id, False)
         else:
-            raise DCOSException("Unable to remove '{}'.  It may be running."
-                                .format(job_id))
+            raise DCOSException("Unable to remove '{}'.  {}."
+                                .format(job_id, e))
     except DCOSException as e:
-        raise DCOSException("Unable to remove '{}'.  It may be running."
-                            .format(job_id))
+        raise DCOSException("Unable to remove '{}'. {}."
+                            .format(job_id, e))
 
     return 0
 
