@@ -5,3 +5,8 @@
 # file level.
 
 disable=similarities,missing-docstring
+
+[BASIC]
+
+# Add "e" to accepted variable names (commonly used when catching an exception)
+good-names=i,j,k,ex,Run,_,e
