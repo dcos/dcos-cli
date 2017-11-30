@@ -4,6 +4,7 @@ from mock import MagicMock, patch
 from dcos import mesos
 from dcos.errors import DCOSException
 from dcoscli.log import log_files
+from dcoscli.metrics import EmptyMetricsException
 from dcoscli.task.main import _dcos_log, _dcos_log_v2, _metrics, main
 
 from .common import assert_mock
@@ -272,11 +273,8 @@ def test_dcos_task_metrics_agent_missing_both(
     }
     mocked_get_master.return_value = mock_response
 
-    try:
+    with pytest.raises(EmptyMetricsException):
         _metrics(True, 'task_id', False)
-        raise Exception('Expected EmptyMetricsException was not raised')
-    except DCOSException:
-        pass
 
 
 @patch('dcos.http.get')
