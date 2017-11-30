@@ -264,6 +264,7 @@ def test_dcos_task_metrics_agent_missing_both(
 
     mock_response = MagicMock()
     mock_response.status_code = 204
+    mocked_http_get.return_value = mock_response
 
     mock_master = MagicMock()
     mock_master.task = lambda _: {'slave_id': 'slave_id'}
@@ -271,7 +272,7 @@ def test_dcos_task_metrics_agent_missing_both(
         'parent': {},
         'value': 'container_id'
     }
-    mocked_get_master.return_value = mock_response
+    mocked_get_master.return_value = mock_master
 
     with pytest.raises(EmptyMetricsException):
         _metrics(True, 'task_id', False)
