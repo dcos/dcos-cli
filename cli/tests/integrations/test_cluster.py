@@ -25,18 +25,6 @@ def dcos_dir_tmp_copy():
             os.environ.pop(constants.DCOS_DIR_ENV)
 
 
-def test_info():
-    stdout = b'Manage your DC/OS clusters\n'
-    assert_command(['dcos', 'cluster', '--info'],
-                   stdout=stdout)
-
-
-def test_version():
-    stdout = b'dcos-cluster version SNAPSHOT\n'
-    assert_command(['dcos', 'cluster', '--version'],
-                   stdout=stdout)
-
-
 def test_list():
     returncode, stdout, stderr = exec_command(
         ['dcos', 'cluster', 'list', '--json'])

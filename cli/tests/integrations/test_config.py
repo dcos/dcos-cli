@@ -18,18 +18,6 @@ def env():
     return r
 
 
-def test_info():
-    stdout = b'Manage the DC/OS configuration file\n'
-    assert_command(['dcos', 'config', '--info'],
-                   stdout=stdout)
-
-
-def test_version():
-    stdout = b'dcos-config version SNAPSHOT\n'
-    assert_command(['dcos', 'config', '--version'],
-                   stdout=stdout)
-
-
 def test_get_existing_boolean_property(env):
     with update_config("core.reporting", "false", env):
         _get_value('core.reporting', False, env)
