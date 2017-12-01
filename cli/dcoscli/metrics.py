@@ -35,7 +35,7 @@ def _fetch_metrics_datapoints(url):
     with contextlib.closing(http.get(url)) as r:
 
         if r.status_code == 204:
-            raise EmptyMetricsException()
+            return []
 
         if r.status_code != 200:
             raise DCOSHTTPException(r)
@@ -263,18 +263,11 @@ def print_task_metrics(url, app_url, summary, json_):
     :rtype: int
     """
 
-    container_datapoints = []
-    app_datapoints = []
-
-    # In the case of an executor, app data may exist when
-    # container data does not.
-    try:
-        container_datapoints = _fetch_metrics_datapoints(url)
-    except EmptyMetricsException:
-        pass
-
+    container_datapoints = _fetch_metrics_datapoints(url)
     app_datapoints = _fetch_metrics_datapoints(app_url)
     datapoints = container_datapoints + app_datapoints
+    if len(datapoints) == 0:
+        raise EmptyMetricsException()
 
     if summary:
         if json_:

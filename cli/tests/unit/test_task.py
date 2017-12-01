@@ -4,9 +4,21 @@ from mock import MagicMock, patch
 from dcos import mesos
 from dcos.errors import DCOSException
 from dcoscli.log import log_files
+from dcoscli.metrics import EmptyMetricsException
 from dcoscli.task.main import _dcos_log, _dcos_log_v2, _metrics, main
 
 from .common import assert_mock
+
+
+# metrics_messages is a minimal fixture for mocking non-empty API responses
+metrics_message = {
+    'datapoints': [
+        {
+            'name': 'statsd_tester.time.uptime',
+            'value': 1234,
+        }
+    ]
+}
 
 
 @patch('dcos.config.get_config')
@@ -167,6 +179,7 @@ def test_dcos_task_metrics_agent_details(mocked_get_config_val,
 
     mock_http_response = MagicMock()
     mock_http_response.status_code = 200
+    mock_http_response.json = lambda: metrics_message
     mocked_http_get.return_value = mock_http_response
 
     mock_master = MagicMock()
@@ -200,6 +213,8 @@ def test_dcos_task_metrics_agent_missing_container(
     mock_container_response.status_code = 204
     mock_app_response = MagicMock()
     mock_app_response.status_code = 200
+    mock_app_response.json = lambda: metrics_message
+
     mocked_http_get.side_effect = [mock_container_response, mock_app_response]
 
     mock_master = MagicMock()
@@ -211,6 +226,56 @@ def test_dcos_task_metrics_agent_missing_container(
     mocked_get_master.return_value = mock_master
 
     _metrics(True, 'task_id', False)
+
+
+@patch('dcos.http.get')
+@patch('dcos.mesos.get_master')
+@patch('dcos.config.get_config_val')
+def test_dcos_task_metrics_agent_missing_app(
+    mocked_get_config_val, mocked_get_master, mocked_http_get
+):
+    mocked_get_config_val.return_value = 'http://127.0.0.1'
+
+    mock_container_response = MagicMock()
+    mock_container_response.status_code = 200
+    mock_container_response.json = lambda: metrics_message
+    mock_app_response = MagicMock()
+    mock_app_response.status_code = 204
+    mocked_http_get.side_effect = [mock_container_response, mock_app_response]
+
+    mock_master = MagicMock()
+    mock_master.task = lambda _: {'slave_id': 'slave_id'}
+    mock_master.get_container_id = lambda _: {
+        'parent': {},
+        'value': 'container_id'
+    }
+    mocked_get_master.return_value = mock_master
+
+    _metrics(True, 'task_id', False)
+
+
+@patch('dcos.http.get')
+@patch('dcos.mesos.get_master')
+@patch('dcos.config.get_config_val')
+def test_dcos_task_metrics_agent_missing_both(
+    mocked_get_config_val, mocked_get_master, mocked_http_get
+):
+    mocked_get_config_val.return_value = 'http://127.0.0.1'
+
+    mock_response = MagicMock()
+    mock_response.status_code = 204
+    mocked_http_get.return_value = mock_response
+
+    mock_master = MagicMock()
+    mock_master.task = lambda _: {'slave_id': 'slave_id'}
+    mock_master.get_container_id = lambda _: {
+        'parent': {},
+        'value': 'container_id'
+    }
+    mocked_get_master.return_value = mock_master
+
+    with pytest.raises(EmptyMetricsException):
+        _metrics(True, 'task_id', False)
 
 
 @patch('dcos.http.get')
