@@ -41,7 +41,7 @@ def cosmos_error(fn):
             logger.debug("Error: {}".format(response.json()))
             error_msg = _format_error_message(response.json())
             raise DCOSException(error_msg)
-        elif (response.status_code / 100) != 2:
+        elif int(response.status_code / 100) != 2:
             raise DCOSHTTPException(response)
         return response
 
