@@ -2,6 +2,10 @@ import collections
 import contextlib
 import time
 
+from urllib.parse import urlparse
+
+from dcos import mesos
+
 from .common import assert_command, exec_command
 from .marathon import add_app, watch_all_deployments
 from .service import get_services, service_shutdown
@@ -48,30 +52,25 @@ UNIVERSE_TEST_REPOS = collections.OrderedDict(
 
 def setup_universe_server():
     # add both Unvierse servers with static packages
-    add_app('tests/data/universe-v3-stub.json', True)
-    add_app('tests/data/helloworld-v3-stub.json', True)
+    add_app('tests/data/universe-v3-stub.json', False)
+    add_app('tests/data/helloworld-v3-stub.json', False)
 
     assert_command(
         ['dcos', 'package', 'repo', 'remove', 'Universe'])
 
+    watch_all_deployments()
+
     # Add the two test repos to Cosmos
     for name, url in UNIVERSE_TEST_REPOS.items():
-        assert_command(['dcos', 'package', 'repo', 'add', name, url])
+        # wait for DNS records for the universe app to be propagated
+        host = urlparse(url).netloc
+        for i in range(30):
+            for record in mesos.MesosDNSClient().hosts(host):
+                if record['host'] == host and record['ip'] != '':
+                    break
+            time.sleep(1)
 
-    watch_all_deployments()
-    # Give the test universe some time to become available
-    describe_command = ['dcos', 'package', 'describe', 'helloworld']
-    for i in range(30):
-        returncode, _, _ = exec_command(describe_command)
-        if returncode == 0:
-            break
-        time.sleep(1)
-    else:
-        # Explicitly clean up in this case; pytest will not automatically
-        # perform teardowns if setup fails. See the remarks at the end of
-        # http://doc.pytest.org/en/latest/xunit_setup.html for more info.
-        teardown_universe_server()
-        assert False, 'test-universe failed to come up'
+        assert_command(['dcos', 'package', 'repo', 'add', name, url])
 
 
 def teardown_universe_server():
