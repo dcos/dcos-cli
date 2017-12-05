@@ -146,7 +146,7 @@ def test_log_marathon_config():
                         "Now that we test against an AWS cluster, this test "
                         "is blocked on DCOS-3104requires python3.3"))
 def test_log_marathon():
-    stdout, stderr = ssh_output(
+    stdout, stderr, _ = ssh_output(
         'dcos service log marathon ' +
         '--ssh-config-file=tests/data/service/ssh_config')
 
