@@ -84,7 +84,7 @@ def test_repo_list():
         assert_command(['dcos', 'package', 'repo', 'list'], stdout=repo_list)
 
 
-def test_repo_add():
+def test_repo_add_and_remove():
     repo_list = bytes(
         (
             "test-universe: {test-universe}\n"
@@ -97,9 +97,7 @@ def test_repo_add():
     args = ["Universe", UNIVERSE_REPO]
     _repo_add(args, repo_list)
 
-
-def test_repo_add_index():
-    repo17 = "http://universe.mesosphere.com/repo-1.7"
+    repo17 = "https://universe.mesosphere.com/repo-1.7"
     repo_list = bytes(
         (
             "test-universe: {test-universe}\n"
@@ -113,8 +111,6 @@ def test_repo_add_index():
     args = ["1.7-universe", repo17, '--index=1']
     _repo_add(args, repo_list)
 
-
-def test_repo_remove():
     repo_list = bytes(
         (
             "test-universe: {test-universe}\n"
@@ -149,7 +145,7 @@ def test_repo_remove_multi():
     _repo_add(args, repo_list)
 
     # Add "1.7-universe" repo so we can test removing it
-    repo17 = "http://universe.mesosphere.com/repo-1.7"
+    repo17 = "https://universe.mesosphere.com/repo-1.7"
     repo_list = bytes(
         (
             "test-universe: {test-universe}\n"
