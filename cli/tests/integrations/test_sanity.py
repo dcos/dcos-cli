@@ -80,10 +80,10 @@ def test_repo_list():
 
 def test_package_describe():
     stdout = file_json(
-        'tests/data/package/json/test_describe_marathon.json')
+        'tests/data/package/json/test_describe_helloworld.json')
 
     returncode_, stdout_, stderr_ = exec_command(
-        ['dcos', 'package', 'describe', 'marathon'])
+        ['dcos', 'package', 'describe', 'helloworld'])
 
     assert returncode_ == 0
     output = json.loads(stdout_.decode('utf-8'))
