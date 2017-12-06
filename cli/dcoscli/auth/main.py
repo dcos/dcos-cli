@@ -178,9 +178,6 @@ def _trigger_client_method(
         auth.oidc_implicit_flow_auth(dcos_url)
     elif client_method == "dcos-usercredential-post-receive-authtoken" or \
             client_method == "dcos-credential-post-receive-authtoken":
-        if not username or not password:
-            msg = "Please specify username and password for provider [{}]"
-            raise DCOSException(msg.format(provider))
         auth.dcos_uid_password_auth(dcos_url, username, password)
     elif client_method == "dcos-servicecredential-post-receive-authtoken":
         if not username or not key_path:
