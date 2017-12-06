@@ -14,6 +14,13 @@ from dcos.errors import (DCOSAuthenticationException, DCOSException,
 
 logger = util.get_logger(__name__)
 
+AUTH_TYPE_DCOS_UID_PASSWORD = "dcos-uid-password"
+AUTH_TYPE_DCOS_UID_SERVICEKEY = "dcos-uid-servicekey"
+AUTH_TYPE_DCOS_UID_PASSWORD_LDAP = "dcos-uid-password-ldap"
+AUTH_TYPE_SAML_SP_INITIATED = "saml-sp-initiated"
+AUTH_TYPE_OIDC_AUTHORIZATION_CODE_FLOW = "oidc-authorization-code-flow"
+AUTH_TYPE_OIDC_IMPLICIT_FLOW = "oidc-implicit-flow"
+
 
 def _get_auth_scheme(response):
     """Return authentication scheme requested by server for
@@ -378,20 +385,21 @@ def auth_type_description(provider_info):
     """
 
     auth_type = provider_info.get("authentication-type")
-    if auth_type == "dcos-uid-password":
-        msg = ("Authenticate using a standard DC/OS user account "
-               "(using username and password)")
-    elif auth_type == "dcos-uid-servicekey":
-        msg = ("Authenticate using a DC/OS service user account "
-               "(using username and private key)")
-    elif auth_type == "dcos-uid-password-ldap":
-        msg = ("Authenticate using an LDAP user account "
-               "(using username and password)")
-    elif auth_type == "saml-sp-initiated":
-        msg = "Authenticate using SAML 2.0 ({})".format(
+    if auth_type == AUTH_TYPE_DCOS_UID_PASSWORD:
+        msg = ("Log in using a standard DC/OS user account "
+               "(username and password)")
+    elif auth_type == AUTH_TYPE_DCOS_UID_SERVICEKEY:
+        msg = ("Log in using a DC/OS service user account "
+               "(username and private key)")
+    elif auth_type == AUTH_TYPE_DCOS_UID_PASSWORD_LDAP:
+        msg = ("Log in using an LDAP user account "
+               "(username and password)")
+    elif auth_type == AUTH_TYPE_SAML_SP_INITIATED:
+        msg = "Log in using SAML 2.0 ({})".format(
                 provider_info["description"])
-    elif auth_type in ["oidc-authorization-code-flow", "oidc-implicit-flow"]:
-        msg = "Authenticate using OpenID Connect ({})".format(
+    elif auth_type in [AUTH_TYPE_OIDC_AUTHORIZATION_CODE_FLOW,
+                       AUTH_TYPE_OIDC_IMPLICIT_FLOW]:
+        msg = "Log in using OpenID Connect ({})".format(
                 provider_info["description"])
     else:
         raise DCOSException("Unknown authentication type")
