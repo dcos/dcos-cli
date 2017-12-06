@@ -155,7 +155,7 @@ def _get_dcostoken_by_dcos_uid_password_auth(
     username = username or url.username
     password = password or url.password
 
-    if password is None:
+    if not (username and password):
         username, password = _prompt_for_uid_password(username, hostname)
 
     creds = {"uid": username, "password": password}
