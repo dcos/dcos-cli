@@ -4,7 +4,7 @@ from functools import wraps
 
 import docopt
 
-from dcos import emitting
+from dcos import emitting, errors
 
 emitter = emitting.FlatEmitter()
 
@@ -84,6 +84,48 @@ def confirm_text(prompt, confirmation_text):
             emitter.publish(msg)
             count += 1
     return False
+
+
+def prompt_with_choices(choices, descriptions=[], msg='Please choose:'):
+    """
+    Allow to pick an item from a list of choices. For example :
+
+        Please choose a login provider for your linked cluster:
+        1) dcos-uid-password
+        2) saml-sp-initiated
+        (1-2): [...]
+
+    :param choices: choices for the list
+    :type choices: list of str
+    :param descriptions: descriptions for the choices
+    :type descriptions: list of str
+    :param msg: the message to display before the choices
+    :type msg: str
+    :returns: the chosen item
+    :rtype: str
+    """
+
+    if not descriptions:
+        descriptions = choices
+
+    if len(choices) != len(descriptions):
+        msg = 'Count mismatch between choices and descriptions.'
+        raise errors.DCOSException(msg)
+
+    emitter.publish(msg)
+    for i, desc in enumerate(descriptions):
+        emitter.publish('{}) {}'.format(i+1, desc))
+
+    # Write to stdout without new line.
+    msg = '({}-{}): '.format(1, len(choices))
+    emitter.publish(msg, end='')
+
+    try:
+        chosen_id = int(_read_response())
+    except ValueError:
+        return None
+
+    return choices[chosen_id-1] if chosen_id <= len(choices) else None
 
 
 def _read_response():
