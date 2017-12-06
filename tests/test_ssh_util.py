@@ -57,3 +57,5 @@ def test_get_ssh_proxy_options():
     with patch.dict('os.environ', clear=True):
         with pytest.raises(DCOSException):
             ssh_util.get_ssh_proxy_options('', proxy_ip=proxy_ip)
+        assert ssh_options in ssh_util.get_ssh_proxy_options(
+            ssh_options, proxy_ip=proxy_ip)

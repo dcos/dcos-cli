@@ -85,7 +85,7 @@ def get_ssh_proxy_options(ssh_options, user_options='',
     if not proxy_ip:
         return ''
 
-    if proxy_ip and not os.environ.get('SSH_AUTH_SOCK'):
+    if proxy_ip and not os.environ.get('SSH_AUTH_SOCK') and not ssh_options:
         raise DCOSException(
             "There is no SSH_AUTH_SOCK env variable, which likely means "
             "you aren't running `ssh-agent`.  `dcos node ssh "
