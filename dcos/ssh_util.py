@@ -1,4 +1,5 @@
 import os
+
 from dcos import config, constants, mesos
 from dcos.errors import DCOSException
 from dcos.util import get_logger
@@ -8,7 +9,7 @@ logger = get_logger(__name__)
 
 
 def get_ssh_user(ssh_config_file, user):
-    """Returns the SSH user name to use accessing cluter nodes. If an ssh
+    """Returns the SSH user name to use accessing cluster nodes. If an ssh
     config file provided, expects the username to be specified in the
     file and ignores any provided username. Username resolution
     follows this logic, use any username explicitly provided, else use
