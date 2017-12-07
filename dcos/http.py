@@ -13,7 +13,7 @@ from dcos.errors import (DCOSAuthenticationException,
 
 logger = util.get_logger(__name__)
 
-DEFAULT_TIMEOUT = 5
+DEFAULT_TIMEOUT = 180
 
 
 def _default_is_success(status_code):
