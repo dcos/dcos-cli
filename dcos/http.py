@@ -13,7 +13,7 @@ from dcos.errors import (DCOSAuthenticationException,
 
 logger = util.get_logger(__name__)
 
-DEFAULT_TIMEOUT = 5
+DEFAULT_TIMEOUT = 500
 
 
 def _default_is_success(status_code):
@@ -93,7 +93,7 @@ def _verify_ssl(url, verify=None, toml_config=None):
 def _request(method,
              url,
              is_success=_default_is_success,
-             timeout=DEFAULT_TIMEOUT,
+             timeout=500,
              auth=None,
              verify=None,
              toml_config=None,
@@ -171,7 +171,7 @@ def _request(method,
 def request(method,
             url,
             is_success=_default_is_success,
-            timeout=DEFAULT_TIMEOUT,
+            timeout=500,
             verify=None,
             toml_config=None,
             **kwargs):
