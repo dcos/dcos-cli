@@ -97,7 +97,7 @@ Options:
     --status
         Print diagnostics job status.
     --user=<user>
-        The SSH user [default: core].
+        The SSH user (default: core).
     --version
         Print version information.
 

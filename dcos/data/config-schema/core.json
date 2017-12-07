@@ -49,6 +49,16 @@
             "default": true,
             "title": "Pagination",
             "description": "Whether to paginate output"
+        },
+        "ssh_user": {
+            "type": "string",
+            "title": "SSH user",
+            "description": "Whether to use a different default username for node SSH access."
+        },
+        "ssh_proxy_ip": {
+            "type": "string",
+            "title": "SSH Proxy",
+            "description": "Whether to use a fixed ssh proxy host (Bastion) for node SSH access."
         }
     },
     "type": "object"

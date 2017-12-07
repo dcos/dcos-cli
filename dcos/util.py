@@ -34,6 +34,9 @@ def get_logger(name):
     return logging.getLogger(name)
 
 
+logger = get_logger(__name__)
+
+
 @contextlib.contextmanager
 def tempdir():
     """A context manager for temporary directories.
@@ -692,28 +695,6 @@ def stream(fn, objs):
             yield job, jobs[job]
 
 
-def get_ssh_options(config_file, options):
-    """Returns the SSH arguments for the given parameters.  Used by
-    commands that wrap SSH.
-
-    :param config_file: SSH config file.
-    :type config_file: str | None
-    :param options: SSH options
-    :type options: [str]
-    :rtype: str
-    """
-
-    ssh_options = ' '.join('-o {}'.format(opt) for opt in options)
-
-    if config_file:
-        ssh_options += ' -F {}'.format(config_file)
-
-    if ssh_options:
-        ssh_options += ' '
-
-    return ssh_options
-
-
 def normalize_marathon_id_path(id_path):
     """Normalizes a Marathon "ID path", such as an app ID, group ID, or pod ID.
 
@@ -728,9 +709,6 @@ def normalize_marathon_id_path(id_path):
     """
 
     return urllib.parse.quote('/' + id_path.strip('/'))
-
-
-logger = get_logger(__name__)
 
 
 def md5_hash_file(file):

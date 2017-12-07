@@ -42,3 +42,6 @@ DCOS_COMMAND_PREFIX = 'dcos-'
 
 VALID_LOG_LEVEL_VALUES = ['debug', 'info', 'warning', 'error', 'critical']
 """List of all the supported log level values for the CLIs."""
+
+DEFAULT_SSH_USER = 'core'
+"""Default SSH username to reach DC/OS cluster nodes"""
