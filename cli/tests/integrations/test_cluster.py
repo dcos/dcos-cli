@@ -44,7 +44,7 @@ def test_list():
     assert len(cluster_list) == 1
     info = cluster_list[0]
     assert info.get("attached")
-    keys = ["attached", "cluster_id", "name", "url", "version"]
+    keys = ["attached", "cluster_id", "name", "status", "url", "version"]
     assert sorted(info.keys()) == keys
 
 

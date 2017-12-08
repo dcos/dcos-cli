@@ -912,6 +912,7 @@ def clusters_table(clusters):
     fields = OrderedDict([
         ('NAME', lambda c: print_name(c)),
         ('CLUSTER ID', lambda c: c['cluster_id']),
+        ('STATUS', lambda c: c['status']),
         ('VERSION', lambda c: c['version']),
         ('URL', lambda c: c['url'] or "N/A")
     ])
