@@ -141,6 +141,27 @@ def setup_cluster_config(dcos_url, temp_path, stored_cert):
     return cluster_path
 
 
+def get_attached_cluster():
+    """
+    Get the attached cluster.
+
+    :returns: the attached cluster
+    :rtype: Cluster
+    """
+
+    clusters = get_clusters()
+    for c in clusters:
+        if c.is_attached():
+            return c
+
+    # If there is only one cluster, set it as attached. This is consistent
+    # with config.get_attached_cluster_path().
+    if len(clusters) == 1:
+        c = clusters[0]
+        set_attached(c.get_cluster_path())
+        return c
+
+
 def set_attached(cluster_path):
     """
     Set the cluster specified in `cluster_path` as the attached cluster
