@@ -24,11 +24,13 @@ class Emitter(object):
     """Abstract class for emitting events."""
 
     @abc.abstractmethod
-    def publish(self, event):
+    def publish(self, event, end="\n"):
         """Publishes an event.
 
         :param event: event to publish
         :type event: any
+        :param end: a string to append after the event
+        :type end: str
         """
 
         raise NotImplementedError
@@ -49,21 +51,25 @@ class FlatEmitter(Emitter):
         else:
             self._handler = handler
 
-    def publish(self, event):
+    def publish(self, event, end="\n"):
         """Publishes an event.
 
         :param event: event to publish
         :type event: any
+        :param end: a string to append after the event
+        :type end: str
         """
 
-        self._handler(event)
+        self._handler(event, end)
 
 
-def print_handler(event):
-    """Default handler for printing event to stdout.
+def print_handler(event, end="\n"):
+    """Default handler for printing event to stdout or stderr.
 
-    :param event: event to emit to stdout
+    :param event: event to emit to stdout or stderr
     :type event: str, dict, list, or dcos.errors.Error
+    :param end: a string to append after the event
+    :type end: str
     """
 
     pager_command = os.environ.get(constants.DCOS_PAGER_COMMAND_ENV)
@@ -73,25 +79,24 @@ def print_handler(event):
         pass
 
     elif isinstance(event, six.string_types):
-        _page(event, pager_command)
+        _page(event, pager_command, end)
 
     elif isinstance(event, errors.Error):
-        print(event.error(), file=sys.stderr)
-        sys.stderr.flush()
+        print(event.error(), file=sys.stderr, flush=True)
 
     elif (isinstance(event, collections.Mapping) or
           isinstance(event, collections.Sequence) or isinstance(event, bool) or
           isinstance(event, six.integer_types) or isinstance(event, float)):
         # These are all valid JSON types let's treat them different
         processed_json = _process_json(event)
-        _page(processed_json, pager_command)
+        _page(processed_json, pager_command, end)
 
     elif isinstance(event, errors.DCOSException):
-        print(event, file=sys.stderr)
+        print(event, file=sys.stderr, end=end, flush=True)
 
     else:
         logger.debug('Printing unknown type: %s, %r.', type(event), event)
-        _page(event, pager_command)
+        _page(event, pager_command, end)
 
 
 def publish_table(emitter, objs, table_fn, json_):
@@ -142,20 +147,21 @@ def _process_json(event):
     return json_output
 
 
-def _page(output, pager_command=None):
+def _page(output, pager_command=None, end="\n"):
     """Conditionally pipes the supplied output through a pager.
 
     :param output:
     :type output: object
     :param pager_command:
     :type pager_command: str
+    :param end: a string to append after the event
+    :type end: str
     """
 
     output = six.text_type(output)
 
     if not sys.stdout.isatty() or util.is_windows_platform():
-        print(output)
-        sys.stdout.flush()
+        print(output, end=end, flush=True)
         return
 
     num_lines = output.count('\n')
@@ -172,7 +178,7 @@ def _page(output, pager_command=None):
             spawn.find_executable(pager_command.split(' ')[0]) is not None:
         pydoc.pipepager(output, cmd=pager_command)
     else:
-        print(output)
+        print(output, end=end, flush=True)
 
 
 def _highlight_json(json_value):
