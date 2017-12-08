@@ -5,26 +5,22 @@ from distutils.dir_util import copy_tree
 
 import pytest
 
-from dcos import config, constants, util
-from dcoscli.test.common import (assert_command, exec_command,
+from dcos import cluster
+from dcoscli.test.common import (assert_command, dcos_tempdir, exec_command,
                                  skip_if_env_missing)
 from dcoscli.test.constants import (DCOS_TEST_URL_ENV)
 
 
 @pytest.fixture
 def dcos_dir_tmp_copy():
-    with util.tempdir() as tempdir:
-        old_dcos_dir_env = os.environ.get(constants.DCOS_DIR_ENV)
-        old_dcos_dir = config.get_config_dir_path()
-        os.environ[constants.DCOS_DIR_ENV] = tempdir
-        copy_tree(old_dcos_dir, tempdir)
-
+    with dcos_tempdir(True) as tempdir:
         yield tempdir
 
-        if old_dcos_dir_env:
-            os.environ[constants.DCOS_DIR_ENV] = old_dcos_dir_env
-        else:
-            os.environ.pop(constants.DCOS_DIR_ENV)
+
+@pytest.fixture
+def dcos_dir_tmp():
+    with dcos_tempdir() as tempdir:
+        yield tempdir
 
 
 def test_info():
