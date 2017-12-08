@@ -126,13 +126,56 @@ def test_setup_unreachable_url():
         ['dcos',
          'cluster',
          'setup',
-         'https://will.never.exist.hopefully.BOFGY7tfb7doftd.mesosphere.com'],
+         'https://will.never.exist.hopefully.BOFGY7tfb7doftd'],
         timeout=10)
 
     assert returncode == 1
     msg = (b"Error downloading CA certificate from cluster."
            b" Please check the provided DC/OS URL.\n")
     assert msg == stderr
+
+
+def test_link_self(dcos_dir_tmp_copy):
+    skip_if_env_missing([DCOS_TEST_URL_ENV])
+
+    provider = 'dcos-users'
+
+    returncode, _, stderr = exec_command(
+        ['dcos',
+         'cluster',
+         'link',
+         '--provider=' + provider,
+         os.environ.get(DCOS_TEST_URL_ENV)])
+
+    assert returncode == 0
+
+    c = cluster.get_attached_cluster()
+    links = cluster.get_cluster_links(c.get_url()).get('links')
+
+    assert len(links) == 1
+
+    link = links[0]
+    assert link['id'] == c.get_cluster_id()
+    assert link['name'] == c.get_name()
+    assert link['url'] == c.get_url()
+    assert link['login_provider']['id'] == provider
+
+    assert_command(['dcos', 'cluster', 'unlink', link['id']])
+
+
+def test_link_invalid_cluster(dcos_dir_tmp_copy):
+    name = 'https://will.never.exist.hopefully.BOFGY7tfb7doftd'
+    ret, _, err = exec_command(['dcos', 'cluster', 'link', name])
+    assert ret != 0
+    assert err.decode('utf-8').startswith(
+            "Unable to retrieve IP for '{}':".format(name))
+
+
+def test_unlink_invalid_cluster(dcos_dir_tmp_copy):
+    name = 'not-me'
+    ret, _, err = exec_command(['dcos', 'cluster', 'unlink', name])
+    assert ret != 0
+    assert err.decode('utf-8') == "Unknown cluster {}.\n".format(name)
 
 
 def _num_of_clusters():
