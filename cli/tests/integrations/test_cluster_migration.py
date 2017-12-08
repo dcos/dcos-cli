@@ -6,7 +6,7 @@ import pytest
 
 from dcos import config, constants, util
 
-from dcoscli.test.common import (assert_command, exec_command,
+from dcoscli.test.common import (assert_command, dcos_tempdir, exec_command,
                                  skip_if_env_missing)
 from dcoscli.test.constants import (DCOS_TEST_PASS_ENV, DCOS_TEST_URL_ENV,
                                     DCOS_TEST_USER_ENV)
@@ -19,14 +19,8 @@ def acs_token():
 
 @pytest.fixture
 def temp_dcos_dir():
-    with util.tempdir() as tempdir:
-        old_dcos_dir = os.environ.get(constants.DCOS_DIR_ENV)
-        os.environ[constants.DCOS_DIR_ENV] = tempdir
+    with dcos_tempdir() as tempdir:
         yield tempdir
-        if old_dcos_dir is None:
-            os.environ.pop(constants.DCOS_DIR_ENV)
-        else:
-            os.environ[constants.DCOS_DIR_ENV] = old_dcos_dir
 
 
 def test_dcos_dir_env_with_acs_token(acs_token, temp_dcos_dir):

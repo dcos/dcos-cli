@@ -5,11 +5,13 @@ import os
 import subprocess
 import time
 
+from distutils.dir_util import copy_tree
+
 import pytest
 import six
 from six.moves import urllib
 
-from dcos import config, http
+from dcos import config, constants, http, util
 
 
 def exec_command(cmd, env=None, stdin=None, timeout=None):
@@ -262,6 +264,30 @@ def update_config(name, value, env=None):
 
     if token:
         config_set("core.dcos_acs_token", token, env)
+
+
+@contextlib.contextmanager
+def dcos_tempdir(copy=False):
+    """
+    Context manager for getting a temporary DCOS_DIR.
+
+    :param copy: whether or not to copy the current one
+    :type copy: bool
+    """
+
+    with util.tempdir() as tempdir:
+        old_dcos_dir_env = os.environ.get(constants.DCOS_DIR_ENV)
+        old_dcos_dir = config.get_config_dir_path()
+        os.environ[constants.DCOS_DIR_ENV] = tempdir
+        if copy:
+            copy_tree(old_dcos_dir, tempdir)
+
+        yield tempdir
+
+        if old_dcos_dir_env:
+            os.environ[constants.DCOS_DIR_ENV] = old_dcos_dir_env
+        else:
+            os.environ.pop(constants.DCOS_DIR_ENV)
 
 
 def popen_tty(cmd):
