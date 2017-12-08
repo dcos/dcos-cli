@@ -158,6 +158,7 @@ def test_show_missing_absolute_app_version():
             "Error: App '/zero-instance-app' does not exist")
 
 
+@pytest.mark.skipif(True, reason=('MARATHON-7954'))
 def test_show_bad_app_version():
     with _zero_instance_app():
         _update_app(
