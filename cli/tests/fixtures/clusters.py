@@ -10,5 +10,6 @@ def cluster_list_fixture():
         "name": "tamar-ytck1ge",
         "url": "https://52.25.204.103",
         "version": "1.9-dev",
-        "attached": False
+        "attached": False,
+        "status": "AVAILABLE"
     }

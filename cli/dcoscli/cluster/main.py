@@ -106,8 +106,12 @@ def _list(json_, attached):
     :rtype: None
     """
 
-    clusters = [c.dict() for c in cluster.get_clusters()
-                if not attached or c.is_attached()]
+    if attached:
+        clusters = [c.dict() for c in cluster.get_clusters()
+                    if c.is_attached()]
+    else:
+        clusters = [c.dict() for c in cluster.get_clusters(True)]
+
     if json_:
         emitter.publish(clusters)
     elif len(clusters) == 0:
