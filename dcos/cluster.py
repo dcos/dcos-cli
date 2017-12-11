@@ -409,19 +409,11 @@ class LinkedCluster(Cluster):
     """Representation of a linked cluster"""
 
     def __init__(self, cluster_url, cluster_id, cluster_name, provider):
-        self.cluster_id = cluster_id
         self.cluster_name = cluster_name
         self.cluster_url = cluster_url
         self.provider = provider
 
-    def get_cluster_path(self):
-        return None
-
-    def get_config_path(self):
-        return None
-
-    def get_config(self, mutable=False):
-        return None
+        super().__init__(cluster_id)
 
     def get_name(self):
         return self.cluster_name
@@ -430,9 +422,15 @@ class LinkedCluster(Cluster):
         return self.cluster_url
 
     def is_attached(self):
-        return False
+        if self.get_status() == STATUS_UNCONFIGURED:
+            return False
+
+        return super().is_attached()
 
     def get_status(self):
+        if os.path.exists(self.get_cluster_path()):
+            return super().get_status()
+
         return STATUS_UNCONFIGURED
 
     def get_provider(self):

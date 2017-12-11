@@ -181,7 +181,7 @@ def _attach(name):
     if not c:
         raise DCOSException("Cluster [{}] does not exist".format(name))
 
-    if isinstance(c, cluster.LinkedCluster):
+    if c.get_status() == cluster.STATUS_UNCONFIGURED:
         return setup(c.get_url(), provider=c.get_provider().get('id'))
 
     return cluster.set_attached(c.get_cluster_path())
