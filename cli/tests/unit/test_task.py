@@ -3,7 +3,7 @@ from mock import MagicMock, patch
 
 from dcos import mesos
 from dcos.errors import DCOSException
-from dcoscli.log import log_files
+from dcoscli.log import is_success, log_files
 from dcoscli.metrics import EmptyMetricsException
 from dcoscli.task.main import _dcos_log, _dcos_log_v2, _metrics, main
 
@@ -124,7 +124,8 @@ def test_dcos_log(mocked_get_config_val, mocked_http_get):
         'http://127.0.0.1/system/v1/agent/slave-123/logs/v1/range/framework/'
         'framework-123/executor/id-123/container/parent-456.child-123'
         '?skip_prev=10&filter=STREAM:STDOUT',
-        headers={'Accept': 'text/plain'})
+        headers={'Accept': 'text/plain'},
+        is_success=is_success)
 
 
 @patch('dcoscli.log.follow_logs')

@@ -331,6 +331,16 @@ def follow_logs(url):
         emitter.publish(line)
 
 
+def is_success(code):
+    """ Returns the expected response codes for HTTP GET requests
+    :param code: HTTP response codes
+    :type code: int
+    """
+    if (200 <= code < 300) or code == 404:
+        return True
+    return False
+
+
 def print_logs_range(url):
     """ Make a get request to `dcos-log` range endpoint.
         the function will print out logs to stdout and exit.
@@ -338,10 +348,8 @@ def print_logs_range(url):
     :param url: `dcos-log` endpoint
     :type url: str
     """
-
-    is_success = lambda c: True if (200 <= c < 300) or c == 404 else False
-    with contextlib.closing(
-            http.get(url, is_success=is_success, headers={'Accept': 'text/plain'})) as r:
+    with contextlib.closing(http.get(url, is_success=is_success,
+                                     headers={'Accept': 'text/plain'})) as r:
 
         if r.status_code == 404:
             raise DCOSException('No files exist. Exiting.')
