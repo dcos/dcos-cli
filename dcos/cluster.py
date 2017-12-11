@@ -7,6 +7,8 @@ import urllib
 
 from urllib.request import urlopen
 
+import requests
+
 from dcos import config, constants, http, util
 from dcos.errors import DCOSException
 
@@ -354,16 +356,22 @@ class Cluster():
 
     def get_dcos_version(self):
         dcos_url = self.get_url()
-        if dcos_url:
-            url = os.path.join(
-                self.get_url(), "dcos-metadata/dcos-version.json")
-            try:
-                resp = http.get(url, toml_config=self.get_config())
-                return resp.json().get("version", VERSION_UNKNOWN)
-            except DCOSException:
-                pass
+        if not dcos_url:
+            return VERSION_UNKNOWN
 
-        return VERSION_UNKNOWN
+        endpoint = os.path.join(
+            self.get_url(), "dcos-metadata/dcos-version.json")
+
+        try:
+            resp = requests.request(
+                'GET',
+                url=endpoint,
+                timeout=http.DEFAULT_TIMEOUT,
+                verify=False)
+        except Exception as e:
+            return VERSION_UNKNOWN
+
+        return resp.json().get("version", VERSION_UNKNOWN)
 
     def is_attached(self):
         cluster_envvar = os.environ.get(constants.DCOS_CLUSTER)
