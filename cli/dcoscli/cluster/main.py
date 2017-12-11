@@ -471,7 +471,7 @@ def _prompt_for_login_provider(providers):
 
     choices = []
     descriptions = []
-    for idx in providers.keys():
+    for idx in sorted(providers.keys()):
         provider_type = providers[idx].get('authentication-type')
         if provider_type not in [
                 auth.AUTH_TYPE_DCOS_UID_PASSWORD,
