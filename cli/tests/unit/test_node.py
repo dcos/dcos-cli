@@ -3,6 +3,7 @@ import pytest
 
 import dcoscli.node.main as main
 from dcos.errors import DCOSException
+from dcoscli.log import is_success
 
 
 @mock.patch('dcos.packagemanager.PackageManager')
@@ -207,7 +208,8 @@ def test_dcos_log_v2_leader_mesos(mocked_dcos_log_enabled, mocked_http_get,
     main._dcos_log_v2(False, 10, True, '', None, [])
     mocked_http_get.assert_called_with(
         'http://127.0.0.1/system/v1/leader/mesos/logs/v2/component?skip=-10',
-        headers={'Accept': 'text/plain'})
+        headers={'Accept': 'text/plain'},
+        is_success=is_success)
 
 
 @mock.patch('dcos.config.get_config_val')
@@ -227,7 +229,8 @@ def test_dcos_log_v2_leader_marathon(mocked_dcos_log_enabled, mocked_http_get,
     mocked_http_get.assert_called_with(
         'http://127.0.0.1/system/v1/leader/marathon/logs/v2/component/'
         'dcos-marathon.service?skip=-10',
-        headers={'Accept': 'text/plain'})
+        headers={'Accept': 'text/plain'},
+        is_success=is_success)
 
 
 @mock.patch('dcoscli.log.follow_logs')
@@ -288,7 +291,8 @@ def test_dcos_log_leader_mesos(mocked_dcos_log_enabled, mocked_http_get,
     main._dcos_log(False, 10, True, '', None, [])
     mocked_http_get.assert_called_with(
         'http://127.0.0.1/system/v1/leader/mesos/logs/v1/range/?skip_prev=10',
-        headers={'Accept': 'text/plain'})
+        headers={'Accept': 'text/plain'},
+        is_success=is_success)
 
 
 @mock.patch('dcos.config.get_config_val')
@@ -308,7 +312,8 @@ def test_dcos_log_leader_marathon(mocked_dcos_log_enabled, mocked_http_get,
     mocked_http_get.assert_called_with(
         'http://127.0.0.1/system/v1/leader/marathon/logs/v1/range/'
         '?skip_prev=10&filter=_SYSTEMD_UNIT:dcos-marathon.service',
-        headers={'Accept': 'text/plain'})
+        headers={'Accept': 'text/plain'},
+        is_success=is_success)
 
 
 @mock.patch('dcoscli.log.follow_logs')

@@ -94,7 +94,7 @@ def test_node_log_missing_slave():
     assert returncode == 1
     assert stdout == b''
     stderr_str = str(stderr)
-    assert 'HTTP 404: "Not Found"' in stderr_str
+    assert 'No files exist. Exiting.' in stderr_str
 
 
 def test_node_log_lines():

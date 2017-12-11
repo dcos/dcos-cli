@@ -2,14 +2,18 @@ import collections
 import json
 import os
 import re
+import subprocess
+import sys
 import time
+
+import pytest
 
 import dcos.util as util
 from dcos.util import create_schema
 
 from dcoscli.test.common import (assert_command, assert_lines,
                                  assert_lines_range, exec_command)
-from dcoscli.test.marathon import (add_app, app, remove_app,
+from dcoscli.test.marathon import (add_app, app, pod, remove_app,
                                    watch_all_deployments)
 from ..fixtures.task import task_fixture
 
@@ -98,9 +102,6 @@ def test_filter():
     assert_lines(['dcos', 'task', 'test-app2', '--json'], 1, greater_than=True)
 
 
-# TODO (Bilal): commenting log tests as they are currently failing with
-# DC/OS master. Maksym will take a look at these before the 1.11 release.
-'''
 def test_log_no_files():
     """ Tail stdout on nonexistant task """
     assert_command(['dcos', 'task', 'log', 'bogus'],
@@ -128,18 +129,18 @@ def test_log_pod_task():
         # logs shouldn't be seen and this pod shouldn't have any logging
         # to stderr
         assert returncode == 0
-        assert 'No logs for this task' in str(stderr)
-        assert stdout == b'\n'
+        assert not stderr
+        assert not stdout
 
 
 def test_log_missing_file():
     """ Tail a single file on a single task """
     returncode, stdout, stderr = exec_command(
-        ['dcos', 'task', 'log', 'test-app', 'bogus'])
+        ['dcos', 'task', 'log', 'test-app2', 'bogus'])
 
     assert returncode == 1
     assert stdout == b''
-    assert stderr == b'No files exist. Exiting.\n'
+    assert stderr == b'No logs found\n'
 
 
 def test_log_lines():
@@ -174,46 +175,6 @@ def test_log_follow():
         proc.kill()
 
 
-def test_log_two_tasks():
-    """ Test tailing a single file on two separate tasks """
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'task', 'log', 'test-app'])
-
-    assert returncode == 0
-    assert stderr == b''
-
-    lines = stdout.decode('utf-8').split('\n')
-    assert len(lines) == 7
-    assert len(
-        [line for line in lines if line.startswith('===> task:test-app')]
-    ) == 2
-
-
-@pytest.mark.skipif(sys.platform == 'win32',
-                    reason='Using Windows unsupported import (fcntl)')
-def test_log_two_tasks_follow():
-    """ Test tailing a single file on two separate tasks with --follow """
-    with app(TWO_TASKS_FOLLOW, 'two-tasks-follow'):
-        proc = subprocess.Popen(
-            ['dcos', 'task', 'log', 'two-tasks-follow', '--follow'],
-            stdout=subprocess.PIPE)
-
-        # mark stdout as non-blocking, so we can read all available data
-        # before EOF
-        _mark_non_blocking(proc.stdout)
-
-        time.sleep(5)
-        first_lines = _read_lines(proc.stdout)
-        time.sleep(3)
-        second_lines = _read_lines(proc.stdout)
-
-        assert len(first_lines) >= 1
-        # assert there are more lines after sleeping
-        assert len(second_lines) >= 1
-
-        proc.kill()
-
-
 def test_log_completed():
     """ Test `dcos task log --completed` """
     # create a completed task
@@ -237,7 +198,6 @@ def test_log_completed():
     assert returncode == 0
     assert stderr == b''
     assert len(stdout.decode('utf-8').split('\n')) >= 3
-'''
 
 
 def test_ls_no_params():
