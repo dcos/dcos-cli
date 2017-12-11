@@ -8,7 +8,7 @@ Usage:
     dcos cluster attach <name>
     dcos cluster link <dcos_url> [--provider=<provider_id>]
     dcos cluster unlink <name>
-    dcos cluster list [--attached --json]
+    dcos cluster list [--attached --linked --json]
     dcos cluster remove [<name> | --all]
     dcos cluster rename <name> <new_name>
     dcos cluster setup <dcos_url>
@@ -44,6 +44,8 @@ Options:
         Print a short description of this subcommand.
     --insecure
         Allow requests to bypass SSL certificate verification (insecure).
+    --linked
+        List only linked clusters.
     --no-check
         Do not check CA certficate downloaded from cluster (insecure). Applies to Enterprise DC/OS only.
     --password=<password>

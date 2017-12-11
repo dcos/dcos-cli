@@ -138,6 +138,13 @@ def test_setup_unreachable_url():
 def test_link_self(dcos_dir_tmp_copy):
     skip_if_env_missing([DCOS_TEST_URL_ENV])
 
+    attached_cluster = cluster.get_attached_cluster()
+
+    # There should be no linked clusters yet
+    linked_clusters = cluster.get_cluster_links(attached_cluster.get_url())
+    assert not linked_clusters.get('links')
+
+    # Link a cluster with a given provider
     provider = 'dcos-users'
 
     returncode, _, stderr = exec_command(
@@ -149,18 +156,25 @@ def test_link_self(dcos_dir_tmp_copy):
 
     assert returncode == 0
 
-    c = cluster.get_attached_cluster()
-    links = cluster.get_cluster_links(c.get_url()).get('links')
+    # Get linked clusters through the list command
+    returncode, stdout, stderr = exec_command(
+        ['dcos', 'cluster', 'list', '--json', '--linked'])
+    assert returncode == 0
+    assert stderr == b''
+    linked_clusters = json.loads(stdout.decode('utf-8'))
+    assert len(linked_clusters) == 1
 
+    link = linked_clusters[0]
+    assert link['cluster_id'] == attached_cluster.get_cluster_id()
+    assert link['name'] == attached_cluster.get_name()
+    assert link['url'] == attached_cluster.get_url()
+
+    # Get linked clusters from the API (to check the login_provider)
+    links = cluster.get_cluster_links(attached_cluster.get_url()).get('links')
     assert len(links) == 1
+    assert links[0]['login_provider']['id'] == provider
 
-    link = links[0]
-    assert link['id'] == c.get_cluster_id()
-    assert link['name'] == c.get_name()
-    assert link['url'] == c.get_url()
-    assert link['login_provider']['id'] == provider
-
-    assert_command(['dcos', 'cluster', 'unlink', link['id']])
+    assert_command(['dcos', 'cluster', 'unlink', link['cluster_id']])
 
 
 def test_link_invalid_cluster(dcos_dir_tmp_copy):
