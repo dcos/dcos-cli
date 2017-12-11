@@ -55,16 +55,22 @@ def _main(argv):
 
     http.silence_requests_warnings()
 
-    return cmds.execute(_cmds(), args)
+    return cmds.execute(_cmds(doc_name), args)
 
 
-def _cmds():
+def _cmds(doc_name):
     """
+    :param doc_name: the docopt help file in use
+    :type doc_name: str
     :returns: all the supported commands
     :rtype: list of dcos.cmds.Command
     """
 
-    return [
+    list_arg_keys = ['--json', '--attached']
+    if doc_name == 'cluster_ee':
+        list_arg_keys.append('--linked')
+
+    commands = [
         cmds.Command(
             hierarchy=['cluster', 'setup'],
             arg_keys=['<dcos_url>',
@@ -75,7 +81,7 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['cluster', 'list'],
-            arg_keys=['--json', '--attached'],
+            arg_keys=list_arg_keys,
             function=_list),
 
         cmds.Command(
@@ -92,22 +98,25 @@ def _cmds():
             hierarchy=['cluster', 'rename'],
             arg_keys=['<name>', '<new_name>'],
             function=_rename),
+    ]
 
-        cmds.Command(
+    if doc_name == 'cluster_ee':
+        commands.append(cmds.Command(
             hierarchy=['cluster', 'link'],
             arg_keys=['<dcos_url>', '--provider'],
-            function=_link),
-
-        cmds.Command(
+            function=_link))
+        commands.append(cmds.Command(
             hierarchy=['cluster', 'unlink'],
             arg_keys=['<name>'],
-            function=_unlink),
+            function=_unlink))
 
-        cmds.Command(
-            hierarchy=['cluster'],
-            arg_keys=['--info'],
-            function=_info),
-    ]
+    # This needs to be last as it's also a fallback.
+    commands.append(cmds.Command(
+        hierarchy=['cluster'],
+        arg_keys=['--info'],
+        function=_info))
+
+    return commands
 
 
 def _info(info):
@@ -122,20 +131,24 @@ def _info(info):
     return 0
 
 
-def _list(json_, attached):
+def _list(json_, attached, linked=False):
     """
     List configured clusters.
 
     :param json_: output json if True
     :type json_: bool
     :param attached: return only attached cluster
-    :type attached: True
+    :type attached: bool
+    :param linked: return only linked clusters
+    :type linked: bool
     :rtype: None
     """
 
     if attached:
         clusters = [c.dict() for c in cluster.get_clusters()
                     if c.is_attached()]
+    elif linked:
+        clusters = [c.dict() for c in cluster.get_linked_clusters()]
     else:
         clusters = [c.dict() for c in cluster.get_clusters(True)]
 

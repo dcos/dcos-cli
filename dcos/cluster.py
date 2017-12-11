@@ -244,7 +244,13 @@ def get_clusters(include_linked=False):
     clusters_path = config.get_clusters_path()
     util.ensure_dir_exists(clusters_path)
     clusters = set()
-    linked_clusters = []
+
+    if include_linked:
+        try:
+            linked_clusters = get_linked_clusters()
+            clusters.update(linked_clusters)
+        except DCOSException:
+            pass
 
     uuid_regex = re.compile((r'^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-'
                              r'[89ab][a-f0-9]{3}-[a-f0-9]{12}\Z'))
@@ -253,25 +259,7 @@ def get_clusters(include_linked=False):
         entry_path = os.path.join(clusters_path, entry)
         if os.path.isdir(entry_path) and uuid_regex.match(entry):
             c = Cluster(entry)
-
-            if include_linked and c.is_attached():
-                try:
-                    links = get_cluster_links(c.get_url()).get('links')
-                except DCOSException:
-                    pass
-                else:
-                    for link in links:
-                        link = LinkedCluster(
-                            link.get('url'),
-                            link.get('id'),
-                            link.get('name'),
-                            link.get('login_provider'))
-
-                        linked_clusters.append(link)
-
             clusters.add(c)
-
-    clusters.update(linked_clusters)
 
     return list(clusters)
 
@@ -305,6 +293,33 @@ def get_cluster_links(dcos_url):
         return http.get(endpoint, headers=headers).json()
     except ValueError:
         raise DCOSException("Can't parse cluster links.")
+
+
+def get_linked_clusters():
+    """
+    Get linked clusters.
+
+    :returns: list of linked clusters
+    :rtype: [LinkedCluster]
+    """
+
+    current_cluster = get_attached_cluster()
+    if not current_cluster:
+        return []
+
+    links = get_cluster_links(current_cluster.get_url()).get('links')
+    linked_clusters = []
+
+    for link in links:
+        link = LinkedCluster(
+            link.get('url'),
+            link.get('id'),
+            link.get('name'),
+            link.get('login_provider'))
+
+        linked_clusters.append(link)
+
+    return linked_clusters
 
 
 def remove(name):
