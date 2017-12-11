@@ -42,13 +42,8 @@ def test_dcos_dir_env_with_acs_token(acs_token, temp_dcos_dir):
 def test_dcos_dir_env_without_acs_token(acs_token, temp_dcos_dir):
     _copy_config_to_dir('dcos.toml', temp_dcos_dir)
 
-    stderr = (
-        b"No clusters are currently configured. "
-        b"To configure one, run `dcos cluster setup <dcos_url>`\n"
-    )
-
     # Without an ACS token, the migration shouldn't occur
-    assert_command(['dcos', 'cluster', 'list'], returncode=1, stderr=stderr)
+    assert_command(['dcos', 'cluster', 'list'])
 
 
 def test_dcos_config_env_with_acs_token(acs_token, temp_dcos_dir):
@@ -80,13 +75,11 @@ def test_dcos_config_env_without_acs_token(temp_dcos_dir):
         stderr = (
             b"DCOS_CONFIG is deprecated, please consider using "
             b"`dcos cluster setup <dcos_url>`.\n"
-            b"No clusters are currently configured. "
-            b"To configure one, run `dcos cluster setup <dcos_url>`\n"
         )
 
         # Without an ACS token, the migration shouldn't occur
         assert_command(
-            ['dcos', 'cluster', 'list'], returncode=1, stderr=stderr)
+            ['dcos', 'cluster', 'list'], stderr=stderr)
 
 
 def test_setup_cluster_through_config_commands(acs_token, temp_dcos_dir):

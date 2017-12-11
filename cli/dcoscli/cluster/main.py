@@ -158,10 +158,7 @@ def _list(json_, attached, linked=False):
         if attached:
             msg = ("No cluster is attached. "
                    "Please run `dcos cluster attach <cluster-name>")
-        else:
-            msg = ("No clusters are currently configured. "
-                   "To configure one, run `dcos cluster setup <dcos_url>`")
-        raise DCOSException(msg)
+            raise DCOSException(msg)
     else:
         emitter.publish(clusters_table(clusters))
 
