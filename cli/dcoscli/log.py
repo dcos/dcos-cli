@@ -338,9 +338,13 @@ def print_logs_range(url):
     :param url: `dcos-log` endpoint
     :type url: str
     """
-    with contextlib.closing(
-            http.get(url, headers={'Accept': 'text/plain'})) as r:
 
+    is_success = lambda c: True if (200 <= c < 300) or c == 404 else False
+    with contextlib.closing(
+            http.get(url, is_success=is_success, headers={'Accept': 'text/plain'})) as r:
+
+        if r.status_code == 404:
+            raise DCOSException('No files exist. Exiting.')
         if r.status_code == 204:
             raise DCOSException('No logs found')
 
