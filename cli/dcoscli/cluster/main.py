@@ -3,6 +3,7 @@ import os
 import socket
 import urllib
 
+from concurrent import futures
 from urllib.parse import urlparse
 
 import docopt
@@ -147,10 +148,18 @@ def _list(json_, attached, linked=False):
     if attached:
         clusters = [c.dict() for c in cluster.get_clusters()
                     if c.is_attached()]
-    elif linked:
-        clusters = [c.dict() for c in cluster.get_linked_clusters()]
     else:
-        clusters = [c.dict() for c in cluster.get_clusters(True)]
+        if linked:
+            clusters = cluster.get_linked_clusters()
+        else:
+            clusters = cluster.get_clusters(True)
+
+        if clusters:
+            # Query for cluster versions concurrently.
+            nb_workers = len(clusters)
+            with futures.ThreadPoolExecutor(max_workers=nb_workers) as pool:
+                reqs = [pool.submit(c.dict) for c in clusters]
+                clusters = [r.result() for r in futures.as_completed(reqs)]
 
     if json_:
         emitter.publish(clusters)
