@@ -14,7 +14,7 @@ def test_info():
 
 def test_version():
     assert_command(['dcos', 'help', '--version'],
-                   stdout=b'dcos-help version SNAPSHOT\n')
+                   stdout=b'dcos-help version 1.11.0-sf2\n')
 
 
 def test_help_config():

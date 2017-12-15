@@ -18,7 +18,7 @@ def test_help():
 
 def test_version():
     assert_command(['dcos', 'job', '--version'],
-                   stdout=b'dcos-job version SNAPSHOT\n')
+                   stdout=b'dcos-job version 1.11.0-sf2\n')
 
 
 def test_schema_config():

@@ -32,7 +32,7 @@ def test_help():
 
 def test_version():
     assert_command(['dcos', 'marathon', '--version'],
-                   stdout=b'dcos-marathon version SNAPSHOT\n')
+                   stdout=b'dcos-marathon version 1.11.0-sf2\n')
 
 
 def test_info():

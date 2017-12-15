@@ -26,7 +26,7 @@ def test_version():
     assert returncode == 0
     assert stderr == b''
     versions = stdout.decode('utf-8').split("\n")
-    assert versions[0] == "dcoscli.version=SNAPSHOT"
+    assert versions[0] == "dcoscli.version=1.11.0-sf2"
     assert versions[1].startswith("dcos.version")
     assert versions[2].startswith("dcos.commit")
     assert versions[3].startswith("dcos.bootstrap-id")

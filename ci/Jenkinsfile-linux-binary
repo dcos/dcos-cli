@@ -49,6 +49,12 @@ def binaryBuilder = builder('py35', '/workspace')({
             sh "dist/dcos"
         }
     }
+
+    stage ("Archive dcos-cli binary") {
+        dir('dcos-cli/cli/dist') {
+            archiveArtifacts artifacts: 'dcos'
+        }
+    }
 })
 
 binaryBuilder()
