@@ -13,7 +13,18 @@ from dcos.errors import (DCOSAuthenticationException,
 
 logger = util.get_logger(__name__)
 
-DEFAULT_TIMEOUT = 5
+DEFAULT_READ_TIMEOUT = 180
+"""The default timeout for reading an HTTP response, it can be overriden
+through the `core.timeout` config. This is not a time limit on the entire
+response download; rather, an exception is raised if the server has not issued
+a response for timeout seconds (more precisely, if no bytes have been received
+on the underlying socket for timeout seconds)."""
+
+DEFAULT_CONNECT_TIMEOUT = 5
+"""The default timeout for establishing an HTTP connection."""
+
+DEFAULT_TIMEOUT = (DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOUT)
+"""The default timeout tuple for connection and read."""
 
 
 def _default_is_success(status_code):
@@ -93,7 +104,7 @@ def _verify_ssl(url, verify=None, toml_config=None):
 def _request(method,
              url,
              is_success=_default_is_success,
-             timeout=DEFAULT_TIMEOUT,
+             timeout=True,
              auth=None,
              verify=None,
              toml_config=None,
@@ -106,8 +117,15 @@ def _request(method,
     :type url: str
     :param is_success: Defines successful status codes for the request
     :type is_success: Function from int to bool
-    :param timeout: request timeout
-    :type timeout: int
+    :param timeout: How many seconds to wait for the server to send data
+                    before aborting and raising an exception. A timeout is
+                    either a float, a (connect timeout, read timeout) tuple
+                    or `None`. `None` means unlimited timeout. If no timeout
+                    is passed it defaults to the DEFAULT_TIMEOUT tuple, where
+                    the connect timeout can optionally be overridden by the
+                    `core.timeout` config.
+    :type timeout: int | float | None | bool |
+                   (int | float | None, int | float | None)
     :param auth: authentication
     :type auth: AuthBase
     :param verify: whether to verify SSL certs or path to cert(s)
@@ -119,6 +137,15 @@ def _request(method,
     :type kwargs: dict
     :rtype: Response
     """
+
+    if timeout is True:
+        if toml_config is None:
+            toml_config = config.get_config()
+
+        timeout = config.get_config_val("core.timeout", toml_config)
+        timeout = (DEFAULT_CONNECT_TIMEOUT, timeout or DEFAULT_READ_TIMEOUT)
+    elif type(timeout) in (float, int):
+        timeout = (DEFAULT_CONNECT_TIMEOUT, timeout)
 
     if 'headers' not in kwargs:
         kwargs['headers'] = {'Accept': 'application/json'}
@@ -171,7 +198,7 @@ def _request(method,
 def request(method,
             url,
             is_success=_default_is_success,
-            timeout=DEFAULT_TIMEOUT,
+            timeout=True,
             verify=None,
             toml_config=None,
             **kwargs):
@@ -184,8 +211,15 @@ def request(method,
     :type url: str
     :param is_success: Defines successful status codes for the request
     :type is_success: Function from int to bool
-    :param timeout: request timeout
-    :type timeout: int
+    :param timeout: How many seconds to wait for the server to send data
+                    before aborting and raising an exception. A timeout is
+                    either a float, a (connect timeout, read timeout) tuple
+                    or `None`. `None` means unlimited timeout. If no timeout
+                    is passed it defaults to the DEFAULT_TIMEOUT tuple, where
+                    the connect timeout can optionally be overridden by the
+                    `core.timeout` config.
+    :type timeout: int | float | None | bool |
+                   (int | float | None, int | float | None)
     :param verify: whether to verify SSL certs or path to cert(s)
     :type verify: bool | str
     :param toml_config: cluster config to use

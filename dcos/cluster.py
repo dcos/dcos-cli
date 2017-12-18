@@ -106,7 +106,9 @@ def setup_cluster_config(dcos_url, temp_path, stored_cert):
     try:
         # find cluster id
         cluster_url = dcos_url.rstrip('/') + '/metadata'
-        res = http.get(cluster_url, timeout=1)
+        # This is an informational request,
+        # a 5 seconds read timeout is enough.
+        res = http.get(cluster_url, timeout=5)
         cluster_id = res.json().get("CLUSTER_ID")
 
     except DCOSException as e:
@@ -138,7 +140,11 @@ def setup_cluster_config(dcos_url, temp_path, stored_cert):
     cluster_name = cluster_id
     try:
         url = dcos_url.rstrip('/') + '/mesos/state-summary'
-        name_query = http.get(url, toml_config=cluster.get_config())
+        # This is an informational request,
+        # a 5 seconds read timeout is enough.
+        name_query = http.get(url,
+                              toml_config=cluster.get_config(),
+                              timeout=5)
         cluster_name = name_query.json().get("cluster")
 
     except DCOSException:
@@ -378,6 +384,8 @@ class Cluster():
             self.get_url(), "dcos-metadata/dcos-version.json")
 
         try:
+            # This is an informational request,
+            # a 5 seconds read timeout is enough.
             resp = requests.request(
                 'GET',
                 url=endpoint,
