@@ -389,7 +389,7 @@ class Cluster():
             resp = requests.request(
                 'GET',
                 url=endpoint,
-                timeout=http.DEFAULT_TIMEOUT,
+                timeout=5,
                 verify=False)
         except Exception as e:
             return VERSION_UNKNOWN
