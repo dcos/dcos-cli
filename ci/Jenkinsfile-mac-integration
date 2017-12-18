@@ -43,6 +43,7 @@ dcos_config:
         - 10.10.0.2
     dns_search: us-west-2.compute.internal
     master_discovery: static
+    exhibitor_storage_backend: static
 """
 }
 
