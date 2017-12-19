@@ -796,7 +796,7 @@ def _get_api_url(path):
 
 def _get_timeout():
     """
-    :returns: timout value for API calls
+    :returns: timeout value for API calls
     :rtype: str
     """
     # if timeout is not passed, try to read `core.timeout`
