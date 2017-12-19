@@ -238,7 +238,7 @@ def request(method,
     dcos_url = urlparse(config.get_config_val("core.dcos_url", toml_config))
 
     # only request with DC/OS Auth if request is to DC/OS cluster
-    if auth_token and _is_request_to_dcos(url):
+    if auth_token and _is_request_to_dcos(url, toml_config=toml_config):
         auth = DCOSAcsAuth(auth_token)
     else:
         auth = None
