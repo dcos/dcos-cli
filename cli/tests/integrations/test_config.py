@@ -25,7 +25,7 @@ def test_info():
 
 
 def test_version():
-    stdout = b'dcos-config version SNAPSHOT\n'
+    stdout = b'dcos-config version 1.11.0-sf2\n'
     assert_command(['dcos', 'config', '--version'],
                    stdout=stdout)
 

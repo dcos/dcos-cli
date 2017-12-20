@@ -1,4 +1,4 @@
 # Version is set for releases by our build system.
 # Be extremely careful when modifying.
-version = 'SNAPSHOT'
+version = '1.11.0-sf2'
 """DC/OS version"""

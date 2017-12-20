@@ -50,6 +50,12 @@ def binaryBuilder = builder('windows')({
             bat 'dist\\dcos.exe'
         }
     }
+
+    stage ("Archive dcos-cli binary") {
+        dir('dcos-cli/cli/dist') {
+            archiveArtifacts artifacts: 'dcos.exe'
+        }
+    }
 })
 
 binaryBuilder()

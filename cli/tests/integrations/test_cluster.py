@@ -30,7 +30,7 @@ def test_info():
 
 
 def test_version():
-    stdout = b'dcos-cluster version SNAPSHOT\n'
+    stdout = b'dcos-cluster version 1.11.0-sf2\n'
     assert_command(['dcos', 'cluster', '--version'],
                    stdout=stdout)
 

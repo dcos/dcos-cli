@@ -22,7 +22,7 @@ def test_info():
 
 
 def test_version():
-    stdout = b'dcos-auth version SNAPSHOT\n'
+    stdout = b'dcos-auth version 1.11.0-sf2\n'
     assert_command(['dcos', 'auth', '--version'],
                    stdout=stdout)
 
