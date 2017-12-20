@@ -8,7 +8,7 @@ import sys
 import pytest
 import six
 
-from dcos import config, constants, errors, subcommand, util
+from dcos import config, constants, errors, http, subcommand, util
 
 from dcoscli.test.common import (assert_command, assert_lines, base64_to_dict,
                                  delete_zk_node,
@@ -1095,8 +1095,9 @@ def _package(name,
     command = ['dcos', 'package', 'install', name] + args
 
     installed = False
+    timeout = http.DEFAULT_READ_TIMEOUT
     try:
-        returncode_, stdout_, stderr_ = exec_command(command, timeout=30)
+        returncode_, stdout_, _ = exec_command(command, timeout=timeout)
         installed = (returncode_ == 0)
 
         assert installed
