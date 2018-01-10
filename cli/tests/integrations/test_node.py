@@ -129,7 +129,8 @@ def test_node_metrics_agent_summary_json():
     )
 
     names = [d['name'] for d in node_json]
-    assert names == ['cpu.total', 'memory.total', 'filesystem.capacity.used']
+    assert names == ['cpu.total', 'memory.total', 'memory.free',
+                     'filesystem.capacity.total', 'filesystem.capacity.used']
 
 
 def test_node_metrics_agent_details():

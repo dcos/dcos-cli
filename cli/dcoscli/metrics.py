@@ -98,6 +98,8 @@ def _node_summary_json(datapoints):
     summary_datapoints = [
         _get_datapoint(datapoints, 'cpu.total'),
         _get_datapoint(datapoints, 'memory.total'),
+        _get_datapoint(datapoints, 'memory.free'),
+        _get_datapoint(datapoints, 'filesystem.capacity.total', {'path': '/'}),
         _get_datapoint(datapoints, 'filesystem.capacity.used', {'path': '/'})
     ]
     return json.dumps(summary_datapoints)
