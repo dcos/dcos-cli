@@ -257,7 +257,12 @@ def _link(dcos_url, provider_id):
     for configured_cluster in cluster.get_clusters():
         configured_cluster_host = \
             urlparse(configured_cluster.get_url()).netloc
-        configured_cluster_ip = socket.gethostbyname(configured_cluster_host)
+
+        try:
+            configured_cluster_ip = \
+                socket.gethostbyname(configured_cluster_host)
+        except OSError as error:
+            continue
 
         if linked_cluster_ip == configured_cluster_ip:
             linked_cluster_id = configured_cluster.get_cluster_id()
