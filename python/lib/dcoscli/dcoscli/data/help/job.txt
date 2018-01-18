@@ -18,6 +18,7 @@ Description:
         dcos job schedule remove <job-id> <schedule-id>
         dcos job schedule update <job-id> <schedule-file>
         dcos job show runs <job-id> [--run-id <run-id>][--json|--quiet]
+        dcos job queue [<job-id>][--json|--quiet]
         dcos job history <job-id> [--json|--quiet] [--failures --last]
 
 Commands:
@@ -45,6 +46,8 @@ Commands:
         Updates a schedule on a job.
     job show runs
         Shows the successful and failure runs of a job.
+    job queue
+        Print a list of currently jobruns that a queued to launch
     job history
         Provides a job run history.
 
