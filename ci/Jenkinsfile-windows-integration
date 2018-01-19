@@ -21,7 +21,7 @@ def platforms = ["windows"]
 /**
  * This generates the `dcos_launch` config for a particular build.
  */
-def generateConfig(deploymentName, installerUrl, sshKeyPath) {
+def generateConfig(deploymentName, installerUrl, license, sshKeyPath) {
     return """
 ---
 launch_config_version: 1
@@ -44,6 +44,7 @@ dcos_config:
     dns_search: us-west-2.compute.internal
     master_discovery: static
     exhibitor_storage_backend: static
+    license_key_contents: ${license}
 """
 }
 
@@ -80,6 +81,7 @@ class TestCluster implements Serializable {
                         "text" : script.generateConfig(
                                 "dcos-cli-${platform}-${script.env.ghprbPullId}-${script.env.BUILD_ID}-${createAttempts}",
                                 "${script.env.DCOS_INSTALLER_URL}",
+                                "${script.env.DCOS_LICENSE}",
                                 "${script.env.CLI_TEST_SSH_KEY_PATH}")])
 
                 script.sh "./dcos-launch create -c ${platform}_config.yaml -i ${platform}_cluster_info.json"
@@ -276,6 +278,9 @@ throttle(['dcos-cli']) {
             [$class: 'StringBinding',
              credentialsId: '0b513aad-e0e0-4a82-95f4-309a80a02ff9',
              variable: 'DCOS_INSTALLER_URL'],
+            [$class: 'StringBinding',
+             credentialsId: 'ca159ad3-7323-4564-818c-46a8f03e1389',
+             variable: 'DCOS_LICENSE'],
             [$class: 'UsernamePasswordMultiBinding',
              credentialsId: '323df884-742b-4099-b8b7-d764e5eb9674',
              usernameVariable: 'DCOS_ADMIN_USERNAME',
