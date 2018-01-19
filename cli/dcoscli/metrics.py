@@ -124,10 +124,9 @@ def _node_summary_data(datapoints):
 
     disk_total = _get_datapoint_value(
         datapoints, 'filesystem.capacity.total', {'path': '/'})
-    disk_free = _get_datapoint_value(
+    disk_used = _get_datapoint_value(
         datapoints, 'filesystem.capacity.used', {'path': '/'})
-    disk_used = disk_total - disk_free
-    disk_used_pc = _percentage(disk_free, disk_total)
+    disk_used_pc = _percentage(disk_used, disk_total)
 
     return {
         'cpu': '{:0.2f} ({:0.2f}%)'.format(cpu_used, cpu_used_pc),
