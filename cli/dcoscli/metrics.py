@@ -98,6 +98,8 @@ def _node_summary_json(datapoints):
     summary_datapoints = [
         _get_datapoint(datapoints, 'cpu.total'),
         _get_datapoint(datapoints, 'memory.total'),
+        _get_datapoint(datapoints, 'memory.free'),
+        _get_datapoint(datapoints, 'filesystem.capacity.total', {'path': '/'}),
         _get_datapoint(datapoints, 'filesystem.capacity.used', {'path': '/'})
     ]
     return json.dumps(summary_datapoints)
@@ -122,9 +124,8 @@ def _node_summary_data(datapoints):
 
     disk_total = _get_datapoint_value(
         datapoints, 'filesystem.capacity.total', {'path': '/'})
-    disk_free = _get_datapoint_value(
+    disk_used = _get_datapoint_value(
         datapoints, 'filesystem.capacity.used', {'path': '/'})
-    disk_used = disk_total - disk_free
     disk_used_pc = _percentage(disk_used, disk_total)
 
     return {
