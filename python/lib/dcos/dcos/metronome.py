@@ -345,7 +345,7 @@ class Client(object):
         path = '/v1/jobs{}/runs{}/actions/stop'.format(job_id, run_id)
         self._rpc.http_req(http.post, path)
 
-    def get_queued_jobruns(self, job_id):
+    def get_queued_job_runs(self, job_id):
         """Returns the content of the launch queue,
         including the jobruns for each job_id which should be scheduled.
 
@@ -356,7 +356,7 @@ class Client(object):
         if job_id is not None:
             deployments = [
                 deployment for deployment in response.json()
-                if job_id in deployment['jobId']
+                if job_id == deployment['jobId']
             ]
         else:
             deployments = response.json()

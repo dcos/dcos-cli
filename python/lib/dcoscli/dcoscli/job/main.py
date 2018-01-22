@@ -237,13 +237,14 @@ def _queue(job_id, json_flag=False, quiet=False):
     """
     :param job_id: Id of the job
     :type job_id: str
-    :param json_flag: output json if True
+    :param json_flag: Output json if True
     :type json_flag: bool
     :returns: process return code
     :rtype: int
     """
+
     client = metronome.create_client()
-    deployment_list = client.get_queued_jobruns(job_id)
+    deployment_list = client.get_queued_job_runs(job_id)
 
     if not deployment_list and not json_flag:
         msg = "There are no deployments in the queue"
