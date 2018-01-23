@@ -309,7 +309,8 @@ def job_queue_table(job_queue):
     for job in job_queue:
         job_id = job["jobId"]
         for jobruns in job.get("runs"):
-            flatten_job_list.append({'jobId': job_id, 'jobrun_id': jobruns.get("runId")})
+            flatten_job_list.append(
+                {'jobId': job_id, 'jobrun_id': jobruns.get("runId")})
 
     fields = OrderedDict([
         ('id', lambda s: s['jobId']),
