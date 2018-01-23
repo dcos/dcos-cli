@@ -308,7 +308,7 @@ def _unlink(name):
     """
     Unlink a DC/OS cluster.
 
-    :param name:  name of the cluster
+    :param name: ID or name of the cluster
     :type name: str
     :returns: process status
     :rtype: int
