@@ -188,6 +188,15 @@ def test_link_self(dcos_dir_tmp_copy):
 
     assert_command(['dcos', 'cluster', 'unlink', link['cluster_id']])
 
+    # Unlinking an unexisting cluster should return an error.
+    ret, stdout, stderr = exec_command(
+        ['dcos', 'cluster', 'unlink', link['cluster_id']])
+
+    assert ret != 0
+    assert stdout == b''
+    expected_err_msg = "Unknown cluster link {}.\n".format(link['cluster_id'])
+    assert stderr.decode() == expected_err_msg
+
 
 def test_link_invalid_cluster(dcos_dir_tmp_copy):
     name = 'https://will.never.exist.hopefully.BOFGY7tfb7doftd'
@@ -201,7 +210,7 @@ def test_unlink_invalid_cluster(dcos_dir_tmp_copy):
     name = 'not-me'
     ret, _, err = exec_command(['dcos', 'cluster', 'unlink', name])
     assert ret != 0
-    assert err.decode('utf-8') == "Unknown cluster {}.\n".format(name)
+    assert err.decode('utf-8') == "Unknown cluster link {}.\n".format(name)
 
 
 def _num_of_clusters():
