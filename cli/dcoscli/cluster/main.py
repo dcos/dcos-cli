@@ -315,12 +315,12 @@ def _unlink(name):
     """
 
     c = cluster.get_cluster(name)
-    if not c:
-        raise DCOSException('Unknown cluster {}.'.format(name))
+    if c:
+        name = c.get_cluster_id()
 
     dcos_url = config.get_config_val('core.dcos_url')
     endpoint = urllib.parse.urljoin(
-            dcos_url, '/cluster/v1/links/' + c.get_cluster_id())
+            dcos_url, '/cluster/v1/links/' + name)
 
     http.delete(endpoint)
 
