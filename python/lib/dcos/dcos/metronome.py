@@ -339,7 +339,8 @@ class Client(object):
         :rtype: None
         """
         if job_id is None or run_id is None:
-            raise DCOSException("job_id and run_id are required to kill a jobrun.")
+            raise DCOSException(
+                "job_id and run_id are required to kill a jobrun.")
         job_id = util.normalize_marathon_id_path(job_id)
         run_id = util.normalize_marathon_id_path(run_id)
         path = '/v1/jobs{}/runs{}/actions/stop'.format(job_id, run_id)
