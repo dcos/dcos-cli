@@ -321,3 +321,16 @@ def test_task_fault_domain():
 
     slave = mesos.Slave({}, None, None)
     assert not slave.fault_domain()
+
+
+@patch('dcos.http.get')
+def test_dcos_log_v2_500(mocked_http_get):
+    mock_http_response = MagicMock()
+    mock_http_response.status_code = 500
+    mock_http_response.text = "foo bar error"
+    mocked_http_get.return_value = mock_http_response
+
+    task = {'id': 'test-task'}
+    with pytest.raises(DCOSException) as excinfo:
+        _dcos_log_v2(False, [task], 10, 'stdout')
+    assert 'foo bar error' in str(excinfo.value)
