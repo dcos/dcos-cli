@@ -156,6 +156,18 @@ def test_link_self(dcos_dir_tmp_copy):
 
     assert returncode == 0
 
+    # Recreating the exact same link should return an error.
+    returncode, stdout, stderr = exec_command(
+        ['dcos',
+         'cluster',
+         'link',
+         '--provider=' + provider,
+         os.environ.get(DCOS_TEST_URL_ENV)])
+
+    assert returncode != 0
+    assert stdout == b''
+    assert stderr == b"This cluster link already exists.\n"
+
     # Get linked clusters through the list command
     returncode, stdout, stderr = exec_command(
         ['dcos', 'cluster', 'list', '--json', '--linked'])
