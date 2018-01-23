@@ -13,6 +13,7 @@ from dcos.cosmos import get_cosmos_url
 from dcos.errors import (DCOSAuthenticationException,
                          DCOSAuthorizationException,
                          DCOSException,
+                         DCOSHTTPException,
                          DefaultError)
 
 logger = util.get_logger(__name__)
@@ -336,7 +337,7 @@ def is_success(code):
     :param code: HTTP response codes
     :type code: int
     """
-    if (200 <= code < 300) or code == 404:
+    if (200 <= code < 300) or code in [404, 500]:
         return True
     return False
 
@@ -351,6 +352,9 @@ def print_logs_range(url):
     with contextlib.closing(http.get(url, is_success=is_success,
                                      headers={'Accept': 'text/plain'})) as r:
 
+        if r.status_code == 500:
+            raise DCOSException(
+                '{} Error message: {}'.format(DCOSHTTPException(r), r.text))
         if r.status_code == 404:
             raise DCOSException('No files exist. Exiting.')
         if r.status_code == 204:
