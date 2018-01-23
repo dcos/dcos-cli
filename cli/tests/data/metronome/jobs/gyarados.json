@@ -1,0 +1,10 @@
+{
+  "id": "gyarados",
+  "description": "so large I do not fit",
+  "run": {
+    "cmd": "sleep 20000",
+    "cpus": 10,
+    "mem": 32,
+    "disk": 0
+  }
+}
