@@ -17,7 +17,7 @@ import dcoscli
 
 from dcos import auth, cluster, cmds, config, emitting, http, jsonitem, util
 from dcos.errors import (DCOSAuthenticationException, DCOSException,
-                         DefaultError)
+                         DCOSHTTPException, DefaultError)
 from dcoscli.auth.main import login
 from dcoscli.subcommand import default_command_info, default_doc
 from dcoscli.tables import clusters_table
@@ -296,10 +296,15 @@ def _link(dcos_url, provider_id):
         'Content-Type': 'application/json',
         'Accept': 'application/json'}
 
-    http.post(
-        urllib.parse.urljoin(current_cluster_url, '/cluster/v1/links'),
-        data=json.dumps(message),
-        headers=headers)
+    try:
+        http.post(
+            urllib.parse.urljoin(current_cluster_url, '/cluster/v1/links'),
+            data=json.dumps(message),
+            headers=headers)
+    except DCOSHTTPException as e:
+        if e.status() == 409:
+            raise DCOSException("This cluster link already exists.")
+        raise
 
     return 0
 
