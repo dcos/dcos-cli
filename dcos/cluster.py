@@ -391,10 +391,10 @@ class Cluster():
                 url=endpoint,
                 timeout=5,
                 verify=False)
+
+            return resp.json().get("version", VERSION_UNKNOWN)
         except Exception as e:
             return VERSION_UNKNOWN
-
-        return resp.json().get("version", VERSION_UNKNOWN)
 
     def is_attached(self):
         cluster_envvar = os.environ.get(constants.DCOS_CLUSTER)
