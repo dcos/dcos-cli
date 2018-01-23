@@ -239,6 +239,8 @@ def _queue(job_id, json_flag=False, quiet=False):
     :type job_id: str
     :param json_flag: Output json if True
     :type json_flag: bool
+    :param quiet: Output only job run ids if true
+    :type quiet: bool
     :returns: process return code
     :rtype: int
     """
@@ -250,10 +252,8 @@ def _queue(job_id, json_flag=False, quiet=False):
         msg = "There are no deployments in the queue"
         if job_id:
             msg += " for '{}'".format(job_id)
-            raise DCOSException(msg)
-        else:
-            emitter.publish(msg)
-            return 0
+        emitter.publish(msg)
+        return 0
 
     if quiet:
         for deployment in deployment_list:

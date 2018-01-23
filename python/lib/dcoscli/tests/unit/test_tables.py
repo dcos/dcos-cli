@@ -19,7 +19,8 @@ from ..fixtures.metrics import (agent_metrics_node_details_fixture,
                                 agent_metrics_node_summary_fixture,
                                 agent_metrics_task_details_fixture)
 from ..fixtures.metronome import (job_history_fixture, job_list_fixture,
-                                  job_run_fixture, job_schedule_fixture)
+                                  job_run_fixture, job_schedule_fixture,
+                                  job_queue_fixture)
 from ..fixtures.node import slave_fixture
 from ..fixtures.package import package_fixture, search_result_fixture
 from ..fixtures.service import framework_fixture
@@ -103,6 +104,10 @@ def test_job_history_table():
                 job_history_fixture(),
                 'tests/unit/data/job_history.txt')
 
+def test_job_history_table():
+    _test_table(tables.job_queue_table,
+                job_queue_fixture(),
+                'tests/unit/data/job_queue.txt')
 
 def test_job_schedule_table():
     _test_table(tables.schedule_table,
