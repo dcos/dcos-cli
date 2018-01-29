@@ -42,7 +42,7 @@
             "type": "string",
             "default": "false",
             "title": "SSL Verification",
-            "description": "Whether to verify SSL certs for HTTPS or path to certs. Valid values are True, False, or a path to a CA_BUNDLE."
+            "description": "Whether to verify SSL certs for HTTPS or path to certs. Valid values are a path to a CA_BUNDLE, True (will then use CA Certificates from certifi), or False (will then send insecure requests)."
         },
         "pagination": {
             "type": "boolean",
