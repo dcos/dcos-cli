@@ -99,27 +99,20 @@ def test_service_inactive_and_completed():
 
 
 def test_log():
-    with package(
-        'cassandra',
-        deploy=True,
-        args=['--package-version=1.0.25-3.0.10']
-    ):
+    with package('hello-world', deploy=True):
         returncode, stdout, stderr = exec_command(
-            ['dcos', 'service', 'log', 'cassandra'])
+            ['dcos', 'service', 'log', 'hello-world'])
 
         assert returncode == 0
         assert len(stdout.decode('utf-8').split('\n')) > 1
         assert stderr == b''
 
         returncode, stdout, stderr = exec_command(
-            ['dcos', 'service', 'log', 'cassandra', 'stderr'])
+            ['dcos', 'service', 'log', 'hello-world', 'stderr'])
 
         assert returncode == 0
         assert len(stdout.decode('utf-8').split('\n')) > 1
         assert stderr == b''
-
-    # Package was uninstalled but its group needs to be removed separately
-    exec_command(['dcos', 'marathon', 'group', 'remove', 'cassandra'])
 
 
 def test_log_marathon_file():
