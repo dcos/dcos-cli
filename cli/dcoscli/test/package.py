@@ -4,10 +4,11 @@ import time
 
 from urllib.parse import urlparse
 
-from dcos import mesos
+import retrying
 
+from dcos import mesos
 from .common import assert_command, exec_command
-from .marathon import add_app, watch_all_deployments
+from .marathon import add_app, count_apps, watch_all_deployments
 from .service import get_services, service_shutdown
 
 
@@ -23,6 +24,7 @@ def package(package_name, deploy=False, args=[]):
     :rtype: None
     """
 
+    nb_apps_before_install = count_apps()
     package_install(package_name, deploy, args)
     try:
         yield
@@ -31,6 +33,12 @@ def package(package_name, deploy=False, args=[]):
         returncode, _, _ = exec_command(command)
         assert returncode == 0
         watch_all_deployments()
+
+        @retrying.retry(wait_fixed=1000, stop_max_attempt_number=300)
+        def wait_for_app_count():
+            assert count_apps() == nb_apps_before_install
+
+        wait_for_app_count()
 
         services = get_services()
         for framework in services:
