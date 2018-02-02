@@ -99,16 +99,18 @@ def test_service_inactive_and_completed():
 
 
 def test_log():
-    with package('hello-world', deploy=True):
+    package_name = 'hello-world'
+
+    with package(package_name, deploy=True):
         returncode, stdout, stderr = exec_command(
-            ['dcos', 'service', 'log', 'hello-world'])
+            ['dcos', 'service', 'log', package_name])
 
         assert returncode == 0
         assert len(stdout.decode('utf-8').split('\n')) > 1
         assert stderr == b''
 
         returncode, stdout, stderr = exec_command(
-            ['dcos', 'service', 'log', 'hello-world', 'stderr'])
+            ['dcos', 'service', 'log', package_name, 'stderr'])
 
         assert returncode == 0
         assert len(stdout.decode('utf-8').split('\n')) > 1
