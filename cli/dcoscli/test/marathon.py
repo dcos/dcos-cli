@@ -378,6 +378,19 @@ def watch_all_deployments(count=300):
         watch_deployment(dep['id'], count)
 
 
+def count_apps():
+    """Count the number of marathon apps.
+
+    :returns: number of marathon apps
+    :rtype: int
+    """
+
+    returncode, stdout, _ = exec_command(
+            ['dcos', 'marathon', 'app', 'list', '--json'])
+    assert returncode == 0
+    return len(json.loads(stdout.decode()))
+
+
 def watch_for_overdue(max_count=300):
     """Wait for overdue to be set to true.  Useful to test apps stuck in
     deployment.
