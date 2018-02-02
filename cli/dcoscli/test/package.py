@@ -112,7 +112,7 @@ def package_install(package, deploy=False, args=[]):
     :rtype: None
     """
 
-    returncode, stdout, stderr = exec_command(
+    returncode, _, stderr = exec_command(
         ['dcos', 'package', 'install', '--yes', package] + args)
 
     assert returncode == 0
