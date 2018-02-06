@@ -46,6 +46,7 @@ def test_list():
     assert info.get("attached")
     keys = ["attached", "cluster_id", "name", "status", "url", "version"]
     assert sorted(info.keys()) == keys
+    assert info.get('version') != cluster.VERSION_UNKNOWN
 
 
 def test_remove_all(dcos_dir_tmp_copy):

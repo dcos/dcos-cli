@@ -380,8 +380,7 @@ class Cluster():
         if not dcos_url:
             return VERSION_UNKNOWN
 
-        endpoint = os.path.join(
-            self.get_url(), "dcos-metadata/dcos-version.json")
+        endpoint = dcos_url.rstrip('/') + '/dcos-metadata/dcos-version.json'
 
         try:
             # This is an informational request,
