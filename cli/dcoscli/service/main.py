@@ -248,7 +248,8 @@ def _get_service_app(marathon_client, service_name):
                 ', '.join('[{}]'.format(app['id']) for app in apps)))
     elif len(apps) == 0:
         raise DCOSException(
-            'No marathon apps found for service [{}]'.format(service_name))
+            'No marathon apps found for service name [{}]'.format(
+                service_name))
     else:
         return apps[0]
 
