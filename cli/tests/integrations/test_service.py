@@ -243,7 +243,7 @@ def test_log_multiple_apps():
 
 def test_log_no_apps():
     assert_command(['dcos', 'service', 'log', 'bogus'],
-                   stderr=b'No marathon apps found for service [bogus]\n',
+                   stderr=b'No marathon apps found for service name [bogus]\n',
                    returncode=1)
 
 
