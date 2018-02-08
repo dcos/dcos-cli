@@ -13,10 +13,18 @@
  * tests.
  */
 
+@Library('sec_ci_libs@v2-latest') _
+
 /**
  * These are the platforms we are building against.
  */
 def platforms = ["windows"]
+
+/**
+ * These branches will trigger a Slack notification in case of failure.
+ */
+def master_branches = ["master", "0.4.x", "0.5.x", ] as String[]
+
 
 /**
  * This generates the `dcos_launch` config for a particular build.
@@ -136,7 +144,7 @@ class TestCluster implements Serializable {
  * This function returns a closure that prepares a test environment for a
  * specific platform on a specific node in a specific workspace.
  */
-def testBuilder(String platform, String nodeId, String workspace = null) {
+def testBuilder(String platform, String nodeId, String[] master_branches, String workspace = null) {
     return { Closure _body ->
         def body = _body
 
@@ -151,7 +159,7 @@ def testBuilder(String platform, String nodeId, String workspace = null) {
             try {
                 def dcosIp = cluster.getDcosIp()
 
-                node(nodeId) {
+                task_wrapper(nodeId, master_branches, '8b793652-f26a-422f-a9ba-0d1e47eb9d89', '#dcos-cli-ci') {
                     if (!workspace) {
                         workspace = "${env.WORKSPACE}"
                     }
@@ -211,7 +219,7 @@ def testBuilder(String platform, String nodeId, String workspace = null) {
 def builders = [:]
 
 
-builders['windows-tests'] = testBuilder('windows', 'windows', 'C:\\windows\\workspace')({
+builders['windows-tests'] = testBuilder('windows', 'windows', master_branches, 'C:\\windows\\workspace')({
     stage ("Run dcos-cli tests") {
         bat 'bash -c "rm -rf ${HOME}/.dcos"'
 
