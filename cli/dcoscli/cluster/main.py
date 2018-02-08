@@ -184,7 +184,7 @@ def _remove(name=None, all_clusters=False):
     """
     if all_clusters:
         for c in cluster.get_clusters():
-            cluster.remove(c.get_name())
+            cluster.remove(c.get_cluster_id())
     else:
         cluster.remove(name)
 
