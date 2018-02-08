@@ -7,13 +7,22 @@ from mock import patch
 
 from test_util import add_cluster_dir, create_global_config, env
 
-from dcos import cluster, config, constants, util
+from dcos import auth, cluster, config, constants, util
 
 
 def _cluster(cluster_id):
     c = cluster.Cluster(cluster_id)
     c.get_name = MagicMock(return_value="cluster-{}".format(cluster_id))
     return c
+
+
+def _linked_cluster(cluster_id):
+    return cluster.LinkedCluster(
+        cluster_url='https://example.org',
+        cluster_id=cluster_id,
+        cluster_name="It's me, Mario!",
+        provider=auth.AUTH_TYPE_OIDC_AUTHORIZATION_CODE_FLOW,
+    )
 
 
 def _test_cluster_list():
@@ -49,6 +58,19 @@ def test_get_clusters():
         util.ensure_dir_exists(os.path.join(clusters_dir, 'not_a_cluster'))
 
         assert cluster.get_clusters() == [_cluster(cluster_id)]
+
+
+@patch('dcos.cluster.get_linked_clusters')
+def test_get_clusters_with_configured_link(get_linked_clusters):
+    with env(), util.tempdir() as tempdir:
+        os.environ[constants.DCOS_DIR_ENV] = tempdir
+        cluster_id = "a8b53513-63d4-4059-8b08-fde4fe1f1a83"
+        add_cluster_dir(cluster_id, tempdir)
+        get_linked_clusters.return_value = [_linked_cluster(cluster_id)]
+
+        clusters = cluster.get_clusters(True)
+        assert len(clusters) == 1
+        assert type(clusters[0]) == cluster.Cluster
 
 
 def test_set_attached():

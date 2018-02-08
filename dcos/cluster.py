@@ -251,13 +251,6 @@ def get_clusters(include_linked=False):
     util.ensure_dir_exists(clusters_path)
     clusters = set()
 
-    if include_linked:
-        try:
-            linked_clusters = get_linked_clusters()
-            clusters.update(linked_clusters)
-        except DCOSException:
-            pass
-
     uuid_regex = re.compile((r'^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-'
                              r'[89ab][a-f0-9]{3}-[a-f0-9]{12}\Z'))
 
@@ -266,6 +259,15 @@ def get_clusters(include_linked=False):
         if os.path.isdir(entry_path) and uuid_regex.match(entry):
             c = Cluster(entry)
             clusters.add(c)
+
+    # Search for linked clusters after configured clusters, this makes sure
+    # the set gives priority to Cluster over LinkedCluster.
+    if include_linked:
+        try:
+            linked_clusters = get_linked_clusters()
+            clusters.update(linked_clusters)
+        except DCOSException:
+            pass
 
     return list(clusters)
 
