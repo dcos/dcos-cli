@@ -276,12 +276,27 @@ def get_cluster(name):
     """
     :param name: name of cluster
     :type name: str
-    :returns: Cluster identified by name
+    :returns: Cluster identified by name or ID, also accepts an initial
+              portion of ID if it's unique.
     :rtype: Cluster
     """
 
-    return next((c for c in get_clusters(True)
-                 if c.get_cluster_id() == name or c.get_name() == name), None)
+    clusters = []
+
+    for cluster in get_clusters(True):
+        cluster_id = cluster.get_cluster_id()
+        if cluster_id == name:
+            return cluster
+
+        if cluster.get_name() == name or cluster_id.startswith(name):
+            clusters.append(cluster)
+
+    if len(clusters) > 1:
+        msg = ('Multiple clusters matching "{}", '
+               'please use the exact cluster ID.')
+        raise DCOSException(msg.format(name))
+
+    return next(iter(clusters), None)
 
 
 def get_cluster_links(dcos_url):

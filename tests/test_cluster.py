@@ -2,12 +2,12 @@ import os
 
 from unittest.mock import MagicMock
 
-import mock
-from mock import patch
+import pytest
 
+from mock import Mock, patch
 from test_util import add_cluster_dir, create_global_config, env
 
-from dcos import auth, cluster, config, constants, util
+from dcos import auth, cluster, config, constants, errors, util
 
 
 def _cluster(cluster_id):
@@ -30,10 +30,24 @@ def _test_cluster_list():
 
 
 @patch('dcos.cluster.get_clusters')
-def test_get_cluster(clusters):
-    clusters.return_value = _test_cluster_list()
-    assert cluster.get_cluster("a") == _cluster("a")
-    assert cluster.get_cluster("cluster-b") == _cluster("b")
+def test_get_cluster(get_clusters):
+    clusters = [_cluster("its_me_mario"), _cluster("its_me_luigi")]
+    get_clusters.return_value = clusters
+
+    expected_msg = ('Multiple clusters matching "cluster-its_me", '
+                    'please use the cluster ID.')
+    with pytest.raises(errors.DCOSException, message=expected_msg):
+        assert cluster.get_cluster("its_me")
+
+    assert cluster.get_cluster("cluster-its_me_mario") == clusters[0]
+    assert cluster.get_cluster("its_me_m") == clusters[0]
+    assert cluster.get_cluster("its_me_mario") == clusters[0]
+
+    assert cluster.get_cluster("cluster-its_me_luigi") == clusters[1]
+    assert cluster.get_cluster("its_me_l") == clusters[1]
+    assert cluster.get_cluster("its_me_luigi") == clusters[1]
+
+    assert cluster.get_cluster("cluster-its_not_me") is None
 
 
 def test_get_clusters():
@@ -105,7 +119,7 @@ def test_setup_cluster_config(mock_get):
             cluster.set_attached(setup_temp)
 
             cluster_id = "fake"
-            mock_resp = mock.Mock()
+            mock_resp = Mock()
             mock_resp.json.return_value = {
                 "CLUSTER_ID": cluster_id,
                 "cluster": cluster_id
@@ -131,7 +145,7 @@ def test_move_to_cluster_config(mock_get, mock_config):
         mock_config.return_value = "fake-url"
 
         cluster_id = "fake"
-        mock_resp = mock.Mock()
+        mock_resp = Mock()
         mock_resp.json.return_value = {"CLUSTER_ID": cluster_id}
         mock_get.return_value = mock_resp
 
