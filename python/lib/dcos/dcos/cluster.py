@@ -248,9 +248,10 @@ def get_clusters(include_linked=False):
     if include_linked:
         try:
             linked_clusters = get_linked_clusters()
-            clusters.update(linked_clusters)
         except DCOSException:
             pass
+        else:
+            clusters.update(linked_clusters)
 
     return list(clusters)
 
