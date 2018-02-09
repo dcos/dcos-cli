@@ -253,7 +253,7 @@ def _link(dcos_url, provider_id):
         raise DCOSException("Unable to retrieve IP for '{dcos_url}': {error}"
                             .format(dcos_url=dcos_url, error=error))
 
-    # Check if the linked cluster is already configured (based on its IP)
+    # Make sure the linked cluster is already configured (based on its IP)
     for configured_cluster in cluster.get_clusters():
         configured_cluster_host = \
             urlparse(configured_cluster.get_url()).netloc
