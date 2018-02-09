@@ -274,6 +274,9 @@ def _link(dcos_url, provider_id):
                "    $ dcos cluster setup {}".format(dcos_url))
         raise DCOSException(msg)
 
+    if linked_cluster_id == current_cluster.get_cluster_id():
+        raise DCOSException('Cannot link a cluster to itself.')
+
     providers = auth.get_providers(dcos_url)
 
     if provider_id:
