@@ -138,7 +138,7 @@ class TestCluster implements Serializable {
  * This function returns a closure that prepares a test environment for a
  * specific platform on a specific node in a specific workspace.
  */
-def testBuilder(String platform, String nodeId, String[] master_branches, String workspace = null) {
+def testBuilder(String platform, String nodeId, String workspace = null) {
     return { Closure _body ->
         def body = _body
 
@@ -153,7 +153,7 @@ def testBuilder(String platform, String nodeId, String[] master_branches, String
             try {
                 def dcosIp = cluster.getDcosIp()
 
-                task_wrapper(nodeId, master_branches, '8b793652-f26a-422f-a9ba-0d1e47eb9d89', '#dcos-cli-ci') {
+                node(nodeId) {
                     if (!workspace) {
                         workspace = "${env.WORKSPACE}"
                     }
@@ -213,7 +213,7 @@ def testBuilder(String platform, String nodeId, String[] master_branches, String
 def builders = [:]
 
 
-builders['mac-tests'] = testBuilder('mac', 'mac', master_branches)({
+builders['mac-tests'] = testBuilder('mac', 'mac')({
     try {
         stage ("Run dcos-cli tests") {
             sh "rm -rf ~/.dcos"
@@ -250,7 +250,7 @@ builders['mac-tests'] = testBuilder('mac', 'mac', master_branches)({
  * are done.
  */
 throttle(['dcos-cli']) {
-    node('py35') {
+    task_wrapper('py35', master_branches, '8b793652-f26a-422f-a9ba-0d1e47eb9d89', '#dcos-cli-ci') {
         stage('Cleanup workspace') {
             deleteDir()
         }
