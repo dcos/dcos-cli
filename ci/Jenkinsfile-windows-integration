@@ -16,11 +16,6 @@
 @Library('sec_ci_libs@v2-latest') _
 
 /**
- * These are the platforms we are building against.
- */
-def platforms = ["windows"]
-
-/**
  * These branches will trigger a Slack notification in case of failure.
  */
 def master_branches = ["master", "0.4.x", "0.5.x", ] as String[]
