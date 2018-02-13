@@ -6,7 +6,7 @@ import pkg_resources
 
 import dcoscli
 from dcos import cmds, emitting, http, options, package, subcommand, util
-from dcos.errors import DCOSException
+from dcos.errors import DCOSException, DefaultError
 from dcos.package import get_package_manager
 from dcoscli import tables
 from dcoscli.subcommand import default_command_info, default_doc
@@ -318,6 +318,10 @@ def _install(package_name, package_version, options_path, cli,
     :returns: process status
     :rtype: int
     """
+
+    if global_:
+        msg = 'Usage of --global is deprecated and will be removed in 1.12.'
+        emitter.publish(DefaultError(msg))
 
     if cli is False and app is False:
         # Install both if neither flag is specified
