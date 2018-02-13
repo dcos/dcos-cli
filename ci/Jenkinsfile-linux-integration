@@ -16,11 +16,6 @@
 @Library('sec_ci_libs@v2-latest') _
 
 /**
- * These are the platforms we are building against.
- */
-def platforms = ["linux"]
-
-/**
  * These branches will trigger a Slack notification in case of failure.
  */
 def master_branches = ["master", "0.4.x", "0.5.x", ] as String[]
@@ -144,7 +139,7 @@ class TestCluster implements Serializable {
  * This function returns a closure that prepares a test environment for a
  * specific platform on a specific node in a specific workspace.
  */
-def testBuilder(String platform, String nodeId, String[] master_branches, String workspace = null) {
+def testBuilder(String platform, String nodeId, String workspace = null) {
     return { Closure _body ->
         def body = _body
 
@@ -159,7 +154,7 @@ def testBuilder(String platform, String nodeId, String[] master_branches, String
             try {
                 def dcosIp = cluster.getDcosIp()
 
-                task_wrapper(nodeId, master_branches, '8b793652-f26a-422f-a9ba-0d1e47eb9d89', '#dcos-cli-ci') {
+                node(nodeId) {
                     if (!workspace) {
                         workspace = "${env.WORKSPACE}"
                     }
@@ -219,7 +214,7 @@ def testBuilder(String platform, String nodeId, String[] master_branches, String
 def builders = [:]
 
 
-builders['linux-tests'] = testBuilder('linux', 'py35', master_branches, '/workspace')({
+builders['linux-tests'] = testBuilder('linux', 'py35', '/workspace')({
     stage ("Run dcos-cli tests") {
         sh "rm -rf ~/.dcos"
 
@@ -250,7 +245,11 @@ builders['linux-tests'] = testBuilder('linux', 'py35', master_branches, '/worksp
  * are done.
  */
 throttle(['dcos-cli']) {
-    node('py35') {
+    task_wrapper('py35', master_branches, '8b793652-f26a-422f-a9ba-0d1e47eb9d89', '#dcos-cli-ci') {
+        stage("Verify author") {
+            user_is_authorized(master_branches, '8b793652-f26a-422f-a9ba-0d1e47eb9d89', '#dcos-cli-ci')
+        }
+
         stage('Cleanup workspace') {
             deleteDir()
         }
@@ -266,7 +265,11 @@ throttle(['dcos-cli']) {
 
         stage ('Pull dcos-cli repository') {
             dir('dcos-cli') {
+                print('before')
+                print(env.BRANCH_NAME)
                 checkout scm
+                print('after')
+                print(env.BRANCH_NAME)
             }
         }
 
