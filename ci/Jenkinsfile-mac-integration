@@ -255,6 +255,11 @@ throttle(['dcos-cli']) {
             deleteDir()
         }
 
+        stage ('Fail') {
+            print(env.BRANCH_NAME)
+            sh 'false'
+        }
+
         stage ('Update node') {
             sh 'pip install requests'
         }
