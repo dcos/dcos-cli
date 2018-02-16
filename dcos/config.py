@@ -170,12 +170,16 @@ def get_config_val_envvar(name, config=None):
 
     section, subkey = split_key(name.upper())
 
-    env_var = None
+    env_var = ''
     if section == "CORE":
         if subkey.startswith("DCOS") and os.environ.get(subkey):
             env_var = subkey
         else:
             env_var = "DCOS_{}".format(subkey)
+    elif section == "CLUSTER" and subkey == "NAME":
+        # Ignore DCOS_CLUSTER_NAME, this environment variable is confusing.
+        # cf. https://jira.mesosphere.com/browse/DCOS-21098
+        pass
     else:
         env_var = "DCOS_{}_{}".format(section, subkey)
 
