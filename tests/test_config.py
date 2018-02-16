@@ -189,6 +189,19 @@ def test_get_config(load_path_mock):
         load_path_mock.assert_called_with(cluster_toml, True)
 
 
+def test_get_cluster_name_ignore_env():
+    with env():
+        os.environ['DCOS_CLUSTER_NAME'] = 'fake-name'
+
+        cluster_conf = config.Toml({
+            'cluster': {'name': 'real-name'},
+        })
+
+        cluster_name = config.get_config_val('cluster.name', cluster_conf)
+
+        assert cluster_name == 'real-name'
+
+
 def _create_clusters_dir(dcos_dir):
     clusters_dir = os.path.join(dcos_dir, constants.DCOS_CLUSTERS_SUBDIR)
     util.ensure_dir_exists(clusters_dir)
