@@ -213,7 +213,7 @@ def testBuilder(String platform, String nodeId, String workspace = null) {
 def builders = [:]
 
 
-builders['mac-tests'] = testBuilder('mac', 'mac')({
+builders['mac-tests'] = testBuilder('mac', 'mac-hh')({
     try {
         stage ("Run dcos-cli tests") {
             sh "rm -rf ~/.dcos"
