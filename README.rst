@@ -62,17 +62,18 @@ Setup
 
 #. Create a python virtual env for the dcos project::
 
+    cd python/lib/dcos
     make env
 
 #. Create a virtualenv for the dcoscli project::
 
-    cd cli
+    cd python/lib/dcoscli
     make env
 
 Configure Environment and Run
 -----------------------------
 
-#. From the :code:`cli` directory, :code:`source` the virtualenv activation
+#. From the :code:`dcoscli` directory, :code:`source` the virtualenv activation
    script to add the :code:`dcos` command line interface to your :code:`PATH`::
 
     source env/bin/activate
@@ -200,8 +201,8 @@ Running
 #######
 
 Now that your environment is set up appropriately, we can start running the
-tests. We have tests both in the :code:`dcos` package (root directory)
-and in the :code:`dcoscli` package (:code:`cli` directory).
+tests. We have tests both in the :code:`dcos` package (:code:`python/lib/dcos`)
+and in the :code:`dcoscli` package (:code:`python/lib/dcoscli`).
 
 When running the tests, change your current directory to one of those two
 locations and follow the instructions below.

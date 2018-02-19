@@ -44,7 +44,7 @@ def binaryBuilder = builder('py35', '/workspace')({
     }
 
     stage ("Build dcos-cli binary") {
-        dir('dcos-cli/cli') {
+        dir('dcos-cli/python/lib/dcoscli') {
             sh "make binary"
             sh "dist/dcos"
         }
