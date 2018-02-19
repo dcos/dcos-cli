@@ -17,4 +17,4 @@ source ${CURRDIR}/common.sh
                -u $(id -u ${USER}):$(id -g ${USER}) \
                python:3.5"}
 
-source ${BASEDIR}/../bin/docker.sh
+source ${BASEDIR}/../../bin/docker.sh

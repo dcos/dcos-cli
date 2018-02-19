@@ -218,11 +218,11 @@ builders['linux-tests'] = testBuilder('linux', 'py35', '/workspace')({
     stage ("Run dcos-cli tests") {
         sh "rm -rf ~/.dcos"
 
-        dir('dcos-cli') {
+        dir('dcos-cli/python/lib/dcos') {
             sh 'make test'
         }
 
-        dir('dcos-cli/cli') {
+        dir('dcos-cli/python/lib/dcoscli') {
             sh '''
                export PYTHONIOENCODING=utf-8; \
                make binary; \
