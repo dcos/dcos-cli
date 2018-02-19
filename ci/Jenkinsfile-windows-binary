@@ -45,7 +45,7 @@ def binaryBuilder = builder('windows')({
     }
 
     stage ("Build dcos-cli binary") {
-        dir('dcos-cli/cli') {
+        dir('dcos-cli/python/lib/dcoscli') {
             bat 'bash -c "make binary"'
             bat 'dist\\dcos.exe'
         }
