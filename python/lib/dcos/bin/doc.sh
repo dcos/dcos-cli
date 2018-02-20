@@ -2,4 +2,4 @@
 
 CURRDIR=$(dirname "${0}")
 source ${CURRDIR}/common.sh
-source ${BUILDDIR}/../bin/env.sh
+source ${BUILDDIR}/../../bin/doc.sh

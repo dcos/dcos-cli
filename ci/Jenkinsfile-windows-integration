@@ -217,11 +217,11 @@ builders['windows-tests'] = testBuilder('windows', 'windows', 'C:\\windows\\work
     stage ("Run dcos-cli tests") {
         bat 'bash -c "rm -rf ${HOME}/.dcos"'
 
-        dir('dcos-cli') {
+        dir('dcos-cli/python/lib/dcos') {
             bat 'make test'
         }
 
-        dir('dcos-cli/cli') {
+        dir('dcos-cli/python/lib/dcoscli') {
             bat '''
                 bash -c " \
                 export PYTHONIOENCODING=utf-8; \
