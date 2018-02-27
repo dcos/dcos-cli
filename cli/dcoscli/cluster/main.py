@@ -420,8 +420,8 @@ def setup(dcos_url,
             raise DCOSException(msg)
 
         # configure cluster directory
-        cluster_path = cluster.setup_cluster_config(dcos_url, real_config_dir,
-                                                    stored_cert)
+        cluster_path = cluster.setup_cluster_config(
+            dcos_url, real_config_dir, temp_cluster_path, stored_cert)
 
         attached_file = os.path.join(
             cluster_path, constants.DCOS_CLUSTER_ATTACHED_FILE)

@@ -123,33 +123,35 @@ def test_setup_cluster_config(mock_get):
                                       "setup")
             util.ensure_dir_exists(setup_temp)
 
-            cluster_id = "fake"
+            cluster_id = "b63fb196-8e9e-43b2-bcda-9771fc1d10d1"
             mock_resp = Mock()
             mock_resp.json.return_value = {
                 "CLUSTER_ID": cluster_id,
-                "cluster": cluster_id
+                "cluster": cluster_id,
+                "links": [],
             }
             mock_get.return_value = mock_resp
 
             expected_folder = os.path.join(
                 real_config_dir, constants.DCOS_CLUSTERS_SUBDIR, cluster_id)
             expected_file = os.path.join(expected_folder, "dcos.toml")
-            if os.path.isfile(expected_file):
-                os.remove(expected_file)
-            if os.path.isdir(expected_folder):
-                os.rmdir(expected_folder)
+            expected_ca_cert = os.path.join(expected_folder, "dcos_ca.crt")
 
             path = cluster.setup_cluster_config("fake_url", real_config_dir,
-                                                False)
+                                                setup_temp, True)
             os.environ[constants.DCOS_DIR_ENV] = real_config_dir
-            cluster.set_attached(setup_temp)
 
             assert path == expected_folder
             assert os.path.exists(path)
             assert os.path.exists(expected_file)
+
+            c = cluster.get_cluster(cluster_id)
+            assert c.get_cluster_path() == expected_folder
+            assert c.get_cluster_id() == cluster_id
+            assert c.get_config().get('core.ssl_verify') == expected_ca_cert
         finally:
-            shutil.rmtree(setup_temp, ignore_errors=True)
-            assert not os.path.exists(setup_temp)
+            shutil.rmtree(expected_folder)
+            assert not os.path.exists(expected_folder)
 
 
 @patch('dcos.config.get_config_val')
