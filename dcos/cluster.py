@@ -66,7 +66,7 @@ def move_to_cluster_config():
         cluster_path, constants.DCOS_CLUSTER_ATTACHED_FILE))
 
 
-def setup_cluster_config(dcos_url, real_path, stored_cert):
+def setup_cluster_config(dcos_url, real_path, temp_cluster_path, stored_cert):
     """
     Create a cluster directory for cluster specified
     in 'constants.DCOS_DIR_ENV' directory.
@@ -75,6 +75,8 @@ def setup_cluster_config(dcos_url, real_path, stored_cert):
     :type dcos_url: str
     :param real_path: path to final config dir
     :type real_path: str
+    :param temp_cluster_path: path to the temp cluster dir
+    :type temp_cluster_path: str
     :param stored_cert: whether we stored cert bundle in 'setup' dir
     :type stored_cert: bool
     :returns: path to cluster specific directory
@@ -102,13 +104,8 @@ def setup_cluster_config(dcos_url, real_path, stored_cert):
     if os.path.exists(cluster_path):
         raise DCOSException("Cluster [{}] is already setup".format(dcos_url))
 
-    util.ensure_dir_exists(cluster_path)
-
     # move contents of setup dir to new location
-    temp_path = os.environ[constants.DCOS_DIR_ENV]
-    for (path, dirnames, filenames) in os.walk(temp_path):
-        for f in filenames:
-            util.sh_copy(os.path.join(path, f), cluster_path)
+    util.sh_move(temp_cluster_path, cluster_path)
 
     os.environ[constants.DCOS_DIR_ENV] = real_path
 
@@ -116,9 +113,8 @@ def setup_cluster_config(dcos_url, real_path, stored_cert):
     config_path = cluster.get_config_path()
 
     if stored_cert:
-        cert_path = os.path.join(real_path, constants.DCOS_CLUSTERS_SUBDIR,
-                                 cluster_id, 'dcos_ca.crt')
-        config.set_val("core.ssl_verify", cert_path)
+        cert_path = os.path.join(cluster_path, 'dcos_ca.crt')
+        config.set_val("core.ssl_verify", cert_path, config_path=config_path)
 
     cluster_name = cluster_id
     try:
