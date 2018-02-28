@@ -180,7 +180,7 @@ def testBuilder(String platform, String nodeId, String workspace = null) {
                                     echo(
                                         "Build interrupted. The DC/OS cluster at" +
                                         " ${dcosIp} will be destroyed.")
-                                    destroyCluster = true
+                                    destroyCluster = false
                                     throw e
                                 } catch (Exception e) {
                                     echo(
@@ -232,7 +232,7 @@ builders['linux-tests'] = testBuilder('linux', 'py35', '/workspace')({
                    --insecure --username=${DCOS_ADMIN_USERNAME} \
                    --password-env=DCOS_ADMIN_PASSWORD; \
                dist/dcos config set core.reporting false; \
-               dist/dcos config set core.timeout 5; \
+               dist/dcos config set core.timeout 30; \
                make test-binary'''
         }
     }
