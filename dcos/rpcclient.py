@@ -129,7 +129,7 @@ class RpcClient(object):
             text = _get_response_text(e.response)
             logger.error('DCOS Error: %s\n%s',
                          e.response.reason, text)
-
+            print(text)
             try:
                 json_body = e.response.json()
             except Exception:
