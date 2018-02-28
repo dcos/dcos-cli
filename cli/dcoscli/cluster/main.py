@@ -15,8 +15,7 @@ from cryptography.hazmat.primitives import hashes
 
 import dcoscli
 
-from dcos import (auth, cluster, cmds, config, constants,
-                  emitting, http, jsonitem, util)
+from dcos import auth, cluster, cmds, config, emitting, http, jsonitem, util
 from dcos.errors import (DCOSAuthenticationException, DCOSException,
                          DCOSHTTPException, DefaultError)
 from dcoscli.auth.main import login
@@ -372,23 +371,19 @@ def setup(dcos_url,
     :rtype: int
     """
 
-    with util.tempdir() as tempdir:
-        temp_cluster_path = os.path.join(tempdir,
-                                         constants.DCOS_CLUSTERS_SUBDIR,
-                                         "setup")
-        os.makedirs(temp_cluster_path)
-        real_config_dir = config.get_config_dir_path()
+    with cluster.setup_directory() as temp_path:
 
-        os.environ[constants.DCOS_DIR_ENV] = tempdir
+        # set cluster as attached
+        cluster.set_attached(temp_path)
 
         # Make sure to ignore any environment variable for the DCOS URL.
         # There is already a mandatory command argument for this.
         env_warning = ("Ignoring '{}' environment variable.\n")
         if "DCOS_URL" in os.environ:
-            emitter.publish(DefaultError(env_warning.format("DCOS_URL")))
+            emitter.publish(DefaultError(env_warning.format('DCOS_URL')))
             del os.environ["DCOS_URL"]
         if "DCOS_DCOS_URL" in os.environ:
-            emitter.publish(DefaultError(env_warning.format("DCOS_DCOS_URL")))
+            emitter.publish(DefaultError(env_warning.format('DCOS_DCOS_URL')))
             del os.environ["DCOS_DCOS_URL"]
 
         # authenticate
@@ -412,7 +407,8 @@ def setup(dcos_url,
             config.set_val("core.ssl_verify", "false")
 
         try:
-            login(dcos_url, password_str, password_env, password_file,
+            login(dcos_url,
+                  password_str, password_env, password_file,
                   provider, username, key_path)
         except DCOSAuthenticationException:
             msg = ("Authentication failed. "
@@ -420,15 +416,7 @@ def setup(dcos_url,
             raise DCOSException(msg)
 
         # configure cluster directory
-        cluster_path = cluster.setup_cluster_config(dcos_url, real_config_dir,
-                                                    stored_cert)
-
-        attached_file = os.path.join(
-            cluster_path, constants.DCOS_CLUSTER_ATTACHED_FILE)
-
-        os.remove(attached_file)
-
-        cluster.set_attached(cluster_path)
+        cluster.setup_cluster_config(dcos_url, temp_path, stored_cert)
 
     return 0
 

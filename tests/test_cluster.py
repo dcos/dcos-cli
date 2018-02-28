@@ -1,5 +1,4 @@
 import os
-import shutil
 
 from unittest.mock import MagicMock
 
@@ -114,14 +113,10 @@ def test_set_attached():
 @patch('dcos.http.get')
 def test_setup_cluster_config(mock_get):
     with env(), util.tempdir() as tempdir:
-        real_config_dir = config.get_config_dir_path()
         os.environ[constants.DCOS_DIR_ENV] = tempdir
+        with cluster.setup_directory() as setup_temp:
 
-        try:
-            setup_temp = os.path.join(config.get_config_dir_path(),
-                                      constants.DCOS_CLUSTERS_SUBDIR,
-                                      "setup")
-            util.ensure_dir_exists(setup_temp)
+            cluster.set_attached(setup_temp)
 
             cluster_id = "fake"
             mock_resp = Mock()
@@ -130,26 +125,14 @@ def test_setup_cluster_config(mock_get):
                 "cluster": cluster_id
             }
             mock_get.return_value = mock_resp
-
-            expected_folder = os.path.join(
-                real_config_dir, constants.DCOS_CLUSTERS_SUBDIR, cluster_id)
-            expected_file = os.path.join(expected_folder, "dcos.toml")
-            if os.path.isfile(expected_file):
-                os.remove(expected_file)
-            if os.path.isdir(expected_folder):
-                os.rmdir(expected_folder)
-
-            path = cluster.setup_cluster_config("fake_url", real_config_dir,
-                                                False)
-            os.environ[constants.DCOS_DIR_ENV] = real_config_dir
-            cluster.set_attached(setup_temp)
-
-            assert path == expected_folder
+            path = cluster.setup_cluster_config("fake_url", setup_temp, False)
+            expected_path = os.path.join(
+                tempdir, constants.DCOS_CLUSTERS_SUBDIR, cluster_id)
+            assert path == expected_path
             assert os.path.exists(path)
-            assert os.path.exists(expected_file)
-        finally:
-            shutil.rmtree(setup_temp, ignore_errors=True)
-            assert not os.path.exists(setup_temp)
+            assert os.path.exists(os.path.join(path, "dcos.toml"))
+
+        assert not os.path.exists(setup_temp)
 
 
 @patch('dcos.config.get_config_val')
