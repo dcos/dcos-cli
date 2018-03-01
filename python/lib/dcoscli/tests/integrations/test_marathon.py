@@ -715,30 +715,43 @@ def test_leader_show():
     assert 'ip' in result
 
 
+def ignore_exception(exc):
+    return isinstance(exc, Exception)
+
+
 @pytest.fixture
 def marathon_up():
     yield
-
-    def ignore_exception(exc):
-        return isinstance(exc, Exception)
 
     @retrying.retry(stop_max_delay=timedelta(minutes=5).total_seconds() * 1000,
                     retry_on_exception=ignore_exception)
     def check_marathon_up():
         # testing to see if marathon is up and can talk through the gateway
         # ignore the exception until we have a successful reponse.
-        returncode, stdout, stderr = exec_command(
-            ['dcos', 'marathon', 'about'])
+        returncode, _, _ = exec_command(['dcos', 'marathon', 'app', 'list'])
 
         assert returncode == 0
-        assert stderr == b''
 
     check_marathon_up()
+
+
+@retrying.retry(stop_max_delay=timedelta(minutes=5).total_seconds() * 1000,
+                retry_on_exception=ignore_exception)
+def wait_marathon_down():
+    returncode, _, _ = exec_command(['dcos', 'marathon', 'app', 'list'])
+
+    assert returncode != 0
 
 
 def test_leader_delete(marathon_up):
     assert_command(['dcos', 'marathon', 'leader', 'delete'],
                    stdout=b'Leadership abdicated\n')
+
+    # There might be a slight delay until marathon shows itself as down,
+    # so marathon_up() might succeed directly and the next tests would
+    # run with an unhealthy marathon. Explicitly wait for marathon to
+    # go down before waiting for it to become healthy again.
+    wait_marathon_down()
 
 
 @pytest.mark.skipif(sys.platform == 'win32',
