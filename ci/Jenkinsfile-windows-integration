@@ -232,7 +232,7 @@ builders['windows-tests'] = testBuilder('windows', 'windows', 'C:\\windows\\work
                     --insecure --username=${DCOS_ADMIN_USERNAME} \
                     --password-env=DCOS_ADMIN_PASSWORD; \
                 dist/dcos config set core.reporting false; \
-                dist/dcos config set core.timeout 5; \
+                dist/dcos config set core.timeout 30; \
                 make test-binary"'''
         }
     }
