@@ -96,6 +96,7 @@ def test_rename():
     assert_command(['dcos', 'cluster', 'rename', new_name, name])
 
 
+@pytest.mark.skipif(True, reason="debug")
 def test_setup_noninteractive():
     """
     Run "dcos cluster setup" command as non-interactive with a 30 sec timeout.

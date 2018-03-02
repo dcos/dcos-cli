@@ -172,7 +172,7 @@ def testBuilder(String platform, String nodeId, String workspace = null) {
                               credentialsId: '23743034-1ac4-49f7-b2e6-a661aee2d11b',
                               variable: 'CLI_TEST_SSH_KEY_PATH']]) {
 
-                            withEnv(["CLI_TEST_DCOS_URL=https://${dcosIp}"]) {
+                            withEnv(["CLI_TEST_DCOS_URL=http://${dcosIp}"]) {
                                 try {
                                     body()
                                 } catch(InterruptedException | hudson.AbortException e) {
