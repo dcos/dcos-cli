@@ -280,7 +280,7 @@ def read_file_secure(path):
     enforce_file_permissions(path)
 
     with open_file(path) as file_:
-        return file_.read()
+        return file_.read().rstrip()
 
 
 def which(program):
