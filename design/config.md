@@ -1,4 +1,3 @@
-
 # config
 
 The config package manages the DC/OS CLI configuration for a given cluster.
