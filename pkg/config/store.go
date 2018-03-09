@@ -6,8 +6,11 @@ import (
 	"strings"
 
 	toml "github.com/pelletier/go-toml"
+	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 )
+
+var fs = afero.NewOsFs()
 
 // StoreOpts are functional options for a Store.
 type StoreOpts struct {
@@ -30,6 +33,10 @@ type Store struct {
 
 // NewStore creates a Store according to a TOML tree and functional options.
 func NewStore(tree *toml.Tree, opts StoreOpts) *Store {
+	if tree == nil {
+		tree, _ = toml.TreeFromMap(make(map[string]interface{}))
+	}
+
 	if opts.EnvWhitelist == nil {
 		opts.EnvWhitelist = map[string]string{
 			keyURL:      "DCOS_URL",

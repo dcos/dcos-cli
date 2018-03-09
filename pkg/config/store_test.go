@@ -37,20 +37,35 @@ func TestStoreGet(t *testing.T) {
 		},
 	})
 
-	val := store.Get("core.dcos_url")
+	val := store.Get(keyURL)
 	require.Equal(t, "https://dcos-env.example.com", val)
 
-	val = store.Get("core.ssl_verify")
+	val = store.Get(keyTLS)
 	require.Equal(t, "true", val)
 
-	val = store.Get("core.reporting")
+	val = store.Get(keyReporting)
 	require.Equal(t, true, val)
 
-	val = store.Get("core.timeout")
+	val = store.Get(keyTimeout)
 	require.EqualValues(t, 15, val)
 
-	val = store.Get("cluster.name")
+	val = store.Get(keyClusterName)
 	require.Equal(t, "mr-cluster", val)
+}
+
+func TestStoreSetAndUnset(t *testing.T) {
+	store := NewStore(nil, StoreOpts{})
+
+	store.Set(keyURL, "https://dcos.example.com")
+	store.Set(keyTimeout, "30")
+	store.Set(keyReporting, "1")
+
+	require.Equal(t, "https://dcos.example.com", store.Get(keyURL))
+	require.Equal(t, true, store.Get(keyReporting))
+	require.EqualValues(t, 30, store.Get(keyTimeout))
+
+	store.Unset(keyURL)
+	require.Nil(t, store.Get(keyURL))
 }
 
 func TestStoreKeys(t *testing.T) {

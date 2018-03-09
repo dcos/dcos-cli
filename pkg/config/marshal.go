@@ -2,10 +2,12 @@ package config
 
 import (
 	"crypto/x509"
-	"io/ioutil"
+	"io"
 	"strconv"
+	"strings"
 
 	toml "github.com/pelletier/go-toml"
+	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 )
 
@@ -23,24 +25,32 @@ const (
 	keyClusterName    = "cluster.name"
 )
 
-// FromPath creates a Config based on a path to a .toml file.
+// FromPath creates a Config based on a path to a TOML file.
 func FromPath(path string) (Config, error) {
-	tree, err := toml.LoadFile(path)
+	f, err := fs.Open(path)
 	if err != nil {
 		return Config{}, err
 	}
-	conf := fromStore(NewStore(tree, StoreOpts{}))
-	conf.path = path
+	defer f.Close()
+
+	conf, err := FromReader(f)
+	conf.Store().SetPath(path)
 	return conf, nil
 }
 
 // FromString creates a Config using a string representing the configuration formatted as a TOML document.
 func FromString(tomlData string) (Config, error) {
-	tree, err := toml.Load(tomlData)
+	return FromReader(strings.NewReader(tomlData))
+}
+
+// FromReader creates a Config based on an io.Reader.
+func FromReader(reader io.Reader) (Config, error) {
+	tree, err := toml.LoadReader(reader)
 	if err != nil {
 		return Config{}, err
 	}
-	return fromStore(NewStore(tree, StoreOpts{})), nil
+	conf := fromStore(NewStore(tree, StoreOpts{}))
+	return conf, nil
 }
 
 func fromStore(store *Store) Config {
@@ -104,7 +114,7 @@ func UnmarshalTLS(val interface{}) TLS {
 	}
 
 	// If the value is not a string representing a bool, it means it's a path to a root CA bundle.
-	rootCAsPEM, err := ioutil.ReadFile(strVal)
+	rootCAsPEM, err := afero.ReadFile(fs, strVal)
 	if err != nil {
 		return TLS{
 			Insecure:    true,
