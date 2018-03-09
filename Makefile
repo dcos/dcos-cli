@@ -16,7 +16,7 @@ darwin linux windows:
 
 .PHONY: test
 test: vet
-	$(call inDocker,go test ./...)
+	$(call inDocker,go test -cover ./...)
 
 .PHONY: vet
 vet:
