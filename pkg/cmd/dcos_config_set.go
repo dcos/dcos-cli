@@ -12,9 +12,9 @@ var configSetCmd = &cobra.Command{
 }
 
 func runConfigSetCmd(cmd *cobra.Command, args []string) error {
-	conf := attachedCluster().Config
-	conf.Store().Set(args[0], args[1])
-	return conf.Save()
+	store := attachedCluster().Config.Store()
+	store.Set(args[0], args[1])
+	return store.Save()
 }
 
 func init() {
