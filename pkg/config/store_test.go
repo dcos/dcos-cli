@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/pelletier/go-toml"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )
 
@@ -106,4 +107,18 @@ func TestStoreKeys(t *testing.T) {
 		"marathon.url",
 	}
 	require.Equal(t, expectedKeys, keys)
+}
+
+func TestSaveWithoutPath(t *testing.T) {
+	store := NewStore(nil, StoreOpts{})
+	require.Error(t, store.Save())
+}
+
+func TestSave(t *testing.T) {
+	store := NewStore(nil, StoreOpts{})
+
+	f, _ := afero.TempFile(fs, "/", "ca")
+	store.SetPath(f.Name())
+
+	require.NoError(t, store.Save())
 }

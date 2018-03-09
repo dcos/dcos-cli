@@ -1,10 +1,7 @@
 package config
 
 import (
-	"bytes"
 	"crypto/x509"
-	"errors"
-	"io/ioutil"
 )
 
 // Config for the DC/OS CLI.
@@ -46,9 +43,6 @@ type Config struct {
 
 	// The Store associated to the Config.
 	store *Store
-
-	// Path to the config file.
-	path string
 }
 
 // TLS holds the configuration for TLS clients.
@@ -69,18 +63,6 @@ type TLS struct {
 // Store returns the config Store.
 func (conf *Config) Store() *Store {
 	return conf.store
-}
-
-// Save writes the config to the path specified in the Config.Path field.
-func (conf *Config) Save() error {
-	if conf.path == "" {
-		return errors.New("cannot save config: no path specified")
-	}
-	var buf bytes.Buffer
-	if _, err := conf.store.tree.WriteTo(&buf); err != nil {
-		return err
-	}
-	return ioutil.WriteFile(conf.path, buf.Bytes(), 0600)
 }
 
 // DefaultConfig returns the default configuration for the DC/OS CLI.

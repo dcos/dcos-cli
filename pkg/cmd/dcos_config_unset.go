@@ -12,9 +12,9 @@ var configUnsetCmd = &cobra.Command{
 }
 
 func runConfigUnsetCmd(cmd *cobra.Command, args []string) error {
-	conf := attachedCluster().Config
-	conf.Store().Unset(args[0])
-	return conf.Save()
+	store := attachedCluster().Config.Store()
+	store.Unset(args[0])
+	return store.Save()
 }
 
 func init() {

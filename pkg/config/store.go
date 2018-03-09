@@ -1,6 +1,8 @@
 package config
 
 import (
+	"bytes"
+	"errors"
 	"os"
 	"sort"
 	"strings"
@@ -26,6 +28,7 @@ type StoreOpts struct {
 // Store is the backend for Config data. It aggregates multiple sources (env vars, TOML document)
 // and is able to get/set/unset key(s) in the TOML document.
 type Store struct {
+	path         string
 	tree         *toml.Tree
 	envWhitelist map[string]string
 	envLookup    func(key string) (string, bool)
@@ -55,6 +58,11 @@ func NewStore(tree *toml.Tree, opts StoreOpts) *Store {
 		envWhitelist: opts.EnvWhitelist,
 		envLookup:    opts.EnvLookup,
 	}
+}
+
+// SetPath assigns a path to the Store.
+func (s *Store) SetPath(path string) {
+	s.path = path
 }
 
 // Get returns a value from the Store using a key.
@@ -118,6 +126,18 @@ func (s *Store) Unset(key string) {
 			}
 		}
 	}
+}
+
+// Save writes the TOML tree at the path associated to the Store.
+func (s *Store) Save() error {
+	if s.path == "" {
+		return errors.New("cannot save the config: no path specified")
+	}
+	var buf bytes.Buffer
+	if _, err := s.tree.WriteTo(&buf); err != nil {
+		return err
+	}
+	return afero.WriteFile(fs, s.path, buf.Bytes(), 0600)
 }
 
 // Keys returns all the keys in the Store.
