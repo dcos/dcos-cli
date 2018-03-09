@@ -26,6 +26,15 @@
   version = "v1.0.0"
 
 [[projects]]
+  name = "github.com/spf13/afero"
+  packages = [
+    ".",
+    "mem"
+  ]
+  revision = "bb8f1927f2a9d3ab41c9340aa034f6b803f4359c"
+  version = "v1.0.2"
+
+[[projects]]
   name = "github.com/spf13/cast"
   packages = ["."]
   revision = "8965335b8c7107321228e3e3702cab9832751bac"
@@ -52,9 +61,22 @@
   revision = "12b6f73e6084dad08a7c6e575284b177ecafbc71"
   version = "v1.2.1"
 
+[[projects]]
+  name = "golang.org/x/text"
+  packages = [
+    "internal/gen",
+    "internal/triegen",
+    "internal/ucd",
+    "transform",
+    "unicode/cldr",
+    "unicode/norm"
+  ]
+  revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
+  version = "v0.3.0"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f3ddf15b6063ab03a7747ca65933edb407ebd2f15523b4842663d30b6bcd8b10"
+  inputs-digest = "c63a6f753b3f5794300f82172f9fe25b61549102487e2b2f93dff44e165f3404"
   solver-name = "gps-cdcl"
   solver-version = 1
