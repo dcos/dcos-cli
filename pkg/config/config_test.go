@@ -1,6 +1,7 @@
 package config
 
 import (
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -25,19 +26,27 @@ dcos_acs_token = "token_zj8Tb0vhQw"
 
 	conf, err := FromPath(f.Name())
 	require.NoError(t, err)
-	require.Equal(t, "https://dcos.example.com", conf.URL)
-	require.Equal(t, "token_zj8Tb0vhQw", conf.ACSToken)
+	require.Equal(t, "https://dcos.example.com", conf.URL())
+	require.Equal(t, "token_zj8Tb0vhQw", conf.ACSToken())
+	require.Equal(t, f.Name(), conf.Store().path)
+}
+
+func TestFromInvalidPath(t *testing.T) {
+	_, err := FromPath("/path/to/unexisting/config/dcos.toml")
+	require.Error(t, err)
 }
 
 func TestFromEmptyString(t *testing.T) {
 	conf, err := FromString("")
 	require.NoError(t, err)
 
-	// Remove the store before comparing with the default config.
-	require.NotNil(t, conf.Store())
-	conf.store = nil
+	expectedConf := Default()
 
-	require.Equal(t, DefaultConfig(), conf)
+	// Remove the stores before comparing configs.
+	conf.store = nil
+	expectedConf.store = nil
+
+	require.Equal(t, expectedConf, conf)
 }
 
 func TestFromFullConfigString(t *testing.T) {
@@ -61,15 +70,34 @@ name = "mr-cluster"
 `)
 	require.NoError(t, err)
 
-	require.Equal(t, "https://dcos.example.com", conf.URL)
-	require.Equal(t, "token_zj8Tb0vhQw", conf.ACSToken)
-	require.Equal(t, true, conf.TLS.Insecure)
-	require.Equal(t, 15, conf.Timeout)
-	require.Equal(t, "myuser", conf.SSHUser)
-	require.Equal(t, "192.0.2.1", conf.SSHProxyIP)
-	require.Equal(t, true, conf.Pagination)
-	require.Equal(t, true, conf.Reporting)
-	require.Equal(t, "https://mesos.example.com", conf.MesosMasterURL)
-	require.Equal(t, true, conf.PrompLogin)
-	require.Equal(t, "mr-cluster", conf.ClusterName)
+	require.Equal(t, "https://dcos.example.com", conf.URL())
+	require.Equal(t, "token_zj8Tb0vhQw", conf.ACSToken())
+	require.Equal(t, true, conf.TLS().Insecure)
+	require.Equal(t, 15, conf.Timeout())
+	require.Equal(t, "myuser", conf.SSHUser())
+	require.Equal(t, "192.0.2.1", conf.SSHProxyHost())
+	require.Equal(t, true, conf.Pagination())
+	require.Equal(t, true, conf.Reporting())
+	require.Equal(t, "https://mesos.example.com", conf.MesosMasterURL())
+	require.Equal(t, true, conf.PromptLogin())
+	require.Equal(t, "mr-cluster", conf.ClusterName())
+}
+
+func TestSave(t *testing.T) {
+	conf := New()
+	conf.SetURL("https://dcos.example.com")
+
+	f, _ := afero.TempFile(fs, "/", "config")
+	conf.SetPath(f.Name())
+
+	require.NoError(t, conf.Save())
+
+	contents, err := ioutil.ReadAll(f)
+	require.NoError(t, err)
+
+	expectedTOML := []byte(`
+[core]
+  dcos_url = "https://dcos.example.com"
+`)
+	require.Equal(t, expectedTOML, contents)
 }

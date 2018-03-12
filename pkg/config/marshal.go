@@ -20,7 +20,7 @@ func FromPath(path string) (Config, error) {
 	defer f.Close()
 
 	conf, err := FromReader(f)
-	conf.Store().SetPath(path)
+	conf.store.SetPath(path)
 	return conf, nil
 }
 
@@ -35,55 +35,51 @@ func FromReader(reader io.Reader) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	conf := fromStore(NewStore(tree, StoreOpts{}))
+
+	conf := Default()
+	Unmarshal(NewStore(StoreOpts{Tree: tree}), &conf)
 	return conf, nil
 }
 
-func fromStore(store *Store) Config {
-	conf := DefaultConfig()
-	Unmarshal(&conf, store)
-	conf.store = store
-	return conf
-}
-
 // Unmarshal extracts configuration data from the Store and stores it in the Config.
-func Unmarshal(conf *Config, store *Store) {
+func Unmarshal(store *Store, conf *Config) {
 	for _, key := range store.Keys() {
 		val := store.Get(key)
 		switch key {
 		case keyURL:
-			conf.URL = cast.ToString(val)
+			conf.url = cast.ToString(val)
 		case keyACSToken:
-			conf.ACSToken = cast.ToString(val)
+			conf.acsToken = cast.ToString(val)
 		case keyTLS:
-			conf.TLS = UnmarshalTLS(val)
+			conf.tls = unmarshalTLS(val)
 		case keyTimeout:
-			conf.Timeout = cast.ToInt(val)
+			conf.timeout = cast.ToInt(val)
 		case keySSHUser:
-			conf.SSHUser = cast.ToString(val)
-		case keySSHProxyIP:
-			conf.SSHProxyIP = cast.ToString(val)
+			conf.sshUser = cast.ToString(val)
+		case keySSHProxyHost:
+			conf.sshProxyHost = cast.ToString(val)
 		case keyPagination:
-			conf.Pagination = cast.ToBool(val)
+			conf.pagination = cast.ToBool(val)
 		case keyReporting:
-			conf.Reporting = cast.ToBool(val)
+			conf.reporting = cast.ToBool(val)
 		case keyMesosMasterURL:
-			conf.MesosMasterURL = cast.ToString(val)
+			conf.mesosMasterURL = cast.ToString(val)
 		case keyPrompLogin:
-			conf.PrompLogin = cast.ToBool(val)
+			conf.promptLogin = cast.ToBool(val)
 		case keyClusterName:
-			conf.ClusterName = cast.ToString(val)
+			conf.clusterName = cast.ToString(val)
 		}
 	}
+	conf.store = store
 }
 
-// UnmarshalTLS creates a TLS struct from a string.
+// unmarshalTLS creates a TLS struct from a string.
 //
 // Valid values are:
 // - A path to a root CA bundle.
 // - "1", "t", "T", "TRUE", "true", "True" - will use the system's CA bundle.
 // - "0", "f", "F", "FALSE", "false", "False" - will send insecure requests.
-func UnmarshalTLS(val interface{}) TLS {
+func unmarshalTLS(val interface{}) TLS {
 	strVal := cast.ToString(val)
 
 	// If the string is empty or the value couldn't be casted to a string, use the default TLS config.
@@ -122,4 +118,49 @@ func UnmarshalTLS(val interface{}) TLS {
 		RootCAsPath: strVal,
 		RootCAs:     certPool,
 	}
+}
+
+// Marshal updates the Store with Config dirty fields.
+func Marshal(conf *Config, store *Store) {
+	if conf.dirtyFields[&conf.url] {
+		store.Set(keyURL, conf.url)
+	}
+	if conf.dirtyFields[&conf.acsToken] {
+		store.Set(keyACSToken, conf.acsToken)
+	}
+	if conf.dirtyFields[&conf.tls] {
+		store.Set(keyTLS, marshalTLS(conf.tls))
+	}
+	if conf.dirtyFields[&conf.timeout] {
+		store.Set(keyTimeout, conf.timeout)
+	}
+	if conf.dirtyFields[&conf.sshUser] {
+		store.Set(keySSHUser, conf.sshUser)
+	}
+	if conf.dirtyFields[&conf.sshProxyHost] {
+		store.Set(keySSHProxyHost, conf.sshProxyHost)
+	}
+	if conf.dirtyFields[&conf.pagination] {
+		store.Set(keyPagination, conf.pagination)
+	}
+	if conf.dirtyFields[&conf.reporting] {
+		store.Set(keyReporting, conf.reporting)
+	}
+	if conf.dirtyFields[&conf.mesosMasterURL] {
+		store.Set(keyMesosMasterURL, conf.mesosMasterURL)
+	}
+	if conf.dirtyFields[&conf.promptLogin] {
+		store.Set(keyPrompLogin, conf.promptLogin)
+	}
+	if conf.dirtyFields[&conf.clusterName] {
+		store.Set(keyClusterName, conf.clusterName)
+	}
+}
+
+// marshalTLS creates a string from a TLS struct.
+func marshalTLS(tls TLS) string {
+	if tls.RootCAsPath != "" {
+		return tls.RootCAsPath
+	}
+	return strconv.FormatBool(!tls.Insecure)
 }
