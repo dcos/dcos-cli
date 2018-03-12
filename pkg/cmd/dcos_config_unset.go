@@ -14,7 +14,7 @@ var configUnsetCmd = &cobra.Command{
 func runConfigUnsetCmd(cmd *cobra.Command, args []string) error {
 	store := attachedCluster().Config.Store()
 	store.Unset(args[0])
-	return store.Save()
+	return store.Persist()
 }
 
 func init() {

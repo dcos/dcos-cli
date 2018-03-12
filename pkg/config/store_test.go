@@ -24,7 +24,8 @@ func TestStoreGet(t *testing.T) {
 	tree, err := toml.TreeFromMap(treeMap)
 	require.NoError(t, err)
 
-	store := NewStore(tree, StoreOpts{
+	store := NewStore(StoreOpts{
+		Tree: tree,
 		EnvLookup: func(key string) (string, bool) {
 			switch key {
 			case "DCOS_URL":
@@ -55,7 +56,7 @@ func TestStoreGet(t *testing.T) {
 }
 
 func TestStoreSetAndUnset(t *testing.T) {
-	store := NewStore(nil, StoreOpts{})
+	store := NewStore(StoreOpts{})
 
 	store.Set(keyURL, "https://dcos.example.com")
 	store.Set(keyTimeout, "30")
@@ -86,7 +87,8 @@ func TestStoreKeys(t *testing.T) {
 	tree, err := toml.TreeFromMap(treeMap)
 	require.NoError(t, err)
 
-	store := NewStore(tree, StoreOpts{
+	store := NewStore(StoreOpts{
+		Tree: tree,
 		EnvLookup: func(key string) (string, bool) {
 			switch key {
 			case "DCOS_URL":
@@ -109,16 +111,16 @@ func TestStoreKeys(t *testing.T) {
 	require.Equal(t, expectedKeys, keys)
 }
 
-func TestSaveWithoutPath(t *testing.T) {
-	store := NewStore(nil, StoreOpts{})
-	require.Error(t, store.Save())
+func TestPersistWithoutPath(t *testing.T) {
+	store := NewStore(StoreOpts{})
+	require.Error(t, store.Persist())
 }
 
-func TestSave(t *testing.T) {
-	store := NewStore(nil, StoreOpts{})
+func TestPersist(t *testing.T) {
+	store := NewStore(StoreOpts{})
 
-	f, _ := afero.TempFile(fs, "/", "ca")
+	f, _ := afero.TempFile(fs, "/", "config")
 	store.SetPath(f.Name())
 
-	require.NoError(t, store.Save())
+	require.NoError(t, store.Persist())
 }

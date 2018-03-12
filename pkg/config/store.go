@@ -12,10 +12,43 @@ import (
 	"github.com/spf13/cast"
 )
 
+// TOML keys for the DC/OS configuration.
+const (
+	keyURL            = "core.dcos_url"
+	keyACSToken       = "core.dcos_acs_token"
+	keyTLS            = "core.ssl_verify"
+	keyTimeout        = "core.timeout"
+	keySSHUser        = "core.ssh_user"
+	keySSHProxyHost   = "core.ssh_proxy_ip"
+	keyPagination     = "core.pagination"
+	keyReporting      = "core.reporting"
+	keyMesosMasterURL = "core.mesos_master_url"
+	keyPrompLogin     = "core.prompt_login"
+	keyClusterName    = "cluster.name"
+)
+
+// Environment variables for the DC/OS configuration.
+const (
+	envURL      = "DCOS_URL"
+	envACSToken = "DCOS_ACS_TOKEN"
+	envTLS      = "DCOS_SSL_VERIFY"
+	envTimeout  = "DCOS_TIMEOUT"
+)
+
+// Errors related to the Store.
+var (
+	ErrNoStorePath = errors.New("no path specified for the config store")
+)
+
+// fs is an abstraction for the filesystem. All filesystem operations
+// should be done through it instead of the os package.
 var fs = afero.NewOsFs()
 
 // StoreOpts are functional options for a Store.
 type StoreOpts struct {
+	// The TOML tree associated to the store. When not set it defaults to an empty tree.
+	Tree *toml.Tree
+
 	// EnvWhitelist is a map of config keys and environment variables. When present,
 	// these env vars would take precedence over the values in the toml.Tree.
 	EnvWhitelist map[string]string
@@ -35,17 +68,17 @@ type Store struct {
 }
 
 // NewStore creates a Store according to a TOML tree and functional options.
-func NewStore(tree *toml.Tree, opts StoreOpts) *Store {
-	if tree == nil {
-		tree, _ = toml.TreeFromMap(make(map[string]interface{}))
+func NewStore(opts StoreOpts) *Store {
+	if opts.Tree == nil {
+		opts.Tree, _ = toml.TreeFromMap(make(map[string]interface{}))
 	}
 
 	if opts.EnvWhitelist == nil {
 		opts.EnvWhitelist = map[string]string{
-			keyURL:      "DCOS_URL",
-			keyACSToken: "DCOS_ACS_TOKEN",
-			keyTLS:      "DCOS_SSL_VERIFY",
-			keyTimeout:  "DCOS_TIMEOUT",
+			keyURL:      envURL,
+			keyACSToken: envACSToken,
+			keyTLS:      envTLS,
+			keyTimeout:  envTimeout,
 		}
 	}
 
@@ -54,7 +87,7 @@ func NewStore(tree *toml.Tree, opts StoreOpts) *Store {
 	}
 
 	return &Store{
-		tree:         tree,
+		tree:         opts.Tree,
 		envWhitelist: opts.EnvWhitelist,
 		envLookup:    opts.EnvLookup,
 	}
@@ -76,15 +109,12 @@ func (s *Store) Get(key string) interface{} {
 	}
 
 	// Fallback to the TOML tree if present.
-	if s.tree != nil {
-		switch node := s.tree.Get(key).(type) {
-		case *toml.Tree, []*toml.Tree:
-			return nil
-		default:
-			return node
-		}
+	switch node := s.tree.Get(key).(type) {
+	case *toml.Tree, []*toml.Tree:
+		return nil
+	default:
+		return node
 	}
-	return nil
 }
 
 // Set sets a key in the store.
@@ -128,10 +158,10 @@ func (s *Store) Unset(key string) {
 	}
 }
 
-// Save writes the TOML tree at the path associated to the Store.
-func (s *Store) Save() error {
+// Persist flushes the in-memory TOML tree representation to the path associated to the Store.
+func (s *Store) Persist() error {
 	if s.path == "" {
-		return errors.New("cannot save the config: no path specified")
+		return ErrNoStorePath
 	}
 	var buf bytes.Buffer
 	if _, err := s.tree.WriteTo(&buf); err != nil {

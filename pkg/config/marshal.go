@@ -11,20 +11,6 @@ import (
 	"github.com/spf13/cast"
 )
 
-const (
-	keyURL            = "core.dcos_url"
-	keyACSToken       = "core.dcos_acs_token"
-	keyTLS            = "core.ssl_verify"
-	keyTimeout        = "core.timeout"
-	keySSHUser        = "core.ssh_user"
-	keySSHProxyIP     = "core.ssh_proxy_ip"
-	keyPagination     = "core.pagination"
-	keyReporting      = "core.reporting"
-	keyMesosMasterURL = "core.mesos_master_url"
-	keyPrompLogin     = "core.prompt_login"
-	keyClusterName    = "cluster.name"
-)
-
 // FromPath creates a Config based on a path to a TOML file.
 func FromPath(path string) (Config, error) {
 	f, err := fs.Open(path)
