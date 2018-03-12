@@ -8,6 +8,41 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestMarshal(t *testing.T) {
+	conf := New()
+	conf.SetURL("https://dcos.example.com")
+	conf.SetACSToken("token_XYZ")
+	conf.SetTLS(TLS{})
+	conf.SetTimeout(15)
+	conf.SetSSHUser("dcos-user")
+	conf.SetSSHProxyHost("dcos-bastion")
+	conf.SetPagination(true)
+	conf.SetReporting(true)
+	conf.SetMesosMasterURL("https://mesos.example.com")
+	conf.SetPromptLogin(true)
+	conf.SetClusterName("custom-cluster-name")
+
+	store := NewStore(StoreOpts{})
+	Marshal(&conf, store)
+
+	require.Equal(t, "https://dcos.example.com", store.Get(keyURL))
+	require.Equal(t, "true", store.Get(keyTLS))
+	require.EqualValues(t, 15, store.Get(keyTimeout))
+	require.Equal(t, "dcos-user", store.Get(keySSHUser))
+	require.Equal(t, "dcos-bastion", store.Get(keySSHProxyHost))
+	require.Equal(t, true, store.Get(keyPagination))
+	require.Equal(t, true, store.Get(keyReporting))
+	require.Equal(t, "https://mesos.example.com", store.Get(keyMesosMasterURL))
+	require.Equal(t, true, store.Get(keyPrompLogin))
+	require.Equal(t, "custom-cluster-name", store.Get(keyClusterName))
+}
+
+func TestMarshalTLS(t *testing.T) {
+	require.Equal(t, "true", marshalTLS(TLS{}))
+	require.Equal(t, "false", marshalTLS(TLS{Insecure: true}))
+	require.Equal(t, "/path/to/ca", marshalTLS(TLS{RootCAsPath: "/path/to/ca"}))
+}
+
 func TestUnmarshalTLS(t *testing.T) {
 	expectedTLSInsecureSkipVerify := []struct {
 		val      interface{}
@@ -23,7 +58,7 @@ func TestUnmarshalTLS(t *testing.T) {
 	}
 
 	for _, exp := range expectedTLSInsecureSkipVerify {
-		tlsConfig := UnmarshalTLS(exp.val)
+		tlsConfig := unmarshalTLS(exp.val)
 		require.Equal(t, exp.insecure, tlsConfig.Insecure)
 	}
 }
@@ -56,7 +91,7 @@ NT4Sf75bbjkawxsKnddRgK2dILw//sQdOXmSJboaStNrHS5joczy
 	f, _ := afero.TempFile(fs, "/", "ca")
 	f.Write(ca)
 
-	tlsConfig := UnmarshalTLS(f.Name())
+	tlsConfig := unmarshalTLS(f.Name())
 	require.Equal(t, false, tlsConfig.Insecure)
 	require.Equal(t, f.Name(), tlsConfig.RootCAsPath)
 

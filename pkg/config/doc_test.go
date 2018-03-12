@@ -6,6 +6,21 @@ import (
 	"github.com/dcos/dcos-cli/pkg/config"
 )
 
+func ExampleNew() {
+	conf := config.New()
+
+	// Set the DC/OS URL and ACS token.
+	conf.SetURL("https://dcos.example.com")
+	conf.SetACSToken("token_ABC")
+
+	// Set a path for the config and save it.
+	conf.SetPath("/path/to/config.toml")
+	err := conf.Save()
+	if err != nil {
+		// Handle error.
+	}
+}
+
 func ExampleFromPath() {
 	conf, err := config.FromPath("/path/to/config.toml")
 	if err != nil {
@@ -13,7 +28,16 @@ func ExampleFromPath() {
 	}
 
 	// Displays the DC/OS URL if it exists in the file.
-	fmt.Println(conf.URL)
+	fmt.Println(conf.URL())
+
+	// Change the cluster name.
+	conf.SetClusterName("my-new-cluster-name")
+
+	// Save the config file.
+	err = conf.Save()
+	if err != nil {
+		// Handle error.
+	}
 }
 
 func ExampleFromString() {
@@ -31,7 +55,7 @@ name = "my-cluster"
 		// Handle error.
 	}
 
-	fmt.Println(conf.URL)         // https://example.com
-	fmt.Println(conf.ACSToken)    // "token_zj8Tb0vhQw"
-	fmt.Println(conf.ClusterName) // "my-cluster"
+	fmt.Println(conf.URL())         // https://example.com
+	fmt.Println(conf.ACSToken())    // "token_zj8Tb0vhQw"
+	fmt.Println(conf.ClusterName()) // "my-cluster"
 }
