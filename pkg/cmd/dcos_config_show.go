@@ -35,6 +35,7 @@ func configShowAll(store *config.Store) {
 			for _, maskedKey := range maskedKeys {
 				if maskedKey == key {
 					val = "********"
+					break
 				}
 			}
 			fmt.Printf("%s %v\n", key, val)
