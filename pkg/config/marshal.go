@@ -155,6 +155,9 @@ func Marshal(conf *Config, store *Store) {
 	if conf.dirtyFields[&conf.clusterName] {
 		store.Set(keyClusterName, conf.clusterName)
 	}
+
+	// Clear config dirty fields.
+	conf.dirtyFields = make(map[interface{}]bool)
 }
 
 // marshalTLS creates a string from a TLS struct.

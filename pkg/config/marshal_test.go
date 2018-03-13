@@ -35,6 +35,9 @@ func TestMarshal(t *testing.T) {
 	require.Equal(t, "https://mesos.example.com", store.Get(keyMesosMasterURL))
 	require.Equal(t, true, store.Get(keyPrompLogin))
 	require.Equal(t, "custom-cluster-name", store.Get(keyClusterName))
+
+	// Make sure dirty fields map is cleared after marshalling.
+	require.Equal(t, 0, len(conf.dirtyFields))
 }
 
 func TestMarshalTLS(t *testing.T) {
