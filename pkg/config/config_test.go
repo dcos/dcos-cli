@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
@@ -73,7 +74,7 @@ name = "mr-cluster"
 	require.Equal(t, "https://dcos.example.com", conf.URL())
 	require.Equal(t, "token_zj8Tb0vhQw", conf.ACSToken())
 	require.Equal(t, true, conf.TLS().Insecure)
-	require.Equal(t, 15, conf.Timeout())
+	require.Equal(t, 15*time.Second, conf.Timeout())
 	require.Equal(t, "myuser", conf.SSHUser())
 	require.Equal(t, "192.0.2.1", conf.SSHProxyHost())
 	require.Equal(t, true, conf.Pagination())

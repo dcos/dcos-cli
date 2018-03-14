@@ -2,6 +2,7 @@ package config
 
 import (
 	"crypto/x509"
+	"time"
 )
 
 // Config for the DC/OS CLI.
@@ -58,8 +59,8 @@ func (conf *Config) SetTLS(tls TLS) {
 }
 
 // Timeout returns the HTTP request timeout in seconds once the connection is established.
-func (conf *Config) Timeout() int {
-	return conf.timeout
+func (conf *Config) Timeout() time.Duration {
+	return time.Duration(conf.timeout) * time.Second
 }
 
 // SetTimeout sets the HTTP request timeout in seconds once the connection is established.
