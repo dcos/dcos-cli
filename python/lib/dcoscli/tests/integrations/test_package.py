@@ -70,9 +70,9 @@ def test_version():
 def test_repo_list():
     repo_list = bytes(
         (
-            "test-universe: {test-universe}\n"
+            "Universe: {0}\n"
             "helloworld-universe: {helloworld-universe}\n"
-        ).format(**UNIVERSE_TEST_REPOS),
+        ).format(UNIVERSE_REPO, **UNIVERSE_TEST_REPOS),
         'utf-8'
     )
 
@@ -85,25 +85,12 @@ def test_repo_list():
 
 
 def test_repo_add_and_remove():
-    repo_list = bytes(
-        (
-            "test-universe: {test-universe}\n"
-            "helloworld-universe: {helloworld-universe}\n"
-            "Universe: {0}\n"
-        ).format(UNIVERSE_REPO, **UNIVERSE_TEST_REPOS),
-        'utf-8'
-    )
-
-    args = ["Universe", UNIVERSE_REPO]
-    _repo_add(args, repo_list)
-
     repo17 = "https://universe.mesosphere.com/repo-1.7"
     repo_list = bytes(
         (
-            "test-universe: {test-universe}\n"
+            "Universe: {1}\n"
             "1.7-universe: {0}\n"
             "helloworld-universe: {helloworld-universe}\n"
-            "Universe: {1}\n"
         ).format(repo17,  UNIVERSE_REPO, **UNIVERSE_TEST_REPOS),
         'utf-8'
     )
@@ -113,64 +100,21 @@ def test_repo_add_and_remove():
 
     repo_list = bytes(
         (
-            "test-universe: {test-universe}\n"
-            "helloworld-universe: {helloworld-universe}\n"
             "Universe: {0}\n"
+            "helloworld-universe: {helloworld-universe}\n"
         ).format(UNIVERSE_REPO, **UNIVERSE_TEST_REPOS),
         'utf-8'
     )
     _repo_remove(['1.7-universe'], repo_list)
 
-    repo_list = bytes(
-        (
-            "test-universe: {test-universe}\n"
-            "helloworld-universe: {helloworld-universe}\n"
-        ).format(**UNIVERSE_TEST_REPOS),
-        'utf-8'
-    )
-    _repo_remove(['Universe'], repo_list)
 
+def test_repo_remove_multi_and_empty():
+    repos = ['Universe']
+    repos.extend(UNIVERSE_TEST_REPOS.keys())
 
-def test_repo_remove_multi():
-    # Add "Universe" repo so we can test removing it
-    repo_list = bytes(
-        (
-            "test-universe: {test-universe}\n"
-            "helloworld-universe: {helloworld-universe}\n"
-            "Universe: {0}\n"
-        ).format(UNIVERSE_REPO, **UNIVERSE_TEST_REPOS),
-        'utf-8'
-    )
-    args = ["Universe", UNIVERSE_REPO]
-    _repo_add(args, repo_list)
-
-    # Add "1.7-universe" repo so we can test removing it
-    repo17 = "https://universe.mesosphere.com/repo-1.7"
-    repo_list = bytes(
-        (
-            "test-universe: {test-universe}\n"
-            "1.7-universe: {1}\n"
-            "helloworld-universe: {helloworld-universe}\n"
-            "Universe: {0}\n"
-        ).format(UNIVERSE_REPO, repo17, **UNIVERSE_TEST_REPOS),
-        'utf-8'
-    )
-    args = ["1.7-universe", repo17, '--index=1']
-    _repo_add(args, repo_list)
-
-    repo_list = bytes(
-        (
-            "test-universe: {test-universe}\n"
-            "helloworld-universe: {helloworld-universe}\n"
-        ).format(**UNIVERSE_TEST_REPOS),
-        'utf-8'
-    )
-    _repo_remove(['1.7-universe', 'Universe'], repo_list)
-
-
-def test_repo_empty():
-    for name in UNIVERSE_TEST_REPOS.keys():
-        assert_command(['dcos', 'package', 'repo', 'remove', name])
+    repos_remove_cmd = ['dcos', 'package', 'repo', 'remove']
+    repos_remove_cmd.extend(repos)
+    assert_command(repos_remove_cmd)
 
     returncode, stdout, stderr = exec_command(
         ['dcos', 'package', 'repo', 'list'])
@@ -180,8 +124,12 @@ def test_repo_empty():
     assert stdout == b''
     assert stderr == stderr_msg
 
+    # Add back test repos
     for name, url in UNIVERSE_TEST_REPOS.items():
         assert_command(['dcos', 'package', 'repo', 'add', name, url])
+
+    assert_command(
+        ['dcos', 'package', 'repo', 'add', 'Universe', UNIVERSE_REPO])
 
 
 def test_describe_nonexistent():
@@ -508,17 +456,7 @@ def test_images_in_metadata():
     assert images.get("icon-medium") is not None
     assert images.get("icon-large") is not None
 
-    # uninstall
-    stderr = (
-        b'Uninstalled package [cassandra] version [2.0.2-3.0.14]\n'
-        b'The DC/OS Apache Cassandra service is being uninstalled.\n\n'
-        b'For DC/OS versions from 1.10 no further action is required. '
-        b'For older DC/OS versions follow the instructions at https://docs.'
-        b'mesosphere.com/service-docs/cassandra/uninstall to remove any '
-        b'persistent state if required.\n'
-    )
-
-    package_uninstall('cassandra', stderr=stderr)
+    package_uninstall('cassandra')
     delete_zk_node('dcos-service-cassandra')
     watch_all_deployments()
 
@@ -620,13 +558,12 @@ def test_list(zk_znode):
     _list(args=['xyzzy', '--json'], stdout=empty)
     _list(args=['--app-id=/xyzzy', '--json'], stdout=empty)
 
-    with _chronos_package():
-
+    with _helloworld():
         expected_output = file_json(
-            'tests/data/package/json/test_list_chronos.json')
+            'tests/data/package/json/test_list_helloworld.json')
         _list(args=['--json'], stdout=expected_output)
-        _list(args=['--json', 'chronos'], stdout=expected_output)
-        _list(args=['--json', '--app-id=/chronos'], stdout=expected_output)
+        _list(args=['--json', 'helloworld'], stdout=expected_output)
+        _list(args=['--json', '--app-id=/helloworld'], stdout=expected_output)
 
     le_package = 'ceci-nest-pas-une-package'
     _list(args=['--json', le_package], stdout=empty)
@@ -736,39 +673,20 @@ def test_cli_global():
 
 
 def test_uninstall_multiple_frameworknames(zk_znode):
-    _install_chronos(
-        args=['--yes', '--options=tests/data/package/chronos-1.json'])
-    _install_chronos(
-        args=['--yes', '--options=tests/data/package/chronos-2.json'])
+    retcode, _, _ = exec_command([
+        'dcos', 'package', 'install',
+        'chronos', '--yes', '--options=tests/data/package/chronos-1.json'])
+    assert retcode == 0
+
+    retcode, _, _ = exec_command([
+        'dcos', 'package', 'install',
+        'chronos', '--yes', '--options=tests/data/package/chronos-2.json'])
+    assert retcode == 0
 
     watch_all_deployments()
 
-    expected_output = file_json(
-        'tests/data/package/json/test_list_chronos_two_users.json')
-
-    _list(args=['--json'], stdout=expected_output)
-    _list(args=['--json', 'chronos'], stdout=expected_output)
-    _list(args=['--json', '--app-id=/chronos-user-1'], stdout=file_json(
-        'tests/data/package/json/test_list_chronos_user_1.json'))
-
-    _list(args=['--json', '--app-id=/chronos-user-2'], stdout=file_json(
-        'tests/data/package/json/test_list_chronos_user_2.json'))
-
-    _uninstall_chronos(
-        args=['--app-id=chronos-user-1'],
-        returncode=1,
-        stderr='Uninstalled package [chronos] version [2.5.0-1]\n'
-               'Unable to shutdown [chronos] service framework with name '
-               '[chronos-user] because there are multiple framework ids '
-               'matching this name: ')
-
-    _uninstall_chronos(
-        args=['--app-id=chronos-user-2'],
-        returncode=1,
-        stderr='Uninstalled package [chronos] version [2.5.0-1]\n'
-               'Unable to shutdown [chronos] service framework with name '
-               '[chronos-user] because there are multiple framework ids '
-               'matching this name: ')
+    _uninstall_chronos(args=['--app-id=chronos-user-1'], returncode=1)
+    _uninstall_chronos(args=['--app-id=chronos-user-2'], returncode=1)
 
     for framework in get_services(args=['--inactive']):
         if framework['name'] == 'chronos-user':
@@ -952,76 +870,6 @@ def _install_bad_helloworld(
     assert returncode_ == 1
     assert stderr in stderr_.decode('utf-8')
     assert stdout_ == stdout
-
-
-def _install_chronos(
-        args=['--yes'],
-        returncode=0,
-        stdout=b'Installing Marathon app for package [chronos] '
-               b'version [2.5.0-1]\n',
-        stderr=b'',
-        pre_install_notes=(
-            b'By Deploying, you agree to the Terms '
-            b'and Conditions https://mesosphere.com/'
-            b'catalog-terms-conditions/#certified-services\n'
-            b'We recommend a minimum of one node with at least '
-            b'1 CPU and 2GB of RAM available for the '
-            b'Chronos Service.\n'
-        ),
-        post_install_notes=b'Chronos DCOS Service has been successfully '
-                           b'installed!\n\n'
-                           b'\tDocumentation: http://mesos.github.io/'
-                           b'chronos\n'
-                           b'\tIssues: https://github.com/mesos/chronos/'
-                           b'issues\n',
-        stdin=None):
-
-    cmd = ['dcos', 'package', 'install', 'chronos'] + args
-    assert_command(
-        cmd,
-        returncode,
-        pre_install_notes + stdout + post_install_notes,
-        stderr,
-        stdin=stdin)
-
-
-@contextlib.contextmanager
-def _chronos_package(
-        args=['--yes'],
-        returncode=0,
-        stdout=b'Installing Marathon app for package [chronos] '
-               b'version [2.5.0-1]\n',
-        stderr=b'',
-        pre_install_notes=(
-            b'By Deploying, you agree to the Terms '
-            b'and Conditions https://mesosphere.com/'
-            b'catalog-terms-conditions/#certified-services\n'
-            b'We recommend a minimum of one node with at least '
-            b'1 CPU and 2GB of RAM available for the '
-            b'Chronos Service.\n'
-        ),
-        post_install_notes=b'Chronos DCOS Service has been successfully '
-                           b'installed!\n\n'
-                           b'\tDocumentation: http://mesos.github.io/'
-                           b'chronos\n'
-                           b'\tIssues: https://github.com/mesos/chronos/'
-                           b'issues\n',
-        stdin=None):
-
-    _install_chronos(
-        args,
-        returncode,
-        stdout,
-        stderr,
-        pre_install_notes,
-        post_install_notes,
-        stdin)
-    try:
-        yield
-    finally:
-        _uninstall_chronos()
-        delete_zk_node('chronos')
-        watch_all_deployments()
 
 
 def _list(args, stdout):

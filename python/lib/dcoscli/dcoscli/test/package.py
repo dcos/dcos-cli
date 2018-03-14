@@ -49,7 +49,6 @@ def package(package_name, deploy=False, args=[]):
 UNIVERSE_REPO = "https://universe.mesosphere.com/repo"
 UNIVERSE_TEST_REPOS = collections.OrderedDict(
     [
-        ("test-universe", "http://universe.marathon.mesos:8085/repo"),
         (
             "helloworld-universe",
             "http://helloworld-universe.marathon.mesos:8086/repo"
@@ -59,17 +58,11 @@ UNIVERSE_TEST_REPOS = collections.OrderedDict(
 
 
 def setup_universe_server():
-    # add both Unvierse servers with static packages
-    add_app('tests/data/universe-v3-stub.json', False)
-    add_app('tests/data/helloworld-v3-stub.json', False)
-
-    assert_command(
-        ['dcos', 'package', 'repo', 'remove', 'Universe'])
-
-    watch_all_deployments()
-
-    # Add the two test repos to Cosmos
+    # Add test repos to Marathon and Cosmos
     for name, url in UNIVERSE_TEST_REPOS.items():
+        add_app('tests/data/' + name + '.json', False)
+        watch_all_deployments()
+
         # wait for DNS records for the universe app to be propagated
         host = urlparse(url).netloc
         for i in range(30):
@@ -82,20 +75,11 @@ def setup_universe_server():
 
 
 def teardown_universe_server():
-    # Remove the test Universe repos from Cosmos
+    # Remove the test Universe repos from Cosmos and Marathon
     for name, url in UNIVERSE_TEST_REPOS.items():
         assert_command(['dcos', 'package', 'repo', 'remove', name])
-
-    assert_command(
-        ['dcos', 'package', 'repo', 'add', 'Universe', UNIVERSE_REPO])
-
-    # Remove the Marathon tasks running our two test Universe
-    assert_command(
-        ['dcos', 'marathon', 'app', 'remove', '/universe', '--force'])
-    assert_command(
-        ['dcos', 'marathon', 'app', 'remove', '/helloworld-universe',
-         '--force']
-    )
+        assert_command(
+            ['dcos', 'marathon', 'app', 'remove', '/' + name, '--force'])
 
     watch_all_deployments()
 
@@ -122,18 +106,16 @@ def package_install(package, deploy=False, args=[]):
         watch_all_deployments()
 
 
-def package_uninstall(package_name, args=[], stderr=b''):
+def package_uninstall(package_name, args=[]):
     """ Calls `dcos package uninstall`
 
     :param package_name: name of the package to uninstall
     :type package_name: str
     :param args: extra CLI args
     :type args: [str]
-    :param stderr: expected string in stderr for package uninstall
-    :type stderr: bytes
     :rtype: None
     """
 
-    assert_command(
-        ['dcos', 'package', 'uninstall', package_name, '--yes'] + args,
-        stderr=stderr)
+    returncode, _, _ = exec_command(
+        ['dcos', 'package', 'uninstall', package_name, '--yes'] + args)
+    assert returncode == 0

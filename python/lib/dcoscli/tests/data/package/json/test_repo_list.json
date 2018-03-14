@@ -1,8 +1,8 @@
 {
   "repositories": [
     {
-      "name": "test-universe",
-      "uri": "http://universe.marathon.mesos:8085/repo"
+      "name": "Universe",
+      "uri": "https://universe.mesosphere.com/repo"
     },
     {
       "name": "helloworld-universe",
