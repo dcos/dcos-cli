@@ -43,10 +43,31 @@ def binaryBuilder = builder('py35', '/workspace')({
         }
     }
 
-    stage ("Build dcos-cli binary") {
-        dir('dcos-cli/python/lib/dcoscli') {
+    dir('dcos-cli/python/lib/dcoscli') {
+        stage ("Build dcos-cli binary") {
             sh "make binary"
             sh "dist/dcos"
+        }
+
+        stage ("Run syntax checks on dcoscli") {
+            sh "make env"
+            sh '''
+                bash -c " \
+                  source env/bin/activate && \
+                  tox -e py35-syntax"
+                '''
+        }
+    }
+
+    stage ("Run syntax checks and unit tests on dcos") {
+        dir('dcos-cli/python/lib/dcos') {
+            sh "make env"
+            sh '''
+                bash -c " \
+                    source env/bin/activate && \
+                    tox -e py35-syntax && \
+                    tox -e py35-unit"
+                '''
         }
     }
 })
