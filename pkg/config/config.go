@@ -161,6 +161,7 @@ func (conf *Config) SetPath(path string) {
 	conf.store.path = path
 }
 
+// Save unmarshals the Config into its associated Store and persists it to the disk.
 func (conf *Config) Save() error {
 	Marshal(conf, conf.store)
 	return conf.store.Persist()

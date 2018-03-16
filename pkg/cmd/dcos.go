@@ -25,6 +25,7 @@ func Execute() {
 	}
 }
 
+// Cluster is a temporary struct representing a cluster until we have the proper abstraction for this.
 type Cluster struct {
 	Config config.Config
 }
