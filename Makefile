@@ -19,8 +19,13 @@ test: vet
 	$(call inDocker,go test -race -cover ./...)
 
 .PHONY: vet
-vet:
+vet: lint
 	$(call inDocker,go vet ./...)
+
+.PHONY: lint
+lint:
+	# Can be simplified once https://github.com/golang/lint/issues/320 is fixed.
+	$(call inDocker,go get -u golang.org/x/lint/golint && golint -set_exit_status ./cmd/... ./pkg/...)
 
 .PHONY: vendor
 vendor:
