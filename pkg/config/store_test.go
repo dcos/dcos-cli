@@ -113,7 +113,7 @@ func TestStoreKeys(t *testing.T) {
 
 func TestPersistWithoutPath(t *testing.T) {
 	store := NewStore(StoreOpts{})
-	require.Error(t, store.Persist())
+	require.Equal(t, ErrNoStorePath, store.Persist())
 }
 
 func TestPersist(t *testing.T) {
