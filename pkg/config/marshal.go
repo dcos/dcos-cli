@@ -5,6 +5,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"time"
 
 	toml "github.com/pelletier/go-toml"
 	"github.com/spf13/afero"
@@ -53,7 +54,7 @@ func Unmarshal(store *Store, conf *Config) {
 		case keyTLS:
 			conf.tls = unmarshalTLS(val)
 		case keyTimeout:
-			conf.timeout = cast.ToInt(val)
+			conf.timeout = time.Duration(cast.ToInt64(val)) * time.Second
 		case keySSHUser:
 			conf.sshUser = cast.ToString(val)
 		case keySSHProxyHost:
@@ -132,7 +133,7 @@ func Marshal(conf *Config, store *Store) {
 		store.Set(keyTLS, marshalTLS(conf.tls))
 	}
 	if conf.dirtyFields[&conf.timeout] {
-		store.Set(keyTimeout, conf.timeout)
+		store.Set(keyTimeout, conf.timeout.Seconds())
 	}
 	if conf.dirtyFields[&conf.sshUser] {
 		store.Set(keySSHUser, conf.sshUser)

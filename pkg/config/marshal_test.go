@@ -3,6 +3,7 @@ package config
 import (
 	"crypto/x509"
 	"testing"
+	"time"
 
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
@@ -13,7 +14,7 @@ func TestMarshal(t *testing.T) {
 	conf.SetURL("https://dcos.example.com")
 	conf.SetACSToken("token_XYZ")
 	conf.SetTLS(TLS{})
-	conf.SetTimeout(15)
+	conf.SetTimeout(15 * time.Second)
 	conf.SetSSHUser("dcos-user")
 	conf.SetSSHProxyHost("dcos-bastion")
 	conf.SetPagination(true)
