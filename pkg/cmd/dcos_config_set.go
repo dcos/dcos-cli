@@ -13,7 +13,9 @@ var configSetCmd = &cobra.Command{
 
 func runConfigSetCmd(cmd *cobra.Command, args []string) error {
 	store := attachedCluster().Config.Store()
-	store.Set(args[0], args[1])
+	if err := store.Set(args[0], args[1]); err != nil {
+		return err
+	}
 	return store.Persist()
 }
 

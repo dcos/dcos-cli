@@ -2,7 +2,11 @@ package config
 
 import (
 	"crypto/x509"
+	"io"
+	"strings"
 	"time"
+
+	toml "github.com/pelletier/go-toml"
 )
 
 // Config for the DC/OS CLI.
@@ -197,4 +201,34 @@ func Default() Config {
 	conf := New()
 	conf.timeout = 180
 	return conf
+}
+
+// FromPath creates a Config based on a path to a TOML file.
+func FromPath(path string) (Config, error) {
+	f, err := fs.Open(path)
+	if err != nil {
+		return Config{}, err
+	}
+	defer f.Close()
+
+	conf, err := FromReader(f)
+	conf.store.SetPath(path)
+	return conf, nil
+}
+
+// FromString creates a Config using a string representing the configuration formatted as a TOML document.
+func FromString(tomlData string) (Config, error) {
+	return FromReader(strings.NewReader(tomlData))
+}
+
+// FromReader creates a Config based on an io.Reader.
+func FromReader(reader io.Reader) (Config, error) {
+	tree, err := toml.LoadReader(reader)
+	if err != nil {
+		return Config{}, err
+	}
+
+	conf := Default()
+	Unmarshal(NewStore(StoreOpts{Tree: tree}), &conf)
+	return conf, nil
 }

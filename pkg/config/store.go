@@ -3,6 +3,7 @@ package config
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"os"
 	"sort"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	toml "github.com/pelletier/go-toml"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
+	"github.com/xeipuuv/gojsonschema"
 )
 
 // TOML keys for the DC/OS configuration.
@@ -37,7 +39,9 @@ const (
 
 // Errors related to the Store.
 var (
-	ErrNoStorePath = errors.New("no path specified for the config store")
+	ErrInvalidJSONSchema = errors.New("invalid JSON schema")
+	ErrInvalidKey        = errors.New("invalid key specified")
+	ErrNoStorePath       = errors.New("no path specified for the config store")
 )
 
 // fs is an abstraction for the filesystem. All filesystem operations
@@ -56,6 +60,10 @@ type StoreOpts struct {
 	// EnvLookup is the function used to lookup environment variables.
 	// When not set it defaults to os.LookupEnv.
 	EnvLookup func(key string) (string, bool)
+
+	// JSONSchemas is a map of JSON schemas to validate non-core configs against.
+	// The map key refers to the config section and the associated value is the JSON schema.
+	JSONSchemas map[string]*gojsonschema.Schema
 }
 
 // Store is the backend for Config data. It aggregates multiple sources (env vars, TOML document)
@@ -65,6 +73,7 @@ type Store struct {
 	tree         *toml.Tree
 	envWhitelist map[string]string
 	envLookup    func(key string) (string, bool)
+	jsonSchemas  map[string]*gojsonschema.Schema
 }
 
 // NewStore creates a Store according to a TOML tree and functional options.
@@ -86,10 +95,15 @@ func NewStore(opts StoreOpts) *Store {
 		opts.EnvLookup = os.LookupEnv
 	}
 
+	if opts.JSONSchemas == nil {
+		opts.JSONSchemas = make(map[string]*gojsonschema.Schema)
+	}
+
 	return &Store{
 		tree:         opts.Tree,
 		envWhitelist: opts.EnvWhitelist,
 		envLookup:    opts.EnvLookup,
+		jsonSchemas:  opts.JSONSchemas,
 	}
 }
 
@@ -104,31 +118,28 @@ func (s *Store) Get(key string) interface{} {
 	if envVar, ok := s.envWhitelist[key]; ok {
 		// If so, look-it up.
 		if envVal, ok := s.envLookup(envVar); ok {
-			return envVal
+			val, _ := s.normalize(key, envVal)
+			return val
 		}
 	}
 
 	// Fallback to the TOML tree if present.
 	switch node := s.tree.Get(key).(type) {
-	case *toml.Tree, []*toml.Tree:
+	case *toml.Tree, []*toml.Tree, nil:
 		return nil
 	default:
-		return node
+		val, _ := s.normalize(key, node)
+		return val
 	}
 }
 
 // Set sets a key in the store.
-func (s *Store) Set(key string, val interface{}) {
-	switch key {
-	case keyTimeout:
-		// go-toml requires int64
-		val = cast.ToInt64(val)
-	case keyPagination, keyReporting, keyPrompLogin:
-		val = cast.ToBool(val)
-	default:
-		val = cast.ToString(val)
+func (s *Store) Set(key string, val interface{}) (err error) {
+	val, err = s.normalize(key, val)
+	if err == nil {
+		s.tree.Set(key, val)
 	}
-	s.tree.Set(key, val)
+	return err
 }
 
 // Unset deletes a given key from the Store.
@@ -212,4 +223,68 @@ func searchKeys(tree *toml.Tree, keys *[]string, keyPath []string) {
 			*keys = append(*keys, strings.Join(childKeyPath, "."))
 		}
 	}
+}
+
+// normalize casts/validates a value for a given config key. For non-core keys it relies
+// on JSON schemas. If the casting or validation can't be done it returns an error.
+func (s *Store) normalize(key string, val interface{}) (interface{}, error) {
+	// Check if it is a core key and cast the value accordingly.
+	switch key {
+	case
+		keyURL,
+		keyACSToken,
+		keyTLS,
+		keySSHUser,
+		keySSHProxyHost,
+		keyMesosMasterURL,
+		keyClusterName:
+
+		return cast.ToStringE(val)
+	case keyTimeout:
+		return cast.ToInt64E(val)
+	case
+		keyPagination,
+		keyReporting,
+		keyPrompLogin:
+
+		return cast.ToBoolE(val)
+	}
+
+	keys := strings.SplitN(key, ".", 2)
+	if len(keys) != 2 {
+		return nil, ErrInvalidKey
+	}
+
+	// If it's not a core key, lookup for the section's JSON schema.
+	jsonSchema, ok := s.jsonSchemas[keys[0]]
+	if !ok {
+		// When no JSON schema is defined for a section, return the value as is.
+		return val, nil
+	}
+
+	// Get the current subtree for the config section. If none create an empty tree.
+	subTree, ok := s.tree.Get(keys[0]).(*toml.Tree)
+	if !ok {
+		subTree, _ = toml.TreeFromMap(make(map[string]interface{}))
+	}
+
+	// Set the config value into the tree.
+	subTree.Set(keys[1], val)
+
+	// Convert the tree into a map and validate it against the JSON schema.
+	result, err := jsonSchema.Validate(gojsonschema.NewGoLoader(subTree.ToMap()))
+	if err != nil {
+		return nil, ErrInvalidJSONSchema
+	}
+
+	// If the result is invalid, iterate through result errors and fail only if the error is for
+	// the field we're trying to set. Possible errors about other section fields should be ignored.
+	if !result.Valid() {
+		for _, err := range result.Errors() {
+			if err.Field() == keys[1] {
+				return nil, fmt.Errorf("validation error on \"%s\": %s", key, err.Description())
+			}
+		}
+	}
+	return val, nil
 }

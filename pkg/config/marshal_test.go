@@ -48,6 +48,7 @@ func TestUnmarshalTLS(t *testing.T) {
 		val      interface{}
 		insecure bool
 	}{
+		{"", false},
 		{"True", false},
 		{"1", false},
 		{"true", false},
@@ -61,6 +62,22 @@ func TestUnmarshalTLS(t *testing.T) {
 		tlsConfig := unmarshalTLS(exp.val)
 		require.Equal(t, exp.insecure, tlsConfig.Insecure)
 	}
+}
+
+func TestUnmarshalTLSWithInvalidCA(t *testing.T) {
+	ca := []byte(`
+-----BEGIN CERTIFICATE-----
+I have no authority.
+-----END CERTIFICATE-----
+`)
+	f, _ := afero.TempFile(fs, "/", "ca")
+	f.Write(ca)
+
+	tlsConfig := unmarshalTLS(f.Name())
+
+	require.Equal(t, true, tlsConfig.Insecure)
+	require.Equal(t, f.Name(), tlsConfig.RootCAsPath)
+	require.Nil(t, tlsConfig.RootCAs)
 }
 
 func TestUnmarshalTLSWithValidCA(t *testing.T) {
