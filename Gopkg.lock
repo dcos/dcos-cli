@@ -62,6 +62,24 @@
   version = "v1.2.1"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/xeipuuv/gojsonpointer"
+  packages = ["."]
+  revision = "4e3ac2762d5f479393488629ee9370b50873b3a6"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/xeipuuv/gojsonreference"
+  packages = ["."]
+  revision = "bd5ef7bd5415a7ac448318e64f11a24cd21e594b"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/xeipuuv/gojsonschema"
+  packages = ["."]
+  revision = "8bcffc811467a5f691810420385be6e66b35a317"
+
+[[projects]]
   name = "golang.org/x/text"
   packages = [
     "internal/gen",
@@ -77,6 +95,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c63a6f753b3f5794300f82172f9fe25b61549102487e2b2f93dff44e165f3404"
+  inputs-digest = "4c8d6ea042da588941f70ce85bcd1910b8885e29c1d2293feb7321ea49b4bd09"
   solver-name = "gps-cdcl"
   solver-version = 1
