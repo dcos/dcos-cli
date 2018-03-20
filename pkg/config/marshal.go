@@ -2,44 +2,11 @@ package config
 
 import (
 	"crypto/x509"
-	"io"
 	"strconv"
-	"strings"
 
-	toml "github.com/pelletier/go-toml"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 )
-
-// FromPath creates a Config based on a path to a TOML file.
-func FromPath(path string) (Config, error) {
-	f, err := fs.Open(path)
-	if err != nil {
-		return Config{}, err
-	}
-	defer f.Close()
-
-	conf, err := FromReader(f)
-	conf.store.SetPath(path)
-	return conf, nil
-}
-
-// FromString creates a Config using a string representing the configuration formatted as a TOML document.
-func FromString(tomlData string) (Config, error) {
-	return FromReader(strings.NewReader(tomlData))
-}
-
-// FromReader creates a Config based on an io.Reader.
-func FromReader(reader io.Reader) (Config, error) {
-	tree, err := toml.LoadReader(reader)
-	if err != nil {
-		return Config{}, err
-	}
-
-	conf := Default()
-	Unmarshal(NewStore(StoreOpts{Tree: tree}), &conf)
-	return conf, nil
-}
 
 // Unmarshal extracts configuration data from the Store and stores it in the Config.
 func Unmarshal(store *Store, conf *Config) {

@@ -84,6 +84,17 @@ name = "mr-cluster"
 	require.Equal(t, "mr-cluster", conf.ClusterName())
 }
 
+func TestFromInvalidString(t *testing.T) {
+	_, err := FromString(`
+{
+  "core": {
+    "dcos_url": "https://en.wikipedia.org/wiki/TOML"
+  }
+}
+`)
+	require.Error(t, err)
+}
+
 func TestSave(t *testing.T) {
 	conf := New()
 	conf.SetURL("https://dcos.example.com")
