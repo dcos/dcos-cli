@@ -24,24 +24,15 @@ func init() {
 }
 
 func listProviders(cmd *cobra.Command, args []string) {
-	var config = dcosConfig.Config
-	var client = httpclient.New(config)
-	var response, err = client.Get("/acs/api/v1/auth/providers")
+	providers, err := getProviders()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	defer response.Body.Close()
 
-	var resp map[string]authProvider
-	err = json.NewDecoder(response.Body).Decode(&resp)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
 	if jsonOutput {
 		// re-marshal it into json with indents added in for pretty printing
-		out, err := json.MarshalIndent(resp, "", "\t")
+		out, err := json.MarshalIndent(providers, "", "\t")
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -55,11 +46,29 @@ func listProviders(cmd *cobra.Command, args []string) {
 		table.SetColumnSeparator(" ")
 		table.SetCenterSeparator(" ")
 
-		for _, v := range resp {
+		for _, v := range *providers {
 			table.Append([]string{v.AuthenticationType, v.Description})
 		}
 		table.Render()
 	}
+}
+
+func getProviders() (*map[string]authProvider, error) {
+	var config = dcosConfig.Config
+	var client = httpclient.New(config)
+	var response, err = client.Get("/acs/api/v1/auth/providers")
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	var resp map[string]authProvider
+	err = json.NewDecoder(response.Body).Decode(&resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &resp, nil
 }
 
 type authProvider struct {
