@@ -2,6 +2,7 @@ package config
 
 import (
 	"crypto/x509"
+	"strings"
 	"time"
 )
 
@@ -25,7 +26,7 @@ type Config struct {
 
 // URL returns the public master URL of the DC/OS cluster.
 func (conf *Config) URL() string {
-	return conf.url
+	return strings.TrimRight(conf.url, "/")
 }
 
 // SetURL sets the public master URL of the DC/OS cluster.
