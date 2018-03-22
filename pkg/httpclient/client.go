@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/dcos/dcos-cli/pkg/config"
 )
@@ -18,24 +17,18 @@ type Client struct {
 
 // New returns a new HTTP client based on a Config.
 func New(conf config.Config) *Client {
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: conf.TLS().Insecure,
-		RootCAs:            conf.TLS().RootCAs,
-	}
-	transport := &http.Transport{
-		TLSClientConfig: tlsConfig,
-	}
-	client := &http.Client{
-		Transport: transport,
-		Timeout:   conf.Timeout(),
-	}
-
-	baseURL := strings.Trim(conf.URL(), "/")
-
 	return &Client{
 		acsToken: conf.ACSToken(),
-		baseURL:  baseURL,
-		client:   client,
+		baseURL:  conf.URL(),
+		client: &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: conf.TLS().Insecure,
+					RootCAs:            conf.TLS().RootCAs,
+				},
+			},
+			Timeout: conf.Timeout(),
+		},
 	}
 }
 
