@@ -70,7 +70,7 @@ setup(
         'toml>=0.9, <1.0',
         'virtualenv>=13.0, <16.0',
         'cryptography==2.0.2',
-        'sseclient==0.0.14',
+        'sseclient==0.0.19',
         'retrying==1.3.3',
     ],
 
