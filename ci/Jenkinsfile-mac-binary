@@ -36,7 +36,7 @@ def builder(String nodeId, String workspace = null) {
 /**
  * Run a builder to create the dcos-cli binary and execute it.
  */
-def binaryBuilder = builder('mac')({
+def binaryBuilder = builder('mac-hh-yosemite')({
     stage ('Pull dcos-cli repository') {
         dir('dcos-cli') {
             checkout scm
