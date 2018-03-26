@@ -1,6 +1,7 @@
 package httpclient
 
 import (
+	"crypto/tls"
 	"crypto/x509"
 	"io/ioutil"
 	"net/http"
@@ -9,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,10 +22,7 @@ func TestGet(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	conf := config.New()
-	conf.SetURL(ts.URL)
-
-	client := New(conf)
+	client := New(ts.URL)
 
 	resp, err := client.Get("/path")
 	require.NoError(t, err)
@@ -49,10 +46,7 @@ func TestPost(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	conf := config.New()
-	conf.SetURL(ts.URL)
-
-	client := New(conf)
+	client := New(ts.URL)
 
 	resp, err := client.Post("/path", "application/json", strings.NewReader(`{"cluster":"DC/OS"}`))
 	require.NoError(t, err)
@@ -63,16 +57,14 @@ func TestPost(t *testing.T) {
 }
 
 func TestNewRequest(t *testing.T) {
-	conf := config.New()
-	conf.SetACSToken("acsToken")
-	conf.SetURL("https://dcos.io")
-
-	client := New(conf)
+	client := New("https://dcos.io", func(client *Client) {
+		client.acsToken = "acsToken"
+	})
 
 	req, err := client.NewRequest("GET", "/path", nil)
 	require.NoError(t, err)
-	require.Equal(t, req.URL.String(), conf.URL()+"/path")
-	require.Equal(t, "token="+conf.ACSToken(), req.Header.Get("Authorization"))
+	require.Equal(t, req.URL.String(), "https://dcos.io/path")
+	require.Equal(t, "token=acsToken", req.Header.Get("Authorization"))
 }
 
 func TestTimeout(t *testing.T) {
@@ -83,11 +75,9 @@ func TestTimeout(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	conf := config.New()
-	conf.SetURL(ts.URL)
-	conf.SetTimeout(50 * time.Millisecond)
-
-	client := New(conf)
+	client := New(ts.URL, func(client *Client) {
+		client.baseClient.Timeout = 50 * time.Millisecond
+	})
 
 	// The handler will sleep for 100ms with a client timeout of 50ms, the call should fail.
 	req, err := client.NewRequest("GET", "/", nil)
@@ -114,26 +104,26 @@ func TestTLS(t *testing.T) {
 	certPool.AddCert(ts.Certificate())
 
 	tlsConfigs := []struct {
-		tls   config.TLS
+		tls   *tls.Config
 		valid bool
 	}{
 		// Using an empty TLS config should fail because the CA is not specified.
-		{config.TLS{}, false},
+		{&tls.Config{}, false},
 
 		// Using a TLS config with the actual CA should work.
-		{config.TLS{RootCAs: certPool}, true},
+		{&tls.Config{RootCAs: certPool}, true},
 
-		// Using a TLS config with Insecure set to true should work.
-		{config.TLS{Insecure: true}, true},
+		// Using a TLS config with InsecureSkipVerify set to true should work.
+		{&tls.Config{InsecureSkipVerify: true}, true},
 	}
 
-	conf := config.New()
-	conf.SetURL(ts.URL)
-
 	for _, exp := range tlsConfigs {
-		conf.SetTLS(exp.tls)
+		client := New(ts.URL, func(client *Client) {
+			client.baseClient.Transport = &http.Transport{
+				TLSClientConfig: exp.tls,
+			}
+		})
 
-		client := New(conf)
 		resp, err := client.Get("/")
 		if exp.valid {
 			require.NoError(t, err)
