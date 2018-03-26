@@ -1,35 +1,30 @@
 package httpclient
 
 import (
-	"crypto/tls"
 	"io"
 	"net/http"
-
-	"github.com/dcos/dcos-cli/pkg/config"
 )
 
 // A Client is an HTTP client.
 type Client struct {
-	acsToken string
-	baseURL  string
-	client   *http.Client
+	acsToken   string
+	baseURL    string
+	baseClient *http.Client
 }
 
-// New returns a new HTTP client based on a Config.
-func New(conf config.Config) *Client {
-	return &Client{
-		acsToken: conf.ACSToken(),
-		baseURL:  conf.URL(),
-		client: &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: conf.TLS().Insecure,
-					RootCAs:            conf.TLS().RootCAs,
-				},
-			},
-			Timeout: conf.Timeout(),
-		},
+// Option is a functional option for an HTTP client.
+type Option func(*Client)
+
+// New returns a new HTTP client for a given baseURL and functional options.
+func New(baseURL string, opts ...Option) *Client {
+	client := &Client{
+		baseURL:    baseURL,
+		baseClient: &http.Client{},
 	}
+	for _, opt := range opts {
+		opt(client)
+	}
+	return client
 }
 
 // Get issues a GET to the specified DC/OS cluster path.
@@ -70,5 +65,5 @@ func (c *Client) NewRequest(method, path string, body io.Reader) (*http.Request,
 // policy (such as redirects, cookies, auth) as configured on the
 // client.
 func (c *Client) Do(req *http.Request) (*http.Response, error) {
-	return c.client.Do(req)
+	return c.baseClient.Do(req)
 }
