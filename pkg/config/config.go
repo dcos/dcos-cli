@@ -2,6 +2,7 @@ package config
 
 import (
 	"crypto/x509"
+	"strings"
 	"time"
 )
 
@@ -10,7 +11,7 @@ type Config struct {
 	url            string
 	acsToken       string
 	tls            TLS
-	timeout        int
+	timeout        time.Duration
 	sshUser        string
 	sshProxyHost   string
 	pagination     bool
@@ -25,7 +26,7 @@ type Config struct {
 
 // URL returns the public master URL of the DC/OS cluster.
 func (conf *Config) URL() string {
-	return conf.url
+	return strings.TrimRight(conf.url, "/")
 }
 
 // SetURL sets the public master URL of the DC/OS cluster.
@@ -58,13 +59,13 @@ func (conf *Config) SetTLS(tls TLS) {
 	conf.setDirty(&conf.tls)
 }
 
-// Timeout returns the HTTP request timeout in seconds once the connection is established.
+// Timeout returns the HTTP request timeout once the connection is established.
 func (conf *Config) Timeout() time.Duration {
-	return time.Duration(conf.timeout) * time.Second
+	return conf.timeout
 }
 
-// SetTimeout sets the HTTP request timeout in seconds once the connection is established.
-func (conf *Config) SetTimeout(timeout int) {
+// SetTimeout sets the HTTP request timeout once the connection is established.
+func (conf *Config) SetTimeout(timeout time.Duration) {
 	conf.timeout = timeout
 	conf.setDirty(&conf.timeout)
 }
@@ -192,9 +193,9 @@ func New() Config {
 }
 
 // Default returns the default configuration for the DC/OS CLI.
-// All config defaults are their zero value except for the timeout which is 180 seconds.
+// All config defaults are their zero value except for the timeout which is 3 minutes.
 func Default() Config {
 	conf := New()
-	conf.timeout = 180
+	conf.timeout = 3 * time.Minute
 	return conf
 }
