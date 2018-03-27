@@ -493,33 +493,17 @@ class Master(object):
 
         return tasks
 
-    def get_container_id(self, task_id):
-        """Returns the container ID for a task ID matching `task_id`
+    def get_container_id(self, task_obj):
+        """Returns the container ID for a task.
 
-        :param task_id: The task ID which will be mapped to container ID
-        :type task_id: str
-        :returns: The container ID associated with 'task_id'
+        :param task__obj: The task which will be mapped to container ID
+        :type task_obj: Task()
+        :returns: The container ID associated with 'task_obj'
         :rtype: str
         """
 
-        def _get_task(task_id):
-            candidates = []
-            if 'frameworks' in self.state():
-                for framework in self.state()['frameworks']:
-                    if 'tasks' in framework:
-                        for task in framework['tasks']:
-                            if 'id' in task:
-                                if task['id'].startswith(task_id):
-                                    candidates.append(task)
-
-            if len(candidates) == 1:
-                return candidates[0]
-
-            raise DCOSException(
-                "More than one task matching '{}' found: {}"
-                .format(task_id, candidates))
-
-        def _get_container_status(task):
+        def _get_container_status(task_obj):
+            task = task_obj.dict()
             if 'statuses' in task:
                 if len(task['statuses']) > 0:
                     if 'container_status' in task['statuses'][0]:
@@ -539,11 +523,7 @@ class Master(object):
                 " It might still be spinning up."
                 " Please try again.")
 
-        if not task_id:
-            raise DCOSException("Invalid task ID")
-
-        task = _get_task(task_id)
-        container_status = _get_container_status(task)
+        container_status = _get_container_status(task_obj)
         return _get_container_id(container_status)
 
     def frameworks(self, inactive=False, completed=False):
@@ -1136,7 +1116,7 @@ class TaskIO(object):
                 path="api/v1")
 
         # Grab a reference to the container ID for the task.
-        self.parent_id = master.get_container_id(task_id)
+        self.parent_id = master.get_container_id(task_obj)
 
         # Generate a new UUID for the nested container
         # used to run commands passed to `task exec`.
