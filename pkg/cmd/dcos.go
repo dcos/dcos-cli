@@ -3,6 +3,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -11,18 +12,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// rootCmd represents the base command when called without any subcommands.
-var rootCmd = &cobra.Command{
-	Use: "dcos",
-}
-
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+// NewDCOSCommand creates the `dcos` command with its `auth`, `config`, and `cluster` subcommands.
+func NewDCOSCommand(out, err io.Writer) *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "dcos",
 	}
+	cmd.AddCommand(
+		newCmdAuth(out, err),
+		newCmdConfig(out, err),
+		newCmdCluster(out, err),
+	)
+	return cmd
 }
 
 // Cluster is a temporary struct representing a cluster until we have the proper abstraction for this.
