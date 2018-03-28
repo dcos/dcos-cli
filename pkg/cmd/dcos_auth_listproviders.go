@@ -9,6 +9,7 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 
+	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 )
 
@@ -27,7 +28,7 @@ var jsonOutput bool
 
 // authListProvidersCmd represents the `dcos auth list-providers` subcommand.
 var authListProvidersCmd = &cobra.Command{
-	Use: "list-providers",
+	Use:  "list-providers",
 	RunE: listProviders,
 }
 
@@ -37,7 +38,8 @@ func init() {
 }
 
 func listProviders(cmd *cobra.Command, args []string) error {
-	providers, err := getProviders()
+	conf := attachedCluster().Config
+	providers, err := getProviders(conf)
 	if err != nil {
 		return err
 	}
@@ -72,9 +74,8 @@ func listProviders(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func getProviders() (*map[string]loginProvider, error) {
-	config := attachedCluster().Config
-	client := httpclient.New(config)
+func getProviders(conf config.Config) (*map[string]loginProvider, error) {
+	client := httpclient.New(conf)
 	response, err := client.Get("/acs/api/v1/auth/providers")
 	if err != nil {
 		return nil, err
