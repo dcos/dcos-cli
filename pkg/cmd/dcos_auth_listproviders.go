@@ -15,12 +15,12 @@ import (
 // These are the different auth types that DC/OS supports with the names that they'll be given from the providers
 // endpoint.
 const (
-	AuthTypeDCOSUidPassword     = "dcos-uid-password"
-	AuthTypeDCOSUidServiceKey   = "dcos-uid-servicekey"
-	AuthTypeDCOSUidPasswordLDAP = "dcos-uid-password-ldap"
-	AuthTypeSAMLSpInitiated     = "saml-sp-initiated"
-	AuthTypeOIDCAuthCodeFlow    = "oidc-authorization-code-flow"
-	AuthTypeOIDCImplicitFlow    = "oidc-implicit-flow"
+	LoginTypeDCOSUidPassword     = "dcos-uid-password"
+	LoginTypeDCOSUidServiceKey   = "dcos-uid-servicekey"
+	LoginTypeDCOSUidPasswordLDAP = "dcos-uid-password-ldap"
+	LoginTypeSAMLSpInitiated     = "saml-sp-initiated"
+	LoginTypeOIDCAuthCodeFlow    = "oidc-authorization-code-flow"
+	LoginTypeOIDCImplicitFlow    = "oidc-implicit-flow"
 )
 
 var jsonOutput bool
@@ -63,9 +63,9 @@ func listProviders(cmd *cobra.Command, args []string) {
 		table.SetCenterSeparator(" ")
 
 		for name, provider := range *providers {
-			desc, err := authTypeDescription(provider.AuthenticationType, provider)
+			desc, err := loginTypeDescription(provider.AuthenticationType, provider)
 			if err != nil {
-				fmt.Printf("Unknown authentication type %s", provider.AuthenticationType)
+				fmt.Printf("Unknown login type %s", provider.AuthenticationType)
 				os.Exit(1)
 			}
 			table.Append([]string{name, desc})
@@ -74,7 +74,7 @@ func listProviders(cmd *cobra.Command, args []string) {
 	}
 }
 
-func getProviders() (*map[string]authProvider, error) {
+func getProviders() (*map[string]loginProvider, error) {
 	var config = dcosConfig.Config
 	var client = httpclient.New(config)
 	var response, err = client.Get("/acs/api/v1/auth/providers")
@@ -83,7 +83,7 @@ func getProviders() (*map[string]authProvider, error) {
 	}
 	defer response.Body.Close()
 
-	var resp map[string]authProvider
+	var resp map[string]loginProvider
 	err = json.NewDecoder(response.Body).Decode(&resp)
 	if err != nil {
 		return nil, err
@@ -92,34 +92,34 @@ func getProviders() (*map[string]authProvider, error) {
 	return &resp, nil
 }
 
-func authTypeDescription(authType string, provider authProvider) (string, error) {
+func loginTypeDescription(loginType string, provider loginProvider) (string, error) {
 	var desc string
-	switch authType {
-	case AuthTypeDCOSUidPassword:
+	switch loginType {
+	case LoginTypeDCOSUidPassword:
 		desc = "Log in using a standard DC/OS user account (username and password)"
-	case AuthTypeDCOSUidServiceKey:
+	case LoginTypeDCOSUidServiceKey:
 		desc = "Log in using a DC/OS service user account (username and private key)"
-	case AuthTypeDCOSUidPasswordLDAP:
+	case LoginTypeDCOSUidPasswordLDAP:
 		desc = "Log in in using an LDAP user account (username and password)"
-	case AuthTypeSAMLSpInitiated:
+	case LoginTypeSAMLSpInitiated:
 		desc = fmt.Sprintf("Log in using SAML 2.0 (%s)", provider.Description)
-	case AuthTypeOIDCImplicitFlow:
+	case LoginTypeOIDCImplicitFlow:
 		desc = fmt.Sprintf("Log in using OpenID Connect(%s)", provider.Description)
-	case AuthTypeOIDCAuthCodeFlow:
+	case LoginTypeOIDCAuthCodeFlow:
 		desc = fmt.Sprintf("Log in using OpenID Connect(%s)", provider.Description)
 	default:
-		return "", errors.New("unknown authentication type")
+		return "", errors.New("unknown login provider")
 	}
 	return desc, nil
 }
 
-type authProvider struct {
-	AuthenticationType string                 `json:"authentication-type"`
-	ClientMethod       string                 `json:"client-method"`
-	Config             authListProviderConfig `json:"config"`
-	Description        string                 `json:"description"`
+type loginProvider struct {
+	AuthenticationType string                  `json:"authentication-type"`
+	ClientMethod       string                  `json:"client-method"`
+	Config             loginListProviderConfig `json:"config"`
+	Description        string                  `json:"description"`
 }
 
-type authListProviderConfig struct {
+type loginListProviderConfig struct {
 	StartFlowUrl string `json:"start_flow_url"`
 }
