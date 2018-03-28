@@ -92,17 +92,20 @@ func getProviders() (*map[string]authProvider, error) {
 
 func authTypeDescription(authType string, provider authProvider) (string, error) {
 	var desc string
-	if authType == AuthTypeDCOSUidPassword {
+	switch authType {
+	case AuthTypeDCOSUidPassword:
 		desc = "Log in using a standard DC/OS user account (username and password)"
-	} else if authType == AuthTypeDCOSUidServiceKey {
+	case AuthTypeDCOSUidServiceKey:
 		desc = "Log in using a DC/OS service user account (username and private key)"
-	} else if authType == AuthTypeDCOSUidPasswordLDAP {
+	case AuthTypeDCOSUidPasswordLDAP:
 		desc = "Log in in using an LDAP user account (username and password)"
-	} else if authType == AuthTypeSAMLSpInitiated {
+	case AuthTypeSAMLSpInitiated:
 		desc = fmt.Sprintf("Log in using SAML 2.0 (%s)", provider.Description)
-	} else if authType == AuthTypeOIDCAuthCodeFlow || authType == AuthTypeOIDCImplicitFlow {
+	case AuthTypeOIDCImplicitFlow:
 		desc = fmt.Sprintf("Log in using OpenID Connect(%s)", provider.Description)
-	} else {
+	case AuthTypeOIDCAuthCodeFlow:
+		desc = fmt.Sprintf("Log in using OpenID Connect(%s)", provider.Description)
+	default:
 		return "", errors.New("unknown authentication type")
 	}
 	return desc, nil
