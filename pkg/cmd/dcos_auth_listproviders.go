@@ -28,28 +28,25 @@ var jsonOutput bool
 // authCmd represents the `dcos auth` subcommand.
 var authListProvidersCmd = &cobra.Command{
 	Use: "list-providers",
-	Run: listProviders,
+	RunE: listProviders,
 }
 
 func init() {
 	authCmd.AddCommand(authListProvidersCmd)
-	authListProvidersCmd.Flags().BoolVar(&jsonOutput, "json", false,
-		"returns providers in json format")
+	authListProvidersCmd.Flags().BoolVar(&jsonOutput, "json", false, "returns providers in json format")
 }
 
-func listProviders(cmd *cobra.Command, args []string) {
+func listProviders(cmd *cobra.Command, args []string) error {
 	providers, err := getProviders()
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return err
 	}
 
 	if jsonOutput {
 		// re-marshal it into json with indents added in for pretty printing
 		out, err := json.MarshalIndent(providers, "", "\t")
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			return err
 		}
 		fmt.Println(string(out))
 	} else {
@@ -65,13 +62,14 @@ func listProviders(cmd *cobra.Command, args []string) {
 		for name, provider := range *providers {
 			desc, err := loginTypeDescription(provider.AuthenticationType, provider)
 			if err != nil {
-				fmt.Printf("Unknown login type %s", provider.AuthenticationType)
-				os.Exit(1)
+				return err
 			}
 			table.Append([]string{name, desc})
 		}
 		table.Render()
 	}
+
+	return nil
 }
 
 func getProviders() (*map[string]loginProvider, error) {
