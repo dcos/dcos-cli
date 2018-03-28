@@ -120,5 +120,5 @@ type loginProvider struct {
 }
 
 type loginListProviderConfig struct {
-	StartFlowUrl string `json:"start_flow_url"`
+	StartFlowURL string `json:"start_flow_url"`
 }
