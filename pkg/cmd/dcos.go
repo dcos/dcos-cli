@@ -3,13 +3,13 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/user"
 	"path/filepath"
 
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/spf13/cobra"
-	"io"
 )
 
 // rootCmd represents the base command when called without any subcommands.
