@@ -61,4 +61,4 @@ Positional Arguments:
     <path>
         The Mesos sandbox directory path. The default is '.'.
     <task>
-        A full task ID, a partial task ID, or a regular expression.
+        A full task ID, a partial task ID, or a Unix shell wildcard pattern (eg. 'my-task*').
