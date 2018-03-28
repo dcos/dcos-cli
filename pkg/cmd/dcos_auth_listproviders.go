@@ -73,7 +73,7 @@ func listProviders(cmd *cobra.Command, args []string) error {
 }
 
 func getProviders() (*map[string]loginProvider, error) {
-	config := dcosConfig.Config
+	config := attachedCluster().Config
 	client := httpclient.New(config)
 	response, err := client.Get("/acs/api/v1/auth/providers")
 	if err != nil {
