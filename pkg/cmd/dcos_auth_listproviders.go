@@ -25,7 +25,7 @@ const (
 
 var jsonOutput bool
 
-// authCmd represents the `dcos auth` subcommand.
+// authListProvidersCmd represents the `dcos auth list-providers` subcommand.
 var authListProvidersCmd = &cobra.Command{
 	Use: "list-providers",
 	RunE: listProviders,
@@ -43,7 +43,7 @@ func listProviders(cmd *cobra.Command, args []string) error {
 	}
 
 	if jsonOutput {
-		// re-marshal it into json with indents added in for pretty printing
+		// Re-marshal it into json with indents added in for pretty printing.
 		out, err := json.MarshalIndent(providers, "", "\t")
 		if err != nil {
 			return err
@@ -52,7 +52,7 @@ func listProviders(cmd *cobra.Command, args []string) error {
 	} else {
 		table := tablewriter.NewWriter(os.Stdout)
 		table.SetHeader([]string{"PROVIDER ID", "AUTHENTICATION TYPE"})
-		// turn off wrapping because it seems to wrap even if the column is set to be wide enough
+		// Turn off wrapping because it seems to wrap even if the column is set to be wide enough.
 		table.SetAutoWrapText(false)
 		table.SetBorder(false)
 		table.SetRowSeparator(" ")
