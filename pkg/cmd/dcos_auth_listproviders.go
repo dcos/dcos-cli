@@ -4,21 +4,23 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/dcos/dcos-cli/pkg/httpclient"
+	"os"
+
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
-	"os"
+
+	"github.com/dcos/dcos-cli/pkg/httpclient"
 )
 
 // These are the different auth types that DC/OS supports with the names that they'll be given from the providers
 // endpoint.
 const (
-	AuthTypeDCOSUidPassword = "dcos-uid-password"
-	AuthTypeDCOSUidServiceKey = "dcos-uid-servicekey"
+	AuthTypeDCOSUidPassword     = "dcos-uid-password"
+	AuthTypeDCOSUidServiceKey   = "dcos-uid-servicekey"
 	AuthTypeDCOSUidPasswordLDAP = "dcos-uid-password-ldap"
-	AuthTypeSAMLSpInitiated = "saml-sp-initiated"
-	AuthTypeOIDCAuthCodeFlow = "oidc-authorization-code-flow"
-	AuthTypeOIDCImplicitFlow = "oidc-implicit-flow"
+	AuthTypeSAMLSpInitiated     = "saml-sp-initiated"
+	AuthTypeOIDCAuthCodeFlow    = "oidc-authorization-code-flow"
+	AuthTypeOIDCImplicitFlow    = "oidc-implicit-flow"
 )
 
 var jsonOutput bool
