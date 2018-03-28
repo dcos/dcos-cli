@@ -88,11 +88,7 @@ func getProviders(baseURL string) (*map[string]loginProvider, error) {
 
 	var resp map[string]loginProvider
 	err = json.NewDecoder(response.Body).Decode(&resp)
-	if err != nil {
-		return nil, err
-	}
-
-	return &resp, nil
+	return &resp, err
 }
 
 func loginTypeDescription(loginType string, provider loginProvider) (string, error) {
