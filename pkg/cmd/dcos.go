@@ -3,6 +3,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -46,8 +47,27 @@ func attachedCluster() *Cluster {
 		os.Exit(1)
 	}
 
+	// Default to the old config path. If .dcos/clusters exists, it will search that for an attached cluster and if it
+	// finds one there, it will override this var to use that cluster's config instead.
+	configPath := filepath.Join(usr.HomeDir, ".dcos")
+
+	clustersDir := filepath.Join(configPath, "clusters")
+
+	// Find the config of the attached cluster.
+	err = filepath.Walk(clustersDir, func(path string, info os.FileInfo, err error) error {
+		if filepath.Base(path) == "attached" {
+			configPath = filepath.Dir(path)
+			return io.EOF
+		}
+		return nil
+	})
+	if err != io.EOF && err != filepath.SkipDir && err != nil {
+		fmt.Println(err)
+	}
+
+
 	// Make sure "~/.dcos/dcos.toml" exists.
-	path := filepath.Join(dir, "dcos.toml")
+	path := filepath.Join(configPath, "dcos.toml")
 	f, err := os.OpenFile(path, os.O_RDONLY|os.O_CREATE, 0600)
 	if err != nil {
 		fmt.Printf("Couldn't create config file \"%s\": %s.\n", path, err)
