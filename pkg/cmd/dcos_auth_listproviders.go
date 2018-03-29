@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 
@@ -108,7 +107,7 @@ func loginTypeDescription(loginType string, provider loginProvider) (string, err
 	case LoginTypeOIDCAuthCodeFlow:
 		return fmt.Sprintf("Log in using OpenID Connect(%s)", provider.Description), nil
 	default:
-		return "", errors.New(fmt.Sprintf("unknown login provider %s", loginType))
+		return "", fmt.Errorf("unknown login provider %s", loginType)
 	}
 }
 
