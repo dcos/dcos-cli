@@ -38,11 +38,14 @@ func init() {
 }
 
 func listProviders(cmd *cobra.Command, args []string) error {
-	conf := attachedCluster().Config
-	url := conf.URL()
-	if len(args) == 1 {
+	var url string
+	if len(args) == 0 {
+		conf := attachedCluster().Config
+		url = conf.URL()
+	} else {
 		url = args[0]
 	}
+
 	providers, err := getProviders(url)
 	if err != nil {
 		return err
