@@ -108,7 +108,7 @@ func loginTypeDescription(loginType string, provider loginProvider) (string, err
 	case LoginTypeOIDCAuthCodeFlow:
 		return fmt.Sprintf("Log in using OpenID Connect(%s)", provider.Description), nil
 	default:
-		return "", errors.New("unknown login provider")
+		return "", errors.New(fmt.Sprintf("unknown login provider %s", loginType))
 	}
 }
 
