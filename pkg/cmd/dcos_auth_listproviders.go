@@ -94,24 +94,22 @@ func getProviders(baseURL string) (*map[string]loginProvider, error) {
 }
 
 func loginTypeDescription(loginType string, provider loginProvider) (string, error) {
-	var desc string
 	switch loginType {
 	case LoginTypeDCOSUidPassword:
-		desc = "Log in using a standard DC/OS user account (username and password)"
+		return "Log in using a standard DC/OS user account (username and password)", nil
 	case LoginTypeDCOSUidServiceKey:
-		desc = "Log in using a DC/OS service user account (username and private key)"
+		return "Log in using a DC/OS service user account (username and private key)", nil
 	case LoginTypeDCOSUidPasswordLDAP:
-		desc = "Log in in using an LDAP user account (username and password)"
+		return "Log in in using an LDAP user account (username and password)", nil
 	case LoginTypeSAMLSpInitiated:
-		desc = fmt.Sprintf("Log in using SAML 2.0 (%s)", provider.Description)
+		return fmt.Sprintf("Log in using SAML 2.0 (%s)", provider.Description), nil
 	case LoginTypeOIDCImplicitFlow:
-		desc = fmt.Sprintf("Log in using OpenID Connect(%s)", provider.Description)
+		return fmt.Sprintf("Log in using OpenID Connect(%s)", provider.Description), nil
 	case LoginTypeOIDCAuthCodeFlow:
-		desc = fmt.Sprintf("Log in using OpenID Connect(%s)", provider.Description)
+		return fmt.Sprintf("Log in using OpenID Connect(%s)", provider.Description), nil
 	default:
 		return "", errors.New("unknown login provider")
 	}
-	return desc, nil
 }
 
 type loginProvider struct {
