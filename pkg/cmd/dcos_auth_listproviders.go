@@ -6,10 +6,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
-
-	"github.com/dcos/dcos-cli/pkg/httpclient"
 )
 
 // These are the different auth types that DC/OS supports with the names that they'll be given from the providers
