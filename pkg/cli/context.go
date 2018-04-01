@@ -1,0 +1,71 @@
+package cli
+
+import (
+	"io"
+	"os"
+	"os/user"
+	"path/filepath"
+
+	"github.com/dcos/dcos-cli/pkg/config"
+	"github.com/dcos/dcos-cli/pkg/config/core"
+	"github.com/spf13/afero"
+)
+
+// Context contains abstractions for stdout/stderr, the filesystem, and the CLI environment in general.
+// It also acts as a factory/helper for various objects across the project. It has quite wide scope so
+// in the future it might be refined or interfaces might be introduced for subsets of its functionalities.
+type Context struct {
+	Out       io.Writer
+	ErrOut    io.Writer
+	EnvLookup func(key string) (string, bool)
+	User      *user.User
+	Fs        afero.Fs
+}
+
+// DefaultContext returns the default context, backed by the os package.
+func DefaultContext() *Context {
+	// Not being able to get the current user is not critical. While it is very unlikely to happen,
+	// the context can use alternatives in such cases. See for example DCOSDir where it can use an
+	// environment variable or default to the current directory when ~/.dcos is not resolvable.
+	//
+	// Once we have a logging system this is an error we should log though.
+	usr, _ := user.Current()
+
+	return &Context{
+		Out:       os.Stdout,
+		ErrOut:    os.Stderr,
+		EnvLookup: os.LookupEnv,
+		User:      usr,
+		Fs:        afero.NewOsFs(),
+	}
+}
+
+// DCOSDir returns the root directory for the DC/OS CLI.
+// It defaults to `~/.dcos` and can be overriden by the `DCOS_DIR` env var.
+func (ctx *Context) DCOSDir() string {
+	if dcosDir, ok := ctx.EnvLookup("DCOS_DIR"); ok {
+		return dcosDir
+	}
+	if ctx.User != nil {
+		return filepath.Join(ctx.User.HomeDir, ".dcos")
+	}
+	return ""
+}
+
+// ConfigManager returns the ConfigManager for the context.
+func (ctx *Context) ConfigManager() *config.Manager {
+	return config.NewManager(config.ManagerOpts{
+		Fs:        ctx.Fs,
+		EnvLookup: ctx.EnvLookup,
+		Dir:       ctx.DCOSDir(),
+	})
+}
+
+// Cluster returns the current cluster.
+func (ctx *Context) Cluster() (*core.Cluster, error) {
+	conf, err := ctx.ConfigManager().Current()
+	if err != nil {
+		return nil, err
+	}
+	return core.NewCluster(conf), nil
+}

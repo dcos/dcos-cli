@@ -3,17 +3,16 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/spf13/cobra"
 )
 
-// clusterCmd represents the `dcos cluster` subcommand.
-var clusterCmd = &cobra.Command{
-	Use: "cluster",
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("cluster called")
-	},
-}
-
-func init() {
-	rootCmd.AddCommand(clusterCmd)
+// newCmdCluster creates the `dcos cluster` subcommand.
+func newCmdCluster(ctx *cli.Context) *cobra.Command {
+	return &cobra.Command{
+		Use: "cluster",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("cluster called")
+		},
+	}
 }
