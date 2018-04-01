@@ -1,14 +1,20 @@
 package cmd
 
 import (
+	"io"
+
 	"github.com/spf13/cobra"
 )
 
-// configCmd represents the `dcos config` subcommand.
-var configCmd = &cobra.Command{
-	Use: "config",
-}
-
-func init() {
-	rootCmd.AddCommand(configCmd)
+// newCmdConfig creates the `dcos config` subcommand.
+func newCmdConfig(out, err io.Writer) *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "config",
+	}
+	cmd.AddCommand(
+		newCmdConfigSet(out, err),
+		newCmdConfigShow(out, err),
+		newCmdConfigUnset(out, err),
+	)
+	return cmd
 }

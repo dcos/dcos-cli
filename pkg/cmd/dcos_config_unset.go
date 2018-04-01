@@ -1,22 +1,20 @@
 package cmd
 
 import (
+	"io"
+
 	"github.com/spf13/cobra"
 )
 
-// configUnsetCmd represents the `dcos config unset` subcommand.
-var configUnsetCmd = &cobra.Command{
-	Use:  "unset",
-	Args: cobra.ExactArgs(1),
-	RunE: runConfigUnsetCmd,
-}
-
-func runConfigUnsetCmd(cmd *cobra.Command, args []string) error {
-	store := attachedCluster().Config.Store()
-	store.Unset(args[0])
-	return store.Persist()
-}
-
-func init() {
-	configCmd.AddCommand(configUnsetCmd)
+// newCmdConfigUnset creates the `dcos config unset` subcommand.
+func newCmdConfigUnset(out, err io.Writer) *cobra.Command {
+	return &cobra.Command{
+		Use:  "unset",
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			store := attachedCluster().Config.Store()
+			store.Unset(args[0])
+			return store.Persist()
+		},
+	}
 }
