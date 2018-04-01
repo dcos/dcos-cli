@@ -1,0 +1,5 @@
+[core]
+dcos_url = "https://success.example.com"
+
+[cluster]
+name = "multi_config_with_same_name"

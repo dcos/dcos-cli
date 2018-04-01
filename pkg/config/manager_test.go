@@ -1,0 +1,110 @@
+package config
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
+
+func TestCurrent(t *testing.T) {
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+
+	fixturesDir := filepath.Join(wd, "manager_test_fixtures")
+
+	fixtures := []struct {
+		name       string
+		envLookup  func(key string) (val string, ok bool)
+		shouldFail bool
+	}{
+		{"conflicting_.dcos_file", nil, true},
+		{"multi_config_with_none_attached", nil, true},
+		{"multiple_config_attached", nil, true},
+		{"legacy_config", nil, false},
+		{"legacy_config_with_empty_clusters_dir", nil, false},
+		{"conflicting_clusters_file", nil, false},
+		{"single_config_attached", nil, false},
+		{"single_config_unattached", nil, false},
+		{"multi_config_with_one_attached", nil, false},
+		{"dcos_config_env", func(key string) (val string, ok bool) {
+			if key == "DCOS_CONFIG" {
+				return filepath.Join(fixturesDir, "dcos_config_env", ".dcos", "dcos_env.toml"), true
+			}
+			return
+		}, false},
+		{"multi_config_with_none_attached", func(key string) (val string, ok bool) {
+			if key == "DCOS_CLUSTER" {
+				return "97193161-f7f1-2295-2514-a6b3918043b6", true
+			}
+			return
+		}, false},
+		{"multi_config_with_none_attached", func(key string) (val string, ok bool) {
+			if key == "DCOS_CLUSTER" {
+				return "multi_config_with_none_attached", true
+			}
+			return
+		}, false},
+		{"multi_config_with_none_attached", func(key string) (val string, ok bool) {
+			if key == "DCOS_CLUSTER" {
+				return "multi_config_with", true
+			}
+			return
+		}, true},
+	}
+
+	for _, fixture := range fixtures {
+		dcosDir := filepath.Join(fixturesDir, fixture.name, ".dcos")
+		manager := NewManager(ManagerOpts{
+			Dir:       dcosDir,
+			EnvLookup: fixture.envLookup,
+		})
+
+		t.Run(fixture.name, func(t *testing.T) {
+			conf, err := manager.Current()
+			if fixture.shouldFail {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, fixture.name, conf.Get("cluster.name").(string))
+			}
+		})
+	}
+}
+
+func TestFind(t *testing.T) {
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+
+	fixturesDir := filepath.Join(wd, "manager_test_fixtures")
+
+	fixtures := []struct {
+		name       string
+		search     string
+		shouldFail bool
+	}{
+		{"multi_config_with_same_name", "multi_config_with_same_name", true},
+		{"multi_config_with_same_name", "multi", true},
+		{"multi_config_with_same_name", "97193161-f7f1-2295-2514-a6b3918043b6", false},
+		{"multi_config_with_same_name", "97193161", false},
+	}
+
+	for _, fixture := range fixtures {
+		dcosDir := filepath.Join(fixturesDir, fixture.name, ".dcos")
+		manager := NewManager(ManagerOpts{
+			Dir: dcosDir,
+		})
+
+		t.Run(fixture.name, func(t *testing.T) {
+			conf, err := manager.Find(fixture.search, false)
+			if fixture.shouldFail {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, fixture.name, conf.Get("cluster.name").(string))
+				require.Equal(t, "https://success.example.com", conf.Get("core.dcos_url").(string))
+			}
+		})
+	}
+}
