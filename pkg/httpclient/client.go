@@ -1,15 +1,18 @@
 package httpclient
 
 import (
+	"context"
 	"io"
 	"net"
 	"net/http"
+	"time"
 )
 
 // A Client is an HTTP client.
 type Client struct {
 	acsToken   string
 	baseURL    string
+	timeout    time.Duration
 	baseClient *http.Client
 }
 
@@ -40,6 +43,11 @@ func New(baseURL string, opts ...Option) *Client {
 				MaxIdleConnsPerHost: 30,
 			},
 		},
+
+		// Default request timeout to 3 minutes. We don't use http.Client.Timeout on purpose as the
+		// current approach allows to change the timeout on a per-request basis. The same client can
+		// be shared for requests with different timeouts.
+		timeout: 3 * time.Minute,
 	}
 	for _, opt := range opts {
 		opt(client)
@@ -77,6 +85,15 @@ func (c *Client) NewRequest(method, path string, body io.Reader) (*http.Request,
 
 	if c.acsToken != "" {
 		req.Header.Add("Authorization", "token="+c.acsToken)
+	}
+
+	if c.timeout > 0 {
+		ctx, cancel := context.WithTimeout(req.Context(), c.timeout)
+		go func() {
+			<-ctx.Done()
+			cancel()
+		}()
+		req = req.WithContext(ctx)
 	}
 	return req, nil
 }

@@ -76,7 +76,7 @@ func TestTimeout(t *testing.T) {
 	defer ts.Close()
 
 	client := New(ts.URL, func(client *Client) {
-		client.baseClient.Timeout = 50 * time.Millisecond
+		client.timeout = 50 * time.Millisecond
 	})
 
 	// The handler will sleep for 100ms with a client timeout of 50ms, the call should fail.
