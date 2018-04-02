@@ -73,22 +73,3 @@ def binaryBuilder = builder('py35', '/workspace')({
 })
 
 binaryBuilder()
-
-node("mesos") {
-    stage ('Pull dcos-cli repository') {
-        dir('dcos-cli') {
-            checkout scm
-        }
-    }
-
-    dir('dcos-cli') {
-        stage ("Build dcos-cli Go binary") {
-            sh "make"
-            sh "./build/linux/dcos"
-        }
-
-        stage ("Test dcos-cli Go project") {
-            sh "make test"
-        }
-    }
-}
