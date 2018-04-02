@@ -2,6 +2,7 @@ package httpclient
 
 import (
 	"io"
+	"net"
 	"net/http"
 )
 
@@ -18,8 +19,27 @@ type Option func(*Client)
 // New returns a new HTTP client for a given baseURL and functional options.
 func New(baseURL string, opts ...Option) *Client {
 	client := &Client{
-		baseURL:    baseURL,
-		baseClient: &http.Client{},
+		baseURL: baseURL,
+		baseClient: &http.Client{
+			Transport: &http.Transport{
+
+				// Allow http_proxy, https_proxy, and no_proxy.
+				Proxy: http.ProxyFromEnvironment,
+
+				// Set a 10 seconds timeout for the connection to be established.
+				DialContext: (&net.Dialer{
+					Timeout: 10 * time.Second,
+				}).DialContext,
+
+				// Set it to 10 seconds as well for the TLS handshake when using HTTPS.
+				TLSHandshakeTimeout: 10 * time.Second,
+
+				// The client will be dealing with a single host (the one in baseURL),
+				// set max idle connections to 30 regardless of the host.
+				MaxIdleConns:        30,
+				MaxIdleConnsPerHost: 30,
+			},
+		},
 	}
 	for _, opt := range opts {
 		opt(client)
