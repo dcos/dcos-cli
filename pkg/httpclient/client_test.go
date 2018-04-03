@@ -60,12 +60,26 @@ func TestPost(t *testing.T) {
 func TestNewRequest(t *testing.T) {
 	client := New("https://dcos.io", func(client *Client) {
 		client.acsToken = "acsToken"
+		client.timeout = 60 * time.Second
 	})
 
 	req, err := client.NewRequest("GET", "/path", nil)
 	require.NoError(t, err)
 	require.Equal(t, req.URL.String(), "https://dcos.io/path")
 	require.Equal(t, "token=acsToken", req.Header.Get("Authorization"))
+	_, ok := req.Context().Deadline()
+	require.True(t, ok)
+}
+
+func TestNewRequestWithoutTimeout(t *testing.T) {
+	client := New("https://dcos.io", func(client *Client) {
+		client.timeout = 60 * time.Second
+	})
+
+	req, err := client.NewRequest("GET", "/path", nil, NoTimeout())
+	require.NoError(t, err)
+	_, ok := req.Context().Deadline()
+	require.False(t, ok)
 }
 
 func TestCancelRequest(t *testing.T) {
