@@ -19,6 +19,17 @@ type Client struct {
 // Option is a functional option for an HTTP client.
 type Option func(*Client)
 
+// RequestOption is a functional option for an HTTP request.
+type RequestOption func(*http.Request)
+
+// reqContextKey is used to set values in request contexts.
+type reqContextKey int
+
+const (
+	// keyNoTimeout is a context key indicating that no timeout should be set for a given request.
+	keyNoTimeout reqContextKey = iota
+)
+
 // New returns a new HTTP client for a given baseURL and functional options.
 func New(baseURL string, opts ...Option) *Client {
 	client := &Client{
@@ -74,10 +85,18 @@ func (c *Client) Post(path string, contentType string, body io.Reader) (*http.Re
 	return c.Do(req)
 }
 
+// NoTimeout disables the timeout for an HTTP request.
+func NoTimeout() RequestOption {
+	return func(req *http.Request) {
+		ctx := context.WithValue(req.Context(), keyNoTimeout, struct{}{})
+		*req = *req.WithContext(ctx)
+	}
+}
+
 // NewRequest returns a new Request given a method, path, and optional body.
 // Also adds the authorization header with the ACS token to work with the
 // DC/OS cluster we are linked to if it has been set.
-func (c *Client) NewRequest(method, path string, body io.Reader) (*http.Request, error) {
+func (c *Client) NewRequest(method, path string, body io.Reader, opts ...RequestOption) (*http.Request, error) {
 	req, err := http.NewRequest(method, c.baseURL+path, body)
 	if err != nil {
 		return nil, err
@@ -87,13 +106,22 @@ func (c *Client) NewRequest(method, path string, body io.Reader) (*http.Request,
 		req.Header.Add("Authorization", "token="+c.acsToken)
 	}
 
+	for _, opt := range opts {
+		opt(req)
+	}
+
 	if c.timeout > 0 {
-		ctx, cancel := context.WithTimeout(req.Context(), c.timeout)
-		go func() {
-			<-ctx.Done()
-			cancel()
-		}()
-		req = req.WithContext(ctx)
+		ctx := req.Context()
+		noTimeout := ctx.Value(keyNoTimeout)
+
+		if noTimeout == nil {
+			newCtx, cancel := context.WithTimeout(ctx, c.timeout)
+			go func() {
+				<-ctx.Done()
+				cancel()
+			}()
+			req = req.WithContext(newCtx)
+		}
 	}
 	return req, nil
 }
