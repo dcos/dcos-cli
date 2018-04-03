@@ -1,6 +1,7 @@
 package httpclient
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"io/ioutil"
@@ -67,31 +68,43 @@ func TestNewRequest(t *testing.T) {
 	require.Equal(t, "token=acsToken", req.Header.Get("Authorization"))
 }
 
-func TestTimeout(t *testing.T) {
+func TestCancelRequest(t *testing.T) {
+	done := make(chan struct{})
+	stuckHandler := make(chan struct{})
+	canceler := make(chan context.CancelFunc, 1)
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		timeout, err := time.ParseDuration(r.URL.Query().Get("timeout"))
-		assert.NoError(t, err)
-		time.Sleep(timeout)
+		cancel := <-canceler
+		cancel()
+		<-stuckHandler
 	}))
 	defer ts.Close()
+	defer close(stuckHandler)
 
-	client := New(ts.URL, func(client *Client) {
-		client.timeout = 50 * time.Millisecond
-	})
+	client := New(ts.URL)
 
-	// The handler will sleep for 100ms with a client timeout of 50ms, the call should fail.
 	req, err := client.NewRequest("GET", "/", nil)
-	req.URL.RawQuery = "timeout=100ms"
 	require.NoError(t, err)
-	_, err = client.Do(req)
-	require.Error(t, err)
 
-	// The handler will sleep for 10ms with a client timeout of 50ms, the call should succeed.
-	req, err = client.NewRequest("GET", "/", nil)
-	req.URL.RawQuery = "timeout=10ms"
-	require.NoError(t, err)
-	_, err = client.Do(req)
-	require.NoError(t, err)
+	// Create a cancelable request and send the cancel function to a channel.
+	// The HTTP handler will then invoke it, this simulates a test where the
+	// request timeout is reached while the server is still processing it.
+	newCtx, cancel := context.WithCancel(req.Context())
+	req = req.WithContext(newCtx)
+	canceler <- cancel
+
+	go func() {
+		resp, err := client.Do(req)
+		require.Error(t, err)
+		require.Nil(t, resp)
+		close(done)
+	}()
+
+	select {
+	case <-time.After(5 * time.Second):
+		require.Fail(t, "HTTP client didn't error-out within 5 seconds, it is most likely stuck forever.")
+	case <-done:
+	}
 }
 
 func TestTLS(t *testing.T) {
