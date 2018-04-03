@@ -40,7 +40,11 @@ if [ ! -d "${BUILDDIR}/${VENV}" ]; then
 
     # Install all requirements into the virtualenv.
     echo "Installing virtualenv requirements..."
-    ${BUILDDIR}/${VENV}/${BIN}/pip${EXE} install --upgrade pip
+    if [ "$(uname)" = "Windows_NT" ]; then
+      ${PYTHON} -m pip install -U pip
+    else
+      ${BUILDDIR}/${VENV}/${BIN}/pip${EXE} install --upgrade pip
+    fi
     ${BUILDDIR}/${VENV}/${BIN}/pip${EXE} install -r ${BASEDIR}/requirements.txt
     ${BUILDDIR}/${VENV}/${BIN}/pip${EXE} install -e ${BASEDIR}
     if [ "$(uname)" = "Windows_NT" ]; then
