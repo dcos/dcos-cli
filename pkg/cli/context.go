@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	"github.com/dcos/dcos-cli/pkg/config"
-	"github.com/dcos/dcos-cli/pkg/config/core"
 	"github.com/spf13/afero"
 )
 
@@ -62,10 +61,10 @@ func (ctx *Context) ConfigManager() *config.Manager {
 }
 
 // Cluster returns the current cluster.
-func (ctx *Context) Cluster() (*core.Cluster, error) {
+func (ctx *Context) Cluster() (*Cluster, error) {
 	conf, err := ctx.ConfigManager().Current()
 	if err != nil {
 		return nil, err
 	}
-	return core.NewCluster(conf), nil
+	return NewCluster(conf), nil
 }
