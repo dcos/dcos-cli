@@ -9,7 +9,9 @@ import stat
 import subprocess
 import sys
 import zipfile
+
 from distutils.version import LooseVersion
+from urllib.parse import urlparse
 
 from dcos import config, constants, http, util
 from dcos.errors import DCOSException
@@ -515,6 +517,10 @@ def _install_with_binary(
 
     binary_url, kind = binary_cli.get("url"), binary_cli.get("kind")
 
+    binary_url = _rewrite_binary_url(
+        binary_url,
+        config.get_config_val("core.dcos_url"))
+
     try:
         env_bin_dir = os.path.join(env_directory, BIN_DIRECTORY)
 
@@ -565,6 +571,31 @@ def _install_with_binary(
         raise _generic_error(package_name, e.message)
 
     return None
+
+
+def _rewrite_binary_url(binary_url, dcos_url):
+    """ Rewrite Cosmos binary URLs when needed.
+
+    A rewrite happens when a resource refers to the currently configured
+    DC/OS cluster but uses the wrong scheme. Ideally this "hack" will be
+    removed in the future.
+
+    For more context, see https://jira.mesosphere.com/browse/DCOS_OSS-2325.
+
+    :param binary_url: the binary resource URL as returned by Cosmos
+    :type binary_url: str
+    :param dcos_url: the DC/OS URL of the current cluster
+    :type dcos_url: str
+    :rtype: str
+    """
+
+    binary_url = urlparse(binary_url)
+    dcos_url = urlparse(dcos_url)
+
+    if binary_url.netloc == dcos_url.netloc:
+        binary_url = binary_url._replace(scheme=dcos_url.scheme)
+
+    return binary_url.geturl()
 
 
 def _install_with_pip(
