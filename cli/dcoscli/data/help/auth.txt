@@ -30,7 +30,7 @@ Options:
     --password-env=<password_env>
         Specify an environment variable name that contains the password.
     --password-file=<password_file>
-        Specify the path to a file that contains the password.
+        Specify the path to a file that contains the password. Trailing whitespaces in the file are ignored.
     --provider=<provider_id>
         Specify the authentication provider to use for login.
     --private-key=<key_path>

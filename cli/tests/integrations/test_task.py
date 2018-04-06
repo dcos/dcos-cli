@@ -312,6 +312,13 @@ def test_exec_interactive():
             stdout=content, stdin=text)
 
 
+def test_exec_match_id_pattern():
+    assert_command(['dcos', 'task', 'exec', 'app1', 'true'])
+    assert_command(['dcos', 'task', 'exec', 'app2', 'true'])
+    returncode, _, _ = exec_command(['dcos', 'task', 'exec', 'app', 'true'])
+    assert returncode != 0
+
+
 def _mark_non_blocking(file_):
     import fcntl
     fcntl.fcntl(file_.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)

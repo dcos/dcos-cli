@@ -16,6 +16,22 @@ def test_open_file():
         in str(excinfo.value)
 
 
+def test_read_file_secure_with_trailing_newline():
+    with util.temptext(b"my_secure_password\n") as temp_file:
+        path = temp_file[1]
+        os.chmod(path, 0o600)
+        password = util.read_file_secure(path)
+        assert password == "my_secure_password"
+
+
+def test_read_file_secure_with_trailing_whitespaces():
+    with util.temptext(b"my_secure_password \r\n") as temp_file:
+        path = temp_file[1]
+        os.chmod(path, 0o600)
+        password = util.read_file_secure(path)
+        assert password == "my_secure_password"
+
+
 @contextlib.contextmanager
 def env():
     """Context manager for altering env vars in tests """
