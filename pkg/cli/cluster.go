@@ -52,20 +52,20 @@ func (c *Cluster) SetACSToken(acsToken string) {
 
 // TLS returns the configuration for TLS clients.
 func (c *Cluster) TLS() TLS {
-	strVal := cast.ToString(c.config.Get("core.ssl_verify"))
+	tlsVal := cast.ToString(c.config.Get("core.ssl_verify"))
 
 	// Try to cast the value to a bool, true means we verify
 	// server certificates, false means we skip verification.
-	if verify, err := strconv.ParseBool(strVal); err == nil {
+	if verify, err := strconv.ParseBool(tlsVal); err == nil {
 		return TLS{Insecure: !verify}
 	}
 
-	// If the value is not a string representing a bool, it means it's a path to a root CA bundle.
-	rootCAsPEM, err := afero.ReadFile(c.config.Fs(), strVal)
+	// The value is not a string representing a bool thus it is a path to a root CA bundle.
+	rootCAsPEM, err := afero.ReadFile(c.config.Fs(), tlsVal)
 	if err != nil {
 		return TLS{
 			Insecure:    true,
-			RootCAsPath: strVal,
+			RootCAsPath: tlsVal,
 		}
 	}
 
@@ -74,14 +74,14 @@ func (c *Cluster) TLS() TLS {
 	if !certPool.AppendCertsFromPEM(rootCAsPEM) {
 		return TLS{
 			Insecure:    true,
-			RootCAsPath: strVal,
+			RootCAsPath: tlsVal,
 		}
 	}
 
 	// The cert pool has been successfully created, store it in the TLS config.
 	return TLS{
 		RootCAs:     certPool,
-		RootCAsPath: strVal,
+		RootCAsPath: tlsVal,
 	}
 }
 

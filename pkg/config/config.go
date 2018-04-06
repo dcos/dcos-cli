@@ -44,8 +44,8 @@ var (
 
 // Opts are functional options for a Config.
 type Opts struct {
-	// EnvWhitelist is a map of config keys and environment variables. When present,
-	// these env vars would take precedence over the values in the toml.Tree.
+	// EnvWhitelist is a map of config keys and environment variables.
+	// When present, these env vars take precedence over the values in the toml.Tree.
 	EnvWhitelist map[string]string
 
 	// EnvLookup is the function used to lookup environment variables.
@@ -254,7 +254,6 @@ func (c *Config) Keys() []string {
 		if keys[i] == keys[i-1] {
 			keys = append(keys[:i], keys[i+1:]...)
 			keysLen--
-			i--
 		}
 	}
 	return keys
