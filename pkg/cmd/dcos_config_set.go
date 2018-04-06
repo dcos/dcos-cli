@@ -1,22 +1,23 @@
 package cmd
 
 import (
+	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/spf13/cobra"
 )
 
-// configSetCmd represents the `dcos config set` subcommand.
-var configSetCmd = &cobra.Command{
-	Use:  "set",
-	Args: cobra.ExactArgs(2),
-	RunE: runConfigSetCmd,
-}
+// newCmdConfigSet creates the `dcos config set` subcommand.
+func newCmdConfigSet(ctx *cli.Context) *cobra.Command {
+	return &cobra.Command{
+		Use:  "set",
+		Args: cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			conf, err := ctx.ConfigManager().Current()
+			if err != nil {
+				return err
+			}
 
-func runConfigSetCmd(cmd *cobra.Command, args []string) error {
-	store := attachedCluster().Config.Store()
-	store.Set(args[0], args[1])
-	return store.Persist()
-}
-
-func init() {
-	configCmd.AddCommand(configSetCmd)
+			conf.Set(args[0], args[1])
+			return conf.Persist()
+		},
+	}
 }

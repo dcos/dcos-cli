@@ -1,19 +1,17 @@
 package cmd
 
 import (
-	"fmt"
-
+	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/spf13/cobra"
 )
 
-// authCmd represents the `dcos auth` subcommand.
-var authCmd = &cobra.Command{
-	Use: "auth",
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("auth called")
-	},
-}
-
-func init() {
-	rootCmd.AddCommand(authCmd)
+// newCmdAuth creates the `dcos auth` subcommand.
+func newCmdAuth(ctx *cli.Context) *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "auth",
+	}
+	cmd.AddCommand(
+		newCmdAuthListProviders(ctx),
+	)
+	return cmd
 }
