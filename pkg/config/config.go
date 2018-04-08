@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 
@@ -145,16 +144,6 @@ func (c *Config) SetPath(path string) {
 // Fs returns the filesystem for the store.
 func (c *Config) Fs() afero.Fs {
 	return c.fs
-}
-
-// Attached returns whether or not the store has an attached file next to it.
-func (c *Config) Attached() bool {
-	attachedFilePath := filepath.Join(filepath.Dir(c.path), "attached")
-	attachedFileInfo, err := c.fs.Stat(attachedFilePath)
-	if err == nil && attachedFileInfo.Mode().IsRegular() {
-		return true
-	}
-	return false
 }
 
 // Get returns a value from the Config using a key.

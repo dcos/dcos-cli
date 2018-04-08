@@ -74,7 +74,8 @@ func (m *Manager) Current() (*Config, error) {
 	default:
 		var currentConfig *Config
 		for _, config := range configs {
-			if config.Attached() {
+			attachedFile := m.attachedFilePath(config)
+			if m.fileExists(attachedFile) {
 				if currentConfig != nil {
 					return nil, errors.New("multiple clusters are attached")
 				}
@@ -139,6 +140,20 @@ func (m *Manager) All() (configs []*Config) {
 		}
 	}
 	return
+}
+
+// attachedFilePath returns the `attached` file path for a given config.
+func (m *Manager) attachedFilePath(conf *Config) string {
+	return filepath.Join(filepath.Dir(conf.Path()), "attached")
+}
+
+// fileExists returns whether or not a file exists.
+func (m *Manager) fileExists(path string) bool {
+	fileInfo, err := m.fs.Stat(path)
+	if err != nil {
+		return false
+	}
+	return fileInfo.Mode().IsRegular()
 }
 
 func (m *Manager) newConfig() *Config {
