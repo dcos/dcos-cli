@@ -142,6 +142,28 @@ func (m *Manager) All() (configs []*Config) {
 	return
 }
 
+// Attach sets a given config as the current one. This is done by adding an `attached`
+// file next to it. If another config is already attached, the file gets moved.
+func (m *Manager) Attach(config *Config) error {
+	var currentAttachedFile string
+	for _, c := range m.All() {
+		attachedFile := m.attachedFilePath(c)
+		if m.fileExists(attachedFile) {
+			currentAttachedFile = attachedFile
+		}
+	}
+
+	configAttachedPath := m.attachedFilePath(config)
+	if currentAttachedFile == "" {
+		f, err := m.fs.Create(configAttachedPath)
+		if err != nil {
+			return err
+		}
+		return f.Close()
+	}
+	return m.fs.Rename(currentAttachedFile, configAttachedPath)
+}
+
 // attachedFilePath returns the `attached` file path for a given config.
 func (m *Manager) attachedFilePath(conf *Config) string {
 	return filepath.Join(filepath.Dir(conf.Path()), "attached")
