@@ -93,7 +93,8 @@ func (m *Manager) Current() (*Config, error) {
 func (m *Manager) Find(name string, strict bool) (*Config, error) {
 	var matches []*Config
 	for _, config := range m.All() {
-		if name == config.Get(keyClusterName).(string) {
+		configName, _ := config.Get(keyClusterName).(string)
+		if name == configName {
 			matches = append(matches, config)
 		}
 		clusterID := filepath.Base(filepath.Dir(config.Path()))
