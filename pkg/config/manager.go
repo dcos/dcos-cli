@@ -146,14 +146,19 @@ func (m *Manager) All() (configs []*Config) {
 // file next to it. If another config is already attached, the file gets moved.
 func (m *Manager) Attach(config *Config) error {
 	var currentAttachedFile string
+
+	// Iterate over all configs to find the one with an attached file, if any.
 	for _, c := range m.All() {
 		attachedFile := m.attachedFilePath(c)
 		if m.fileExists(attachedFile) {
 			currentAttachedFile = attachedFile
+			break
 		}
 	}
 
 	configAttachedPath := m.attachedFilePath(config)
+
+	// Create the attached file if no config is currently attached, otherwise move it.
 	if currentAttachedFile == "" {
 		f, err := m.fs.Create(configAttachedPath)
 		if err != nil {
