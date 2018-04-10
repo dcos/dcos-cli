@@ -13,15 +13,17 @@
  * tests.
  */
 
+@Library('sec_ci_libs@v2-latest') _
+
 /**
- * These are the platforms we are building against.
+ * These branches will trigger a Slack notification in case of failure.
  */
-def platforms = ["linux"]
+def master_branches = ["master", "0.4.x", "0.5.x", ] as String[]
 
 /**
  * This generates the `dcos_launch` config for a particular build.
  */
-def generateConfig(deploymentName, installerUrl, sshKeyPath) {
+def generateConfig(deploymentName, installerUrl, license, sshKeyPath) {
     return """
 ---
 launch_config_version: 1
@@ -43,9 +45,7 @@ dcos_config:
         - 10.10.0.2
     dns_search: us-west-2.compute.internal
     master_discovery: static
-    cosmos_config:
-      staged_package_storage_uri: file:///var/lib/dcos/cosmos/staged-packages
-      package_storage_uri: file:///var/lib/dcos/cosmos/packages
+    exhibitor_storage_backend: static
 """
 }
 
@@ -82,6 +82,7 @@ class TestCluster implements Serializable {
                         "text" : script.generateConfig(
                                 "dcos-cli-${platform}-${script.env.ghprbPullId}-${script.env.BUILD_ID}-${createAttempts}",
                                 "${script.env.DCOS_INSTALLER_URL}",
+                                "${script.env.DCOS_LICENSE}",
                                 "${script.env.CLI_TEST_SSH_KEY_PATH}")])
 
                 script.sh "./dcos-launch create -c ${platform}_config.yaml -i ${platform}_cluster_info.json"
@@ -168,13 +169,10 @@ def testBuilder(String platform, String nodeId, String workspace = null) {
 
                         withCredentials(
                             [[$class: 'FileBinding',
-                              credentialsId: '1c206779-acc0-4844-97f6-7b3ed081a456',
-                              variable: 'DCOS_SNAKEOIL_CRT_PATH'],
-                             [$class: 'FileBinding',
                               credentialsId: '23743034-1ac4-49f7-b2e6-a661aee2d11b',
                               variable: 'CLI_TEST_SSH_KEY_PATH']]) {
 
-                            withEnv(["DCOS_IP=${dcosIp}"]) {
+                            withEnv(["CLI_TEST_DCOS_URL=https://${dcosIp}"]) {
                                 try {
                                     body()
                                 } catch(InterruptedException | hudson.AbortException e) {
@@ -217,11 +215,7 @@ def builders = [:]
 
 builders['linux-tests'] = testBuilder('linux', 'py35', '/workspace')({
     stage ("Run dcos-cli tests") {
-        sh '''
-           rm -rf ~/.dcos; \
-           grep -q "^.* dcos.snakeoil.mesosphere.com$" /etc/hosts && \
-           sed -iold "s/^.* dcos.snakeoil.mesosphere.com$/${DCOS_IP} dcos.snakeoil.mesosphere.com/" /etc/hosts || \
-           echo ${DCOS_IP} dcos.snakeoil.mesosphere.com >> /etc/hosts'''
+        sh "rm -rf ~/.dcos"
 
         dir('dcos-cli') {
             sh 'make test'
@@ -233,11 +227,11 @@ builders['linux-tests'] = testBuilder('linux', 'py35', '/workspace')({
                make binary; \
                export CLI_TEST_SSH_USER=centos; \
                export CLI_TEST_MASTER_PROXY=true; \
-               dist/dcos cluster setup dcos.snakeoil.mesosphere.com \
+               dist/dcos cluster setup ${CLI_TEST_DCOS_URL} \
                    --insecure --username=${DCOS_ADMIN_USERNAME} \
                    --password-env=DCOS_ADMIN_PASSWORD; \
                dist/dcos config set core.reporting false; \
-               dist/dcos config set core.timeout 5; \
+               dist/dcos config set core.timeout 30; \
                make test-binary'''
         }
     }
@@ -250,7 +244,7 @@ builders['linux-tests'] = testBuilder('linux', 'py35', '/workspace')({
  * are done.
  */
 throttle(['dcos-cli']) {
-    node('py35') {
+    task_wrapper('py35', master_branches, '8b793652-f26a-422f-a9ba-0d1e47eb9d89', '#dcos-cli-ci') {
         stage('Cleanup workspace') {
             deleteDir()
         }
@@ -260,7 +254,7 @@ throttle(['dcos-cli']) {
         }
 
         stage ('Download dcos-launch') {
-            sh 'wget https://downloads.dcos.io/dcos-test-utils/bin/linux/dcos-launch'
+            sh 'wget https://downloads.dcos.io/dcos-launch/bin/linux/dcos-launch'
             sh 'chmod a+x dcos-launch'
         }
 
@@ -285,6 +279,9 @@ throttle(['dcos-cli']) {
             [$class: 'StringBinding',
              credentialsId: '84658f14-3944-4597-bca1-a00b89fcf938',
              variable: 'DCOS_INSTALLER_URL'],
+            [$class: 'StringBinding',
+             credentialsId: 'ca159ad3-7323-4564-818c-46a8f03e1389',
+             variable: 'DCOS_LICENSE'],
             [$class: 'UsernamePasswordMultiBinding',
              credentialsId: '323df884-742b-4099-b8b7-d764e5eb9674',
              usernameVariable: 'DCOS_ADMIN_USERNAME',
