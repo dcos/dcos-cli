@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )
 
@@ -107,4 +108,24 @@ func TestFind(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAttach(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	clusterID := "97193161-f7f1-2295-2514-a6b3918043b6"
+	fs.Create(filepath.Join(".dcos", "clusters", clusterID, "dcos.toml"))
+
+	manager := NewManager(ManagerOpts{
+		Dir: ".dcos",
+		Fs:  fs,
+	})
+
+	conf, err := manager.Find(clusterID, true)
+	require.NoError(t, err)
+
+	attachedFilePath := manager.attachedFilePath(conf)
+
+	require.False(t, manager.fileExists(attachedFilePath))
+	require.NoError(t, manager.Attach(conf))
+	require.True(t, manager.fileExists(attachedFilePath))
 }

@@ -74,7 +74,8 @@ func (m *Manager) Current() (*Config, error) {
 	default:
 		var currentConfig *Config
 		for _, config := range configs {
-			if config.Attached() {
+			attachedFile := m.attachedFilePath(config)
+			if m.fileExists(attachedFile) {
 				if currentConfig != nil {
 					return nil, errors.New("multiple clusters are attached")
 				}
@@ -93,7 +94,8 @@ func (m *Manager) Current() (*Config, error) {
 func (m *Manager) Find(name string, strict bool) (*Config, error) {
 	var matches []*Config
 	for _, config := range m.All() {
-		if name == config.Get(keyClusterName).(string) {
+		configName, _ := config.Get(keyClusterName).(string)
+		if name == configName {
 			matches = append(matches, config)
 		}
 		clusterID := filepath.Base(filepath.Dir(config.Path()))
@@ -138,6 +140,47 @@ func (m *Manager) All() (configs []*Config) {
 		}
 	}
 	return
+}
+
+// Attach sets a given config as the current one. This is done by adding an `attached`
+// file next to it. If another config is already attached, the file gets moved.
+func (m *Manager) Attach(config *Config) error {
+	var currentAttachedFile string
+
+	// Iterate over all configs to find the one with an attached file, if any.
+	for _, c := range m.All() {
+		attachedFile := m.attachedFilePath(c)
+		if m.fileExists(attachedFile) {
+			currentAttachedFile = attachedFile
+			break
+		}
+	}
+
+	configAttachedPath := m.attachedFilePath(config)
+
+	// Create the attached file if no config is currently attached, otherwise move it.
+	if currentAttachedFile == "" {
+		f, err := m.fs.Create(configAttachedPath)
+		if err != nil {
+			return err
+		}
+		return f.Close()
+	}
+	return m.fs.Rename(currentAttachedFile, configAttachedPath)
+}
+
+// attachedFilePath returns the `attached` file path for a given config.
+func (m *Manager) attachedFilePath(conf *Config) string {
+	return filepath.Join(filepath.Dir(conf.Path()), "attached")
+}
+
+// fileExists returns whether or not a file exists.
+func (m *Manager) fileExists(path string) bool {
+	fileInfo, err := m.fs.Stat(path)
+	if err != nil {
+		return false
+	}
+	return fileInfo.Mode().IsRegular()
 }
 
 func (m *Manager) newConfig() *Config {
