@@ -6,7 +6,6 @@ import (
 
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
-	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 )
 
@@ -52,14 +51,7 @@ func newCmdAuthListProviders(ctx *cli.Context) *cobra.Command {
 				}
 				fmt.Fprintln(ctx.Out, string(out))
 			} else {
-				table := tablewriter.NewWriter(ctx.Out)
-				table.SetHeader([]string{"PROVIDER ID", "AUTHENTICATION TYPE"})
-				// Turn off wrapping because it seems to wrap even if the column is set to be wide enough.
-				table.SetAutoWrapText(false)
-				table.SetBorder(false)
-				table.SetRowSeparator(" ")
-				table.SetColumnSeparator(" ")
-				table.SetCenterSeparator(" ")
+				table := cli.NewTable(ctx.Out, []string{"PROVIDER ID", "AUTHENTICATION TYPE"})
 
 				for name, provider := range *providers {
 					desc, err := loginTypeDescription(provider.AuthenticationType, provider)
