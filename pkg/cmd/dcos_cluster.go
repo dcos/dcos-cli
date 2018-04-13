@@ -12,6 +12,7 @@ func newCmdCluster(ctx *cli.Context) *cobra.Command {
 	}
 	cmd.AddCommand(
 		newCmdClusterAttach(ctx),
+		newCmdClusterList(ctx),
 		newCmdClusterRemove(ctx),
 		newCmdClusterRename(ctx),
 	)

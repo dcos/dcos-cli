@@ -71,6 +71,17 @@ func (ctx *Context) Cluster() (*Cluster, error) {
 	return NewCluster(conf), nil
 }
 
+// Clusters returns the clusters.
+func (ctx *Context) Clusters() []*Cluster {
+	confs := ctx.ConfigManager().All()
+	var clusters []*Cluster
+	for _, conf := range confs {
+		clusters = append(clusters, NewCluster(conf))
+	}
+
+	return clusters
+}
+
 // HTTPClient creates an httpclient.Client for a given cluster.
 func (ctx *Context) HTTPClient(c *Cluster, opts ...httpclient.Option) *httpclient.Client {
 	if c.Timeout() > 0 {
