@@ -2,6 +2,7 @@ package httpclient
 
 import (
 	"context"
+	"crypto/tls"
 	"io"
 	"net"
 	"net/http"
@@ -18,6 +19,20 @@ type Client struct {
 
 // Option is a functional option for an HTTP client.
 type Option func(*Client)
+
+// TLS sets the TLS configuration for the HTTP client transport.
+func TLS(tlsConfig *tls.Config) Option {
+	return func(c *Client) {
+		c.baseClient.Transport.(*http.Transport).TLSClientConfig = tlsConfig
+	}
+}
+
+// Timeout sets the timeout for HTTP requests.
+func Timeout(timeout time.Duration) Option {
+	return func(c *Client) {
+		c.timeout = timeout
+	}
+}
 
 // RequestOption is a functional option for an HTTP request.
 type RequestOption func(*http.Request)

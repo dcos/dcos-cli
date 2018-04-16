@@ -28,18 +28,18 @@ func newCmdAuthListProviders(ctx *cli.Context) *cobra.Command {
 		Use:  "list-providers",
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var url string
+			var client *httpclient.Client
 			if len(args) == 0 {
 				cluster, err := ctx.Cluster()
 				if err != nil {
 					return err
 				}
-				url = cluster.URL()
+				client = ctx.HTTPClient(cluster)
 			} else {
-				url = args[0]
+				client = httpclient.New(args[0])
 			}
 
-			providers, err := getProviders(url)
+			providers, err := getProviders(client)
 			if err != nil {
 				return err
 			}
@@ -78,8 +78,7 @@ func newCmdAuthListProviders(ctx *cli.Context) *cobra.Command {
 	return cmd
 }
 
-func getProviders(baseURL string) (*map[string]loginProvider, error) {
-	client := httpclient.New(baseURL)
+func getProviders(client *httpclient.Client) (*map[string]loginProvider, error) {
 	response, err := client.Get("/acs/api/v1/auth/providers")
 	if err != nil {
 		return nil, err
