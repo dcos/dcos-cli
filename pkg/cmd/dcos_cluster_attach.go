@@ -9,7 +9,7 @@ import (
 func newCmdClusterAttach(ctx *cli.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  "attach",
-		Args: cobra.MaximumNArgs(1),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			manager := ctx.ConfigManager()
 			conf, err := manager.Find(args[0], false)
