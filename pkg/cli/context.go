@@ -1,12 +1,14 @@
 package cli
 
 import (
+	"crypto/tls"
 	"io"
 	"os"
 	"os/user"
 	"path/filepath"
 
 	"github.com/dcos/dcos-cli/pkg/config"
+	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/spf13/afero"
 )
 
@@ -67,4 +69,19 @@ func (ctx *Context) Cluster() (*Cluster, error) {
 		return nil, err
 	}
 	return NewCluster(conf), nil
+}
+
+// HTTPClient creates an httpclient.Client for a given cluster.
+func (ctx *Context) HTTPClient(c *Cluster, opts ...httpclient.Option) *httpclient.Client {
+	if c.Timeout() > 0 {
+		timeoutOpt := httpclient.Timeout(c.Timeout())
+		opts = append([]httpclient.Option{timeoutOpt}, opts...)
+	}
+	tlsOpt := httpclient.TLS(&tls.Config{
+		InsecureSkipVerify: c.TLS().Insecure,
+		RootCAs:            c.TLS().RootCAs,
+	})
+
+	opts = append([]httpclient.Option{tlsOpt}, opts...)
+	return httpclient.New(c.URL(), opts...)
 }
