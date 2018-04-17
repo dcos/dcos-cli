@@ -2,6 +2,7 @@ package cli
 
 import (
 	"crypto/x509"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -99,6 +100,12 @@ func (c *Cluster) Timeout() time.Duration {
 // SetTimeout sets the HTTP request timeout once the connection is established.
 func (c *Cluster) SetTimeout(timeout time.Duration) {
 	c.config.Set("core.timeout", timeout.Seconds())
+}
+
+// ID returns the ID of the cluster.
+func (c *Cluster) ID() string {
+	path := c.Config().Path()
+	return filepath.Base(filepath.Dir(path))
 }
 
 // Name returns the custom name for the cluster.
