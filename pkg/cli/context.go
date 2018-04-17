@@ -9,6 +9,7 @@ import (
 
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
 
@@ -21,6 +22,7 @@ type Context struct {
 	EnvLookup func(key string) (string, bool)
 	User      *user.User
 	Fs        afero.Fs
+	Logger    *logrus.Logger
 }
 
 // DefaultContext returns the default context, backed by the os package.
@@ -38,6 +40,11 @@ func DefaultContext() *Context {
 		EnvLookup: os.LookupEnv,
 		User:      usr,
 		Fs:        afero.NewOsFs(),
+		Logger: &logrus.Logger{
+			Out:       os.Stderr,
+			Formatter: new(logrus.TextFormatter),
+			Hooks:     make(logrus.LevelHooks),
+		},
 	}
 }
 
