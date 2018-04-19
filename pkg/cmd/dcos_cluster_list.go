@@ -66,9 +66,9 @@ func newCmdClusterList(ctx *cli.Context) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				fmt.Fprintln(ctx.Out, string(out))
+				fmt.Fprintln(ctx.Out(), string(out))
 			} else {
-				table := cli.NewTable(ctx.Out, []string{"", "NAME", "ID", "STATUS", "VERSION", "URL"})
+				table := cli.NewTable(ctx.Out(), []string{"", "NAME", "ID", "STATUS", "VERSION", "URL"})
 				for i := range infos {
 					var attached string
 					if infos[i].Attached {

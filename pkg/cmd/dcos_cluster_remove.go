@@ -27,7 +27,7 @@ func newCmdClusterRemove(ctx *cli.Context) *cobra.Command {
 			// Remove all clusters.
 			if removeAll {
 				for _, conf := range ctx.ConfigManager().All() {
-					if err := ctx.Fs.RemoveAll(filepath.Dir(conf.Path())); err != nil {
+					if err := ctx.Fs().RemoveAll(filepath.Dir(conf.Path())); err != nil {
 						return err
 					}
 				}
@@ -39,7 +39,7 @@ func newCmdClusterRemove(ctx *cli.Context) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return ctx.Fs.RemoveAll(filepath.Dir(conf.Path()))
+			return ctx.Fs().RemoveAll(filepath.Dir(conf.Path()))
 		},
 	}
 	cmd.Flags().BoolVar(&removeAll, "all", false, "remove all clusters")

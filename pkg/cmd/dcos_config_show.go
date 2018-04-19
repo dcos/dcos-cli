@@ -36,7 +36,7 @@ func newCmdConfigShow(ctx *cli.Context) *cobra.Command {
 					if key == "core.dcos_acs_token" {
 						val = "********"
 					}
-					fmt.Fprintf(ctx.Out, "%s %v\n", key, val)
+					fmt.Fprintf(ctx.Out(), "%s %v\n", key, val)
 				}
 			}
 			return nil

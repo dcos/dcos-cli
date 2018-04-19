@@ -49,9 +49,9 @@ func newCmdAuthListProviders(ctx *cli.Context) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				fmt.Fprintln(ctx.Out, string(out))
+				fmt.Fprintln(ctx.Out(), string(out))
 			} else {
-				table := cli.NewTable(ctx.Out, []string{"PROVIDER ID", "AUTHENTICATION TYPE"})
+				table := cli.NewTable(ctx.Out(), []string{"PROVIDER ID", "AUTHENTICATION TYPE"})
 
 				for name, provider := range *providers {
 					desc, err := loginTypeDescription(provider.AuthenticationType, provider)
