@@ -15,11 +15,11 @@ func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			if verbose == 1 {
 				// -v sets the logger level to info.
-				ctx.Logger.SetLevel(logrus.InfoLevel)
+				ctx.Logger().SetLevel(logrus.InfoLevel)
 			} else if verbose > 1 {
 				// -vv sets the logger level to debug. This also happens for -vvv
 				// and above, in such cases we set the logging level to its maximum.
-				ctx.Logger.SetLevel(logrus.DebugLevel)
+				ctx.Logger().SetLevel(logrus.DebugLevel)
 			}
 		},
 	}

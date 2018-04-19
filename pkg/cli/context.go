@@ -3,7 +3,6 @@ package cli
 import (
 	"crypto/tls"
 	"io"
-	"os"
 	"os/user"
 	"path/filepath"
 
@@ -13,58 +12,75 @@ import (
 	"github.com/spf13/afero"
 )
 
-// Context contains abstractions for stdout/stderr, the filesystem, and the CLI environment in general.
-// It also acts as a factory/helper for various objects across the project. It has quite wide scope so
-// in the future it might be refined or interfaces might be introduced for subsets of its functionalities.
+// Context provides an implementation of api.Context. It relies on an Environment and is used to create
+// various objects across the project and is being passed to every command as a constructor argument.
 type Context struct {
-	Out       io.Writer
-	ErrOut    io.Writer
-	EnvLookup func(key string) (string, bool)
-	User      *user.User
-	Fs        afero.Fs
-	Logger    *logrus.Logger
+	env    *Environment
+	logger *logrus.Logger
 }
 
-// DefaultContext returns the default context, backed by the os package.
-func DefaultContext() *Context {
-	// Not being able to get the current user is not critical. While it is very unlikely to happen,
-	// the context can use alternatives in such cases. See for example DCOSDir where it can use an
-	// environment variable or default to the current directory when ~/.dcos is not resolvable.
-	//
-	// Once we have a logging system this is an error we should log though.
-	usr, _ := user.Current()
+// NewContext creates a new context from a given environment.
+func NewContext(env *Environment) *Context {
+	return &Context{env: env}
+}
 
-	return &Context{
-		Out:       os.Stdout,
-		ErrOut:    os.Stderr,
-		EnvLookup: os.LookupEnv,
-		User:      usr,
-		Fs:        afero.NewOsFs(),
-		Logger: &logrus.Logger{
-			Out:       os.Stderr,
+// Out returns the writer for CLI output.
+func (ctx *Context) Out() io.Writer {
+	return ctx.env.Out
+}
+
+// ErrOut returns the writer for CLI errors, logs, and informational messages.
+func (ctx *Context) ErrOut() io.Writer {
+	return ctx.env.ErrOut
+}
+
+// EnvLookup lookups environment variables.
+func (ctx *Context) EnvLookup(key string) (string, bool) {
+	return ctx.env.EnvLookup(key)
+}
+
+// User returns the current system user.
+func (ctx *Context) User() (*user.User, error) {
+	return ctx.env.UserLookup()
+}
+
+// Fs returns the filesystem.
+func (ctx *Context) Fs() afero.Fs {
+	return ctx.env.Fs
+}
+
+// Logger returns the CLI logger.
+func (ctx *Context) Logger() *logrus.Logger {
+	if ctx.logger == nil {
+		ctx.logger = &logrus.Logger{
+			Out:       ctx.env.ErrOut,
 			Formatter: new(logrus.TextFormatter),
 			Hooks:     make(logrus.LevelHooks),
-		},
+		}
 	}
+	return ctx.logger
 }
 
 // DCOSDir returns the root directory for the DC/OS CLI.
 // It defaults to `~/.dcos` and can be overriden by the `DCOS_DIR` env var.
 func (ctx *Context) DCOSDir() string {
-	if dcosDir, ok := ctx.EnvLookup("DCOS_DIR"); ok {
+	if dcosDir, ok := ctx.env.EnvLookup("DCOS_DIR"); ok {
 		return dcosDir
 	}
-	if ctx.User != nil {
-		return filepath.Join(ctx.User.HomeDir, ".dcos")
+	if usr, err := ctx.env.UserLookup(); err == nil {
+		return filepath.Join(usr.HomeDir, ".dcos")
 	}
+
+	// Not being able to get the current user is not critical. While it is
+	// very unlikely to happen, we can fallback to the current directory.
 	return ""
 }
 
 // ConfigManager returns the ConfigManager for the context.
 func (ctx *Context) ConfigManager() *config.Manager {
 	return config.NewManager(config.ManagerOpts{
-		Fs:        ctx.Fs,
-		EnvLookup: ctx.EnvLookup,
+		Fs:        ctx.env.Fs,
+		EnvLookup: ctx.env.EnvLookup,
 		Dir:       ctx.DCOSDir(),
 	})
 }
