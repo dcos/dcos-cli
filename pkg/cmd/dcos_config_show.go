@@ -22,7 +22,7 @@ func newCmdConfigShow(ctx *cli.Context) *cobra.Command {
 			if len(args) == 1 {
 				key := args[0]
 				if val := conf.Get(key); val != nil {
-					fmt.Printf("%v\n", val)
+					fmt.Fprintf(ctx.Out(), "%v\n", val)
 					return nil
 				}
 				return fmt.Errorf("unknown key \"%s\"", key)
