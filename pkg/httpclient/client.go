@@ -6,7 +6,11 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/httputil"
 	"time"
+
+	"github.com/dcos/dcos-cli/pkg/printer"
+	"github.com/sirupsen/logrus"
 )
 
 // A Client is an HTTP client.
@@ -15,6 +19,7 @@ type Client struct {
 	baseURL    string
 	timeout    time.Duration
 	baseClient *http.Client
+	logger     *logrus.Logger
 }
 
 // Option is a functional option for an HTTP client.
@@ -31,6 +36,13 @@ func TLS(tlsConfig *tls.Config) Option {
 func Timeout(timeout time.Duration) Option {
 	return func(c *Client) {
 		c.timeout = timeout
+	}
+}
+
+// Logger sets the logger for the HTTP client.
+func Logger(logger *logrus.Logger) Option {
+	return func(c *Client) {
+		c.logger = logger
 	}
 }
 
@@ -145,5 +157,28 @@ func (c *Client) NewRequest(method, path string, body io.Reader, opts ...Request
 // policy (such as redirects, cookies, auth) as configured on the
 // client.
 func (c *Client) Do(req *http.Request) (*http.Response, error) {
-	return c.baseClient.Do(req)
+	var dumpBody bool
+
+	if c.logger != nil && c.logger.Level >= logrus.DebugLevel {
+		dumpBody = true
+	}
+
+	reqDump, err := httputil.DumpRequestOut(req, dumpBody)
+	if err != nil {
+		printer.Log(c.logger, logrus.WarnLevel, false, "Couldn't dump request: %s", err)
+	} else {
+		printer.Log(c.logger, logrus.InfoLevel, false, "Outgoing request:\n%s", reqDump)
+	}
+
+	resp, err := c.baseClient.Do(req)
+
+	if err == nil {
+		respDump, err := httputil.DumpResponse(resp, dumpBody)
+		if err != nil {
+			printer.Log(c.logger, logrus.WarnLevel, false, "Couldn't dump response: %s", err)
+		} else {
+			printer.Log(c.logger, logrus.InfoLevel, false, "Incoming response:\n%s", respDump)
+		}
+	}
+	return resp, err
 }
