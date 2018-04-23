@@ -107,15 +107,17 @@ func (ctx *Context) Clusters() []*Cluster {
 
 // HTTPClient creates an httpclient.Client for a given cluster.
 func (ctx *Context) HTTPClient(c *Cluster, opts ...httpclient.Option) *httpclient.Client {
+	var baseOpts []httpclient.Option
 	if c.Timeout() > 0 {
-		timeoutOpt := httpclient.Timeout(c.Timeout())
-		opts = append([]httpclient.Option{timeoutOpt}, opts...)
+		baseOpts = append(baseOpts, httpclient.Timeout(c.Timeout()))
 	}
 	tlsOpt := httpclient.TLS(&tls.Config{
 		InsecureSkipVerify: c.TLS().Insecure,
 		RootCAs:            c.TLS().RootCAs,
 	})
 
-	opts = append([]httpclient.Option{tlsOpt}, opts...)
+	baseOpts = append(baseOpts, tlsOpt, httpclient.Logger(ctx.Logger))
+	opts = append(baseOpts, opts...)
+
 	return httpclient.New(c.URL(), opts...)
 }
