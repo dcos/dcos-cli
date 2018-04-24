@@ -1,4 +1,4 @@
-package cmd
+package cluster
 
 import (
 	"github.com/dcos/dcos-cli/pkg/cli"
