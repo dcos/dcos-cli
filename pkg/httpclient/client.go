@@ -162,7 +162,7 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 		if err != nil {
 			c.logger.Warnf("Couldn't dump request: %s", err)
 		} else {
-			c.logger.Infof("Incoming response:\n%s", reqDump)
+			c.logger.Infof("Outgoing request:\n%s", reqDump)
 		}
 	}
 
