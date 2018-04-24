@@ -13,7 +13,7 @@ func TestCurrent(t *testing.T) {
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 
-	fixturesDir := filepath.Join(wd, "manager_test_fixtures")
+	fixturesDir := filepath.Join(wd, "testdata")
 
 	fixtures := []struct {
 		name       string
@@ -78,7 +78,7 @@ func TestFind(t *testing.T) {
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 
-	fixturesDir := filepath.Join(wd, "manager_test_fixtures")
+	fixturesDir := filepath.Join(wd, "testdata")
 
 	fixtures := []struct {
 		name       string
