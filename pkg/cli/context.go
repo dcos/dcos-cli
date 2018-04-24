@@ -116,7 +116,7 @@ func (ctx *Context) HTTPClient(c *Cluster, opts ...httpclient.Option) *httpclien
 		RootCAs:            c.TLS().RootCAs,
 	})
 
-	baseOpts = append(baseOpts, tlsOpt, httpclient.Logger(ctx.Logger))
+	baseOpts = append(baseOpts, tlsOpt, httpclient.Logger(ctx.Logger()))
 	opts = append(baseOpts, opts...)
 
 	return httpclient.New(c.URL(), opts...)
