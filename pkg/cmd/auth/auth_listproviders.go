@@ -1,4 +1,4 @@
-package cmd
+package auth
 
 import (
 	"encoding/json"

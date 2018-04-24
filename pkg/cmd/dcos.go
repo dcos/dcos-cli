@@ -3,6 +3,9 @@ package cmd
 
 import (
 	"github.com/dcos/dcos-cli/pkg/cli"
+	"github.com/dcos/dcos-cli/pkg/cmd/auth"
+	"github.com/dcos/dcos-cli/pkg/cmd/cluster"
+	"github.com/dcos/dcos-cli/pkg/cmd/config"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -27,9 +30,9 @@ func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
 	cmd.PersistentFlags().CountVarP(&verbose, "", "v", "verbosity (-v or -vv)")
 
 	cmd.AddCommand(
-		newCmdAuth(ctx),
-		newCmdConfig(ctx),
-		newCmdCluster(ctx),
+		auth.NewCommand(ctx),
+		config.NewCommand(ctx),
+		cluster.NewCommand(ctx),
 	)
 	return cmd
 }

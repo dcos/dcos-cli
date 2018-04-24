@@ -1,12 +1,12 @@
-package cmd
+package auth
 
 import (
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/spf13/cobra"
 )
 
-// newCmdAuth creates the `dcos auth` subcommand.
-func newCmdAuth(ctx *cli.Context) *cobra.Command {
+// NewCommand creates the `dcos auth` subcommand.
+func NewCommand(ctx *cli.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "auth",
 	}

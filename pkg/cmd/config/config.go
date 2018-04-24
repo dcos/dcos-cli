@@ -1,12 +1,12 @@
-package cmd
+package config
 
 import (
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/spf13/cobra"
 )
 
-// newCmdConfig creates the `dcos config` subcommand.
-func newCmdConfig(ctx *cli.Context) *cobra.Command {
+// NewCommand creates the `dcos config` subcommand.
+func NewCommand(ctx *cli.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "config",
 	}

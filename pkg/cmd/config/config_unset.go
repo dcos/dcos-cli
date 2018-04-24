@@ -1,4 +1,4 @@
-package cmd
+package config
 
 import (
 	"github.com/dcos/dcos-cli/pkg/cli"
