@@ -77,4 +77,3 @@ func (c *Client) challengeAuth() (string, error) {
 	}
 	return resp.Header.Get("WWW-Authenticate"), nil
 }
-
