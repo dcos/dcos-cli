@@ -31,6 +31,13 @@ func TLS(tlsConfig *tls.Config) Option {
 	}
 }
 
+// ACSToken sets the authorization token for HTTP requests.
+func ACSToken(token string) Option {
+	return func(c *Client) {
+		c.acsToken = token
+	}
+}
+
 // Timeout sets the timeout for HTTP requests.
 func Timeout(timeout time.Duration) Option {
 	return func(c *Client) {

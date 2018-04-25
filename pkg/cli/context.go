@@ -108,6 +108,10 @@ func (ctx *Context) Clusters() []*Cluster {
 // HTTPClient creates an httpclient.Client for a given cluster.
 func (ctx *Context) HTTPClient(c *Cluster, opts ...httpclient.Option) *httpclient.Client {
 	var baseOpts []httpclient.Option
+
+	if c.ACSToken() != "" {
+		baseOpts = append(baseOpts, httpclient.ACSToken(c.ACSToken()))
+	}
 	if c.Timeout() > 0 {
 		baseOpts = append(baseOpts, httpclient.Timeout(c.Timeout()))
 	}
