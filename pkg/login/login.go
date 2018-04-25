@@ -33,9 +33,10 @@ func (c *Client) Providers() (map[string]*Provider, error) {
 	providers := make(map[string]*Provider)
 	if resp.StatusCode == 200 {
 		err := json.NewDecoder(resp.Body).Decode(&providers)
-		if err == nil {
-			return providers, nil
+		if err != nil {
+			return nil, err
 		}
+		return providers, nil
 	}
 
 	c.logger.Info("Falling back to the WWW-Authenticate challenge.")
