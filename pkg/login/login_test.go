@@ -52,6 +52,8 @@ func TestProviders(t *testing.T) {
 		if fixture.authChallenge != "" {
 			mux.HandleFunc("/pkgpanda/active.buildinfo.full.json", func(w http.ResponseWriter, req *http.Request) {
 				assert.Equal(t, "HEAD", req.Method)
+				assert.Equal(t, "", req.Header.Get("Authorization"))
+
 				w.Header().Add("WWW-Authenticate", fixture.authChallenge)
 				w.WriteHeader(401)
 			})

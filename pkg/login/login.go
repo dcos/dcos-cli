@@ -39,6 +39,8 @@ func (c *Client) Providers() (map[string]*Provider, error) {
 	}
 
 	c.logger.Info("Falling back to the WWW-Authenticate challenge.")
+
+	// This is for DC/OS EE 1.7/1.8 and DC/OS Open Source.
 	authHeader, err := c.challengeAuth()
 	if err != nil {
 		return nil, err
@@ -46,8 +48,10 @@ func (c *Client) Providers() (map[string]*Provider, error) {
 
 	switch authHeader {
 	case "oauthjwt":
+		// DC/OS Open Source
 		providers["dcos-oidc"] = defaultOIDCImplicitFlowProvider()
 	case "acsjwt":
+		// DC/OS EE 1.7/1.8
 		providers["dcos-users"] = defaultDCOSUIDPasswordProvider()
 	default:
 		return nil, fmt.Errorf("unsupported WWW-Authenticate challenge '%s'", authHeader)
@@ -58,7 +62,7 @@ func (c *Client) Providers() (map[string]*Provider, error) {
 // challengeAuth sends an unauthenticated HTTP request to a DC/OS well-known resource.
 // It then expects a 401 response with a WWW-Authenticate header containing the login method to use.
 // This method is used to determine which login provider is available when the /acs/api/v1/auth/providers
-// endpoint is not present. In practice this is mainly useful for DC/OS EE 1.7/1.8 and DC/OS Open Source.
+// endpoint is not present.
 func (c *Client) challengeAuth() (string, error) {
 	req, err := c.http.NewRequest("HEAD", "/pkgpanda/active.buildinfo.full.json", nil)
 	if err != nil {
