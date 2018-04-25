@@ -28,7 +28,7 @@ func (provider *Provider) String() string {
 	case DCOSUIDServiceKey:
 		return "Log in using a DC/OS service user account (username and private key)"
 	case DCOSUIDPasswordLDAP:
-		return "Log in in using an LDAP user account (username and password)"
+		return "Log in using an LDAP user account (username and password)"
 	case SAMLSpInitiated:
 		return fmt.Sprintf("Log in using SAML 2.0 (%s)", provider.Description)
 	case OIDCImplicitFlow:
