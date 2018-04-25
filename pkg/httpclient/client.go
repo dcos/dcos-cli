@@ -31,7 +31,7 @@ func TLS(tlsConfig *tls.Config) Option {
 	}
 }
 
-// ACSToken sets the authorization token for HTTP requests.
+// ACSToken sets the authentication token for HTTP requests.
 func ACSToken(token string) Option {
 	return func(c *Client) {
 		c.acsToken = token
