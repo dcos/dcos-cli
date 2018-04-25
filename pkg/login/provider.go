@@ -44,3 +44,25 @@ func (provider *Provider) String() string {
 type ProviderConfig struct {
 	StartFlowURL string `json:"start_flow_url"`
 }
+
+func defaultDCOSUIDPasswordProvider() (provider *Provider) {
+	return &Provider{
+		Type:         DCOSUIDPassword,
+		Description:  "Default DC/OS login provider",
+		ClientMethod: "dcos-usercredential-post-receive-authtoken",
+		Config: ProviderConfig{
+			StartFlowURL: "/acs/api/v1/auth/login",
+		},
+	}
+}
+
+func defaultOIDCImplicitFlowProvider() (provider *Provider) {
+	return &Provider{
+		Type:         OIDCImplicitFlow,
+		Description:  "Google, GitHub, or Microsoft",
+		ClientMethod: "browser-prompt-authtoken",
+		Config: ProviderConfig{
+			StartFlowURL: "/login?redirect_uri=urn:ietf:wg:oauth:2.0:oob",
+		},
+	}
+}
