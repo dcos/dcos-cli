@@ -34,7 +34,7 @@ func TestProviders(t *testing.T) {
 		{
 			nil,
 			"oauthjwt",
-			map[string]*Provider{"dcos-oidc": defaultOIDCImplicitFlowProvider()},
+			map[string]*Provider{"dcos-oidc-auth0": defaultOIDCImplicitFlowProvider()},
 		},
 	}
 

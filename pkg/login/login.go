@@ -50,7 +50,7 @@ func (c *Client) Providers() (map[string]*Provider, error) {
 	switch authHeader {
 	case "oauthjwt":
 		// DC/OS Open Source
-		providers["dcos-oidc"] = defaultOIDCImplicitFlowProvider()
+		providers["dcos-oidc-auth0"] = defaultOIDCImplicitFlowProvider()
 	case "acsjwt":
 		// DC/OS EE 1.7/1.8
 		providers["dcos-users"] = defaultDCOSUIDPasswordProvider()
