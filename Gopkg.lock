@@ -20,12 +20,6 @@
   version = "v0.0.2"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/olekukonko/tablewriter"
-  packages = ["."]
-  revision = "b8a9be070da40449e501c3c4730a889e42d87a9e"
-
-[[projects]]
   name = "github.com/pelletier/go-toml"
   packages = ["."]
   revision = "acdc4509485b587f5e675510c4f2c63e90ff68a8"
@@ -110,6 +104,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f30166619713aa3b843faaa6b2420e25eb224750eeb695fd3d9c54b832bd31b4"
+  inputs-digest = "de3509f76b15f9d6988a4dbf5a8dd7fb53734fa44ae0ee0b283499330a9162bf"
   solver-name = "gps-cdcl"
   solver-version = 1
