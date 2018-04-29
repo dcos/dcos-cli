@@ -7,6 +7,7 @@ import (
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/dcos/dcos-cli/pkg/login"
+	"github.com/dcos/dcos-cli/pkg/render"
 	"github.com/spf13/cobra"
 )
 
@@ -42,11 +43,12 @@ func newCmdAuthListProviders(ctx *cli.Context) *cobra.Command {
 				}
 				fmt.Fprintln(ctx.Out(), string(out))
 			} else {
-				table := cli.NewTable(ctx.Out(), []string{"PROVIDER ID", "LOGIN METHOD"})
+				table := render.NewTable([]string{"PROVIDER ID", "AUTHENTICATION TYPE"})
+
 				for name, provider := range providers {
-					table.Append([]string{name, provider.String()})
+					table.Append([]interface{}{name, provider.String()})
 				}
-				table.Render()
+				table.Render(ctx.Out())
 			}
 
 			return nil

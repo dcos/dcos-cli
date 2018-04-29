@@ -8,6 +8,7 @@ import (
 
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
+	"github.com/dcos/dcos-cli/pkg/render"
 	"github.com/spf13/cobra"
 )
 
@@ -68,15 +69,15 @@ func newCmdClusterList(ctx *cli.Context) *cobra.Command {
 				}
 				fmt.Fprintln(ctx.Out(), string(out))
 			} else {
-				table := cli.NewTable(ctx.Out(), []string{"", "NAME", "ID", "STATUS", "VERSION", "URL"})
+				table := render.NewTable([]string{"", "NAME", "ID", "STATUS", "VERSION", "URL"})
 				for i := range infos {
 					var attached string
 					if infos[i].Attached {
 						attached = "*"
 					}
-					table.Append([]string{attached, infos[i].Name, infos[i].ID, infos[i].Status, infos[i].Version, infos[i].URL})
+					table.Append([]interface{}{attached, infos[i].Name, infos[i].ID, infos[i].Status, infos[i].Version, infos[i].URL})
 				}
-				table.Render()
+				table.Render(ctx.Out())
 			}
 			return nil
 		},
