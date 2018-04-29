@@ -11,6 +11,7 @@ import (
 
 func main() {
 	ctx := cli.NewContext(&cli.Environment{
+		Input:      os.Stdin,
 		Out:        os.Stdout,
 		ErrOut:     os.Stderr,
 		EnvLookup:  os.LookupEnv,

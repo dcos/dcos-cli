@@ -24,6 +24,11 @@ func NewContext(env *Environment) *Context {
 	return &Context{env: env}
 }
 
+// Input returns the reader for CLI input.
+func (ctx *Context) Input() io.Reader {
+	return ctx.env.Input
+}
+
 // Out returns the writer for CLI output.
 func (ctx *Context) Out() io.Writer {
 	return ctx.env.Out
