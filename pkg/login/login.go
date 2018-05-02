@@ -23,14 +23,14 @@ func NewClient(baseClient *httpclient.Client, logger *logrus.Logger) *Client {
 }
 
 // Providers returns the supported login providers for a given DC/OS cluster.
-func (c *Client) Providers() (map[string]*Provider, error) {
+func (c *Client) Providers() (Providers, error) {
 	resp, err := c.http.Get("/acs/api/v1/auth/providers")
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	providers := make(map[string]*Provider)
+	providers := Providers{}
 	if resp.StatusCode == 200 {
 		err := json.NewDecoder(resp.Body).Decode(&providers)
 		if err != nil {
@@ -50,10 +50,12 @@ func (c *Client) Providers() (map[string]*Provider, error) {
 	switch authHeader {
 	case "oauthjwt":
 		// DC/OS Open Source
-		providers["dcos-oidc-auth0"] = defaultOIDCImplicitFlowProvider()
+		provider := defaultOIDCImplicitFlowProvider()
+		providers[provider.ID] = provider
 	case "acsjwt":
 		// DC/OS EE 1.7/1.8
-		providers["dcos-users"] = defaultDCOSUIDPasswordProvider()
+		provider := defaultDCOSUIDPasswordProvider()
+		providers[provider.ID] = provider
 	default:
 		return nil, fmt.Errorf("unsupported WWW-Authenticate challenge '%s'", authHeader)
 	}
