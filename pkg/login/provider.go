@@ -1,6 +1,10 @@
 package login
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+	"sort"
+)
 
 // These are the different login provider types that DC/OS supports.
 const (
@@ -14,6 +18,7 @@ const (
 
 // Provider is a DC/OS login provider.
 type Provider struct {
+	ID           string         `json:"-"`
 	Type         string         `json:"authentication-type"`
 	ClientMethod string         `json:"client-method"`
 	Config       ProviderConfig `json:"config"`
@@ -45,8 +50,40 @@ type ProviderConfig struct {
 	StartFlowURL string `json:"start_flow_url"`
 }
 
+// Providers is a map of providers as returned by the DC/OS API.
+type Providers map[string]*Provider
+
+// UnmarshalJSON unmarshals JSON into a Providers type.
+func (p *Providers) UnmarshalJSON(data []byte) error {
+	var providers map[string]*Provider
+	if err := json.Unmarshal(data, &providers); err != nil {
+		return err
+	}
+	for id, provider := range providers {
+		provider.ID = id
+	}
+	*p = providers
+	return nil
+}
+
+// Slice returns providers sorted by ID in a slice.
+func (p Providers) Slice() []*Provider {
+	var ids []string
+	for id := range p {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+
+	var providers []*Provider
+	for _, id := range ids {
+		providers = append(providers, p[id])
+	}
+	return providers
+}
+
 func defaultDCOSUIDPasswordProvider() (provider *Provider) {
 	return &Provider{
+		ID:           "dcos-users",
 		Type:         DCOSUIDPassword,
 		Description:  "Default DC/OS login provider",
 		ClientMethod: "dcos-usercredential-post-receive-authtoken",
@@ -58,6 +95,7 @@ func defaultDCOSUIDPasswordProvider() (provider *Provider) {
 
 func defaultOIDCImplicitFlowProvider() (provider *Provider) {
 	return &Provider{
+		ID:           "dcos-oidc-auth0",
 		Type:         OIDCImplicitFlow,
 		Description:  "Google, GitHub, or Microsoft",
 		ClientMethod: "browser-prompt-authtoken",

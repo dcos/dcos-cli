@@ -17,24 +17,24 @@ func TestProviders(t *testing.T) {
 	fixtures := []struct {
 		providersEndpoint map[string]*Provider
 		authChallenge     string
-		expectedProviders map[string]*Provider
+		expectedProviders Providers
 	}{
 		{nil, "", nil},
 		{nil, "unexisting-login-method", nil},
 		{
 			map[string]*Provider{"dcos-users": defaultDCOSUIDPasswordProvider()},
 			"",
-			map[string]*Provider{"dcos-users": defaultDCOSUIDPasswordProvider()},
+			Providers{"dcos-users": defaultDCOSUIDPasswordProvider()},
 		},
 		{
 			nil,
 			"acsjwt",
-			map[string]*Provider{"dcos-users": defaultDCOSUIDPasswordProvider()},
+			Providers{"dcos-users": defaultDCOSUIDPasswordProvider()},
 		},
 		{
 			nil,
 			"oauthjwt",
-			map[string]*Provider{"dcos-oidc-auth0": defaultOIDCImplicitFlowProvider()},
+			Providers{"dcos-oidc-auth0": defaultOIDCImplicitFlowProvider()},
 		},
 	}
 
