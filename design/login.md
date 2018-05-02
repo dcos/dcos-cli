@@ -69,7 +69,8 @@ A login happens through the `dcos auth login` command, which accepts the followi
 
 - **--provider** (string) : Specify the login provider ID to use.
 - **--username** (string) : Specify the username.
-- **--password** (string) : Specify password on the command line (insecure).
+- **--password** (string) : Specify password in plaintext (insecure).
+- **--password-file** (string) : Specify the path to a file that contains the password (insecure).
 - **--password-env** (string) : Specify an environment variable name that contains the password.
 - **--private-key** (string) : Specify the path to a file that contains the private key for service
     account login.
