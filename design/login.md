@@ -4,7 +4,7 @@ The login package handles DC/OS login related operations.
 
 ## Goals
 
-The goals of the login package are to :
+The goals of the login package are to:
 
 - Detect available login providers for a DC/OS cluster.
 - Log in to a DC/OS cluster using a given login provider.
@@ -81,10 +81,10 @@ In order to perform a login, the CLI must select a login provider to use. This s
 in 3 different ways:
 
 - **explicitly** : the user passed the `--provider` flag with a given login provider ID.
-- **implicitly** : there is a single available login provider, or the user passed some flags
+- **implicitly** : a single login provider is available or the user passed some flags
     which are specific to a single login provider.
-- **manually** : when the login provider is not explicit nor implicit, a list is prompted and
-    the user is expected to select a login provider manually.
+- **manually** : when the login provider is not explicit nor implicit, a list is prompted to let
+    the user select a login provider manually.
 
 Once the login provider is selected, its relevant credentials are read from command-line flags
 and the user is being prompted for the missing ones (if any). The login provider's `client-method`
