@@ -8,6 +8,7 @@ import (
 
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
+	"github.com/dcos/dcos-cli/pkg/open"
 	"github.com/dcos/dcos-cli/pkg/prompt"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -135,4 +136,9 @@ func (ctx *Context) HTTPClient(c *Cluster, opts ...httpclient.Option) *httpclien
 // Prompt is able to prompt for input, password or choices.
 func (ctx *Context) Prompt() *prompt.Prompt {
 	return prompt.New(ctx.Input(), ctx.Out())
+}
+
+// Opener returns a new OS Opener.
+func (ctx *Context) Opener() open.Opener {
+	return open.NewOsOpener(ctx.Logger())
 }
