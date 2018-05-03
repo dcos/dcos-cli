@@ -10,7 +10,7 @@ Description:
         dcos job remove <job-id> [--stop-current-job-runs]
         dcos job show <job-id>
         dcos job update <job-file>
-        dcos job kill <job-id> [<run-id>][--all]
+        dcos job kill <job-id> (<run-id>|--all)
         dcos job run <job-id> [--json]
         dcos job list [--json|--quiet]
         dcos job schedule add <job-id> <schedule-file>
