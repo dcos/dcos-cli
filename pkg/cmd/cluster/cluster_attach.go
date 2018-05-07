@@ -1,12 +1,12 @@
 package cluster
 
 import (
-	"github.com/dcos/dcos-cli/pkg/cli"
+	"github.com/dcos/dcos-cli/api"
 	"github.com/spf13/cobra"
 )
 
 // newCmdClusterAttach ataches the CLI to a cluster.
-func newCmdClusterAttach(ctx *cli.Context) *cobra.Command {
+func newCmdClusterAttach(ctx api.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  "attach",
 		Args: cobra.ExactArgs(1),

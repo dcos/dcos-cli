@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/dcos/dcos-cli/pkg/login"
@@ -11,7 +12,7 @@ import (
 )
 
 // newCmdAuthListProviders creates the `dcos auth list-providers` subcommand.
-func newCmdAuthListProviders(ctx *cli.Context) *cobra.Command {
+func newCmdAuthListProviders(ctx api.Context) *cobra.Command {
 	var jsonOutput bool
 	cmd := &cobra.Command{
 		Use:  "list-providers",

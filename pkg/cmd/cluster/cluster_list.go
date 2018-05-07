@@ -6,13 +6,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/spf13/cobra"
 )
 
 // newCmdClusterList lists the clusters.
-func newCmdClusterList(ctx *cli.Context) *cobra.Command {
+func newCmdClusterList(ctx api.Context) *cobra.Command {
 	var onlyAttached bool
 	var jsonOutput bool
 	cmd := &cobra.Command{
@@ -87,7 +88,7 @@ func newCmdClusterList(ctx *cli.Context) *cobra.Command {
 }
 
 // getVersion returns the version of the cluster as a string.
-func getVersion(ctx *cli.Context, cluster *cli.Cluster) (string, error) {
+func getVersion(ctx api.Context, cluster *cli.Cluster) (string, error) {
 	client := ctx.HTTPClient(cluster, httpclient.Timeout(5*time.Second))
 	resp, err := client.Get("/dcos-metadata/dcos-version.json")
 	if err != nil {
