@@ -1,12 +1,12 @@
 package config
 
 import (
-	"github.com/dcos/dcos-cli/pkg/cli"
+	"github.com/dcos/dcos-cli/api"
 	"github.com/spf13/cobra"
 )
 
 // newCmdConfigUnset creates the `dcos config unset` subcommand.
-func newCmdConfigUnset(ctx *cli.Context) *cobra.Command {
+func newCmdConfigUnset(ctx api.Context) *cobra.Command {
 	return &cobra.Command{
 		Use:  "unset",
 		Args: cobra.ExactArgs(1),

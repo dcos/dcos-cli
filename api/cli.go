@@ -51,5 +51,5 @@ type Context interface {
 	HTTPClient(c *cli.Cluster, opts ...httpclient.Option) *httpclient.Client
 
 	// Opener returns an open.Opener.
-	Opener() *open.Opener
+	Opener() open.Opener
 }

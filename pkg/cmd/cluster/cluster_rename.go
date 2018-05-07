@@ -1,12 +1,12 @@
 package cluster
 
 import (
-	"github.com/dcos/dcos-cli/pkg/cli"
+	"github.com/dcos/dcos-cli/api"
 	"github.com/spf13/cobra"
 )
 
 // newCmdClusterRename renames a cluster.
-func newCmdClusterRename(ctx *cli.Context) *cobra.Command {
+func newCmdClusterRename(ctx api.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  "rename",
 		Args: cobra.ExactArgs(2),
