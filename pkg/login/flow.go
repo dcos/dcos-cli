@@ -200,7 +200,7 @@ func (f *Flow) openBrowser(clusterPath string) error {
 	if err := f.opener.Open(urlToOpen); err != nil {
 		f.logger.Error(err)
 	}
-	msg := "If your browser didn't open, please go to the following link:\n\n    %s\n\n"
+	msg := "If your browser didn't open, please follow this link:\n\n    %s\n\n"
 	fmt.Fprintf(f.errout, msg, urlToOpen)
 	return nil
 }

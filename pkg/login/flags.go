@@ -48,7 +48,7 @@ func (f *Flags) Register(flags *pflag.FlagSet) {
 		&f.password,
 		"password",
 		"",
-		"Specify password on the command line (insecure).",
+		"Specify the password on the command line (insecure).",
 	)
 	flags.StringVar(
 		&f.passwordEnv,
