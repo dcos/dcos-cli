@@ -109,6 +109,8 @@ def get_config_path():
         return get_global_config_path()
     else:
         cluster_path = get_attached_cluster_path()
+        if not cluster_path:
+            raise DCOSException("No cluster is currently attached.")
         return os.path.join(cluster_path, "dcos.toml")
 
 
