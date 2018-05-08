@@ -9,21 +9,15 @@ import (
 )
 
 func NewDcosSubCommand(ctx *cli.Context) subcommand.SubCommand {
-	sc := &subcommand.InternalCommand{
-		CommandName: "dcos",
-		RunCmd:      NewDCOSCommand,
-		AutoCmd:     dcosAutocompleteCommand,
-	}
+	cmd := NewDCOSCommand(ctx)
+	sc := subcommand.NewInternalSubCommand(cmd)
+
 	sc.AddSubCommand(
 		newSubCmdAuth(ctx),
 	)
 	// TODO: add in searching for available external subcommands based on the currently attached cluster
 
 	return sc
-}
-
-func dcosAutocompleteCommand(cmd *cobra.Command, args []string, ctx *cli.Context) []string {
-	return []string{}
 }
 
 // NewDCOSCommand creates the `dcos` command with its `auth`, `config`, and `cluster` subcommands.
@@ -43,15 +37,6 @@ func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
 			}
 		},
 	}
-
 	cmd.PersistentFlags().CountVarP(&verbose, "", "v", "verbosity (-v or -vv)")
-
-	/*
-		cmd.AddCommand(
-			newCmdAuth(ctx),
-			newCmdConfig(ctx),
-			newCmdCluster(ctx),
-		)
-	*/
 	return cmd
 }

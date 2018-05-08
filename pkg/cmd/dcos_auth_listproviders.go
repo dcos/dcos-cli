@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/dcos/dcos-cli/pkg/subcommand"
+
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
-	"github.com/dcos/dcos-cli/pkg/subcommand"
 	"github.com/spf13/cobra"
 )
 
@@ -22,11 +23,14 @@ const (
 )
 
 func newSubCmdAuthListProviders(ctx *cli.Context) subcommand.SubCommand {
-	sc := &subcommand.InternalCommand{
-		CommandName: "list-providers",
-		RunCmd:      newCmdAuthListProviders,
-	}
+	sc := subcommand.NewInternalSubCommand(newCmdAuthListProviders(ctx))
+	sc.Autocomplete = subCmdAuthListProvidersAutocomplete
+
 	return sc
+}
+
+func subCmdAuthListProvidersAutocomplete(cmd *cobra.Command, args []string, ctx *cli.Context) []string {
+	return []string{}
 }
 
 // newCmdAuthListProviders creates the `dcos auth list-providers` subcommand.

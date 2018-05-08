@@ -6,6 +6,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func newSubCmdAuth(ctx *cli.Context) subcommand.SubCommand {
+	sc := subcommand.NewInternalSubCommand(newCmdAuth(ctx))
+
+	sc.AddSubCommand(
+		newSubCmdAuthListProviders(ctx),
+	)
+	return sc
+}
+
 // newCmdAuth creates the `dcos auth` subcommand.
 func newCmdAuth(ctx *cli.Context) *cobra.Command {
 	cmd := &cobra.Command{
@@ -17,16 +26,4 @@ func newCmdAuth(ctx *cli.Context) *cobra.Command {
 		)
 	*/
 	return cmd
-}
-
-func newSubCmdAuth(ctx *cli.Context) subcommand.SubCommand {
-	sc := &subcommand.InternalCommand{
-		CommandName: "auth",
-		RunCmd:      newCmdAuth,
-	}
-	sc.AddSubCommand(
-		newSubCmdAuthListProviders(ctx),
-	)
-
-	return sc
 }
