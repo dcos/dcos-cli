@@ -11,6 +11,9 @@ import (
 // functions for environment variables or user lookup, as well as a filesystem abstraction.
 type Environment struct {
 
+	// Input is the reader for CLI input.
+	Input io.Reader
+
 	// Out is the writer for CLI output.
 	Out io.Writer
 

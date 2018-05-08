@@ -1,12 +1,12 @@
-package cmd
+package config
 
 import (
-	"github.com/dcos/dcos-cli/pkg/cli"
+	"github.com/dcos/dcos-cli/api"
 	"github.com/spf13/cobra"
 )
 
 // newCmdConfigSet creates the `dcos config set` subcommand.
-func newCmdConfigSet(ctx *cli.Context) *cobra.Command {
+func newCmdConfigSet(ctx api.Context) *cobra.Command {
 	return &cobra.Command{
 		Use:  "set",
 		Args: cobra.ExactArgs(2),

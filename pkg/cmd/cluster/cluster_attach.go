@@ -1,6 +1,7 @@
-package cmd
+package cluster
 
 import (
+	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/subcommand"
 	"github.com/spf13/cobra"
@@ -23,7 +24,7 @@ func cmdClusterAttachAutocomplete(cmd *cobra.Command, args []string, ctx *cli.Co
 }
 
 // newCmdClusterAttach ataches the CLI to a cluster.
-func newCmdClusterAttach(ctx *cli.Context) *cobra.Command {
+func newCmdClusterAttach(ctx api.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  "attach",
 		Args: cobra.ExactArgs(1),

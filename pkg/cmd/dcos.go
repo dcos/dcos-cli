@@ -3,6 +3,8 @@ package cmd
 
 import (
 	"github.com/dcos/dcos-cli/pkg/cli"
+	"github.com/dcos/dcos-cli/pkg/cmd/auth"
+	"github.com/dcos/dcos-cli/pkg/cmd/cluster"
 	"github.com/dcos/dcos-cli/pkg/subcommand"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -13,8 +15,8 @@ func NewDcosSubCommand(ctx *cli.Context) subcommand.SubCommand {
 	sc := subcommand.NewInternalCommand(cmd)
 
 	sc.AddSubCommand(
-		newSubCmdAuth(ctx),
-		newSubCmdCluster(ctx),
+		auth.NewSubCmdAuth(ctx),
+		cluster.NewSubCmdCluster(ctx),
 		newSubCmdCompletion(ctx),
 	)
 	// TODO: add in searching for available external subcommands based on the currently attached cluster

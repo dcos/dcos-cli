@@ -1,15 +1,15 @@
-package cmd
+package cluster
 
 import (
 	"errors"
 	"path/filepath"
 
-	"github.com/dcos/dcos-cli/pkg/cli"
+	"github.com/dcos/dcos-cli/api"
 	"github.com/spf13/cobra"
 )
 
 // newCmdClusterRemove removes a cluster.
-func newCmdClusterRemove(ctx *cli.Context) *cobra.Command {
+func newCmdClusterRemove(ctx api.Context) *cobra.Command {
 	var removeAll bool
 	cmd := &cobra.Command{
 		Use:  "remove",

@@ -8,6 +8,8 @@ import (
 
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
+	"github.com/dcos/dcos-cli/pkg/open"
+	"github.com/dcos/dcos-cli/pkg/prompt"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
@@ -22,6 +24,11 @@ type Context struct {
 // NewContext creates a new context from a given environment.
 func NewContext(env *Environment) *Context {
 	return &Context{env: env}
+}
+
+// Input returns the reader for CLI input.
+func (ctx *Context) Input() io.Reader {
+	return ctx.env.Input
 }
 
 // Out returns the writer for CLI output.
@@ -108,6 +115,10 @@ func (ctx *Context) Clusters() []*Cluster {
 // HTTPClient creates an httpclient.Client for a given cluster.
 func (ctx *Context) HTTPClient(c *Cluster, opts ...httpclient.Option) *httpclient.Client {
 	var baseOpts []httpclient.Option
+
+	if c.ACSToken() != "" {
+		baseOpts = append(baseOpts, httpclient.ACSToken(c.ACSToken()))
+	}
 	if c.Timeout() > 0 {
 		baseOpts = append(baseOpts, httpclient.Timeout(c.Timeout()))
 	}
@@ -120,4 +131,14 @@ func (ctx *Context) HTTPClient(c *Cluster, opts ...httpclient.Option) *httpclien
 	opts = append(baseOpts, opts...)
 
 	return httpclient.New(c.URL(), opts...)
+}
+
+// Prompt is able to prompt for input, password or choices.
+func (ctx *Context) Prompt() *prompt.Prompt {
+	return prompt.New(ctx.Input(), ctx.Out())
+}
+
+// Opener returns a new OS Opener.
+func (ctx *Context) Opener() open.Opener {
+	return open.NewOsOpener(ctx.Logger())
 }

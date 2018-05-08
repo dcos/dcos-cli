@@ -1,14 +1,14 @@
-package cmd
+package config
 
 import (
 	"fmt"
 
-	"github.com/dcos/dcos-cli/pkg/cli"
+	"github.com/dcos/dcos-cli/api"
 	"github.com/spf13/cobra"
 )
 
 // newCmdConfigShow creates the `dcos config show` subcommand.
-func newCmdConfigShow(ctx *cli.Context) *cobra.Command {
+func newCmdConfigShow(ctx api.Context) *cobra.Command {
 	return &cobra.Command{
 		Use:  "show",
 		Args: cobra.MaximumNArgs(1),
