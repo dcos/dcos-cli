@@ -24,13 +24,7 @@ const (
 
 func newSubCmdAuthListProviders(ctx *cli.Context) subcommand.SubCommand {
 	sc := subcommand.NewInternalSubCommand(newCmdAuthListProviders(ctx))
-	sc.Autocomplete = subCmdAuthListProvidersAutocomplete
-
 	return sc
-}
-
-func subCmdAuthListProvidersAutocomplete(cmd *cobra.Command, args []string, ctx *cli.Context) []string {
-	return []string{}
 }
 
 // newCmdAuthListProviders creates the `dcos auth list-providers` subcommand.

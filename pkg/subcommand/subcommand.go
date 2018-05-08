@@ -22,6 +22,7 @@ type InternalCommand struct {
 	// Autocomplete isn't a cobra command because we want some default behavior like automatically
 	// completing subcommands or arguments of the associated Command so this function is embedded within
 	// the actual cobra Command in InternalCommand's AutocompleteCommand function
+	// cmd is this.Command, not the cobra.Command running the autocomplete function as it normally is
 	Autocomplete func(cmd *cobra.Command, args []string, ctx *cli.Context) []string
 }
 
@@ -30,7 +31,9 @@ type InternalCommand struct {
 // cmd as subcommands here. This is because we need to allow the children to assign an autocomplete
 // function which means knowing what function to call for each of the children to allow them to put
 // together a subcommand however they see fit. The subcommands are added as children of the cobra
-// command in RunCommand
+// command in RunCommand.
+// This also means that children should not be added to the wrapped cobra.Command directly. If they are
+// the commands will be present twice in the list.
 func NewInternalSubCommand(cmd *cobra.Command) *InternalCommand {
 	i := &InternalCommand{
 		Command: cmd,
@@ -73,7 +76,7 @@ func (i *InternalCommand) AutocompleteCommand(ctx *cli.Context) *cobra.Command {
 			}
 
 			if i.Autocomplete != nil {
-				i.Autocomplete(cmd, args, ctx)
+				out = append(out, i.Autocomplete(i.Command, args, ctx)...)
 			}
 
 			// Pull from RunCommand's args, not the autocomplete command's
@@ -113,6 +116,7 @@ func (e *ExternalCommand) RunCommand(ctx *cli.Context) *cobra.Command {
 		Use: e.Name(),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Shell out to external binary
+			fmt.Printf("External command %s called with args %s\n", e.Name(), args)
 			return nil
 		},
 	}

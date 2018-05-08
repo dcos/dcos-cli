@@ -6,10 +6,17 @@ import (
 	"sync"
 	"time"
 
+	"github.com/dcos/dcos-cli/pkg/subcommand"
+
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/spf13/cobra"
 )
+
+func newSubCmdClusterList(ctx *cli.Context) subcommand.SubCommand {
+	sc := subcommand.NewInternalSubCommand(newCmdClusterList(ctx))
+	return sc
+}
 
 // newCmdClusterList lists the clusters.
 func newCmdClusterList(ctx *cli.Context) *cobra.Command {

@@ -20,10 +20,5 @@ func newCmdAuth(ctx *cli.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "auth",
 	}
-	/*
-		cmd.AddCommand(
-			newCmdAuthListProviders(ctx),
-		)
-	*/
 	return cmd
 }
