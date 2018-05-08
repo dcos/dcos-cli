@@ -6,6 +6,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	bashCompletion = `
+
+`
+)
+
 func newSubCmdCompletion(ctx *cli.Context) subcommand.SubCommand {
 	sc := subcommand.NewInternalSubCommand(newCmdCompletion(ctx))
 	return sc
