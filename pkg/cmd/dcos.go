@@ -18,12 +18,13 @@ func NewDcosSubCommand(ctx *cli.Context) subcommand.SubCommand {
 		newSubCmdCompletion(ctx),
 	)
 	// TODO: add in searching for available external subcommands based on the currently attached cluster
-
-	sc.AddSubCommand(
-		&subcommand.ExternalCommand{
-			CommandName: "plugin",
-		},
-	)
+	/*
+		sc.AddSubCommand(
+			&subcommand.ExternalCommand{
+				CommandName: "plugin",
+			},
+		)
+	*/
 	return sc
 }
 

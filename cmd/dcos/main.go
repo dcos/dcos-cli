@@ -32,7 +32,7 @@ func main() {
 			os.Exit(1)
 		}
 	} else {
-		if err := cmdTree.RunCommand(ctx).Execute(); err != nil {
+		if err := cmdTree.RunCommand().Execute(); err != nil {
 			os.Exit(1)
 		}
 	}
