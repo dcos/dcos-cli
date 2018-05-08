@@ -9,7 +9,12 @@ import (
 
 // InternalCommand is for commands that exist in the current binary.
 type InternalCommand struct {
-	Command     *cobra.Command
+	// command is the cobra.command that will be used when the command is run. It's stored here as a command
+	// instead of, for example, a function, because we want to allow the definition of args, flags, and other
+	// cobra options without replicating the API here. This also means we have an easier time inspecting the
+	// command to be run while doing autocompletion because the actual command will always exist alongside
+	// the autocomplete function.
+	command     *cobra.Command
 	subcommands []SubCommand
 
 	// Autocomplete isn't a cobra command because we want some default behavior like automatically
@@ -29,7 +34,7 @@ type InternalCommand struct {
 // the commands will be present twice in the list.
 func NewInternalSubCommand(cmd *cobra.Command) *InternalCommand {
 	i := &InternalCommand{
-		Command: cmd,
+		command: cmd,
 	}
 	return i
 }
@@ -42,16 +47,16 @@ func (i *InternalCommand) AddSubCommand(commands ...SubCommand) {
 
 // Name returns the Command's name used by cobra when searching for dispatch.
 func (i *InternalCommand) Name() string {
-	return i.Command.Use
+	return i.command.Use
 }
 
 // RunCommand builds and returns the cobra.Command to run for this subcommand.
 func (i *InternalCommand) RunCommand() *cobra.Command {
-	cmd := i.Command
+	cmd := i.command
 	for _, sc := range i.subcommands {
 		cmd.AddCommand(sc.RunCommand())
 	}
-	return i.Command
+	return i.command
 }
 
 // AutocompleteCommand builds and returns the cobra.Command to run when getting autocomplete options.
@@ -69,12 +74,12 @@ func (i *InternalCommand) AutocompleteCommand(ctx *cli.Context) *cobra.Command {
 			}
 
 			if i.Autocomplete != nil {
-				out = append(out, i.Autocomplete(i.Command, args, ctx)...)
+				out = append(out, i.Autocomplete(i.command, args, ctx)...)
 			}
 
 			// Pull from RunCommand's args, not the autocomplete command's
-			if len(i.Command.ValidArgs) > 0 {
-				for _, arg := range i.Command.ValidArgs {
+			if len(i.command.ValidArgs) > 0 {
+				for _, arg := range i.command.ValidArgs {
 					out = append(out, arg)
 				}
 			}
