@@ -21,12 +21,14 @@ func main() {
 	args := os.Args
 	cmdTree := cmd.NewDcosSubCommand(ctx)
 
-	if len(args) > 1 && args[1] == "__autocomplete__" {
+	// In the case of autocomplete the first 3 args will always be `dcos __autocomplete__ dcos`
+	if len(args) >= 3 && args[1] == "__autocomplete__" {
 		autocomplete := cmdTree.AutocompleteCommand(ctx)
 
-		// we chop off the first 2 args which will be `dcos __autocomplete__` to let the autocomplete tree
-		// start from the actual command being completed
-		autocomplete.SetArgs(args[2:])
+		// We want to ignore the `dcos __autocomplete__` since that's not part of the autocomplete tree
+		// and we need to take off the second `dcos` because that's what cobra normally does when you haven't
+		// overriden Command::Args but since we do here, we need to take it off manually.
+		autocomplete.SetArgs(args[3:])
 
 		if err := autocomplete.Execute(); err != nil {
 			os.Exit(1)

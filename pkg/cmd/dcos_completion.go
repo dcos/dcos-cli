@@ -24,9 +24,7 @@ _dcos()
 	cur=${COMP_WORDS[COMP_CWORD]}
 
 	local dcos_out
-	# The use of [@]:1 is to chop off the leading 'dcos' which cobra won't get rid of otherwise but does
-	# for commands run normally
-	if dcos_out=$(dcos __autocomplete__ ${COMP_WORDS[@]:1} 2>/dev/null); then
+	if dcos_out=$(dcos __autocomplete__ ${COMP_WORDS[*]} 2>/dev/null); then
 		__dcos_debug ${dcos_out}
 		COMPREPLY=( $(compgen -W "${dcos_out[*]}" -- "$cur") )
 	fi
