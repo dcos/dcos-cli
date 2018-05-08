@@ -3,13 +3,33 @@ package cmd
 
 import (
 	"github.com/dcos/dcos-cli/pkg/cli"
+	"github.com/dcos/dcos-cli/pkg/subcommand"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
+func NewDcosSubCommand(ctx *cli.Context) subcommand.SubCommand {
+	sc := &subcommand.InternalCommand{
+		CommandName: "dcos",
+		RunCmd:      NewDCOSCommand,
+		AutoCmd:     dcosAutocompleteCommand,
+	}
+	sc.AddSubCommand(
+		newSubCmdAuth(ctx),
+	)
+	// TODO: add in searching for available external subcommands based on the currently attached cluster
+
+	return sc
+}
+
+func dcosAutocompleteCommand(cmd *cobra.Command, args []string, ctx *cli.Context) []string {
+	return []string{}
+}
+
 // NewDCOSCommand creates the `dcos` command with its `auth`, `config`, and `cluster` subcommands.
 func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
 	var verbose int
+
 	cmd := &cobra.Command{
 		Use: "dcos",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
@@ -26,10 +46,12 @@ func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
 
 	cmd.PersistentFlags().CountVarP(&verbose, "", "v", "verbosity (-v or -vv)")
 
-	cmd.AddCommand(
-		newCmdAuth(ctx),
-		newCmdConfig(ctx),
-		newCmdCluster(ctx),
-	)
+	/*
+		cmd.AddCommand(
+			newCmdAuth(ctx),
+			newCmdConfig(ctx),
+			newCmdCluster(ctx),
+		)
+	*/
 	return cmd
 }

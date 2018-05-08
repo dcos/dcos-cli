@@ -6,6 +6,7 @@ import (
 
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
+	"github.com/dcos/dcos-cli/pkg/subcommand"
 	"github.com/spf13/cobra"
 )
 
@@ -19,6 +20,14 @@ const (
 	LoginTypeOIDCAuthCodeFlow    = "oidc-authorization-code-flow"
 	LoginTypeOIDCImplicitFlow    = "oidc-implicit-flow"
 )
+
+func newSubCmdAuthListProviders(ctx *cli.Context) subcommand.SubCommand {
+	sc := &subcommand.InternalCommand{
+		CommandName: "list-providers",
+		RunCmd:      newCmdAuthListProviders,
+	}
+	return sc
+}
 
 // newCmdAuthListProviders creates the `dcos auth list-providers` subcommand.
 func newCmdAuthListProviders(ctx *cli.Context) *cobra.Command {
