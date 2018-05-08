@@ -14,6 +14,7 @@ func NewDcosSubCommand(ctx *cli.Context) subcommand.SubCommand {
 
 	sc.AddSubCommand(
 		newSubCmdAuth(ctx),
+		newSubCmdCompletion(ctx),
 	)
 	// TODO: add in searching for available external subcommands based on the currently attached cluster
 
