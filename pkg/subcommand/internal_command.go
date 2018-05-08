@@ -24,7 +24,7 @@ type InternalCommand struct {
 	Autocomplete func(cmd *cobra.Command, args []string, ctx *cli.Context) []string
 }
 
-// NewInternalSubCommand takes in a cobra command struct and creates a wrapping SubCommand from it.
+// NewInternalCommand takes in a cobra command struct and creates a wrapping SubCommand from it.
 // It's counterintuitive but this function does NOT automatically add all of the children of the given
 // cmd as subcommands here. This is because we need to allow the children to assign an autocomplete
 // function which means knowing what function to call for each of the children to allow them to put
@@ -32,7 +32,7 @@ type InternalCommand struct {
 // command in RunCommand.
 // This also means that children should not be added to the wrapped cobra.Command directly. If they are
 // the commands will be present twice in the list.
-func NewInternalSubCommand(cmd *cobra.Command) *InternalCommand {
+func NewInternalCommand(cmd *cobra.Command) *InternalCommand {
 	i := &InternalCommand{
 		command: cmd,
 	}

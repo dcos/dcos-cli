@@ -7,7 +7,7 @@ import (
 )
 
 func newSubCmdAuth(ctx *cli.Context) subcommand.SubCommand {
-	sc := subcommand.NewInternalSubCommand(newCmdAuth(ctx))
+	sc := subcommand.NewInternalCommand(newCmdAuth(ctx))
 
 	sc.AddSubCommand(
 		newSubCmdAuthListProviders(ctx),

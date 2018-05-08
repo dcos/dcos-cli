@@ -7,7 +7,7 @@ import (
 )
 
 func newSubCmdClusterAttach(ctx *cli.Context) subcommand.SubCommand {
-	sc := subcommand.NewInternalSubCommand(newCmdClusterAttach(ctx))
+	sc := subcommand.NewInternalCommand(newCmdClusterAttach(ctx))
 	sc.Autocomplete = cmdClusterAttachAutocomplete
 
 	return sc

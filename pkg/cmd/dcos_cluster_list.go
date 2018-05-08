@@ -14,7 +14,7 @@ import (
 )
 
 func newSubCmdClusterList(ctx *cli.Context) subcommand.SubCommand {
-	sc := subcommand.NewInternalSubCommand(newCmdClusterList(ctx))
+	sc := subcommand.NewInternalCommand(newCmdClusterList(ctx))
 	return sc
 }
 

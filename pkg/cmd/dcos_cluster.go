@@ -7,7 +7,7 @@ import (
 )
 
 func newSubCmdCluster(ctx *cli.Context) subcommand.SubCommand {
-	sc := subcommand.NewInternalSubCommand(newCmdCluster(ctx))
+	sc := subcommand.NewInternalCommand(newCmdCluster(ctx))
 
 	sc.AddSubCommand(
 		newSubCmdClusterAttach(ctx),

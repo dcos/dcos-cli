@@ -23,7 +23,7 @@ const (
 )
 
 func newSubCmdAuthListProviders(ctx *cli.Context) subcommand.SubCommand {
-	sc := subcommand.NewInternalSubCommand(newCmdAuthListProviders(ctx))
+	sc := subcommand.NewInternalCommand(newCmdAuthListProviders(ctx))
 	return sc
 }
 

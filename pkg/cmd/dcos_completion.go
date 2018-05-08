@@ -37,7 +37,7 @@ complete -o default -F _dcos dcos
 )
 
 func newSubCmdCompletion(ctx *cli.Context) subcommand.SubCommand {
-	sc := subcommand.NewInternalSubCommand(newCmdCompletion(ctx))
+	sc := subcommand.NewInternalCommand(newCmdCompletion(ctx))
 	return sc
 }
 
