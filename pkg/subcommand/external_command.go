@@ -20,7 +20,7 @@ func (e *ExternalCommand) Name() string {
 }
 
 // RunCommand builds and returns the cobra.Command to run for this subcommand.
-func (e *ExternalCommand) RunCommand(ctx *cli.Context) *cobra.Command {
+func (e *ExternalCommand) RunCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: e.Name(),
 		RunE: func(cmd *cobra.Command, args []string) error {

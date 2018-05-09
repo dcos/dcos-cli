@@ -23,6 +23,7 @@ func NewDcosCmdRoot(ctx *cli.Context) subcommand.DcosCommand {
 		sc.AddSubCommand(
 			&subcommand.ExternalCommand{
 				CommandName: "plugin",
+				BinaryPath:  "",
 			},
 		)
 	*/
