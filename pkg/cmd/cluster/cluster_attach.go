@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newSubCmdClusterAttach(ctx *cli.Context) subcommand.SubCommand {
+func newDcosCmdClusterAttach(ctx *cli.Context) subcommand.DcosCommand {
 	sc := subcommand.NewInternalCommand(newCmdClusterAttach(ctx))
 	sc.AddAutocomplete(cmdClusterAttachAutocomplete)
 

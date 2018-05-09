@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newSubCmdAuthListProviders(ctx *cli.Context) subcommand.SubCommand {
+func newDcosCmdAuthListProviders(ctx *cli.Context) subcommand.DcosCommand {
 	sc := subcommand.NewInternalCommand(newCmdAuthListProviders(ctx))
 	return sc
 }

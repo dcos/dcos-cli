@@ -7,12 +7,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewSubCmdCluster(ctx *cli.Context) subcommand.SubCommand {
+func NewDcosCmdCluster(ctx *cli.Context) subcommand.DcosCommand {
 	sc := subcommand.NewInternalCommand(NewCommand(ctx))
 
 	sc.AddSubCommand(
-		newSubCmdClusterAttach(ctx),
-		newSubCmdClusterList(ctx),
+		newDcosCmdClusterAttach(ctx),
+		newDcosCmdClusterList(ctx),
 	)
 	return sc
 }

@@ -11,6 +11,7 @@ import (
 // commands like Core CLI-specific commands or package extensions
 type ExternalCommand struct {
 	CommandName string
+	BinaryPath  string
 }
 
 // Name returns the Command's name used by cobra when searching for dispatch.
@@ -37,6 +38,7 @@ func (e *ExternalCommand) AutocompleteCommand(ctx *cli.Context) *cobra.Command {
 		Use: e.Name(),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Shell out to external binary
+			fmt.Printf("External autocomplete command %s called with args %s\n", e.Name(), args)
 			return nil
 		},
 	}

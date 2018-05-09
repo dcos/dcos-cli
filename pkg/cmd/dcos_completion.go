@@ -34,7 +34,7 @@ complete -o default -F _dcos dcos
 `
 )
 
-func newSubCmdCompletion(ctx *cli.Context) subcommand.SubCommand {
+func newDcosCmdCompletion(ctx *cli.Context) subcommand.DcosCommand {
 	sc := subcommand.NewInternalCommand(newCmdCompletion(ctx))
 	return sc
 }

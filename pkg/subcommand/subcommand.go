@@ -5,8 +5,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// SubCommand defines a subcommand interface that provides the correct cobra command at runtime.
-type SubCommand interface {
+// DcosCommand defines a subcommand interface that provides the correct cobra command at runtime.
+type DcosCommand interface {
 	// RunCommand returns the cobra command that will be used when this subcommand is supposed to be run.
 	RunCommand() *cobra.Command
 	// Autocomplete returns the cobra command that will be used when this command is being autocompleted.

@@ -15,7 +15,7 @@ type InternalCommand struct {
 	// command to be run while doing autocompletion because the actual command will always exist alongside
 	// the autocomplete function.
 	command     *cobra.Command
-	subcommands []SubCommand
+	subcommands []DcosCommand
 
 	// autocomplete isn't a cobra command because we want some default behavior like automatically
 	// completing subcommands or arguments of the associated Command so this function is embedded within
@@ -46,7 +46,7 @@ func (i *InternalCommand) AddAutocomplete(a func(cmd *cobra.Command, args []stri
 
 // AddSubCommand adds the given subcommand(s). These will be added to RunCmd and AutocompleteCmd as children
 // of the cobra Command on creation.
-func (i *InternalCommand) AddSubCommand(commands ...SubCommand) {
+func (i *InternalCommand) AddSubCommand(commands ...DcosCommand) {
 	i.subcommands = append(i.subcommands, commands...)
 }
 

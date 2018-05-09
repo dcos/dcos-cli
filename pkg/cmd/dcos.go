@@ -10,13 +10,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewDcosSubCommand(ctx *cli.Context) subcommand.SubCommand {
-	sc := subcommand.NewInternalCommand(NewDCOSCommand(ctx))
+func NewDcosSubCommand(ctx *cli.Context) subcommand.DcosCommand {
+	sc := subcommand.NewInternalCommand(NewRootCommand(ctx))
 
 	sc.AddSubCommand(
-		auth.NewSubCmdAuth(ctx),
-		cluster.NewSubCmdCluster(ctx),
-		newSubCmdCompletion(ctx),
+		auth.NewDcosCmdAuth(ctx),
+		cluster.NewDcosCmdCluster(ctx),
+		newDcosCmdCompletion(ctx),
 	)
 	// TODO: add in searching for available external subcommands based on the currently attached cluster
 	/*
@@ -29,8 +29,8 @@ func NewDcosSubCommand(ctx *cli.Context) subcommand.SubCommand {
 	return sc
 }
 
-// NewDCOSCommand creates the `dcos` command with its `auth`, `config`, and `cluster` subcommands.
-func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
+// NewRootCommand creates the `dcos` command with its `auth`, `config`, and `cluster` subcommands.
+func NewRootCommand(ctx *cli.Context) *cobra.Command {
 	var verbose int
 
 	cmd := &cobra.Command{

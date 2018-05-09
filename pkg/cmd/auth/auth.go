@@ -7,11 +7,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewSubCmdAuth(ctx *cli.Context) subcommand.SubCommand {
+func NewDcosCmdAuth(ctx *cli.Context) subcommand.DcosCommand {
 	sc := subcommand.NewInternalCommand(NewCommand(ctx))
 
 	sc.AddSubCommand(
-		newSubCmdAuthListProviders(ctx),
+		newDcosCmdAuthListProviders(ctx),
 	)
 	return sc
 }
