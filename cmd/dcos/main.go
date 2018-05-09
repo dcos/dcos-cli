@@ -20,7 +20,7 @@ func main() {
 	})
 
 	args := os.Args
-	cmdTree := cmd.NewDcosSubCommand(ctx)
+	cmdTree := cmd.NewDcosCmdRoot(ctx)
 
 	// In the case of autocomplete the first 3 args will always be `dcos __autocomplete__ dcos`
 	if len(args) >= 3 && args[1] == "__autocomplete__" {

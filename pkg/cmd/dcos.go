@@ -10,8 +10,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewDcosSubCommand(ctx *cli.Context) subcommand.DcosCommand {
-	sc := subcommand.NewInternalCommand(NewRootCommand(ctx))
+func NewDcosCmdRoot(ctx *cli.Context) subcommand.DcosCommand {
+	sc := subcommand.NewInternalCommand(NewCmdRoot(ctx))
 
 	sc.AddSubCommand(
 		auth.NewDcosCmdAuth(ctx),
@@ -29,8 +29,8 @@ func NewDcosSubCommand(ctx *cli.Context) subcommand.DcosCommand {
 	return sc
 }
 
-// NewRootCommand creates the `dcos` command with its `auth`, `config`, and `cluster` subcommands.
-func NewRootCommand(ctx *cli.Context) *cobra.Command {
+// NewCmdRoot creates the `dcos` command with its `auth`, `config`, and `cluster` subcommands.
+func NewCmdRoot(ctx *cli.Context) *cobra.Command {
 	var verbose int
 
 	cmd := &cobra.Command{
