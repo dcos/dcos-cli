@@ -9,7 +9,7 @@ import (
 
 func newSubCmdClusterAttach(ctx *cli.Context) subcommand.SubCommand {
 	sc := subcommand.NewInternalCommand(newCmdClusterAttach(ctx))
-	sc.Autocomplete = cmdClusterAttachAutocomplete
+	sc.AddAutocomplete(cmdClusterAttachAutocomplete)
 
 	return sc
 }

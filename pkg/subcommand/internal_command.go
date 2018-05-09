@@ -39,6 +39,10 @@ func NewInternalCommand(cmd *cobra.Command) *InternalCommand {
 	return i
 }
 
+func (i *InternalCommand) AddAutocomplete(a func(cmd *cobra.Command, args []string, ctx *cli.Context) []string) {
+	i.Autocomplete = a
+}
+
 // AddSubCommand adds the given subcommand(s). These will be added to RunCmd and AutocompleteCmd as children
 // of the cobra Command on creation.
 func (i *InternalCommand) AddSubCommand(commands ...SubCommand) {

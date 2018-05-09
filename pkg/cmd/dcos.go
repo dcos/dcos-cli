@@ -11,8 +11,7 @@ import (
 )
 
 func NewDcosSubCommand(ctx *cli.Context) subcommand.SubCommand {
-	cmd := NewDCOSCommand(ctx)
-	sc := subcommand.NewInternalCommand(cmd)
+	sc := subcommand.NewInternalCommand(NewDCOSCommand(ctx))
 
 	sc.AddSubCommand(
 		auth.NewSubCmdAuth(ctx),
