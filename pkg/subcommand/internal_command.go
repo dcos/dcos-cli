@@ -17,11 +17,11 @@ type InternalCommand struct {
 	command     *cobra.Command
 	subcommands []SubCommand
 
-	// Autocomplete isn't a cobra command because we want some default behavior like automatically
+	// autocomplete isn't a cobra command because we want some default behavior like automatically
 	// completing subcommands or arguments of the associated Command so this function is embedded within
 	// the actual cobra Command in InternalCommand's AutocompleteCommand function
 	// cmd is this.Command, not the cobra.Command running the autocomplete function as it normally is
-	Autocomplete func(cmd *cobra.Command, args []string, ctx *cli.Context) []string
+	autocomplete func(cmd *cobra.Command, args []string, ctx *cli.Context) []string
 }
 
 // NewInternalCommand takes in a cobra command struct and creates a wrapping SubCommand from it.
@@ -39,8 +39,9 @@ func NewInternalCommand(cmd *cobra.Command) *InternalCommand {
 	return i
 }
 
+// AddAutocomplete adds a custom autocomplete function to the InternalCommand
 func (i *InternalCommand) AddAutocomplete(a func(cmd *cobra.Command, args []string, ctx *cli.Context) []string) {
-	i.Autocomplete = a
+	i.autocomplete = a
 }
 
 // AddSubCommand adds the given subcommand(s). These will be added to RunCmd and AutocompleteCmd as children
@@ -77,8 +78,8 @@ func (i *InternalCommand) AutocompleteCommand(ctx *cli.Context) *cobra.Command {
 				out = append(out, sc.Name())
 			}
 
-			if i.Autocomplete != nil {
-				out = append(out, i.Autocomplete(i.command, args, ctx)...)
+			if i.autocomplete != nil {
+				out = append(out, i.autocomplete(i.command, args, ctx)...)
 			}
 
 			// Pull from RunCommand's args, not the autocomplete command's
