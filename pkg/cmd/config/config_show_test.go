@@ -2,30 +2,23 @@ package config
 
 import (
 	"bytes"
-	"errors"
-	"os/user"
 	"testing"
 
 	"github.com/dcos/dcos-cli/pkg/cli"
-	"github.com/spf13/afero"
+	"github.com/dcos/dcos-cli/pkg/mock"
 	"github.com/stretchr/testify/require"
 )
 
 func TestConfigShowEnvVar(t *testing.T) {
 	var out bytes.Buffer
 
-	env := &cli.Environment{
-		Out: &out,
-		Fs:  afero.NewMemMapFs(),
-		EnvLookup: func(key string) (string, bool) {
-			if key == "DCOS_URL" {
-				return "https://dcos.example.org", true
-			}
-			return "", false
-		},
-		UserLookup: func() (*user.User, error) {
-			return nil, errors.New("no user")
-		},
+	env := mock.NewEnvironment()
+	env.Out = &out
+	env.EnvLookup = func(key string) (string, bool) {
+		if key == "DCOS_URL" {
+			return "https://dcos.example.org", true
+		}
+		return "", false
 	}
 
 	cmd := newCmdConfigShow(cli.NewContext(env))
