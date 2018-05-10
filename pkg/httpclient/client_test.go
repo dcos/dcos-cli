@@ -76,7 +76,7 @@ func TestNewRequestWithoutTimeout(t *testing.T) {
 		client.timeout = 60 * time.Second
 	})
 
-	req, err := client.NewRequest("GET", "/path", nil, NoTimeout())
+	req, err := client.NewRequest("GET", "/path", nil, RequestTimeout(0))
 	require.NoError(t, err)
 	_, ok := req.Context().Deadline()
 	require.False(t, ok)

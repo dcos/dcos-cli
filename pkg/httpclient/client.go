@@ -59,8 +59,8 @@ type RequestOption func(*http.Request)
 type reqContextKey int
 
 const (
-	// keyNoTimeout is a context key indicating that no timeout should be set for a given request.
-	keyNoTimeout reqContextKey = iota
+	// keyTimeout is a context key indicating the timeout for a given request.
+	keyTimeout reqContextKey = iota
 )
 
 // New returns a new HTTP client for a given baseURL and functional options.
@@ -100,8 +100,8 @@ func New(baseURL string, opts ...Option) *Client {
 }
 
 // Get issues a GET to the specified DC/OS cluster path.
-func (c *Client) Get(path string) (*http.Response, error) {
-	req, err := c.NewRequest("GET", path, nil)
+func (c *Client) Get(path string, opts ...RequestOption) (*http.Response, error) {
+	req, err := c.NewRequest("GET", path, nil, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -109,8 +109,8 @@ func (c *Client) Get(path string) (*http.Response, error) {
 }
 
 // Post issues a POST to the specified DC/OS cluster path.
-func (c *Client) Post(path string, contentType string, body io.Reader) (*http.Response, error) {
-	req, err := c.NewRequest("POST", path, body)
+func (c *Client) Post(path string, contentType string, body io.Reader, opts ...RequestOption) (*http.Response, error) {
+	req, err := c.NewRequest("POST", path, body, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -118,10 +118,10 @@ func (c *Client) Post(path string, contentType string, body io.Reader) (*http.Re
 	return c.Do(req)
 }
 
-// NoTimeout disables the timeout for an HTTP request.
-func NoTimeout() RequestOption {
+// RequestTimeout sets the timeout for a given HTTP request.
+func RequestTimeout(timeout time.Duration) RequestOption {
 	return func(req *http.Request) {
-		ctx := context.WithValue(req.Context(), keyNoTimeout, struct{}{})
+		ctx := context.WithValue(req.Context(), keyTimeout, timeout)
 		*req = *req.WithContext(ctx)
 	}
 }
@@ -143,18 +143,24 @@ func (c *Client) NewRequest(method, path string, body io.Reader, opts ...Request
 		opt(req)
 	}
 
-	if c.timeout > 0 {
-		ctx := req.Context()
-		noTimeout := ctx.Value(keyNoTimeout)
+	var timeout time.Duration
+	var hasReqTimeout bool
 
-		if noTimeout == nil {
-			newCtx, cancel := context.WithTimeout(ctx, c.timeout)
-			go func() {
-				<-ctx.Done()
-				cancel()
-			}()
-			req = req.WithContext(newCtx)
-		}
+	ctx := req.Context()
+	if ctxTimeout := ctx.Value(keyTimeout); ctxTimeout != nil {
+		timeout, hasReqTimeout = ctxTimeout.(time.Duration)
+	}
+	if !hasReqTimeout {
+		timeout = c.timeout
+	}
+
+	if timeout > 0 {
+		newCtx, cancel := context.WithTimeout(ctx, c.timeout)
+		go func() {
+			<-ctx.Done()
+			cancel()
+		}()
+		req = req.WithContext(newCtx)
 	}
 	return req, nil
 }
