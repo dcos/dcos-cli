@@ -12,6 +12,7 @@ func NewCommand(ctx api.Context) *cobra.Command {
 	}
 	cmd.AddCommand(
 		newCmdAuthListProviders(ctx),
+		newCmdAuthLogin(ctx),
 	)
 	return cmd
 }

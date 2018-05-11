@@ -7,6 +7,7 @@ import (
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
+	"github.com/dcos/dcos-cli/pkg/login"
 	"github.com/dcos/dcos-cli/pkg/open"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -52,4 +53,7 @@ type Context interface {
 
 	// Opener returns an open.Opener.
 	Opener() open.Opener
+
+	// Login initiates a login based on a set of flags and HTTP client. On success it returns an ACS token.
+	Login(flags *login.Flags, httpClient *httpclient.Client) (string, error)
 }

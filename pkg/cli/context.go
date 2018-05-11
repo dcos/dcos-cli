@@ -8,6 +8,7 @@ import (
 
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
+	"github.com/dcos/dcos-cli/pkg/login"
 	"github.com/dcos/dcos-cli/pkg/open"
 	"github.com/dcos/dcos-cli/pkg/prompt"
 	"github.com/sirupsen/logrus"
@@ -141,4 +142,15 @@ func (ctx *Context) Prompt() *prompt.Prompt {
 // Opener returns a new OS Opener.
 func (ctx *Context) Opener() open.Opener {
 	return open.NewOsOpener(ctx.Logger())
+}
+
+// Login initiates a login based on a set of flags and HTTP client. On success it returns an ACS token.
+func (ctx *Context) Login(flags *login.Flags, httpClient *httpclient.Client) (string, error) {
+	flow := login.NewFlow(login.FlowOpts{
+		Errout: ctx.ErrOut(),
+		Prompt: ctx.Prompt(),
+		Logger: ctx.Logger(),
+		Opener: ctx.Opener(),
+	})
+	return flow.Start(flags, httpClient)
 }
