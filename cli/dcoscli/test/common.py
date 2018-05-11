@@ -6,6 +6,7 @@ import subprocess
 import time
 import zipfile
 
+import pytest
 import six
 from six.moves import urllib
 
@@ -376,3 +377,15 @@ def zip_contents_as_json(path, inner_file):
     with zipfile.ZipFile(path) as zip_file:
         inner_file_contents = zip_file.read(inner_file).decode()
     return json.loads(inner_file_contents)
+
+
+def skip_if_env_missing(env_vars):
+    """Skip a test if some environment variable are missing.
+
+    :param env_vars: environment variables that should be present
+    :type env_vars: list of str
+    """
+
+    for env_var in env_vars:
+        if env_var not in os.environ:
+            pytest.skip(env_var + ' is not set.')

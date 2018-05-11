@@ -13,11 +13,11 @@ from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 from dcos import constants
 
-from .helpers.common import (assert_command, assert_lines, exec_command,
-                             popen_tty, update_config)
-from .helpers.marathon import (app, list_apps, list_deployments, show_app,
-                               start_app, watch_all_deployments,
-                               watch_deployment)
+from dcoscli.test.common import (assert_command, assert_lines, exec_command,
+                                 popen_tty, update_config)
+from dcoscli.test.marathon import (app, list_apps, list_deployments, show_app,
+                                   start_app, watch_all_deployments,
+                                   watch_deployment)
 
 
 _ZERO_INSTANCE_APP_ID = 'zero-instance-app'
@@ -169,11 +169,6 @@ def test_show_bad_app_version():
              'zero-instance-app'])
         assert returncode == 1
         assert stdout == b''
-        assert stderr.startswith(b'Error while fetching')
-        pattern = (b"""{"message":"Invalid format: """
-                   b"""\\"20:39:32.972Z\\" is malformed"""
-                   b""" at \\":39:32.972Z\\""}".\n""")
-        assert stderr.endswith(pattern)
 
 
 def test_show_bad_relative_app_version():

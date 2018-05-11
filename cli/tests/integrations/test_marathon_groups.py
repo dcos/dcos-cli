@@ -1,9 +1,9 @@
 import json
 import re
 
-from .helpers.common import assert_command, assert_lines, exec_command
-from .helpers.marathon import (group, remove_group, show_app,
-                               watch_all_deployments)
+from dcoscli.test.common import assert_command, assert_lines, exec_command
+from dcoscli.test.marathon import (group, remove_group, show_app,
+                                   watch_all_deployments)
 
 
 GOOD_GROUP = 'tests/data/marathon/groups/good.json'

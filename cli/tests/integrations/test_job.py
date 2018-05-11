@@ -6,8 +6,8 @@ import pytest
 
 from dcos import constants
 
-from .helpers.common import assert_command, exec_command
-from .helpers.job import job, show_job, show_job_schedule
+from dcoscli.test.common import assert_command, exec_command
+from dcoscli.test.job import job, show_job, show_job_schedule
 
 
 def test_help():

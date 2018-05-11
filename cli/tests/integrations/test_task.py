@@ -11,10 +11,10 @@ import pytest
 import dcos.util as util
 from dcos.util import create_schema
 
-from .helpers.common import (assert_command, assert_lines,
-                             assert_lines_range, exec_command)
-from .helpers.marathon import (add_app, app, pod, remove_app,
-                               watch_all_deployments)
+from dcoscli.test.common import (assert_command, assert_lines,
+                                 assert_lines_range, exec_command)
+from dcoscli.test.marathon import (add_app, app, pod, remove_app,
+                                   watch_all_deployments)
 from ..fixtures.task import task_fixture
 
 SLEEP_COMPLETED = 'tests/data/marathon/apps/sleep-completed.json'
@@ -350,6 +350,13 @@ def test_exec_interactive():
         assert_command(
             ['dcos', 'task', 'exec', '--interactive', task_id, 'cat'],
             stdout=content, stdin=text)
+
+
+def test_exec_match_id_pattern():
+    assert_command(['dcos', 'task', 'exec', 'app1', 'true'])
+    assert_command(['dcos', 'task', 'exec', 'app2', 'true'])
+    returncode, _, _ = exec_command(['dcos', 'task', 'exec', 'app', 'true'])
+    assert returncode != 0
 
 
 def _mark_non_blocking(file_):

@@ -3,8 +3,8 @@ import json
 import re
 import retrying
 
-from .helpers.common import exec_command
-from .helpers.marathon import app, pod, watch_for_overdue
+from dcoscli.test.common import exec_command
+from dcoscli.test.marathon import app, pod, watch_for_overdue
 
 list_regex = '/stuck-(?:sleep|pod)\W+[^Z]+Z\W+\d\W+(?:True|False)' \
              '\W+\d{1,2}\W+\d{1,2}\W+[^Z]+Z\W+[^Z]+Z'

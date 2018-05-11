@@ -4,9 +4,9 @@ import time
 
 import pytest
 
-from .helpers.common import assert_command, exec_command
-from .helpers.marathon import (add_pod, pod, pod_spec_json, pods, remove_pod,
-                               watch_all_deployments)
+from dcoscli.test.common import assert_command, exec_command
+from dcoscli.test.marathon import (add_pod, pod, pod_spec_json, pods,
+                                   remove_pod, watch_all_deployments)
 from ..fixtures.marathon import (DOUBLE_POD_FILE_PATH, DOUBLE_POD_ID,
                                  GOOD_POD_FILE_PATH, GOOD_POD_ID,
                                  POD_KILL_FILE_PATH, POD_KILL_ID,
