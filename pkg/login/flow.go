@@ -97,7 +97,7 @@ func (f *Flow) selectProvider(providers Providers) (*Provider, error) {
 		if f.flags.Supports(provider) {
 			providerCandidates = append(providerCandidates, provider)
 		} else {
-			f.logger.Infof("Excluding provider '%s' based on command-line flags.")
+			f.logger.Infof("Excluding provider '%s' based on command-line flags.", provider.ID)
 		}
 	}
 
