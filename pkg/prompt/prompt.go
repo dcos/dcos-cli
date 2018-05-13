@@ -2,6 +2,7 @@ package prompt
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -77,4 +78,25 @@ func (prompt *Prompt) Select(msg string, choices interface{}) (int, error) {
 		return 0, fmt.Errorf("choice %d doesn't exist", i)
 	}
 	return i - 1, nil
+}
+
+// Confirm prompts for a confirmation.
+func (prompt *Prompt) Confirm(msg string) error {
+	scanner := bufio.NewScanner(prompt.in)
+
+ConfirmLoop:
+	for i := 0; i < 3; i++ {
+		fmt.Fprintf(prompt.out, "%s [Y/n] ", msg)
+
+		scanner.Scan()
+		ok := scanner.Text()
+
+		switch ok {
+		case "y", "yes", "Y", "Yes":
+			return nil
+		case "n", "no", "N", "No":
+			break ConfirmLoop
+		}
+	}
+	return errors.New("couldn't get confirmation")
 }
