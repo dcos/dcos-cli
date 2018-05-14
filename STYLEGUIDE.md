@@ -7,6 +7,7 @@ The DC/OS CLI is the main tool used by developers and operators to interact with
 * Generally top level commands are single nouns e.g. dcos job, dcos service
 * Top level commands are followed by verbs e.g. dcos job create, dcos cluster rename
 * Command names should always be a single, lowercase word without spaces, hyphens, underscores, or other word delimiters
+* If there is no obvious way to avoid having multiple words, separate with kebab-case e.g. `dcos auth list-providers`
 
 ## Inputs
 
@@ -21,7 +22,10 @@ The DC/OS CLI is the main tool used by developers and operators to interact with
   * Show - Show a description or definition aka Describe, Get
   * List - List all objects
 
-### Flags
+### Arguments/Flags
+
+Commands should support the following flags.
+
 * `--help` and `-h` should always output one level of help
 * `--version` should always show the version of the plugin
 * `--json` outputs JSON
@@ -30,18 +34,10 @@ The DC/OS CLI is the main tool used by developers and operators to interact with
 * `-v` and `-vv` for verbose outputs (for verbose and very verbose)
 * `--lines=N` to restrict amount of results
 
-## Arguments
+Flags may or may not accept a value.
 
-### Positional Arguments
-
-* A positional argument is a bare value, and its position in a list of arguments identifies it
-
-### Named Arguments
-
-* A named argument is a (key, value) pair, where the key identifies the value
-* Flags may or may not accept named arguments
-* Flags should have smart defaults when no named argument is provided
-* Named arguments should be preceded by “=” i.e. not a space
+* Flags should have smart defaults when no value is provided
+* Support both flags that have values preceded by "=" and values preceded by a space e.g. `dcos <command> <action> --<flag>=<value>` is the same as `dcos <command> <action> --<flag> <value>`
 
 ## Prompts
 
@@ -183,18 +179,6 @@ $ dcos <command> -h
 <Usage>
 <Flags>
 <Commands>
-```
-
-### ✅ Do
-
-``` 
-$ dcos <command> --<flag>=<argument>
-```
-
-### 🚫 Don't
-
-```
-$ dcos <command> --<flag> <argument>
 ```
 
 ### ✅ Do
