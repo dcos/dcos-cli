@@ -4,7 +4,6 @@ import (
 	"io"
 	"os/user"
 
-	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/dcos/dcos-cli/pkg/login"
@@ -43,13 +42,13 @@ type Context interface {
 	ConfigManager() *config.Manager
 
 	// Cluster returns the current cluster.
-	Cluster() (*cli.Cluster, error)
+	Cluster() (*config.Cluster, error)
 
 	// Clusters returns the configured clusters.
-	Clusters() []*cli.Cluster
+	Clusters() []*config.Cluster
 
 	// HTTPClient creates an httpclient.Client for a given cluster.
-	HTTPClient(c *cli.Cluster, opts ...httpclient.Option) *httpclient.Client
+	HTTPClient(c *config.Cluster, opts ...httpclient.Option) *httpclient.Client
 
 	// Opener returns an open.Opener.
 	Opener() open.Opener

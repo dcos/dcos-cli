@@ -1,17 +1,16 @@
-package cli
+package config
 
 import (
 	"crypto/x509"
 	"testing"
 	"time"
 
-	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGetters(t *testing.T) {
-	conf := config.Empty()
+	conf := Empty()
 
 	conf.Set("core.dcos_url", "https://dcos.example.com")
 	conf.Set("core.dcos_acs_token", "token_zj8Tb0vhQw")
@@ -29,7 +28,7 @@ func TestGetters(t *testing.T) {
 }
 
 func TestSetters(t *testing.T) {
-	conf := config.Empty()
+	conf := Empty()
 
 	cluster := NewCluster(conf)
 	cluster.SetURL("https://dcos.example.com")
@@ -77,7 +76,7 @@ func TestGetTLS(t *testing.T) {
 
 	for _, exp := range expectedTLSInsecureSkipVerify {
 		t.Run(exp.val.(string), func(t *testing.T) {
-			conf := config.Empty()
+			conf := Empty()
 			conf.Set("core.ssl_verify", exp.val)
 			cluster := NewCluster(conf)
 			require.Equal(t, exp.insecure, cluster.TLS().Insecure)
@@ -86,7 +85,7 @@ func TestGetTLS(t *testing.T) {
 }
 
 func TestGetTLSWithInvalidCA(t *testing.T) {
-	conf := config.New(config.Opts{
+	conf := New(Opts{
 		Fs: afero.NewMemMapFs(),
 	})
 
@@ -108,7 +107,7 @@ I am no authority.
 }
 
 func TestGetTLSWithValidCA(t *testing.T) {
-	conf := config.New(config.Opts{
+	conf := New(Opts{
 		Fs: afero.NewMemMapFs(),
 	})
 
