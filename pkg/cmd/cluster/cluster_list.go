@@ -8,6 +8,8 @@ import (
 
 	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/cli"
+	"github.com/dcos/dcos-cli/pkg/config"
+	"github.com/dcos/dcos-cli/pkg/dcos"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/spf13/cobra"
 )
@@ -26,7 +28,7 @@ func newCmdClusterList(ctx api.Context) *cobra.Command {
 				currentClusterID = currentCluster.ID()
 			}
 
-			var clusters []*cli.Cluster
+			var clusters []*config.Cluster
 			if !onlyAttached {
 				clusters = ctx.Clusters()
 			} else if currentCluster != nil {
@@ -49,7 +51,7 @@ func newCmdClusterList(ctx api.Context) *cobra.Command {
 			var wg sync.WaitGroup
 			for _, cluster := range clusters {
 				wg.Add(1)
-				go func(cluster *cli.Cluster) {
+				go func(cluster *config.Cluster) {
 					defer wg.Done()
 					item := ClusterInfo{
 						ID:       cluster.ID(),
@@ -61,7 +63,7 @@ func newCmdClusterList(ctx api.Context) *cobra.Command {
 					}
 
 					httpClient := ctx.HTTPClient(cluster, httpclient.Timeout(5*time.Second))
-					version, err := cli.NewDCOSClient(httpClient).Version()
+					version, err := dcos.NewClient(httpClient).Version()
 					if err == nil {
 						item.Status = "AVAILABLE"
 						item.Version = version.Version

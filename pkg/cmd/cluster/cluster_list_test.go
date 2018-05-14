@@ -17,7 +17,7 @@ func TestClusterListTable(t *testing.T) {
 	env := mock.NewEnvironment()
 	env.Out = &out
 
-	newCluster := func(id, name, url string, attached bool) *cli.Cluster {
+	newCluster := func(id, name, url string, attached bool) *config.Cluster {
 		conf := config.New(config.Opts{Fs: env.Fs})
 		conf.Set("core.dcos_url", url)
 		conf.Set("cluster.name", name)
@@ -26,7 +26,7 @@ func TestClusterListTable(t *testing.T) {
 			env.Fs.Create(filepath.Join("clusters", id, "attached"))
 			conf.Persist()
 		}
-		return cli.NewCluster(conf)
+		return config.NewCluster(conf)
 	}
 
 	ts := mock.NewTestServer(mock.Cluster{Version: "1.12"})
@@ -42,7 +42,7 @@ func TestClusterListTable(t *testing.T) {
 	downCluster := newCluster("3234-56789-01234", "invalid-cluster", ts3.URL, false)
 
 	ctx := mock.NewContext(env)
-	ctx.SetClusters([]*cli.Cluster{currentCluster, otherCluster, downCluster})
+	ctx.SetClusters([]*config.Cluster{currentCluster, otherCluster, downCluster})
 
 	err := newCmdClusterList(ctx).Execute()
 	require.NoError(t, err)

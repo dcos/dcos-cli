@@ -10,6 +10,7 @@ import (
 	"os/user"
 
 	"github.com/dcos/dcos-cli/pkg/cli"
+	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/login"
 	"github.com/spf13/afero"
 )
@@ -66,7 +67,7 @@ func NewEnvironment() *cli.Environment {
 // Context is an api.Context which can be mocked.
 type Context struct {
 	*cli.Context
-	clusters []*cli.Cluster
+	clusters []*config.Cluster
 }
 
 // NewContext returns a new mock context.
@@ -80,12 +81,12 @@ func NewContext(environment *cli.Environment) *Context {
 }
 
 // SetClusters sets the CLI clusters.
-func (ctx *Context) SetClusters(clusters []*cli.Cluster) {
+func (ctx *Context) SetClusters(clusters []*config.Cluster) {
 	ctx.clusters = clusters
 }
 
 // Clusters khgfs.
-func (ctx *Context) Clusters() []*cli.Cluster {
+func (ctx *Context) Clusters() []*config.Cluster {
 	if ctx.clusters != nil {
 		return ctx.clusters
 	}

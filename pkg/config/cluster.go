@@ -1,4 +1,4 @@
-package cli
+package config
 
 import (
 	"crypto/x509"
@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 )
@@ -17,13 +16,13 @@ import (
 // It is a proxy struct on top of a config which provides user-friendly getters and setters for common
 // configurations such as "core.dcos_url" or "core.ssl_verify". It leverages Go types as much as possible.
 type Cluster struct {
-	config *config.Config
+	config *Config
 }
 
 // NewCluster returns a new cluster for a given config, if omitted it uses an empty config.
-func NewCluster(conf *config.Config) *Cluster {
+func NewCluster(conf *Config) *Cluster {
 	if conf == nil {
-		conf = config.Empty()
+		conf = Empty()
 	}
 	return &Cluster{config: conf}
 }
@@ -119,7 +118,7 @@ func (c *Cluster) SetName(name string) {
 }
 
 // Config returns the cluster's config.
-func (c *Cluster) Config() *config.Config {
+func (c *Cluster) Config() *Config {
 	return c.config
 }
 

@@ -94,27 +94,27 @@ func (ctx *Context) ConfigManager() *config.Manager {
 }
 
 // Cluster returns the current cluster.
-func (ctx *Context) Cluster() (*Cluster, error) {
+func (ctx *Context) Cluster() (*config.Cluster, error) {
 	conf, err := ctx.ConfigManager().Current()
 	if err != nil {
 		return nil, err
 	}
-	return NewCluster(conf), nil
+	return config.NewCluster(conf), nil
 }
 
 // Clusters returns the clusters.
-func (ctx *Context) Clusters() []*Cluster {
+func (ctx *Context) Clusters() []*config.Cluster {
 	confs := ctx.ConfigManager().All()
-	var clusters []*Cluster
+	var clusters []*config.Cluster
 	for _, conf := range confs {
-		clusters = append(clusters, NewCluster(conf))
+		clusters = append(clusters, config.NewCluster(conf))
 	}
 
 	return clusters
 }
 
 // HTTPClient creates an httpclient.Client for a given cluster.
-func (ctx *Context) HTTPClient(c *Cluster, opts ...httpclient.Option) *httpclient.Client {
+func (ctx *Context) HTTPClient(c *config.Cluster, opts ...httpclient.Option) *httpclient.Client {
 	var baseOpts []httpclient.Option
 
 	if c.ACSToken() != "" {
