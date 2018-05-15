@@ -8,6 +8,7 @@ import (
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/dcos/dcos-cli/pkg/login"
 	"github.com/dcos/dcos-cli/pkg/open"
+	"github.com/dcos/dcos-cli/pkg/setup"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
@@ -55,4 +56,7 @@ type Context interface {
 
 	// Login initiates a login based on a set of flags and HTTP client. On success it returns an ACS token.
 	Login(flags *login.Flags, httpClient *httpclient.Client) (string, error)
+
+	// Setup configures a given cluster based on its URL and setup flags.
+	Setup(flags *setup.Flags, clusterURL string) error
 }

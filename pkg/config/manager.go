@@ -142,6 +142,24 @@ func (m *Manager) All() (configs []*Config) {
 	return
 }
 
+// Save saves a config to the disk under the given cluster ID folder.
+func (m *Manager) Save(config *Config, id string, caBundle []byte) error {
+	configDir := filepath.Join(m.dir, "clusters", id)
+	if err := m.fs.MkdirAll(configDir, 0755); err != nil {
+		return err
+	}
+	if len(caBundle) > 0 {
+		caBundlePath := filepath.Join(configDir, "dcos_ca.crt")
+		err := afero.WriteFile(m.fs, caBundlePath, caBundle, 0644)
+		if err != nil {
+			return err
+		}
+		config.Set(keyTLS, caBundlePath)
+	}
+	config.SetPath(filepath.Join(configDir, "dcos.toml"))
+	return config.Persist()
+}
+
 // Attach sets a given config as the current one. This is done by adding an `attached`
 // file next to it. If another config is already attached, the file gets moved.
 func (m *Manager) Attach(config *Config) error {

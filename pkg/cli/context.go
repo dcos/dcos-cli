@@ -11,6 +11,7 @@ import (
 	"github.com/dcos/dcos-cli/pkg/login"
 	"github.com/dcos/dcos-cli/pkg/open"
 	"github.com/dcos/dcos-cli/pkg/prompt"
+	"github.com/dcos/dcos-cli/pkg/setup"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
@@ -146,11 +147,25 @@ func (ctx *Context) Opener() open.Opener {
 
 // Login initiates a login based on a set of flags and HTTP client. On success it returns an ACS token.
 func (ctx *Context) Login(flags *login.Flags, httpClient *httpclient.Client) (string, error) {
-	flow := login.NewFlow(login.FlowOpts{
+	return ctx.loginFlow().Start(flags, httpClient)
+}
+
+// Setup configures a given cluster based on its URL and setup flags.
+func (ctx *Context) Setup(flags *setup.Flags, clusterURL string) error {
+	return setup.New(setup.Opts{
+		Errout:        ctx.ErrOut(),
+		Prompt:        ctx.Prompt(),
+		Logger:        ctx.Logger(),
+		LoginFlow:     ctx.loginFlow(),
+		ConfigManager: ctx.ConfigManager(),
+	}).Configure(flags, clusterURL)
+}
+
+func (ctx *Context) loginFlow() *login.Flow {
+	return login.NewFlow(login.FlowOpts{
 		Errout: ctx.ErrOut(),
 		Prompt: ctx.Prompt(),
 		Logger: ctx.Logger(),
 		Opener: ctx.Opener(),
 	})
-	return flow.Start(flags, httpClient)
 }
