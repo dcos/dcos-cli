@@ -18,8 +18,7 @@ func newAutocompleteCommand(ctx *cli.Context) *cobra.Command {
 		Hidden: true,
 
 		// This needs to be true to prevent __autocomplete__ from trying to parse flags that are meant for
-		// the commands it's trying to complete and causing completion to fail because it takes no flags
-		// itself so any flags will break it.
+		// the commands it's trying to complete causing it to fail.
 		DisableFlagParsing: true,
 		Args:               cobra.MinimumNArgs(1),
 		ValidArgs:          []string{"bash", "zsh"},
