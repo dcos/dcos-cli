@@ -13,6 +13,7 @@ import (
 func newAutocompleteCommand(ctx *cli.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:       "__autocomplete__",
+		Hidden:    true,
 		Args:      cobra.MinimumNArgs(1),
 		ValidArgs: []string{"bash", "zsh"},
 		RunE: func(cmd *cobra.Command, args []string) error {
