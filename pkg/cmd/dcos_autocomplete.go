@@ -11,13 +11,10 @@ import (
 )
 
 func newAutocompleteCommand(ctx *cli.Context) *cobra.Command {
-	// We can either implement shell specification with an optional flag or we can require it as an
-	// argument taken by __autocomplete__. Thinking about it, I think giving it as the first argument
-	// is best because we'll only ever support a few shell types and users won't be typing these commands
-	// in manually.
 	cmd := &cobra.Command{
-		Use:  "__autocomplete__",
-		Args: cobra.MinimumNArgs(1),
+		Use:       "__autocomplete__",
+		Args:      cobra.MinimumNArgs(1),
+		ValidArgs: []string{"bash", "zsh"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
 				return errors.New("no arguments given")
@@ -52,12 +49,14 @@ func newAutocompleteCommand(ctx *cli.Context) *cobra.Command {
 				// not a command is internal or external. In this case we're only interested in whether the
 				// external key exists because we assume the default is internal.
 				if _, exists := cmd.Annotations["external"]; exists {
-					completions = externalCompletion(cmd)
+					completions = externalCompletion(command)
 				} else {
 					completions = internalCompletion(command, flags, flagComplete)
 				}
+
+				completions = append(completions, customCompletion(command, ctx)...)
 			default:
-				return errors.New("")
+				return fmt.Errorf("no completion implemented for shell %s", shell)
 			}
 
 			for _, c := range completions {
@@ -132,5 +131,5 @@ func customCompletion(cmd *cobra.Command, ctx *cli.Context) []string {
 	default:
 	}
 
-	return []string{}
+	return out
 }
