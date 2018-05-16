@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/spf13/cobra"
+	flag "github.com/spf13/pflag"
 )
 
 func newAutocompleteCommand(ctx *cli.Context) *cobra.Command {
@@ -21,25 +23,45 @@ func newAutocompleteCommand(ctx *cli.Context) *cobra.Command {
 				return errors.New("no arguments given")
 			}
 			shell := args[0]
+
+			// root.Find will error out if it's given a flag that isn't accepted by the command it finds so
+			// we need to strip out the flags currently in the list to give just the command names to
+			// Find.
 			commands, flags := stripFlags(args[1:])
 			flagComplete := isFlag(args[len(args)-1])
 			root := cmd.Parent()
 
+			var completions []string
+
 			switch shell {
+			case "zsh":
 			case "bash":
 				// root.Find will return the stuff remaining from after the words that matched the commands
 				// (e.g. `cluster att` will give ["att"]).
 				// However, if there are incorrect or, unfortunately, incomplete flags, this will error out
 				// so if they're completing on a flag with something like `auth list-providers --j`,
 				// it'll error
-				command, remaining, err := root.Find(commands)
+				command, _, err := root.Find(commands)
 				if err != nil {
 					return err
 				}
 
-				internalCompletion(command, flags, flagComplete)
-			case "zsh":
+				// We'll need to determine whether or not the found command is internal or external here.
+				// To do that we use the Annotations object which the cobra documentation doesn't say much
+				// about but appears to be for arbitrary metadata so we can use that to hold whether or
+				// not a command is internal or external. In this case we're only interested in whether the
+				// external key exists because we assume the default is internal.
+				if _, exists := cmd.Annotations["external"]; exists {
+					completions = externalCompletion(cmd)
+				} else {
+					completions = internalCompletion(command, flags, flagComplete)
+				}
 			default:
+				return errors.New("")
+			}
+
+			for _, c := range completions {
+				fmt.Fprintln(ctx.Out(), c)
 			}
 
 			return nil
@@ -76,10 +98,39 @@ func internalCompletion(cmd *cobra.Command, flags []string, flagComplete bool) [
 		out = append(out, cmd.ValidArgs...)
 	} else {
 		flagSet := cmd.Flags()
+		flagSet.VisitAll(func(f *flag.Flag) {
+			if f.Name != "" {
+				name := "--" + f.Name
+				out = append(out, name)
+			}
+			if f.Shorthand != "" {
+				shorthand := "-" + f.Shorthand
+				out = append(out, shorthand)
+			}
+		})
 	}
 	return out
 }
 
-func externalCompletion(cmd *cobra.Command, flag bool) []string {
+func externalCompletion(cmd *cobra.Command) []string {
+	return []string{}
+}
+
+func customCompletion(cmd *cobra.Command, ctx *cli.Context) []string {
+	funcName, exists := cmd.Annotations["custom_completion"]
+	if !exists {
+		return []string{}
+	}
+
+	out := []string{}
+
+	switch funcName {
+	case "cluster_list":
+		for _, c := range ctx.Clusters() {
+			out = append(out, c.Name())
+		}
+	default:
+	}
+
 	return []string{}
 }
