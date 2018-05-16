@@ -6,7 +6,7 @@ import (
 	"sort"
 )
 
-// These are the different login provider types that DC/OS supports.
+// These are the different login provider types that the DC/OS CLI supports.
 const (
 	DCOSUIDPassword     = "dcos-uid-password"
 	DCOSUIDServiceKey   = "dcos-uid-servicekey"
@@ -14,6 +14,14 @@ const (
 	SAMLSpInitiated     = "saml-sp-initiated"
 	OIDCAuthCodeFlow    = "oidc-authorization-code-flow"
 	OIDCImplicitFlow    = "oidc-implicit-flow"
+)
+
+// These are the different login client methods that the DC/OS CLI supports.
+const (
+	methodBrowserToken      = "browser-prompt-authtoken"
+	methodCredential        = "dcos-credential-post-receive-authtoken"
+	methodServiceCredential = "dcos-servicecredential-post-receive-authtoken"
+	methodUserCredential    = "dcos-usercredential-post-receive-authtoken"
 )
 
 // Provider is a DC/OS login provider.
@@ -86,7 +94,7 @@ func defaultDCOSUIDPasswordProvider() (provider *Provider) {
 		ID:           "dcos-users",
 		Type:         DCOSUIDPassword,
 		Description:  "Default DC/OS login provider",
-		ClientMethod: "dcos-usercredential-post-receive-authtoken",
+		ClientMethod: methodUserCredential,
 		Config: ProviderConfig{
 			StartFlowURL: "/acs/api/v1/auth/login",
 		},
@@ -98,7 +106,7 @@ func defaultOIDCImplicitFlowProvider() (provider *Provider) {
 		ID:           "dcos-oidc-auth0",
 		Type:         OIDCImplicitFlow,
 		Description:  "Google, GitHub, or Microsoft",
-		ClientMethod: "browser-prompt-authtoken",
+		ClientMethod: methodBrowserToken,
 		Config: ProviderConfig{
 			StartFlowURL: "/login?redirect_uri=urn:ietf:wg:oauth:2.0:oob",
 		},

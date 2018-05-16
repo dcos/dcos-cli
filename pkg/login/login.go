@@ -1,12 +1,37 @@
 package login
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/sirupsen/logrus"
 )
+
+// Credentials is the payload for login POST requests.
+type Credentials struct {
+	UID      string `json:"uid"`
+	Password string `json:"password,omitempty"`
+	Token    string `json:"token,omitempty"`
+}
+
+// JWT is the authentication token returned by the DC/OS login API.
+type JWT struct {
+	Token string `json:"token"`
+}
+
+// Error represents an error returned by the login API.
+type Error struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Code        string `json:"code"`
+}
+
+// Error converts a login API error to a string.
+func (err *Error) Error() string {
+	return err.Description
+}
 
 // Client is able to detect available login providers and login to DC/OS.
 type Client struct {
@@ -83,4 +108,36 @@ func (c *Client) challengeAuth() (string, error) {
 		return "", fmt.Errorf("expected status code 401, got %d", resp.StatusCode)
 	}
 	return resp.Header.Get("WWW-Authenticate"), nil
+}
+
+// Login makes a POST requests to the login endpoint with the given credentials.
+func (c *Client) Login(loginEndpoint string, credentials *Credentials) (string, error) {
+	if loginEndpoint == "" {
+		loginEndpoint = "/acs/api/v1/auth/login"
+	}
+
+	reqBody, err := json.Marshal(credentials)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := c.http.Post(loginEndpoint, "application/json", bytes.NewBuffer(reqBody))
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		var apiError *Error
+		if err := json.NewDecoder(resp.Body).Decode(&apiError); err != nil {
+			return "", fmt.Errorf("couldn't log in")
+		}
+		return "", apiError
+	}
+
+	var jwt *JWT
+	if err := json.NewDecoder(resp.Body).Decode(&jwt); err != nil {
+		return "", err
+	}
+	return jwt.Token, nil
 }
