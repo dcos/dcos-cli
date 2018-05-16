@@ -12,10 +12,11 @@ import (
 
 func newAutocompleteCommand(ctx *cli.Context) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:       "__autocomplete__",
-		Hidden:    true,
-		Args:      cobra.MinimumNArgs(1),
-		ValidArgs: []string{"bash", "zsh"},
+		Use:                "__autocomplete__",
+		Hidden:             true,
+		DisableFlagParsing: true,
+		Args:               cobra.MinimumNArgs(1),
+		ValidArgs:          []string{"bash", "zsh"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
 				return errors.New("no arguments given")
@@ -34,14 +35,10 @@ func newAutocompleteCommand(ctx *cli.Context) *cobra.Command {
 			switch shell {
 			case "zsh":
 			case "bash":
-				// root.Find will return the stuff remaining from after the words that matched the commands
-				// (e.g. `cluster att` will give ["att"]).
-				// However, if there are incorrect or, unfortunately, incomplete flags, this will error out
-				// so if they're completing on a flag with something like `auth list-providers --j`,
-				// it'll error
 				command, _, err := root.Find(commands)
 				if err != nil {
-					return err
+					// if no command was found, default to the root
+					command = root
 				}
 
 				// We'll need to determine whether or not the found command is internal or external here.
@@ -93,7 +90,9 @@ func internalCompletion(cmd *cobra.Command, flags []string, flagComplete bool) [
 	if !flagComplete {
 		// subcommand or argument completion
 		for _, c := range cmd.Commands() {
-			out = append(out, c.Name())
+			if !c.Hidden {
+				out = append(out, c.Name())
+			}
 		}
 		out = append(out, cmd.ValidArgs...)
 	} else {
@@ -119,6 +118,7 @@ func externalCompletion(cmd *cobra.Command) []string {
 func customCompletion(cmd *cobra.Command, ctx *cli.Context) []string {
 	funcName, exists := cmd.Annotations["custom_completion"]
 	if !exists {
+		// custom_completion is optional so bail out now.
 		return []string{}
 	}
 
