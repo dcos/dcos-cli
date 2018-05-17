@@ -22,18 +22,18 @@ func newAutocompleteCommand(ctx *cli.Context) *cobra.Command {
 		DisableFlagParsing: true,
 		Args:               cobra.MinimumNArgs(1),
 		ValidArgs:          []string{"bash", "zsh"},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
+		RunE: func(cmd *cobra.Command, rawArgs []string) error {
+			if len(rawArgs) == 0 {
 				return errors.New("no arguments given")
 			}
-			shell := args[0]
+			shell := rawArgs[0]
 
-			// root.Find will error out if it's given a flag that isn't accepted by the command it finds so
-			// we need to strip out the flags currently in the list to give just the command names to
-			// Find.
-			commands, flags := stripFlags(args[1:])
-			flagComplete := isFlag(args[len(args)-1])
-			root := cmd.Parent()
+			commands := rawArgs[1:]
+			// This currently doesn't account for the possibility of a space separated flag value
+			// like `--flag value`. cobra's code has examples of how that might be possible but first we
+			// need to figure out what behavior scenarios there are to deal with.
+			flagComplete := isFlag(rawArgs[len(rawArgs)-1])
+			root := cmd.Root()
 
 			var completions []string
 
@@ -54,7 +54,7 @@ func newAutocompleteCommand(ctx *cli.Context) *cobra.Command {
 				if _, exists := cmd.Annotations["external"]; exists {
 					completions = externalCompletion(command)
 				} else {
-					completions = internalCompletion(command, flags, flagComplete)
+					completions = internalCompletion(command, flagComplete)
 				}
 
 				completions = append(completions, customCompletion(command, ctx)...)
@@ -90,7 +90,7 @@ func stripFlags(args []string) ([]string, []string) {
 	return commands, flags
 }
 
-func internalCompletion(cmd *cobra.Command, flags []string, flagComplete bool) []string {
+func internalCompletion(cmd *cobra.Command, flagComplete bool) []string {
 	var out []string
 	if !flagComplete {
 		// subcommand or argument completion
