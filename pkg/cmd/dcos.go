@@ -33,7 +33,7 @@ func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
 		auth.NewCommand(ctx),
 		config.NewCommand(ctx),
 		cluster.NewCommand(ctx),
-		newAutocompleteCommand(ctx),
+		completion.newAutocompleteCommand(ctx),
 	)
 	return cmd
 }

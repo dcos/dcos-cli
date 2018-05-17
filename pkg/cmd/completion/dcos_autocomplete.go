@@ -1,4 +1,4 @@
-package cmd
+package completion
 
 import (
 	"errors"
@@ -10,7 +10,8 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
-func newAutocompleteCommand(ctx *cli.Context) *cobra.Command {
+// NewAutocompleteCommand creates and returns a command to get autocompletion options for the CLi
+func NewAutocompleteCommand(ctx *cli.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "__autocomplete__",
 
