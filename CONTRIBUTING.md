@@ -18,9 +18,10 @@ If you are submitting a bug report, please include:
 Please describe the problem you are addressing and your proposed solution.
 
 ### Style
-We follow [pep8](https://www.python.org/dev/peps/pep-0008/) and [isort](
+Please refer to our [style guide](https://github.com/dcos/dcos-cli/blob/master/STYLEGUIDE.md). We follow [pep8](https://www.python.org/dev/peps/pep-0008/) and [isort](
 https://pypi.python.org/pypi/isort) conventions. You can make sure you follow these by running
 `tox -e py34-syntax` in the `dcos-cli` and `cli` directories.
+
 
 ### Tests
 Please include test(s) with your changes. Make sure to separate integration and unit tests. Please
