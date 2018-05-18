@@ -214,7 +214,7 @@ run:
 
         env/bin/tox -e py35-integration /<test-file>.py
 
-### Releasing
+## Releasing
 
 Releasing a new version of the DC/OS CLI is only possible through an
 [automated TeamCity
@@ -230,3 +230,7 @@ executables (for Windows, macOS, and Linux).
 
 The executables are pushed to s3 and available at
 <https://downloads.dcos.io/binaries/cli/>\<platform\>/x86-64/\<tag\>/dcos.
+
+## Contributing
+
+Contributions are always welcome! Please refer to our [contributing guidelines](https://github.com/dcos/dcos-cli/blob/master/CONTRIBUTING.md) and [style guide](https://github.com/dcos/dcos-cli/blob/master/STYLEGUIDE.md) first.
