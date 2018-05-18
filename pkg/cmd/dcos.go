@@ -5,6 +5,7 @@ import (
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/cmd/auth"
 	"github.com/dcos/dcos-cli/pkg/cmd/cluster"
+	"github.com/dcos/dcos-cli/pkg/cmd/completion"
 	"github.com/dcos/dcos-cli/pkg/cmd/config"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -33,7 +34,7 @@ func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
 		auth.NewCommand(ctx),
 		config.NewCommand(ctx),
 		cluster.NewCommand(ctx),
-		completion.newAutocompleteCommand(ctx),
+		completion.NewAutocompleteCommand(ctx),
 	)
 	return cmd
 }
