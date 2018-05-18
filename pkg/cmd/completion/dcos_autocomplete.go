@@ -108,10 +108,6 @@ func internalCompletion(cmd *cobra.Command, flagComplete bool) []string {
 				name := "--" + f.Name
 				out = append(out, name)
 			}
-			if f.Shorthand != "" {
-				shorthand := "-" + f.Shorthand
-				out = append(out, shorthand)
-			}
 		})
 	}
 	return out
