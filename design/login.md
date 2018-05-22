@@ -23,7 +23,7 @@ top-level key refers to the login provider ID, while its value is the login prov
     "config": {
       "start_flow_url": "/acs/api/v1/auth/login"
     },
-    "description": "Default DC/OS authenticator"
+    "description": "Default DC/OS login provider"
   }
 }
 ```
@@ -36,7 +36,7 @@ detected by making an unauthenticated `HEAD` request to a well-known protected D
 reading the `WWW-Authenticate` header DC/OS returns in the 401 response:
 
 - `acsjwt` : the cluster only supports the `dcos-users` provider as defined above.
-- `oauthjwt` : the cluster only supports the OpenID implicit flow provider, as defined below:
+- `oauthjwt` : the cluster only supports the OpenID Connect implicit flow provider, as defined below:
 
 ``` json
 {
@@ -53,12 +53,12 @@ reading the `WWW-Authenticate` header DC/OS returns in the 401 response:
 
 ## Log in to a DC/OS cluster
 
-Log in to a DC/OS cluster is the action of presenting some credentials to the cluster in order to
-get an authorization token in return (also known as `ACS token`).
+"Login" is the process of presenting some credentials to a DC/OS cluster within an HTTP request which is then,
+upon success, responded to with an HTTP response containing a so-called DC/OS authentication token.
 
-The DC/OS CLI supports 6 login providers types (`authentication-type`):
+The DC/OS CLI supports 6 providers types (`authentication-type`):
 
-- **dcos-uid-password** : Log in using a standard DC/OS user account (username and password).
+- **dcos-uid-password** : Log in using a regular DC/OS user account (username and password).
 - **dcos-uid-password-ldap** : Log in using an LDAP user account (username and password).
 - **dcos-uid-servicekey** : Log in using a DC/OS service user account (username and private key).
 - **saml-sp-initiated** : Log in using SAML 2.0.
@@ -67,13 +67,16 @@ The DC/OS CLI supports 6 login providers types (`authentication-type`):
 
 A login happens through the `dcos auth login` command, which accepts the following flags:
 
-- **--provider** (string) : Specify the login provider ID to use.
-- **--username** (string) : Specify the username.
-- **--password** (string) : Specify password in plaintext (insecure).
-- **--password-file** (string) : Specify the path to a file that contains the password (insecure).
-- **--password-env** (string) : Specify an environment variable name that contains the password.
-- **--private-key** (string) : Specify the path to a file that contains the private key for service
-    account login.
+- **--provider** : Specify the login provider ID to use.
+- **--username** : Specify the username.
+- **--password** : [INSECURE] Specify password in plaintext on the command-line. This should
+                   only be used in development / testing environments as it can leak the
+                   password in various ways.
+- **--password-file** : Specify the path to a file that contains the password.
+- **--private-key** : Specify the path to the private key for service account login.
+
+The password can also be read from the `DCOS_PASSWORD` environment variable. The `--password` or
+`--password-file` flags take precedence over the environment variable.
 
 (A login also happens at the end of the `dcos cluster setup` command, which accepts all the flags
 from the `dcos auth login` command.)
@@ -96,7 +99,8 @@ Each login provider has one of these 4 login methods associated to it (`client-m
 - **dcos-usercredential-post-receive-authtoken**, **dcos-credential-post-receive-authtoken** :
     POST username and password to the `start_flow_url` endpoint.
 - **dcos-servicecredential-post-receive-authtoken** : Generate a login token from a service account
-    private key. POST username and the generated token to the `start_flow_url` endpoint.
+    private key. The login token is valid for 5 minutes. POST username and the generated token to the
+    `start_flow_url` endpoint.
 - **browser-prompt-authtoken** : Open the DC/OS cluster UI in a browser, at the page referenced
     in `start_flow_url`. The user is then expected to continue the flow in the browser, eventually
     they are redirected to a page with a token to copy-paste from the browser to their terminal.
