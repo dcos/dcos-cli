@@ -46,6 +46,11 @@ completion, like `<subcommand binary> __autocomplete__ bash marathon task list`.
 binary (subcommands, flags, etc.) so the CLI can provide at least a basic completion experience even on older
 versions of our plugins.
 
+Delivery of the completion script is handled similarly to `kubectl`. It will be shipped as a static string in
+the binary that's output when `dcos completion <shell>` is called. It will be up to the user to do whatever
+they want to with it, either sourcing when the shell starts or putting it wherever they keep other completion
+scripts.
+
 
 ## Complications ##
 
