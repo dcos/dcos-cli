@@ -9,8 +9,14 @@ import (
 	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
+	"github.com/dcos/dcos-cli/pkg/subcommand"
 	"github.com/spf13/cobra"
 )
+
+func newDcosCmdClusterList(ctx *cli.Context) subcommand.DcosCommand {
+	sc := subcommand.NewInternalCommand(newCmdClusterList(ctx))
+	return sc
+}
 
 // newCmdClusterList lists the clusters.
 func newCmdClusterList(ctx api.Context) *cobra.Command {

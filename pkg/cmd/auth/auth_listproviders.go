@@ -8,8 +8,14 @@ import (
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/dcos/dcos-cli/pkg/login"
+	"github.com/dcos/dcos-cli/pkg/subcommand"
 	"github.com/spf13/cobra"
 )
+
+func newDcosCmdAuthListProviders(ctx *cli.Context) subcommand.DcosCommand {
+	sc := subcommand.NewInternalCommand(newCmdAuthListProviders(ctx))
+	return sc
+}
 
 // newCmdAuthListProviders creates the `dcos auth list-providers` subcommand.
 func newCmdAuthListProviders(ctx api.Context) *cobra.Command {
