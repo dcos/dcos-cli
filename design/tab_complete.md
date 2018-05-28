@@ -14,6 +14,8 @@ depending on how feasible they are to implement.
 * Subcommand completion, e.g. `dcos cluster[TAB]` should give you `list attach remove rename`.
 This includes handling partial completion, e.g. `dcos clu[TAB]` should give you `cluster`. But that will
 be easy to do with `compgen`.
+* Flag name completion. Provide completion for flag names available to the current command, e.g.
+`dcos auth list-providers --[TAB]` should give `json`.
 * Support for currently existing commands without modification of the code itself.
 * Users won't need to update their completion script often. Often in this sense would be whenever
 the plugins they have installed have been updated. It's possible that the basic script will need to
@@ -25,8 +27,6 @@ ideally, we could set up a different completion code path that takes advantage o
 additional features provided by zsh.
 * Argument completion. This would mean intelligently completing arguments with DC/OS object
 identifiers, e.g. `dcos cluster attach[TAB]` would give a list of all clusters the CLI is aware of.
-* Flag name completion. Provide completion for flag names available to the current command, e.g.
-`dcos auth list-providers --[TAB]` should give `json`.
 * Flag argument completion. Provide intelligent completion for flag arguments, e.g.
 `dcos node ssh --private-ip=[TAB]` should give a list of the private IPs of all nodes in the cluster.
 
