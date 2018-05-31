@@ -28,7 +28,10 @@ if [ ! -d "${BUILDDIR}/${VENV}" ]; then
     # Create the virtualenv.
     echo "Creating virtualenv..."
     if [ "$(uname)" = "Windows_NT" ]; then
+      rmdir %TEMP%\pip
+      rmdir %TEMP%\pip-build
       mkdir -p ${BUILDDIR}/${VENV}; cd ${BUILDDIR}/${VENV}
+      source bin
       ${VIRTUALENV} --python=$(which ${PYTHON}) --prompt="${PROMPT}" --no-site-packages ${BUILDDIR}/${VENV}
       ${VIRTUALENV} --relocatable ${BUILDDIR}/${VENV}
       cd -
