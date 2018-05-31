@@ -45,7 +45,7 @@ if [ ! -d "${BUILDDIR}/${VENV}" ]; then
     else
       ${BUILDDIR}/${VENV}/${BIN}/pip${EXE} install --upgrade pip
     fi
-    ${BUILDDIR}/${VENV}/${BIN}/pip${EXE} install --upgrade setuptools --user python
+    ${BUILDDIR}/${VENV}/${BIN}/pip${EXE} install --upgrade setuptools
     ${BUILDDIR}/${VENV}/${BIN}/pip${EXE} install --upgrade --force-reinstall -r ${BASEDIR}/requirements.txt
     ${BUILDDIR}/${VENV}/${BIN}/pip${EXE} install -e ${BASEDIR}
     if [ "$(uname)" = "Windows_NT" ]; then
