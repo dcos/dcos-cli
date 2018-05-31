@@ -75,8 +75,8 @@ A login happens through the `dcos auth login` command, which accepts the followi
 - **--password-file** : Specify the path to a file that contains the password.
 - **--private-key** : Specify the path to the private key for service account login.
 
-The password can also be read from the `DCOS_PASSWORD` environment variable. The `--password` or
-`--password-file` flags take precedence over the environment variable.
+The username and password can also be read from the `DCOS_USERNAME` and `DCOS_PASSWORD` environment
+variables. Flags (`--username`, `--password`, `--password-file`) take precedence over environment variables.
 
 (A login also happens at the end of the `dcos cluster setup` command, which accepts all the flags
 from the `dcos auth login` command.)
