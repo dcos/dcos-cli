@@ -28,10 +28,7 @@ if [ ! -d "${BUILDDIR}/${VENV}" ]; then
     # Create the virtualenv.
     echo "Creating virtualenv..."
     if [ "$(uname)" = "Windows_NT" ]; then
-      rmdir %TEMP%\pip
-      rmdir %TEMP%\pip-build
       mkdir -p ${BUILDDIR}/${VENV}; cd ${BUILDDIR}/${VENV}
-      source bin
       ${VIRTUALENV} --python=$(which ${PYTHON}) --prompt="${PROMPT}" --no-site-packages ${BUILDDIR}/${VENV}
       ${VIRTUALENV} --relocatable ${BUILDDIR}/${VENV}
       cd -
@@ -44,12 +41,11 @@ if [ ! -d "${BUILDDIR}/${VENV}" ]; then
     # Install all requirements into the virtualenv.
     echo "Installing virtualenv requirements..."
     if [ "$(uname)" = "Windows_NT" ]; then
-      ${PYTHON} -m pip install -U pip
+      ${PYTHON} -m pip --no-cache-dir
     else
       ${BUILDDIR}/${VENV}/${BIN}/pip${EXE} install --upgrade pip
     fi
-    ${BUILDDIR}/${VENV}/${BIN}/pip${EXE} uninstall -y setuptools
-    ${BUILDDIR}/${VENV}/${BIN}/pip${EXE} install --upgrade --force-reinstall -r ${BASEDIR}/requirements.txt
+    ${BUILDDIR}/${VENV}/${BIN}/pip${EXE} install -r ${BASEDIR}/requirements.txt
     ${BUILDDIR}/${VENV}/${BIN}/pip${EXE} install -e ${BASEDIR}
     if [ "$(uname)" = "Windows_NT" ]; then
       ${VIRTUALENV} --relocatable ${BUILDDIR}/${VENV}
