@@ -131,6 +131,15 @@ func (c *Client) Post(path string, contentType string, body io.Reader, opts ...O
 	return c.Do(req)
 }
 
+// Delete issues a DELETE to the specified DC/OS cluster path.
+func (c *Client) Delete(path string, opts ...Option) (*http.Response, error) {
+	req, err := c.NewRequest("DELETE", path, nil, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return c.Do(req)
+}
+
 // NewRequest returns a new Request given a method, path, and optional body.
 // Also adds the authorization header with the ACS token to work with the
 // DC/OS cluster we are linked to if it has been set.

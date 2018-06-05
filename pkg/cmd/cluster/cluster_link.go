@@ -65,6 +65,18 @@ func newCmdClusterLink(ctx api.Context) *cobra.Command {
 				provider = providers[i]
 			}
 
+			type LoginProvider struct {
+				ID   string `json:"id"`
+				Type string `json:"type"`
+			}
+
+			type LinkRequest struct {
+				ID            string `json:"id"`
+				Name          string `json:"name"`
+				URL           string `json:"url"`
+				LoginProvider `json:"login_provider"`
+			}
+
 			linkRequest := &LinkRequest{
 				ID:   linkableCluster.ID(),
 				Name: linkableCluster.Name(),
