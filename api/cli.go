@@ -8,6 +8,7 @@ import (
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/dcos/dcos-cli/pkg/login"
 	"github.com/dcos/dcos-cli/pkg/open"
+	"github.com/dcos/dcos-cli/pkg/prompt"
 	"github.com/dcos/dcos-cli/pkg/setup"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -53,6 +54,9 @@ type Context interface {
 
 	// HTTPClient creates an httpclient.Client for a given cluster.
 	HTTPClient(c *config.Cluster, opts ...httpclient.Option) *httpclient.Client
+
+	// Prompt returns a *prompt.Prompt.
+	Prompt() *prompt.Prompt
 
 	// Opener returns an open.Opener.
 	Opener() open.Opener
