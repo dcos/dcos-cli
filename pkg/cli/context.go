@@ -103,6 +103,22 @@ func (ctx *Context) Cluster() (*config.Cluster, error) {
 	return config.NewCluster(conf), nil
 }
 
+// IsUniqueCluster returns if a cluster name is unique among all the clusters.
+func (ctx *Context) IsUniqueCluster(name string) bool {
+	confs := ctx.ConfigManager().All()
+	count := 0
+	for _, conf := range confs {
+		if config.NewCluster(conf).Name() == name {
+			if count >= 1 {
+				return false
+			}
+			count++
+		}
+	}
+
+	return true
+}
+
 // Clusters returns the clusters.
 func (ctx *Context) Clusters() []*config.Cluster {
 	confs := ctx.ConfigManager().All()

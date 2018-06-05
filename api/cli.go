@@ -45,6 +45,9 @@ type Context interface {
 	// Cluster returns the current cluster.
 	Cluster() (*config.Cluster, error)
 
+	// IsUniqueCluster returns if a cluster has a unique name among the list.
+	IsUniqueCluster(name string) bool
+
 	// Clusters returns the configured clusters.
 	Clusters() []*config.Cluster
 
