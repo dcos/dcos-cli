@@ -4,15 +4,18 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"net/url"
 
 	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/login"
+	"github.com/dcos/dcos-cli/pkg/setup"
 	"github.com/spf13/cobra"
 )
 
 // newCmdClusterLink links the attached cluster to another one.
 func newCmdClusterLink(ctx api.Context) *cobra.Command {
+	setupFlags := setup.NewFlags(ctx.Fs(), ctx.EnvLookup)
 	cmd := &cobra.Command{
 		Use:  "link",
 		Args: cobra.ExactArgs(1),
@@ -33,7 +36,35 @@ func newCmdClusterLink(ctx api.Context) *cobra.Command {
 			}
 
 			if (config.Cluster{}) == linkableCluster {
-				return errors.New("unable to retrieve cluster " + args[0])
+				// The cluster does not exist yet. Two possibilities:
+				// - The argument is an URL, we try to setup the cluster.
+				// - The argument is not an URL, we return an error.
+				_, err = url.ParseRequestURI(args[0])
+				if err != nil {
+					return errors.New("unable to retrieve cluster " + args[0])
+				}
+
+				msg := " is not set up in the CLI, would you like to do it now?"
+				err = ctx.Prompt().Confirm(args[0] + msg)
+				if err != nil {
+					return err
+				}
+
+				// We save the current configuration before starting the setup.
+				manager := ctx.ConfigManager()
+				conf, err := manager.Current()
+				if err != nil {
+					return err
+				}
+				ctx.Setup(setupFlags, args[0])
+
+				// The new cluster is set up and attached, we reattach the old one.
+				newlyAttachedCluster, err := ctx.Cluster()
+				if err != nil {
+					return err
+				}
+				linkableCluster = *newlyAttachedCluster
+				manager.Attach(conf)
 			}
 
 			if attachedCluster.ID() == linkableCluster.ID() {
@@ -97,5 +128,6 @@ func newCmdClusterLink(ctx api.Context) *cobra.Command {
 			return nil
 		},
 	}
+	setupFlags.Register(cmd.Flags())
 	return cmd
 }
