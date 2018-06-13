@@ -25,17 +25,13 @@ func newCmdClusterLink(ctx api.Context) *cobra.Command {
 				return err
 			}
 
-			var linkableCluster config.Cluster
-			for _, cluster := range ctx.Clusters() {
-				if args[0] == cluster.ID() ||
-					args[0] == cluster.URL() ||
-					args[0] == cluster.Name() && ctx.IsUniqueCluster(cluster.Name()) {
-					linkableCluster = *cluster
-					break
-				}
+			manager := ctx.ConfigManager()
+			linkableClusterConfig, err := manager.Find(args[0], false)
+			if err != nil {
+				return err
 			}
 
-			if (config.Cluster{}) == linkableCluster {
+			if config.Empty() == linkableClusterConfig {
 				// The cluster does not exist yet. Two possibilities:
 				// - The argument is an URL, we try to setup the cluster.
 				// - The argument is not an URL, we return an error.
@@ -50,28 +46,18 @@ func newCmdClusterLink(ctx api.Context) *cobra.Command {
 					return err
 				}
 
-				// We save the current configuration before starting the setup.
-				manager := ctx.ConfigManager()
-				conf, err := manager.Current()
-				if err != nil {
-					return err
-				}
-				ctx.Setup(setupFlags, args[0])
-
-				// The new cluster is set up and attached, we reattach the old one.
-				newlyAttachedCluster, err := ctx.Cluster()
-				if err != nil {
-					return err
-				}
-				linkableCluster = *newlyAttachedCluster
-				manager.Attach(conf)
+				// We do not want to attach the linkable cluster.
+				attach := false
+				ctx.Setup(setupFlags, args[0], attach)
 			}
 
-			if attachedCluster.ID() == linkableCluster.ID() {
+			if attachedCluster.Config() == linkableClusterConfig {
 				return errors.New("cannot link a cluster to itself")
 			}
 
-			client := login.NewClient(ctx.HTTPClient(&linkableCluster), ctx.Logger())
+			linkableCluster := config.NewCluster(linkableClusterConfig)
+
+			client := login.NewClient(ctx.HTTPClient(linkableCluster), ctx.Logger())
 			rawProviders, err := client.Providers()
 			if err != nil {
 				return err
@@ -120,9 +106,19 @@ func newCmdClusterLink(ctx api.Context) *cobra.Command {
 			message, err := json.Marshal(linkRequest)
 
 			attachedClient := ctx.HTTPClient(attachedCluster)
-			_, err = attachedClient.Post("/cluster/v1/links", "application/json", bytes.NewReader(message))
+			resp, err := attachedClient.Post("/cluster/v1/links", "application/json", bytes.NewReader(message))
 			if err != nil {
 				return err
+			}
+
+			defer resp.Body.Close()
+
+			if resp.StatusCode != 200 {
+				var apiError *login.Error
+				if err := json.NewDecoder(resp.Body).Decode(&apiError); err != nil {
+					return errors.New("couldn't link")
+				}
+				return apiError
 			}
 
 			return nil

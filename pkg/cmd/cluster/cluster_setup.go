@@ -22,7 +22,10 @@ func newCmdClusterSetup(ctx api.Context) *cobra.Command {
 			if !strings.HasPrefix(clusterURL, "https://") && !strings.HasPrefix(clusterURL, "http://") {
 				clusterURL = "https://" + clusterURL
 			}
-			return ctx.Setup(setupFlags, clusterURL)
+
+			// We want to attach the cluster once it is setup.
+			attach := true
+			return ctx.Setup(setupFlags, clusterURL, attach)
 		},
 	}
 	setupFlags.Register(cmd.Flags())

@@ -167,13 +167,14 @@ func (ctx *Context) Login(flags *login.Flags, httpClient *httpclient.Client) (st
 }
 
 // Setup configures a given cluster based on its URL and setup flags.
-func (ctx *Context) Setup(flags *setup.Flags, clusterURL string) error {
+func (ctx *Context) Setup(flags *setup.Flags, clusterURL string, attach bool) error {
 	return setup.New(setup.Opts{
 		Errout:        ctx.ErrOut(),
 		Prompt:        ctx.Prompt(),
 		Logger:        ctx.Logger(),
 		LoginFlow:     ctx.loginFlow(),
 		ConfigManager: ctx.ConfigManager(),
+		Attach:        attach,
 	}).Configure(flags, clusterURL)
 }
 

@@ -65,5 +65,5 @@ type Context interface {
 	Login(flags *login.Flags, httpClient *httpclient.Client) (string, error)
 
 	// Setup configures a given cluster based on its URL and setup flags.
-	Setup(flags *setup.Flags, clusterURL string) error
+	Setup(flags *setup.Flags, clusterURL string, attach bool) error
 }

@@ -1,10 +1,12 @@
 package cluster
 
 import (
+	"encoding/json"
 	"errors"
 
 	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/config"
+	"github.com/dcos/dcos-cli/pkg/login"
 	"github.com/spf13/cobra"
 )
 
@@ -28,18 +30,24 @@ func newCmdClusterUnlink(ctx api.Context) *cobra.Command {
 				}
 			}
 
-			if (config.Cluster{}) == linkedCluster {
-				return errors.New("unable to retrieve cluster " + args[0])
-			}
-
 			if attachedCluster.ID() == linkedCluster.ID() {
 				return errors.New("cannot unlink a cluster to itself")
 			}
 
 			client := ctx.HTTPClient(attachedCluster)
-			_, err = client.Delete("/cluster/v1/links/" + linkedCluster.ID())
+			resp, err := client.Delete("/cluster/v1/links/" + linkedCluster.ID())
 			if err != nil {
 				return err
+			}
+
+			defer resp.Body.Close()
+
+			if resp.StatusCode != 200 {
+				var apiError *login.Error
+				if err := json.NewDecoder(resp.Body).Decode(&apiError); err != nil {
+					return errors.New("couldn't unlink")
+				}
+				return apiError
 			}
 
 			return nil
