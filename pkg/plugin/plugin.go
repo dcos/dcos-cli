@@ -1,6 +1,10 @@
 package plugin
 
-import "github.com/spf13/cobra"
+import (
+	"fmt"
+
+	"github.com/spf13/cobra"
+)
 
 // Plugin defines an external plugin and its associated data
 type Plugin struct {
@@ -45,9 +49,32 @@ type Argument struct {
 	Mutliple bool `yaml:"multiple"`
 }
 
-// IntoCommand creates a cobra command that will call out to the plugin when used
-func (p *Plugin) IntoCommand() *cobra.Command {
-	cmd := &cobra.Command{}
+// IntoCommands creates a list of cobra commands from the commands available in the plugin
+func (p *Plugin) IntoCommands() []*cobra.Command {
+	var commands []*cobra.Command
+
+	for _, c := range p.Commands {
+		cmd := c.IntoCommand()
+
+		commands = append(commands, cmd)
+	}
+
+	return commands
+}
+
+// IntoCommand creates a cobra command used to call this command
+func (c *Command) IntoCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: c.Name,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Printf("%s called\n", c.Name)
+			return nil
+		},
+	}
+
+	for _, s := range c.Subcommands {
+		cmd.AddCommand(s.IntoCommand())
+	}
 
 	return cmd
 }

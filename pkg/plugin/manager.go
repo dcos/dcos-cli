@@ -61,11 +61,13 @@ func (m *Manager) All() []*Plugin {
 			definitionFilePath := filepath.Join(m.dir, pluginDirInfo.Name(), "plugin.yaml")
 			data, err := ioutil.ReadFile(definitionFilePath)
 			if err != nil {
+				fmt.Println(err)
 				continue
 			}
 
 			var plugin *Plugin
 			if err = yaml.Unmarshal(data, &plugin); err != nil {
+				fmt.Println(err)
 				continue
 			}
 
