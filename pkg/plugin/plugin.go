@@ -1,5 +1,7 @@
 package plugin
 
+import "github.com/spf13/cobra"
+
 // Plugin defines an external plugin and its associated data
 type Plugin struct {
 	Name        string     `yaml:"name"`
@@ -41,4 +43,11 @@ type Argument struct {
 	// TODO: loading plugins should probably be handled in this package because multiple is something that
 	// should be checked on plugin load.
 	Mutliple bool `yaml:"multiple"`
+}
+
+// IntoCommand creates a cobra command that will call out to the plugin when used
+func (p *Plugin) IntoCommand() *cobra.Command {
+	cmd := &cobra.Command{}
+
+	return cmd
 }

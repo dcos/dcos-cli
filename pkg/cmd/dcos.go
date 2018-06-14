@@ -34,5 +34,12 @@ func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
 		config.NewCommand(ctx),
 		cluster.NewCommand(ctx),
 	)
+
+	plugins, _ := ctx.Plugins()
+
+	for _, p := range plugins {
+		cmd.AddCommand(p.IntoCommand())
+	}
+
 	return cmd
 }
