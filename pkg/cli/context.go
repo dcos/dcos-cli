@@ -130,15 +130,6 @@ func (ctx *Context) PluginManager() (*plugin.Manager, error) {
 	}), nil
 }
 
-func (ctx *Context) Plugins() ([]*plugin.Plugin, error) {
-	manager, err := ctx.PluginManager()
-	if err != nil {
-		return nil, err
-	}
-
-	return manager.All(), nil
-}
-
 // HTTPClient creates an httpclient.Client for a given cluster.
 func (ctx *Context) HTTPClient(c *Cluster, opts ...httpclient.Option) *httpclient.Client {
 	var baseOpts []httpclient.Option

@@ -2,8 +2,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/cmd/auth"
 	"github.com/dcos/dcos-cli/pkg/cmd/cluster"
@@ -37,12 +35,11 @@ func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
 		cluster.NewCommand(ctx),
 	)
 
-	plugins, _ := ctx.Plugins()
-
-	for _, p := range plugins {
-		fmt.Println(p.Name)
-		cmd.AddCommand(p.IntoCommands()...)
+	manager, err := ctx.PluginManager()
+	if err != nil {
 	}
+
+	cmd.AddCommand(manager.CreateCommands()...)
 
 	return cmd
 }

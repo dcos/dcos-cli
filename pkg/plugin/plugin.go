@@ -2,7 +2,8 @@ package plugin
 
 import (
 	"fmt"
-	"strings"
+	"os/exec"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
@@ -15,6 +16,9 @@ type Plugin struct {
 	Executable  string     `yaml:"executable"`
 	Source      source     `yaml:"source"`
 	Commands    []*Command `yaml:"commands"`
+
+	// Plugin directory in filesystem
+	dir string
 }
 
 // Command is a command living within a plugin binary
@@ -56,7 +60,7 @@ func (p *Plugin) IntoCommands() []*cobra.Command {
 	var commands []*cobra.Command
 
 	for _, c := range p.Commands {
-		cmd := c.IntoCommand(p.Executable)
+		cmd := c.IntoCommand(p.dir, p.Executable)
 
 		commands = append(commands, cmd)
 	}
@@ -65,22 +69,24 @@ func (p *Plugin) IntoCommands() []*cobra.Command {
 }
 
 // IntoCommand creates a cobra command used to call this command
-func (c *Command) IntoCommand(exe string) *cobra.Command {
+func (c *Command) IntoCommand(dir string, exe string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: c.Name,
+		Use:                c.Name,
+		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Printf("%s called\n", c.Name)
 
-			b := strings.Builder{}
-			b.WriteString(exe)
-			b.WriteRune(' ')
-			b.WriteString(c.Name)
-			for _, a := range args {
-				b.WriteRune(' ')
-				b.WriteString(a)
-			}
+			argsWithRoot := append([]string{c.Name}, args...)
+			shell := exec.Command(filepath.Join(dir, exe), argsWithRoot...)
 
-			fmt.Printf("would call %s\n", b.String())
+			output, _ := shell.CombinedOutput()
+			/*
+				if err != nil {
+					return err
+				}
+			*/
+
+			fmt.Println(string(output))
+
 			return nil
 		},
 	}

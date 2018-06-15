@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/afero"
+	"github.com/spf13/cobra"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -41,8 +42,8 @@ func NewManager(opts ManagerOpts) *Manager {
 	}
 }
 
-// All returns all plugins available to the manager
-func (m *Manager) All() []*Plugin {
+// Plugins returns all plugins for the current cluster
+func (m *Manager) Plugins() []*Plugin {
 	plugins := []*Plugin{}
 
 	pluginDir, err := m.fs.Open(m.dir)
@@ -71,10 +72,25 @@ func (m *Manager) All() []*Plugin {
 				continue
 			}
 
+			// set plugin directory
+			plugin.dir = filepath.Join(m.dir, pluginDirInfo.Name())
+
 			plugins = append(plugins, plugin)
-			fmt.Println(definitionFilePath)
 		}
 	}
 
 	return plugins
+}
+
+// CreateCommands creates a list cobra command corresponding to the commands available in the plugin.
+func (m *Manager) CreateCommands() []*cobra.Command {
+	plugins := m.Plugins()
+
+	commands := []*cobra.Command{}
+
+	for _, p := range plugins {
+		commands = append(commands, p.IntoCommands()...)
+	}
+
+	return commands
 }
