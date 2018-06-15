@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -11,6 +12,7 @@ type Plugin struct {
 	Name        string     `yaml:"name"`
 	Description string     `yaml:"description"`
 	Version     string     `yaml:"version"`
+	Executable  string     `yaml:"executable"`
 	Source      source     `yaml:"source"`
 	Commands    []*Command `yaml:"commands"`
 }
@@ -54,7 +56,7 @@ func (p *Plugin) IntoCommands() []*cobra.Command {
 	var commands []*cobra.Command
 
 	for _, c := range p.Commands {
-		cmd := c.IntoCommand()
+		cmd := c.IntoCommand(p.Executable)
 
 		commands = append(commands, cmd)
 	}
@@ -63,18 +65,31 @@ func (p *Plugin) IntoCommands() []*cobra.Command {
 }
 
 // IntoCommand creates a cobra command used to call this command
-func (c *Command) IntoCommand() *cobra.Command {
+func (c *Command) IntoCommand(exe string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: c.Name,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Printf("%s called\n", c.Name)
+
+			b := strings.Builder{}
+			b.WriteString(exe)
+			b.WriteRune(' ')
+			b.WriteString(c.Name)
+			for _, a := range args {
+				b.WriteRune(' ')
+				b.WriteString(a)
+			}
+
+			fmt.Printf("would call %s\n", b.String())
 			return nil
 		},
 	}
 
-	for _, s := range c.Subcommands {
-		cmd.AddCommand(s.IntoCommand())
-	}
+	/*
+		for _, s := range c.Subcommands {
+			cmd.AddCommand(s.IntoCommand(exe))
+		}
+	*/
 
 	return cmd
 }
