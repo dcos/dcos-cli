@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/dcos/dcos-cli/pkg/dcos"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/sirupsen/logrus"
 )
@@ -19,18 +20,6 @@ type Credentials struct {
 // JWT is the authentication token returned by the DC/OS login API.
 type JWT struct {
 	Token string `json:"token"`
-}
-
-// Error represents an error returned by the login API.
-type Error struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Code        string `json:"code"`
-}
-
-// Error converts a login API error to a string.
-func (err *Error) Error() string {
-	return err.Description
 }
 
 // Client is able to detect available login providers and login to DC/OS.
@@ -128,7 +117,7 @@ func (c *Client) Login(loginEndpoint string, credentials *Credentials) (string, 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		var apiError *Error
+		var apiError *dcos.Error
 		if err := json.NewDecoder(resp.Body).Decode(&apiError); err != nil {
 			return "", fmt.Errorf("couldn't log in")
 		}

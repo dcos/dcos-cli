@@ -5,6 +5,7 @@ import (
 	"io"
 	"os/user"
 	"path/filepath"
+	"strings"
 
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
@@ -103,22 +104,6 @@ func (ctx *Context) Cluster() (*config.Cluster, error) {
 	return config.NewCluster(conf), nil
 }
 
-// IsUniqueCluster returns if a cluster name is unique among all the clusters.
-func (ctx *Context) IsUniqueCluster(name string) bool {
-	confs := ctx.ConfigManager().All()
-	count := 0
-	for _, conf := range confs {
-		if config.NewCluster(conf).Name() == name {
-			if count >= 1 {
-				return false
-			}
-			count++
-		}
-	}
-
-	return true
-}
-
 // Clusters returns the clusters.
 func (ctx *Context) Clusters() []*config.Cluster {
 	confs := ctx.ConfigManager().All()
@@ -167,7 +152,12 @@ func (ctx *Context) Login(flags *login.Flags, httpClient *httpclient.Client) (st
 }
 
 // Setup configures a given cluster based on its URL and setup flags.
-func (ctx *Context) Setup(flags *setup.Flags, clusterURL string, attach bool) error {
+func (ctx *Context) Setup(flags *setup.Flags, clusterURL string, attach bool) (*config.Cluster, error) {
+	// This supports passing a cluster URL without scheme, it then defaults to HTTPS.
+	if !strings.HasPrefix(clusterURL, "https://") && !strings.HasPrefix(clusterURL, "http://") {
+		clusterURL = "https://" + clusterURL
+	}
+
 	return setup.New(setup.Opts{
 		Errout:        ctx.ErrOut(),
 		Prompt:        ctx.Prompt(),

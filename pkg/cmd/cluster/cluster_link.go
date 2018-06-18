@@ -1,12 +1,10 @@
 package cluster
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
-	"net/url"
 
 	"github.com/dcos/dcos-cli/api"
+	"github.com/dcos/dcos-cli/pkg/clusterlinker"
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/login"
 	"github.com/dcos/dcos-cli/pkg/setup"
@@ -28,30 +26,22 @@ func newCmdClusterLink(ctx api.Context) *cobra.Command {
 			manager := ctx.ConfigManager()
 			linkableClusterConfig, err := manager.Find(args[0], false)
 			if err != nil {
-				return err
-			}
+				if err == config.ErrConfigNotFound {
+					msg := " is not set up in the CLI, would you like to do it now?"
+					err = ctx.Prompt().Confirm(args[0] + msg)
+					if err != nil {
+						return err
+					}
 
-			if config.Empty() == linkableClusterConfig {
-				// The cluster does not exist yet. Two possibilities:
-				// - The argument is an URL, we try to setup the cluster.
-				// - The argument is not an URL, we return an error.
-				_, err = url.ParseRequestURI(args[0])
-				if err != nil {
-					return errors.New("unable to retrieve cluster " + args[0])
-				}
-
-				msg := " is not set up in the CLI, would you like to do it now?"
-				err = ctx.Prompt().Confirm(args[0] + msg)
-				if err != nil {
+					// We do not want to attach the linkable cluster.
+					attach := false
+					ctx.Setup(setupFlags, args[0], attach)
+				} else {
 					return err
 				}
-
-				// We do not want to attach the linkable cluster.
-				attach := false
-				ctx.Setup(setupFlags, args[0], attach)
 			}
 
-			if attachedCluster.Config() == linkableClusterConfig {
+			if attachedCluster.Config().Path() == linkableClusterConfig.Path() {
 				return errors.New("cannot link a cluster to itself")
 			}
 
@@ -63,65 +53,47 @@ func newCmdClusterLink(ctx api.Context) *cobra.Command {
 				return err
 			}
 			providers := rawProviders.Slice()
+			var filteredProviders []*login.Provider
+
+			// Not all login providers are supported for a cluster link.
+			for _, provider := range providers {
+				switch provider.Type {
+				case login.DCOSUIDPassword, login.DCOSUIDPasswordLDAP,
+					login.SAMLSpInitiated, login.OIDCAuthCodeFlow:
+					filteredProviders = append(filteredProviders, provider)
+				}
+			}
 
 			// We do not use a login.Flow as we are not following the entire flow.
 			var provider *login.Provider
-			switch len(providers) {
+			switch len(filteredProviders) {
 			case 0:
 				return errors.New("couldn't determine a login provider")
 			case 1:
 				// Implicit provider selection.
-				provider = providers[0]
+				provider = filteredProviders[0]
 			default:
 				// Manual provider selection.
 				prompt := ctx.Prompt()
-				i, err := prompt.Select("Please select a login method:", providers)
+				i, err := prompt.Select("Please select a login method:", filteredProviders)
 				if err != nil {
 					return err
 				}
-				provider = providers[i]
+				provider = filteredProviders[i]
 			}
 
-			type LoginProvider struct {
-				ID   string `json:"id"`
-				Type string `json:"type"`
-			}
-
-			type LinkRequest struct {
-				ID            string `json:"id"`
-				Name          string `json:"name"`
-				URL           string `json:"url"`
-				LoginProvider `json:"login_provider"`
-			}
-
-			linkRequest := &LinkRequest{
+			linkRequest := &clusterlinker.LinkRequest{
 				ID:   linkableCluster.ID(),
 				Name: linkableCluster.Name(),
 				URL:  linkableCluster.URL(),
-				LoginProvider: LoginProvider{
+				LoginProvider: clusterlinker.LoginProvider{
 					ID:   provider.ID,
 					Type: provider.Type,
 				},
 			}
-			message, err := json.Marshal(linkRequest)
 
-			attachedClient := ctx.HTTPClient(attachedCluster)
-			resp, err := attachedClient.Post("/cluster/v1/links", "application/json", bytes.NewReader(message))
-			if err != nil {
-				return err
-			}
-
-			defer resp.Body.Close()
-
-			if resp.StatusCode != 200 {
-				var apiError *login.Error
-				if err := json.NewDecoder(resp.Body).Decode(&apiError); err != nil {
-					return errors.New("couldn't link")
-				}
-				return apiError
-			}
-
-			return nil
+			attachedClient := clusterlinker.NewClient(ctx.HTTPClient(attachedCluster), ctx.Logger())
+			return attachedClient.Link(linkRequest)
 		},
 	}
 	setupFlags.Register(cmd.Flags())

@@ -1,8 +1,6 @@
 package cluster
 
 import (
-	"strings"
-
 	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/setup"
 
@@ -18,14 +16,10 @@ func newCmdClusterSetup(ctx api.Context) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clusterURL := args[0]
 
-			// This supports passing a cluster URL without scheme, it then defaults to HTTPS.
-			if !strings.HasPrefix(clusterURL, "https://") && !strings.HasPrefix(clusterURL, "http://") {
-				clusterURL = "https://" + clusterURL
-			}
-
 			// We want to attach the cluster once it is setup.
 			attach := true
-			return ctx.Setup(setupFlags, clusterURL, attach)
+			_, err := ctx.Setup(setupFlags, clusterURL, attach)
+			return err
 		},
 	}
 	setupFlags.Register(cmd.Flags())
