@@ -60,14 +60,11 @@ func (ctx *Context) Fs() afero.Fs {
 
 // Logger returns the CLI logger.
 func (ctx *Context) Logger() *logrus.Logger {
-	if ctx.logger == nil {
-		ctx.logger = &logrus.Logger{
-			Out:       ctx.env.ErrOut,
-			Formatter: new(logrus.TextFormatter),
-			Hooks:     make(logrus.LevelHooks),
-		}
+	return &logrus.Logger{
+		Out:       ctx.env.ErrOut,
+		Formatter: new(logrus.TextFormatter),
+		Hooks:     make(logrus.LevelHooks),
 	}
-	return ctx.logger
 }
 
 // DCOSDir returns the root directory for the DC/OS CLI.
