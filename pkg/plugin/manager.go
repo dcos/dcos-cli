@@ -44,7 +44,8 @@ func Plugins(ctx *cli.Context) []*Plugin {
 			}
 
 			// set plugin directory
-			plugin.dir = filepath.Join(pluginsDir, pluginDirInfo.Name())
+			plugin.pluginDir = filepath.Join(pluginsDir, pluginDirInfo.Name())
+			plugin.binDir = filepath.Join(pluginsDir, pluginDirInfo.Name(), "/bin")
 
 			plugins = append(plugins, plugin)
 		}

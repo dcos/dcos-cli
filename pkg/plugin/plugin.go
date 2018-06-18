@@ -17,7 +17,10 @@ type Plugin struct {
 	Executables []*Executable `yaml:"executables"`
 
 	// Plugin directory in filesystem
-	dir string
+	pluginDir string
+
+	// directory containing the plugin's binaries
+	binDir string
 }
 
 // Executable defines what commands are associated with which executable file in the plugin
@@ -66,7 +69,7 @@ func (p *Plugin) IntoCommands(ctx *cli.Context) []*cobra.Command {
 
 	for _, e := range p.Executables {
 		for _, c := range e.Commands {
-			cmd := c.IntoCommand(ctx, p.dir, e.Filename)
+			cmd := c.IntoCommand(ctx, p.binDir, e.Filename)
 
 			commands = append(commands, cmd)
 		}
