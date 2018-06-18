@@ -37,8 +37,9 @@ func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
 	)
 
 	plugins := plugin.Plugins(ctx)
+	pluginCommands := plugin.CreateCommands(ctx, plugins)
 
-	cmd.AddCommand(plugin.CreateCommands(ctx, plugins)...)
+	cmd.AddCommand(pluginCommands...)
 
 	return cmd
 }
