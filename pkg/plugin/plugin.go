@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -56,11 +57,11 @@ type Argument struct {
 }
 
 // IntoCommands creates a list of cobra commands from the commands available in the plugin
-func (p *Plugin) IntoCommands() []*cobra.Command {
+func (p *Plugin) IntoCommands(ctx *cli.Context) []*cobra.Command {
 	var commands []*cobra.Command
 
 	for _, c := range p.Commands {
-		cmd := c.IntoCommand(p.dir, p.Executable)
+		cmd := c.IntoCommand(ctx, p.dir, p.Executable)
 
 		commands = append(commands, cmd)
 	}
@@ -69,24 +70,25 @@ func (p *Plugin) IntoCommands() []*cobra.Command {
 }
 
 // IntoCommand creates a cobra command used to call this command
-func (c *Command) IntoCommand(dir string, exe string) *cobra.Command {
+func (c *Command) IntoCommand(ctx *cli.Context, dir string, exe string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                c.Name,
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 
+			// Need to prepend the arguments with the commands name so the executed command knows
+			// which subcommand to execute (e.g. `dcos marathon app` would send `dcos app` without this).
 			argsWithRoot := append([]string{c.Name}, args...)
 			shell := exec.Command(filepath.Join(dir, exe), argsWithRoot...)
 
-			output, _ := shell.CombinedOutput()
-			/*
-				if err != nil {
-					return err
-				}
-			*/
+			output, err := shell.CombinedOutput()
 
+			// TODO: This should probably follow the same stdout file as ctx.Out()
 			fmt.Println(string(output))
 
+			if err != nil {
+				return err
+			}
 			return nil
 		},
 	}

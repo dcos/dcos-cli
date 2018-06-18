@@ -10,7 +10,6 @@ import (
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/dcos/dcos-cli/pkg/login"
 	"github.com/dcos/dcos-cli/pkg/open"
-	"github.com/dcos/dcos-cli/pkg/plugin"
 	"github.com/dcos/dcos-cli/pkg/prompt"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -112,22 +111,6 @@ func (ctx *Context) Clusters() []*Cluster {
 	}
 
 	return clusters
-}
-
-// PluginManager creates and returns the PluginManager for the context
-func (ctx *Context) PluginManager() (*plugin.Manager, error) {
-	config, err := ctx.ConfigManager().Current()
-	if err != nil {
-		return nil, err
-	}
-
-	configHome := filepath.Dir(config.Path())
-	dir := filepath.Join(configHome, "plugins")
-
-	return plugin.NewManager(plugin.ManagerOpts{
-		Fs:  ctx.env.Fs,
-		Dir: dir,
-	}), nil
 }
 
 // HTTPClient creates an httpclient.Client for a given cluster.

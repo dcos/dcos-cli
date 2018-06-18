@@ -5,61 +5,32 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/spf13/afero"
+	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/spf13/cobra"
 	yaml "gopkg.in/yaml.v2"
 )
 
-// ManagerOpts defines the options available to the plugin Manager.
-type ManagerOpts struct {
-	// Fs is an abstraction for the filesystem. All filesystem operations
-	// for the manager should be done through it instead of the os package.
-	Fs afero.Fs
-
-	// EnvLookup is the function used to lookup environment variables.
-	// When not set it defaults to os.LookupEnv.
-	EnvLookup func(key string) (string, bool)
-
-	// Dir is the root directory for the config manager.
-	Dir string
-}
-
-// Manager is able to find, install, and delete plugins
-type Manager struct {
-	fs  afero.Fs
-	dir string
-}
-
-// NewManager creates a plugin manager
-func NewManager(opts ManagerOpts) *Manager {
-	if opts.Fs == nil {
-		opts.Fs = afero.NewOsFs()
-	}
-
-	return &Manager{
-		fs:  opts.Fs,
-		dir: opts.Dir,
-	}
-}
-
-// Plugins returns all plugins for the current cluster
-func (m *Manager) Plugins() []*Plugin {
+// Plugins returns all plugins associated with the current cluster.
+func Plugins(ctx *cli.Context) []*Plugin {
 	plugins := []*Plugin{}
 
-	pluginDir, err := m.fs.Open(m.dir)
+	pluginsDir := pluginsDir(ctx)
+
+	pluginsDirHandle, err := ctx.Fs().Open(pluginsDir)
 	if err != nil {
 		return []*Plugin{}
 	}
-	defer pluginDir.Close()
+	defer pluginsDirHandle.Close()
 
-	pluginsDirInfo, err := pluginDir.Readdir(-1)
+	pluginsDirInfo, err := pluginsDirHandle.Readdir(-1)
 	if err != nil {
 		return plugins
 	}
 
 	for _, pluginDirInfo := range pluginsDirInfo {
 		if pluginDirInfo.IsDir() {
-			definitionFilePath := filepath.Join(m.dir, pluginDirInfo.Name(), "plugin.yaml")
+			definitionFilePath := filepath.Join(pluginsDir, pluginDirInfo.Name(), "plugin.yaml")
+
 			data, err := ioutil.ReadFile(definitionFilePath)
 			if err != nil {
 				fmt.Println(err)
@@ -73,7 +44,7 @@ func (m *Manager) Plugins() []*Plugin {
 			}
 
 			// set plugin directory
-			plugin.dir = filepath.Join(m.dir, pluginDirInfo.Name())
+			plugin.dir = filepath.Join(pluginsDir, pluginDirInfo.Name())
 
 			plugins = append(plugins, plugin)
 		}
@@ -82,15 +53,27 @@ func (m *Manager) Plugins() []*Plugin {
 	return plugins
 }
 
-// CreateCommands creates a list cobra command corresponding to the commands available in the plugin.
-func (m *Manager) CreateCommands() []*cobra.Command {
-	plugins := m.Plugins()
-
+// CreateCommands will create cobra commands from the given plugin list
+func CreateCommands(ctx *cli.Context, plugins []*Plugin) []*cobra.Command {
 	commands := []*cobra.Command{}
 
 	for _, p := range plugins {
-		commands = append(commands, p.IntoCommands()...)
+		commands = append(commands, p.IntoCommands(ctx)...)
 	}
 
 	return commands
+}
+
+func pluginsDir(ctx *cli.Context) string {
+	config, err := ctx.ConfigManager().Current()
+	if err != nil {
+		//return nil, err
+		// TODO: handle this error
+		return ""
+	}
+
+	configHome := filepath.Dir(config.Path())
+	dir := filepath.Join(configHome, "plugins")
+
+	return dir
 }
