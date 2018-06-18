@@ -88,14 +88,16 @@ func (c *Command) IntoCommand(ctx *cli.Context, dir string, exe string) *cobra.C
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			// Need to prepend the arguments with the commands name so the executed command knows
-			// which subcommand to execute (e.g. `dcos marathon app` would send `dcos app` without this).
+			// which subcommand to execute (e.g. `dcos marathon app` would send `<binary> app` without this).
 			argsWithRoot := append([]string{c.Name}, args...)
+			// TODO: this needs better error handling.
+			// If the executable isn't in the given location then nothing will happen except for an error return code
+			// due to the silencing of errors above.
 			shellOut := exec.Command(filepath.Join(dir, exe), argsWithRoot...)
 			shellOut.Stdout = ctx.Out()
 			shellOut.Stderr = ctx.ErrOut()
 			shellOut.Stdin = ctx.Input()
 
-			//output, err := shellOut.CombinedOutput()
 			err := shellOut.Run()
 			if err != nil {
 				return err
