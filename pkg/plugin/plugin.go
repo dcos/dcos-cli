@@ -10,15 +10,20 @@ import (
 
 // Plugin defines an external plugin and its associated data
 type Plugin struct {
-	Name        string     `yaml:"name"`
-	Description string     `yaml:"description"`
-	Version     string     `yaml:"version"`
-	Executable  string     `yaml:"executable"`
-	Source      source     `yaml:"source"`
-	Commands    []*Command `yaml:"commands"`
+	Name        string        `yaml:"name"`
+	Description string        `yaml:"description"`
+	Version     string        `yaml:"version"`
+	Source      source        `yaml:"source"`
+	Executables []*Executable `yaml:"executables"`
 
 	// Plugin directory in filesystem
 	dir string
+}
+
+// Executable defines what commands are associated with which executable file in the plugin
+type Executable struct {
+	Filename string     `yaml:"filename"`
+	Commands []*Command `yaml:"commands"`
 }
 
 // Command is a command living within a plugin binary
@@ -59,10 +64,12 @@ type Argument struct {
 func (p *Plugin) IntoCommands(ctx *cli.Context) []*cobra.Command {
 	var commands []*cobra.Command
 
-	for _, c := range p.Commands {
-		cmd := c.IntoCommand(ctx, p.dir, p.Executable)
+	for _, e := range p.Executables {
+		for _, c := range e.Commands {
+			cmd := c.IntoCommand(ctx, p.dir, e.Filename)
 
-		commands = append(commands, cmd)
+			commands = append(commands, cmd)
+		}
 	}
 
 	return commands
