@@ -1,7 +1,6 @@
 package plugin
 
 import (
-	"fmt"
 	"os/exec"
 	"path/filepath"
 
@@ -74,18 +73,20 @@ func (c *Command) IntoCommand(ctx *cli.Context, dir string, exe string) *cobra.C
 	cmd := &cobra.Command{
 		Use:                c.Name,
 		DisableFlagParsing: true,
+		SilenceUsage:       true, // Silences usage information from the wrapper CLI on error
+		SilenceErrors:      true, // Silences error message if called binary returns an error exit code
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			// Need to prepend the arguments with the commands name so the executed command knows
 			// which subcommand to execute (e.g. `dcos marathon app` would send `dcos app` without this).
 			argsWithRoot := append([]string{c.Name}, args...)
-			shell := exec.Command(filepath.Join(dir, exe), argsWithRoot...)
+			shellOut := exec.Command(filepath.Join(dir, exe), argsWithRoot...)
+			shellOut.Stdout = ctx.Out()
+			shellOut.Stderr = ctx.ErrOut()
+			shellOut.Stdin = ctx.Input()
 
-			output, err := shell.CombinedOutput()
-
-			// TODO: This should probably follow the same stdout file as ctx.Out()
-			fmt.Println(string(output))
-
+			//output, err := shellOut.CombinedOutput()
+			err := shellOut.Run()
 			if err != nil {
 				return err
 			}
