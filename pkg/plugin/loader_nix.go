@@ -35,23 +35,23 @@ func Plugins(ctx *cli.Context) []*Plugin {
 
 	for _, pluginDirInfo := range pluginsDirInfo {
 		if pluginDirInfo.IsDir() {
-			definitionFilePath := filepath.Join(pluginsDir, pluginDirInfo.Name(), "plugin.yaml")
-
 			plugin := &Plugin{}
 
 			// set plugin directories
 			plugin.pluginDir = filepath.Join(pluginsDir, pluginDirInfo.Name())
-			plugin.binDir = filepath.Join(pluginsDir, pluginDirInfo.Name(), "bin")
+			plugin.binDir = filepath.Join(plugin.pluginDir, "bin")
 
+			definitionFilePath := filepath.Join(plugin.pluginDir, "plugin.yaml")
 			data, err := ioutil.ReadFile(definitionFilePath)
 			// Since we don't want to have the CLI fail if a single plugin is malformed. It will log the error
 			// but otherwise continue.
 			if err == nil {
-				if err = yaml.Unmarshal(data, &plugin); err != nil {
+				if err = yaml.Unmarshal(data, plugin); err != nil {
 					ctx.Logger().Warning(err)
 					continue
 				}
 			} else {
+				// Try loading this as an old-style plugin
 				if err = oldPlugin(ctx, plugin); err != nil {
 					ctx.Logger().Warning(err)
 					continue
