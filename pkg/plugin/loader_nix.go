@@ -51,7 +51,7 @@ func Plugins(ctx *cli.Context) []*Plugin {
 					continue
 				}
 			} else {
-				// Try loading this as an old-style plugin
+				// plugin.yaml not found, try loading this as an old-style plugin
 				if err = oldPlugin(ctx, plugin); err != nil {
 					ctx.Logger().Warning(err)
 					continue
