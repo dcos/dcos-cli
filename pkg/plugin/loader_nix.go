@@ -1,9 +1,12 @@
+// +build !windows
+
 package plugin
 
 import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/spf13/cobra"
@@ -35,7 +38,7 @@ func Plugins(ctx *cli.Context) []*Plugin {
 
 			// set plugin directories
 			plugin.pluginDir = filepath.Join(pluginsDir, pluginDirInfo.Name())
-			plugin.binDir = filepath.Join(pluginsDir, pluginDirInfo.Name(), "/bin")
+			plugin.binDir = filepath.Join(pluginsDir, pluginDirInfo.Name(), "bin")
 
 			data, err := ioutil.ReadFile(definitionFilePath)
 			if err == nil {
@@ -45,8 +48,8 @@ func Plugins(ctx *cli.Context) []*Plugin {
 				}
 			} else {
 				// TODO: if there's no plugin yaml, it's possibly an old style command
-				fmt.Println(err)
-				continue
+				//fmt.Println(err)
+				oldPlugin(ctx, plugin)
 			}
 
 			plugins = append(plugins, plugin)
@@ -65,6 +68,47 @@ func CreateCommands(ctx *cli.Context, plugins []*Plugin) []*cobra.Command {
 	}
 
 	return commands
+}
+
+func oldPlugin(ctx *cli.Context, plugin *Plugin) {
+	dir := plugin.pluginDir
+	plugin.binDir = filepath.Join(dir, "env", "bin")
+
+	binDirHandle, err := ctx.Fs().Open(plugin.binDir)
+	if err != nil {
+		fmt.Println(dir)
+		fmt.Println(plugin.binDir)
+		fmt.Println(err)
+		return
+	}
+	defer binDirHandle.Close()
+
+	binaries, err := binDirHandle.Readdir(-1)
+	if err != nil {
+		return
+	}
+
+	executables := []*Executable{}
+	for _, binary := range binaries {
+		if strings.HasPrefix(binary.Name(), "dcos-") {
+			//binFilePath := filepath.Join(plugin.binDir, binary.Name())
+			commandName := strings.TrimLeft(binary.Name(), "dcos-")
+			cmd := &Command{
+				Name: commandName,
+			}
+
+			exe := &Executable{
+				Filename: binary.Name(),
+				Commands: []*Command{
+					cmd,
+				},
+			}
+
+			executables = append(executables, exe)
+		}
+	}
+
+	plugin.Executables = executables
 }
 
 func pluginsDir(ctx *cli.Context) string {
