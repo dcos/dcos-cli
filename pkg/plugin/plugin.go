@@ -25,6 +25,8 @@ type Plugin struct {
 
 // Executable defines what commands are associated with which executable file in the plugin
 type Executable struct {
+	// Executables are found from pluginDir + Filename. This means all executables in a plugin are in
+	// the same place.
 	Filename string     `yaml:"filename"`
 	Commands []*Command `yaml:"commands"`
 }

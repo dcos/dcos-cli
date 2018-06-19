@@ -91,7 +91,6 @@ func oldPlugin(ctx *cli.Context, plugin *Plugin) {
 	executables := []*Executable{}
 	for _, binary := range binaries {
 		if strings.HasPrefix(binary.Name(), "dcos-") {
-			//binFilePath := filepath.Join(plugin.binDir, binary.Name())
 			commandName := strings.TrimLeft(binary.Name(), "dcos-")
 			cmd := &Command{
 				Name: commandName,
