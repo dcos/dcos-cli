@@ -3,7 +3,6 @@
 package plugin
 
 import (
-	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
@@ -17,11 +16,15 @@ import (
 func Plugins(ctx *cli.Context) []*Plugin {
 	plugins := []*Plugin{}
 
-	pluginsDir := pluginsDir(ctx)
+	pluginsDir, err := pluginsDir(ctx)
+	if err != nil {
+		// This probably means there is no currently attached cluster thus no plugins to load.
+		return plugins
+	}
 
 	pluginsDirHandle, err := ctx.Fs().Open(pluginsDir)
 	if err != nil {
-		return []*Plugin{}
+		return plugins
 	}
 	defer pluginsDirHandle.Close()
 
@@ -41,15 +44,18 @@ func Plugins(ctx *cli.Context) []*Plugin {
 			plugin.binDir = filepath.Join(pluginsDir, pluginDirInfo.Name(), "bin")
 
 			data, err := ioutil.ReadFile(definitionFilePath)
+			// Since we don't want to have the CLI fail if a single plugin is malformed. It will log the error
+			// but otherwise continue.
 			if err == nil {
 				if err = yaml.Unmarshal(data, &plugin); err != nil {
-					fmt.Println(err)
+					ctx.Logger().Warning(err)
 					continue
 				}
 			} else {
-				// TODO: if there's no plugin yaml, it's possibly an old style command
-				//fmt.Println(err)
-				oldPlugin(ctx, plugin)
+				if err = oldPlugin(ctx, plugin); err != nil {
+					ctx.Logger().Warning(err)
+					continue
+				}
 			}
 
 			plugins = append(plugins, plugin)
@@ -70,22 +76,19 @@ func CreateCommands(ctx *cli.Context, plugins []*Plugin) []*cobra.Command {
 	return commands
 }
 
-func oldPlugin(ctx *cli.Context, plugin *Plugin) {
+func oldPlugin(ctx *cli.Context, plugin *Plugin) error {
 	dir := plugin.pluginDir
 	plugin.binDir = filepath.Join(dir, "env", "bin")
 
 	binDirHandle, err := ctx.Fs().Open(plugin.binDir)
 	if err != nil {
-		fmt.Println(dir)
-		fmt.Println(plugin.binDir)
-		fmt.Println(err)
-		return
+		return err
 	}
 	defer binDirHandle.Close()
 
 	binaries, err := binDirHandle.Readdir(-1)
 	if err != nil {
-		return
+		return err
 	}
 
 	executables := []*Executable{}
@@ -108,18 +111,18 @@ func oldPlugin(ctx *cli.Context, plugin *Plugin) {
 	}
 
 	plugin.Executables = executables
+
+	return nil
 }
 
-func pluginsDir(ctx *cli.Context) string {
+func pluginsDir(ctx *cli.Context) (string, error) {
 	config, err := ctx.ConfigManager().Current()
 	if err != nil {
-		//return nil, err
-		// TODO: handle this error
-		return ""
+		return "", err
 	}
 
 	configHome := filepath.Dir(config.Path())
 	dir := filepath.Join(configHome, "subcommands")
 
-	return dir
+	return dir, nil
 }
