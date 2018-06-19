@@ -31,21 +31,23 @@ func Plugins(ctx *cli.Context) []*Plugin {
 		if pluginDirInfo.IsDir() {
 			definitionFilePath := filepath.Join(pluginsDir, pluginDirInfo.Name(), "plugin.yaml")
 
-			data, err := ioutil.ReadFile(definitionFilePath)
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
+			plugin := &Plugin{}
 
-			var plugin *Plugin
-			if err = yaml.Unmarshal(data, &plugin); err != nil {
-				fmt.Println(err)
-				continue
-			}
-
-			// set plugin directory
+			// set plugin directories
 			plugin.pluginDir = filepath.Join(pluginsDir, pluginDirInfo.Name())
 			plugin.binDir = filepath.Join(pluginsDir, pluginDirInfo.Name(), "/bin")
+
+			data, err := ioutil.ReadFile(definitionFilePath)
+			if err == nil {
+				if err = yaml.Unmarshal(data, &plugin); err != nil {
+					fmt.Println(err)
+					continue
+				}
+			} else {
+				// TODO: if there's no plugin yaml, it's possibly an old style command
+				fmt.Println(err)
+				continue
+			}
 
 			plugins = append(plugins, plugin)
 		}
@@ -74,7 +76,7 @@ func pluginsDir(ctx *cli.Context) string {
 	}
 
 	configHome := filepath.Dir(config.Path())
-	dir := filepath.Join(configHome, "plugins")
+	dir := filepath.Join(configHome, "subcommands")
 
 	return dir
 }
