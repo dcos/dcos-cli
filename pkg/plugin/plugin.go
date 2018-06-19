@@ -117,11 +117,3 @@ func (c *Command) IntoCommand(ctx *cli.Context, dir string, exe string) *cobra.C
 
 	return cmd
 }
-
-func (c *Command) IntoAutocompleteCommand(ctx *cli.Context, dir string, exe string) *cobra.Command {
-	cmd := &cobra.Command{
-		Use: c.Name,
-	}
-
-	return cmd
-}
