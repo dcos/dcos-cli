@@ -38,6 +38,9 @@ type Command struct {
 	Flags       []*Flag     `yaml:"flags"`
 	Args        []*Argument `yaml:"args"`
 	Subcommands []*Command  `yaml:"subcommands"`
+
+	CobraCounterpart *cobra.Command // holds a reference to the created cobra command which is needed
+	// to generate the subcommands only when completion code is being created.
 }
 
 // Flag represents a flag option on a command
@@ -80,6 +83,16 @@ func (p *Plugin) IntoCommands(ctx *cli.Context) []*cobra.Command {
 	return commands
 }
 
+// AddCompletionData will add flags and associated subcommands to a plugin's root level command
+// for generating the completion script.
+func (p *Plugin) AddCompletionData() {
+	for _, e := range p.Executables {
+		for _, c := range e.Commands {
+			c.addCompletionData(p.binDir, e.Filename)
+		}
+	}
+}
+
 // IntoCommand creates a cobra command used to call this command
 func (c *Command) IntoCommand(ctx *cli.Context, dir string, exe string) *cobra.Command {
 	cmd := &cobra.Command{
@@ -109,11 +122,53 @@ func (c *Command) IntoCommand(ctx *cli.Context, dir string, exe string) *cobra.C
 		},
 	}
 
-	/*
-		for _, s := range c.Subcommands {
-			cmd.AddCommand(s.IntoCommand(exe))
+	c.CobraCounterpart = cmd
+
+	return cmd
+}
+
+func (c *Command) addCompletionData(dir string, exe string) {
+	cmd := c.CobraCounterpart
+
+	for _, f := range c.Flags {
+		switch f.Type {
+		case "boolean":
+			var flagVal bool
+			cmd.Flags().BoolVar(&flagVal, f.Name, false, f.Description)
+		default:
+			var strVal string
+			cmd.Flags().StringVar(&strVal, f.Name, "", f.Description)
 		}
-	*/
+	}
+
+	for _, s := range c.Subcommands {
+		cmd.AddCommand(s.intoSubcommand(dir, exe))
+	}
+}
+
+func (c *Command) intoSubcommand(dir string, exe string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:                c.Name,
+		DisableFlagParsing: true,
+		SilenceUsage:       true, // Silences usage information from the wrapper CLI on error
+		SilenceErrors:      true, // Silences error message if called binary returns an error exit code
+		Run:                func(cmd *cobra.Command, args []string) {},
+	}
+
+	for _, f := range c.Flags {
+		switch f.Type {
+		case "boolean":
+			var flagVal bool
+			cmd.Flags().BoolVar(&flagVal, f.Name, false, f.Description)
+		default:
+			var strVal string
+			cmd.Flags().StringVar(&strVal, f.Name, "", f.Description)
+		}
+	}
+
+	for _, s := range c.Subcommands {
+		cmd.AddCommand(s.intoSubcommand(dir, exe))
+	}
 
 	return cmd
 }
