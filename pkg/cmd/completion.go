@@ -37,6 +37,9 @@ func newCompletionCommand(ctx *cli.Context, plugins []*plugin.Plugin) *cobra.Com
 }
 
 func zshCompletion(root *cobra.Command, out io.Writer) {
+	// All of this is lifted pretty much directly from kubectl's zsh completion which relies on cobra's
+	// bash completion. Cobra has built in zsh completion generation but it seems to be fairly
+	// limited at this time.
 	zshHead := "#compdef dcos\n"
 
 	out.Write([]byte(zshHead))
