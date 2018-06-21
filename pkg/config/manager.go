@@ -33,7 +33,7 @@ type Manager struct {
 // ErrConfigNotFound means that the manager cannot find a config using a name/id.
 var ErrConfigNotFound = errors.New("no match found")
 
-// ErrTooManyConfigs means that there are more than one config with a given name.
+// ErrTooManyConfigs means that more than one config has been found for a given search.
 var ErrTooManyConfigs = errors.New("multiple matches found")
 
 // NewManager creates a new config manager.

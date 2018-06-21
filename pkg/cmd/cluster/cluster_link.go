@@ -33,9 +33,7 @@ func newCmdClusterLink(ctx api.Context) *cobra.Command {
 						return err
 					}
 
-					// We do not want to attach the linkable cluster.
-					attach := false
-					ctx.Setup(setupFlags, args[0], attach)
+					ctx.Setup(setupFlags, args[0])
 				} else {
 					return err
 				}

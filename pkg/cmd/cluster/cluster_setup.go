@@ -16,10 +16,12 @@ func newCmdClusterSetup(ctx api.Context) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clusterURL := args[0]
 
-			// We want to attach the cluster once it is setup.
-			attach := true
-			_, err := ctx.Setup(setupFlags, clusterURL, attach)
-			return err
+			cluster, err := ctx.Setup(setupFlags, clusterURL)
+			if err != nil {
+				return err
+			}
+
+			return ctx.ConfigManager().Attach(cluster.Config())
 		},
 	}
 	setupFlags.Register(cmd.Flags())

@@ -29,7 +29,6 @@ type Opts struct {
 	Logger        *logrus.Logger
 	LoginFlow     *login.Flow
 	ConfigManager *config.Manager
-	Attach        bool
 }
 
 // Setup represents a cluster setup.
@@ -39,7 +38,6 @@ type Setup struct {
 	logger        *logrus.Logger
 	loginFlow     *login.Flow
 	configManager *config.Manager
-	attach        bool
 }
 
 // New creates a new setup.
@@ -50,7 +48,6 @@ func New(opts Opts) *Setup {
 		logger:        opts.Logger,
 		loginFlow:     opts.LoginFlow,
 		configManager: opts.ConfigManager,
-		attach:        opts.Attach,
 	}
 }
 
@@ -108,7 +105,7 @@ func (s *Setup) Configure(flags *Flags, clusterURL string) (*config.Cluster, err
 	if err != nil {
 		return nil, err
 	}
-	return cluster, s.configManager.Attach(cluster.Config())
+	return cluster, nil
 }
 
 // configureTLS creates the TLS configuration for a given cluster URL and set of flags.

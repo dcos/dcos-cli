@@ -16,11 +16,8 @@ type Client struct {
 	logger *logrus.Logger
 }
 
-type LoginProvider struct {
-	ID   string `json:"id"`
-	Type string `json:"type"`
-}
-
+// LinkRequest is the request sent to the /v1/links endpoint to link the cluster
+// handled by the client to a cluster using its id, name, url, and login provider.
 type LinkRequest struct {
 	ID            string `json:"id"`
 	Name          string `json:"name"`
@@ -28,7 +25,14 @@ type LinkRequest struct {
 	LoginProvider `json:"login_provider"`
 }
 
-// NewClient creates a new DC/OS client.
+// LoginProvider representing a part of the message when sending a link request,
+// it gives information about the cluster to link to.
+type LoginProvider struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+}
+
+// NewClient creates a new cluster linker client from a standard HTTP client.
 func NewClient(baseClient *httpclient.Client, logger *logrus.Logger) *Client {
 	return &Client{
 		http:   baseClient,
@@ -36,6 +40,7 @@ func NewClient(baseClient *httpclient.Client, logger *logrus.Logger) *Client {
 	}
 }
 
+// Link sends a link request to /v1/links using a given client.
 func (c *Client) Link(linkRequest *LinkRequest) error {
 	message, err := json.Marshal(linkRequest)
 
@@ -57,6 +62,7 @@ func (c *Client) Link(linkRequest *LinkRequest) error {
 	return nil
 }
 
+// Unlink sends an unlink request to /v1/links using a given client.
 func (c *Client) Unlink(linkedClusterID string) error {
 	resp, err := c.http.Delete("/cluster/v1/links/" + linkedClusterID)
 	if err != nil {
