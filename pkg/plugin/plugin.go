@@ -52,7 +52,7 @@ type Flag struct {
 }
 
 type source struct {
-	Type string `yaml:"zip"`
+	Type string `yaml:"type"`
 	URL  string `yaml:"url"`
 }
 
