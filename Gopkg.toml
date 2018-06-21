@@ -33,3 +33,7 @@
 [[constraint]]
   name = "github.com/dgrijalva/jwt-go"
   version = "3.2.0"
+
+[[constraint]]
+  name = "gopkg.in/yaml.v2"
+  version = "2.2.1"

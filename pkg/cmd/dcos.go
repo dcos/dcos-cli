@@ -6,6 +6,7 @@ import (
 	"github.com/dcos/dcos-cli/pkg/cmd/auth"
 	"github.com/dcos/dcos-cli/pkg/cmd/cluster"
 	"github.com/dcos/dcos-cli/pkg/cmd/config"
+	"github.com/dcos/dcos-cli/pkg/plugin"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -34,5 +35,11 @@ func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
 		config.NewCommand(ctx),
 		cluster.NewCommand(ctx),
 	)
+
+	plugins := plugin.Plugins(ctx)
+	pluginCommands := plugin.CreateCommands(ctx, plugins)
+
+	cmd.AddCommand(pluginCommands...)
+
 	return cmd
 }
