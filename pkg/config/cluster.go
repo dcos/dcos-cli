@@ -122,6 +122,11 @@ func (c *Cluster) Config() *Config {
 	return c.config
 }
 
+// SubcommandsDir returns the cluster's subcommands directory.
+func (c *Cluster) SubcommandsDir() string {
+	return filepath.Join(filepath.Dir(c.Config().Path()), "subcommands")
+}
+
 // TLS holds the configuration for TLS clients.
 type TLS struct {
 	// Insecure specifies if server certificates should be accepted without verification.
