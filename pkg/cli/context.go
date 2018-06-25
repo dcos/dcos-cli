@@ -19,8 +19,7 @@ import (
 // Context provides an implementation of api.Context. It relies on an Environment and is used to create
 // various objects across the project and is being passed to every command as a constructor argument.
 type Context struct {
-	env    *Environment
-	logger *logrus.Logger
+	env *Environment
 }
 
 // NewContext creates a new context from a given environment.
