@@ -10,6 +10,7 @@ import (
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/dcos/dcos-cli/pkg/login"
 	"github.com/dcos/dcos-cli/pkg/open"
+	"github.com/dcos/dcos-cli/pkg/plugin"
 	"github.com/dcos/dcos-cli/pkg/prompt"
 	"github.com/dcos/dcos-cli/pkg/setup"
 	"github.com/sirupsen/logrus"
@@ -64,6 +65,19 @@ func (ctx *Context) Logger() *logrus.Logger {
 		Formatter: new(logrus.TextFormatter),
 		Hooks:     make(logrus.LevelHooks),
 	}
+}
+
+// PluginManager returns a plugin manager.
+func (ctx *Context) PluginManager(dir string) *plugin.Manager {
+	return &plugin.Manager{
+		Fs:     ctx.Fs(),
+		Logger: ctx.Logger(),
+		Dir:    dir,
+		Stdout: ctx.Out(),
+		Stderr: ctx.ErrOut(),
+		Stdin:  ctx.Input(),
+	}
+
 }
 
 // DCOSDir returns the root directory for the DC/OS CLI.
