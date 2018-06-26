@@ -5,6 +5,7 @@ import (
 	"io"
 	"os/user"
 	"path/filepath"
+	"strings"
 
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
@@ -161,7 +162,12 @@ func (ctx *Context) Login(flags *login.Flags, httpClient *httpclient.Client) (st
 }
 
 // Setup configures a given cluster based on its URL and setup flags.
-func (ctx *Context) Setup(flags *setup.Flags, clusterURL string) error {
+func (ctx *Context) Setup(flags *setup.Flags, clusterURL string) (*config.Cluster, error) {
+	// This supports passing a cluster URL without scheme, it then defaults to HTTPS.
+	if !strings.HasPrefix(clusterURL, "https://") && !strings.HasPrefix(clusterURL, "http://") {
+		clusterURL = "https://" + clusterURL
+	}
+
 	return setup.New(setup.Opts{
 		Errout:        ctx.ErrOut(),
 		Prompt:        ctx.Prompt(),

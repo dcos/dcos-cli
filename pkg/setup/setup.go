@@ -52,9 +52,9 @@ func New(opts Opts) *Setup {
 }
 
 // Configure triggers the setup flow.
-func (s *Setup) Configure(flags *Flags, clusterURL string) error {
+func (s *Setup) Configure(flags *Flags, clusterURL string) (*config.Cluster, error) {
 	if err := flags.Resolve(); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Create a Cluster and an HTTP client with the few information already available.
@@ -72,7 +72,7 @@ func (s *Setup) Configure(flags *Flags, clusterURL string) error {
 	if strings.HasPrefix(cluster.URL(), "https://") {
 		tlsConfig, err := s.configureTLS(cluster.URL(), httpOpts, flags)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		httpOpts = append(httpOpts, httpclient.TLS(tlsConfig))
 	}
@@ -81,7 +81,7 @@ func (s *Setup) Configure(flags *Flags, clusterURL string) error {
 	httpClient := httpclient.New(cluster.URL(), httpOpts...)
 	acsToken, err := s.loginFlow.Start(flags.loginFlags, httpClient)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	cluster.SetACSToken(acsToken)
 	httpClient = httpclient.New(cluster.URL(), append(httpOpts, httpclient.ACSToken(acsToken))...)
@@ -89,7 +89,7 @@ func (s *Setup) Configure(flags *Flags, clusterURL string) error {
 	// Read cluster ID from cluster metadata.
 	metadata, err := dcos.NewClient(httpClient).Metadata()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Read cluster name from Mesos state summary.
@@ -103,9 +103,9 @@ func (s *Setup) Configure(flags *Flags, clusterURL string) error {
 	// Create the config for the given cluster and attach the cluster.
 	err = s.configManager.Save(cluster.Config(), metadata.ClusterID, flags.caBundle)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return s.configManager.Attach(cluster.Config())
+	return cluster, nil
 }
 
 // configureTLS creates the TLS configuration for a given cluster URL and set of flags.

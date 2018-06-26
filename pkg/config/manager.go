@@ -30,6 +30,12 @@ type Manager struct {
 	dir       string
 }
 
+// ErrConfigNotFound means that the manager cannot find a config using a name/id.
+var ErrConfigNotFound = errors.New("no match found")
+
+// ErrTooManyConfigs means that more than one config has been found for a given search.
+var ErrTooManyConfigs = errors.New("multiple matches found")
+
 // NewManager creates a new config manager.
 func NewManager(opts ManagerOpts) *Manager {
 	if opts.Fs == nil {
@@ -109,11 +115,11 @@ func (m *Manager) Find(name string, strict bool) (*Config, error) {
 
 	switch len(matches) {
 	case 0:
-		return nil, errors.New("no match found")
+		return nil, ErrConfigNotFound
 	case 1:
 		return matches[0], nil
 	default:
-		return nil, errors.New("multiple matches found")
+		return nil, ErrTooManyConfigs
 	}
 }
 
