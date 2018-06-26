@@ -23,27 +23,31 @@ func newCmdClusterLink(ctx api.Context) *cobra.Command {
 				return err
 			}
 
+			var linkableCluster *config.Cluster
 			manager := ctx.ConfigManager()
-			linkableClusterConfig, err := manager.Find(args[0], false)
+			linkableClusterConfig, err = manager.Find(args[0], false)
 			if err != nil {
-				if err == config.ErrConfigNotFound {
-					msg := " is not set up in the CLI, would you like to do it now?"
-					err = ctx.Prompt().Confirm(args[0] + msg)
-					if err != nil {
-						return err
-					}
-
-					ctx.Setup(setupFlags, args[0])
-				} else {
+				if err != config.ErrConfigNotFound {
 					return err
 				}
+
+				msg := " is not set up in the CLI, would you like to do it now?"
+				err = ctx.Prompt().Confirm(args[0] + msg)
+				if err != nil {
+					return err
+				}
+
+				linkableCluster, err = ctx.Setup(setupFlags, args[0])
+				if err != nil {
+					return err
+				}
+			} else {
+				linkableCluster = config.NewCluster(linkableClusterConfig)
 			}
 
-			if attachedCluster.Config().Path() == linkableClusterConfig.Path() {
+			if attachedCluster.Config().Path() == linkableCluster.Config().Path() {
 				return errors.New("cannot link a cluster to itself")
 			}
-
-			linkableCluster := config.NewCluster(linkableClusterConfig)
 
 			client := login.NewClient(ctx.HTTPClient(linkableCluster), ctx.Logger())
 			rawProviders, err := client.Providers()
