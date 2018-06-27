@@ -165,7 +165,7 @@ func (m *Manager) loadPluginFromPackage(plugin *Plugin) error {
 			cmdExe := filepath.Join(plugin.BinDir, binary.Name())
 			infoCmd, err := exec.Command(cmdExe, commandName, "--info").Output()
 			if err != nil {
-				m.Logger.Fatal(err)
+				m.Logger.Warning(err)
 			}
 			cmd.Description = strings.TrimSpace(string(infoCmd))
 
@@ -188,14 +188,14 @@ func (m *Manager) loadPluginFromPackage(plugin *Plugin) error {
 func (m *Manager) persist(plugin *Plugin) error {
 	// We need an env directory for `plugin.yaml`.
 	envFilePath := filepath.Join(plugin.dir, "env")
-	if _, err := os.Stat(envFilePath); os.IsNotExist(err) {
+	if _, err := m.Fs.Stat(envFilePath); os.IsNotExist(err) {
 		return errors.New(envFilePath + " does not exist")
 	}
 
 	// We should not overwrite `plugin.yaml`, this method should only be used
 	// to create a minimal `plugin.yaml` if the user has an old plugin.
 	pluginFilePath := filepath.Join(plugin.dir, "env", "plugin.yaml")
-	if _, err := os.Stat(pluginFilePath); err == nil {
+	if _, err := m.Fs.Stat(pluginFilePath); err == nil {
 		return errors.New(pluginFilePath + " already exists")
 	}
 
