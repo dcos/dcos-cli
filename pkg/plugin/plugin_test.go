@@ -80,6 +80,22 @@ func TestIgnoreMalformedYaml(t *testing.T) {
 	assert.Empty(t, plugins)
 }
 
+func TestLoadingMultiple(t *testing.T) {
+	dir := targetSubcommandDir(t, "correct_and_malformed")
+	logger, _ := test.NewNullLogger()
+
+	m := plugin.Manager{
+		Fs:     roFs(),
+		Dir:    dir,
+		Logger: logger,
+	}
+
+	plugins := m.Plugins()
+	// 3 directories, one new plugin, one old, and one malformed
+	// malformed should be ignored, leaving 2 loaded plugins
+	assert.Equal(t, 2, len(plugins))
+}
+
 func targetSubcommandDir(t *testing.T, name string) string {
 	wd, err := os.Getwd()
 	require.NoError(t, err)
