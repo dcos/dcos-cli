@@ -66,8 +66,18 @@ func TestLoadOldPlugin(t *testing.T) {
 	assert.True(t, pluginExists, "plugin.yaml was not created")
 }
 
-func TestIgnoreMissingYaml(t *testing.T) {
+func TestIgnoreMalformedYaml(t *testing.T) {
+	dir := targetSubcommandDir(t, "malformed_yaml")
+	logger, _ := test.NewNullLogger()
 
+	m := plugin.Manager{
+		Fs:     roFs(),
+		Dir:    dir,
+		Logger: logger,
+	}
+	plugins := m.Plugins()
+
+	assert.Empty(t, plugins)
 }
 
 func targetSubcommandDir(t *testing.T, name string) string {
