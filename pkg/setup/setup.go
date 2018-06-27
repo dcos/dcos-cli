@@ -92,8 +92,11 @@ func (s *Setup) Configure(flags *Flags, clusterURL string) (*config.Cluster, err
 		return nil, err
 	}
 
-	// Read cluster name from Mesos state summary.
-	if stateSummary, err := mesos.NewClient(httpClient).StateSummary(); err == nil {
+	if flags.name != "" {
+		// A custom cluster name has been passed as a flag.
+		cluster.SetName(flags.name)
+	} else if stateSummary, err := mesos.NewClient(httpClient).StateSummary(); err == nil {
+		// Read cluster name from Mesos state summary.
 		cluster.SetName(stateSummary.Cluster)
 	} else {
 		// Fallback to cluster ID as cluster name.
