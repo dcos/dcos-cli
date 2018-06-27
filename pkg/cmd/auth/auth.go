@@ -8,7 +8,8 @@ import (
 // NewCommand creates the `dcos auth` subcommand.
 func NewCommand(ctx api.Context) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "auth",
+		Use:   "auth",
+		Short: "Authenticate to DC/OS cluster",
 	}
 	cmd.AddCommand(
 		newCmdAuthListProviders(ctx),

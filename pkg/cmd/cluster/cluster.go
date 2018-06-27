@@ -8,7 +8,8 @@ import (
 // NewCommand creates the `dcos cluster` subcommand.
 func NewCommand(ctx api.Context) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "cluster",
+		Use:   "cluster",
+		Short: "Manage your DC/OS clusters",
 	}
 	cmd.AddCommand(
 		newCmdClusterAttach(ctx),
