@@ -8,7 +8,7 @@ import (
 
 // newCmdAuthLogin creates the `dcos auth login` subcommand.
 func newCmdAuthLogin(ctx api.Context) *cobra.Command {
-	flags := login.NewFlags(ctx.EnvLookup)
+	flags := login.NewFlags(ctx.Fs(), ctx.EnvLookup)
 	cmd := &cobra.Command{
 		Use:  "login",
 		Args: cobra.NoArgs,

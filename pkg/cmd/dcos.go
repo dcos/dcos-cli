@@ -2,11 +2,12 @@
 package cmd
 
 import (
+	"path/filepath"
+
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/cmd/auth"
 	"github.com/dcos/dcos-cli/pkg/cmd/cluster"
 	"github.com/dcos/dcos-cli/pkg/cmd/config"
-	"github.com/dcos/dcos-cli/pkg/plugin"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -36,11 +37,38 @@ func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
 		cluster.NewCommand(ctx),
 	)
 
-	plugins := plugin.Plugins(ctx)
-	pluginCommands := plugin.CreateCommands(ctx, plugins)
+	// If a cluster is attached, we get its plugins.
+	if cluster, err := ctx.Cluster(); err == nil {
+		pluginManager := ctx.PluginManager(cluster.SubcommandsDir())
 
-	cmd.AddCommand(pluginCommands...)
+		for _, p := range pluginManager.Plugins() {
+			var commands []*cobra.Command
 
+			for _, e := range p.Executables {
+				for _, c := range e.Commands {
+					cmd := &cobra.Command{
+						Use:                c.Name,
+						Short:              c.Description,
+						DisableFlagParsing: true,
+						SilenceErrors:      true, // Silences error message if command returns an exit code.
+						SilenceUsage:       true, // Silences usage information from the wrapper CLI on error.
+						RunE: func(cmd *cobra.Command, args []string) error {
+							// Prepend the arguments with the commands name so that the
+							// executed command knows which subcommand to execute (e.g.
+							// `dcos marathon app` would send `<binary> app` without this).
+							argsWithRoot := append([]string{c.Name}, args...)
+
+							return pluginManager.Invoke(filepath.Join(p.BinDir, e.Filename), argsWithRoot)
+						},
+					}
+
+					commands = append(commands, cmd)
+				}
+			}
+
+			cmd.AddCommand(commands...)
+		}
+	}
 	cmd.AddCommand(newCompletionCommand(ctx, plugins))
 
 	return cmd

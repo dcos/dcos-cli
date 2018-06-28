@@ -30,6 +30,12 @@ type Manager struct {
 	dir       string
 }
 
+// ErrConfigNotFound means that the manager cannot find a config using a name/id.
+var ErrConfigNotFound = errors.New("no match found")
+
+// ErrTooManyConfigs means that more than one config has been found for a given search.
+var ErrTooManyConfigs = errors.New("multiple matches found")
+
 // NewManager creates a new config manager.
 func NewManager(opts ManagerOpts) *Manager {
 	if opts.Fs == nil {
@@ -109,11 +115,11 @@ func (m *Manager) Find(name string, strict bool) (*Config, error) {
 
 	switch len(matches) {
 	case 0:
-		return nil, errors.New("no match found")
+		return nil, ErrConfigNotFound
 	case 1:
 		return matches[0], nil
 	default:
-		return nil, errors.New("multiple matches found")
+		return nil, ErrTooManyConfigs
 	}
 }
 
@@ -140,6 +146,24 @@ func (m *Manager) All() (configs []*Config) {
 		}
 	}
 	return
+}
+
+// Save saves a config to the disk under the given cluster ID folder.
+func (m *Manager) Save(config *Config, id string, caBundle []byte) error {
+	configDir := filepath.Join(m.dir, "clusters", id)
+	if err := m.fs.MkdirAll(configDir, 0755); err != nil {
+		return err
+	}
+	if len(caBundle) > 0 {
+		caBundlePath := filepath.Join(configDir, "dcos_ca.crt")
+		err := afero.WriteFile(m.fs, caBundlePath, caBundle, 0644)
+		if err != nil {
+			return err
+		}
+		config.Set(keyTLS, caBundlePath)
+	}
+	config.SetPath(filepath.Join(configDir, "dcos.toml"))
+	return config.Persist()
 }
 
 // Attach sets a given config as the current one. This is done by adding an `attached`

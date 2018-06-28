@@ -4,11 +4,12 @@ import (
 	"io"
 	"os/user"
 
-	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/dcos/dcos-cli/pkg/login"
 	"github.com/dcos/dcos-cli/pkg/open"
+	"github.com/dcos/dcos-cli/pkg/prompt"
+	"github.com/dcos/dcos-cli/pkg/setup"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
@@ -43,17 +44,23 @@ type Context interface {
 	ConfigManager() *config.Manager
 
 	// Cluster returns the current cluster.
-	Cluster() (*cli.Cluster, error)
+	Cluster() (*config.Cluster, error)
 
 	// Clusters returns the configured clusters.
-	Clusters() []*cli.Cluster
+	Clusters() []*config.Cluster
 
 	// HTTPClient creates an httpclient.Client for a given cluster.
-	HTTPClient(c *cli.Cluster, opts ...httpclient.Option) *httpclient.Client
+	HTTPClient(c *config.Cluster, opts ...httpclient.Option) *httpclient.Client
+
+	// Prompt returns a *prompt.Prompt.
+	Prompt() *prompt.Prompt
 
 	// Opener returns an open.Opener.
 	Opener() open.Opener
 
 	// Login initiates a login based on a set of flags and HTTP client. On success it returns an ACS token.
 	Login(flags *login.Flags, httpClient *httpclient.Client) (string, error)
+
+	// Setup configures a given cluster based on its URL and setup flags.
+	Setup(flags *setup.Flags, clusterURL string) (*config.Cluster, error)
 }

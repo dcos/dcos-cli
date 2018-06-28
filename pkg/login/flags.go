@@ -4,15 +4,17 @@ import (
 	"bytes"
 	"crypto/rsa"
 	"fmt"
-	"io/ioutil"
 	"unicode"
 
+	"github.com/dcos/dcos-cli/pkg/fsutil"
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 )
 
 // Flags are command-line flags for a login flow.
 type Flags struct {
+	fs             afero.Fs
 	envLookup      func(key string) (string, bool)
 	providerID     string
 	username       string
@@ -24,8 +26,9 @@ type Flags struct {
 }
 
 // NewFlags creates flags for a login flow.
-func NewFlags(envLookup func(key string) (string, bool)) *Flags {
+func NewFlags(fs afero.Fs, envLookup func(key string) (string, bool)) *Flags {
 	return &Flags{
+		fs:        fs,
 		envLookup: envLookup,
 	}
 }
@@ -73,7 +76,7 @@ func (f *Flags) Register(flags *pflag.FlagSet) {
 // Resolve resolves credentials from --password-env, --password-file and --private-key flags.
 func (f *Flags) Resolve() error {
 	if f.passwordFile != "" {
-		rawPassword, err := ioutil.ReadFile(f.passwordFile)
+		rawPassword, err := fsutil.ReadSecureFile(f.fs, f.passwordFile)
 		if err != nil {
 			return err
 		}
@@ -90,7 +93,7 @@ func (f *Flags) Resolve() error {
 	}
 
 	if f.privateKeyFile != "" {
-		privateKeyPEM, err := ioutil.ReadFile(f.privateKeyFile)
+		privateKeyPEM, err := fsutil.ReadSecureFile(f.fs, f.privateKeyFile)
 		if err != nil {
 			return err
 		}

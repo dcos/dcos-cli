@@ -5,12 +5,15 @@ import (
 	"io"
 	"os/user"
 	"path/filepath"
+	"strings"
 
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/dcos/dcos-cli/pkg/login"
 	"github.com/dcos/dcos-cli/pkg/open"
+	"github.com/dcos/dcos-cli/pkg/plugin"
 	"github.com/dcos/dcos-cli/pkg/prompt"
+	"github.com/dcos/dcos-cli/pkg/setup"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
@@ -18,8 +21,7 @@ import (
 // Context provides an implementation of api.Context. It relies on an Environment and is used to create
 // various objects across the project and is being passed to every command as a constructor argument.
 type Context struct {
-	env    *Environment
-	logger *logrus.Logger
+	env *Environment
 }
 
 // NewContext creates a new context from a given environment.
@@ -59,14 +61,24 @@ func (ctx *Context) Fs() afero.Fs {
 
 // Logger returns the CLI logger.
 func (ctx *Context) Logger() *logrus.Logger {
-	if ctx.logger == nil {
-		ctx.logger = &logrus.Logger{
-			Out:       ctx.env.ErrOut,
-			Formatter: new(logrus.TextFormatter),
-			Hooks:     make(logrus.LevelHooks),
-		}
+	return &logrus.Logger{
+		Out:       ctx.env.ErrOut,
+		Formatter: new(logrus.TextFormatter),
+		Hooks:     make(logrus.LevelHooks),
 	}
-	return ctx.logger
+}
+
+// PluginManager returns a plugin manager.
+func (ctx *Context) PluginManager(dir string) *plugin.Manager {
+	return &plugin.Manager{
+		Fs:     ctx.Fs(),
+		Logger: ctx.Logger(),
+		Dir:    dir,
+		Stdout: ctx.Out(),
+		Stderr: ctx.ErrOut(),
+		Stdin:  ctx.Input(),
+	}
+
 }
 
 // DCOSDir returns the root directory for the DC/OS CLI.
@@ -94,27 +106,27 @@ func (ctx *Context) ConfigManager() *config.Manager {
 }
 
 // Cluster returns the current cluster.
-func (ctx *Context) Cluster() (*Cluster, error) {
+func (ctx *Context) Cluster() (*config.Cluster, error) {
 	conf, err := ctx.ConfigManager().Current()
 	if err != nil {
 		return nil, err
 	}
-	return NewCluster(conf), nil
+	return config.NewCluster(conf), nil
 }
 
 // Clusters returns the clusters.
-func (ctx *Context) Clusters() []*Cluster {
+func (ctx *Context) Clusters() []*config.Cluster {
 	confs := ctx.ConfigManager().All()
-	var clusters []*Cluster
+	var clusters []*config.Cluster
 	for _, conf := range confs {
-		clusters = append(clusters, NewCluster(conf))
+		clusters = append(clusters, config.NewCluster(conf))
 	}
 
 	return clusters
 }
 
 // HTTPClient creates an httpclient.Client for a given cluster.
-func (ctx *Context) HTTPClient(c *Cluster, opts ...httpclient.Option) *httpclient.Client {
+func (ctx *Context) HTTPClient(c *config.Cluster, opts ...httpclient.Option) *httpclient.Client {
 	var baseOpts []httpclient.Option
 
 	if c.ACSToken() != "" {
@@ -146,11 +158,30 @@ func (ctx *Context) Opener() open.Opener {
 
 // Login initiates a login based on a set of flags and HTTP client. On success it returns an ACS token.
 func (ctx *Context) Login(flags *login.Flags, httpClient *httpclient.Client) (string, error) {
-	flow := login.NewFlow(login.FlowOpts{
+	return ctx.loginFlow().Start(flags, httpClient)
+}
+
+// Setup configures a given cluster based on its URL and setup flags.
+func (ctx *Context) Setup(flags *setup.Flags, clusterURL string) (*config.Cluster, error) {
+	// This supports passing a cluster URL without scheme, it then defaults to HTTPS.
+	if !strings.HasPrefix(clusterURL, "https://") && !strings.HasPrefix(clusterURL, "http://") {
+		clusterURL = "https://" + clusterURL
+	}
+
+	return setup.New(setup.Opts{
+		Errout:        ctx.ErrOut(),
+		Prompt:        ctx.Prompt(),
+		Logger:        ctx.Logger(),
+		LoginFlow:     ctx.loginFlow(),
+		ConfigManager: ctx.ConfigManager(),
+	}).Configure(flags, clusterURL)
+}
+
+func (ctx *Context) loginFlow() *login.Flow {
+	return login.NewFlow(login.FlowOpts{
 		Errout: ctx.ErrOut(),
 		Prompt: ctx.Prompt(),
 		Logger: ctx.Logger(),
 		Opener: ctx.Opener(),
 	})
-	return flow.Start(flags, httpClient)
 }

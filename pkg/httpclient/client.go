@@ -14,58 +14,73 @@ import (
 
 // A Client is an HTTP client.
 type Client struct {
-	acsToken   string
 	baseURL    string
-	timeout    time.Duration
 	baseClient *http.Client
-	logger     *logrus.Logger
+	opts       Options
 }
 
 // Option is a functional option for an HTTP client.
-type Option func(*Client)
+type Option func(opts *Options)
+
+// Options are configuration options for an HTTP client.
+type Options struct {
+	Timeout       time.Duration
+	TLS           *tls.Config
+	Logger        *logrus.Logger
+	ACSToken      string
+	CheckRedirect func(req *http.Request, via []*http.Request) error
+}
 
 // TLS sets the TLS configuration for the HTTP client transport.
 func TLS(tlsConfig *tls.Config) Option {
-	return func(c *Client) {
-		c.baseClient.Transport.(*http.Transport).TLSClientConfig = tlsConfig
+	return func(opts *Options) {
+		opts.TLS = tlsConfig
 	}
 }
 
 // ACSToken sets the authentication token for HTTP requests.
 func ACSToken(token string) Option {
-	return func(c *Client) {
-		c.acsToken = token
+	return func(opts *Options) {
+		opts.ACSToken = token
 	}
 }
 
 // Timeout sets the timeout for HTTP requests.
 func Timeout(timeout time.Duration) Option {
-	return func(c *Client) {
-		c.timeout = timeout
+	return func(opts *Options) {
+		opts.Timeout = timeout
 	}
 }
 
 // Logger sets the logger for the HTTP client.
 func Logger(logger *logrus.Logger) Option {
-	return func(c *Client) {
-		c.logger = logger
+	return func(opts *Options) {
+		opts.Logger = logger
 	}
 }
 
-// RequestOption is a functional option for an HTTP request.
-type RequestOption func(*http.Request)
-
-// reqContextKey is used to set values in request contexts.
-type reqContextKey int
-
-const (
-	// keyTimeout is a context key indicating the timeout for a given request.
-	keyTimeout reqContextKey = iota
-)
+// NoFollow prevents the client to follow redirect responses.
+func NoFollow() Option {
+	return func(opts *Options) {
+		noFollow := func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
+		opts.CheckRedirect = noFollow
+	}
+}
 
 // New returns a new HTTP client for a given baseURL and functional options.
 func New(baseURL string, opts ...Option) *Client {
-	client := &Client{
+	// Default request timeout to 3 minutes. We don't use http.Client.Timeout on purpose as the
+	// current approach allows to change the timeout on a per-request basis. The same client can
+	// be shared for requests with different timeouts.
+	options := Options{Timeout: 3 * time.Minute}
+
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	return &Client{
 		baseURL: baseURL,
 		baseClient: &http.Client{
 			Transport: &http.Transport{
@@ -85,22 +100,20 @@ func New(baseURL string, opts ...Option) *Client {
 				// set max idle connections to 30 regardless of the host.
 				MaxIdleConns:        30,
 				MaxIdleConnsPerHost: 30,
-			},
-		},
 
-		// Default request timeout to 3 minutes. We don't use http.Client.Timeout on purpose as the
-		// current approach allows to change the timeout on a per-request basis. The same client can
-		// be shared for requests with different timeouts.
-		timeout: 3 * time.Minute,
+				// Set the TLS configuration as specified in the context.
+				TLSClientConfig: options.TLS,
+			},
+
+			// Specify the redirect policy for the client.
+			CheckRedirect: options.CheckRedirect,
+		},
+		opts: options,
 	}
-	for _, opt := range opts {
-		opt(client)
-	}
-	return client
 }
 
 // Get issues a GET to the specified DC/OS cluster path.
-func (c *Client) Get(path string, opts ...RequestOption) (*http.Response, error) {
+func (c *Client) Get(path string, opts ...Option) (*http.Response, error) {
 	req, err := c.NewRequest("GET", path, nil, opts...)
 	if err != nil {
 		return nil, err
@@ -109,7 +122,7 @@ func (c *Client) Get(path string, opts ...RequestOption) (*http.Response, error)
 }
 
 // Post issues a POST to the specified DC/OS cluster path.
-func (c *Client) Post(path string, contentType string, body io.Reader, opts ...RequestOption) (*http.Response, error) {
+func (c *Client) Post(path string, contentType string, body io.Reader, opts ...Option) (*http.Response, error) {
 	req, err := c.NewRequest("POST", path, body, opts...)
 	if err != nil {
 		return nil, err
@@ -118,49 +131,41 @@ func (c *Client) Post(path string, contentType string, body io.Reader, opts ...R
 	return c.Do(req)
 }
 
-// RequestTimeout sets the timeout for a given HTTP request.
-func RequestTimeout(timeout time.Duration) RequestOption {
-	return func(req *http.Request) {
-		ctx := context.WithValue(req.Context(), keyTimeout, timeout)
-		*req = *req.WithContext(ctx)
+// Delete issues a DELETE to the specified DC/OS cluster path.
+func (c *Client) Delete(path string, opts ...Option) (*http.Response, error) {
+	req, err := c.NewRequest("DELETE", path, nil, opts...)
+	if err != nil {
+		return nil, err
 	}
+	return c.Do(req)
 }
 
 // NewRequest returns a new Request given a method, path, and optional body.
 // Also adds the authorization header with the ACS token to work with the
 // DC/OS cluster we are linked to if it has been set.
-func (c *Client) NewRequest(method, path string, body io.Reader, opts ...RequestOption) (*http.Request, error) {
+func (c *Client) NewRequest(method, path string, body io.Reader, opts ...Option) (*http.Request, error) {
 	req, err := http.NewRequest(method, c.baseURL+path, body)
 	if err != nil {
 		return nil, err
 	}
 
-	if c.acsToken != "" {
-		req.Header.Add("Authorization", "token="+c.acsToken)
-	}
-
+	options := c.opts
 	for _, opt := range opts {
-		opt(req)
+		opt(&options)
 	}
 
-	var timeout time.Duration
-	var hasReqTimeout bool
-
-	ctx := req.Context()
-	if ctxTimeout := ctx.Value(keyTimeout); ctxTimeout != nil {
-		timeout, hasReqTimeout = ctxTimeout.(time.Duration)
-	}
-	if !hasReqTimeout {
-		timeout = c.timeout
+	if options.ACSToken != "" {
+		req.Header.Add("Authorization", "token="+options.ACSToken)
 	}
 
-	if timeout > 0 {
-		newCtx, cancel := context.WithTimeout(ctx, c.timeout)
+	if options.Timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel := context.WithTimeout(req.Context(), options.Timeout)
 		go func() {
 			<-ctx.Done()
 			cancel()
 		}()
-		req = req.WithContext(newCtx)
+		req = req.WithContext(ctx)
 	}
 	return req, nil
 }
@@ -169,25 +174,27 @@ func (c *Client) NewRequest(method, path string, body io.Reader, opts ...Request
 // policy (such as redirects, cookies, auth) as configured on the
 // client.
 func (c *Client) Do(req *http.Request) (*http.Response, error) {
-	if c.logger != nil {
-		dumpBody := (c.logger.Level >= logrus.DebugLevel)
+	logger := c.opts.Logger
+
+	if logger != nil {
+		dumpBody := (logger.Level >= logrus.DebugLevel)
 		reqDump, err := httputil.DumpRequestOut(req, dumpBody)
 		if err != nil {
-			c.logger.Warnf("Couldn't dump request: %s", err)
+			logger.Warnf("Couldn't dump request: %s", err)
 		} else {
-			c.logger.Infof("Outgoing request:\n%s", reqDump)
+			logger.Infof("Outgoing request:\n%s", reqDump)
 		}
 	}
 
 	resp, err := c.baseClient.Do(req)
 
-	if err == nil && c.logger != nil {
-		dumpBody := (c.logger.Level >= logrus.DebugLevel)
+	if err == nil && logger != nil {
+		dumpBody := (logger.Level >= logrus.DebugLevel)
 		respDump, err := httputil.DumpResponse(resp, dumpBody)
 		if err != nil {
-			c.logger.Warnf("Couldn't dump response: %s", err)
+			logger.Warnf("Couldn't dump response: %s", err)
 		} else {
-			c.logger.Infof("Incoming response:\n%s", respDump)
+			logger.Infof("Incoming response:\n%s", respDump)
 		}
 	}
 	return resp, err

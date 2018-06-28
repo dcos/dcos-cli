@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -58,10 +59,7 @@ func TestPost(t *testing.T) {
 }
 
 func TestNewRequest(t *testing.T) {
-	client := New("https://dcos.io", func(client *Client) {
-		client.acsToken = "acsToken"
-		client.timeout = 60 * time.Second
-	})
+	client := New("https://dcos.io", ACSToken("acsToken"), Timeout(60*time.Second))
 
 	req, err := client.NewRequest("GET", "/path", nil)
 	require.NoError(t, err)
@@ -72,11 +70,9 @@ func TestNewRequest(t *testing.T) {
 }
 
 func TestNewRequestWithoutTimeout(t *testing.T) {
-	client := New("https://dcos.io", func(client *Client) {
-		client.timeout = 60 * time.Second
-	})
+	client := New("https://dcos.io", Timeout(60*time.Second))
 
-	req, err := client.NewRequest("GET", "/path", nil, RequestTimeout(0))
+	req, err := client.NewRequest("GET", "/path", nil, Timeout(0))
 	require.NoError(t, err)
 	_, ok := req.Context().Deadline()
 	require.False(t, ok)
@@ -145,11 +141,7 @@ func TestTLS(t *testing.T) {
 	}
 
 	for _, exp := range tlsConfigs {
-		client := New(ts.URL, func(client *Client) {
-			client.baseClient.Transport = &http.Transport{
-				TLSClientConfig: exp.tls,
-			}
-		})
+		client := New(ts.URL, TLS(exp.tls))
 
 		resp, err := client.Get("/")
 		if exp.valid {
@@ -162,4 +154,10 @@ func TestTLS(t *testing.T) {
 			require.Nil(t, resp)
 		}
 	}
+}
+
+func TestLogger(t *testing.T) {
+	logger := &logrus.Logger{Out: ioutil.Discard}
+	client := New("", Logger(logger))
+	require.Equal(t, client.opts.Logger, logger)
 }
