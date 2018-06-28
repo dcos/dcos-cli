@@ -21,8 +21,8 @@ artifacts = [
 # TODO: this should probably passed as argument.
 build_path = os.path.dirname(os.path.realpath(__file__)) + "/../build"
 
-#for f, bucket_key in artifacts:
-#    s3_client.upload_file(build_path + "/" + f, bucket, bucket_key)
+for f, bucket_key in artifacts:
+    s3_client.upload_file(build_path + "/" + f, bucket, bucket_key)
 
 slack_token = os.environ.get("SLACK_API_TOKEN")
 if not slack_token or version.startswith("dcos-"):

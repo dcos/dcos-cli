@@ -30,7 +30,7 @@ for artifact in artifacts:
     src = {'Bucket': bucket, 'Key': artifact.format(tag_name)}
     dst = artifact.format("dcos-" + dcos_version)
 
-#    s3_client.copy(src, bucket, dst)
+    s3_client.copy(src, bucket, dst)
 
 slack_token = os.environ.get("SLACK_API_TOKEN")
 if not slack_token:
