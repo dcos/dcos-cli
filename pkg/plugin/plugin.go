@@ -1,7 +1,6 @@
 package plugin
 
 import (
-	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -25,16 +24,16 @@ type executable struct {
 	// Executables are found from pluginDir + Filename. This means all executables in a plugin are in
 	// the same place.
 	Filename string     `yaml:"filename"`
-	Commands []*Command `yaml:"commands"`
+	Commands []*command `yaml:"commands"`
 }
 
 // command is a command living within a plugin binary
 type command struct {
 	Name        string      `yaml:"name"`
 	Description string      `yaml:"description"`
-	Flags       []*Flag     `yaml:"flags"`
-	Args        []*Argument `yaml:"args"`
-	Subcommands []*Command  `yaml:"subcommands"`
+	Flags       []*flag     `yaml:"flags"`
+	Args        []*argument `yaml:"args"`
+	Subcommands []*command  `yaml:"subcommands"`
 
 	cobraCounterpart *cobra.Command // holds a reference to the created cobra command which is needed
 	// to generate the subcommands only when completion code is being created.
@@ -54,8 +53,8 @@ type source struct {
 	URL  string `yaml:"url"`
 }
 
-// Argument represents an argument of a subcommand
-type Argument struct {
+// argument represents an argument of a subcommand
+type argument struct {
 	Name        string `yaml:"name"`
 	Description string `yaml:"description"`
 	Type        string `yaml:"type"`
@@ -66,32 +65,17 @@ type Argument struct {
 	Mutliple bool `yaml:"multiple"`
 }
 
-// IntoCommands creates a list of cobra commands from the commands available in the plugin
-func (p *Plugin) IntoCommands(ctx *cli.Context) []*cobra.Command {
-	var commands []*cobra.Command
-
-	for _, e := range p.Executables {
-		for _, c := range e.Commands {
-			cmd := c.IntoCommand(ctx, p.binDir, e.Filename)
-
-			commands = append(commands, cmd)
-		}
-	}
-
-	return commands
-}
-
 // AddCompletionData will add flags and associated subcommands to a plugin's root level command
 // for generating the completion script.
 func (p *Plugin) AddCompletionData() {
 	for _, e := range p.Executables {
 		for _, c := range e.Commands {
-			c.addCompletionData(p.binDir, e.Filename)
+			c.addCompletionData(p.BinDir, e.Filename)
 		}
 	}
 }
 
-func (c *Command) addCompletionData(dir string, exe string) {
+func (c *command) addCompletionData(dir string, exe string) {
 	cmd := c.cobraCounterpart
 
 	for _, f := range c.Flags {
@@ -110,7 +94,7 @@ func (c *Command) addCompletionData(dir string, exe string) {
 	}
 }
 
-func (c *Command) intoSubcommand(dir string, exe string) *cobra.Command {
+func (c *command) intoSubcommand(dir string, exe string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                c.Name,
 		DisableFlagParsing: true,
