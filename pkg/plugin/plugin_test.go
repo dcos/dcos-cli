@@ -3,6 +3,7 @@ package plugin_test
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/sirupsen/logrus/hooks/test"
@@ -100,7 +101,13 @@ func targetSubcommandDir(t *testing.T, name string) string {
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 
-	return filepath.Join(wd, "testdata", name)
+	var testdataDir string
+	if runtime.GOOS == "windows" {
+		testdataDir = filepath.Join(wd, "testdata_windows")
+	} else {
+		testdataDir = filepath.Join(wd, "testdata")
+	}
+	return filepath.Join(testdataDir, name)
 }
 
 func roFs() afero.Fs {
