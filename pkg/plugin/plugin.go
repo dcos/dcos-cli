@@ -35,7 +35,7 @@ type command struct {
 	Args        []*argument `yaml:"args"`
 	Subcommands []*command  `yaml:"subcommands"`
 
-	cobraCounterpart *cobra.Command // holds a reference to the created cobra command which is needed
+	CobraCounterpart *cobra.Command // holds a reference to the created cobra command which is needed
 	// to generate the subcommands only when completion code is being created.
 }
 
@@ -76,7 +76,7 @@ func (p *Plugin) AddCompletionData() {
 }
 
 func (c *command) addCompletionData(dir string, exe string) {
-	cmd := c.cobraCounterpart
+	cmd := c.CobraCounterpart
 
 	for _, f := range c.Flags {
 		switch f.Type {

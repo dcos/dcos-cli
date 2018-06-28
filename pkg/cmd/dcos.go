@@ -41,9 +41,10 @@ func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
 	// If a cluster is attached, we get its plugins.
 	if cluster, err := ctx.Cluster(); err == nil {
 		pluginManager := ctx.PluginManager(cluster.SubcommandsDir())
+		plugins := pluginManager.Plugins()
 
+		var commands []*cobra.Command
 		for _, p := range pluginManager.Plugins() {
-			var commands []*cobra.Command
 
 			for _, e := range p.Executables {
 				for _, c := range e.Commands {
@@ -63,19 +64,20 @@ func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
 						},
 					}
 
+					c.CobraCounterpart = cmd
 					commands = append(commands, cmd)
 				}
 			}
-
-			cmd.AddCommand(commands...)
 		}
+
+		cmd.AddCommand(commands...)
+		cmd.AddCommand(newCompletionCommand(ctx, plugins))
 	}
-	cmd.AddCommand(newCompletionCommand(ctx, plugins))
 
 	return cmd
 }
 
-func pluginsToCobra([]*plugin.Plugin) []*cobra.Command {
+func plugins(pluginManager *plugin.Manager) []*cobra.Command {
 	var commands []*cobra.Command
 	for _, p := range pluginManager.Plugins() {
 
@@ -97,7 +99,7 @@ func pluginsToCobra([]*plugin.Plugin) []*cobra.Command {
 					},
 				}
 
-				c.cobraCounterpart = cmd
+				c.CobraCounterpart = cmd
 				commands = append(commands, cmd)
 			}
 		}
