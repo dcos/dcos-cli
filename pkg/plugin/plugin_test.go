@@ -103,9 +103,9 @@ func targetSubcommandDir(t *testing.T, name string) string {
 
 	var testdataDir string
 	if runtime.GOOS == "windows" {
-		testdataDir = filepath.Join(wd, "testdata_windows")
+		testdataDir = filepath.Join(wd, "testdata", "windows")
 	} else {
-		testdataDir = filepath.Join(wd, "testdata")
+		testdataDir = filepath.Join(wd, "testdata", "unix")
 	}
 	return filepath.Join(testdataDir, name)
 }
