@@ -17,6 +17,7 @@ import (
 // configurations such as "core.dcos_url" or "core.ssl_verify". It leverages Go types as much as possible.
 type Cluster struct {
 	config *Config
+	id     string
 }
 
 // NewCluster returns a new cluster for a given config, if omitted it uses an empty config.
@@ -103,8 +104,16 @@ func (c *Cluster) SetTimeout(timeout time.Duration) {
 
 // ID returns the ID of the cluster.
 func (c *Cluster) ID() string {
+	if c.id != "" {
+		return c.id
+	}
 	path := c.Config().Path()
 	return filepath.Base(filepath.Dir(path))
+}
+
+// SetID sets a custom id for the cluster.
+func (c *Cluster) SetID(id string) {
+	c.id = id
 }
 
 // Name returns the custom name for the cluster.

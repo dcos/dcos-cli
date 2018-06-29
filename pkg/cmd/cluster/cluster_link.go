@@ -83,7 +83,7 @@ func newCmdClusterLink(ctx api.Context) *cobra.Command {
 				provider = filteredProviders[i]
 			}
 
-			linkRequest := &clusterlinker.LinkRequest{
+			linkRequest := &clusterlinker.Link{
 				ID:   linkableCluster.ID(),
 				Name: linkableCluster.Name(),
 				URL:  linkableCluster.URL(),
