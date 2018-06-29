@@ -37,7 +37,7 @@ func TestLoadNewPlugin(t *testing.T) {
 	}
 
 	plugins := m.Plugins()
-	require.NotEmpty(t, plugins)
+	assert.Equal(t, 1, len(plugins))
 	plugin := plugins[0]
 
 	assert.Equal(t, "new-test", plugin.Name)
@@ -55,7 +55,7 @@ func TestLoadOldPlugin(t *testing.T) {
 	}
 
 	plugins := m.Plugins()
-	require.NotEmpty(t, plugins)
+	assert.Equal(t, 1, len(plugins))
 
 	plugin := plugins[0]
 
