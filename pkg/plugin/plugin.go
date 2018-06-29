@@ -20,11 +20,11 @@ type executable struct {
 	// Executables are found in the binary directory + the filename.
 	// This means all executables in a plugin are in the same place.
 	Filename string     `yaml:"filename"`
-	Commands []*command `yaml:"commands"`
+	Commands []*Command `yaml:"commands"`
 }
 
-// command is a command living within a plugin binary.
-type command struct {
+// Command is a Command living within a plugin binary.
+type Command struct {
 	Name        string `yaml:"name"`
 	Description string `yaml:"description"`
 }
