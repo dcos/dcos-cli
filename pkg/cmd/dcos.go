@@ -43,26 +43,20 @@ func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
 		pluginManager := ctx.PluginManager(cluster.SubcommandsDir())
 
 		for _, p := range pluginManager.Plugins() {
-			var commands []*cobra.Command
-
 			for _, e := range p.Executables {
 				for _, c := range e.Commands {
 					executable := filepath.Join(p.BinDir, e.Filename)
-					cmd := pluginCommandToCobra(executable, pluginManager, c)
-					commands = append(commands, cmd)
+					cmd.AddCommand(pluginCommand(executable, pluginManager, c))
 				}
 			}
-
-			cmd.AddCommand(commands...)
 		}
 	}
 
 	return cmd
 }
 
-func pluginCommandToCobra(executable string, pluginManager *plugin.Manager, c *plugin.Command) *cobra.Command {
-
-	cmd := &cobra.Command{
+func pluginCommand(executable string, pluginManager *plugin.Manager, c *plugin.Command) *cobra.Command {
+	return &cobra.Command{
 		Use:                c.Name,
 		Short:              c.Description,
 		DisableFlagParsing: true,
@@ -77,5 +71,4 @@ func pluginCommandToCobra(executable string, pluginManager *plugin.Manager, c *p
 			return pluginManager.Invoke(executable, argsWithRoot)
 		},
 	}
-	return cmd
 }
