@@ -145,6 +145,7 @@ func (m *Manager) All() (configs []*Config) {
 			}
 		}
 	}
+	
 	return
 }
 

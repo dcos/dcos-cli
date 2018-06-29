@@ -65,3 +65,8 @@ func (f *Flags) Resolve() error {
 	}
 	return f.loginFlags.Resolve()
 }
+
+// LoginFlags returns the login flags.
+func (f *Flags) LoginFlags() *login.Flags {
+	return f.loginFlags
+}

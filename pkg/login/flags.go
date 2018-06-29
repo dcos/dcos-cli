@@ -105,6 +105,11 @@ func (f *Flags) Resolve() error {
 	return nil
 }
 
+// SetProviderID sets the provider ID.
+func (f *Flags) SetProviderID(providerID string) {
+	f.providerID = providerID
+}
+
 // Supports indicates whether or not a provider is supported based on the specified flags.
 func (f *Flags) Supports(provider *Provider) bool {
 	if provider.Type == DCOSUIDServiceKey {

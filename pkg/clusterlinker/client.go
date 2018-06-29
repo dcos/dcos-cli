@@ -16,9 +16,9 @@ type Client struct {
 	logger *logrus.Logger
 }
 
-// LinkRequest is the request sent to the /v1/links endpoint to link the cluster
+// Link is the request sent to the /v1/links endpoint to link the cluster
 // handled by the client to a cluster using its id, name, url, and login provider.
-type LinkRequest struct {
+type Link struct {
 	ID            string `json:"id"`
 	Name          string `json:"name"`
 	URL           string `json:"url"`
@@ -32,6 +32,10 @@ type LoginProvider struct {
 	Type string `json:"type"`
 }
 
+type links struct {
+	Links []*Link `json:"links"`
+}
+
 // NewClient creates a new cluster linker client from a standard HTTP client.
 func NewClient(baseClient *httpclient.Client, logger *logrus.Logger) *Client {
 	return &Client{
@@ -41,7 +45,7 @@ func NewClient(baseClient *httpclient.Client, logger *logrus.Logger) *Client {
 }
 
 // Link sends a link request to /v1/links using a given client.
-func (c *Client) Link(linkRequest *LinkRequest) error {
+func (c *Client) Link(linkRequest *Link) error {
 	message, err := json.Marshal(linkRequest)
 
 	resp, err := c.http.Post("/cluster/v1/links", "application/json", bytes.NewReader(message))
@@ -52,9 +56,14 @@ func (c *Client) Link(linkRequest *LinkRequest) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
+		// links is a new endpoint, if it is not available DC/OS will not return an API error.
+		if resp.StatusCode == 404 {
+			return errors.New("inaccessible endpoint, cannot link cluster")
+		}
+
 		var apiError *dcos.Error
 		if err := json.NewDecoder(resp.Body).Decode(&apiError); err != nil {
-			return errors.New("couldn't link")
+			return err
 		}
 		return apiError
 	}
@@ -80,4 +89,34 @@ func (c *Client) Unlink(linkedClusterID string) error {
 	}
 
 	return nil
+}
+
+// Links returns the links of a cluster.
+func (c *Client) Links() ([]*Link, error) {
+	resp, err := c.http.Get("/cluster/v1/links")
+	if err != nil {
+		return nil, errors.New("couldn't get linked clusters")
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		// links is a new endpoint, if it is not available DC/OS will not return an API error.
+		if resp.StatusCode == 404 {
+			return nil, errors.New("inaccessible endpoint, cannot find linked clusters")
+		}
+
+		var apiError *dcos.Error
+		if err := json.NewDecoder(resp.Body).Decode(&apiError); err != nil {
+			return nil, err
+		}
+		return nil, apiError
+	}
+
+	links := &links{}
+	err = json.NewDecoder(resp.Body).Decode(&links)
+	if err != nil {
+		return nil, err
+	}
+	return links.Links, nil
 }
