@@ -16,8 +16,8 @@ pipeline {
       steps {
         withCredentials([
             string(credentialsId: "8b793652-f26a-422f-a9ba-0d1e47eb9d89", variable: "SLACK_API_TOKEN"),
-            string(credentialsId: "3f0dbb48-de33-431f-b91c-2366d2f0e1cf", variable: "AWS_ACCESS_KEY_ID"),
-            string(credentialsId: "f585ec9a-3c38-4f67-8bdb-79e5d4761937", variable: "AWS_SECRET_ACCESS_KEY"),
+            string(credentialsId: "e270aa3f-4825-480c-a3ec-18a541c4e2d1",variable: "AWS_ACCESS_KEY_ID"),
+            string(credentialsId: "cd616d55-78eb-45de-b7a8-e5bc5ccce4c7",variable: "AWS_SECRET_ACCESS_KEY"),
         ]) {
             sh '''
               bash -exc " \
