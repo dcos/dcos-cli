@@ -43,12 +43,11 @@ func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
 		pluginManager := ctx.PluginManager(cluster.SubcommandsDir())
 		plugins := pluginManager.Plugins()
 
-		var commands []*cobra.Command
-		for _, p := range pluginManager.Plugins() {
+		for _, p := range plugins {
 
 			for _, e := range p.Executables {
 				for _, c := range e.Commands {
-					cmd := &cobra.Command{
+					pCmd := &cobra.Command{
 						Use:                c.Name,
 						Short:              c.Description,
 						DisableFlagParsing: true,
@@ -64,13 +63,12 @@ func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
 						},
 					}
 
-					c.CobraCounterpart = cmd
-					commands = append(commands, cmd)
+					c.CobraCounterpart = pCmd
+					cmd.AddCommand(pCmd)
 				}
 			}
 		}
 
-		cmd.AddCommand(commands...)
 		cmd.AddCommand(newCompletionCommand(ctx, plugins))
 	}
 
