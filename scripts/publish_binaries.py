@@ -10,7 +10,7 @@ import requests
 # TODO: the current DC/OS dev version (1.12) should be pulled dynamically (from the Github API?).
 version = os.environ.get("TAG_NAME") or "dcos-1.12"
 
-s3_client = boto3.resource('s3').meta.client
+s3_client = boto3.resource('s3', region_name='us-west-2').meta.client
 bucket = "downloads.dcos.io"
 artifacts = [
     ("linux/dcos", "binaries/cli/linux/x86-64/{}/dcos".format(version)),

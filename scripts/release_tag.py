@@ -18,7 +18,7 @@ if not dcos_version:
     print("Missing DCOS_VERSION.", file=sys.stderr)
     sys.exit(1)
 
-s3_client = boto3.resource('s3').meta.client
+s3_client = boto3.resource('s3', region_name='us-west-2').meta.client
 bucket = "downloads.dcos.io"
 artifacts = [
     "binaries/cli/linux/x86-64/{}/dcos",
