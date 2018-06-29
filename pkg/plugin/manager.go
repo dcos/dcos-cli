@@ -157,7 +157,7 @@ func (m *Manager) loadPluginFromPackage(plugin *Plugin) error {
 				commandName = strings.TrimSuffix(commandName, ".exe")
 			}
 
-			cmd := &command{
+			cmd := &Command{
 				Name: commandName,
 			}
 
@@ -172,7 +172,7 @@ func (m *Manager) loadPluginFromPackage(plugin *Plugin) error {
 			// We create an executable which is what will be executed when calling a subcommand.
 			exe := &executable{
 				Filename: binary.Name(),
-				Commands: []*command{
+				Commands: []*Command{
 					cmd,
 				},
 			}

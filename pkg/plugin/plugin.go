@@ -24,16 +24,16 @@ type executable struct {
 	// Executables are found from pluginDir + Filename. This means all executables in a plugin are in
 	// the same place.
 	Filename string     `yaml:"filename"`
-	Commands []*command `yaml:"commands"`
+	Commands []*Command `yaml:"commands"`
 }
 
-// command is a command living within a plugin binary
-type command struct {
+// Command is a Command living within a plugin binary.
+type Command struct {
 	Name        string      `yaml:"name"`
 	Description string      `yaml:"description"`
 	Flags       []*flag     `yaml:"flags"`
 	Args        []*argument `yaml:"args"`
-	Subcommands []*command  `yaml:"subcommands"`
+	Subcommands []*Command  `yaml:"subcommands"`
 
 	CobraCounterpart *cobra.Command // holds a reference to the created cobra command which is needed
 	// to generate the subcommands only when completion code is being created.
@@ -75,7 +75,7 @@ func (p *Plugin) AddCompletionData() {
 	}
 }
 
-func (c *command) addCompletionData(dir string, exe string) {
+func (c *Command) addCompletionData(dir string, exe string) {
 	cmd := c.CobraCounterpart
 
 	for _, f := range c.Flags {
@@ -94,7 +94,7 @@ func (c *command) addCompletionData(dir string, exe string) {
 	}
 }
 
-func (c *command) intoSubcommand(dir string, exe string) *cobra.Command {
+func (c *Command) intoSubcommand(dir string, exe string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                c.Name,
 		DisableFlagParsing: true,

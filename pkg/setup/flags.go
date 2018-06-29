@@ -10,6 +10,7 @@ import (
 type Flags struct {
 	caBundle     []byte
 	caBundlePath string
+	name         string
 	noCheck      bool
 	insecure     bool
 	loginFlags   *login.Flags
@@ -43,6 +44,12 @@ func (f *Flags) Register(flags *pflag.FlagSet) {
 		"ca-certs",
 		"",
 		"Specify the path to a file with trusted CAs to verify requests against.",
+	)
+	flags.StringVar(
+		&f.name,
+		"name",
+		"",
+		"Specify a custom name for the cluster.",
 	)
 	f.loginFlags.Register(flags)
 }

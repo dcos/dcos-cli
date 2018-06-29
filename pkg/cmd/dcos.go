@@ -8,6 +8,7 @@ import (
 	"github.com/dcos/dcos-cli/pkg/cmd/auth"
 	"github.com/dcos/dcos-cli/pkg/cmd/cluster"
 	"github.com/dcos/dcos-cli/pkg/cmd/config"
+	"github.com/dcos/dcos-cli/pkg/plugin"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -46,23 +47,8 @@ func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
 
 			for _, e := range p.Executables {
 				for _, c := range e.Commands {
-					pCmd := &cobra.Command{
-						Use:                c.Name,
-						Short:              c.Description,
-						DisableFlagParsing: true,
-						SilenceErrors:      true, // Silences error message if command returns an exit code.
-						SilenceUsage:       true, // Silences usage information from the wrapper CLI on error.
-						RunE: func(cmd *cobra.Command, args []string) error {
-							// Prepend the arguments with the commands name so that the
-							// executed command knows which subcommand to execute (e.g.
-							// `dcos marathon app` would send `<binary> app` without this).
-							argsWithRoot := append([]string{c.Name}, args...)
-
-							return pluginManager.Invoke(filepath.Join(p.BinDir, e.Filename), argsWithRoot)
-						},
-					}
-
-					c.CobraCounterpart = pCmd
+					executable := filepath.Join(p.BinDir, e.Filename)
+					pCmd := pluginCommandToCobra(executable, pluginManager, c)
 					cmd.AddCommand(pCmd)
 				}
 			}
@@ -70,6 +56,29 @@ func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
 
 		cmd.AddCommand(newCompletionCommand(ctx, plugins))
 	}
+
+	return cmd
+}
+
+func pluginCommandToCobra(executable string, pluginManager *plugin.Manager, c *plugin.Command) *cobra.Command {
+
+	cmd := &cobra.Command{
+		Use:                c.Name,
+		Short:              c.Description,
+		DisableFlagParsing: true,
+		SilenceErrors:      true, // Silences error message if command returns an exit code.
+		SilenceUsage:       true, // Silences usage information from the wrapper CLI on error.
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// Prepend the arguments with the commands name so that the
+			// executed command knows which subcommand to execute (e.g.
+			// `dcos marathon app` would send `<binary> app` without this).
+			argsWithRoot := append([]string{c.Name}, args...)
+
+			return pluginManager.Invoke(executable, argsWithRoot)
+		},
+	}
+
+	c.CobraCounterpart = cmd
 
 	return cmd
 }
