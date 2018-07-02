@@ -2,11 +2,21 @@ package cmd
 
 import (
 	"bytes"
+	"fmt"
 	"io"
+	"strings"
 
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/plugin"
 	"github.com/spf13/cobra"
+)
+
+const (
+	dcosReloadReplacementTarget = `__start_dcos()
+{`
+	dcosReloadReplacementResult = `__start_dcos()
+{
+    source <(dcos completion %s)`
 )
 
 func newCompletionCommand(ctx *cli.Context, plugins []*plugin.Plugin) *cobra.Command {
@@ -21,13 +31,20 @@ func newCompletionCommand(ctx *cli.Context, plugins []*plugin.Plugin) *cobra.Com
 				p.AddCompletionData()
 			}
 
+			buffer := &bytes.Buffer{}
+
 			switch shell {
 			case "bash":
-				cmd.Root().GenBashCompletion(ctx.Out())
+				cmd.Root().GenBashCompletion(buffer)
 			case "zsh":
-				zshCompletion(cmd.Root(), ctx.Out())
+				zshCompletion(cmd.Root(), buffer)
 			default:
 			}
+
+			replaceWithShell := fmt.Sprintf(dcosReloadReplacementResult, shell)
+			outStr := strings.Replace(buffer.String(), dcosReloadReplacementTarget, replaceWithShell, 1)
+
+			fmt.Fprint(ctx.Out(), outStr)
 
 			return nil
 		},
@@ -37,7 +54,7 @@ func newCompletionCommand(ctx *cli.Context, plugins []*plugin.Plugin) *cobra.Com
 }
 
 func zshCompletion(root *cobra.Command, out io.Writer) {
-	// All of this is lifted pretty much directly from kubectl's zsh completion which relies on cobra's
+	// All of this is lifted directly from kubectl's zsh completion which relies on cobra's
 	// bash completion. Cobra has built in zsh completion generation but it seems to be fairly
 	// limited at this time.
 	zshHead := "#compdef dcos\n"
