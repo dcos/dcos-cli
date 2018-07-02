@@ -14,9 +14,11 @@ import (
 const (
 	dcosReloadReplacementTarget = `__start_dcos()
 {`
+	// This has a workaround to allow this auto-reload method to work on older versions of bash.
+	// Specifically 3.2 which is the default bash installed on macOS.
 	dcosReloadReplacementResult = `__start_dcos()
 {
-    source <(dcos completion %s)`
+    source /dev/stdin <<<"$(dcos completion %s)"`
 )
 
 func newCompletionCommand(ctx *cli.Context, plugins []*plugin.Plugin) *cobra.Command {
