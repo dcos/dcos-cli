@@ -8,7 +8,8 @@ import (
 // NewCommand creates the `dcos config` subcommand.
 func NewCommand(ctx api.Context) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "config",
+		Use:   "config",
+		Short: "Manage the DC/OS configuration file",
 	}
 	cmd.AddCommand(
 		newCmdConfigSet(ctx),

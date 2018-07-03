@@ -6,6 +6,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
@@ -21,7 +22,9 @@ import (
 // Context provides an implementation of api.Context. It relies on an Environment and is used to create
 // various objects across the project and is being passed to every command as a constructor argument.
 type Context struct {
-	env *Environment
+	env      *Environment
+	logger   *logrus.Logger
+	loggerMu sync.Mutex
 }
 
 // NewContext creates a new context from a given environment.
@@ -61,11 +64,17 @@ func (ctx *Context) Fs() afero.Fs {
 
 // Logger returns the CLI logger.
 func (ctx *Context) Logger() *logrus.Logger {
-	return &logrus.Logger{
-		Out:       ctx.env.ErrOut,
-		Formatter: new(logrus.TextFormatter),
-		Hooks:     make(logrus.LevelHooks),
+	ctx.loggerMu.Lock()
+	defer ctx.loggerMu.Unlock()
+
+	if ctx.logger == nil {
+		ctx.logger = &logrus.Logger{
+			Out:       ctx.env.ErrOut,
+			Formatter: new(logrus.TextFormatter),
+			Hooks:     make(logrus.LevelHooks),
+		}
 	}
+	return ctx.logger
 }
 
 // PluginManager returns a plugin manager.
