@@ -2,6 +2,7 @@ package completion
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -27,11 +28,18 @@ func NewCompletionCommand(ctx *cli.Context, plugins []*plugin.Plugin) *cobra.Com
 		Use:       "completion",
 		ValidArgs: []string{"bash", "zsh"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return errors.New("no shell given")
+			}
 			shell := args[0]
 
 			// add the subcommands and their associated data to the root plugin commands
 			for _, p := range plugins {
-				p.AddCompletionData()
+				for _, e := range p.Executables {
+					for _, c := range e.Commands {
+						addCompletionData(c)
+					}
+				}
 			}
 
 			buffer := &bytes.Buffer{}
@@ -42,6 +50,7 @@ func NewCompletionCommand(ctx *cli.Context, plugins []*plugin.Plugin) *cobra.Com
 			case "zsh":
 				zshCompletion(cmd.Root(), buffer)
 			default:
+				return fmt.Errorf("invalid shell '%s' given", shell)
 			}
 
 			replaceWithShell := fmt.Sprintf(dcosReloadReplacementResult, shell)
@@ -202,4 +211,55 @@ __dcos_bash_source <(__dcos_convert_bash_to_zsh)
 _complete dcos 2>/dev/null
 `
 	out.Write([]byte(zshTail))
+}
+
+func addCompletionData(c *plugin.Command) {
+	cmd := c.CobraCounterpart
+
+	// Add flags to the root commands because they aren't given them on normal creation since they
+	// don't parse flags when run.
+	addFlags(c, cmd)
+
+	for _, s := range c.Subcommands {
+		cmd.AddCommand(createSubcommand(s))
+	}
+}
+
+// createSubcommand will make a completion subcommand tree from a given command.
+// The only differences between a subcommand and a command are:
+// * subcommands are given an empty run
+// * they given their flags immediately on creation
+func createSubcommand(c *plugin.Command) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:                c.Name,
+		DisableFlagParsing: true,
+		SilenceUsage:       true, // Silences usage information from the wrapper CLI on error
+		SilenceErrors:      true, // Silences error message if called binary returns an error exit code
+		// This exists but is empty because otherwise cobra won't include these in the completion script.
+		Run: func(cmd *cobra.Command, args []string) {},
+	}
+
+	addFlags(c, cmd)
+
+	for _, s := range c.Subcommands {
+		cmd.AddCommand(createSubcommand(s))
+	}
+
+	return cmd
+}
+
+// addFlags will add flags of the appropriate type to the cobra command.
+func addFlags(pluginCmd *plugin.Command, cobraCmd *cobra.Command) {
+	for _, f := range pluginCmd.Flags {
+		// This switch case makes variables that aren't used anywhere because the flag requires a place to
+		// put the value they receive but since this is just for completion, we don't need them.
+		switch f.Type {
+		case "boolean":
+			var flagVal bool
+			cobraCmd.Flags().BoolVar(&flagVal, f.Name, false, f.Description)
+		default:
+			var strVal string
+			cobraCmd.Flags().StringVar(&strVal, f.Name, "", f.Description)
+		}
+	}
 }
