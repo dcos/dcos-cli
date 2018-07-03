@@ -1,9 +1,5 @@
 package plugin
 
-import (
-	"github.com/spf13/cobra"
-)
-
 // Plugin defines an external plugin and its associated data.
 type Plugin struct {
 	Name        string        `yaml:"name"`
@@ -34,9 +30,6 @@ type Command struct {
 	Flags       []*flag     `yaml:"flags"`
 	Args        []*argument `yaml:"args"`
 	Subcommands []*Command  `yaml:"subcommands"`
-
-	CobraCounterpart *cobra.Command // holds a reference to the created cobra command which is needed
-	// to generate the subcommands only when completion code is being created.
 }
 
 // flag represents a flag option on a command

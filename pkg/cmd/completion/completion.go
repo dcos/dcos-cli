@@ -22,8 +22,17 @@ const (
     source /dev/stdin <<<"$(dcos completion %s)"`
 )
 
+// CommandPair represents a pairing between a plugin's root level command and the cobra command
+// created for it. This isn't strictly necessary but makes it easy to keep the plugin command
+// together with the cobra command and means we don't need to search the cobra tree to find
+// the commands each completion call.
+type CommandPair struct {
+	Plugin *plugin.Command
+	Cobra  *cobra.Command
+}
+
 // NewCompletionCommand creates a command that will generate a shell completion script.
-func NewCompletionCommand(ctx *cli.Context, plugins []*plugin.Plugin) *cobra.Command {
+func NewCompletionCommand(ctx *cli.Context, pairs []*CommandPair) *cobra.Command {
 	noReload := false
 
 	cmd := &cobra.Command{
@@ -36,12 +45,8 @@ func NewCompletionCommand(ctx *cli.Context, plugins []*plugin.Plugin) *cobra.Com
 			shell := args[0]
 
 			// add the subcommands and their associated data to the root plugin commands
-			for _, p := range plugins {
-				for _, e := range p.Executables {
-					for _, c := range e.Commands {
-						addCompletionData(c)
-					}
-				}
+			for _, pair := range pairs {
+				addCompletionData(pair.Plugin, pair.Cobra)
 			}
 
 			buffer := &bytes.Buffer{}
@@ -226,15 +231,13 @@ _complete dcos 2>/dev/null
 	out.Write([]byte(zshTail))
 }
 
-func addCompletionData(c *plugin.Command) {
-	cmd := c.CobraCounterpart
-
+func addCompletionData(pluginCmd *plugin.Command, cobraCmd *cobra.Command) {
 	// Add flags to the root commands because they aren't given them on normal creation since they
 	// don't parse flags when run.
-	addFlags(c, cmd)
+	addFlags(pluginCmd, cobraCmd)
 
-	for _, s := range c.Subcommands {
-		cmd.AddCommand(createSubcommand(s))
+	for _, s := range pluginCmd.Subcommands {
+		cobraCmd.AddCommand(createSubcommand(s))
 	}
 }
 
