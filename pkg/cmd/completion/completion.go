@@ -24,6 +24,8 @@ const (
 
 // NewCompletionCommand creates a command that will generate a shell completion script.
 func NewCompletionCommand(ctx *cli.Context, plugins []*plugin.Plugin) *cobra.Command {
+	noReload := false
+
 	cmd := &cobra.Command{
 		Use:       "completion",
 		ValidArgs: []string{"bash", "zsh"},
@@ -53,20 +55,25 @@ func NewCompletionCommand(ctx *cli.Context, plugins []*plugin.Plugin) *cobra.Com
 				return fmt.Errorf("invalid shell '%s' given", shell)
 			}
 
-			// This is a bit of a hack that will insert the equivalent of
-			// `source <(dcos completion <shell>)`
-			// into the resulting completion script.
-			// This makes the completion script automatically reload the available completions which is
-			// useful for us because what plugin commands are available can change often and this means
-			// users won't need to reload their shells to see the changes.
-			replaceWithShell := fmt.Sprintf(dcosReloadReplacementResult, shell)
-			completionStr := strings.Replace(buffer.String(), dcosReloadReplacementTarget, replaceWithShell, 1)
+			completionStr := buffer.String()
+			if !noReload {
+				// This is a bit of a hack that will insert the equivalent of
+				// `source <(dcos completion <shell>)`
+				// into the resulting completion script.
+				// This makes the completion script automatically reload the available completions which is
+				// useful for us because what plugin commands are available can change often and this means
+				// users won't need to reload their shells to see the changes.
+				replaceWithShell := fmt.Sprintf(dcosReloadReplacementResult, shell)
+				completionStr = strings.Replace(completionStr, dcosReloadReplacementTarget, replaceWithShell, 1)
+			}
 
 			fmt.Fprint(ctx.Out(), completionStr)
 
 			return nil
 		},
 	}
+
+	cmd.Flags().BoolVar(&noReload, "no-reload", false, "Disables inclusion of auto reload")
 
 	return cmd
 }
