@@ -53,10 +53,16 @@ func NewCompletionCommand(ctx *cli.Context, plugins []*plugin.Plugin) *cobra.Com
 				return fmt.Errorf("invalid shell '%s' given", shell)
 			}
 
+			// This is a bit of a hack that will insert the equivalent of
+			// `source <(dcos completion <shell>)`
+			// into the resulting completion script.
+			// This makes the completion script automatically reload the available completions which is
+			// useful for us because what plugin commands are available can change often and this means
+			// users won't need to reload their shells to see the changes.
 			replaceWithShell := fmt.Sprintf(dcosReloadReplacementResult, shell)
-			outStr := strings.Replace(buffer.String(), dcosReloadReplacementTarget, replaceWithShell, 1)
+			completionStr := strings.Replace(buffer.String(), dcosReloadReplacementTarget, replaceWithShell, 1)
 
-			fmt.Fprint(ctx.Out(), outStr)
+			fmt.Fprint(ctx.Out(), completionStr)
 
 			return nil
 		},
