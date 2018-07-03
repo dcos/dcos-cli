@@ -1,4 +1,4 @@
-package cmd
+package completion
 
 import (
 	"bytes"
@@ -21,7 +21,8 @@ const (
     source /dev/stdin <<<"$(dcos completion %s)"`
 )
 
-func newCompletionCommand(ctx *cli.Context, plugins []*plugin.Plugin) *cobra.Command {
+// NewCompletionCommand creates a command that will generate a shell completion script.
+func NewCompletionCommand(ctx *cli.Context, plugins []*plugin.Plugin) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:       "completion",
 		ValidArgs: []string{"bash", "zsh"},

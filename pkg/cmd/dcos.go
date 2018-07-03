@@ -7,6 +7,7 @@ import (
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/cmd/auth"
 	"github.com/dcos/dcos-cli/pkg/cmd/cluster"
+	"github.com/dcos/dcos-cli/pkg/cmd/completion"
 	"github.com/dcos/dcos-cli/pkg/cmd/config"
 	"github.com/dcos/dcos-cli/pkg/plugin"
 	"github.com/sirupsen/logrus"
@@ -54,7 +55,7 @@ func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
 			}
 		}
 
-		cmd.AddCommand(newCompletionCommand(ctx, plugins))
+		cmd.AddCommand(completion.NewCompletionCommand(ctx, plugins))
 	}
 
 	return cmd
