@@ -7,6 +7,7 @@ import (
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/cmd/auth"
 	"github.com/dcos/dcos-cli/pkg/cmd/cluster"
+	"github.com/dcos/dcos-cli/pkg/cmd/completion"
 	"github.com/dcos/dcos-cli/pkg/cmd/config"
 	"github.com/dcos/dcos-cli/pkg/plugin"
 	"github.com/sirupsen/logrus"
@@ -42,14 +43,22 @@ func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
 	if cluster, err := ctx.Cluster(); err == nil {
 		pluginManager := ctx.PluginManager(cluster.SubcommandsDir())
 
+		pairs := []*completion.CommandPair{}
 		for _, p := range pluginManager.Plugins() {
 			for _, e := range p.Executables {
-				for _, c := range e.Commands {
+				for _, pCmd := range e.Commands {
 					executable := filepath.Join(p.BinDir, e.Filename)
-					cmd.AddCommand(pluginCommand(executable, pluginManager, c))
+					cCmd := pluginCommand(executable, pluginManager, pCmd)
+					pairs = append(pairs, &completion.CommandPair{
+						Plugin: pCmd,
+						Cobra:  cCmd,
+					})
+					cmd.AddCommand(cCmd)
 				}
 			}
 		}
+
+		cmd.AddCommand(completion.NewCompletionCommand(ctx, pairs))
 	}
 
 	return cmd
