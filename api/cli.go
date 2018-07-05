@@ -8,6 +8,7 @@ import (
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/dcos/dcos-cli/pkg/login"
 	"github.com/dcos/dcos-cli/pkg/open"
+	"github.com/dcos/dcos-cli/pkg/plugin"
 	"github.com/dcos/dcos-cli/pkg/prompt"
 	"github.com/dcos/dcos-cli/pkg/setup"
 	"github.com/sirupsen/logrus"
@@ -57,6 +58,9 @@ type Context interface {
 
 	// Opener returns an open.Opener.
 	Opener() open.Opener
+
+	// PluginManager returns a plugin manager.
+	PluginManager(dir string) *plugin.Manager
 
 	// Login initiates a login based on a set of flags and HTTP client. On success it returns an ACS token.
 	Login(flags *login.Flags, httpClient *httpclient.Client) (string, error)

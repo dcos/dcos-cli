@@ -4,7 +4,7 @@ package cmd
 import (
 	"path/filepath"
 
-	"github.com/dcos/dcos-cli/pkg/cli"
+	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/cmd/auth"
 	"github.com/dcos/dcos-cli/pkg/cmd/cluster"
 	"github.com/dcos/dcos-cli/pkg/cmd/config"
@@ -14,7 +14,7 @@ import (
 )
 
 // NewDCOSCommand creates the `dcos` command with its `auth`, `config`, and `cluster` subcommands.
-func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
+func NewDCOSCommand(ctx api.Context) *cobra.Command {
 	var verbose int
 	cmd := &cobra.Command{
 		Use: "dcos",
