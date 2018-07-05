@@ -13,6 +13,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const annotationUsageOptions string = "usage_options"
+
 // NewDCOSCommand creates the `dcos` command with its `auth`, `config`, and `cluster` subcommands.
 func NewDCOSCommand(ctx api.Context) *cobra.Command {
 	var verbose int
@@ -50,6 +52,34 @@ func NewDCOSCommand(ctx api.Context) *cobra.Command {
 				}
 			}
 		}
+	}
+
+	// This follows the CLI design guidelines for help formatting.
+	cmd.SetUsageTemplate(`Usage:{{if .Runnable}}
+  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
+  {{.CommandPath}} [command]{{end}}{{if .HasExample}}
+
+Examples:
+{{.Example}}{{end}}{{if .HasAvailableSubCommands}}
+
+Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+  {{.Name}}
+      {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+
+Options:{{if ne (index .Annotations "` + annotationUsageOptions + `") ""}}{{index .Annotations "` + annotationUsageOptions + `"}}{{else}}
+{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
+
+Use "{{.CommandPath}} [command] --help" for more information about a command.{{end}}
+`)
+
+	cmd.Annotations = map[string]string{
+		annotationUsageOptions: `
+  --version
+      Print version information
+  -v, -vv
+      Output verbosity (verbose or very verbose)
+  -h, --help
+      Show usage help`,
 	}
 
 	return cmd
