@@ -85,7 +85,7 @@ func (ctx *Context) SetClusters(clusters []*config.Cluster) {
 	ctx.clusters = clusters
 }
 
-// Clusters khgfs.
+// Clusters returns the configured clusters.
 func (ctx *Context) Clusters() []*config.Cluster {
 	if ctx.clusters != nil {
 		return ctx.clusters
