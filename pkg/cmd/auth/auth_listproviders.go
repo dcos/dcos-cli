@@ -2,7 +2,6 @@ package auth
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/cli"
@@ -36,19 +35,16 @@ func newCmdAuthListProviders(ctx api.Context) *cobra.Command {
 			}
 
 			if jsonOutput {
-				// Re-marshal it into json with indents added in for pretty printing.
-				out, err := json.MarshalIndent(providers, "", "\t")
-				if err != nil {
-					return err
-				}
-				fmt.Fprintln(ctx.Out(), string(out))
-			} else {
-				table := cli.NewTable(ctx.Out(), []string{"PROVIDER ID", "LOGIN METHOD"})
-				for _, provider := range providers.Slice() {
-					table.Append([]string{provider.ID, provider.String()})
-				}
-				table.Render()
+				enc := json.NewEncoder(ctx.Out())
+				enc.SetIndent("", "    ")
+				return enc.Encode(providers)
 			}
+
+			table := cli.NewTable(ctx.Out(), []string{"PROVIDER ID", "LOGIN METHOD"})
+			for _, provider := range providers.Slice() {
+				table.Append([]string{provider.ID, provider.String()})
+			}
+			table.Render()
 
 			return nil
 		},

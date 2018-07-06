@@ -1,28 +1,38 @@
-package clusterlinker
+package linker
 
 import (
 	"bytes"
 	"encoding/json"
 	"errors"
 
+	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/dcos"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/sirupsen/logrus"
 )
 
-// Client is able to detect available login providers and login to DC/OS.
-type Client struct {
+// Linker manages DC/OS cluster links.
+type Linker struct {
 	http   *httpclient.Client
 	logger *logrus.Logger
 }
 
-// Link is the request sent to the /v1/links endpoint to link the cluster
+// Link is the request sent to the /cluster/v1/links endpoint to link the cluster
 // handled by the client to a cluster using its id, name, url, and login provider.
 type Link struct {
 	ID            string `json:"id"`
 	Name          string `json:"name"`
 	URL           string `json:"url"`
 	LoginProvider `json:"login_provider"`
+}
+
+// ToCluster converts a link to a config.Cluster.
+func (l *Link) ToCluster() *config.Cluster {
+	cluster := config.NewCluster(nil)
+	cluster.SetID(l.ID)
+	cluster.SetName(l.Name)
+	cluster.SetURL(l.URL)
+	return cluster
 }
 
 // LoginProvider representing a part of the message when sending a link request,
@@ -32,23 +42,24 @@ type LoginProvider struct {
 	Type string `json:"type"`
 }
 
-type links struct {
+// Links is the structure returned by the /cluster/v1/links endpoint.
+type Links struct {
 	Links []*Link `json:"links"`
 }
 
-// NewClient creates a new cluster linker client from a standard HTTP client.
-func NewClient(baseClient *httpclient.Client, logger *logrus.Logger) *Client {
-	return &Client{
+// New creates a new cluster linker client from a standard HTTP client.
+func New(baseClient *httpclient.Client, logger *logrus.Logger) *Linker {
+	return &Linker{
 		http:   baseClient,
 		logger: logger,
 	}
 }
 
-// Link sends a link request to /v1/links using a given client.
-func (c *Client) Link(linkRequest *Link) error {
-	message, err := json.Marshal(linkRequest)
+// Link sends a link request to /cluster/v1/links using a given client.
+func (l *Linker) Link(link *Link) error {
+	message, err := json.Marshal(link)
 
-	resp, err := c.http.Post("/cluster/v1/links", "application/json", bytes.NewReader(message))
+	resp, err := l.http.Post("/cluster/v1/links", "application/json", bytes.NewReader(message))
 	if err != nil {
 		return err
 	}
@@ -71,9 +82,9 @@ func (c *Client) Link(linkRequest *Link) error {
 	return nil
 }
 
-// Unlink sends an unlink request to /v1/links using a given client.
-func (c *Client) Unlink(linkedClusterID string) error {
-	resp, err := c.http.Delete("/cluster/v1/links/" + linkedClusterID)
+// Unlink sends an unlink request to /cluster/v1/links.
+func (l *Linker) Unlink(id string) error {
+	resp, err := l.http.Delete("/cluster/v1/links/" + id)
 	if err != nil {
 		return err
 	}
@@ -92,8 +103,8 @@ func (c *Client) Unlink(linkedClusterID string) error {
 }
 
 // Links returns the links of a cluster.
-func (c *Client) Links() ([]*Link, error) {
-	resp, err := c.http.Get("/cluster/v1/links")
+func (l *Linker) Links() ([]*Link, error) {
+	resp, err := l.http.Get("/cluster/v1/links")
 	if err != nil {
 		return nil, errors.New("couldn't get linked clusters")
 	}
@@ -113,7 +124,7 @@ func (c *Client) Links() ([]*Link, error) {
 		return nil, apiError
 	}
 
-	links := &links{}
+	links := &Links{}
 	err = json.NewDecoder(resp.Body).Decode(&links)
 	if err != nil {
 		return nil, err
