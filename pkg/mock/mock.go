@@ -10,6 +10,7 @@ import (
 	"os/user"
 
 	"github.com/dcos/dcos-cli/pkg/cli"
+	"github.com/dcos/dcos-cli/pkg/cluster/linker"
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/login"
 	"github.com/spf13/afero"
@@ -20,6 +21,7 @@ type Cluster struct {
 	Version        string
 	LoginProviders login.Providers
 	AuthChallenge  string
+	Links          []*linker.Link
 }
 
 // NewTestServer creates a new HTTP test server based on a Cluster.
@@ -43,6 +45,12 @@ func NewTestServer(cluster Cluster) *httptest.Server {
 		mux.HandleFunc("/pkgpanda/active.buildinfo.full.json", func(w http.ResponseWriter, req *http.Request) {
 			w.Header().Add("WWW-Authenticate", cluster.AuthChallenge)
 			w.WriteHeader(401)
+		})
+	}
+
+	if cluster.Links != nil {
+		mux.HandleFunc("/cluster/v1/links", func(w http.ResponseWriter, req *http.Request) {
+			json.NewEncoder(w).Encode(&linker.Links{Links: cluster.Links})
 		})
 	}
 	return httptest.NewServer(mux)

@@ -2,7 +2,7 @@ package cluster
 
 import (
 	"github.com/dcos/dcos-cli/api"
-	"github.com/dcos/dcos-cli/pkg/clusterlinker"
+	"github.com/dcos/dcos-cli/pkg/cluster/linker"
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/spf13/cobra"
 )
@@ -25,7 +25,7 @@ func newCmdClusterUnlink(ctx api.Context) *cobra.Command {
 			}
 			linkedCluster := config.NewCluster(linkedClusterConfig)
 
-			attachedClient := clusterlinker.NewClient(ctx.HTTPClient(attachedCluster), ctx.Logger())
+			attachedClient := linker.New(ctx.HTTPClient(attachedCluster), ctx.Logger())
 			return attachedClient.Unlink(linkedCluster.ID())
 		},
 	}
