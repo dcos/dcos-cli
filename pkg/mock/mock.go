@@ -67,6 +67,7 @@ func NewEnvironment() *cli.Environment {
 // Context is an api.Context which can be mocked.
 type Context struct {
 	*cli.Context
+	cluster  *config.Cluster
 	clusters []*config.Cluster
 }
 
@@ -78,6 +79,19 @@ func NewContext(environment *cli.Environment) *Context {
 	return &Context{
 		Context: cli.NewContext(environment),
 	}
+}
+
+// SetCluster sets the current CLI cluster.
+func (ctx *Context) SetCluster(cluster *config.Cluster) {
+	ctx.cluster = cluster
+}
+
+// Cluster returns the current cluster.
+func (ctx *Context) Cluster() (*config.Cluster, error) {
+	if ctx.cluster != nil {
+		return ctx.cluster, nil
+	}
+	return ctx.Context.Cluster()
 }
 
 // SetClusters sets the CLI clusters.
