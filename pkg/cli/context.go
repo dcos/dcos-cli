@@ -10,6 +10,7 @@ import (
 
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
+	"github.com/dcos/dcos-cli/pkg/log"
 	"github.com/dcos/dcos-cli/pkg/login"
 	"github.com/dcos/dcos-cli/pkg/open"
 	"github.com/dcos/dcos-cli/pkg/plugin"
@@ -70,7 +71,7 @@ func (ctx *Context) Logger() *logrus.Logger {
 	if ctx.logger == nil {
 		ctx.logger = &logrus.Logger{
 			Out:       ctx.env.ErrOut,
-			Formatter: new(logrus.TextFormatter),
+			Formatter: &log.Formatter{},
 			Hooks:     make(logrus.LevelHooks),
 		}
 	}
