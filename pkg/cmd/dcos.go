@@ -21,6 +21,7 @@ func NewDCOSCommand(ctx api.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "dcos",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			cmd.SilenceUsage = true
 			if verbose == 1 {
 				// -v sets the logger level to info.
 				ctx.Logger().SetLevel(logrus.InfoLevel)
