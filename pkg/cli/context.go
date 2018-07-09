@@ -173,8 +173,8 @@ func (ctx *Context) Login(flags *login.Flags, httpClient *httpclient.Client) (st
 
 // Setup configures a given cluster based on its URL and setup flags.
 func (ctx *Context) Setup(flags *setup.Flags, clusterURL string) (*config.Cluster, error) {
-	// This supports passing a cluster URL without scheme, it then defaults to HTTPS.
 	if !strings.HasPrefix(clusterURL, "https://") && !strings.HasPrefix(clusterURL, "http://") {
+		ctx.Logger().Info("Missing scheme in cluster URL, assuming HTTPS.")
 		clusterURL = "https://" + clusterURL
 	}
 
