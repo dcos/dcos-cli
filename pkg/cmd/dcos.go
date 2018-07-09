@@ -4,7 +4,7 @@ package cmd
 import (
 	"path/filepath"
 
-	"github.com/dcos/dcos-cli/pkg/cli"
+	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/cmd/auth"
 	"github.com/dcos/dcos-cli/pkg/cmd/cluster"
 	"github.com/dcos/dcos-cli/pkg/cmd/config"
@@ -13,8 +13,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const annotationUsageOptions string = "usage_options"
+
 // NewDCOSCommand creates the `dcos` command with its `auth`, `config`, and `cluster` subcommands.
-func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
+func NewDCOSCommand(ctx api.Context) *cobra.Command {
 	var verbose int
 	cmd := &cobra.Command{
 		Use: "dcos",
@@ -43,26 +45,48 @@ func NewDCOSCommand(ctx *cli.Context) *cobra.Command {
 		pluginManager := ctx.PluginManager(cluster.SubcommandsDir())
 
 		for _, p := range pluginManager.Plugins() {
-			var commands []*cobra.Command
-
 			for _, e := range p.Executables {
 				for _, c := range e.Commands {
 					executable := filepath.Join(p.BinDir, e.Filename)
-					cmd := pluginCommandToCobra(executable, pluginManager, c)
-					commands = append(commands, cmd)
+					cmd.AddCommand(pluginCommand(executable, pluginManager, c))
 				}
 			}
-
-			cmd.AddCommand(commands...)
 		}
+	}
+
+	// This follows the CLI design guidelines for help formatting.
+	cmd.SetUsageTemplate(`Usage:{{if .Runnable}}
+  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
+  {{.CommandPath}} [command]{{end}}{{if .HasExample}}
+
+Examples:
+{{.Example}}{{end}}{{if .HasAvailableSubCommands}}
+
+Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+  {{.Name}}
+      {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+
+Options:{{if ne (index .Annotations "` + annotationUsageOptions + `") ""}}{{index .Annotations "` + annotationUsageOptions + `"}}{{else}}
+{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
+
+Use "{{.CommandPath}} [command] --help" for more information about a command.{{end}}
+`)
+
+	cmd.Annotations = map[string]string{
+		annotationUsageOptions: `
+  --version
+      Print version information
+  -v, -vv
+      Output verbosity (verbose or very verbose)
+  -h, --help
+      Show usage help`,
 	}
 
 	return cmd
 }
 
-func pluginCommandToCobra(executable string, pluginManager *plugin.Manager, c *plugin.Command) *cobra.Command {
-
-	cmd := &cobra.Command{
+func pluginCommand(executable string, pluginManager *plugin.Manager, c *plugin.Command) *cobra.Command {
+	return &cobra.Command{
 		Use:                c.Name,
 		Short:              c.Description,
 		DisableFlagParsing: true,
@@ -77,5 +101,4 @@ func pluginCommandToCobra(executable string, pluginManager *plugin.Manager, c *p
 			return pluginManager.Invoke(executable, argsWithRoot)
 		},
 	}
-	return cmd
 }

@@ -45,7 +45,10 @@
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
-  packages = ["."]
+  packages = [
+    ".",
+    "hooks/test"
+  ]
   revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
   version = "v1.0.5"
 
@@ -122,6 +125,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "acd59ad2d4d66f77fa10b9178a995f59e689d48c1665c97286e74c97c9f4ef33"
+  inputs-digest = "029ff8a6bf9b3b05d9f8c262b502133b2c42324d83bed9e5fbcb99b0c2023829"
   solver-name = "gps-cdcl"
   solver-version = 1

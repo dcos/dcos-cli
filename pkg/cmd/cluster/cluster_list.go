@@ -2,12 +2,14 @@ package cluster
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
 
 	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/cli"
+	"github.com/dcos/dcos-cli/pkg/clusterlinker"
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/dcos"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
@@ -28,12 +30,41 @@ func newCmdClusterList(ctx api.Context) *cobra.Command {
 				currentClusterID = currentCluster.ID()
 			}
 
-			var clusters []*config.Cluster
-			if !onlyAttached {
-				clusters = ctx.Clusters()
-			} else if currentCluster != nil {
-				clusters = append(clusters, currentCluster)
+			if onlyAttached && currentCluster == nil {
+				return errors.New("no cluster is attached. Please run `dcos cluster attach <cluster-name>`")
 			}
+
+			clusters := make(chan *config.Cluster)
+			go func() {
+				if onlyAttached {
+					clusters <- currentCluster
+				} else {
+					clusterIDs := make(map[string]bool)
+					for _, cluster := range ctx.Clusters() {
+						clusters <- cluster
+						clusterIDs[cluster.ID()] = true
+					}
+
+					if currentCluster != nil {
+						attachedClient := clusterlinker.NewClient(ctx.HTTPClient(currentCluster), ctx.Logger())
+						linkedClusters, err := attachedClient.Links()
+						if err != nil {
+							ctx.Logger().Info(err)
+						} else {
+							for _, linkedCluster := range linkedClusters {
+								if _, found := clusterIDs[linkedCluster.ID]; !found {
+									cluster := config.NewCluster(nil)
+									cluster.SetID(linkedCluster.ID)
+									cluster.SetName(linkedCluster.Name)
+									cluster.SetURL(linkedCluster.URL)
+									clusters <- cluster
+								}
+							}
+						}
+					}
+				}
+				close(clusters)
+			}()
 
 			// ClusterInfo contains information about a cluster, it represents an item in the list.
 			type ClusterInfo struct {
@@ -49,7 +80,7 @@ func newCmdClusterList(ctx api.Context) *cobra.Command {
 			var mu sync.Mutex
 
 			var wg sync.WaitGroup
-			for _, cluster := range clusters {
+			for cluster := range clusters {
 				wg.Add(1)
 				go func(cluster *config.Cluster) {
 					defer wg.Done()
@@ -62,11 +93,15 @@ func newCmdClusterList(ctx api.Context) *cobra.Command {
 						Attached: (cluster.ID() == currentClusterID),
 					}
 
-					httpClient := ctx.HTTPClient(cluster, httpclient.Timeout(5*time.Second))
+					httpClient := ctx.HTTPClient(cluster, httpclient.Timeout(3*time.Second))
 					version, err := dcos.NewClient(httpClient).Version()
 					if err == nil {
 						item.Status = "AVAILABLE"
 						item.Version = version.Version
+					}
+
+					if cluster.Config().Path() == "" {
+						item.Status = "UNCONFIGURED"
 					}
 					mu.Lock()
 					defer mu.Unlock()
