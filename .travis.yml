@@ -1,0 +1,16 @@
+os:
+ - linux
+ - osx
+
+language: go
+
+go: "1.10.x"
+
+go_import_path: github.com/dcos/dcos-cli
+
+env:
+ - NO_DOCKER=1
+
+before_script: go get -u github.com/golang/dep/cmd/dep github.com/golang/lint/golint
+
+script: make test 
