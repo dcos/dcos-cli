@@ -10,8 +10,9 @@ import (
 func newCmdAuthLogin(ctx api.Context) *cobra.Command {
 	flags := login.NewFlags(ctx.Fs(), ctx.EnvLookup)
 	cmd := &cobra.Command{
-		Use:  "login",
-		Args: cobra.NoArgs,
+		Use:   "login",
+		Short: "Log in to the current cluster",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cluster, err := ctx.Cluster()
 			if err != nil {

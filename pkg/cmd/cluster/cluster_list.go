@@ -15,8 +15,9 @@ func newCmdClusterList(ctx api.Context) *cobra.Command {
 	var attachedOnly bool
 	var jsonOutput bool
 	cmd := &cobra.Command{
-		Use:  "list",
-		Args: cobra.NoArgs,
+		Use:   "list",
+		Short: "List the clusters configured and the ones linked to the current cluster",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			items := lister.New(ctx.ConfigManager(), ctx.Logger()).List(attachedOnly)
 			if attachedOnly && len(items) == 0 {
