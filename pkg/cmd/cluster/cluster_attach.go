@@ -13,8 +13,9 @@ import (
 // newCmdClusterAttach ataches the CLI to a cluster.
 func newCmdClusterAttach(ctx api.Context) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "attach",
-		Args: cobra.ExactArgs(1),
+		Use:   "attach",
+		Short: "Attach the CLI to a cluster",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			manager := ctx.ConfigManager()
 

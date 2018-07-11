@@ -9,8 +9,9 @@ import (
 // This unset the key `core.dcos_acs_token` in the current config.
 func newCmdAuthLogout(ctx api.Context) *cobra.Command {
 	return &cobra.Command{
-		Use:  "logout",
-		Args: cobra.NoArgs,
+		Use:   "logout",
+		Short: "Log out the CLI from the current cluster",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			conf, err := ctx.ConfigManager().Current()
 			if err != nil {
@@ -22,4 +23,3 @@ func newCmdAuthLogout(ctx api.Context) *cobra.Command {
 		},
 	}
 }
-
