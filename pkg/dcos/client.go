@@ -21,6 +21,7 @@ func NewClient(baseClient *httpclient.Client) *Client {
 // Version contains information about the DC/OS version.
 type Version struct {
 	Version         string `json:"version"`
+	DCOSVariant     string `json:"dcos-variant"`
 	DCOSImageCommit string `json:"dcos-image-commit"`
 	BootstrapID     string `json:"bootstrap-id"`
 }
