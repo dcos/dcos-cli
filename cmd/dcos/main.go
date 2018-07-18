@@ -6,6 +6,7 @@ import (
 	"os/user"
 	"time"
 
+	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/cmd"
 	"github.com/dcos/dcos-cli/pkg/dcos"
@@ -36,7 +37,7 @@ func main() {
 }
 
 // printVersion prints CLI version information.
-func printVersion(ctx *cli.Context) {
+func printVersion(ctx api.Context) {
 	fmt.Fprintln(ctx.Out(), "dcoscli.version="+version)
 
 	cluster, err := ctx.Cluster()
