@@ -38,7 +38,7 @@ func New(configManager *config.Manager, logger *logrus.Logger) *Lister {
 	}
 	if currentConfig, err := configManager.Current(); err == nil {
 		lister.currentCluster = config.NewCluster(currentConfig)
-		lister.linker = linker.New(httpClient(lister.currentCluster), nil)
+		lister.linker = linker.New(lister.httpClient(lister.currentCluster), nil)
 	}
 	return lister
 }
@@ -95,7 +95,7 @@ func (l *Lister) List(attachedOnly bool) (items []*Item) {
 				return
 			}
 
-			httpClient := httpClient(cluster)
+			httpClient := l.httpClient(cluster)
 			version, err := dcos.NewClient(httpClient).Version()
 			if err == nil {
 				item.Status = "AVAILABLE"
@@ -122,9 +122,10 @@ func (l *Lister) List(attachedOnly bool) (items []*Item) {
 	return
 }
 
-func httpClient(cluster *config.Cluster) *httpclient.Client {
+func (l *Lister) httpClient(cluster *config.Cluster) *httpclient.Client {
 	return httpclient.New(
 		cluster.URL(),
+		httpclient.Logger(l.logger),
 		httpclient.ACSToken(cluster.ACSToken()),
 		httpclient.Timeout(3*time.Second),
 		httpclient.TLS(&tls.Config{
