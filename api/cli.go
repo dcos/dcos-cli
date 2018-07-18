@@ -19,6 +19,8 @@ import (
 // It also acts as a factory/helper for various objects across the project. It has quite wide scope so
 // in the future it might be refined or interfaces might be introduced for subsets of its functionalities.
 type Context interface {
+	// Input returns the reader for CLI input.
+	Input() io.Reader
 
 	// Out returns a writer for CLI output.
 	Out() io.Writer
