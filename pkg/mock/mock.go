@@ -13,6 +13,8 @@ import (
 	"github.com/dcos/dcos-cli/pkg/cluster/linker"
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/login"
+	"github.com/sirupsen/logrus"
+	logrustest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/spf13/afero"
 )
 
@@ -75,8 +77,10 @@ func NewEnvironment() *cli.Environment {
 // Context is an api.Context which can be mocked.
 type Context struct {
 	*cli.Context
-	cluster  *config.Cluster
-	clusters []*config.Cluster
+	logger     *logrus.Logger
+	loggerHook *logrustest.Hook
+	cluster    *config.Cluster
+	clusters   []*config.Cluster
 }
 
 // NewContext returns a new mock context.
@@ -84,8 +88,11 @@ func NewContext(environment *cli.Environment) *Context {
 	if environment == nil {
 		environment = NewEnvironment()
 	}
+	logger, hook := logrustest.NewNullLogger()
 	return &Context{
-		Context: cli.NewContext(environment),
+		Context:    cli.NewContext(environment),
+		logger:     logger,
+		loggerHook: hook,
 	}
 }
 
@@ -113,4 +120,14 @@ func (ctx *Context) Clusters() []*config.Cluster {
 		return ctx.clusters
 	}
 	return ctx.Context.Clusters()
+}
+
+// Logger returns the logger.
+func (ctx *Context) Logger() *logrus.Logger {
+	return ctx.logger
+}
+
+// LoggerHook returns the logger hook.
+func (ctx *Context) LoggerHook() *logrustest.Hook {
+	return ctx.loggerHook
 }
