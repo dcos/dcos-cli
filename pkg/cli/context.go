@@ -89,9 +89,6 @@ func (ctx *Context) PluginManager(dir string) *plugin.Manager {
 		Fs:     ctx.Fs(),
 		Logger: ctx.Logger(),
 		Dir:    dir,
-		Stdout: ctx.Out(),
-		Stderr: ctx.ErrOut(),
-		Stdin:  ctx.Input(),
 	}
 
 }
