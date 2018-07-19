@@ -18,6 +18,7 @@ var version = "SNAPSHOT"
 
 func main() {
 	ctx := cli.NewContext(&cli.Environment{
+		Args:       os.Args,
 		Input:      os.Stdin,
 		Out:        os.Stdout,
 		ErrOut:     os.Stderr,

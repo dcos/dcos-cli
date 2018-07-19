@@ -11,6 +11,9 @@ import (
 // functions for environment variables or user lookup, as well as a filesystem abstraction.
 type Environment struct {
 
+	// Args are the command-line arguments, starting by the program name.
+	Args []string
+
 	// Input is the reader for CLI input.
 	Input io.Reader
 
