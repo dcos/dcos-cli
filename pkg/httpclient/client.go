@@ -3,6 +3,7 @@ package httpclient
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -24,12 +25,20 @@ type Option func(opts *Options)
 
 // Options are configuration options for an HTTP client.
 type Options struct {
-	Timeout       time.Duration
-	TLS           *tls.Config
-	Logger        *logrus.Logger
-	ACSToken      string
-	CheckRedirect func(req *http.Request, via []*http.Request) error
+	Timeout         time.Duration
+	TLS             *tls.Config
+	Logger          *logrus.Logger
+	ACSToken        string
+	CheckRedirect   func(req *http.Request, via []*http.Request) error
+	FailOnErrStatus bool
 }
+
+// ctxKey is a custom type to set values in request contexts.
+type ctxKey int
+
+// ctxKeyFailOnErrStatus is a request context key which, when sets, indicates that
+// the HTTP client should return in error when it encounters an HTTP error (4XX / 5XX).
+const ctxKeyFailOnErrStatus ctxKey = 0
 
 // TLS sets the TLS configuration for the HTTP client transport.
 func TLS(tlsConfig *tls.Config) Option {
@@ -66,6 +75,13 @@ func NoFollow() Option {
 			return http.ErrUseLastResponse
 		}
 		opts.CheckRedirect = noFollow
+	}
+}
+
+// FailOnErrStatus specifies whether or not the client should fail on HTTP error response (4XX / 5XX).
+func FailOnErrStatus(failOnErrStatus bool) Option {
+	return func(opts *Options) {
+		opts.FailOnErrStatus = failOnErrStatus
 	}
 }
 
@@ -158,6 +174,11 @@ func (c *Client) NewRequest(method, path string, body io.Reader, opts ...Option)
 		req.Header.Add("Authorization", "token="+options.ACSToken)
 	}
 
+	if options.FailOnErrStatus {
+		ctx := context.WithValue(req.Context(), ctxKeyFailOnErrStatus, struct{}{})
+		req = req.WithContext(ctx)
+	}
+
 	if options.Timeout > 0 {
 		var cancel context.CancelFunc
 		ctx, cancel := context.WithTimeout(req.Context(), options.Timeout)
@@ -197,6 +218,14 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 			}
 		} else {
 			logger.Debug(err)
+		}
+	}
+
+	if err == nil {
+		_, failOnErrStatus := req.Context().Value(ctxKeyFailOnErrStatus).(struct{})
+
+		if failOnErrStatus && resp.StatusCode >= 400 && resp.StatusCode < 600 {
+			return nil, fmt.Errorf("HTTP %d error", resp.StatusCode)
 		}
 	}
 	return resp, err
