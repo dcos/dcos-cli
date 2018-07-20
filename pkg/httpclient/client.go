@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -229,4 +230,16 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 		}
 	}
 	return resp, err
+}
+
+// BaseURL returns the HTTP client's base URL.
+func (c *Client) BaseURL() *url.URL {
+	baseURL, err := url.Parse(c.baseURL)
+	if err != nil && c.opts.Logger != nil {
+		// We don't return error-out to keep the method signature clean.
+		// If an http client contains an invalid URL it is broken anyway and
+		// it is not this method responsibility to check this.
+		c.opts.Logger.Debug(err)
+	}
+	return baseURL
 }
