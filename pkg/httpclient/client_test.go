@@ -161,3 +161,19 @@ func TestLogger(t *testing.T) {
 	client := New("", Logger(logger))
 	require.Equal(t, client.opts.Logger, logger)
 }
+
+func TestFailOnError(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(404)
+	}))
+	defer ts.Close()
+
+	client := New(ts.URL)
+
+	resp, err := client.Get("/")
+	require.NoError(t, err)
+	require.Equal(t, resp.StatusCode, 404)
+
+	_, err = client.Get("/", FailOnErrStatus(true))
+	require.Error(t, err)
+}
