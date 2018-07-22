@@ -200,7 +200,7 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 	if logger != nil && logger.Level >= logrus.DebugLevel {
 		reqDump, err := httputil.DumpRequestOut(req, true)
 		if err != nil {
-			logger.Debug("Couldn't dump request: %s", err)
+			logger.Debugf("Couldn't dump request: %s", err)
 		} else {
 			logger.Debug(string(reqDump))
 		}
@@ -212,7 +212,7 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 		if err == nil {
 			respDump, err := httputil.DumpResponse(resp, true)
 			if err != nil {
-				logger.Debug("Couldn't dump response: %s", err)
+				logger.Debugf("Couldn't dump response: %s", err)
 			} else {
 				logger.Debug(string(respDump))
 			}
