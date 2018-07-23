@@ -33,6 +33,11 @@ func NewContext(env *Environment) *Context {
 	return &Context{env: env}
 }
 
+// Args returns the command-line arguments, starting with the program name.
+func (ctx *Context) Args() []string {
+	return ctx.env.Args
+}
+
 // Input returns the reader for CLI input.
 func (ctx *Context) Input() io.Reader {
 	return ctx.env.Input
@@ -84,9 +89,6 @@ func (ctx *Context) PluginManager(dir string) *plugin.Manager {
 		Fs:     ctx.Fs(),
 		Logger: ctx.Logger(),
 		Dir:    dir,
-		Stdout: ctx.Out(),
-		Stderr: ctx.ErrOut(),
-		Stdin:  ctx.Input(),
 	}
 
 }

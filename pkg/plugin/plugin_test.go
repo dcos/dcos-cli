@@ -6,83 +6,35 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/dcos/dcos-cli/pkg/plugin"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/spf13/afero"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/dcos/dcos-cli/pkg/plugin"
 )
 
 func TestLoadNoPlugin(t *testing.T) {
-	subcommandsDir := targetSubcommandDir(t, "no_plugins")
+	subcommandsDir := pluginDir(t, "no_plugins")
+	logger, _ := test.NewNullLogger()
 
 	m := plugin.Manager{
-		Fs:  afero.NewMemMapFs(),
-		Dir: subcommandsDir,
+		Fs:     afero.NewMemMapFs(),
+		Dir:    subcommandsDir,
+		Logger: logger,
 	}
 
 	plugins := m.Plugins()
 	require.Empty(t, plugins)
 }
 
-func TestLoadNewPlugin(t *testing.T) {
-	subcommandsDir := targetSubcommandDir(t, "only_new_plugin")
-	logger, _ := test.NewNullLogger()
+func TestLoadPluginWithBinaryOnly(t *testing.T) {
+	dir := pluginDir(t, "binary_only")
 
-	m := plugin.Manager{
-		Fs:     roFs(),
-		Dir:    subcommandsDir,
-		Logger: logger,
+	if runtime.GOOS == "windows" {
+		dir = filepath.Join(dir, "windows")
+	} else {
+		dir = filepath.Join(dir, "unix")
 	}
 
-	plugins := m.Plugins()
-	assert.Equal(t, 1, len(plugins))
-	plugin := plugins[0]
-
-	assert.Equal(t, "new-test", plugin.Name)
-}
-
-func TestLoadOldPlugin(t *testing.T) {
-	subcommandsDir := targetSubcommandDir(t, "only_old_plugin")
-
-	logger, _ := test.NewNullLogger()
-
-	m := plugin.Manager{
-		Fs:     roFs(),
-		Dir:    subcommandsDir,
-		Logger: logger,
-	}
-
-	plugins := m.Plugins()
-	assert.Equal(t, 1, len(plugins))
-
-	plugin := plugins[0]
-
-	assert.Equal(t, "old-test", plugin.Name, "plugin name does not match name found in package.json")
-
-	pluginExists, err := afero.Exists(m.Fs, filepath.Join(subcommandsDir, "old", "env", "plugin.yaml"))
-	require.NoError(t, err)
-
-	assert.True(t, pluginExists, "plugin.yaml was not created")
-}
-
-func TestIgnoreMalformedYaml(t *testing.T) {
-	dir := targetSubcommandDir(t, "malformed_yaml")
-	logger, _ := test.NewNullLogger()
-
-	m := plugin.Manager{
-		Fs:     roFs(),
-		Dir:    dir,
-		Logger: logger,
-	}
-	plugins := m.Plugins()
-
-	assert.Empty(t, plugins)
-}
-
-func TestLoadingMultiple(t *testing.T) {
-	dir := targetSubcommandDir(t, "correct_and_malformed")
 	logger, _ := test.NewNullLogger()
 
 	m := plugin.Manager{
@@ -92,21 +44,76 @@ func TestLoadingMultiple(t *testing.T) {
 	}
 
 	plugins := m.Plugins()
-	// 3 directories, one new plugin, one old, and one malformed
-	// malformed should be ignored, leaving 2 loaded plugins
-	assert.Equal(t, 2, len(plugins))
+	require.Equal(t, 1, len(plugins))
+	plugin := plugins[0]
+
+	require.Equal(t, "dcos-test-cli", plugin.Name)
+
+	require.Equal(t, 1, len(plugin.Commands))
+	require.Equal(t, "test", plugin.Commands[0].Name)
+	require.Equal(
+		t,
+		filepath.Join(dir, "dcos-test-cli", "env", "bin", "dcos-test"),
+		plugin.Commands[0].Path,
+	)
 }
 
-func targetSubcommandDir(t *testing.T, name string) string {
+func TestLoadPluginWithMalformedToml(t *testing.T) {
+	dir := pluginDir(t, "malformed_toml")
+	logger, _ := test.NewNullLogger()
+
+	m := plugin.Manager{
+		Fs:     roFs(),
+		Dir:    dir,
+		Logger: logger,
+	}
+	plugins := m.Plugins()
+
+	require.Equal(t, 0, len(plugins))
+}
+
+func TestLoadPluginWithMultipleCommands(t *testing.T) {
+	dir := pluginDir(t, "multiple_commands")
+	logger, _ := test.NewNullLogger()
+
+	m := plugin.Manager{
+		Fs:     roFs(),
+		Dir:    dir,
+		Logger: logger,
+	}
+
+	plugins := m.Plugins()
+
+	require.Equal(t, 1, len(plugins))
+
+	require.Equal(t, 2, len(plugins[0].Commands))
+	for _, cmd := range plugins[0].Commands {
+		switch cmd.Name {
+		case "test":
+			require.Equal(
+				t,
+				filepath.Join(dir, "toml", "env", "bin", "dcos-test"),
+				cmd.Path,
+			)
+		case "no-test":
+			require.Equal(t, "no-test", plugins[0].Commands[1].Name)
+			require.Equal(
+				t,
+				filepath.Join(dir, "toml", "env", "bin", "dcos-no-test"),
+				cmd.Path,
+			)
+		default:
+			t.Errorf("unexpected command '%s'", cmd.Name)
+			t.FailNow()
+		}
+	}
+}
+
+func pluginDir(t *testing.T, name string) string {
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 
-	var testdataDir string
-	if runtime.GOOS == "windows" {
-		testdataDir = filepath.Join(wd, "testdata", "windows")
-	} else {
-		testdataDir = filepath.Join(wd, "testdata", "unix")
-	}
+	testdataDir := filepath.Join(wd, "testdata")
 	return filepath.Join(testdataDir, name)
 }
 

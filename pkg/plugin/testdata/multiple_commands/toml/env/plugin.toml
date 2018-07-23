@@ -1,0 +1,12 @@
+schemaVersion = "v1"
+name = "toml"
+
+[[commands]]
+name = "test"
+path = "bin/dcos-test"
+description = "This is a test"
+
+[[commands]]
+name = "no-test"
+path = "bin/dcos-no-test"
+description = "This is not a test"
