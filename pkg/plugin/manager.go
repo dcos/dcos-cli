@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"fmt"
 	"os/exec"
 	"path/filepath"
 	"reflect"
@@ -18,6 +19,19 @@ type Manager struct {
 	Fs     afero.Fs
 	Logger *logrus.Logger
 	Dir    string
+}
+
+// Remove removes a plugin from the filesystem.
+func (m *Manager) Remove(name string) error {
+	pluginDir := filepath.Join(m.Dir, name)
+	pluginDirExists, err := afero.DirExists(m.Fs, pluginDir)
+	if err != nil {
+		return err
+	}
+	if !pluginDirExists {
+		return fmt.Errorf("'%s' is not a plugin directory", pluginDir)
+	}
+	return m.Fs.RemoveAll(pluginDir)
 }
 
 // Plugins returns the plugins associated with the current cluster.

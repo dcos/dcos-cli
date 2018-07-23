@@ -8,6 +8,7 @@ import (
 	"github.com/dcos/dcos-cli/pkg/cmd/auth"
 	"github.com/dcos/dcos-cli/pkg/cmd/cluster"
 	"github.com/dcos/dcos-cli/pkg/cmd/config"
+	plugincmd "github.com/dcos/dcos-cli/pkg/cmd/plugin"
 	"github.com/dcos/dcos-cli/pkg/plugin"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -39,6 +40,7 @@ func NewDCOSCommand(ctx api.Context) *cobra.Command {
 		auth.NewCommand(ctx),
 		config.NewCommand(ctx),
 		cluster.NewCommand(ctx),
+		plugincmd.NewCommand(ctx),
 	)
 
 	// If a cluster is attached, we get its plugins.
