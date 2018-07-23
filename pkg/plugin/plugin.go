@@ -1,14 +1,16 @@
 package plugin
 
-// Plugin defines an external plugin and its associated data.
+// Plugin is the structure representation of a `plugin.toml file.
+// It also contains JSON tags for the `dcos plugin list --json` command.
 type Plugin struct {
-	Name     string     `toml:"name"`
-	Commands []*Command `toml:"commands"`
+	Name     string     `toml:"name" json:"name"`
+	Commands []*Command `toml:"commands" json:"commands"`
 }
 
-// Command is a Command living within a plugin binary.
+// Command represents each item defined in the `commands` key of the `plugin.toml` file.
+// It also contains JSON tags for the `dcos plugin list --json` command.
 type Command struct {
-	Name        string `toml:"name"`
-	Path        string `toml:"path"`
-	Description string `toml:"description"`
+	Name        string `toml:"name" json:"name"`
+	Path        string `toml:"path" json:"path"`
+	Description string `toml:"description" json:"description"`
 }

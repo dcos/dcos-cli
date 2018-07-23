@@ -13,6 +13,7 @@ func NewCommand(ctx api.Context) *cobra.Command {
 	}
 	cmd.AddCommand(
 		newCmdPluginRemove(ctx),
+		newCmdPluginList(ctx),
 	)
 	return cmd
 }
