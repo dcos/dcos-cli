@@ -412,6 +412,7 @@ class MarathonSubcommand(object):
 
         # Check that the application doesn't exist
         app_id = util.normalize_marathon_id_path(application_resource['id'])
+        self._check_service_id_length(app_id)
 
         try:
             client.get_app(app_id)
@@ -1063,6 +1064,9 @@ class MarathonSubcommand(object):
         self._ensure_pods_support(marathon_client)
 
         pod_json = self._resource_reader.get_resource(pod_resource_path)
+        if 'id' in pod_json:
+            self._check_service_id_length(pod_json['id'])
+
         deployment = marathon_client.add_pod(pod_json)
         emitter.publish('Created deployment {}'.format(deployment))
         return 0
@@ -1239,6 +1243,22 @@ class MarathonSubcommand(object):
         if not marathon_client.pod_feature_supported():
             msg = 'This command is not supported by your version of Marathon'
             raise DCOSException(msg)
+
+    @staticmethod
+    def _check_service_id_length(service_id):
+        """Checks that a service ID contains less than 55 characters,
+        otherwise it might not play well with Mesos DNS due to SRV records
+        length limitation.
+
+        :param service_id: the service ID to check
+        :type service_id: string
+        :rtype: None
+        """
+
+        if not len(service_id) < 55:
+            msg = ('Service IDs must be less than 55 characters in order'
+                   ' to have SRV records generated correctly.')
+            emitter.publish(msg.format(service_id))
 
 
 def _enhance_row_with_overdue_information(rows, queued_apps):
