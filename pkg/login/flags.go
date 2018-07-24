@@ -84,6 +84,12 @@ func (f *Flags) Resolve() error {
 		f.password = string(rawPassword)
 	}
 
+	if f.username == "" {
+		if username, ok := f.envLookup("DCOS_USERNAME"); ok {
+			f.username = username
+		}
+	}
+
 	if f.passwordEnv != "" {
 		if password, ok := f.envLookup(f.passwordEnv); ok {
 			f.password = password
