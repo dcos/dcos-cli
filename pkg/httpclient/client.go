@@ -176,25 +176,27 @@ func (c *Client) NewRequest(method, path string, body io.Reader, opts ...Option)
 func (c *Client) Do(req *http.Request) (*http.Response, error) {
 	logger := c.opts.Logger
 
-	if logger != nil {
-		dumpBody := (logger.Level >= logrus.DebugLevel)
-		reqDump, err := httputil.DumpRequestOut(req, dumpBody)
+	if logger != nil && logger.Level >= logrus.DebugLevel {
+		reqDump, err := httputil.DumpRequestOut(req, true)
 		if err != nil {
-			logger.Warnf("Couldn't dump request: %s", err)
+			logger.Debug("Couldn't dump request: %s", err)
 		} else {
-			logger.Infof("Outgoing request:\n%s", reqDump)
+			logger.Debug(string(reqDump))
 		}
 	}
 
 	resp, err := c.baseClient.Do(req)
 
-	if err == nil && logger != nil {
-		dumpBody := (logger.Level >= logrus.DebugLevel)
-		respDump, err := httputil.DumpResponse(resp, dumpBody)
-		if err != nil {
-			logger.Warnf("Couldn't dump response: %s", err)
+	if logger != nil && logger.Level >= logrus.DebugLevel {
+		if err == nil {
+			respDump, err := httputil.DumpResponse(resp, true)
+			if err != nil {
+				logger.Debug("Couldn't dump response: %s", err)
+			} else {
+				logger.Debug(string(respDump))
+			}
 		} else {
-			logger.Infof("Incoming response:\n%s", respDump)
+			logger.Debug(err)
 		}
 	}
 	return resp, err

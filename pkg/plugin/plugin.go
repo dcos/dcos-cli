@@ -1,36 +1,16 @@
 package plugin
 
-// Plugin defines an external plugin and its associated data.
+// Plugin is the structure representation of a `plugin.toml file.
+// It also contains JSON tags for the `dcos plugin list --json` command.
 type Plugin struct {
-	Name        string        `yaml:"name"`
-	Description string        `yaml:"description"`
-	Version     string        `yaml:"version"`
-	Source      source        `yaml:"source"`
-	Executables []*executable `yaml:"executables"`
-
-	// Directory containing the plugin's binaries.
-	BinDir string
-
-	// Plugin directory in filesystem.
-	dir string
+	Name     string     `toml:"name" json:"name"`
+	Commands []*Command `toml:"commands" json:"commands"`
 }
 
-// executable defines what commands are associated with which executable file in the plugin.
-type executable struct {
-	// Executables are found in the binary directory + the filename.
-	// This means all executables in a plugin are in the same place.
-	Filename string     `yaml:"filename"`
-	Commands []*Command `yaml:"commands"`
-}
-
-// Command is a Command living within a plugin binary.
+// Command represents each item defined in the `commands` key of the `plugin.toml` file.
+// It also contains JSON tags for the `dcos plugin list --json` command.
 type Command struct {
-	Name        string `yaml:"name"`
-	Description string `yaml:"description"`
-}
-
-// source is the type and address of the plugin.
-type source struct {
-	Type string `yaml:"type"`
-	URL  string `yaml:"url"`
+	Name        string `toml:"name" json:"name"`
+	Path        string `toml:"path" json:"path"`
+	Description string `toml:"description" json:"description"`
 }

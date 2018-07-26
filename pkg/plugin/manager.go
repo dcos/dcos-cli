@@ -1,209 +1,156 @@
 package plugin
 
 import (
-	"encoding/json"
-	"errors"
-	"io"
-	"os"
+	"fmt"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 
+	"github.com/pelletier/go-toml"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
-	yaml "gopkg.in/yaml.v2"
 )
 
 // Manager retrieves the plugins available for the current cluster
-// by navigating into the filesystem. It requires a `plugin.yaml` file for
-// each plugin, and can create this file if it doesn't exist yet.
+// by navigating into the filesystem.
 type Manager struct {
 	Fs     afero.Fs
 	Logger *logrus.Logger
 	Dir    string
-	Stdout io.Writer
-	Stderr io.Writer
-	Stdin  io.Reader
 }
 
-// Package represents information of old plugins found in Universe packages.
-type Package struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Version     string `json:"version"`
+// Remove removes a plugin from the filesystem.
+func (m *Manager) Remove(name string) error {
+	pluginDir := filepath.Join(m.Dir, name)
+	pluginDirExists, err := afero.DirExists(m.Fs, pluginDir)
+	if err != nil {
+		return err
+	}
+	if !pluginDirExists {
+		return fmt.Errorf("'%s' is not a plugin directory", pluginDir)
+	}
+	return m.Fs.RemoveAll(pluginDir)
 }
 
 // Plugins returns the plugins associated with the current cluster.
-func (m *Manager) Plugins() []*Plugin {
-	plugins := []*Plugin{}
-
-	pluginsDirHandle, err := m.Fs.Open(m.Dir)
+func (m *Manager) Plugins() (plugins []*Plugin) {
+	pluginDirs, err := afero.ReadDir(m.Fs, m.Dir)
 	if err != nil {
-		// If we fail to open the directory, we return an empty list.
-		return plugins
-	}
-	defer pluginsDirHandle.Close()
-
-	pluginDirs, err := pluginsDirHandle.Readdir(0)
-	if err != nil {
-		// If we fail to open the directory, we return an empty list.
+		m.Logger.Debugf("Couldn't open plugin dir: %s", err)
 		return plugins
 	}
 
 	for _, pluginDir := range pluginDirs {
-		if pluginDir.IsDir() {
-			plugin := &Plugin{}
-
-			// Set plugin directories.
-			plugin.dir = filepath.Join(m.Dir, pluginDir.Name())
-			plugin.BinDir = filepath.Join(plugin.dir, "env", "bin")
-
-			if runtime.GOOS == "windows" {
-				exists, _ := afero.DirExists(m.Fs, plugin.BinDir)
-				if !exists {
-					plugin.BinDir = filepath.Join(plugin.dir, "env", "Scripts")
-				}
-			}
-
-			pluginFilePath := filepath.Join(plugin.dir, "env", "plugin.yaml")
-			data, err := afero.ReadFile(m.Fs, pluginFilePath)
-			if err == nil {
-				// We don't want to see the CLI failing if a single plugin is malformed.
-				// We thus log the error but continue if there is an issue at that step.
-				err = yaml.Unmarshal(data, plugin)
-				if err != nil {
-					m.Logger.Warning(err)
-					continue
-				}
-			} else {
-				// plugin.yaml not found, try loading it as an old Universe package.
-				err = m.loadPluginFromPackage(plugin)
-				if err != nil {
-					m.Logger.Warning(err)
-					continue
-				} else {
-					// We have successfully created a plugin from a package.
-					// We save it so that we do not have to do this parsing again.
-					m.persist(plugin)
-				}
-			}
-
-			plugins = append(plugins, plugin)
+		if !pluginDir.IsDir() {
+			continue
 		}
+		plugin, err := m.loadPlugin(pluginDir.Name())
+		if err != nil {
+			// We don't want to see the CLI failing if a single plugin is malformed.
+			// We thus log the error but continue if there is an issue at that step.
+			m.Logger.Debugf("Couldn't load plugin: %s", err)
+			continue
+		}
+		plugins = append(plugins, plugin)
 	}
-
 	return plugins
 }
 
-// Invoke invokes an executable and runs it with the arguments given.
-func (m *Manager) Invoke(executable string, args []string) error {
-	shellOut := exec.Command(executable, args...)
+// loadPlugin loads a plugin based on its name.
+func (m *Manager) loadPlugin(name string) (*Plugin, error) {
+	m.Logger.Infof("Loading plugin '%s'...", name)
 
-	shellOut.Stdout = m.Stdout
-	shellOut.Stderr = m.Stderr
-	shellOut.Stdin = m.Stdin
+	plugin := &Plugin{Name: name}
+	pluginPath := filepath.Join(m.Dir, name, "env")
+	pluginFilePath := filepath.Join(pluginPath, "plugin.toml")
 
-	err := shellOut.Run()
-	if err != nil {
-		// Because we're silencing errors through Cobra, we need to print this separately.
-		m.Logger.Error(err)
+	if err := m.unmarshalPlugin(plugin, pluginFilePath); err != nil {
+		return nil, err
+	}
+	persistedPlugin := *plugin
+
+	if len(plugin.Commands) == 0 {
+		plugin.Commands = m.findCommands(pluginPath)
 	}
 
-	return err
-}
-
-// loadPluginFromPackage fills a Plugin structure from a Universe package.
-// This is based on the assumption that old packages were all downloaded
-// using the Universe and are thus Universe packages.
-func (m *Manager) loadPluginFromPackage(plugin *Plugin) error {
-	packageFilePath := filepath.Join(plugin.dir, "package.json")
-	data, err := afero.ReadFile(m.Fs, packageFilePath)
-	if err != nil {
-		return err
-	}
-
-	pkg := &Package{}
-
-	if err = json.Unmarshal(data, pkg); err != nil {
-		return err
-	}
-
-	// We transfer the information we have from the package to the plugin.
-	plugin.Name = pkg.Name
-	plugin.Description = pkg.Description
-	plugin.Version = pkg.Version
-
-	// Create a handle to then get all the binaries.
-	binDirHandle, err := m.Fs.Open(plugin.BinDir)
-	if err != nil {
-		return err
-	}
-	defer binDirHandle.Close()
-
-	// Read the directory to get all the binaries.
-	binaries, err := binDirHandle.Readdir(0)
-	if err != nil {
-		return err
-	}
-
-	executables := []*executable{}
-
-	// Loop over the binaries to create the list of plugin executables.
-	for _, binary := range binaries {
-		if strings.HasPrefix(binary.Name(), "dcos-") {
-			commandName := strings.TrimPrefix(binary.Name(), "dcos-")
-			if runtime.GOOS == "windows" {
-				commandName = strings.TrimSuffix(commandName, ".exe")
-			}
-
-			cmd := &Command{
-				Name: commandName,
-			}
-
-			// We add the command information to the plugin file by shelling it out.
-			cmdExe := filepath.Join(plugin.BinDir, binary.Name())
-			infoCmd, err := exec.Command(cmdExe, commandName, "--info").Output()
-			if err != nil {
-				m.Logger.Warning(err)
-			}
-			cmd.Description = strings.TrimSpace(string(infoCmd))
-
-			// We create an executable which is what will be executed when calling a subcommand.
-			exe := &executable{
-				Filename: binary.Name(),
-				Commands: []*Command{
-					cmd,
-				},
-			}
-			executables = append(executables, exe)
+	for _, cmd := range plugin.Commands {
+		if !filepath.IsAbs(cmd.Path) {
+			cmd.Path = filepath.Join(pluginPath, cmd.Path)
+		}
+		if cmd.Description == "" {
+			cmd.Description = m.commandDescription(cmd)
 		}
 	}
 
-	plugin.Executables = executables
-	return nil
+	if !reflect.DeepEqual(persistedPlugin, *plugin) {
+		m.unmarshalPlugin(plugin, pluginFilePath)
+	}
+	return plugin, nil
 }
 
-// Persist saves a `plugin.yaml` file representing a plugin if it does not exist.
-func (m *Manager) persist(plugin *Plugin) error {
-	// We need an env directory for `plugin.yaml`.
-	envFilePath := filepath.Join(plugin.dir, "env")
-	if _, err := m.Fs.Stat(envFilePath); os.IsNotExist(err) {
-		return errors.New(envFilePath + " does not exist")
+// findCommands discovers commands in a given directory according to conventions.
+// Each command should be contained in a dedicated binary named `dcos-{command}`.
+// On Windows it must have the `.exe`` extension.
+func (m *Manager) findCommands(pluginDir string) (commands []*Command) {
+	binDir := filepath.Join(pluginDir, "bin")
+	if runtime.GOOS == "windows" {
+		binDir = filepath.Join(pluginDir, "Scripts")
 	}
 
-	// We should not overwrite `plugin.yaml`, this method should only be used
-	// to create a minimal `plugin.yaml` if the user has an old plugin.
-	pluginFilePath := filepath.Join(plugin.dir, "env", "plugin.yaml")
-	if _, err := m.Fs.Stat(pluginFilePath); err == nil {
-		return errors.New(pluginFilePath + " already exists")
-	}
+	m.Logger.Debugf("Discovering commands in '%s'...", binDir)
 
-	// Marshal the plugin.
-	pluginYAML, err := yaml.Marshal(plugin)
+	binaries, err := afero.ReadDir(m.Fs, binDir)
 	if err != nil {
-		return err
+		return nil
 	}
 
-	return afero.WriteFile(m.Fs, pluginFilePath, pluginYAML, 0644)
+	for _, binary := range binaries {
+		if !strings.HasPrefix(binary.Name(), "dcos-") {
+			continue
+		}
+		cmd := &Command{
+			Path: filepath.Join(binDir, binary.Name()),
+			Name: strings.TrimPrefix(binary.Name(), "dcos-"),
+		}
+		if runtime.GOOS == "windows" {
+			cmd.Name = strings.TrimSuffix(cmd.Name, ".exe")
+		}
+		m.Logger.Debugf("Discovered '%s' command", cmd.Name)
+		commands = append(commands, cmd)
+	}
+	return commands
+}
+
+// commandDescription gets the command info summary by invoking the binary with the `--info` flag.
+func (m *Manager) commandDescription(cmd *Command) (desc string) {
+	infoCmd, err := exec.Command(cmd.Path, cmd.Name, "--info").Output()
+	if err != nil {
+		m.Logger.Debugf("Couldn't get info summary for the '%s' command: %s", cmd.Name, err)
+	} else {
+		desc = strings.TrimSpace(string(infoCmd))
+	}
+	return desc
+}
+
+// unmarshalPlugin unmarshals a `plugin.toml` file into a Plugin structure.
+func (m *Manager) unmarshalPlugin(plugin *Plugin, path string) error {
+	data, err := afero.ReadFile(m.Fs, path)
+	if err != nil {
+		m.Logger.Debugf("Couldn't open plugin.toml: %s", err)
+		return nil
+	}
+	return toml.Unmarshal(data, plugin)
+}
+
+// persistPlugin saves a `plugin.toml` file representing the plugin.
+func (m *Manager) persistPlugin(plugin *Plugin, path string) {
+	pluginTOML, err := toml.Marshal(*plugin)
+	if err == nil {
+		err = afero.WriteFile(m.Fs, path, pluginTOML, 0644)
+	}
+	if err != nil {
+		m.Logger.Debug(err)
+	}
 }

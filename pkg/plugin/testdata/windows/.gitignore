@@ -1,2 +1,0 @@
-# env is ignored in the root gitignore, this resets that so the testdata can be tracked
-!env/

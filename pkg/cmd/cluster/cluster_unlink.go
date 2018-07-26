@@ -2,16 +2,17 @@ package cluster
 
 import (
 	"github.com/dcos/dcos-cli/api"
-	"github.com/dcos/dcos-cli/pkg/clusterlinker"
+	"github.com/dcos/dcos-cli/pkg/cluster/linker"
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/spf13/cobra"
 )
 
-// newCmdClusterLink links the attached cluster to another one.
+// newCmdClusterUnlink ublinks the attached cluster to a linked cluster.
 func newCmdClusterUnlink(ctx api.Context) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "unlink",
-		Args: cobra.ExactArgs(1),
+		Use:   "unlink",
+		Short: "Unlink the current cluster with one of its linked clusters",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			attachedCluster, err := ctx.Cluster()
 			if err != nil {
@@ -25,7 +26,7 @@ func newCmdClusterUnlink(ctx api.Context) *cobra.Command {
 			}
 			linkedCluster := config.NewCluster(linkedClusterConfig)
 
-			attachedClient := clusterlinker.NewClient(ctx.HTTPClient(attachedCluster), ctx.Logger())
+			attachedClient := linker.New(ctx.HTTPClient(attachedCluster), ctx.Logger())
 			return attachedClient.Unlink(linkedCluster.ID())
 		},
 	}

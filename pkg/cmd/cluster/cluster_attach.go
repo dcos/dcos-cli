@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/dcos/dcos-cli/api"
-	"github.com/dcos/dcos-cli/pkg/clusterlinker"
+	"github.com/dcos/dcos-cli/pkg/cluster/linker"
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/setup"
 	"github.com/spf13/cobra"
@@ -13,8 +13,9 @@ import (
 // newCmdClusterAttach ataches the CLI to a cluster.
 func newCmdClusterAttach(ctx api.Context) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "attach",
-		Args: cobra.ExactArgs(1),
+		Use:   "attach",
+		Short: "Attach the CLI to a cluster",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			manager := ctx.ConfigManager()
 
@@ -29,14 +30,14 @@ func newCmdClusterAttach(ctx api.Context) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			clusterLinker := clusterlinker.NewClient(ctx.HTTPClient(currentCluster), ctx.Logger())
+			clusterLinker := linker.New(ctx.HTTPClient(currentCluster), ctx.Logger())
 			linkedClusters, err := clusterLinker.Links()
 			if err != nil {
 				ctx.Logger().Info(err)
 			}
 
 			// We try to find a Link matching the argument given.
-			var matchingLinkedClusters []*clusterlinker.Link
+			var matchingLinkedClusters []*linker.Link
 			for _, linkedCluster := range linkedClusters {
 				if args[0] == linkedCluster.Name {
 					matchingLinkedClusters = append(matchingLinkedClusters, linkedCluster)

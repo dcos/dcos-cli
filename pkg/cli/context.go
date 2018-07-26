@@ -10,6 +10,7 @@ import (
 
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
+	"github.com/dcos/dcos-cli/pkg/log"
 	"github.com/dcos/dcos-cli/pkg/login"
 	"github.com/dcos/dcos-cli/pkg/open"
 	"github.com/dcos/dcos-cli/pkg/plugin"
@@ -30,6 +31,11 @@ type Context struct {
 // NewContext creates a new context from a given environment.
 func NewContext(env *Environment) *Context {
 	return &Context{env: env}
+}
+
+// Args returns the command-line arguments, starting with the program name.
+func (ctx *Context) Args() []string {
+	return ctx.env.Args
 }
 
 // Input returns the reader for CLI input.
@@ -70,7 +76,7 @@ func (ctx *Context) Logger() *logrus.Logger {
 	if ctx.logger == nil {
 		ctx.logger = &logrus.Logger{
 			Out:       ctx.env.ErrOut,
-			Formatter: new(logrus.TextFormatter),
+			Formatter: &log.Formatter{},
 			Hooks:     make(logrus.LevelHooks),
 		}
 	}
@@ -83,9 +89,6 @@ func (ctx *Context) PluginManager(dir string) *plugin.Manager {
 		Fs:     ctx.Fs(),
 		Logger: ctx.Logger(),
 		Dir:    dir,
-		Stdout: ctx.Out(),
-		Stderr: ctx.ErrOut(),
-		Stdin:  ctx.Input(),
 	}
 
 }
@@ -172,8 +175,8 @@ func (ctx *Context) Login(flags *login.Flags, httpClient *httpclient.Client) (st
 
 // Setup configures a given cluster based on its URL and setup flags.
 func (ctx *Context) Setup(flags *setup.Flags, clusterURL string) (*config.Cluster, error) {
-	// This supports passing a cluster URL without scheme, it then defaults to HTTPS.
 	if !strings.HasPrefix(clusterURL, "https://") && !strings.HasPrefix(clusterURL, "http://") {
+		ctx.Logger().Info("Missing scheme in cluster URL, assuming HTTPS.")
 		clusterURL = "https://" + clusterURL
 	}
 

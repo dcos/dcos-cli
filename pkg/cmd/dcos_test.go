@@ -33,6 +33,8 @@ Commands:
       Manage the DC/OS configuration file
   help
       Help about any command
+  plugin
+      Manage CLI plugins
 
 Options:
   --version

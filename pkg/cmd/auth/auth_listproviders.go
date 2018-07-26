@@ -2,7 +2,6 @@ package auth
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/cli"
@@ -15,8 +14,9 @@ import (
 func newCmdAuthListProviders(ctx api.Context) *cobra.Command {
 	var jsonOutput bool
 	cmd := &cobra.Command{
-		Use:  "list-providers",
-		Args: cobra.MaximumNArgs(1),
+		Use:   "list-providers",
+		Short: "List available login providers for a cluster",
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var client *login.Client
 			if len(args) == 0 {
@@ -36,19 +36,16 @@ func newCmdAuthListProviders(ctx api.Context) *cobra.Command {
 			}
 
 			if jsonOutput {
-				// Re-marshal it into json with indents added in for pretty printing.
-				out, err := json.MarshalIndent(providers, "", "\t")
-				if err != nil {
-					return err
-				}
-				fmt.Fprintln(ctx.Out(), string(out))
-			} else {
-				table := cli.NewTable(ctx.Out(), []string{"PROVIDER ID", "LOGIN METHOD"})
-				for _, provider := range providers.Slice() {
-					table.Append([]string{provider.ID, provider.String()})
-				}
-				table.Render()
+				enc := json.NewEncoder(ctx.Out())
+				enc.SetIndent("", "    ")
+				return enc.Encode(providers)
 			}
+
+			table := cli.NewTable(ctx.Out(), []string{"PROVIDER ID", "LOGIN METHOD"})
+			for _, provider := range providers.Slice() {
+				table.Append([]string{provider.ID, provider.String()})
+			}
+			table.Render()
 
 			return nil
 		},

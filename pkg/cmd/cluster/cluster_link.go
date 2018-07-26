@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/dcos/dcos-cli/api"
-	"github.com/dcos/dcos-cli/pkg/clusterlinker"
+	"github.com/dcos/dcos-cli/pkg/cluster/linker"
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/login"
 	"github.com/dcos/dcos-cli/pkg/setup"
@@ -15,8 +15,9 @@ import (
 func newCmdClusterLink(ctx api.Context) *cobra.Command {
 	setupFlags := setup.NewFlags(ctx.Fs(), ctx.EnvLookup)
 	cmd := &cobra.Command{
-		Use:  "link",
-		Args: cobra.ExactArgs(1),
+		Use:   "link",
+		Short: "Link the current cluster to another one",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			attachedCluster, err := ctx.Cluster()
 			if err != nil {
@@ -83,17 +84,17 @@ func newCmdClusterLink(ctx api.Context) *cobra.Command {
 				provider = filteredProviders[i]
 			}
 
-			linkRequest := &clusterlinker.Link{
+			linkRequest := &linker.Link{
 				ID:   linkableCluster.ID(),
 				Name: linkableCluster.Name(),
 				URL:  linkableCluster.URL(),
-				LoginProvider: clusterlinker.LoginProvider{
+				LoginProvider: linker.LoginProvider{
 					ID:   provider.ID,
 					Type: provider.Type,
 				},
 			}
 
-			attachedClient := clusterlinker.NewClient(ctx.HTTPClient(attachedCluster), ctx.Logger())
+			attachedClient := linker.New(ctx.HTTPClient(attachedCluster), ctx.Logger())
 			return attachedClient.Link(linkRequest)
 		},
 	}

@@ -8,8 +8,9 @@ import (
 // newCmdClusterRename renames a cluster.
 func newCmdClusterRename(ctx api.Context) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "rename",
-		Args: cobra.ExactArgs(2),
+		Use:   "rename",
+		Short: "Rename a configured cluster",
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			conf, err := ctx.ConfigManager().Find(args[0], false)
 			if err != nil {

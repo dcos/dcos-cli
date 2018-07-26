@@ -11,8 +11,9 @@ import (
 func newCmdClusterSetup(ctx api.Context) *cobra.Command {
 	setupFlags := setup.NewFlags(ctx.Fs(), ctx.EnvLookup)
 	cmd := &cobra.Command{
-		Use:  "setup",
-		Args: cobra.ExactArgs(1),
+		Use:   "setup",
+		Short: "Set up the CLI to communicate with a cluster",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clusterURL := args[0]
 
