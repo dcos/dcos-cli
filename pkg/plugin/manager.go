@@ -1,13 +1,21 @@
 package plugin
 
 import (
+	"crypto/tls"
 	"fmt"
+	"mime"
+	"net/http"
+	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"reflect"
 	"runtime"
 	"strings"
 
+	"github.com/dcos/dcos-cli/pkg/config"
+	"github.com/dcos/dcos-cli/pkg/fsutil"
+	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/pelletier/go-toml"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -27,6 +35,32 @@ func NewManager(fs afero.Fs, logger *logrus.Logger) *Manager {
 		fs:     fs,
 		logger: logger,
 	}
+}
+
+// Install installs a plugin from a resource.
+func (m *Manager) Install(resource string, update bool) error {
+	// If it's a remote resource, download it first.
+	if strings.HasPrefix(resource, "https://") || strings.HasPrefix(resource, "http://") {
+		var err error
+		resource, err = m.downloadPlugin(resource)
+		if err != nil {
+			return err
+		}
+	}
+
+	// The staging dir is where the plugin will be constructed
+	// before eventually getting moved to its final location.
+	stagingDir, err := afero.TempDir(m.fs, os.TempDir(), "dcos-cli")
+	if err != nil {
+		return err
+	}
+
+	// Build the plugin into the staging directory.
+	pluginName, err := m.buildPlugin(resource, stagingDir)
+	if err != nil {
+		return err
+	}
+	return m.installPlugin(pluginName, stagingDir, update)
 }
 
 // SetCluster sets the plugin manager's target cluster.
@@ -172,4 +206,128 @@ func (m *Manager) persistPlugin(plugin *Plugin, path string) {
 // pluginsDir returns the path to the plugins directory.
 func (m *Manager) pluginsDir() string {
 	return filepath.Join(m.cluster.Dir(), "subcommands")
+}
+
+// downloadPlugin downloads a plugin and returns the path to the temporary file it stored it to.
+func (m *Manager) downloadPlugin(url string) (string, error) {
+	tmpDir, err := afero.TempDir(m.fs, os.TempDir(), "dcos-cli")
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := m.httpClient(url).Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	downloadedFilePath := filepath.Join(tmpDir, m.downloadFilename(resp))
+
+	if err := fsutil.CopyReader(m.fs, resp.Body, downloadedFilePath, 0644); err != nil {
+		return "", err
+	}
+	return downloadedFilePath, nil
+}
+
+// downloadFilename picks a filename for the resource to download. It first reads the
+// `Content-Disposition` header, when not set it defaults to the URL path basename.
+func (m *Manager) downloadFilename(resp *http.Response) string {
+	contentDisposition := resp.Header.Get("Content-Disposition")
+	_, dispositionParams, err := mime.ParseMediaType(contentDisposition)
+	if err != nil {
+		m.logger.Debug(err)
+	} else if filename, ok := dispositionParams["filename"]; ok {
+		return filename
+	}
+	return path.Base(resp.Request.URL.Path)
+}
+
+// buildPlugin constructs the plugin structure within a target directory, based on a path to a plugin resource.
+func (m *Manager) buildPlugin(path string, targetDir string) (string, error) {
+	plugin := &Plugin{}
+
+	// Detect the plugin resource media type.
+	contentType, err := fsutil.DetectMediaType(m.fs, path)
+	if err != nil {
+		return "", err
+	}
+
+	switch contentType {
+	case "application/zip":
+		// Unzip the plugin into the staging dir and validate its plugin.toml, if any.
+		if err := fsutil.Unzip(m.fs, path, targetDir); err != nil {
+			return "", err
+		}
+		pluginFilePath := filepath.Join(targetDir, "plugin.toml")
+		if err := m.unmarshalPlugin(plugin, pluginFilePath); err != nil {
+			return "", err
+		}
+
+	// The current media type detection mechanism (based on the stdlib) cannot
+	// detect binary executables. Thus, we assume the resource is an actual binary
+	// when it's not a ZIP archive.
+	default:
+		// Copy the binary into the staging dir's bin folder,
+		binDir := filepath.Join(targetDir, "bin")
+		if err := m.fs.MkdirAll(binDir, 0755); err != nil {
+			return "", err
+		}
+		binPath := filepath.Join(binDir, filepath.Base(path))
+		err := fsutil.Copy(m.fs, path, binPath, 0751)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	// If there is no plugin name, use the resource file basename.
+	if plugin.Name == "" {
+		basename := filepath.Base(path)
+		plugin.Name = strings.TrimSuffix(basename, filepath.Ext(basename))
+	}
+	return plugin.Name, nil
+}
+
+// installPlugin installs a plugin from a staging dir into its final location.
+// "update" indicates whether an already existing plugin can be overwritten.
+func (m *Manager) installPlugin(pluginName, stagingDir string, update bool) error {
+	dest := filepath.Join(m.pluginsDir(), pluginName, "env")
+
+	if update {
+		if err := m.fs.RemoveAll(dest); err != nil {
+			return err
+		}
+	} else {
+		pluginDirExists, err := afero.DirExists(m.fs, dest)
+		if err != nil {
+			m.logger.Debug(err)
+		}
+		if pluginDirExists {
+			return fmt.Errorf("'%s' is already installed", pluginName)
+		}
+	}
+
+	// Move the plugin folder to the final location.
+	if err := m.fs.MkdirAll(filepath.Dir(dest), 0755); err != nil {
+		return err
+	}
+	return m.fs.Rename(stagingDir, dest)
+}
+
+// httpClient returns the appropriate HTTP client for a given resource.
+func (m *Manager) httpClient(url string) *httpclient.Client {
+	httpOpts := []httpclient.Option{
+		httpclient.Logger(m.logger),
+		httpclient.FailOnErrStatus(true),
+	}
+	if strings.HasPrefix(url, m.cluster.URL()) {
+		httpOpts = append(
+			httpOpts,
+			httpclient.ACSToken(m.cluster.ACSToken()),
+			httpclient.TLS(&tls.Config{
+				InsecureSkipVerify: m.cluster.TLS().Insecure,
+				RootCAs:            m.cluster.TLS().RootCAs,
+			}),
+		)
+	}
+	return httpclient.New("", httpOpts...)
 }
