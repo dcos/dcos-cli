@@ -22,7 +22,7 @@ func newCmdPluginList(ctx api.Context) *cobra.Command {
 				return err
 			}
 
-			plugins := ctx.PluginManager(cluster.SubcommandsDir()).Plugins()
+			plugins := ctx.PluginManager(cluster).Plugins()
 
 			if jsonOutput {
 				enc := json.NewEncoder(ctx.Out())

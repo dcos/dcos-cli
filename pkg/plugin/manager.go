@@ -16,29 +16,42 @@ import (
 // Manager retrieves the plugins available for the current cluster
 // by navigating into the filesystem.
 type Manager struct {
-	Fs     afero.Fs
-	Logger *logrus.Logger
-	Dir    string
+	fs      afero.Fs
+	logger  *logrus.Logger
+	cluster *config.Cluster
+}
+
+// NewManager returns a new plugin manager.
+func NewManager(fs afero.Fs, logger *logrus.Logger) *Manager {
+	return &Manager{
+		fs:     fs,
+		logger: logger,
+	}
+}
+
+// SetCluster sets the plugin manager's target cluster.
+func (m *Manager) SetCluster(cluster *config.Cluster) {
+	m.cluster = cluster
 }
 
 // Remove removes a plugin from the filesystem.
 func (m *Manager) Remove(name string) error {
-	pluginDir := filepath.Join(m.Dir, name)
-	pluginDirExists, err := afero.DirExists(m.Fs, pluginDir)
+	pluginDir := filepath.Join(m.pluginsDir(), name)
+	pluginDirExists, err := afero.DirExists(m.fs, pluginDir)
 	if err != nil {
 		return err
 	}
 	if !pluginDirExists {
 		return fmt.Errorf("'%s' is not a plugin directory", pluginDir)
 	}
-	return m.Fs.RemoveAll(pluginDir)
+	return m.fs.RemoveAll(pluginDir)
 }
 
 // Plugins returns the plugins associated with the current cluster.
 func (m *Manager) Plugins() (plugins []*Plugin) {
-	pluginDirs, err := afero.ReadDir(m.Fs, m.Dir)
+	pluginDirs, err := afero.ReadDir(m.fs, m.pluginsDir())
 	if err != nil {
-		m.Logger.Debugf("Couldn't open plugin dir: %s", err)
+		m.logger.Debugf("Couldn't open plugin dir: %s", err)
 		return plugins
 	}
 
@@ -50,7 +63,7 @@ func (m *Manager) Plugins() (plugins []*Plugin) {
 		if err != nil {
 			// We don't want to see the CLI failing if a single plugin is malformed.
 			// We thus log the error but continue if there is an issue at that step.
-			m.Logger.Debugf("Couldn't load plugin: %s", err)
+			m.logger.Debugf("Couldn't load plugin: %s", err)
 			continue
 		}
 		plugins = append(plugins, plugin)
@@ -60,10 +73,10 @@ func (m *Manager) Plugins() (plugins []*Plugin) {
 
 // loadPlugin loads a plugin based on its name.
 func (m *Manager) loadPlugin(name string) (*Plugin, error) {
-	m.Logger.Infof("Loading plugin '%s'...", name)
+	m.logger.Infof("Loading plugin '%s'...", name)
 
 	plugin := &Plugin{Name: name}
-	pluginPath := filepath.Join(m.Dir, name, "env")
+	pluginPath := filepath.Join(m.pluginsDir(), name, "env")
 	pluginFilePath := filepath.Join(pluginPath, "plugin.toml")
 
 	if err := m.unmarshalPlugin(plugin, pluginFilePath); err != nil {
@@ -99,10 +112,11 @@ func (m *Manager) findCommands(pluginDir string) (commands []*Command) {
 		binDir = filepath.Join(pluginDir, "Scripts")
 	}
 
-	m.Logger.Debugf("Discovering commands in '%s'...", binDir)
+	m.logger.Debugf("Discovering commands in '%s'...", binDir)
 
-	binaries, err := afero.ReadDir(m.Fs, binDir)
+	binaries, err := afero.ReadDir(m.fs, binDir)
 	if err != nil {
+		m.logger.Debug(err)
 		return nil
 	}
 
@@ -117,7 +131,7 @@ func (m *Manager) findCommands(pluginDir string) (commands []*Command) {
 		if runtime.GOOS == "windows" {
 			cmd.Name = strings.TrimSuffix(cmd.Name, ".exe")
 		}
-		m.Logger.Debugf("Discovered '%s' command", cmd.Name)
+		m.logger.Debugf("Discovered '%s' command", cmd.Name)
 		commands = append(commands, cmd)
 	}
 	return commands
@@ -127,7 +141,7 @@ func (m *Manager) findCommands(pluginDir string) (commands []*Command) {
 func (m *Manager) commandDescription(cmd *Command) (desc string) {
 	infoCmd, err := exec.Command(cmd.Path, cmd.Name, "--info").Output()
 	if err != nil {
-		m.Logger.Debugf("Couldn't get info summary for the '%s' command: %s", cmd.Name, err)
+		m.logger.Debugf("Couldn't get info summary for the '%s' command: %s", cmd.Name, err)
 	} else {
 		desc = strings.TrimSpace(string(infoCmd))
 	}
@@ -136,9 +150,9 @@ func (m *Manager) commandDescription(cmd *Command) (desc string) {
 
 // unmarshalPlugin unmarshals a `plugin.toml` file into a Plugin structure.
 func (m *Manager) unmarshalPlugin(plugin *Plugin, path string) error {
-	data, err := afero.ReadFile(m.Fs, path)
+	data, err := afero.ReadFile(m.fs, path)
 	if err != nil {
-		m.Logger.Debugf("Couldn't open plugin.toml: %s", err)
+		m.logger.Debugf("Couldn't open plugin.toml: %s", err)
 		return nil
 	}
 	return toml.Unmarshal(data, plugin)
@@ -148,9 +162,14 @@ func (m *Manager) unmarshalPlugin(plugin *Plugin, path string) error {
 func (m *Manager) persistPlugin(plugin *Plugin, path string) {
 	pluginTOML, err := toml.Marshal(*plugin)
 	if err == nil {
-		err = afero.WriteFile(m.Fs, path, pluginTOML, 0644)
+		err = afero.WriteFile(m.fs, path, pluginTOML, 0644)
 	}
 	if err != nil {
-		m.Logger.Debug(err)
+		m.logger.Debug(err)
 	}
+}
+
+// pluginsDir returns the path to the plugins directory.
+func (m *Manager) pluginsDir() string {
+	return filepath.Join(m.cluster.Dir(), "subcommands")
 }

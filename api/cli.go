@@ -65,7 +65,7 @@ type Context interface {
 	Opener() open.Opener
 
 	// PluginManager returns a plugin manager.
-	PluginManager(dir string) *plugin.Manager
+	PluginManager(*config.Cluster) *plugin.Manager
 
 	// Login initiates a login based on a set of flags and HTTP client. On success it returns an ACS token.
 	Login(flags *login.Flags, httpClient *httpclient.Client) (string, error)

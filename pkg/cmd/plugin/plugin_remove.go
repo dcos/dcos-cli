@@ -16,7 +16,7 @@ func newCmdPluginRemove(ctx api.Context) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return ctx.PluginManager(cluster.SubcommandsDir()).Remove(args[0])
+			return ctx.PluginManager(cluster).Remove(args[0])
 		},
 	}
 }
