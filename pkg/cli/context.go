@@ -84,13 +84,12 @@ func (ctx *Context) Logger() *logrus.Logger {
 }
 
 // PluginManager returns a plugin manager.
-func (ctx *Context) PluginManager(dir string) *plugin.Manager {
-	return &plugin.Manager{
-		Fs:     ctx.Fs(),
-		Logger: ctx.Logger(),
-		Dir:    dir,
+func (ctx *Context) PluginManager(cluster *config.Cluster) *plugin.Manager {
+	pluginManager := plugin.NewManager(ctx.Fs(), ctx.Logger())
+	if cluster != nil {
+		pluginManager.SetCluster(cluster)
 	}
-
+	return pluginManager
 }
 
 // DCOSDir returns the root directory for the DC/OS CLI.

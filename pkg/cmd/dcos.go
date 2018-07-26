@@ -36,7 +36,7 @@ func NewDCOSCommand(ctx api.Context) *cobra.Command {
 
 	// If a cluster is attached, we get its plugins.
 	if cluster, err := ctx.Cluster(); err == nil {
-		pluginManager := ctx.PluginManager(cluster.SubcommandsDir())
+		pluginManager := ctx.PluginManager(cluster)
 
 		for _, plugin := range pluginManager.Plugins() {
 			for _, pluginCmd := range plugin.Commands {
