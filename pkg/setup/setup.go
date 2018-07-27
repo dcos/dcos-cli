@@ -5,21 +5,28 @@ import (
 	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/url"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
 	"github.com/dcos/dcos-cli/pkg/config"
+	"github.com/dcos/dcos-cli/pkg/cosmos"
 	"github.com/dcos/dcos-cli/pkg/dcos"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/dcos/dcos-cli/pkg/login"
 	"github.com/dcos/dcos-cli/pkg/mesos"
+	"github.com/dcos/dcos-cli/pkg/plugin"
 	"github.com/dcos/dcos-cli/pkg/prompt"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
 )
 
 // Opts are options for a setup.
@@ -29,6 +36,7 @@ type Opts struct {
 	Logger        *logrus.Logger
 	LoginFlow     *login.Flow
 	ConfigManager *config.Manager
+	PluginManager *plugin.Manager
 }
 
 // Setup represents a cluster setup.
@@ -38,6 +46,7 @@ type Setup struct {
 	logger        *logrus.Logger
 	loginFlow     *login.Flow
 	configManager *config.Manager
+	pluginManager *plugin.Manager
 }
 
 // New creates a new setup.
@@ -48,6 +57,7 @@ func New(opts Opts) *Setup {
 		logger:        opts.Logger,
 		loginFlow:     opts.LoginFlow,
 		configManager: opts.ConfigManager,
+		pluginManager: opts.PluginManager,
 	}
 }
 
@@ -107,6 +117,14 @@ func (s *Setup) Configure(flags *Flags, clusterURL string) (*config.Cluster, err
 	err = s.configManager.Save(cluster.Config(), metadata.ClusterID, flags.caBundle)
 	if err != nil {
 		return nil, err
+	}
+
+	// Install default plugins (dcos-core-cli and dcos-enterprise-cli).
+	if !flags.noPlugin {
+		s.pluginManager.SetCluster(cluster)
+		if err := s.installPlugins(httpClient); err != nil {
+			return nil, err
+		}
 	}
 	return cluster, nil
 }
@@ -256,4 +274,52 @@ Do you trust it?`
 		cert.NotAfter,
 		fingerprintBuf.String(),
 	))
+}
+
+// installPlugins installs the dcos-core-cli and (if applicable) the dcos-enterprise-cli plugin.
+func (s *Setup) installPlugins(httpClient *httpclient.Client) error {
+	// TODO: install dcos-core-cli.
+
+	// Install dcos-enterprise-cli only when the DC/OS variant metadata is "enterprise".
+	version, err := dcos.NewClient(httpClient).Version()
+	if err == nil && version.DCOSVariant == "enterprise" {
+		err := s.installPlugin("dcos-enterprise-cli", httpClient)
+		if err == nil {
+			return nil
+		}
+		s.logger.Debug(err)
+	}
+
+	s.logger.Error("Please run “dcos package install dcos-enterprise-cli” if you use a DC/OS Enterprise cluster.")
+	return nil
+}
+
+// installPlugin installs a plugin by its name. It gets the plugin's download URL through Cosmos.
+func (s *Setup) installPlugin(name string, httpClient *httpclient.Client) error {
+	s.logger.Infof("Installing %s...", name)
+
+	// Get package information from Cosmos.
+	pkgInfo, err := cosmos.NewClient(httpClient).DescribePackage(name)
+	if err != nil {
+		return err
+	}
+
+	// Get the download URL for the current platform.
+	p, ok := pkgInfo.Package.Resource.CLI.Plugins[runtime.GOOS]["x86-64"]
+	if !ok {
+		return fmt.Errorf("'%s' isn't available for '%s')", name, runtime.GOOS)
+	}
+	return s.pluginManager.Install(p.URL, &plugin.InstallOpts{
+		Name:   pkgInfo.Package.Name,
+		Update: true,
+		PostInstall: func(fs afero.Fs, pluginDir string) error {
+			pkgInfoFilepath := filepath.Join(pluginDir, "package.json")
+			pkgInfoFile, err := fs.OpenFile(pkgInfoFilepath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+			if err != nil {
+				return err
+			}
+			defer pkgInfoFile.Close()
+			return json.NewEncoder(pkgInfoFile).Encode(pkgInfo.Package)
+		},
+	})
 }

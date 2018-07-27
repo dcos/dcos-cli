@@ -37,12 +37,27 @@ func NewManager(fs afero.Fs, logger *logrus.Logger) *Manager {
 	}
 }
 
+// InstallOpts are installation options for plugin resources.
+type InstallOpts struct {
+	// Name specify the name of the plugin.
+	Name string
+
+	// Update allows to potentially overwrite an already existing plugin of the same name.
+	Update bool
+
+	// PostInstall is a hook which can be invoked after plugin installation.
+	// It is invoked right before the plugin is moved to its final location.
+	PostInstall func(fs afero.Fs, pluginDir string) error
+
+	path       string
+	stagingDir string
+}
+
 // Install installs a plugin from a resource.
-func (m *Manager) Install(resource string, update bool) error {
+func (m *Manager) Install(resource string, installOpts *InstallOpts) (err error) {
 	// If it's a remote resource, download it first.
 	if strings.HasPrefix(resource, "https://") || strings.HasPrefix(resource, "http://") {
-		var err error
-		resource, err = m.downloadPlugin(resource)
+		installOpts.path, err = m.downloadPlugin(resource)
 		if err != nil {
 			return err
 		}
@@ -50,17 +65,17 @@ func (m *Manager) Install(resource string, update bool) error {
 
 	// The staging dir is where the plugin will be constructed
 	// before eventually getting moved to its final location.
-	stagingDir, err := afero.TempDir(m.fs, os.TempDir(), "dcos-cli")
+	installOpts.stagingDir, err = afero.TempDir(m.fs, os.TempDir(), "dcos-cli")
 	if err != nil {
 		return err
 	}
 
 	// Build the plugin into the staging directory.
-	pluginName, err := m.buildPlugin(resource, stagingDir)
+	err = m.buildPlugin(installOpts)
 	if err != nil {
 		return err
 	}
-	return m.installPlugin(pluginName, stagingDir, update)
+	return m.installPlugin(installOpts)
 }
 
 // SetCluster sets the plugin manager's target cluster.
@@ -243,24 +258,27 @@ func (m *Manager) downloadFilename(resp *http.Response) string {
 }
 
 // buildPlugin constructs the plugin structure within a target directory, based on a path to a plugin resource.
-func (m *Manager) buildPlugin(path string, targetDir string) (string, error) {
+func (m *Manager) buildPlugin(installOpts *InstallOpts) error {
 	plugin := &Plugin{}
 
 	// Detect the plugin resource media type.
-	contentType, err := fsutil.DetectMediaType(m.fs, path)
+	contentType, err := fsutil.DetectMediaType(m.fs, installOpts.path)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	switch contentType {
 	case "application/zip":
 		// Unzip the plugin into the staging dir and validate its plugin.toml, if any.
-		if err := fsutil.Unzip(m.fs, path, targetDir); err != nil {
-			return "", err
+		if err := fsutil.Unzip(m.fs, installOpts.path, installOpts.stagingDir); err != nil {
+			return err
 		}
-		pluginFilePath := filepath.Join(targetDir, "plugin.toml")
+		pluginFilePath := filepath.Join(installOpts.stagingDir, "plugin.toml")
 		if err := m.unmarshalPlugin(plugin, pluginFilePath); err != nil {
-			return "", err
+			return err
+		}
+		if plugin.Name != "" {
+			installOpts.Name = plugin.Name
 		}
 
 	// The current media type detection mechanism (based on the stdlib) cannot
@@ -268,31 +286,34 @@ func (m *Manager) buildPlugin(path string, targetDir string) (string, error) {
 	// when it's not a ZIP archive.
 	default:
 		// Copy the binary into the staging dir's bin folder,
-		binDir := filepath.Join(targetDir, "bin")
+		binDir := filepath.Join(installOpts.stagingDir, "bin")
 		if err := m.fs.MkdirAll(binDir, 0755); err != nil {
-			return "", err
+			return err
 		}
-		binPath := filepath.Join(binDir, filepath.Base(path))
-		err := fsutil.Copy(m.fs, path, binPath, 0751)
+		binPath := filepath.Join(binDir, filepath.Base(installOpts.path))
+		err := fsutil.Copy(m.fs, installOpts.path, binPath, 0751)
 		if err != nil {
-			return "", err
+			return err
 		}
 	}
 
 	// If there is no plugin name, use the resource file basename.
-	if plugin.Name == "" {
-		basename := filepath.Base(path)
-		plugin.Name = strings.TrimSuffix(basename, filepath.Ext(basename))
+	if installOpts.Name == "" {
+		basename := filepath.Base(installOpts.path)
+		installOpts.Name = strings.TrimSuffix(basename, filepath.Ext(basename))
 	}
-	return plugin.Name, nil
+	if installOpts.PostInstall != nil {
+		return installOpts.PostInstall(m.fs, installOpts.stagingDir)
+	}
+	return nil
 }
 
 // installPlugin installs a plugin from a staging dir into its final location.
 // "update" indicates whether an already existing plugin can be overwritten.
-func (m *Manager) installPlugin(pluginName, stagingDir string, update bool) error {
-	dest := filepath.Join(m.pluginsDir(), pluginName, "env")
+func (m *Manager) installPlugin(installOpts *InstallOpts) error {
+	dest := filepath.Join(m.pluginsDir(), installOpts.Name, "env")
 
-	if update {
+	if installOpts.Update {
 		if err := m.fs.RemoveAll(dest); err != nil {
 			return err
 		}
@@ -302,7 +323,7 @@ func (m *Manager) installPlugin(pluginName, stagingDir string, update bool) erro
 			m.logger.Debug(err)
 		}
 		if pluginDirExists {
-			return fmt.Errorf("'%s' is already installed", pluginName)
+			return fmt.Errorf("'%s' is already installed", installOpts.Name)
 		}
 	}
 
@@ -310,7 +331,7 @@ func (m *Manager) installPlugin(pluginName, stagingDir string, update bool) erro
 	if err := m.fs.MkdirAll(filepath.Dir(dest), 0755); err != nil {
 		return err
 	}
-	return m.fs.Rename(stagingDir, dest)
+	return m.fs.Rename(installOpts.stagingDir, dest)
 }
 
 // httpClient returns the appropriate HTTP client for a given resource.

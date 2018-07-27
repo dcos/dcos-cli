@@ -185,6 +185,7 @@ func (ctx *Context) Setup(flags *setup.Flags, clusterURL string) (*config.Cluste
 		Logger:        ctx.Logger(),
 		LoginFlow:     ctx.loginFlow(),
 		ConfigManager: ctx.ConfigManager(),
+		PluginManager: ctx.PluginManager(nil),
 	}).Configure(flags, clusterURL)
 }
 
