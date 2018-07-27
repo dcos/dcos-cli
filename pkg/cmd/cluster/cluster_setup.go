@@ -21,7 +21,6 @@ func newCmdClusterSetup(ctx api.Context) *cobra.Command {
 			if err != nil {
 				return err
 			}
-
 			return ctx.ConfigManager().Attach(cluster.Config())
 		},
 	}
