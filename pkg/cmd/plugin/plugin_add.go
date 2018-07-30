@@ -9,7 +9,7 @@ import (
 func newCmdPluginAdd(ctx api.Context) *cobra.Command {
 	var update bool
 	cmd := &cobra.Command{
-		Use:   "add",
+		Use:   "add <resource>",
 		Short: "Add a CLI plugin",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

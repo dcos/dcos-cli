@@ -10,7 +10,7 @@ import (
 // newCmdConfigShow creates the `dcos config show` subcommand.
 func newCmdConfigShow(ctx api.Context) *cobra.Command {
 	return &cobra.Command{
-		Use:   "show",
+		Use:   "show <name>",
 		Short: "Print the configuration file related to the current cluster",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
