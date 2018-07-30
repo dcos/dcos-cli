@@ -10,7 +10,7 @@ import (
 // newCmdClusterUnlink ublinks the attached cluster to a linked cluster.
 func newCmdClusterUnlink(ctx api.Context) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "unlink",
+		Use:   "unlink <cluster>",
 		Short: "Unlink the current cluster with one of its linked clusters",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -12,7 +12,7 @@ import (
 func newCmdClusterRemove(ctx api.Context) *cobra.Command {
 	var removeAll bool
 	cmd := &cobra.Command{
-		Use:   "remove",
+		Use:   "remove <cluster>",
 		Short: "Remove a configured cluster from the CLI",
 		Args:  cobra.MaximumNArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
