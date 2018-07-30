@@ -1,5 +1,7 @@
 package plugin
 
+//go:generate goderive .
+
 import (
 	"crypto/tls"
 	"fmt"
@@ -131,22 +133,28 @@ func (m *Manager) loadPlugin(name string) (*Plugin, error) {
 	if err := m.unmarshalPlugin(plugin, pluginFilePath); err != nil {
 		return nil, err
 	}
-	persistedPlugin := *plugin
+
+	// Save a deep copy of the plugin once it's loaded from the plugin.toml file.
+	persistedPlugin := &Plugin{}
+	deriveDeepCopy(persistedPlugin, plugin)
 
 	if len(plugin.Commands) == 0 {
 		plugin.Commands = m.findCommands(pluginPath)
 	}
 
-	for _, cmd := range plugin.Commands {
+	// Normalize plugin commands by putting binary full paths and description summaries.
+	for i, cmd := range plugin.Commands {
 		if !filepath.IsAbs(cmd.Path) {
 			cmd.Path = filepath.Join(pluginPath, cmd.Path)
 		}
 		if cmd.Description == "" {
 			cmd.Description = m.commandDescription(cmd)
 		}
+		plugin.Commands[i] = cmd
 	}
 
-	if !reflect.DeepEqual(persistedPlugin, *plugin) {
+	// Compare the normalized plugin with the saved copy to know whether or not the file should be updated.
+	if !reflect.DeepEqual(persistedPlugin, plugin) {
 		m.persistPlugin(plugin, pluginFilePath)
 	}
 	return plugin, nil
@@ -155,7 +163,7 @@ func (m *Manager) loadPlugin(name string) (*Plugin, error) {
 // findCommands discovers commands in a given directory according to conventions.
 // Each command should be contained in a dedicated binary named `dcos-{command}`.
 // On Windows it must have the `.exe`` extension.
-func (m *Manager) findCommands(pluginDir string) (commands []*Command) {
+func (m *Manager) findCommands(pluginDir string) (commands []Command) {
 	binDir := filepath.Join(pluginDir, "bin")
 	if runtime.GOOS == "windows" {
 		binDir = filepath.Join(pluginDir, "Scripts")
@@ -173,7 +181,7 @@ func (m *Manager) findCommands(pluginDir string) (commands []*Command) {
 		if !strings.HasPrefix(binary.Name(), "dcos-") {
 			continue
 		}
-		cmd := &Command{
+		cmd := Command{
 			Path: filepath.Join(binDir, binary.Name()),
 			Name: strings.TrimPrefix(binary.Name(), "dcos-"),
 		}
@@ -187,7 +195,7 @@ func (m *Manager) findCommands(pluginDir string) (commands []*Command) {
 }
 
 // commandDescription gets the command info summary by invoking the binary with the `--info` flag.
-func (m *Manager) commandDescription(cmd *Command) (desc string) {
+func (m *Manager) commandDescription(cmd Command) (desc string) {
 	infoCmd, err := exec.Command(cmd.Path, cmd.Name, "--info").Output()
 	if err != nil {
 		m.logger.Debugf("Couldn't get info summary for the '%s' command: %s", cmd.Name, err)
