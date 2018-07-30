@@ -76,7 +76,7 @@ Use "{{.CommandPath}} [command] --help" for more information about a command.{{e
 	return cmd
 }
 
-func newPluginCommand(ctx api.Context, cmd *plugin.Command) *cobra.Command {
+func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
 	return &cobra.Command{
 		Use:                cmd.Name,
 		Short:              cmd.Description,
