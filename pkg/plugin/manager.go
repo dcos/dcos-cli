@@ -147,7 +147,7 @@ func (m *Manager) loadPlugin(name string) (*Plugin, error) {
 	}
 
 	if !reflect.DeepEqual(persistedPlugin, *plugin) {
-		m.unmarshalPlugin(plugin, pluginFilePath)
+		m.persistPlugin(plugin, pluginFilePath)
 	}
 	return plugin, nil
 }
