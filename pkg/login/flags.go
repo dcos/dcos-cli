@@ -3,7 +3,6 @@ package login
 import (
 	"bytes"
 	"crypto/rsa"
-	"fmt"
 	"unicode"
 
 	"github.com/dcos/dcos-cli/pkg/fsutil"
@@ -19,7 +18,6 @@ type Flags struct {
 	providerID     string
 	username       string
 	password       string
-	passwordEnv    string
 	passwordFile   string
 	privateKey     *rsa.PrivateKey
 	privateKeyFile string
@@ -54,12 +52,6 @@ func (f *Flags) Register(flags *pflag.FlagSet) {
 		"Specify the password on the command line (insecure).",
 	)
 	flags.StringVar(
-		&f.passwordEnv,
-		"password-env",
-		"",
-		"Specify an environment variable name that contains the password.",
-	)
-	flags.StringVar(
 		&f.passwordFile,
 		"password-file",
 		"",
@@ -84,11 +76,15 @@ func (f *Flags) Resolve() error {
 		f.password = string(rawPassword)
 	}
 
-	if f.passwordEnv != "" {
-		if password, ok := f.envLookup(f.passwordEnv); ok {
+	if f.username == "" {
+		if username, ok := f.envLookup("DCOS_USERNAME"); ok {
+			f.username = username
+		}
+	}
+
+	if f.password == "" {
+		if password, ok := f.envLookup("DCOS_PASSWORD"); ok {
 			f.password = password
-		} else {
-			return fmt.Errorf("couldn't read password from '%s' env var", f.passwordEnv)
 		}
 	}
 
