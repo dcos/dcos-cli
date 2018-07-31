@@ -5,44 +5,54 @@ import (
 	"path/filepath"
 
 	"github.com/dcos/dcos-cli/api"
+	"github.com/dcos/dcos-cli/pkg/cluster/lister"
 	"github.com/spf13/cobra"
 )
 
 // newCmdClusterRemove removes a cluster.
 func newCmdClusterRemove(ctx api.Context) *cobra.Command {
 	var removeAll bool
+	var removeUnavailable bool
+
 	cmd := &cobra.Command{
 		Use:   "remove",
 		Short: "Remove a configured cluster from the CLI",
 		Args:  cobra.MaximumNArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if removeAll && len(args) == 1 {
-				return errors.New("cannot accept both a cluster name and the --all option")
+			if (removeAll || removeUnavailable) && len(args) == 1 {
+				return errors.New("cannot accept both a cluster name and the --all / --unavailable option")
 			}
-			if !removeAll && len(args) == 0 {
-				return errors.New("either a cluster name or the --all option must be passed")
+			if !removeAll && !removeUnavailable && len(args) == 0 {
+				return errors.New("either a cluster name or one of the --all / --unavailable option must be passed")
 			}
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Remove all clusters.
-			if removeAll {
-				for _, conf := range ctx.ConfigManager().All() {
-					if err := ctx.Fs().RemoveAll(filepath.Dir(conf.Path())); err != nil {
-						return err
-					}
+			// Remove a single cluster.
+			if len(args) == 1 {
+				conf, err := ctx.ConfigManager().Find(args[0], false)
+				if err != nil {
+					return err
 				}
-				return nil
+				return ctx.Fs().RemoveAll(filepath.Dir(conf.Path()))
 			}
 
-			// Remove a single cluster.
-			conf, err := ctx.ConfigManager().Find(args[0], false)
-			if err != nil {
-				return err
+			var filters []lister.Filter
+			if removeUnavailable {
+				filters = append(filters, lister.Status("UNAVAILABLE"))
 			}
-			return ctx.Fs().RemoveAll(filepath.Dir(conf.Path()))
+
+			items := lister.New(ctx.ConfigManager(), ctx.Logger()).List(filters...)
+
+			for _, item := range items {
+				if err := ctx.Fs().RemoveAll(item.Cluster().Dir()); err != nil {
+					return err
+				}
+			}
+			return nil
 		},
 	}
 	cmd.Flags().BoolVar(&removeAll, "all", false, "remove all clusters")
+	cmd.Flags().BoolVar(&removeUnavailable, "unavailable", false, "remove unavailable clusters")
 	return cmd
 }
