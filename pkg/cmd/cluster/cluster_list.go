@@ -19,7 +19,14 @@ func newCmdClusterList(ctx api.Context) *cobra.Command {
 		Short: "List the clusters configured and the ones linked to the current cluster",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			items := lister.New(ctx.ConfigManager(), ctx.Logger()).List(attachedOnly)
+			var filters []lister.Filter
+			if attachedOnly {
+				filters = append(filters, lister.AttachedOnly())
+			} else {
+				filters = append(filters, lister.Linked())
+			}
+
+			items := lister.New(ctx.ConfigManager(), ctx.Logger()).List(filters...)
 			if attachedOnly && len(items) == 0 {
 				return errors.New("no cluster is attached. Please run `dcos cluster attach <cluster-name>`")
 			}
