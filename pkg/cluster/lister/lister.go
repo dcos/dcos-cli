@@ -12,6 +12,17 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	// StatusAvailable refers to a reachable cluster.
+	StatusAvailable = "AVAILABLE"
+
+	// StatusUnavailable refers to an unreachable cluster.
+	StatusUnavailable = "UNAVAILABLE"
+
+	// StatusUnconfigured refers to an unconfigured cluster (a linked cluster).
+	StatusUnconfigured = "UNCONFIGURED"
+)
+
 // Item represents a cluster item in the list.
 type Item struct {
 	Attached bool   `json:"attached"`
@@ -95,7 +106,7 @@ func (l *Lister) List(filters ...Filter) (items []*Item) {
 				ID:      cluster.ID(),
 				Name:    cluster.Name(),
 				URL:     cluster.URL(),
-				Status:  "UNAVAILABLE",
+				Status:  StatusUnavailable,
 				Version: "UNKNOWN",
 				cluster: cluster,
 			}
@@ -110,12 +121,12 @@ func (l *Lister) List(filters ...Filter) (items []*Item) {
 			httpClient := l.httpClient(cluster)
 			version, err := dcos.NewClient(httpClient).Version()
 			if err == nil {
-				item.Status = "AVAILABLE"
+				item.Status = StatusAvailable
 				item.Version = version.Version
 			}
 
 			if cluster.Config().Path() == "" {
-				item.Status = "UNCONFIGURED"
+				item.Status = StatusUnconfigured
 			}
 
 			if listFilters.Status != "" && item.Status != listFilters.Status {

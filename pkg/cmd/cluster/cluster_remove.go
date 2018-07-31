@@ -39,7 +39,7 @@ func newCmdClusterRemove(ctx api.Context) *cobra.Command {
 
 			var filters []lister.Filter
 			if removeUnavailable {
-				filters = append(filters, lister.Status("UNAVAILABLE"))
+				filters = append(filters, lister.Status(lister.StatusUnavailable))
 			}
 
 			items := lister.New(ctx.ConfigManager(), ctx.Logger()).List(filters...)
