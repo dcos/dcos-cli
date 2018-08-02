@@ -173,7 +173,7 @@ func (ctx *Context) Login(flags *login.Flags, httpClient *httpclient.Client) (st
 }
 
 // Setup configures a given cluster based on its URL and setup flags.
-func (ctx *Context) Setup(flags *setup.Flags, clusterURL string) (*config.Cluster, error) {
+func (ctx *Context) Setup(flags *setup.Flags, clusterURL string, attach bool) (*config.Cluster, error) {
 	if !strings.HasPrefix(clusterURL, "https://") && !strings.HasPrefix(clusterURL, "http://") {
 		ctx.Logger().Info("Missing scheme in cluster URL, assuming HTTPS.")
 		clusterURL = "https://" + clusterURL
@@ -186,7 +186,7 @@ func (ctx *Context) Setup(flags *setup.Flags, clusterURL string) (*config.Cluste
 		LoginFlow:     ctx.loginFlow(),
 		ConfigManager: ctx.ConfigManager(),
 		PluginManager: ctx.PluginManager(nil),
-	}).Configure(flags, clusterURL)
+	}).Configure(flags, clusterURL, attach)
 }
 
 func (ctx *Context) loginFlow() *login.Flow {

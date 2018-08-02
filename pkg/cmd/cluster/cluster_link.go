@@ -37,7 +37,7 @@ func newCmdClusterLink(ctx api.Context) *cobra.Command {
 					return err
 				}
 
-				linkableCluster, err = ctx.Setup(setupFlags, args[0])
+				linkableCluster, err = ctx.Setup(setupFlags, args[0], false)
 				if err != nil {
 					return err
 				}
