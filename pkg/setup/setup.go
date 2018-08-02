@@ -7,12 +7,14 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -62,7 +64,7 @@ func New(opts Opts) *Setup {
 }
 
 // Configure triggers the setup flow.
-func (s *Setup) Configure(flags *Flags, clusterURL string) (*config.Cluster, error) {
+func (s *Setup) Configure(flags *Flags, clusterURL string, attach bool) (*config.Cluster, error) {
 	if err := flags.Resolve(); err != nil {
 		return nil, err
 	}
@@ -113,19 +115,27 @@ func (s *Setup) Configure(flags *Flags, clusterURL string) (*config.Cluster, err
 		cluster.SetName(metadata.ClusterID)
 	}
 
-	// Create the config for the given cluster and attach the cluster.
+	// Create the config for the given cluster.
 	err = s.configManager.Save(cluster.Config(), metadata.ClusterID, flags.caBundle)
 	if err != nil {
 		return nil, err
 	}
 
-	// Install default plugins (dcos-core-cli and dcos-enterprise-cli).
-	if !flags.noPlugin {
-		s.pluginManager.SetCluster(cluster)
-		if err := s.installPlugins(httpClient); err != nil {
+	if attach {
+		err = s.configManager.Attach(cluster.Config())
+		if err != nil {
 			return nil, err
 		}
 	}
+
+	// Install default plugins (dcos-core-cli and dcos-enterprise-cli).
+	if !flags.noPlugin {
+		s.pluginManager.SetCluster(cluster)
+		if err = s.installDefaultPlugins(httpClient); err != nil {
+			return nil, err
+		}
+	}
+
 	return cluster, nil
 }
 
@@ -242,6 +252,79 @@ func (s *Setup) decodePEMCerts(caPEM []byte, prompt bool) (*x509.CertPool, error
 	return certPool, nil
 }
 
+// installDefaultPlugins installs the dcos-core-cli and (if applicable) the dcos-enterprise-cli plugin.
+// The installation of the core plugin only works with DC/OS >= 1.10 and the installation of the EE plugin only works
+// with DC/OS >= 1.12 due to the lack of a "Variant" key in the "/dcos-metadata/dcos-version.json" endpoint before.
+func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
+	version, err := dcos.NewClient(httpClient).Version()
+	if err != nil {
+		return fmt.Errorf("unable to get DC/OS version, installation of the plugins aborted: %s", err)
+	}
+
+	if regexp.MustCompile(`^1\.[7-9]\D*`).MatchString(version.Version) {
+		return errors.New("DC/OS version of the cluster < 1.10, installation of the plugins aborted")
+	}
+
+	// Install dcos-enterprise-cli.
+	enterpriseInstallErr := make(chan error)
+	go func() {
+		// Install dcos-enterprise-cli if the DC/OS variant metadata is "enterprise".
+		if version.DCOSVariant == "enterprise" {
+			enterpriseInstallErr <- s.installPlugin("dcos-enterprise-cli", httpClient)
+		}
+		if version.DCOSVariant == "" {
+			// We add this message if the DC/OS variant is "" (DC/OS < 1.12)
+			// or if there was an error while installing the EE plugin.
+			s.logger.Error("Please run “dcos package install dcos-enterprise-cli” if you use a DC/OS Enterprise cluster")
+		}
+		close(enterpriseInstallErr)
+	}()
+
+	err = s.installPlugin("dcos-core-cli", httpClient)
+	if err != nil {
+		// We don't return an error as the EE plugin is not as useful as the core plugin.
+		return fmt.Errorf("unable to install DC/OS core CLI plugin: %s", err)
+	}
+
+	// The installation of the core and EE plugins happen in parallel.
+	// We wait for the installation of the enterprise plugin before returning.
+	err = <-enterpriseInstallErr
+	if err != nil {
+		return fmt.Errorf("unable to install DC/OS enterprise CLI plugin: %s", err)
+	}
+	return nil
+}
+
+// installPlugin installs a plugin by its name. It gets the plugin's download URL through Cosmos.
+func (s *Setup) installPlugin(name string, httpClient *httpclient.Client) error {
+	s.logger.Infof("Installing %s...", name)
+
+	// Get package information from Cosmos.
+	pkgInfo, err := cosmos.NewClient(httpClient).DescribePackage(name)
+	if err != nil {
+		return err
+	}
+
+	// Get the download URL for the current platform.
+	p, ok := pkgInfo.Package.Resource.CLI.Plugins[runtime.GOOS]["x86-64"]
+	if !ok {
+		return fmt.Errorf("'%s' isn't available for '%s')", name, runtime.GOOS)
+	}
+	return s.pluginManager.Install(p.URL, &plugin.InstallOpts{
+		Name:   pkgInfo.Package.Name,
+		Update: true,
+		PostInstall: func(fs afero.Fs, pluginDir string) error {
+			pkgInfoFilepath := filepath.Join(pluginDir, "package.json")
+			pkgInfoFile, err := fs.OpenFile(pkgInfoFilepath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+			if err != nil {
+				return err
+			}
+			defer pkgInfoFile.Close()
+			return json.NewEncoder(pkgInfoFile).Encode(pkgInfo.Package)
+		},
+	})
+}
+
 // promptCA prompts information about the certificate authority to the user.
 // They are then expected to manually confirm that they trust it.
 func (s *Setup) promptCA(cert *x509.Certificate) error {
@@ -274,52 +357,4 @@ Do you trust it?`
 		cert.NotAfter,
 		fingerprintBuf.String(),
 	))
-}
-
-// installPlugins installs the dcos-core-cli and (if applicable) the dcos-enterprise-cli plugin.
-func (s *Setup) installPlugins(httpClient *httpclient.Client) error {
-	// TODO: install dcos-core-cli.
-
-	// Install dcos-enterprise-cli only when the DC/OS variant metadata is "enterprise".
-	version, err := dcos.NewClient(httpClient).Version()
-	if err == nil && version.DCOSVariant == "enterprise" {
-		err := s.installPlugin("dcos-enterprise-cli", httpClient)
-		if err == nil {
-			return nil
-		}
-		s.logger.Debug(err)
-	}
-
-	s.logger.Error("Please run “dcos package install dcos-enterprise-cli” if you use a DC/OS Enterprise cluster.")
-	return nil
-}
-
-// installPlugin installs a plugin by its name. It gets the plugin's download URL through Cosmos.
-func (s *Setup) installPlugin(name string, httpClient *httpclient.Client) error {
-	s.logger.Infof("Installing %s...", name)
-
-	// Get package information from Cosmos.
-	pkgInfo, err := cosmos.NewClient(httpClient).DescribePackage(name)
-	if err != nil {
-		return err
-	}
-
-	// Get the download URL for the current platform.
-	p, ok := pkgInfo.Package.Resource.CLI.Plugins[runtime.GOOS]["x86-64"]
-	if !ok {
-		return fmt.Errorf("'%s' isn't available for '%s')", name, runtime.GOOS)
-	}
-	return s.pluginManager.Install(p.URL, &plugin.InstallOpts{
-		Name:   pkgInfo.Package.Name,
-		Update: true,
-		PostInstall: func(fs afero.Fs, pluginDir string) error {
-			pkgInfoFilepath := filepath.Join(pluginDir, "package.json")
-			pkgInfoFile, err := fs.OpenFile(pkgInfoFilepath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-			if err != nil {
-				return err
-			}
-			defer pkgInfoFile.Close()
-			return json.NewEncoder(pkgInfoFile).Encode(pkgInfo.Package)
-		},
-	})
 }

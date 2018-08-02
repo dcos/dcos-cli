@@ -67,11 +67,8 @@ func newCmdClusterAttach(ctx api.Context) *cobra.Command {
 				// One matching linked cluster, no matching cluster.
 				flags := setup.NewFlags(ctx.Fs(), ctx.EnvLookup)
 				flags.LoginFlags().SetProviderID(matchingLinkedClusters[0].LoginProvider.ID)
-				cluster, err := ctx.Setup(flags, matchingLinkedClusters[0].URL)
-				if err != nil {
-					return err
-				}
-				return ctx.ConfigManager().Attach(cluster.Config())
+				_, err := ctx.Setup(flags, matchingLinkedClusters[0].URL, true)
+				return err
 			default:
 				return config.ErrTooManyConfigs
 			}
