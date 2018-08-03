@@ -63,7 +63,7 @@ setup(
         'jsonschema>=2.5, <3.0',
         'pager>=3.3, <4.0',
         'prettytable>=0.7, <1.0',
-        'PyJWT==1.4.2',
+        'PyJWT==1.5.3',
         'pygments>=2.0, <3.0',
         'requests>=2.6, <3.0',
         'six>=1.9, <2.0',
