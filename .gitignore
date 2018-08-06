@@ -9,6 +9,7 @@ pydoc/_build/
 .tox/
 .coverage
 .cache
+.pytest_cache
 
 *.pyc
 bundle.zip
