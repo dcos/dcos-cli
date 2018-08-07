@@ -1,5 +1,7 @@
 package httpclient
 
+//go:generate goderive
+
 import (
 	"context"
 	"crypto/tls"
@@ -26,10 +28,10 @@ type Option func(opts *Options)
 
 // Options are configuration options for an HTTP client.
 type Options struct {
+	Header          http.Header
 	Timeout         time.Duration
 	TLS             *tls.Config
 	Logger          *logrus.Logger
-	ACSToken        string
 	CheckRedirect   func(req *http.Request, via []*http.Request) error
 	FailOnErrStatus bool
 }
@@ -50,8 +52,13 @@ func TLS(tlsConfig *tls.Config) Option {
 
 // ACSToken sets the authentication token for HTTP requests.
 func ACSToken(token string) Option {
+	return Header("Authorization", "token="+token)
+}
+
+// Header sets an HTTP header.
+func Header(key, value string) Option {
 	return func(opts *Options) {
-		opts.ACSToken = token
+		opts.Header.Set(key, value)
 	}
 }
 
@@ -88,10 +95,14 @@ func FailOnErrStatus(failOnErrStatus bool) Option {
 
 // New returns a new HTTP client for a given baseURL and functional options.
 func New(baseURL string, opts ...Option) *Client {
-	// Default request timeout to 3 minutes. We don't use http.Client.Timeout on purpose as the
-	// current approach allows to change the timeout on a per-request basis. The same client can
-	// be shared for requests with different timeouts.
-	options := Options{Timeout: 3 * time.Minute}
+	options := Options{
+		Header: make(http.Header),
+
+		// Default request timeout to 3 minutes. We don't use http.Client.Timeout on purpose as the
+		// current approach allows to change the timeout on a per-request basis. The same client can
+		// be shared for requests with different timeouts.
+		Timeout: 3 * time.Minute,
+	}
 
 	for _, opt := range opts {
 		opt(&options)
@@ -167,13 +178,13 @@ func (c *Client) NewRequest(method, path string, body io.Reader, opts ...Option)
 	}
 
 	options := c.opts
+	options.Header = make(http.Header)
+	deriveDeepCopy(options.Header, c.opts.Header)
 	for _, opt := range opts {
 		opt(&options)
 	}
 
-	if options.ACSToken != "" {
-		req.Header.Add("Authorization", "token="+options.ACSToken)
-	}
+	req.Header = options.Header
 
 	if options.FailOnErrStatus {
 		ctx := context.WithValue(req.Context(), ctxKeyFailOnErrStatus, struct{}{})
