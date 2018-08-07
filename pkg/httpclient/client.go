@@ -11,10 +11,16 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"runtime"
+	"strings"
 	"time"
 
+	"github.com/dcos/dcos-cli/pkg/cli/version"
 	"github.com/sirupsen/logrus"
 )
+
+// defaultUserAgent for HTTP requests (eg. "dcos-cli/0.7.1 linux").
+var defaultUserAgent = fmt.Sprintf("dcos-cli/%s %s", version.Version(), runtime.GOOS)
 
 // A Client is an HTTP client.
 type Client struct {
@@ -185,6 +191,11 @@ func (c *Client) NewRequest(method, path string, body io.Reader, opts ...Option)
 	}
 
 	req.Header = options.Header
+
+	// Set the default User-Agent unless the header is already set.
+	if _, ok := req.Header["User-Agent"]; !ok {
+		req.Header.Set("User-Agent", defaultUserAgent)
+	}
 
 	if options.FailOnErrStatus {
 		ctx := context.WithValue(req.Context(), ctxKeyFailOnErrStatus, struct{}{})
