@@ -25,9 +25,11 @@ func TestEmptyList(t *testing.T) {
 	}), logger)
 
 	items := lister.List()
+	require.NotNil(t, items)
 	require.Len(t, items, 0)
 
 	items = lister.List(AttachedOnly())
+	require.NotNil(t, items)
 	require.Len(t, items, 0)
 }
 

@@ -61,7 +61,9 @@ func New(configManager *config.Manager, logger *logrus.Logger) *Lister {
 }
 
 // List retrieves all known clusters.
-func (l *Lister) List(filters ...Filter) (items []*Item) {
+func (l *Lister) List(filters ...Filter) []*Item {
+	items := []*Item{}
+
 	listFilters := Filters{}
 	for _, filter := range filters {
 		filter(&listFilters)
@@ -147,7 +149,7 @@ func (l *Lister) List(filters ...Filter) (items []*Item) {
 		}(cluster)
 	}
 	wg.Wait()
-	return
+	return items
 }
 
 func (l *Lister) httpClient(cluster *config.Cluster) *httpclient.Client {
