@@ -199,7 +199,8 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 	logger := c.opts.Logger
 
 	if logger != nil && logger.Level >= logrus.DebugLevel {
-		reqDump, err := httputil.DumpRequestOut(req, true)
+		dumpBody := c.isText(req.Header.Get("Content-Type"))
+		reqDump, err := httputil.DumpRequestOut(req, dumpBody)
 		if err != nil {
 			logger.Debugf("Couldn't dump request: %s", err)
 		} else {
@@ -211,7 +212,8 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 
 	if logger != nil && logger.Level >= logrus.DebugLevel {
 		if err == nil {
-			respDump, err := httputil.DumpResponse(resp, true)
+			dumpBody := c.isText(resp.Header.Get("Content-Type"))
+			respDump, err := httputil.DumpResponse(resp, dumpBody)
 			if err != nil {
 				logger.Debugf("Couldn't dump response: %s", err)
 			} else {
@@ -242,4 +244,9 @@ func (c *Client) BaseURL() *url.URL {
 		c.opts.Logger.Debug(err)
 	}
 	return baseURL
+}
+
+// isText returns whether the Content-type header refers to a textual body.
+func (c *Client) isText(contentType string) bool {
+	return contentType == "application/json" || strings.HasPrefix(contentType, "text/")
 }
