@@ -177,3 +177,22 @@ func TestFailOnError(t *testing.T) {
 	_, err = client.Get("/", FailOnErrStatus(true))
 	require.Error(t, err)
 }
+
+func TestDefaultUserAgent(t *testing.T) {
+	client := New("https://example.com")
+
+	// Custom User-Agent.
+	req, err := client.NewRequest("GET", "/", nil, Header("User-Agent", "Mario/Nintendo64"))
+	require.NoError(t, err)
+	require.Equal(t, "Mario/Nintendo64", req.Header.Get("User-Agent"))
+
+	// Explicitly empty User-Agent.
+	req, err = client.NewRequest("GET", "/", nil, Header("User-Agent", ""))
+	require.NoError(t, err)
+	require.Equal(t, "", req.Header.Get("User-Agent"))
+
+	// No User-Agent.
+	req, err = client.NewRequest("GET", "/", nil)
+	require.NoError(t, err)
+	require.Equal(t, defaultUserAgent, req.Header.Get("User-Agent"))
+}
