@@ -12,6 +12,17 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	// StatusAvailable refers to a reachable cluster.
+	StatusAvailable = "AVAILABLE"
+
+	// StatusUnavailable refers to an unreachable cluster.
+	StatusUnavailable = "UNAVAILABLE"
+
+	// StatusUnconfigured refers to an unconfigured cluster (a linked cluster).
+	StatusUnconfigured = "UNCONFIGURED"
+)
+
 // Item represents a cluster item in the list.
 type Item struct {
 	Attached bool   `json:"attached"`
@@ -20,6 +31,12 @@ type Item struct {
 	Status   string `json:"status"`
 	URL      string `json:"url"`
 	Version  string `json:"version"`
+	cluster  *config.Cluster
+}
+
+// Cluster returns the cluster associated to the item.
+func (i *Item) Cluster() *config.Cluster {
+	return i.cluster
 }
 
 // Lister is able to retrieve locally configured clusters as well as linked clusters.
@@ -44,7 +61,14 @@ func New(configManager *config.Manager, logger *logrus.Logger) *Lister {
 }
 
 // List retrieves all known clusters.
-func (l *Lister) List(attachedOnly bool) (items []*Item) {
+func (l *Lister) List(filters ...Filter) []*Item {
+	items := []*Item{}
+
+	listFilters := Filters{}
+	for _, filter := range filters {
+		filter(&listFilters)
+	}
+
 	clusters := make(chan *config.Cluster)
 	go func() {
 		l.logger.Info("Reading configured clusters...")
@@ -57,7 +81,7 @@ func (l *Lister) List(attachedOnly bool) (items []*Item) {
 			configuredClusterIDs[cluster.ID()] = true
 		}
 
-		if !attachedOnly && l.linker != nil {
+		if listFilters.Linked && l.linker != nil {
 			l.logger.Info("Fetching linked clusters...")
 			links, err := l.linker.Links()
 			if err != nil {
@@ -84,27 +108,33 @@ func (l *Lister) List(attachedOnly bool) (items []*Item) {
 				ID:      cluster.ID(),
 				Name:    cluster.Name(),
 				URL:     cluster.URL(),
-				Status:  "UNAVAILABLE",
+				Status:  StatusUnavailable,
 				Version: "UNKNOWN",
+				cluster: cluster,
 			}
 			if l.currentCluster != nil {
 				item.Attached = (cluster.Config().Path() == l.currentCluster.Config().Path())
 			}
 
-			if attachedOnly && !item.Attached {
+			if listFilters.AttachedOnly && !item.Attached {
 				return
 			}
 
 			httpClient := l.httpClient(cluster)
 			version, err := dcos.NewClient(httpClient).Version()
 			if err == nil {
-				item.Status = "AVAILABLE"
+				item.Status = StatusAvailable
 				item.Version = version.Version
 			}
 
 			if cluster.Config().Path() == "" {
-				item.Status = "UNCONFIGURED"
+				item.Status = StatusUnconfigured
 			}
+
+			if listFilters.Status != "" && item.Status != listFilters.Status {
+				return
+			}
+
 			mu.Lock()
 			defer mu.Unlock()
 
@@ -119,7 +149,7 @@ func (l *Lister) List(attachedOnly bool) (items []*Item) {
 		}(cluster)
 	}
 	wg.Wait()
-	return
+	return items
 }
 
 func (l *Lister) httpClient(cluster *config.Cluster) *httpclient.Client {

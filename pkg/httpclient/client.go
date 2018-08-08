@@ -1,16 +1,26 @@
 package httpclient
 
+//go:generate goderive
+
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
+	"runtime"
+	"strings"
 	"time"
 
+	"github.com/dcos/dcos-cli/pkg/cli/version"
 	"github.com/sirupsen/logrus"
 )
+
+// defaultUserAgent for HTTP requests (eg. "dcos-cli/0.7.1 linux").
+var defaultUserAgent = fmt.Sprintf("dcos-cli/%s %s", version.Version(), runtime.GOOS)
 
 // A Client is an HTTP client.
 type Client struct {
@@ -24,12 +34,20 @@ type Option func(opts *Options)
 
 // Options are configuration options for an HTTP client.
 type Options struct {
-	Timeout       time.Duration
-	TLS           *tls.Config
-	Logger        *logrus.Logger
-	ACSToken      string
-	CheckRedirect func(req *http.Request, via []*http.Request) error
+	Header          http.Header
+	Timeout         time.Duration
+	TLS             *tls.Config
+	Logger          *logrus.Logger
+	CheckRedirect   func(req *http.Request, via []*http.Request) error
+	FailOnErrStatus bool
 }
+
+// ctxKey is a custom type to set values in request contexts.
+type ctxKey int
+
+// ctxKeyFailOnErrStatus is a request context key which, when sets, indicates that
+// the HTTP client should return in error when it encounters an HTTP error (4XX / 5XX).
+const ctxKeyFailOnErrStatus ctxKey = 0
 
 // TLS sets the TLS configuration for the HTTP client transport.
 func TLS(tlsConfig *tls.Config) Option {
@@ -40,8 +58,13 @@ func TLS(tlsConfig *tls.Config) Option {
 
 // ACSToken sets the authentication token for HTTP requests.
 func ACSToken(token string) Option {
+	return Header("Authorization", "token="+token)
+}
+
+// Header sets an HTTP header.
+func Header(key, value string) Option {
 	return func(opts *Options) {
-		opts.ACSToken = token
+		opts.Header.Set(key, value)
 	}
 }
 
@@ -69,12 +92,23 @@ func NoFollow() Option {
 	}
 }
 
+// FailOnErrStatus specifies whether or not the client should fail on HTTP error response (4XX / 5XX).
+func FailOnErrStatus(failOnErrStatus bool) Option {
+	return func(opts *Options) {
+		opts.FailOnErrStatus = failOnErrStatus
+	}
+}
+
 // New returns a new HTTP client for a given baseURL and functional options.
 func New(baseURL string, opts ...Option) *Client {
-	// Default request timeout to 3 minutes. We don't use http.Client.Timeout on purpose as the
-	// current approach allows to change the timeout on a per-request basis. The same client can
-	// be shared for requests with different timeouts.
-	options := Options{Timeout: 3 * time.Minute}
+	options := Options{
+		Header: make(http.Header),
+
+		// Default request timeout to 3 minutes. We don't use http.Client.Timeout on purpose as the
+		// current approach allows to change the timeout on a per-request basis. The same client can
+		// be shared for requests with different timeouts.
+		Timeout: 3 * time.Minute,
+	}
 
 	for _, opt := range opts {
 		opt(&options)
@@ -150,12 +184,22 @@ func (c *Client) NewRequest(method, path string, body io.Reader, opts ...Option)
 	}
 
 	options := c.opts
+	options.Header = make(http.Header)
+	deriveDeepCopy(options.Header, c.opts.Header)
 	for _, opt := range opts {
 		opt(&options)
 	}
 
-	if options.ACSToken != "" {
-		req.Header.Add("Authorization", "token="+options.ACSToken)
+	req.Header = options.Header
+
+	// Set the default User-Agent unless the header is already set.
+	if _, ok := req.Header["User-Agent"]; !ok {
+		req.Header.Set("User-Agent", defaultUserAgent)
+	}
+
+	if options.FailOnErrStatus {
+		ctx := context.WithValue(req.Context(), ctxKeyFailOnErrStatus, struct{}{})
+		req = req.WithContext(ctx)
 	}
 
 	if options.Timeout > 0 {
@@ -177,9 +221,10 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 	logger := c.opts.Logger
 
 	if logger != nil && logger.Level >= logrus.DebugLevel {
-		reqDump, err := httputil.DumpRequestOut(req, true)
+		dumpBody := c.isText(req.Header.Get("Content-Type"))
+		reqDump, err := httputil.DumpRequestOut(req, dumpBody)
 		if err != nil {
-			logger.Debug("Couldn't dump request: %s", err)
+			logger.Debugf("Couldn't dump request: %s", err)
 		} else {
 			logger.Debug(string(reqDump))
 		}
@@ -189,9 +234,10 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 
 	if logger != nil && logger.Level >= logrus.DebugLevel {
 		if err == nil {
-			respDump, err := httputil.DumpResponse(resp, true)
+			dumpBody := c.isText(resp.Header.Get("Content-Type"))
+			respDump, err := httputil.DumpResponse(resp, dumpBody)
 			if err != nil {
-				logger.Debug("Couldn't dump response: %s", err)
+				logger.Debugf("Couldn't dump response: %s", err)
 			} else {
 				logger.Debug(string(respDump))
 			}
@@ -199,5 +245,30 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 			logger.Debug(err)
 		}
 	}
+
+	if err == nil {
+		_, failOnErrStatus := req.Context().Value(ctxKeyFailOnErrStatus).(struct{})
+
+		if failOnErrStatus && resp.StatusCode >= 400 && resp.StatusCode < 600 {
+			return nil, fmt.Errorf("HTTP %d error", resp.StatusCode)
+		}
+	}
 	return resp, err
+}
+
+// BaseURL returns the HTTP client's base URL.
+func (c *Client) BaseURL() *url.URL {
+	baseURL, err := url.Parse(c.baseURL)
+	if err != nil && c.opts.Logger != nil {
+		// We don't return error-out to keep the method signature clean.
+		// If an http client contains an invalid URL it is broken anyway and
+		// it is not this method responsibility to check this.
+		c.opts.Logger.Debug(err)
+	}
+	return baseURL
+}
+
+// isText returns whether the Content-type header refers to a textual body.
+func (c *Client) isText(contentType string) bool {
+	return contentType == "application/json" || strings.HasPrefix(contentType, "text/")
 }

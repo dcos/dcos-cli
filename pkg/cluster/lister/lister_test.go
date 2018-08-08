@@ -24,10 +24,12 @@ func TestEmptyList(t *testing.T) {
 		EnvLookup: env.EnvLookup,
 	}), logger)
 
-	items := lister.List(false)
+	items := lister.List()
+	require.NotNil(t, items)
 	require.Len(t, items, 0)
 
-	items = lister.List(true)
+	items = lister.List(AttachedOnly())
+	require.NotNil(t, items)
 	require.Len(t, items, 0)
 }
 
@@ -65,26 +67,36 @@ func TestList(t *testing.T) {
 		EnvLookup: env.EnvLookup,
 	}), logger)
 
-	items := lister.List(false)
+	items := lister.List()
 	require.Len(t, items, 3)
 
 	require.Equal(t, currentCluster.URL(), items[0].URL)
-	require.Equal(t, "AVAILABLE", items[0].Status)
+	require.Equal(t, StatusAvailable, items[0].Status)
 	require.Equal(t, "1234-56789-01234", items[0].ID)
 	require.Equal(t, "current-cluster", items[0].Name)
 	require.Equal(t, "1.12", items[0].Version)
 
 	require.Equal(t, downCluster.URL(), items[1].URL)
-	require.Equal(t, "UNAVAILABLE", items[1].Status)
+	require.Equal(t, StatusUnavailable, items[1].Status)
 	require.Equal(t, "3234-56789-01234", items[1].ID)
 	require.Equal(t, "invalid-cluster", items[1].Name)
 	require.Equal(t, "UNKNOWN", items[1].Version)
 
 	require.Equal(t, otherCluster.URL(), items[2].URL)
-	require.Equal(t, "AVAILABLE", items[2].Status)
+	require.Equal(t, StatusAvailable, items[2].Status)
 	require.Equal(t, "2234-56789-01234", items[2].ID)
 	require.Equal(t, "other-cluster", items[2].Name)
 	require.Equal(t, "1.18", items[2].Version)
+
+	// Test the Status filter.
+	items = lister.List(Status(StatusUnavailable))
+	require.Len(t, items, 1)
+
+	require.Equal(t, downCluster.URL(), items[0].URL)
+	require.Equal(t, StatusUnavailable, items[0].Status)
+	require.Equal(t, "3234-56789-01234", items[0].ID)
+	require.Equal(t, "invalid-cluster", items[0].Name)
+	require.Equal(t, "UNKNOWN", items[0].Version)
 }
 
 func TestListIgnoresLegacyConfig(t *testing.T) {
@@ -105,8 +117,8 @@ func TestListIgnoresLegacyConfig(t *testing.T) {
 		Fs:        env.Fs,
 		EnvLookup: env.EnvLookup,
 	}), logger)
-	require.Len(t, lister.List(true), 0)
-	require.Len(t, lister.List(false), 0)
+	require.Len(t, lister.List(AttachedOnly()), 0)
+	require.Len(t, lister.List(), 0)
 }
 
 func TestListLegacyConfigWithLink(t *testing.T) {
@@ -143,13 +155,13 @@ func TestListLegacyConfigWithLink(t *testing.T) {
 		EnvLookup: env.EnvLookup,
 	}), logger)
 
-	require.Len(t, lister.List(true), 0)
+	require.Len(t, lister.List(AttachedOnly()), 0)
 
-	items := lister.List(false)
+	items := lister.List(Linked())
 	require.Len(t, items, 1)
 	require.Equal(t, "22c85511-4f0c-42e7-80d2-c697796e47f1", items[0].ID)
 	require.Equal(t, "Zelda", items[0].Name)
 	require.Equal(t, linkTS.URL, items[0].URL)
-	require.Equal(t, "UNCONFIGURED", items[0].Status)
+	require.Equal(t, StatusUnconfigured, items[0].Status)
 	require.Equal(t, "1.15", items[0].Version)
 }

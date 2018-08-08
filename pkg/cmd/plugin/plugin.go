@@ -12,6 +12,7 @@ func NewCommand(ctx api.Context) *cobra.Command {
 		Short: "Manage CLI plugins",
 	}
 	cmd.AddCommand(
+		newCmdPluginAdd(ctx),
 		newCmdPluginRemove(ctx),
 		newCmdPluginList(ctx),
 	)

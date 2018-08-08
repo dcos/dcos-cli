@@ -8,7 +8,7 @@ import (
 // newCmdPluginRemove creates the `dcos plugin remove` subcommand.
 func newCmdPluginRemove(ctx api.Context) *cobra.Command {
 	return &cobra.Command{
-		Use:   "remove",
+		Use:   "remove <plugin>",
 		Short: "Remove a CLI plugin",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -16,7 +16,7 @@ func newCmdPluginRemove(ctx api.Context) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return ctx.PluginManager(cluster.SubcommandsDir()).Remove(args[0])
+			return ctx.PluginManager(cluster).Remove(args[0])
 		},
 	}
 }

@@ -84,13 +84,12 @@ func (ctx *Context) Logger() *logrus.Logger {
 }
 
 // PluginManager returns a plugin manager.
-func (ctx *Context) PluginManager(dir string) *plugin.Manager {
-	return &plugin.Manager{
-		Fs:     ctx.Fs(),
-		Logger: ctx.Logger(),
-		Dir:    dir,
+func (ctx *Context) PluginManager(cluster *config.Cluster) *plugin.Manager {
+	pluginManager := plugin.NewManager(ctx.Fs(), ctx.Logger())
+	if cluster != nil {
+		pluginManager.SetCluster(cluster)
 	}
-
+	return pluginManager
 }
 
 // DCOSDir returns the root directory for the DC/OS CLI.
@@ -174,7 +173,7 @@ func (ctx *Context) Login(flags *login.Flags, httpClient *httpclient.Client) (st
 }
 
 // Setup configures a given cluster based on its URL and setup flags.
-func (ctx *Context) Setup(flags *setup.Flags, clusterURL string) (*config.Cluster, error) {
+func (ctx *Context) Setup(flags *setup.Flags, clusterURL string, attach bool) (*config.Cluster, error) {
 	if !strings.HasPrefix(clusterURL, "https://") && !strings.HasPrefix(clusterURL, "http://") {
 		ctx.Logger().Info("Missing scheme in cluster URL, assuming HTTPS.")
 		clusterURL = "https://" + clusterURL
@@ -186,7 +185,8 @@ func (ctx *Context) Setup(flags *setup.Flags, clusterURL string) (*config.Cluste
 		Logger:        ctx.Logger(),
 		LoginFlow:     ctx.loginFlow(),
 		ConfigManager: ctx.ConfigManager(),
-	}).Configure(flags, clusterURL)
+		PluginManager: ctx.PluginManager(nil),
+	}).Configure(flags, clusterURL, attach)
 }
 
 func (ctx *Context) loginFlow() *login.Flow {

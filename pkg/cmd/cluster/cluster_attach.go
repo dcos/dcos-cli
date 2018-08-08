@@ -13,7 +13,7 @@ import (
 // newCmdClusterAttach ataches the CLI to a cluster.
 func newCmdClusterAttach(ctx api.Context) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "attach",
+		Use:   "attach <cluster>",
 		Short: "Attach the CLI to a cluster",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -67,11 +67,8 @@ func newCmdClusterAttach(ctx api.Context) *cobra.Command {
 				// One matching linked cluster, no matching cluster.
 				flags := setup.NewFlags(ctx.Fs(), ctx.EnvLookup)
 				flags.LoginFlags().SetProviderID(matchingLinkedClusters[0].LoginProvider.ID)
-				cluster, err := ctx.Setup(flags, matchingLinkedClusters[0].URL)
-				if err != nil {
-					return err
-				}
-				return ctx.ConfigManager().Attach(cluster.Config())
+				_, err := ctx.Setup(flags, matchingLinkedClusters[0].URL, true)
+				return err
 			default:
 				return config.ErrTooManyConfigs
 			}

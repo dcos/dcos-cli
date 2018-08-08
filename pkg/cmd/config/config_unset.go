@@ -8,7 +8,7 @@ import (
 // newCmdConfigUnset creates the `dcos config unset` subcommand.
 func newCmdConfigUnset(ctx api.Context) *cobra.Command {
 	return &cobra.Command{
-		Use:   "unset",
+		Use:   "unset <name>",
 		Short: "Remove a property from the configuration file used for the current cluster",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

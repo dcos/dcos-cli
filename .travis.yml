@@ -11,6 +11,9 @@ go_import_path: github.com/dcos/dcos-cli
 env:
  - NO_DOCKER=1
 
-before_script: go get -u github.com/golang/dep/cmd/dep github.com/golang/lint/golint
+before_script:
+ - go get -u github.com/golang/dep/cmd/dep
+ - go get -u github.com/golang/lint/golint
+ - go get -u github.com/awalterschulze/goderive
 
-script: make test 
+script: make test
