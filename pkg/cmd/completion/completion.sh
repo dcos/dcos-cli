@@ -10,13 +10,12 @@ __dcos_debug() {
 } 
 
 
-# default behavior to get the next command from the current command.
-# in the case of --help and other potential circumstances that should
-# end completion, this returns 1, otherwise 0
+# Default behavior to get the next command from the current command. In the case of --help and maybe other situations
+# in the future that should end completion, this returns 1, otherwise 0
 #
 # Assumes a $command variable exists in the calling context that will contain the found subcommand
 # Assumes a $c variable exists in the calling context that is the current
-# word being evaluated from the input string (this is defined in __dcos_main so shouldn't be much a problem)
+# word being evaluated from the input string (this is defined in __dcos_main so shouldn't be a problem)
 __dcos_default_command_parse() {
     while [ "$c" -lt "$cword" ]; do
         i="${words[c]}"
