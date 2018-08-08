@@ -7,6 +7,7 @@ import (
 	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/cmd/auth"
 	"github.com/dcos/dcos-cli/pkg/cmd/cluster"
+	"github.com/dcos/dcos-cli/pkg/cmd/completion"
 	"github.com/dcos/dcos-cli/pkg/cmd/config"
 	plugincmd "github.com/dcos/dcos-cli/pkg/cmd/plugin"
 	"github.com/dcos/dcos-cli/pkg/plugin"
@@ -32,6 +33,7 @@ func NewDCOSCommand(ctx api.Context) *cobra.Command {
 		config.NewCommand(ctx),
 		cluster.NewCommand(ctx),
 		plugincmd.NewCommand(ctx),
+		completion.NewCommand(ctx),
 	)
 
 	// If a cluster is attached, we get its plugins.
