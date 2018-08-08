@@ -240,6 +240,26 @@ _dcos_cluster_attach() {
     fi
 }
 
+_dcos_cluster_help() {
+    :
+}
+
+_dcos_cluster_list() {
+    :
+}
+
+_dcos_cluster_remove() {
+    :
+}
+
+_dcos_cluster_rename() {
+    :
+}
+
+_dcos_cluster_setup() {
+    :
+}
+
 _dcos_config() {
     :
 }
