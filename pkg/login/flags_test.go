@@ -2,6 +2,7 @@ package login
 
 import (
 	"os"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -52,7 +53,10 @@ func TestResolvePasswordFromFile(t *testing.T) {
 		if fixture.expectedPassword != "" {
 			require.Equal(t, fixture.expectedPassword, flags.password)
 		} else {
-			require.Error(t, err)
+			// Secure files are not supported on Windows.
+			if runtime.GOOS != "windows" {
+				require.Error(t, err)
+			}
 		}
 	}
 }
