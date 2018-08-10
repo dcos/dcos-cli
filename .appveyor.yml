@@ -1,0 +1,22 @@
+install:
+  # https://stackoverflow.com/questions/12881854/how-to-use-gnu-make-on-windows
+  - copy c:\MinGW\bin\mingw32-make.exe c:\MinGW\bin\make.exe
+  - SET PATH=c:\\MinGW\\bin;c:\gopath\bin;%PATH%
+
+build: off
+
+clone_folder: c:\gopath\src\github.com\dcos\dcos-cli
+
+environment:
+  GOPATH: c:\gopath
+  NO_DOCKER: 1
+
+stack: go 1.10
+
+before_test:
+  - go get -u github.com/golang/dep/cmd/dep
+  - go get -u github.com/golang/lint/golint
+  - go get -u github.com/awalterschulze/goderive
+
+test_script:
+  - make test
