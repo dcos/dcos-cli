@@ -166,7 +166,11 @@ func (m *Manager) loadPlugin(name string) (*Plugin, error) {
 func (m *Manager) findCommands(pluginDir string) (commands []Command) {
 	binDir := filepath.Join(pluginDir, "bin")
 	if runtime.GOOS == "windows" {
-		binDir = filepath.Join(pluginDir, "Scripts")
+		// On Windows we check for the `bin` dir. If it doesn't exist we use the legacy `Scripts` dir.
+		binDirExists, err := afero.DirExists(m.fs, binDir)
+		if err != nil || !binDirExists {
+			binDir = filepath.Join(pluginDir, "Scripts")
+		}
 	}
 
 	m.logger.Debugf("Discovering commands in '%s'...", binDir)
