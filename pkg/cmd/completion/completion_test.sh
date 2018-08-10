@@ -13,12 +13,15 @@ setUp() {
     COMPREPLY=()
 }
 
-setTest() { COMP_LINE="$1"
+setTest() {
+    COMP_LINE="$1"
     COMP_POINT="${#COMP_LINE}"
     eval set -- "$COMP_LINE"
+    # read -ar COMP_WORDS <<< "${COMP_LINE[@]}"
     COMP_WORDS=(${COMP_LINE[@]})
+
     # add space if there is a space at the end of the input string
-    [[ ${COMP_LINE[@]: -1} = ' ' ]] && COMP_WORDS+=('')
+    [[ ${COMP_LINE[*]: -1} = ' ' ]] && COMP_WORDS+=('')
     COMP_CWORD=$(( ${#COMP_WORDS[@]} - 1 ))
 
 }
