@@ -296,6 +296,33 @@ def job_table(job_list):
     return tb
 
 
+def job_queue_table(job_queue):
+    """Returns a PrettyTable representation of the job queue from Metronome.
+
+    :param job_queue: jobs with jobruns in the queue to render
+    :type job_queue: [job]
+    :rtype: PrettyTable
+    """
+
+    flatten_job_list = []
+
+    for job in job_queue:
+        job_id = job["jobId"]
+        for jobruns in job.get("runs"):
+            flatten_job_list.append(
+                {'jobId': job_id, 'jobrun_id': jobruns.get("runId")})
+
+    fields = OrderedDict([
+        ('id', lambda s: s['jobId']),
+        ('job run id', lambda s: s['jobrun_id']),
+    ])
+
+    tb = truncate_table(fields, flatten_job_list, None, sortby="ID")
+    tb.align["ID"] = 'l'
+
+    return tb
+
+
 def plugins_table(plugin_list):
     """Returns a PrettyTable representation of the plugins list from Marathon.
 

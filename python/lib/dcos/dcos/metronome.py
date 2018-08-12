@@ -338,11 +338,31 @@ class Client(object):
         :type run_id: str
         :rtype: None
         """
-
+        if job_id is None or run_id is None:
+            raise DCOSException(
+                "job_id and run_id are required to kill a jobrun.")
         job_id = util.normalize_marathon_id_path(job_id)
         run_id = util.normalize_marathon_id_path(run_id)
         path = '/v1/jobs{}/runs{}/actions/stop'.format(job_id, run_id)
         self._rpc.http_req(http.post, path)
+
+    def get_queued_job_runs(self, job_id):
+        """Returns the content of the launch queue,
+        including the jobruns for each job_id which should be scheduled.
+
+        :returns: a list of jobruns to launch
+        :rtype: list of dict
+        """
+        response = self._rpc.http_req(http.get, 'v1/queue')
+        if job_id is not None:
+            deployments = [
+                deployment for deployment in response.json()
+                if job_id == deployment['jobId']
+            ]
+        else:
+            deployments = response.json()
+
+        return deployments
 
     @staticmethod
     def _job_id_path_format(url_path_template, id_path):

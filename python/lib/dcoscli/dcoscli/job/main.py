@@ -124,6 +124,11 @@ def _cmds():
             function=_list),
 
         cmds.Command(
+            hierarchy=['job', 'queue'],
+            arg_keys=['<job-id>', '--json', '--quiet'],
+            function=_queue),
+
+        cmds.Command(
             hierarchy=['job', 'history'],
             arg_keys=['<job-id>', '--json', '--failures', '--last', '--quiet'],
             function=_history),
@@ -225,6 +230,40 @@ def _remove(job_id, stop_current_job_runs=False):
         raise DCOSException("Unable to remove '{}'. {}."
                             .format(job_id, e))
 
+    return 0
+
+
+def _queue(job_id, json_flag=False, quiet=False):
+    """
+    :param job_id: Id of the job
+    :type job_id: str
+    :param json_flag: Output json if True
+    :type json_flag: bool
+    :param quiet: Output only job run ids if true
+    :type quiet: bool
+    :returns: process return code
+    :rtype: int
+    """
+
+    client = metronome.create_client()
+    deployment_list = client.get_queued_job_runs(job_id)
+
+    if not deployment_list and not json_flag:
+        msg = "There are no deployments in the queue"
+        if job_id:
+            msg += " for '{}'".format(job_id)
+        emitter.publish(msg)
+        return 0
+
+    if quiet:
+        for deployment in deployment_list:
+            for runs in deployment.get("runs"):
+                emitter.publish(runs.get("runId"))
+    else:
+        emitting.publish_table(emitter,
+                               deployment_list,
+                               tables.job_queue_table,
+                               json_flag)
     return 0
 
 

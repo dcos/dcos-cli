@@ -117,6 +117,19 @@ def job_history_fixture():
         "id": "20170331210530QHpRU"
       }]
 
+def job_queue_fixture():
+    """Job queue fixture
+
+    :rtype: dict
+    """
+
+    return [
+    {
+      "jobId": "queue-job",
+      "runs": [
+      {"runId": "20180123185638P0Dxf"},
+      {"runId": "20180123185640uv3PZ"}]
+    }]
 
 def job_schedule_fixture():
     """Job schedule fixture
