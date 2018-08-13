@@ -14,6 +14,7 @@ func NewCommand(ctx api.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:       "completion",
 		Short:     "Output completion script for the DC/OS CLI",
+		Hidden:    true,
 		ValidArgs: []string{"bash"},
 		Args:      cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
