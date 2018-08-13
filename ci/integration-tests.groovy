@@ -110,7 +110,7 @@ pipeline {
               bat '''
                 bash -exc " \
                   export PYTHONIOENCODING=utf-8; \
-                  bash -c "rm -rf ${HOME}/.dcos"; \
+                  rm -rf ${HOME}/.dcos; \
                   export DCOS_DIR=${HOME}/.dcos; \
                   PATH=$PWD/build/windows:$PATH; \
                   cd tests; \
