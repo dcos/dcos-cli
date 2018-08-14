@@ -16,7 +16,9 @@ command and for specific subcommands through `dcos <subcommand> --help`.
 Additional documentation for the CLI and for the DC/OS in general is
 available in the [DC/OS docs](https://dcos.io/docs/).
 
-## Development dependencies
+## Development setup
+
+### Requirements
 
 1.  [git](http://git-scm.com) must be installed to download the source
     code for the DC/OS CLI.
@@ -25,7 +27,7 @@ available in the [DC/OS docs](https://dcos.io/docs/).
    must be installed if you are using Windows in order to run setup scripts 
    from the Makefile.
 
-## Basic setup
+### Using Docker
 
 1.  Clone git repo for the dcos cli:
 
@@ -35,12 +37,23 @@ available in the [DC/OS docs](https://dcos.io/docs/).
 
         cd dcos-cli
         
-3. If you do not want to use docker to build the CLI because you have go installed: 
+3.  Build the binary:
 
-       export NO_DOCKER=1
+        make
+
+### Using Go
+
+1.  Clone git repo for the dcos cli:
+
+        go get github.com/dcos/dcos-cli
+
+2.  Change directory to the repo directory:
+
+        cd $GOPATH/src/github.com/dcos/dcos-cli
         
-4.  Build the binary:
+3.  Build the binary:
 
+        export NO_DOCKER=1
         make
 
 ## Using the DC/OS CLI
