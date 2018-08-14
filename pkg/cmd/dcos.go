@@ -7,6 +7,7 @@ import (
 	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/cmd/auth"
 	"github.com/dcos/dcos-cli/pkg/cmd/cluster"
+	"github.com/dcos/dcos-cli/pkg/cmd/completion"
 	"github.com/dcos/dcos-cli/pkg/cmd/config"
 	plugincmd "github.com/dcos/dcos-cli/pkg/cmd/plugin"
 	"github.com/dcos/dcos-cli/pkg/plugin"
@@ -32,11 +33,12 @@ func NewDCOSCommand(ctx api.Context) *cobra.Command {
 		config.NewCommand(ctx),
 		cluster.NewCommand(ctx),
 		plugincmd.NewCommand(ctx),
+		completion.NewCommand(ctx),
 	)
 
 	// If a cluster is attached, we get its plugins.
 	if cluster, err := ctx.Cluster(); err == nil {
-		pluginManager := ctx.PluginManager(cluster.SubcommandsDir())
+		pluginManager := ctx.PluginManager(cluster)
 
 		for _, plugin := range pluginManager.Plugins() {
 			for _, pluginCmd := range plugin.Commands {
@@ -76,7 +78,7 @@ Use "{{.CommandPath}} [command] --help" for more information about a command.{{e
 	return cmd
 }
 
-func newPluginCommand(ctx api.Context, cmd *plugin.Command) *cobra.Command {
+func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
 	return &cobra.Command{
 		Use:                cmd.Name,
 		Short:              cmd.Description,

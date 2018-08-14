@@ -15,7 +15,7 @@ import (
 func newCmdClusterLink(ctx api.Context) *cobra.Command {
 	setupFlags := setup.NewFlags(ctx.Fs(), ctx.EnvLookup)
 	cmd := &cobra.Command{
-		Use:   "link",
+		Use:   "link <cluster>",
 		Short: "Link the current cluster to another one",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -37,7 +37,7 @@ func newCmdClusterLink(ctx api.Context) *cobra.Command {
 					return err
 				}
 
-				linkableCluster, err = ctx.Setup(setupFlags, args[0])
+				linkableCluster, err = ctx.Setup(setupFlags, args[0], false)
 				if err != nil {
 					return err
 				}

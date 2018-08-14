@@ -12,6 +12,7 @@ type Flags struct {
 	caBundlePath string
 	name         string
 	noCheck      bool
+	noPlugin     bool
 	insecure     bool
 	loginFlags   *login.Flags
 	fs           afero.Fs
@@ -38,6 +39,12 @@ func (f *Flags) Register(flags *pflag.FlagSet) {
 		"no-check",
 		false,
 		"Do not check CA certficate downloaded from cluster (insecure). Applies to Enterprise DC/OS only.",
+	)
+	flags.BoolVar(
+		&f.noPlugin,
+		"no-plugin",
+		false,
+		"Do not auto-install dcos-core-cli and dcos-enterprise-cli plugins.",
 	)
 	flags.StringVar(
 		&f.caBundlePath,

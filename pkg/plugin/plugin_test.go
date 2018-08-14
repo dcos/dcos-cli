@@ -1,49 +1,23 @@
-package plugin_test
+package plugin
 
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 
-	"github.com/dcos/dcos-cli/pkg/plugin"
+	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )
 
 func TestLoadNoPlugin(t *testing.T) {
-	subcommandsDir := pluginDir(t, "no_plugins")
-	logger, _ := test.NewNullLogger()
-
-	m := plugin.Manager{
-		Fs:     afero.NewMemMapFs(),
-		Dir:    subcommandsDir,
-		Logger: logger,
-	}
-
-	plugins := m.Plugins()
-	require.Empty(t, plugins)
+	require.Empty(t, pluginManager(t, "no_plugins").Plugins())
 }
 
 func TestLoadPluginWithBinaryOnly(t *testing.T) {
-	dir := pluginDir(t, "binary_only")
-
-	if runtime.GOOS == "windows" {
-		dir = filepath.Join(dir, "windows")
-	} else {
-		dir = filepath.Join(dir, "unix")
-	}
-
-	logger, _ := test.NewNullLogger()
-
-	m := plugin.Manager{
-		Fs:     roFs(),
-		Dir:    dir,
-		Logger: logger,
-	}
-
-	plugins := m.Plugins()
+	pm := pluginManager(t, "binary_only")
+	plugins := pm.Plugins()
 	require.Equal(t, 1, len(plugins))
 	plugin := plugins[0]
 
@@ -53,36 +27,18 @@ func TestLoadPluginWithBinaryOnly(t *testing.T) {
 	require.Equal(t, "test", plugin.Commands[0].Name)
 	require.Equal(
 		t,
-		filepath.Join(dir, "dcos-test-cli", "env", "bin", "dcos-test"),
+		filepath.Join(pm.pluginsDir(), "dcos-test-cli", "env", "bin", "dcos-test"),
 		plugin.Commands[0].Path,
 	)
 }
 
 func TestLoadPluginWithMalformedToml(t *testing.T) {
-	dir := pluginDir(t, "malformed_toml")
-	logger, _ := test.NewNullLogger()
-
-	m := plugin.Manager{
-		Fs:     roFs(),
-		Dir:    dir,
-		Logger: logger,
-	}
-	plugins := m.Plugins()
-
-	require.Equal(t, 0, len(plugins))
+	require.Empty(t, pluginManager(t, "malformed_toml").Plugins())
 }
 
 func TestLoadPluginWithMultipleCommands(t *testing.T) {
-	dir := pluginDir(t, "multiple_commands")
-	logger, _ := test.NewNullLogger()
-
-	m := plugin.Manager{
-		Fs:     roFs(),
-		Dir:    dir,
-		Logger: logger,
-	}
-
-	plugins := m.Plugins()
+	pm := pluginManager(t, "multiple_commands")
+	plugins := pm.Plugins()
 
 	require.Equal(t, 1, len(plugins))
 
@@ -92,14 +48,14 @@ func TestLoadPluginWithMultipleCommands(t *testing.T) {
 		case "test":
 			require.Equal(
 				t,
-				filepath.Join(dir, "toml", "env", "bin", "dcos-test"),
+				filepath.Join(pm.pluginsDir(), "toml", "env", "bin", "dcos-test"),
 				cmd.Path,
 			)
 		case "no-test":
 			require.Equal(t, "no-test", plugins[0].Commands[1].Name)
 			require.Equal(
 				t,
-				filepath.Join(dir, "toml", "env", "bin", "dcos-no-test"),
+				filepath.Join(pm.pluginsDir(), "toml", "env", "bin", "dcos-no-test"),
 				cmd.Path,
 			)
 		default:
@@ -109,18 +65,24 @@ func TestLoadPluginWithMultipleCommands(t *testing.T) {
 	}
 }
 
-func pluginDir(t *testing.T, name string) string {
+func pluginManager(t *testing.T, name string) *Manager {
+	baseFs := afero.NewOsFs()
+	baseRoFs := afero.NewReadOnlyFs(baseFs)
+	fs := afero.NewCopyOnWriteFs(baseRoFs, afero.NewMemMapFs())
+
+	logger, _ := test.NewNullLogger()
+
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 
-	testdataDir := filepath.Join(wd, "testdata")
-	return filepath.Join(testdataDir, name)
-}
+	clusterDir := filepath.Join(wd, "testdata", name)
 
-func roFs() afero.Fs {
-	base := afero.NewOsFs()
-	roBase := afero.NewReadOnlyFs(base)
-	overlay := afero.NewCopyOnWriteFs(roBase, afero.NewMemMapFs())
+	conf := config.New(config.Opts{
+		Fs: fs,
+	})
+	conf.SetPath(filepath.Join(clusterDir, "dcos.toml"))
 
-	return overlay
+	pluginManager := NewManager(fs, logger)
+	pluginManager.SetCluster(config.NewCluster(conf))
+	return pluginManager
 }

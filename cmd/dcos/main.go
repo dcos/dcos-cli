@@ -9,6 +9,7 @@ import (
 
 	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/cli"
+	"github.com/dcos/dcos-cli/pkg/cli/version"
 	"github.com/dcos/dcos-cli/pkg/cmd"
 	"github.com/dcos/dcos-cli/pkg/dcos"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
@@ -16,8 +17,6 @@ import (
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 )
-
-var version = "SNAPSHOT"
 
 func main() {
 	ctx := cli.NewContext(&cli.Environment{
@@ -76,7 +75,7 @@ func logLevel(verbosity int) logrus.Level {
 
 // printVersion prints CLI version information.
 func printVersion(ctx api.Context) {
-	fmt.Fprintln(ctx.Out(), "dcoscli.version="+version)
+	fmt.Fprintln(ctx.Out(), "dcoscli.version="+version.Version())
 
 	cluster, err := ctx.Cluster()
 	if err != nil {
