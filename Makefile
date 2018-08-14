@@ -1,8 +1,8 @@
 CURRENT_DIR=$(shell pwd)
-BUILD_DIR=$(CURRENT_DIR)/build
-PKG_DIR=/go/src/github.com/dcos/dcos-cli
-BINARY_NAME=dcos
+PKG=github.com/dcos/dcos-cli
+PKG_DIR=/go/src/$(PKG)
 IMAGE_NAME=dcos/dcos-cli
+VERSION?=$(shell git rev-parse HEAD)
 
 windows_EXE=.exe
 
@@ -12,7 +12,9 @@ default:
 
 .PHONY: darwin linux windows
 darwin linux windows: docker-image
-	$(call inDocker,env GOOS=$(@) go build -o build/$(@)/$(BINARY_NAME)$($(@)_EXE) ./cmd/dcos)
+	$(call inDocker,env GOOS=$(@) go build \
+		-ldflags '-X $(PKG)/pkg/cli/version.version=$(VERSION)' \
+		-o build/$(@)/dcos$($(@)_EXE) ./cmd/dcos)
 
 .PHONY: test
 test: vet

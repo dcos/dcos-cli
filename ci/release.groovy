@@ -12,7 +12,11 @@ pipeline {
       agent { label 'mesos-ubuntu' }
 
       steps {
-          sh 'make linux darwin windows'
+          sh '''
+            bash -exc " \
+              [ -n \"${TAG_NAME}\" ] && export VERSION=${TAG_NAME};
+              make linux darwin windows"
+          '''
           stash includes: 'build/**', name: 'dcos-binaries'
       }
     }
