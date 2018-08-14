@@ -77,6 +77,25 @@ Using a Python virtual environment is recommended.
     cd tests
     pip install -r requirements.txt
     pytest integration
+    
+## Releasing
+
+Releasing a new version of the DC/OS CLI is done thourgh an
+[automated Jenkins
+build](https://jenkins.mesosphere.com/service/jenkins/job/public-dcos-cluster-ops/job/mesosphere-dcos-cli/job/release/)
+which is triggered automatically for new tags and on pushes to master.
+
+The binaries built from the master branch are continuously published to:
+
+   - https://downloads.dcos.io/binaries/cli/linux/x86-64/latest/dcos
+   - https://downloads.dcos.io/binaries/cli/darwin/x86-64/latest/dcos
+   - https://downloads.dcos.io/binaries/cli/windows/x86-64/latest/dcos.exe
+
+Tags are released to:
+
+   - https://downloads.dcos.io/binaries/cli/linux/x86-64/{tag}/dcos
+   - https://downloads.dcos.io/binaries/cli/darwin/x86-64/{tag}/dcos
+   - https://downloads.dcos.io/binaries/cli/windows/x86-64/{tag}/dcos.exe
 
 ## Contributing
 
