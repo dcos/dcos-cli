@@ -1,2 +1,0 @@
-NAME        VERSION  APP          COMMAND     DESCRIPTION                       
-helloworld  0.1.0    /helloworld  helloworld  Example DCOS application package  

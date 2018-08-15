@@ -1,9 +1,0 @@
-{
-  "chronos": {
-    "id": "chronos-user-1",
-    "framework-name": "chronos-user",
-    "zk-path": "/universe/chronos-user-1",
-    "cpus": 0.5,
-    "mem": 512
-  }
-}

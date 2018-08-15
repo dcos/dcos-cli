@@ -1,7 +1,0 @@
-{
-    "id": "two-tasks-follow",
-    "cmd": "while true; echo 'follow_this'; done;",
-    "cpus": 0.1,
-    "mem": 16,
-    "instances": 2
-}
