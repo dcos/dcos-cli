@@ -12,9 +12,8 @@ env:
  - NO_DOCKER=1
 
 before_script:
- - go get -u github.com/golang/dep/cmd/dep
  - go get -u github.com/golang/lint/golint
- - go get -u github.com/awalterschulze/goderive
- - go get -u github.com/br-lewis/go-bindata/...
 
-script: make test
+script:
+ - make
+ - make test
