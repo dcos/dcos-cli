@@ -35,6 +35,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:c7354463195544b1ab3c1f1fadb41430947f5d28dfbf2cdbd38268c5717a5a03"
+  name = "github.com/mitchellh/go-homedir"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "58046073cbffe2f25d425fe1331102f55cf719de"
+
+[[projects]]
+  branch = "master"
   digest = "1:a8c4a5de1d305a9211794c9c82cef4b3460197755e2be5bb86a973e197d710dd"
   name = "github.com/olekukonko/tablewriter"
   packages = ["."]
@@ -153,6 +161,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/dgrijalva/jwt-go",
+    "github.com/mitchellh/go-homedir",
     "github.com/olekukonko/tablewriter",
     "github.com/pelletier/go-toml",
     "github.com/sirupsen/logrus",
