@@ -14,10 +14,8 @@ environment:
 stack: go 1.10
 
 before_test:
-  - go get -u github.com/golang/dep/cmd/dep
   - go get -u github.com/golang/lint/golint
-  - go get -u github.com/awalterschulze/goderive
-  - go get -u github.com/br-lewis/go-bindata/...
 
 test_script:
+  - make windows
   - make test
