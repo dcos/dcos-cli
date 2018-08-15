@@ -1,2 +1,0 @@
-PROVIDER ID  AUTHENTICATION TYPE                                                 
-dcos-users   Log in using a standard DC/OS user account (username and password)  

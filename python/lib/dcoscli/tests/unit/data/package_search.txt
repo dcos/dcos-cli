@@ -1,8 +1,0 @@
-NAME        VERSION                               SELECTED  FRAMEWORK  DESCRIPTION                                                                       
-cassandra   0.1.0-SNAPSHOT-447-master-3ad1bbf8f7  False     True       Apache Cassandra running on Apache Mesos                                          
-chronos     2.3.4                                 False     True       A fault tolerant job scheduler for Mesos which handles dependencies and ISO86...  
-hdfs        0.1.1                                 False     True       Hadoop Distributed File System (HDFS), Highly Available                           
-helloworld  0.1.0                                 False     False      Example DCOS application package                                                  
-kafka       0.9.0-beta                            False     True       Apache Kafka running on top of Apache Mesos                                       
-marathon    0.8.1                                 False     True       A cluster-wide init and control system for services in cgroups or Docker cont...  
-spark       1.4.0-SNAPSHOT                        False     True       Spark is a fast and general cluster computing system for Big Data                 

@@ -1,2 +1,0 @@
--rw-r--r--  1  root  root    4507  Jul 16 23:31  stderr  
--rw-r--r--  1  root  root  353857  Jul 16 23:33  stdout  

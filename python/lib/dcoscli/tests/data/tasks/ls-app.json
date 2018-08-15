@@ -1,7 +1,0 @@
-{
-    "id": "ls-app",
-    "cmd": "mkdir test && touch test/test1 && touch test/test2 && sleep 1000",
-    "cpus": 0.1,
-    "mem": 32,
-    "instances": 1
-}

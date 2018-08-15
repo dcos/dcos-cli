@@ -1,8 +1,0 @@
-{
-    "marathon": {
-        "zk": "zk://master.mesos:2181/universe/marathon-user2",
-        "framework-name": "marathon-user",
-        "mem": 850,
-        "cpus": 1
-    }
-}
