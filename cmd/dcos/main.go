@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/user"
 	"time"
 
 	"github.com/dcos/dcos-cli/api"
@@ -20,13 +19,12 @@ import (
 
 func main() {
 	ctx := cli.NewContext(&cli.Environment{
-		Args:       os.Args,
-		Input:      os.Stdin,
-		Out:        os.Stdout,
-		ErrOut:     os.Stderr,
-		EnvLookup:  os.LookupEnv,
-		UserLookup: user.Current,
-		Fs:         afero.NewOsFs(),
+		Args:      os.Args,
+		Input:     os.Stdin,
+		Out:       os.Stdout,
+		ErrOut:    os.Stderr,
+		EnvLookup: os.LookupEnv,
+		Fs:        afero.NewOsFs(),
 	})
 
 	if err := run(ctx, os.Args); err != nil {
