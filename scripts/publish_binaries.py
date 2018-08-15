@@ -13,9 +13,9 @@ version = os.environ.get("TAG_NAME") or "dcos-1.12"
 s3_client = boto3.resource('s3', region_name='us-west-2').meta.client
 bucket = "downloads.dcos.io"
 artifacts = [
-    ("linux/dcos", "binaries/cli/linux/x86-64/{}/dcos".format(version)),
-    ("darwin/dcos", "binaries/cli/darwin/x86-64/{}/dcos".format(version)),
-    ("windows/dcos.exe", "binaries/cli/windows/x86-64/{}/dcos.exe".format(version))
+    ("linux/plugin/bin/dcos", "binaries/cli/linux/x86-64/{}/dcos".format(version)),
+    ("darwin/plugin/bin/dcos", "binaries/cli/darwin/x86-64/{}/dcos".format(version)),
+    ("windows/plugin/bin/dcos.exe", "binaries/cli/windows/x86-64/{}/dcos.exe".format(version))
 ]
 
 # TODO: this should probably passed as argument.
