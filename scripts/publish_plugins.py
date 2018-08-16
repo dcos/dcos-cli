@@ -40,6 +40,11 @@ description = "Manage DC/OS services"
 name = "task"
 path = "bin/dcos{0}"
 description = "Manage DC/OS tasks"
+
+[[commands]]
+name = "experimental"
+path = "bin/dcos{0}"
+description = "Manage commands that are under development"
 '''
 
 build_path = os.path.dirname(os.path.realpath(__file__)) + "/../build"
