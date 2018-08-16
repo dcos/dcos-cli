@@ -59,7 +59,6 @@ func NewManager(opts ManagerOpts) *Manager {
 // - DCOS_CONFIG is defined and is a path to a config file.
 // - DCOS_CLUSTER is defined and is the name/ID of a configured cluster.
 // - An attached file exists alongside a configured cluster, OR there is a single configured cluster.
-// - A legacy config file exists (at DCOS_DIR/dcos.toml).
 func (m *Manager) Current() (*Config, error) {
 	if configPath, ok := m.envLookup("DCOS_CONFIG"); ok {
 		config := m.newConfig()
@@ -71,28 +70,24 @@ func (m *Manager) Current() (*Config, error) {
 	}
 
 	configs := m.All()
-	switch len(configs) {
-	case 0:
-		config := m.newConfig()
-		return config, config.LoadPath(filepath.Join(m.dir, "dcos.toml"))
-	case 1:
+	if len(configs) == 1 {
 		return configs[0], nil
-	default:
-		var currentConfig *Config
-		for _, config := range configs {
-			attachedFile := m.attachedFilePath(config)
-			if m.fileExists(attachedFile) {
-				if currentConfig != nil {
-					return nil, errors.New("multiple clusters are attached")
-				}
-				currentConfig = config
-			}
-		}
-		if currentConfig == nil {
-			return nil, errors.New("no cluster is attached")
-		}
-		return currentConfig, nil
 	}
+
+	var currentConfig *Config
+	for _, config := range configs {
+		attachedFile := m.attachedFilePath(config)
+		if m.fileExists(attachedFile) {
+			if currentConfig != nil {
+				return nil, errors.New("multiple clusters are attached")
+			}
+			currentConfig = config
+		}
+	}
+	if currentConfig == nil {
+		return nil, errors.New("no cluster is attached")
+	}
+	return currentConfig, nil
 }
 
 // Find finds a config by cluster name or ID, `strict` indicates
@@ -145,7 +140,7 @@ func (m *Manager) All() (configs []*Config) {
 			}
 		}
 	}
-	
+
 	return
 }
 

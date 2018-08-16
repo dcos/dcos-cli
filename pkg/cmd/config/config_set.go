@@ -13,11 +13,11 @@ func newCmdConfigSet(ctx api.Context) *cobra.Command {
 		Long:  "The properties that can be set are: core.dcos_url, core.dcos_acs_token, core.ssl_verify, core.timeout, core.ssh_user, core_ssh_proxy_ip, core.pagination, core.reporting, core.mesos_master_url, core_prompt_login",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			conf, err := ctx.ConfigManager().Current()
+			cluster, err := ctx.Cluster()
 			if err != nil {
 				return err
 			}
-
+			conf := cluster.Config()
 			conf.Set(args[0], args[1])
 			return conf.Persist()
 		},
