@@ -196,3 +196,21 @@ func TestDefaultUserAgent(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, defaultUserAgent, req.Header.Get("User-Agent"))
 }
+
+func TestIsText(t *testing.T) {
+	client := New("")
+
+	fixtures := []struct {
+		contentType string
+		isText      bool
+	}{
+		{"text/plain", true},
+		{"text/html", true},
+		{"application/json", true},
+		{"application/vnd.dcos.package.describe-response+json;charset=utf-8;version=v3", true},
+		{"application/octet-stream", false},
+	}
+	for _, fixture := range fixtures {
+		require.Equal(t, fixture.isText, client.isText(fixture.contentType))
+	}
+}
