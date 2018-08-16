@@ -24,7 +24,7 @@ available in the [DC/OS docs](https://dcos.io/docs/).
     code for the DC/OS CLI.
 2.  [go](https://golang.org/dl/) 1.10+ or docker.
 3.  [win-bash](https://sourceforge.net/projects/win-bash/files/shell-complete/latest)
-   must be installed if you are using Windows in order to run setup scripts 
+   must be installed if you are using Windows in order to run setup scripts
    from the Makefile.
 
 ### Using Docker
@@ -36,7 +36,7 @@ available in the [DC/OS docs](https://dcos.io/docs/).
 2.  Change directory to the repo directory:
 
         cd dcos-cli
-        
+
 3.  Build the binary:
 
         make
@@ -50,7 +50,7 @@ available in the [DC/OS docs](https://dcos.io/docs/).
 2.  Change directory to the repo directory:
 
         cd $GOPATH/src/github.com/dcos/dcos-cli
-        
+
 3.  Build the binary:
 
         export NO_DOCKER=1
@@ -71,13 +71,13 @@ The DC/OS CLI will be built in the directory `build/<platform>/`.
 You need to have a running DC/OS cluster in order to run the integration tests.
 Using a Python virtual environment is recommended.
 
-	export DCOS_TEST_DEFAULT_CLUSTER_USERNAME=<username to access the cluster>
-	export DCOS_TEST_DEFAULT_CLUSTER_PASSWORD=<password to access the cluster>
-	export DCOS_TEST_DEFAULT_CLUSTER_HOST=<IP or domain of the cluster>
+    export DCOS_TEST_DEFAULT_CLUSTER_USERNAME=<username to access the cluster>
+    export DCOS_TEST_DEFAULT_CLUSTER_PASSWORD=<password to access the cluster>
+    export DCOS_TEST_DEFAULT_CLUSTER_HOST=<IP or domain of the cluster>
     cd tests
     pip install -r requirements.txt
     pytest integration
-    
+
 ## Releasing
 
 Releasing a new version of the DC/OS CLI is done thourgh an
