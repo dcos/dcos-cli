@@ -62,6 +62,7 @@ pipeline {
                 bash -exc " \
                   PATH=$PWD/build/linux:$PATH; \
                   cd tests; \
+                  dcos cluster remove --all; \
                   python3 -m venv env; \
                   source env/bin/activate; \
                   source test_cluster.env.sh; \
@@ -85,6 +86,7 @@ pipeline {
                   export PYTHONIOENCODING=utf-8; \
                   PATH=$PWD/build/darwin:$PATH; \
                   cd tests; \
+                  dcos cluster remove --all; \
                   python3 -m venv env; \
                   source env/bin/activate; \
                   source test_cluster.env.sh; \
@@ -110,9 +112,9 @@ pipeline {
               bat '''
                 bash -exc " \
                   export PYTHONIOENCODING=utf-8; \
-                  rm -rf ${HOME}/.dcos; \
                   PATH=$PWD/build/windows:$PATH; \
                   cd tests; \
+                  dcos cluster remove --all; \
                   source test_cluster.env.sh; \
                   python -m venv env; \
                   env/Scripts/python -m pip install -U pip; \

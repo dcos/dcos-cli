@@ -63,6 +63,8 @@ func (m *Manager) Install(resource string, installOpts *InstallOpts) (err error)
 		if err != nil {
 			return err
 		}
+	} else {
+		installOpts.path = resource
 	}
 
 	// The staging dir is where the plugin will be constructed

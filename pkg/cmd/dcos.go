@@ -100,13 +100,17 @@ func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
 				}
 			}
 
+			executablePath, err := os.Executable()
+			if err != nil {
+				return err
+			}
 			execCmd := exec.Command(cmd.Path, cmdArgs...)
 			execCmd.Stdout = ctx.Out()
 			execCmd.Stderr = ctx.ErrOut()
 			execCmd.Stdin = ctx.Input()
 
 			logLevel := "error"
-			verbosity := "0"
+			verbosity := ""
 			switch ctx.Logger().Level {
 			case logrus.DebugLevel:
 				logLevel = "debug"
@@ -116,9 +120,16 @@ func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
 				verbosity = "1"
 			}
 
-			execCmd.Env = append(os.Environ(), "DCOS_LOG_LEVEL="+logLevel, "DCOS_VERBOSITY="+verbosity)
+			execCmd.Env = append(
+				os.Environ(),
+				"DCOS_CLI_EXECUTABLE_PATH="+executablePath,
+				"DCOS_LOG_LEVEL="+logLevel,
+			)
+			if verbosity != "" {
+				execCmd.Env = append(execCmd.Env, "DCOS_VERBOSITY="+verbosity)
+			}
 
-			err := execCmd.Run()
+			err = execCmd.Run()
 			if err != nil {
 				// Because we're silencing errors through Cobra, we need to print this separately.
 				ctx.Logger().Debug(err)

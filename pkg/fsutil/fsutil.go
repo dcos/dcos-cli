@@ -70,7 +70,11 @@ func DetectMediaType(fs afero.Fs, path string) (string, error) {
 
 	sniffBuf := make([]byte, 512)
 	if _, err := io.ReadFull(f, sniffBuf); err != nil {
-		return "", err
+		// We don't want to fail when the file is smaller than the 512 bytes needed to sniff
+		// its media type. This can happen with non-binary content (eg. a small Python script).
+		if err != io.ErrUnexpectedEOF {
+			return "", err
+		}
 	}
 	return http.DetectContentType(sniffBuf), nil
 }
