@@ -12,11 +12,11 @@ func newCmdConfigUnset(ctx api.Context) *cobra.Command {
 		Short: "Remove a property from the configuration file used for the current cluster",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			conf, err := ctx.ConfigManager().Current()
+			cluster, err := ctx.Cluster()
 			if err != nil {
 				return err
 			}
-
+			conf := cluster.Config()
 			conf.Unset(args[0])
 			return conf.Persist()
 		},

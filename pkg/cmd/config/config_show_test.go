@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/dcos/dcos-cli/pkg/cli"
+	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -21,7 +21,11 @@ func TestConfigShowEnvVar(t *testing.T) {
 		return "", false
 	}
 
-	cmd := newCmdConfigShow(cli.NewContext(env))
+	ctx := mock.NewContext(env)
+	ctx.SetCluster(config.NewCluster(config.New(config.Opts{
+		EnvLookup: env.EnvLookup,
+	})))
+	cmd := newCmdConfigShow(ctx)
 	cmd.SetArgs([]string{"core.dcos_url"})
 
 	err := cmd.Execute()
