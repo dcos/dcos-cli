@@ -14,7 +14,7 @@ pipeline {
       steps {
           sh '''
             bash -exc " \
-              [ -n \"${TAG_NAME}\" ] && export VERSION=${TAG_NAME};
+              export VERSION=\"${TAG_NAME:-$GIT_COMMIT}\";
               make linux darwin windows"
           '''
           stash includes: 'build/**', name: 'dcos-binaries'
