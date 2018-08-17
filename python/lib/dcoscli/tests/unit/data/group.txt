@@ -1,3 +1,0 @@
-ID                 APPS  
-/test-group         1    
-/test-group/sleep   1    

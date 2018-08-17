@@ -1,2 +1,0 @@
-APP                 HEALTHY          STARTED             HOST   ID                                                      
-/zero-instance-app    True   2015-05-29T19:58:01.114Z  dcos-01  zero-instance-app.027b3a83-063d-11e5-84a3-56847afe9799  

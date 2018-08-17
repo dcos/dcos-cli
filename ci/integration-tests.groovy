@@ -111,7 +111,6 @@ pipeline {
                 bash -exc " \
                   export PYTHONIOENCODING=utf-8; \
                   rm -rf ${HOME}/.dcos; \
-                  export DCOS_DIR=${HOME}/.dcos; \
                   PATH=$PWD/build/windows:$PATH; \
                   cd tests; \
                   source test_cluster.env.sh; \

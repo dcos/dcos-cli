@@ -2,7 +2,6 @@ package cli
 
 import (
 	"io"
-	"os/user"
 
 	"github.com/spf13/afero"
 )
@@ -25,9 +24,6 @@ type Environment struct {
 
 	// EnvLookup lookups environment variables.
 	EnvLookup func(key string) (string, bool)
-
-	// UserLookup returns the current system user.
-	UserLookup func() (*user.User, error)
 
 	// Fs is an abstraction for the filesystem.
 	Fs afero.Fs

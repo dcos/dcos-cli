@@ -1,8 +1,8 @@
 CURRENT_DIR=$(shell pwd)
-BUILD_DIR=$(CURRENT_DIR)/build
-PKG_DIR=/go/src/github.com/dcos/dcos-cli
-BINARY_NAME=dcos
+PKG=github.com/dcos/dcos-cli
+PKG_DIR=/go/src/$(PKG)
 IMAGE_NAME=dcos/dcos-cli
+VERSION?=$(shell git rev-parse HEAD)
 
 windows_EXE=.exe
 
@@ -11,8 +11,10 @@ default:
 	@make $(shell uname | tr [A-Z] [a-z])
 
 .PHONY: darwin linux windows
-darwin linux windows: generate
-	$(call inDocker,env GOOS=$(@) go build -o build/$(@)/$(BINARY_NAME)$($(@)_EXE) ./cmd/dcos)
+darwin linux windows: docker-image
+	$(call inDocker,env GOOS=$(@) go build \
+		-ldflags '-X $(PKG)/pkg/cli/version.version=$(VERSION)' \
+		-o build/$(@)/dcos$($(@)_EXE) ./cmd/dcos)
 
 .PHONY: test
 test: vet
@@ -23,7 +25,7 @@ vet: lint
 	$(call inDocker,go vet ./...)
 
 .PHONY: lint
-lint: generate
+lint: docker-image
 	# Can be simplified once https://github.com/golang/lint/issues/320 is fixed.
 	$(call inDocker,golint -set_exit_status ./cmd/... ./pkg/...)
 

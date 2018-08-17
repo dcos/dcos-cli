@@ -1,4 +1,0 @@
-[core]
-ssl_verify = false
-timeout = 5
-reporting = false

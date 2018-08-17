@@ -1,2 +1,0 @@
-NAME        HOST    ACTIVE  TASKS  CPU  MEM   DISK  ID                                       
-marathon  mesos.vm   True     0    0.2  32.0  0.0   20150502-231327-16842879-5050-3889-0000  

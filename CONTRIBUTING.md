@@ -10,27 +10,25 @@ If you are submitting a bug report, please include:
 - dcos cli version: `dcos --version`
 - DC/OS version
 - operating system
-- command that errored with `--log-level=debug --debug`
+- command that errored with `-v`
 
 ## Creating PRs
 
 ### Commit Message
+
 Please describe the problem you are addressing and your proposed solution.
 
 ### Style
-Please refer to our [style guide](https://github.com/dcos/dcos-cli/blob/master/STYLEGUIDE.md). We follow [pep8](https://www.python.org/dev/peps/pep-0008/) and [isort](
-https://pypi.python.org/pypi/isort) conventions. You can make sure you follow these by running
-`tox -e py34-syntax` in the `dcos-cli` and `cli` directories.
 
+You can make sure your code conforms to our code style conventions by running
+`make lint` directories.
 
 ### Tests
-Please include test(s) with your changes. Make sure to separate integration and unit tests. Please
-use our test helpers for [integration tests](
-https://github.com/mesosphere/dcos-cli/blob/master/cli/tests/integrations/common.py) and
-[unit tests](https://github.com/mesosphere/dcos-cli/blob/master/cli/tests/unit/common.py)
-We run all tests on every PR, and won't look at a PR until all tests pass. Please see
-[Running Tests](https://github.com/mesosphere/dcos-cli#running-tests) on how to run our tests
-locally.
+
+Please include test(s) with your changes. Make sure to separate integration and unit tests.
+
+You can use `make test` to run unit tests, in order to run integration tests please follow
+[these instructions](https://github.com/dcos/dcos-cli#integration-tests).
 
 
 ## Thanks!

@@ -14,10 +14,11 @@ func newCmdConfigShow(ctx api.Context) *cobra.Command {
 		Short: "Print the configuration file related to the current cluster",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			conf, err := ctx.ConfigManager().Current()
+			cluster, err := ctx.Cluster()
 			if err != nil {
 				return err
 			}
+			conf := cluster.Config()
 
 			// Show a given config key from the store.
 			if len(args) == 1 {
