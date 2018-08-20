@@ -28,3 +28,41 @@ func TestRunWithDebugVerbosity(t *testing.T) {
 
 	require.Equal(t, logrus.DebugLevel, ctx.Logger().Level)
 }
+
+func TestRunWithDebugFlag(t *testing.T) {
+	ctx := mock.NewContext(nil)
+	require.NoError(t, run(ctx, []string{"dcos", "--debug"}))
+
+	require.Equal(t, logrus.DebugLevel, ctx.Logger().Level)
+}
+
+func TestRunWithLogLevel(t *testing.T) {
+	ctx := mock.NewContext(nil)
+
+	logLevelFlagValues := map[string]logrus.Level{
+		"debug":    logrus.DebugLevel,
+		"info":     logrus.InfoLevel,
+		"warning":  logrus.InfoLevel,
+		"error":    logrus.ErrorLevel,
+		"critical": logrus.ErrorLevel,
+	}
+
+	for flagValue, logLevel := range logLevelFlagValues {
+		require.NoError(t, run(ctx, []string{"dcos", "--log-level=" + flagValue}))
+		require.Equal(t, logLevel, ctx.Logger().Level)
+	}
+}
+
+func TestRunWithVerbosityEnvVar(t *testing.T) {
+	env := mock.NewEnvironment()
+	env.EnvLookup = func(key string) (string, bool) {
+		if key == "DCOS_VERBOSITY" {
+			return "2", true
+		}
+		return "", false
+	}
+	ctx := mock.NewContext(env)
+	require.NoError(t, run(ctx, []string{"dcos"}))
+
+	require.Equal(t, logrus.DebugLevel, ctx.Logger().Level)
+}
