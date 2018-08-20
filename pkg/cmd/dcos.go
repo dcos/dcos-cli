@@ -2,7 +2,10 @@
 package cmd
 
 import (
+	"os"
 	"os/exec"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/cmd/auth"
@@ -101,6 +104,19 @@ func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
 			execCmd.Stdout = ctx.Out()
 			execCmd.Stderr = ctx.ErrOut()
 			execCmd.Stdin = ctx.Input()
+
+			logLevel := "error"
+			verbosity := "0"
+			switch ctx.Logger().Level {
+			case logrus.DebugLevel:
+				logLevel = "debug"
+				verbosity = "2"
+			case logrus.InfoLevel:
+				logLevel = "info"
+				verbosity = "1"
+			}
+
+			execCmd.Env = append(os.Environ(), "DCOS_LOG_LEVEL="+logLevel, "DCOS_VERBOSITY="+verbosity)
 
 			err := execCmd.Run()
 			if err != nil {
