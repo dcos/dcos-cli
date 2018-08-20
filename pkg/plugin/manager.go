@@ -279,13 +279,15 @@ func (m *Manager) buildPlugin(installOpts *InstallOpts) error {
 		return err
 	}
 
+	envDir := path.Join(installOpts.stagingDir, "env")
+
 	switch contentType {
 	case "application/zip":
 		// Unzip the plugin into the staging dir and validate its plugin.toml, if any.
-		if err := fsutil.Unzip(m.fs, installOpts.path, installOpts.stagingDir); err != nil {
+		if err := fsutil.Unzip(m.fs, installOpts.path, envDir); err != nil {
 			return err
 		}
-		pluginFilePath := filepath.Join(installOpts.stagingDir, "plugin.toml")
+		pluginFilePath := filepath.Join(envDir, "plugin.toml")
 		if err := m.unmarshalPlugin(plugin, pluginFilePath); err != nil {
 			return err
 		}
@@ -298,7 +300,7 @@ func (m *Manager) buildPlugin(installOpts *InstallOpts) error {
 	// when it's not a ZIP archive.
 	default:
 		// Copy the binary into the staging dir's bin folder,
-		binDir := filepath.Join(installOpts.stagingDir, "bin")
+		binDir := filepath.Join(envDir, "bin")
 		if err := m.fs.MkdirAll(binDir, 0755); err != nil {
 			return err
 		}
@@ -323,7 +325,7 @@ func (m *Manager) buildPlugin(installOpts *InstallOpts) error {
 // installPlugin installs a plugin from a staging dir into its final location.
 // "update" indicates whether an already existing plugin can be overwritten.
 func (m *Manager) installPlugin(installOpts *InstallOpts) error {
-	dest := filepath.Join(m.pluginsDir(), installOpts.Name, "env")
+	dest := filepath.Join(m.pluginsDir(), installOpts.Name)
 
 	if installOpts.Update {
 		if err := m.fs.RemoveAll(dest); err != nil {
