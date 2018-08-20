@@ -279,7 +279,7 @@ func (m *Manager) buildPlugin(installOpts *InstallOpts) error {
 		return err
 	}
 
-	envDir := path.Join(installOpts.stagingDir, "env")
+	envDir := filepath.Join(installOpts.stagingDir, "env")
 
 	switch contentType {
 	case "application/zip":
