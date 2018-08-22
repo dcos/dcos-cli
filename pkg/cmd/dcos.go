@@ -2,8 +2,12 @@
 package cmd
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
 
 	"github.com/sirupsen/logrus"
 
@@ -13,7 +17,9 @@ import (
 	"github.com/dcos/dcos-cli/pkg/cmd/completion"
 	"github.com/dcos/dcos-cli/pkg/cmd/config"
 	plugincmd "github.com/dcos/dcos-cli/pkg/cmd/plugin"
+	"github.com/dcos/dcos-cli/pkg/cosmos"
 	"github.com/dcos/dcos-cli/pkg/plugin"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
@@ -90,13 +96,24 @@ func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
 		DisableFlagParsing: true,
 		SilenceErrors:      true, // Silences error message if command returns an exit code.
 		SilenceUsage:       true, // Silences usage information from the wrapper CLI on error.
-		RunE: func(_ *cobra.Command, _ []string) error {
+		RunE: func(cobraCmd *cobra.Command, args []string) error {
+			if cobraCmd.Name() == "package" && len(args) == 2 && args[0] == "install" && args[1] == "dcos-core-cli" {
+				// This is a temporary fix in place for the core plugin not being able to update itself.
+				// In the long-term we should come-up with an installation system which is able to update
+				// running binary executables.
+				//
+				// https://jira.mesosphere.com/browse/DCOS_OSS-3985
+				// https://unix.stackexchange.com/questions/138214/how-is-it-possible-to-do-a-live-update-while-a-program-is-running#answer-138241
+				return updateCorePlugin(ctx)
+			}
+
 			// Extract the specific arguments of a command from the context.
 			ctxArgs := ctx.Args()
 			var cmdArgs []string
 			for key, arg := range ctxArgs {
 				if arg == cmd.Name {
 					cmdArgs = ctxArgs[key:]
+					break
 				}
 			}
 
@@ -137,4 +154,38 @@ func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
 			return err
 		},
 	}
+}
+
+// updateCorePlugin updates the core CLI plugin.
+func updateCorePlugin(ctx api.Context) error {
+	cluster, err := ctx.Cluster()
+	if err != nil {
+		return err
+	}
+	httpClient := ctx.HTTPClient(cluster)
+
+	// Get package information from Cosmos.
+	pkgInfo, err := cosmos.NewClient(httpClient).DescribePackage("dcos-core-cli")
+	if err != nil {
+		return err
+	}
+
+	// Get the download URL for the current platform.
+	p, ok := pkgInfo.Package.Resource.CLI.Plugins[runtime.GOOS]["x86-64"]
+	if !ok {
+		return fmt.Errorf("'dcos-core-cli' isn't available for '%s')", runtime.GOOS)
+	}
+	return ctx.PluginManager(cluster).Install(p.URL, &plugin.InstallOpts{
+		Name:   "dcos-core-cli",
+		Update: true,
+		PostInstall: func(fs afero.Fs, pluginDir string) error {
+			pkgInfoFilepath := filepath.Join(pluginDir, "package.json")
+			pkgInfoFile, err := fs.OpenFile(pkgInfoFilepath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+			if err != nil {
+				return err
+			}
+			defer pkgInfoFile.Close()
+			return json.NewEncoder(pkgInfoFile).Encode(pkgInfo.Package)
+		},
+	})
 }
