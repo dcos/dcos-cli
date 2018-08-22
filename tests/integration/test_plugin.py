@@ -3,10 +3,10 @@ import os
 import shutil
 import sys
 
-from .common import exec_cmd, default_cluster  # noqa: F401
+from .common import exec_cmd, default_cluster, default_cluster_with_plugins  # noqa: F401
 
 
-def test_plugin_list(default_cluster):
+def test_plugin_list(default_cluster_with_plugins):
     code, out, err = exec_cmd(['dcos', 'plugin', 'list'])
     assert code == 0
     assert err == ''

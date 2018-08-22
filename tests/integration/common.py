@@ -66,7 +66,17 @@ def default_cluster():
     assert code == 0
 
 
-def _setup_cluster(name, with_plugins=True):
+@pytest.fixture()
+def default_cluster_with_plugins():
+    cluster = _setup_cluster('DEFAULT', with_plugins=True)
+
+    yield cluster
+
+    code, _, _ = exec_cmd(['dcos', 'cluster', 'remove', cluster['name']])
+    assert code == 0
+
+
+def _setup_cluster(name, with_plugins=False):
     cluster = {
         'variant': os.environ.get('DCOS_TEST_' + name + '_CLUSTER_VARIANT'),
         'username': os.environ.get('DCOS_TEST_' + name + '_CLUSTER_USERNAME'),
