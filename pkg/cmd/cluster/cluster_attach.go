@@ -37,6 +37,7 @@ func newCmdClusterAttach(ctx api.Context) *cobra.Command {
 			}
 
 			// We try to find a Link matching the argument given.
+			ctx.Logger().Info("Looking for linked cluster...")
 			var matchingLinkedClusters []*linker.Link
 			for _, linkedCluster := range linkedClusters {
 				if args[0] == linkedCluster.Name {
@@ -55,7 +56,12 @@ func newCmdClusterAttach(ctx api.Context) *cobra.Command {
 			case 0:
 				// No matching linked cluster, one matching cluster.
 				if matchingConf != nil {
-					return manager.Attach(matchingConf)
+					err = manager.Attach(matchingConf)
+					if err != nil {
+						return err
+					}
+					ctx.Logger().Infof("You are now attached to cluster %s", args[0])
+					return nil
 				}
 				// No matching linked cluster, no matching cluster.
 				return config.ErrConfigNotFound
@@ -68,7 +74,11 @@ func newCmdClusterAttach(ctx api.Context) *cobra.Command {
 				flags := setup.NewFlags(ctx.Fs(), ctx.EnvLookup)
 				flags.LoginFlags().SetProviderID(matchingLinkedClusters[0].LoginProvider.ID)
 				_, err := ctx.Setup(flags, matchingLinkedClusters[0].URL, true)
-				return err
+				if err != nil {
+					return err
+				}
+				ctx.Logger().Infof("You are now attached to cluster %s", args[0])
+				return nil
 			default:
 				return config.ErrTooManyConfigs
 			}

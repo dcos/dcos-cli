@@ -23,7 +23,12 @@ func newCmdAuthLogin(ctx api.Context) *cobra.Command {
 				return err
 			}
 			cluster.SetACSToken(acsToken)
-			return cluster.Config().Persist()
+			err = cluster.Config().Persist()
+			if err != nil {
+				return err
+			}
+			ctx.Logger().Info("Login successful")
+			return nil
 		},
 	}
 	flags.Register(cmd.Flags())

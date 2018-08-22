@@ -17,7 +17,12 @@ func newCmdClusterRename(ctx api.Context) *cobra.Command {
 				return err
 			}
 			conf.Set("cluster.name", args[1])
-			return conf.Persist()
+			err = conf.Persist()
+			if err != nil {
+				return err
+			}
+			ctx.Logger().Infof("Renamed %s to %s", args[0], args[1])
+			return nil
 		},
 	}
 	return cmd

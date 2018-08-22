@@ -16,7 +16,12 @@ func newCmdPluginRemove(ctx api.Context) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return ctx.PluginManager(cluster).Remove(args[0])
+			err = ctx.PluginManager(cluster).Remove(args[0])
+			if err != nil {
+				return err
+			}
+			ctx.Logger().Infof("Removed %s as a plugin from the CLI", args[0])
+			return nil
 		},
 	}
 }
