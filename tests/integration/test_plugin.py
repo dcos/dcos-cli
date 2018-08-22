@@ -57,13 +57,7 @@ def test_plugin_invocation(default_cluster):
 
 
 def test_plugin_verbosity(default_cluster):
-    plugins = {
-        'linux': os.path.join(_plugin_dir('dcos-test'), 'linux', 'dcos-test'),
-        'darwin': os.path.join(_plugin_dir('dcos-test'), 'darwin', 'dcos-test'),
-        'win32': os.path.join(_plugin_dir('dcos-test'), 'win32', 'dcos-test.exe'),
-    }
-
-    code, out, err = exec_cmd(['dcos', 'plugin', 'add', plugins[sys.platform]])
+    code, out, err = exec_cmd(['dcos', 'plugin', 'add', _test_plugin_path()])
     assert code == 0
     assert err == ''
     assert out == ''
@@ -104,6 +98,11 @@ def test_plugin_verbosity(default_cluster):
 
         assert out['env'].get('DCOS_VERBOSITY') == fixture['DCOS_VERBOSITY']
         assert out['env'].get('DCOS_LOG_LEVEL') == fixture['DCOS_LOG_LEVEL']
+
+
+def _test_plugin_path():
+    file = 'dcos-test.exe' if sys.platform == 'win32' else 'dcos-test'
+    return os.path.join(_plugin_dir('dcos-test'), sys.platform, file)
 
 
 def _plugin_dir(name):

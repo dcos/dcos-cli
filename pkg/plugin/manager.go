@@ -307,7 +307,7 @@ func (m *Manager) buildPlugin(installOpts *InstallOpts) error {
 			return err
 		}
 		binPath := filepath.Join(binDir, filepath.Base(installOpts.path))
-		err := fsutil.Copy(m.fs, installOpts.path, binPath, 0751)
+		err := fsutil.CopyFile(m.fs, installOpts.path, binPath, 0751)
 		if err != nil {
 			return err
 		}
@@ -343,11 +343,14 @@ func (m *Manager) installPlugin(installOpts *InstallOpts) error {
 		}
 	}
 
-	// Move the plugin folder to the final location.
 	if err := m.fs.MkdirAll(filepath.Dir(dest), 0755); err != nil {
 		return err
 	}
-	return m.fs.Rename(installOpts.stagingDir, dest)
+
+	// Copy the plugin folder to its final location. We don't move it as this causes
+	// issues when the system's temp dir and the DC/OS dir are on different devices.
+	// See https://groups.google.com/forum/m/#!topic/golang-dev/5w7Jmg_iCJQ.
+	return fsutil.CopyDir(m.fs, installOpts.stagingDir, dest)
 }
 
 // httpClient returns the appropriate HTTP client for a given resource.
