@@ -96,17 +96,7 @@ func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
 		DisableFlagParsing: true,
 		SilenceErrors:      true, // Silences error message if command returns an exit code.
 		SilenceUsage:       true, // Silences usage information from the wrapper CLI on error.
-		RunE: func(cobraCmd *cobra.Command, args []string) error {
-			if cobraCmd.Name() == "package" && len(args) == 2 && args[0] == "install" && args[1] == "dcos-core-cli" {
-				// This is a temporary fix in place for the core plugin not being able to update itself.
-				// In the long-term we should come-up with an installation system which is able to update
-				// running binary executables.
-				//
-				// https://jira.mesosphere.com/browse/DCOS_OSS-3985
-				// https://unix.stackexchange.com/questions/138214/how-is-it-possible-to-do-a-live-update-while-a-program-is-running#answer-138241
-				return updateCorePlugin(ctx)
-			}
-
+		RunE: func(_ *cobra.Command, _ []string) error {
 			// Extract the specific arguments of a command from the context.
 			ctxArgs := ctx.Args()
 			var cmdArgs []string
@@ -115,6 +105,16 @@ func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
 					cmdArgs = ctxArgs[key:]
 					break
 				}
+			}
+
+			if len(cmdArgs) >= 3 && cmdArgs[0] == "package" && cmdArgs[1] == "install" && cmdArgs[2] == "dcos-core-cli" {
+				// This is a temporary fix in place for the core plugin not being able to update itself.
+				// In the long-term we should come-up with an installation system which is able to update
+				// running binary executables.
+				//
+				// https://jira.mesosphere.com/browse/DCOS_OSS-3985
+				// https://unix.stackexchange.com/questions/138214/how-is-it-possible-to-do-a-live-update-while-a-program-is-running#answer-138241
+				return updateCorePlugin(ctx)
 			}
 
 			executablePath, err := os.Executable()
