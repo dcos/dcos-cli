@@ -26,7 +26,7 @@ const (
 // Item represents a cluster item in the list.
 type Item struct {
 	Attached bool   `json:"attached"`
-	ID       string `json:"id"`
+	ID       string `json:"cluster_id"`
 	Name     string `json:"name"`
 	Status   string `json:"status"`
 	URL      string `json:"url"`
