@@ -41,6 +41,7 @@ pipeline {
               export PYTHONIOENCODING=utf-8; \
               pip install --upgrade pip; \
               pip install -r requirements.txt; \
+              dcos cluster remove --all; \
               ./run_integration_tests.py --e2e-backend=dcos_launch"
           '''
         }

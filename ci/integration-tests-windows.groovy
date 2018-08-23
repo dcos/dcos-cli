@@ -69,6 +69,7 @@ node('py36') {
                                 export CLI_TEST_SSH_USER=centos; \
                                 export CLI_TEST_SSH_KEY_PATH=${DCOS_TEST_SSH_KEY_PATH}; \
                                 export CLI_TEST_MASTER_PROXY=true; \
+                                dist/dcos cluster remove --all; \
                                 dist/dcos cluster setup ${DCOS_TEST_URL} \
                                     --insecure --username=${DCOS_TEST_ADMIN_USERNAME} \
                                     --password-env=DCOS_TEST_ADMIN_PASSWORD; \
