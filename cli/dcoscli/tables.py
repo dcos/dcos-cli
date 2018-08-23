@@ -361,6 +361,11 @@ def job_runs_table(runs_list):
     :type runs_list: [runs]
     :rtype: PrettyTable
     """
+    # We expect to receive a list,
+    # if not we create one from the single item.
+    if not isinstance(runs_list, (list,)):
+        runs_list = [runs_list]
+
     fields = OrderedDict([
         ('task id', lambda s: s['id']),
         ('job id', lambda s: s['jobId']),
