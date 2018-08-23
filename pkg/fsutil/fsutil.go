@@ -13,9 +13,42 @@ import (
 	"github.com/spf13/afero"
 )
 
-// Copy copies a file into a given destination.
-func Copy(fs afero.Fs, src, dest string, perm os.FileMode) error {
-	srcFile, err := os.Open(src)
+// CopyDir recursively copies a directory into a given destination.
+func CopyDir(fs afero.Fs, src, dest string) error {
+	info, err := fs.Stat(src)
+	if err != nil {
+		return err
+	}
+	if err := fs.Mkdir(dest, info.Mode()); err != nil {
+		return err
+	}
+	list, err := afero.ReadDir(fs, src)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range list {
+		entrySrc := filepath.Join(src, entry.Name())
+		entryDest := filepath.Join(dest, entry.Name())
+
+		if entry.IsDir() {
+			err := CopyDir(fs, entrySrc, entryDest)
+			if err != nil {
+				return err
+			}
+		} else {
+			err := CopyFile(fs, entrySrc, entryDest, entry.Mode())
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// CopyFile copies a file into a given destination.
+func CopyFile(fs afero.Fs, src, dest string, perm os.FileMode) error {
+	srcFile, err := fs.Open(src)
 	if err != nil {
 		return err
 	}
@@ -30,9 +63,8 @@ func CopyReader(fs afero.Fs, r io.Reader, dest string, perm os.FileMode) error {
 	if err != nil {
 		return err
 	}
-	defer destFile.Close()
-
 	_, err = io.Copy(destFile, r)
+	destFile.Close()
 	return err
 }
 
@@ -70,7 +102,11 @@ func DetectMediaType(fs afero.Fs, path string) (string, error) {
 
 	sniffBuf := make([]byte, 512)
 	if _, err := io.ReadFull(f, sniffBuf); err != nil {
-		return "", err
+		// We don't want to fail when the file is smaller than the 512 bytes needed to sniff
+		// its media type. This can happen with non-binary content (eg. a small Python script).
+		if err != io.ErrUnexpectedEOF {
+			return "", err
+		}
 	}
 	return http.DetectContentType(sniffBuf), nil
 }
@@ -116,13 +152,5 @@ func unzipFile(fs afero.Fs, f *zip.File, dest string) error {
 	if err := fs.MkdirAll(filepath.Dir(fpath), 0755); err != nil {
 		return err
 	}
-
-	outFile, err := fs.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
-	if err != nil {
-		return err
-	}
-
-	_, err = io.Copy(outFile, rc)
-	outFile.Close()
-	return err
+	return CopyReader(fs, rc, fpath, f.Mode())
 }

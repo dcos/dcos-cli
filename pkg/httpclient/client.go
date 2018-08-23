@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
+	"mime"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -270,5 +271,13 @@ func (c *Client) BaseURL() *url.URL {
 
 // isText returns whether the Content-type header refers to a textual body.
 func (c *Client) isText(contentType string) bool {
-	return contentType == "application/json" || strings.HasPrefix(contentType, "text/")
+	mediaType, _, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		c.opts.Logger.Debug(err)
+		return false
+	}
+	if mediaType == "application/json" || strings.HasSuffix(mediaType, "+json") {
+		return true
+	}
+	return strings.HasPrefix(mediaType, "text/")
 }

@@ -1,4 +1,4 @@
-from .common import exec_cmd, default_cluster  # noqa: F401
+from .common import exec_cmd, default_cluster, default_cluster_with_plugins  # noqa: F401
 
 
 def test_dcos_help():
@@ -32,7 +32,7 @@ Use "dcos [command] --help" for more information about a command.
 '''
 
 
-def test_dcos_help_with_default_plugins(default_cluster):
+def test_dcos_help_with_default_plugins(default_cluster_with_plugins):
     code, out, err = exec_cmd(['dcos'])
     assert code == 0
     assert err == ''

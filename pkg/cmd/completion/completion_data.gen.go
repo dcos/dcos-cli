@@ -81,7 +81,7 @@ func completionSh() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "completion.sh", size: 7758, mode: os.FileMode(420), modTime: time.Unix(1533890708, 0)}
+	info := bindataFileInfo{name: "completion.sh", size: 7758, mode: os.FileMode(420), modTime: time.Unix(1534254561, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

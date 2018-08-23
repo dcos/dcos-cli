@@ -63,6 +63,8 @@ func (m *Manager) Install(resource string, installOpts *InstallOpts) (err error)
 		if err != nil {
 			return err
 		}
+	} else {
+		installOpts.path = resource
 	}
 
 	// The staging dir is where the plugin will be constructed
@@ -279,13 +281,15 @@ func (m *Manager) buildPlugin(installOpts *InstallOpts) error {
 		return err
 	}
 
+	envDir := filepath.Join(installOpts.stagingDir, "env")
+
 	switch contentType {
 	case "application/zip":
 		// Unzip the plugin into the staging dir and validate its plugin.toml, if any.
-		if err := fsutil.Unzip(m.fs, installOpts.path, installOpts.stagingDir); err != nil {
+		if err := fsutil.Unzip(m.fs, installOpts.path, envDir); err != nil {
 			return err
 		}
-		pluginFilePath := filepath.Join(installOpts.stagingDir, "plugin.toml")
+		pluginFilePath := filepath.Join(envDir, "plugin.toml")
 		if err := m.unmarshalPlugin(plugin, pluginFilePath); err != nil {
 			return err
 		}
@@ -298,12 +302,12 @@ func (m *Manager) buildPlugin(installOpts *InstallOpts) error {
 	// when it's not a ZIP archive.
 	default:
 		// Copy the binary into the staging dir's bin folder,
-		binDir := filepath.Join(installOpts.stagingDir, "bin")
+		binDir := filepath.Join(envDir, "bin")
 		if err := m.fs.MkdirAll(binDir, 0755); err != nil {
 			return err
 		}
 		binPath := filepath.Join(binDir, filepath.Base(installOpts.path))
-		err := fsutil.Copy(m.fs, installOpts.path, binPath, 0751)
+		err := fsutil.CopyFile(m.fs, installOpts.path, binPath, 0751)
 		if err != nil {
 			return err
 		}
@@ -323,7 +327,7 @@ func (m *Manager) buildPlugin(installOpts *InstallOpts) error {
 // installPlugin installs a plugin from a staging dir into its final location.
 // "update" indicates whether an already existing plugin can be overwritten.
 func (m *Manager) installPlugin(installOpts *InstallOpts) error {
-	dest := filepath.Join(m.pluginsDir(), installOpts.Name, "env")
+	dest := filepath.Join(m.pluginsDir(), installOpts.Name)
 
 	if installOpts.Update {
 		if err := m.fs.RemoveAll(dest); err != nil {
@@ -339,11 +343,14 @@ func (m *Manager) installPlugin(installOpts *InstallOpts) error {
 		}
 	}
 
-	// Move the plugin folder to the final location.
 	if err := m.fs.MkdirAll(filepath.Dir(dest), 0755); err != nil {
 		return err
 	}
-	return m.fs.Rename(installOpts.stagingDir, dest)
+
+	// Copy the plugin folder to its final location. We don't move it as this causes
+	// issues when the system's temp dir and the DC/OS dir are on different devices.
+	// See https://groups.google.com/forum/m/#!topic/golang-dev/5w7Jmg_iCJQ.
+	return fsutil.CopyDir(m.fs, installOpts.stagingDir, dest)
 }
 
 // httpClient returns the appropriate HTTP client for a given resource.
