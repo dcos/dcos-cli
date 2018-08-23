@@ -59,6 +59,7 @@ func New(baseClient *httpclient.Client, logger *logrus.Logger) *Linker {
 func (l *Linker) Link(link *Link) error {
 	message, err := json.Marshal(link)
 
+	l.logger.Info("Linking the cluster...")
 	resp, err := l.http.Post("/cluster/v1/links", "application/json", bytes.NewReader(message))
 	if err != nil {
 		return err
@@ -79,11 +80,13 @@ func (l *Linker) Link(link *Link) error {
 		return apiError
 	}
 
+	l.logger.Infof("Linked current cluster to cluster %s", link.ID)
 	return nil
 }
 
 // Unlink sends an unlink request to /cluster/v1/links.
 func (l *Linker) Unlink(id string) error {
+	l.logger.Info("Unlinking the cluster...")
 	resp, err := l.http.Delete("/cluster/v1/links/" + id)
 	if err != nil {
 		return err
@@ -98,7 +101,8 @@ func (l *Linker) Unlink(id string) error {
 		}
 		return apiError
 	}
-
+	
+	l.logger.Infof("Unlinked current cluster from cluster %s", id)
 	return nil
 }
 

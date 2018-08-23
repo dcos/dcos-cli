@@ -60,7 +60,7 @@ func newCmdClusterAttach(ctx api.Context) *cobra.Command {
 					if err != nil {
 						return err
 					}
-					ctx.Logger().Infof("You are now attached to cluster %s", args[0])
+					ctx.Logger().Infof("You are now attached to cluster %s", config.NewCluster(matchingConf).ID())
 					return nil
 				}
 				// No matching linked cluster, no matching cluster.
@@ -77,7 +77,7 @@ func newCmdClusterAttach(ctx api.Context) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				ctx.Logger().Infof("You are now attached to cluster %s", args[0])
+				ctx.Logger().Infof("You are now attached to cluster %s", matchingLinkedClusters[0].ID)
 				return nil
 			default:
 				return config.ErrTooManyConfigs

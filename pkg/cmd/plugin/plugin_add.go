@@ -18,13 +18,7 @@ func newCmdPluginAdd(ctx api.Context) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			ctx.Logger().Infof("Adding %s as a plugin...")
-			err = ctx.PluginManager(cluster).Install(args[0], installOpts)
-			if err != nil {
-				return err
-			}
-			ctx.Logger().Infof("Added %s as a plugin to the CLI", args[0])
-			return nil
+			return ctx.PluginManager(cluster).Install(args[0], installOpts)
 		},
 	}
 	cmd.Flags().BoolVarP(&installOpts.Update, "update", "u", false, "")

@@ -22,7 +22,7 @@ func newCmdConfigUnset(ctx api.Context) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			ctx.Logger().Infof("Config value %s was rmeoved", args[0])
+			ctx.Logger().Infof("Config value %s was removed", args[0])
 			return nil
 		},
 	}

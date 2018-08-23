@@ -16,12 +16,7 @@ func newCmdClusterSetup(ctx api.Context) *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clusterURL := args[0]
-			ctx.Logger().Info("Setting up the cluster...")
 			_, err := ctx.Setup(setupFlags, clusterURL, true)
-			if err != nil {
-				return err
-			}
-			ctx.Logger().Info("Your cluster is now setup")
 			return err
 		},
 	}

@@ -58,6 +58,7 @@ type InstallOpts struct {
 // Install installs a plugin from a resource.
 func (m *Manager) Install(resource string, installOpts *InstallOpts) (err error) {
 	// If it's a remote resource, download it first.
+	m.logger.Infof("Installing plugin from %s...", resource)
 	if strings.HasPrefix(resource, "https://") || strings.HasPrefix(resource, "http://") {
 		installOpts.path, err = m.downloadPlugin(resource)
 		if err != nil {
@@ -79,7 +80,12 @@ func (m *Manager) Install(resource string, installOpts *InstallOpts) (err error)
 	if err != nil {
 		return err
 	}
-	return m.installPlugin(installOpts)
+	err = m.installPlugin(installOpts)
+	if err != nil {
+		return err
+	}
+	m.logger.Info("Added plugin to the CLI")
+	return nil
 }
 
 // SetCluster sets the plugin manager's target cluster.
@@ -97,7 +103,12 @@ func (m *Manager) Remove(name string) error {
 	if !pluginDirExists {
 		return fmt.Errorf("'%s' is not a plugin directory", pluginDir)
 	}
-	return m.fs.RemoveAll(pluginDir)
+	err = m.fs.RemoveAll(pluginDir)
+	if err != nil {
+		return err
+	}
+	m.logger.Infof("Removed %s as a plugin from the CLI", name)
+	return nil
 }
 
 // Plugins returns the plugins associated with the current cluster.

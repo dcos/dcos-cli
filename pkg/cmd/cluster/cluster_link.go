@@ -95,13 +95,7 @@ func newCmdClusterLink(ctx api.Context) *cobra.Command {
 			}
 
 			attachedClient := linker.New(ctx.HTTPClient(attachedCluster), ctx.Logger())
-			ctx.Logger().Info("Linking the cluster...")
-			err = attachedClient.Link(linkRequest)
-			if err != nil {
-				return err
-			}
-			ctx.Logger().Infof("Linked current cluster to %s", args[0])
-			return nil
+			return attachedClient.Link(linkRequest)
 		},
 	}
 	setupFlags.Register(cmd.Flags())

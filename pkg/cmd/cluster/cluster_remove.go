@@ -54,7 +54,7 @@ func newCmdClusterRemove(ctx api.Context) *cobra.Command {
 				if err := ctx.Fs().RemoveAll(item.Cluster().Dir()); err != nil {
 					return err
 				}
-				ctx.Logger().Infof("Removed cluster %s ...", item.Name)
+				ctx.Logger().Infof("Removed cluster %s ...", item.ID)
 			}
 			return nil
 		},
