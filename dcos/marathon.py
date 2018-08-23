@@ -463,22 +463,22 @@ class Client(object):
 
         return deployment
 
-    def get_deployments(self, app_id=None):
-        """Returns a list of deployments, optionally limited to an app.
-
-        :param app_id: the id of the application
-        :type app_id: str
+    def get_deployments(self, id_filter=None):
+        """Returns a list of deployments, optionally limited to an app or pod.
+        :param id_filter: the id of the application or the pod
+        :type id_filter: str
         :returns: a list of deployments
         :rtype: list of dict
         """
 
         response = self._rpc.http_req(http.get, 'v2/deployments')
 
-        if app_id is not None:
-            app_id = util.normalize_marathon_id_path(app_id)
+        if id_filter is not None:
+            id_filter = util.normalize_marathon_id_path(id_filter)
             deployments = [
                 deployment for deployment in response.json()
-                if app_id in deployment['affectedApps']
+                if id_filter in deployment['affectedApps']
+                or id_filter in deployment['affectedPods']
             ]
         else:
             deployments = response.json()
