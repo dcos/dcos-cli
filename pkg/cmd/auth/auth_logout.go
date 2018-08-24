@@ -17,9 +17,13 @@ func newCmdAuthLogout(ctx api.Context) *cobra.Command {
 			if err != nil {
 				return err
 			}
-
 			conf.Unset("core.dcos_acs_token")
-			return conf.Persist()
+			err = conf.Persist()
+			if err != nil {
+				return err
+			}
+			ctx.Logger().Info("Logout successful")
+			return nil
 		},
 	}
 }

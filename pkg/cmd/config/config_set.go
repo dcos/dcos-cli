@@ -19,7 +19,12 @@ func newCmdConfigSet(ctx api.Context) *cobra.Command {
 			}
 			conf := cluster.Config()
 			conf.Set(args[0], args[1])
-			return conf.Persist()
+			err = conf.Persist()
+			if err != nil {
+				return err
+			}
+			ctx.Logger().Infof("Config value %s was set to %s", args[0], args[1])
+			return nil
 		},
 	}
 }

@@ -69,6 +69,8 @@ func (s *Setup) Configure(flags *Flags, clusterURL string, attach bool) (*config
 		return nil, err
 	}
 
+	s.logger.Info("Setting up the cluster...")
+
 	// Create a Cluster and an HTTP client with the few information already available.
 	cluster := config.NewCluster(nil)
 	cluster.SetURL(clusterURL)
@@ -136,6 +138,7 @@ func (s *Setup) Configure(flags *Flags, clusterURL string, attach bool) (*config
 		}
 	}
 
+	s.logger.Info("Your cluster is now setup")
 	return cluster, nil
 }
 

@@ -18,7 +18,12 @@ func newCmdConfigUnset(ctx api.Context) *cobra.Command {
 			}
 			conf := cluster.Config()
 			conf.Unset(args[0])
-			return conf.Persist()
+			err = conf.Persist()
+			if err != nil {
+				return err
+			}
+			ctx.Logger().Infof("Config value %s was removed", args[0])
+			return nil
 		},
 	}
 }

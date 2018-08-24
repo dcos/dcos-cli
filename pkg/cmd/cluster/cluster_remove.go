@@ -34,7 +34,13 @@ func newCmdClusterRemove(ctx api.Context) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				return ctx.Fs().RemoveAll(filepath.Dir(conf.Path()))
+				err = ctx.Fs().RemoveAll(filepath.Dir(conf.Path()))
+				if err != nil {
+					return err
+				}
+
+				ctx.Logger().Infof("Removed cluster: %s", args[0])
+				return nil
 			}
 
 			var filters []lister.Filter
@@ -48,6 +54,7 @@ func newCmdClusterRemove(ctx api.Context) *cobra.Command {
 				if err := ctx.Fs().RemoveAll(item.Cluster().Dir()); err != nil {
 					return err
 				}
+				ctx.Logger().Infof("Removed cluster %s ...", item.ID)
 			}
 			return nil
 		},
