@@ -56,15 +56,9 @@ func NewManager(opts ManagerOpts) *Manager {
 // Current retrieves the current config.
 //
 // The lookup order is :
-// - DCOS_CONFIG is defined and is a path to a config file.
 // - DCOS_CLUSTER is defined and is the name/ID of a configured cluster.
 // - An attached file exists alongside a configured cluster, OR there is a single configured cluster.
 func (m *Manager) Current() (*Config, error) {
-	if configPath, ok := m.envLookup("DCOS_CONFIG"); ok {
-		config := m.newConfig()
-		return config, config.LoadPath(configPath)
-	}
-
 	if configName, ok := m.envLookup("DCOS_CLUSTER"); ok {
 		return m.Find(configName, true)
 	}

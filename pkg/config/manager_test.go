@@ -27,12 +27,6 @@ func TestCurrent(t *testing.T) {
 		{"single_config_attached", nil, false},
 		{"single_config_unattached", nil, false},
 		{"multi_config_with_one_attached", nil, false},
-		{"dcos_config_env", func(key string) (val string, ok bool) {
-			if key == "DCOS_CONFIG" {
-				return filepath.Join(fixturesDir, "dcos_config_env", ".dcos", "dcos_env.toml"), true
-			}
-			return
-		}, false},
 		{"multi_config_with_none_attached", func(key string) (val string, ok bool) {
 			if key == "DCOS_CLUSTER" {
 				return "97193161-f7f1-2295-2514-a6b3918043b6", true
