@@ -289,15 +289,10 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 	// We wait for the installation of the enterprise plugin before returning.
 	errEnterprise := <-enterpriseInstallErr
 
-	switch {
-	case errCore != nil && errEnterprise != nil:
-		return fmt.Errorf("unable to install DC/OS core and enterprise CLI plugins:\n%s\n%s", errCore, errEnterprise)
-	case errCore != nil:
-		return fmt.Errorf("unable to install DC/OS core CLI plugin: %s", errCore)
-	case errEnterprise != nil:
-		return fmt.Errorf("unable to install DC/OS enterprise CLI plugin: %s", errEnterprise)
+	if errCore != nil {
+		return errCore
 	}
-	return nil
+	return errEnterprise
 }
 
 // installPlugin installs a plugin by its name. It gets the plugin's download URL through Cosmos.
