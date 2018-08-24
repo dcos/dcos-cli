@@ -305,7 +305,13 @@ func (s *Setup) installPlugin(name string, httpClient *httpclient.Client) error 
 	// Get package information from Cosmos.
 	pkgInfo, err := cosmos.NewClient(httpClient).DescribePackage(name)
 	if err != nil {
-		return err
+		switch err {
+		case cosmos.ErrForbidden:
+			s.logger.Error("User does not have permission to access Cosmos. Core CLI must be installed manually")
+			return nil
+		default:
+			return err
+		}
 	}
 
 	// Get the download URL for the current platform.
