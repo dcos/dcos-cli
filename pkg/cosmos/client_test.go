@@ -83,3 +83,29 @@ func TestPackageDescribe(t *testing.T) {
 	require.Equal(t, "zip", windowsPlugin.Kind)
 	require.Equal(t, ts.URL+"/dcos-test-cli.zip", windowsPlugin.URL)
 }
+
+func TestPermissionError(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/package/describe", func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	})
+	ts := httptest.NewServer(mux)
+	defer ts.Close()
+	client := NewClient(httpclient.New(ts.URL))
+	_, err := client.DescribePackage("dcos-test-cli")
+	require.Error(t, err)
+	assert.Equal(t, ErrForbidden, err)
+}
+
+func TestOtherError(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/package/describe", func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	})
+	ts := httptest.NewServer(mux)
+	defer ts.Close()
+	client := NewClient(httpclient.New(ts.URL))
+	_, err := client.DescribePackage("dcos-test-cli")
+	require.Error(t, err)
+	assert.NotEqual(t, ErrForbidden, err)
+}
