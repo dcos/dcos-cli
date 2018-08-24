@@ -37,7 +37,7 @@ func (f *Flags) Register(flags *pflag.FlagSet) {
 		&f.providerID,
 		"provider",
 		"",
-		"Specify the authentication provider to use for login.",
+		"Specify the login provider to use.",
 	)
 	flags.StringVar(
 		&f.username,
@@ -55,7 +55,7 @@ func (f *Flags) Register(flags *pflag.FlagSet) {
 		&f.passwordFile,
 		"password-file",
 		"",
-		"Specify the path to a file that contains the password (insecure).",
+		"Specify the path to a file that contains the password.",
 	)
 	flags.StringVar(
 		&f.privateKeyFile,
