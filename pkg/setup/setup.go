@@ -283,19 +283,16 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 		close(enterpriseInstallErr)
 	}()
 
-	err = s.installPlugin("dcos-core-cli", httpClient)
-	if err != nil {
-		// We don't return an error as the EE plugin is not as useful as the core plugin.
-		return fmt.Errorf("unable to install DC/OS core CLI plugin: %s", err)
-	}
-
+	// Install dcos-core-cli.
+	errCore := s.installPlugin("dcos-core-cli", httpClient)
 	// The installation of the core and EE plugins happen in parallel.
 	// We wait for the installation of the enterprise plugin before returning.
-	err = <-enterpriseInstallErr
-	if err != nil {
-		return fmt.Errorf("unable to install DC/OS enterprise CLI plugin: %s", err)
+	errEnterprise := <-enterpriseInstallErr
+
+	if errCore != nil {
+		return errCore
 	}
-	return nil
+	return errEnterprise
 }
 
 // installPlugin installs a plugin by its name. It gets the plugin's download URL through Cosmos.
