@@ -138,7 +138,7 @@ func (s *Setup) Configure(flags *Flags, clusterURL string, attach bool) (*config
 		}
 	}
 
-	s.logger.Info("Your cluster is now setup")
+	s.logger.Infof("%s is now setup", clusterURL)
 	return cluster, nil
 }
 

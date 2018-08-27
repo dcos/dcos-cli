@@ -80,12 +80,7 @@ func (m *Manager) Install(resource string, installOpts *InstallOpts) (err error)
 	if err != nil {
 		return err
 	}
-	err = m.installPlugin(installOpts)
-	if err != nil {
-		return err
-	}
-	m.logger.Info("Added plugin to the CLI")
-	return nil
+	return m.installPlugin(installOpts)
 }
 
 // SetCluster sets the plugin manager's target cluster.
