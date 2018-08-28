@@ -3,10 +3,16 @@ package cosmos
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/url"
 
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 )
+
+// ErrForbidden means that the user doesn't have the `dcos:adminrouter:package` permission
+// so can't access Cosmos
+var ErrForbidden = errors.New("user does not have permission to access Cosmos")
 
 // Client is a client for Cosmos.
 type Client struct {
@@ -56,7 +62,7 @@ func (c *Client) DescribePackage(name string) (*PackageInfo, error) {
 		return nil, err
 	}
 
-	req, err := c.http.NewRequest("POST", "/package/describe", &reqBody, httpclient.FailOnErrStatus(true))
+	req, err := c.http.NewRequest("POST", "/package/describe", &reqBody)
 	if err != nil {
 		return nil, err
 	}
@@ -74,6 +80,12 @@ func (c *Client) DescribePackage(name string) (*PackageInfo, error) {
 	}
 
 	defer resp.Body.Close()
+
+	if resp.StatusCode == 403 {
+		return nil, ErrForbidden
+	} else if resp.StatusCode > 400 {
+		return nil, fmt.Errorf("HTTP %d error received from Cosmos", resp.StatusCode)
+	}
 
 	var pkg PackageInfo
 	err = json.NewDecoder(resp.Body).Decode(&pkg)
