@@ -285,6 +285,7 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 
 	// Install dcos-core-cli.
 	errCore := s.installPlugin("dcos-core-cli", httpClient)
+
 	// The installation of the core and EE plugins happen in parallel.
 	// We wait for the installation of the enterprise plugin before returning.
 	errEnterprise := <-enterpriseInstallErr
