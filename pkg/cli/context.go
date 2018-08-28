@@ -180,6 +180,7 @@ func (ctx *Context) Setup(flags *setup.Flags, clusterURL string, attach bool) (*
 	}
 
 	return setup.New(setup.Opts{
+		Fs:            ctx.Fs(),
 		Errout:        ctx.ErrOut(),
 		Prompt:        ctx.Prompt(),
 		Logger:        ctx.Logger(),

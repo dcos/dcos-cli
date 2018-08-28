@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -33,6 +34,7 @@ import (
 
 // Opts are options for a setup.
 type Opts struct {
+	Fs            afero.Fs
 	Errout        io.Writer
 	Prompt        *prompt.Prompt
 	Logger        *logrus.Logger
@@ -43,6 +45,7 @@ type Opts struct {
 
 // Setup represents a cluster setup.
 type Setup struct {
+	fs            afero.Fs
 	errout        io.Writer
 	prompt        *prompt.Prompt
 	logger        *logrus.Logger
@@ -54,6 +57,7 @@ type Setup struct {
 // New creates a new setup.
 func New(opts Opts) *Setup {
 	return &Setup{
+		fs:            opts.Fs,
 		errout:        opts.Errout,
 		prompt:        opts.Prompt,
 		logger:        opts.Logger,
@@ -292,7 +296,7 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 
 	if errCore != nil {
 		// try to install the default plugin
-		err = s.pluginManager.InstallDefaultPlugin()
+		err = s.installBundledPlugin(version.Version)
 		if err != nil {
 			// We don't return an error as the EE plugin is not as useful as the core plugin.
 			return fmt.Errorf("unable to install DC/OS core CLI plugin: %s", err)
@@ -367,4 +371,49 @@ Do you trust it?`
 		cert.NotAfter,
 		fingerprintBuf.String(),
 	))
+}
+
+// installBundledPlugin installs the default core plugin bundled with the wrapper cli if something
+// went wrong with installing the plugin from Cosmos
+func (s *Setup) installBundledPlugin(version string) error {
+	s.logger.Infof("Installing bundled plugin for verions %s", version)
+
+	filename := fmt.Sprintf("core-%s.zip", s.corePluginVersionName(version))
+	pluginData, err := Asset(filename)
+	if err != nil {
+		return err
+	}
+
+	// Write out the data into a temp directory so that it's in the real filesystem for buildPlugin
+	bundleTempDir, err := afero.TempDir(s.fs, os.TempDir(), "dcos-default-plugin")
+	if err != nil {
+		return err
+	}
+	bundleZipPath := path.Join(bundleTempDir, "dcos-core-cli.zip")
+	err = afero.WriteFile(s.fs, bundleZipPath, pluginData, 0644)
+	if err != nil {
+		return err
+	}
+
+	return s.pluginManager.Install(bundleZipPath, &plugin.InstallOpts{
+		Update: true,
+	})
+}
+
+func (s *Setup) corePluginVersionName(version string) string {
+	versionMatcher := regexp.MustCompile(`^(1.\d+)\D*`)
+	v := versionMatcher.FindStringSubmatch(version)
+
+	coreCliVersion := ""
+	switch v[1] {
+	case "1.10":
+		coreCliVersion = "1.10"
+	case "1.11":
+		coreCliVersion = "1.11"
+	case "1.12":
+		coreCliVersion = "1.11"
+	}
+
+	s.logger.Debugf("Found version %s, Core CLI version: %s", v[1], coreCliVersion)
+	return coreCliVersion
 }

@@ -1,7 +1,6 @@
 package plugin
 
 //go:generate goderive .
-//go:generate go-bindata -pkg plugin -o bundled_plugins.gen.go bundled_plugins/
 
 import (
 	"crypto/tls"
@@ -82,29 +81,6 @@ func (m *Manager) Install(resource string, installOpts *InstallOpts) (err error)
 		return err
 	}
 	return m.installPlugin(installOpts)
-}
-
-// InstallDefaultPlugin installs the default core plugin bundled with the wrapper cli if something
-// went wrong with installing the plugin from Cosmos
-func (m *Manager) InstallDefaultPlugin() (err error) {
-	m.logger.Info("Installing default plugin")
-	pluginData, err := Asset("bundled_plugins/core-1.11.zip")
-	if err != nil {
-		return err
-	}
-
-	// Write out the data into a temp directory so that it's in the real filesystem for buildPlugin
-	bundleTempDir, err := afero.TempDir(m.fs, os.TempDir(), "dcos-default-plugin")
-	if err != nil {
-		return err
-	}
-	bundleZipPath := path.Join(bundleTempDir, "dcos-core-cli.zip")
-	err = afero.WriteFile(m.fs, bundleZipPath, pluginData, 0644)
-	if err != nil {
-		return err
-	}
-
-	return m.Install(bundleZipPath, &InstallOpts{})
 }
 
 // SetCluster sets the plugin manager's target cluster.
