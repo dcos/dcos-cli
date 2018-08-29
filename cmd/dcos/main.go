@@ -14,20 +14,11 @@ import (
 	"github.com/dcos/dcos-cli/pkg/dcos"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 )
 
 func main() {
-	ctx := cli.NewContext(&cli.Environment{
-		Args:      os.Args,
-		Input:     os.Stdin,
-		Out:       os.Stdout,
-		ErrOut:    os.Stderr,
-		EnvLookup: os.LookupEnv,
-		Fs:        afero.NewOsFs(),
-	})
-
+	ctx := cli.NewContext(cli.NewOsEnvironment())
 	if err := run(ctx, os.Args); err != nil {
 		os.Exit(1)
 	}
