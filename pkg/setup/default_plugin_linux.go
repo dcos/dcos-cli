@@ -1,3 +1,5 @@
+//+build withbundle
+
 package setup
 
-//go:generate go-bindata -pkg setup -o bundled_plugins.gen.go -ignore=\.gitignore -prefix "bundled_plugins/linux" bundled_plugins/linux/
+//go:generate go-bindata -pkg setup -o bundled_plugins.gen.go -ignore=\.gitignore -nometadata -prefix "bundled_plugins" bundled_plugins/linux/

@@ -379,7 +379,7 @@ func (s *Setup) installBundledPlugin(version string) error {
 	s.logger.Infof("Installing bundled plugin for verions %s", version)
 
 	filename := fmt.Sprintf("core-%s.zip", s.corePluginVersionName(version))
-	pluginData, err := Asset(filename)
+	pluginData, err := Asset(path.Join(runtime.GOOS, filename))
 	if err != nil {
 		return err
 	}
