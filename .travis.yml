@@ -4,14 +4,14 @@ os:
 
 language: go
 
-go: "1.10.x"
+go: "1.11.x"
 
 go_import_path: github.com/dcos/dcos-cli
 
 env:
- - NO_DOCKER=1
+ - NO_DOCKER=1 GO111MODULE=on
 
-before_script:
+before_install:
  - go get -u github.com/golang/lint/golint
 
 script:
