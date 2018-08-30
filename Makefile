@@ -17,6 +17,10 @@ darwin linux windows: docker-image
 		-tags '$(GO_BUILD_TAGS)' \
 		-o build/$(@)/dcos$($(@)_EXE) ./cmd/dcos)
 
+.PHONY: bundle
+bundle: docker-image
+	$(call inDocker,go generate -tags '$(GO_BUILD_TAGS)' ./pkg/setup/)
+
 .PHONY: test
 test: vet
 	$(call inDocker,go test -race -cover ./...)
