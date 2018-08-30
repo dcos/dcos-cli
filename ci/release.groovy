@@ -15,6 +15,9 @@ pipeline {
           sh '''
             bash -exc " \
               export VERSION=\"${TAG_NAME:-$GIT_COMMIT}\";
+              export GO_BUILD_TAGS=\"corecli\";
+              make core-download;
+              make core-bundle;
               make linux darwin windows"
           '''
           stash includes: 'build/**', name: 'dcos-binaries'

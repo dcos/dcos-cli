@@ -12,7 +12,9 @@ pipeline {
       agent { label 'mesos-ubuntu' }
 
       steps {
-          sh 'make linux darwin windows'
+          sh 'make core-download'
+          sh 'make core-bundle'
+          sh 'GO_BUILD_TAGS=corecli make linux darwin windows'
           stash includes: 'build/linux/**', name: 'dcos-linux'
           stash includes: 'build/darwin/**', name: 'dcos-darwin'
           stash includes: 'build/windows/**', name: 'dcos-windows'

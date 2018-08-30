@@ -1,6 +1,6 @@
 package completion
 
-//go:generate go-bindata -pkg completion -o completion_data.gen.go completion.sh
+//go:generate go-bindata -pkg completion -o completion_data.gen.go -nometadata completion.sh
 
 import (
 	"fmt"

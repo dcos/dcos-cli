@@ -61,7 +61,7 @@ def default_cluster():
 
     yield cluster
 
-    code, _, _ = exec_cmd(['dcos', 'cluster', 'remove', cluster['name']])
+    code, _, _ = exec_cmd(['dcos', 'cluster', 'remove', cluster['cluster_id']])
     assert code == 0
 
 
@@ -71,7 +71,7 @@ def default_cluster_with_plugins():
 
     yield cluster
 
-    code, _, _ = exec_cmd(['dcos', 'cluster', 'remove', cluster['name']])
+    code, _, _ = exec_cmd(['dcos', 'cluster', 'remove', cluster['cluster_id']])
     assert code == 0
 
 
@@ -102,5 +102,6 @@ def _setup_cluster(name, with_plugins=False):
 
     cluster['dcos_url'] = clusters[0]['url']
     cluster['version'] = clusters[0]['version']
+    cluster['cluster_id'] = clusters[0]['cluster_id']
 
     return cluster

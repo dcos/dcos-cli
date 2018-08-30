@@ -1,0 +1,8 @@
+
+# This will be the actual generated bundle file that contains the plugin data
+# so should not be checked in since it'll be quite large. The debug stubs will
+# work for as far as allowing compilation and further testing go so are included.
+
+corecli_linux.gen.go
+corecli_darwin.gen.go
+corecli_windows.gen.go

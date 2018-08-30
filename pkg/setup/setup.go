@@ -33,6 +33,7 @@ import (
 
 // Opts are options for a setup.
 type Opts struct {
+	Fs            afero.Fs
 	Errout        io.Writer
 	Prompt        *prompt.Prompt
 	Logger        *logrus.Logger
@@ -43,6 +44,7 @@ type Opts struct {
 
 // Setup represents a cluster setup.
 type Setup struct {
+	fs            afero.Fs
 	errout        io.Writer
 	prompt        *prompt.Prompt
 	logger        *logrus.Logger
@@ -54,6 +56,7 @@ type Setup struct {
 // New creates a new setup.
 func New(opts Opts) *Setup {
 	return &Setup{
+		fs:            opts.Fs,
 		errout:        opts.Errout,
 		prompt:        opts.Prompt,
 		logger:        opts.Logger,
@@ -285,14 +288,27 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 
 	// Install dcos-core-cli.
 	errCore := s.installPlugin("dcos-core-cli", httpClient)
+
 	// The installation of the core and EE plugins happen in parallel.
 	// We wait for the installation of the enterprise plugin before returning.
 	errEnterprise := <-enterpriseInstallErr
 
 	if errCore != nil {
-		return errCore
+		// Check that the version is 1.12 and if so, try to install the bundled plugin.
+		if versionNumber(version.Version) != "1.12" {
+			return fmt.Errorf("unable to install DC/OS core CLI plugin: %s", errCore)
+		}
+		err = s.installBundledPlugin()
+		if err != nil {
+			return fmt.Errorf("unable to install DC/OS core CLI plugin: %s", err)
+		}
 	}
-	return errEnterprise
+
+	if errEnterprise != nil {
+		// We don't error-out as failing to install the EE plugin isn't critical to the operation.
+		s.logger.Error(`In order to install the "dcos-enterprise-cli" plugin, make sure your user has the "dcos:adminrouter:package" permission and run "dcos package install dcos-enterprise-cli".`)
+	}
+	return nil
 }
 
 // installPlugin installs a plugin by its name. It gets the plugin's download URL through Cosmos.
@@ -357,4 +373,43 @@ Do you trust it? [y/n] `
 		cert.NotAfter,
 		fingerprintBuf.String(),
 	), "")
+}
+
+// installBundledPlugin installs the default core plugin bundled with the wrapper CLI.
+//
+// This will occur for two primary reasons:
+// 1. The cluster and the computer running setup are airgapped. By default the resources describing
+// where the core plugins are point to S3 which will be unreachable in an airgapped environment.
+// 2. The user running setup does not have permission to access Cosmos (dcos:adminrouter:package).
+//
+// Though a user could install the core plugin manually, this will prevent usability regressions until
+// other features of DC/OS are there to allow the normal path to handle all cases.
+func (s *Setup) installBundledPlugin() error {
+	pluginData, err := Asset("core.zip")
+	if err != nil {
+		return err
+	}
+
+	// Write out the data into a temp directory so that it's in the real filesystem for buildPlugin
+	pluginFile, err := afero.TempFile(s.fs, os.TempDir(), "dcos-core-cli.zip")
+	if err != nil {
+		return err
+	}
+	defer s.fs.Remove(pluginFile.Name())
+	defer pluginFile.Close()
+	_, err = pluginFile.Write(pluginData)
+	if err != nil {
+		return err
+	}
+
+	return s.pluginManager.Install(pluginFile.Name(), &plugin.InstallOpts{
+		Update: true,
+	})
+}
+
+// versionNumber takes in a version string and strips pulls out the number portion (strips off trailing -dev)
+func versionNumber(version string) string {
+	versionMatcher := regexp.MustCompile(`^(1.\d+)\D*`)
+	v := versionMatcher.FindStringSubmatch(version)
+	return v[1]
 }

@@ -14,7 +14,21 @@ default:
 darwin linux windows: docker-image
 	$(call inDocker,env GOOS=$(@) go build \
 		-ldflags '-X $(PKG)/pkg/cli/version.version=$(VERSION)' \
+		-tags '$(GO_BUILD_TAGS)' \
 		-o build/$(@)/dcos$($(@)_EXE) ./cmd/dcos)
+
+.PHONY: core-bundle
+core-bundle: docker-image
+	$(call inDocker,go-bindata -pkg setup -o pkg/setup/corecli_linux.gen.go -nometadata -tags "corecli" -prefix "build/linux" build/linux/core.zip)
+	$(call inDocker,go-bindata -pkg setup -o pkg/setup/corecli_darwin.gen.go -nometadata -tags "corecli" -prefix "build/darwin" build/darwin/core.zip)
+	$(call inDocker,go-bindata -pkg setup -o pkg/setup/corecli_windows.gen.go -nometadata -tags "corecli" -prefix "build/windows" build/windows/core.zip)
+
+.PHONY: core-download
+core-download:
+	mkdir -p build/linux build/darwin build/windows
+	wget https://downloads.dcos.io/cli/plugins/dcos-core-cli/1.12/linux/x86-64/dcos-core-cli.zip -O build/linux/core.zip
+	wget https://downloads.dcos.io/cli/plugins/dcos-core-cli/1.12/darwin/x86-64/dcos-core-cli.zip -O build/darwin/core.zip
+	wget https://downloads.dcos.io/cli/plugins/dcos-core-cli/1.12/windows/x86-64/dcos-core-cli.zip -O build/windows/core.zip
 
 .PHONY: test
 test: vet
