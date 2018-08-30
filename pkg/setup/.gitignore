@@ -1,9 +1,6 @@
 
-# This is already added to the repo but it's been added after being generated
-# with an empty target directory which means it has nothing in it but it does
-# have the functions required for the files that depend on it to compile without
-# needing to run go generate.
-# This keeps the file size down (4KB vs 70+MB) and prevents accidentally
-# committing a new version with actual data in it.
+# This will be the actual generated bundle file that contains the plugin data
+# so should not be checked in since it'll be quite large. The debug stubs will
+# work for as far as allowing compilation and further testing go so are included.
 
 bundled_plugins.gen.go
