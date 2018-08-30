@@ -295,11 +295,15 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 	errEnterprise := <-enterpriseInstallErr
 
 	if errCore != nil {
-		// try to install the default plugin
-		err = s.installBundledPlugin(version.Version)
-		if err != nil {
-			// We don't return an error as the EE plugin is not as useful as the core plugin.
-			return fmt.Errorf("unable to install DC/OS core CLI plugin: %s", err)
+		// check that the version is 1.12 and if so, try to install the bundled plugin
+		if versionNumber(version.Version) == "1.12" {
+			err = s.installBundledPlugin()
+			if err != nil {
+				// We don't return an error as the EE plugin is not as useful as the core plugin.
+				return fmt.Errorf("unable to install DC/OS core CLI plugin: %s", err)
+			}
+		} else {
+			return fmt.Errorf("unable to install DC/OS core CLI plugin")
 		}
 	}
 
@@ -375,10 +379,8 @@ Do you trust it?`
 
 // installBundledPlugin installs the default core plugin bundled with the wrapper cli if something
 // went wrong with installing the plugin from Cosmos
-func (s *Setup) installBundledPlugin(version string) error {
-	s.logger.Infof("Installing bundled plugin for verions %s", version)
-
-	filename := fmt.Sprintf("core-%s.zip", s.corePluginVersionName(version))
+func (s *Setup) installBundledPlugin() error {
+	filename := "core-1.12.zip"
 	pluginData, err := Asset(path.Join(runtime.GOOS, filename))
 	if err != nil {
 		return err
@@ -400,20 +402,9 @@ func (s *Setup) installBundledPlugin(version string) error {
 	})
 }
 
-func (s *Setup) corePluginVersionName(version string) string {
+// versionNumber takes in a version string and strips pulls out the number portion (strips off trailing -dev)
+func versionNumber(version string) string {
 	versionMatcher := regexp.MustCompile(`^(1.\d+)\D*`)
 	v := versionMatcher.FindStringSubmatch(version)
-
-	coreCliVersion := ""
-	switch v[1] {
-	case "1.10":
-		coreCliVersion = "1.10"
-	case "1.11":
-		coreCliVersion = "1.11"
-	case "1.12":
-		coreCliVersion = "1.11"
-	}
-
-	s.logger.Debugf("Found version %s, Core CLI version: %s", v[1], coreCliVersion)
-	return coreCliVersion
+	return v[1]
 }
