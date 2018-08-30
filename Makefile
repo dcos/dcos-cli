@@ -14,6 +14,7 @@ default:
 darwin linux windows: docker-image
 	$(call inDocker,env GOOS=$(@) go build \
 		-ldflags '-X $(PKG)/pkg/cli/version.version=$(VERSION)' \
+		-tags '$(GO_BUILD_TAGS)' \
 		-o build/$(@)/dcos$($(@)_EXE) ./cmd/dcos)
 
 .PHONY: test
