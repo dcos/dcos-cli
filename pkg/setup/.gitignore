@@ -3,4 +3,6 @@
 # so should not be checked in since it'll be quite large. The debug stubs will
 # work for as far as allowing compilation and further testing go so are included.
 
-bundled_plugins.gen.go
+bundled_plugins_linux.gen.go
+bundled_plugins_darwin.gen.go
+bundled_plugins_windows.gen.go
