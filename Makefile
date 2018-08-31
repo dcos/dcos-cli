@@ -19,7 +19,7 @@ darwin linux windows: docker-image
 
 .PHONY: bundle
 bundle: docker-image
-	$(call inDocker,go generate -tags '$(GO_BUILD_TAGS)' ./pkg/setup/)
+	$(call inDocker,go-bindata -pkg setup -o pkg/setup/corecli_linux.gen.go -nometadata -tags "corecli" -prefix "build" build/linux/core.zip)
 
 .PHONY: test
 test: vet
