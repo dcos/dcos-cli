@@ -376,8 +376,15 @@ Do you trust it?`
 	))
 }
 
-// installBundledPlugin installs the default core plugin bundled with the wrapper cli if something
-// went wrong with installing the plugin from Cosmos
+// installBundledPlugin installs the default core plugin bundled with the wrapper CLI
+//
+// This will occur for two primary reasons:
+// 1. The cluster and the computer running setup are airgapped. By default the resources describing
+// where the core plugins are point to S3 which will be unreachable in an airgapped environment.
+// 2. The user running setup does not have permission to access Cosmos (dcos:adminrouter:package).
+//
+// Though a user could install the core plugin manually, this will prevent usability regressions until
+// other features of DC/OS are there to allow the normal path to handle all cases.
 func (s *Setup) installBundledPlugin() error {
 	filename := "core-1.12.zip"
 	pluginData, err := Asset(path.Join(runtime.GOOS, filename))
