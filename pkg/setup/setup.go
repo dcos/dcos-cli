@@ -32,6 +32,8 @@ import (
 	"github.com/spf13/afero"
 )
 
+const bundledCoreFilename="core.zip"
+
 // Opts are options for a setup.
 type Opts struct {
 	Fs            afero.Fs
@@ -386,8 +388,7 @@ Do you trust it?`
 // Though a user could install the core plugin manually, this will prevent usability regressions until
 // other features of DC/OS are there to allow the normal path to handle all cases.
 func (s *Setup) installBundledPlugin() error {
-	filename := "core-1.12.zip"
-	pluginData, err := Asset(path.Join(runtime.GOOS, filename))
+	pluginData, err := Asset(path.Join(runtime.GOOS, bundledCoreFilename))
 	if err != nil {
 		return err
 	}
