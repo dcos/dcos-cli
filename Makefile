@@ -20,6 +20,8 @@ darwin linux windows: docker-image
 .PHONY: bundle
 bundle: docker-image
 	$(call inDocker,go-bindata -pkg setup -o pkg/setup/corecli_linux.gen.go -nometadata -tags "corecli" -prefix "build" build/linux/core.zip)
+	$(call inDocker,go-bindata -pkg setup -o pkg/setup/corecli_darwin.gen.go -nometadata -tags "corecli" -prefix "build" build/darwin/core.zip)
+	$(call inDocker,go-bindata -pkg setup -o pkg/setup/corecli_windows.gen.go -nometadata -tags "corecli" -prefix "build" build/windows/core.zip)
 
 .PHONY: test
 test: vet
