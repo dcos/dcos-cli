@@ -296,14 +296,13 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 
 	if errCore != nil {
 		// check that the version is 1.12 and if so, try to install the bundled plugin
-		if versionNumber(version.Version) == "1.12" {
-			err = s.installBundledPlugin()
-			if err != nil {
-				// We don't return an error as the EE plugin is not as useful as the core plugin.
-				return fmt.Errorf("unable to install DC/OS core CLI plugin: %s", err)
-			}
-		} else {
-			return fmt.Errorf("unable to install DC/OS core CLI plugin")
+		if versionNumber(version.Version) != "1.12" {
+			return fmt.Errorf("unable to install DC/OS core CLI plugin: %s", errCore)
+		}
+		err = s.installBundledPlugin()
+		if err != nil {
+			// We don't return an error as the EE plugin is not as useful as the core plugin.
+			return fmt.Errorf("unable to install DC/OS core CLI plugin: %s", err)
 		}
 	}
 
