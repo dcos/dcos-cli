@@ -294,7 +294,7 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 	}
 
 	if errEnterprise != nil {
-		s.logger.Error(fmt.Sprintf("cluster setup was successful but dcos-enterprise-cli could not be installed: %s", errEnterprise))
+		s.logger.Errorf("cluster setup was successful but dcos-enterprise-cli could not be installed: %s", errEnterprise)
 	}
 	return nil
 }
