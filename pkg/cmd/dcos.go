@@ -34,11 +34,6 @@ func NewDCOSCommand(ctx api.Context) *cobra.Command {
 		},
 	}
 
-	// This global flag is handled outside of cobra. It is declared here to prevent the unknown flag error.
-	cmd.PersistentFlags().CountP("", "v", "")
-	cmd.PersistentFlags().Bool("debug", false, "")
-	cmd.PersistentFlags().String("log-level", "", "")
-
 	cmd.AddCommand(
 		auth.NewCommand(ctx),
 		config.NewCommand(ctx),
@@ -68,7 +63,7 @@ Examples:
 
 Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
   {{.Name}}
-      {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+      {{.Short}}{{end}}{{end}}{{end}}{{if or .HasAvailableLocalFlags (ne (index .Annotations "` + annotationUsageOptions + `") "")}}
 
 Options:{{if ne (index .Annotations "` + annotationUsageOptions + `") ""}}{{index .Annotations "` + annotationUsageOptions + `"}}{{else}}
 {{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
