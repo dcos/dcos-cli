@@ -69,22 +69,22 @@ def test_plugin_verbosity(default_cluster):
             'DCOS_LOG_LEVEL': 'error',
         },
         {
-            'cmd': ['dcos', 'test', '-v'],
+            'cmd': ['dcos', '-v', 'test'],
             'DCOS_VERBOSITY': '1',
             'DCOS_LOG_LEVEL': 'info',
         },
         {
-            'cmd': ['dcos', 'test', '-vv'],
+            'cmd': ['dcos', '-vv', 'test'],
             'DCOS_VERBOSITY': '2',
             'DCOS_LOG_LEVEL': 'debug',
         },
         {
-            'cmd': ['dcos', 'test', '--log-level=debug'],
+            'cmd': ['dcos', '--log-level=debug', 'test'],
             'DCOS_VERBOSITY': '2',
             'DCOS_LOG_LEVEL': 'debug',
         },
         {
-            'cmd': ['dcos', 'test', '--debug'],
+            'cmd': ['dcos', '--debug', 'test'],
             'DCOS_VERBOSITY': '2',
             'DCOS_LOG_LEVEL': 'debug',
         },
@@ -96,6 +96,7 @@ def test_plugin_verbosity(default_cluster):
         assert code == 0
         out = json.loads(out)
 
+        assert out['args'][1:] == ['test']
         assert out['env'].get('DCOS_VERBOSITY') == fixture['DCOS_VERBOSITY']
         assert out['env'].get('DCOS_LOG_LEVEL') == fixture['DCOS_LOG_LEVEL']
 
