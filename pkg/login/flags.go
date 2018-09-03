@@ -7,6 +7,7 @@ import (
 
 	"github.com/dcos/dcos-cli/pkg/fsutil"
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 )
@@ -14,6 +15,7 @@ import (
 // Flags are command-line flags for a login flow.
 type Flags struct {
 	fs             afero.Fs
+	logger         *logrus.Logger
 	envLookup      func(key string) (string, bool)
 	providerID     string
 	username       string
@@ -24,10 +26,11 @@ type Flags struct {
 }
 
 // NewFlags creates flags for a login flow.
-func NewFlags(fs afero.Fs, envLookup func(key string) (string, bool)) *Flags {
+func NewFlags(fs afero.Fs, envLookup func(key string) (string, bool), logger *logrus.Logger) *Flags {
 	return &Flags{
 		fs:        fs,
 		envLookup: envLookup,
+		logger:    logger,
 	}
 }
 
@@ -79,12 +82,14 @@ func (f *Flags) Resolve() error {
 	if f.username == "" {
 		if username, ok := f.envLookup("DCOS_USERNAME"); ok {
 			f.username = username
+			f.logger.Info("Read username from environment.")
 		}
 	}
 
 	if f.password == "" {
 		if password, ok := f.envLookup("DCOS_PASSWORD"); ok {
 			f.password = password
+			f.logger.Info("Read password from environment.")
 		}
 	}
 

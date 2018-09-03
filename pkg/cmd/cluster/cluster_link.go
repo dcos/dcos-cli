@@ -13,7 +13,7 @@ import (
 
 // newCmdClusterLink links the attached cluster to another one.
 func newCmdClusterLink(ctx api.Context) *cobra.Command {
-	setupFlags := setup.NewFlags(ctx.Fs(), ctx.EnvLookup)
+	setupFlags := setup.NewFlags(ctx.Fs(), ctx.EnvLookup, ctx.Logger())
 	cmd := &cobra.Command{
 		Use:   "link <cluster>",
 		Short: "Link the current cluster to another one",

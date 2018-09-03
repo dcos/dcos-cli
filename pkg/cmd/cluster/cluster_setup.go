@@ -9,7 +9,7 @@ import (
 
 // newCmdClusterSetup configures the CLI with a given DC/OS cluster.
 func newCmdClusterSetup(ctx api.Context) *cobra.Command {
-	setupFlags := setup.NewFlags(ctx.Fs(), ctx.EnvLookup)
+	setupFlags := setup.NewFlags(ctx.Fs(), ctx.EnvLookup, ctx.Logger())
 	cmd := &cobra.Command{
 		Use:   "setup <url>",
 		Short: "Set up the CLI to communicate with a cluster",
