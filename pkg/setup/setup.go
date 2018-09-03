@@ -309,7 +309,7 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 	}
 
 	if errEnterprise != nil {
-		s.logger.Errorf("Cluster setup was successful but dcos-enterprise-cli could not be installed: %s.", errEnterprise)
+		s.logger.Error(`In order to install the "dcos-enterprise-cli" plugin, make sure your user has the "dcos:adminrouter:package" permission and run "dcos package install dcos-enterprise-cli".`)
 	}
 	return nil
 }
