@@ -292,7 +292,11 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 	if errCore != nil {
 		return errCore
 	}
-	return errEnterprise
+
+	if errEnterprise != nil {
+		s.logger.Errorf("Cluster setup was successful but dcos-enterprise-cli could not be installed: %s.", errEnterprise)
+	}
+	return nil
 }
 
 // installPlugin installs a plugin by its name. It gets the plugin's download URL through Cosmos.
