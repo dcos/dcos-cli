@@ -35,7 +35,7 @@ generate: docker-image
 
 .PHONY: vendor
 vendor: docker-image
-	$(call inDocker,dep ensure)
+	$(call inDocker,go mod vendor)
 
 .PHONY: docker-image
 docker-image:

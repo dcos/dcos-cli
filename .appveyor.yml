@@ -1,5 +1,6 @@
 install:
   - SET PATH=C:\msys64\mingw64\bin;c:\gopath\bin;%PATH%
+  - go get -u github.com/golang/lint/golint
 
 build: off
 
@@ -8,11 +9,9 @@ clone_folder: c:\gopath\src\github.com\dcos\dcos-cli
 environment:
   GOPATH: c:\gopath
   NO_DOCKER: 1
+  GO111MODULE: on
 
-stack: go 1.10
-
-before_test:
-  - go get -u github.com/golang/lint/golint
+stack: go 1.11
 
 test_script:
   - mingw32-make windows

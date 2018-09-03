@@ -22,7 +22,7 @@ available in the [DC/OS docs](https://dcos.io/docs/).
 
 1.  [git](http://git-scm.com) must be installed to download the source
     code for the DC/OS CLI.
-2.  [go](https://golang.org/dl/) 1.10+ or docker.
+2.  [go](https://golang.org/dl/) 1.11+ or docker.
 3.  [win-bash](https://sourceforge.net/projects/win-bash/files/shell-complete/latest)
    must be installed if you are using Windows in order to run setup scripts
    from the Makefile.
@@ -45,11 +45,20 @@ available in the [DC/OS docs](https://dcos.io/docs/).
 
 1.  Clone git repo for the dcos cli:
 
+        git clone git@github.com:dcos/dcos-cli.git
+
+    or:
+
         go get github.com/dcos/dcos-cli
 
 2.  Change directory to the repo directory:
 
+        cd project/path/outside/$GOPATH/dcos-cli
+        
+    or:
+
         cd $GOPATH/src/github.com/dcos/dcos-cli
+        export GO111MODULE=on
 
 3.  Build the binary:
 
