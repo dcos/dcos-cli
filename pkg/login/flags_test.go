@@ -5,9 +5,10 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
+	"github.com/sirupsen/logrus"
+	logrustest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/require"
 )
 
 func TestResolveUsernameFromEnvVar(t *testing.T) {
@@ -18,7 +19,8 @@ func TestResolveUsernameFromEnvVar(t *testing.T) {
 		}
 		return "", false
 	}
-	flags := NewFlags(fs, envLookup)
+	logger, _ := logrustest.NewNullLogger()
+	flags := NewFlags(fs, envLookup, logger)
 	require.NoError(t, flags.Resolve())
 	require.Equal(t, "alice", flags.username)
 }
@@ -47,7 +49,8 @@ func TestResolvePasswordFromFile(t *testing.T) {
 		envLookup := func(key string) (string, bool) {
 			return "", false
 		}
-		flags := NewFlags(fs, envLookup)
+		logger, _ := logrustest.NewNullLogger()
+		flags := NewFlags(fs, envLookup, logger)
 		flags.passwordFile = "/password.txt"
 		err = flags.Resolve()
 		if fixture.expectedPassword != "" {
@@ -69,7 +72,12 @@ func TestResolvePasswordFromEnvVar(t *testing.T) {
 		}
 		return "", false
 	}
-	flags := NewFlags(fs, envLookup)
+	logger, hook := logrustest.NewNullLogger()
+	flags := NewFlags(fs, envLookup, logger)
 	require.NoError(t, flags.Resolve())
 	require.Equal(t, "123456", flags.password)
+	require.Equal(t, 1, len(hook.AllEntries()))
+	entry := hook.LastEntry()
+	require.Equal(t, logrus.InfoLevel, entry.Level)
+	require.Equal(t, "Read password from environment.", entry.Message)
 }

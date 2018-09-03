@@ -8,7 +8,7 @@ import (
 
 // newCmdAuthLogin creates the `dcos auth login` subcommand.
 func newCmdAuthLogin(ctx api.Context) *cobra.Command {
-	flags := login.NewFlags(ctx.Fs(), ctx.EnvLookup)
+	flags := login.NewFlags(ctx.Fs(), ctx.EnvLookup, ctx.Logger())
 	cmd := &cobra.Command{
 		Use:   "login",
 		Short: "Log in to the current cluster",
