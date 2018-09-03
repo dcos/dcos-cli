@@ -1,6 +1,6 @@
 import json
 
-from .common import exec_cmd, default_cluster  # noqa: F401
+from .common import exec_cmd, default_cluster, default_cluster_with_plugins  # noqa: F401
 
 
 def test_cluster_list(default_cluster):
@@ -37,3 +37,17 @@ def test_empty_cluster_list():
     assert code == 0
     assert err == ''
     assert out == '[]\n'
+
+
+def test_cluster_setup_non_superuser(default_cluster_with_plugins):
+    username='nonsuperuser'
+    password='nonsuperpassword'
+    code, out, err = exec_cmd(['dcos', 'security', 'org', 'users',
+                               'create', username, '--password={}'.format(password)])
+    # assert code == 0
+
+    code, out, err = exec_cmd(['dcos', 'cluster', 'setup', default_cluster_with_plugins['dcos_url'],
+                               '--name={}'.format(default_cluster_with_plugins['name']),
+                               '--username={}'.format(username),
+                               '--password={}'.format(password)])
+    assert code == 0
