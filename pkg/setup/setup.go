@@ -302,12 +302,12 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 		}
 		err = s.installBundledPlugin()
 		if err != nil {
-			// We don't return an error as the EE plugin is not as useful as the core plugin.
 			return fmt.Errorf("unable to install DC/OS core CLI plugin: %s", err)
 		}
 	}
 
 	if errEnterprise != nil {
+		// We don't return an error as the EE plugin isn't always supposed to be installed
 		s.logger.Error(`In order to install the "dcos-enterprise-cli" plugin, make sure your user has the "dcos:adminrouter:package" permission and run "dcos package install dcos-enterprise-cli".`)
 	}
 	return nil
