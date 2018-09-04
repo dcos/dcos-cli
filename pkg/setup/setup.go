@@ -298,6 +298,7 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 
 	if errCore != nil {
 		// check that the version is 1.12 and if so, try to install the bundled plugin
+		s.logger.Error(versionNumber(version.Version))
 		if versionNumber(version.Version) != "1.12" {
 			return fmt.Errorf("unable to install DC/OS core CLI plugin: %s", errCore)
 		}
@@ -394,17 +395,16 @@ func (s *Setup) installBundledPlugin() error {
 	}
 
 	// Write out the data into a temp directory so that it's in the real filesystem for buildPlugin
-	bundleTempDir, err := afero.TempDir(s.fs, os.TempDir(), "dcos-default-plugin")
+	coreZipFile, err := afero.TempFile(s.fs, os.TempDir(), "dcos-core-cli.zip")
 	if err != nil {
 		return err
 	}
-	bundleZipPath := path.Join(bundleTempDir, "dcos-core-cli.zip")
-	err = afero.WriteFile(s.fs, bundleZipPath, pluginData, 0644)
+	_, err = coreZipFile.Write(pluginData)
 	if err != nil {
 		return err
 	}
 
-	return s.pluginManager.Install(bundleZipPath, &plugin.InstallOpts{
+	return s.pluginManager.Install(coreZipFile.Name(), &plugin.InstallOpts{
 		Update: true,
 	})
 }
