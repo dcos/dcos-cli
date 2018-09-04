@@ -80,18 +80,35 @@ func (prompt *Prompt) Select(msg string, choices interface{}) (int, error) {
 	return i - 1, nil
 }
 
-// Confirm prompts for a confirmation.
-func (prompt *Prompt) Confirm(msg string) error {
-	scanner := bufio.NewScanner(prompt.in)
+// Confirm prompts for a confirmation, it accepts "yes/no" answers:
+//   - "y", "yes", "Y", "Yes"
+//   - "n", "no", "N", "No"
+//
+// defaultChoice is the default answer to fallback to in case
+// no explicit input is provided (eg. user just pressed ENTER).
+func (prompt *Prompt) Confirm(msg, defaultChoice string) error {
+	reader := bufio.NewReader(prompt.in)
 
 ConfirmLoop:
 	for i := 0; i < 3; i++ {
-		fmt.Fprintf(prompt.out, "%s [Y/n] ", msg)
+		fmt.Fprintf(prompt.out, "%s", msg)
+		line, err := reader.ReadBytes('\n')
+		if err != nil {
+			break ConfirmLoop
+		}
 
-		scanner.Scan()
-		ok := scanner.Text()
+		// Strip the trailing newline and a possible carriage return.
+		line = line[:len(line)-1]
+		if len(line) > 0 && line[len(line)-1] == '\r' {
+			line = line[:len(line)-1]
+		}
 
-		switch ok {
+		// Fallback to the default choice in case of empty input.
+		if len(line) == 0 {
+			line = []byte(defaultChoice)
+		}
+
+		switch string(line) {
 		case "y", "yes", "Y", "Yes":
 			return nil
 		case "n", "no", "N", "No":
