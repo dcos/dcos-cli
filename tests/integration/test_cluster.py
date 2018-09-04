@@ -40,15 +40,18 @@ def test_empty_cluster_list():
 
 
 def test_cluster_setup_non_superuser(default_cluster_with_plugins):
-    username='nonsuperuser'
-    password='nonsuperpassword'
+    username = 'nonsuperuser'
+    password = 'nonsuperpassword'
+
+    # Ignore the exit code as it's not an idempotent operation and our integration
+    # tests on different platforms share the same cluster concurrently.
     exec_cmd(['dcos', 'security', 'org', 'users',
-              'create', username, '--password={}'.format(password)])
-    # No assert against the output because this will either return 0 if the user doesn't exist or
-    # 1 if the user already exists but we don't have an easy way to check the exact error to
-    # ensure it was "good" failure
+              'create', username, '--password', password])
 
     code, out, err = exec_cmd(['dcos', 'cluster', 'setup', default_cluster_with_plugins['dcos_url'],
-                               '--username={}'.format(username),
-                               '--password={}'.format(password)])
+                               '--username', username, '--password', password])
     assert code == 0
+    assert out == ""
+    assert err == ('In order to install the "dcos-enterprise-cli" plugin, '
+                   'make sure your user has the "dcos:adminrouter:package" '
+                   'permission and run "dcos package install dcos-enterprise-cli".\n')
