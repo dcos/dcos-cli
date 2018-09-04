@@ -17,8 +17,8 @@ darwin linux windows: docker-image
 		-tags '$(GO_BUILD_TAGS)' \
 		-o build/$(@)/dcos$($(@)_EXE) ./cmd/dcos)
 
-.PHONY: bundle
-bundle: docker-image
+.PHONY: corebundle
+corebundle: docker-image
 	$(call inDocker,go-bindata -pkg setup -o pkg/setup/corecli_linux.gen.go -nometadata -tags "corecli" -prefix "build/linux" build/linux/core.zip)
 	$(call inDocker,go-bindata -pkg setup -o pkg/setup/corecli_darwin.gen.go -nometadata -tags "corecli" -prefix "build/darwin" build/darwin/core.zip)
 	$(call inDocker,go-bindata -pkg setup -o pkg/setup/corecli_windows.gen.go -nometadata -tags "corecli" -prefix "build/windows" build/windows/core.zip)
