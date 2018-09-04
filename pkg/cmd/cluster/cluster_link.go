@@ -32,7 +32,7 @@ func newCmdClusterLink(ctx api.Context) *cobra.Command {
 					return err
 				}
 
-				err = ctx.Prompt().Confirm("The cluster you want to link to is not set up locally, would you like to do it now?")
+				err = ctx.Prompt().Confirm("The cluster you want to link to is not set up locally, would you like to do it now? [Y/n] ", "Y")
 				if err != nil {
 					return err
 				}

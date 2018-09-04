@@ -348,7 +348,7 @@ func (s *Setup) promptCA(cert *x509.Certificate) error {
 
   SHA256 fingerprint: %s
 
-Do you trust it?`
+Do you trust it? [y/n] `
 
 	return s.prompt.Confirm(fmt.Sprintf(
 		msg,
@@ -356,5 +356,5 @@ Do you trust it?`
 		cert.NotBefore,
 		cert.NotAfter,
 		fingerprintBuf.String(),
-	))
+	), "")
 }

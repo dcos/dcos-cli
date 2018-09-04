@@ -55,24 +55,30 @@ func TestSelect(t *testing.T) {
 
 func TestConfirm(t *testing.T) {
 	fixtures := []struct {
-		input       string
-		expectError bool
+		input         string
+		defaultChoice string
+		expectError   bool
 	}{
-		{"Y\n", false},
-		{"yes\n", false},
-		{"y\n", false},
-		{"\n\nY", false},
-		{"\n", true},
-		{"N\n", true},
-		{"no\n", true},
-		{"n\n", true},
+		{"", "", true},
+		{"Y\n", "", false},
+		{"Y\r\n", "", false},
+		{"yes\n", "", false},
+		{"yes\r\n", "", false},
+		{"y\n", "", false},
+		{"\n\nY\n", "", false},
+		{"N\n", "", true},
+		{"no\n", "", true},
+		{"n\n", "", true},
+		{"n\r\n", "", true},
+		{"\n", "yes", false},
+		{"\n", "no", true},
 	}
 
 	for _, fixture := range fixtures {
 		var buf bytes.Buffer
 		prompt := New(strings.NewReader(fixture.input), &buf)
 
-		err := prompt.Confirm("Please confirm:")
+		err := prompt.Confirm("Please confirm:", fixture.defaultChoice)
 		if fixture.expectError {
 			require.Error(t, err)
 		} else {
