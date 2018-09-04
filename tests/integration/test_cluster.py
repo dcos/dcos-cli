@@ -42,12 +42,13 @@ def test_empty_cluster_list():
 def test_cluster_setup_non_superuser(default_cluster_with_plugins):
     username='nonsuperuser'
     password='nonsuperpassword'
-    code, out, err = exec_cmd(['dcos', 'security', 'org', 'users',
-                               'create', username, '--password={}'.format(password)])
-    # assert code == 0
+    exec_cmd(['dcos', 'security', 'org', 'users',
+              'create', username, '--password={}'.format(password)])
+    # No assert against the output because this will either return 0 if the user doesn't exist or
+    # 1 if the user already exists but we don't have an easy way to check the exact error to
+    # ensure it was "good" failure
 
     code, out, err = exec_cmd(['dcos', 'cluster', 'setup', default_cluster_with_plugins['dcos_url'],
-                               '--name={}'.format(default_cluster_with_plugins['name']),
                                '--username={}'.format(username),
                                '--password={}'.format(password)])
     assert code == 0
