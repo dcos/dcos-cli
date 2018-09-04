@@ -9,7 +9,7 @@ clone_folder: c:\gopath\src\github.com\dcos\dcos-cli
 environment:
   GOPATH: c:\gopath
   NO_DOCKER: 1
-  GO111MODULE: on
+  GO111MODULE: off
 
 stack: go 1.11
 
