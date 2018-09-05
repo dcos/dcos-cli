@@ -131,6 +131,7 @@ func (s *Setup) Configure(flags *Flags, clusterURL string, attach bool) (*config
 		if err != nil {
 			return nil, err
 		}
+		s.logger.Infof("You are now attached to cluster %s", cluster.ID())
 	}
 
 	// Install default plugins (dcos-core-cli and dcos-enterprise-cli).
