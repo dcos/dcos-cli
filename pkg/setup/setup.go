@@ -294,8 +294,7 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 	errEnterprise := <-enterpriseInstallErr
 
 	if errCore != nil {
-		// check that the version is 1.12 and if so, try to install the bundled plugin
-		s.logger.Error(versionNumber(version.Version))
+		// Check that the version is 1.12 and if so, try to install the bundled plugin.
 		if versionNumber(version.Version) != "1.12" {
 			return fmt.Errorf("unable to install DC/OS core CLI plugin: %s", errCore)
 		}
@@ -306,7 +305,7 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 	}
 
 	if errEnterprise != nil {
-		// We don't return an error as the EE plugin isn't always supposed to be installed
+		// We don't error-out as failing to install the EE plugin isn't critical to the operation.
 		s.logger.Error(`In order to install the "dcos-enterprise-cli" plugin, make sure your user has the "dcos:adminrouter:package" permission and run "dcos package install dcos-enterprise-cli".`)
 	}
 	return nil
@@ -376,7 +375,7 @@ Do you trust it?`
 	))
 }
 
-// installBundledPlugin installs the default core plugin bundled with the wrapper CLI
+// installBundledPlugin installs the default core plugin bundled with the wrapper CLI.
 //
 // This will occur for two primary reasons:
 // 1. The cluster and the computer running setup are airgapped. By default the resources describing
@@ -392,16 +391,18 @@ func (s *Setup) installBundledPlugin() error {
 	}
 
 	// Write out the data into a temp directory so that it's in the real filesystem for buildPlugin
-	coreZipFile, err := afero.TempFile(s.fs, os.TempDir(), "dcos-core-cli.zip")
+	pluginFile, err := afero.TempFile(s.fs, os.TempDir(), "dcos-core-cli.zip")
 	if err != nil {
 		return err
 	}
-	_, err = coreZipFile.Write(pluginData)
+	defer s.fs.Remove(pluginFile.Name())
+	defer pluginFile.Close()
+	_, err = pluginFile.Write(pluginData)
 	if err != nil {
 		return err
 	}
 
-	return s.pluginManager.Install(coreZipFile.Name(), &plugin.InstallOpts{
+	return s.pluginManager.Install(pluginFile.Name(), &plugin.InstallOpts{
 		Update: true,
 	})
 }
