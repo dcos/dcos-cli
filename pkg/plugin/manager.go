@@ -4,7 +4,6 @@ package plugin
 
 import (
 	"encoding/hex"
-	"errors"
 	"io"
 	"crypto/tls"
 	"fmt"
@@ -281,8 +280,11 @@ func (m *Manager) downloadPlugin(url string, checksum Checksum) (string, error) 
 		return "", err
 	}
 
-	if checksum.Hasher != nil && hex.EncodeToString(checksum.Hasher.Sum(nil)) != checksum.Value {
-		return "", errors.New("The checksum of the downloaded plugin is not what we expected")
+	if checksum.Hasher != nil {
+		m.logger.Debugf("Verifying checksum for %s...", url)
+		if hex.EncodeToString(checksum.Hasher.Sum(nil)) != checksum.Value {
+			return "", fmt.Errorf("computed checksum %s for %s, expected %s", hex.EncodeToString(checksum.Hasher.Sum(nil)), url, checksum.Value)
+		}
 	}
 
 	return downloadedFilePath, nil
