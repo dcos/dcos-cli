@@ -51,8 +51,8 @@ type InstallOpts struct {
 	// Update allows to potentially overwrite an already existing plugin of the same name.
 	Update bool
 
-	// Hasher represents a CLI plugin resource content hash.
-	Hasher Hasher
+	// Checksum represents a CLI plugin resource content hash.
+	Checksum Checksum
 
 	// PostInstall is a hook which can be invoked after plugin installation.
 	// It is invoked right before the plugin is moved to its final location.
@@ -62,10 +62,10 @@ type InstallOpts struct {
 	stagingDir string
 }
 
-// Hasher contains the hash function and the checksum we expect from a plugin.
-type Hasher struct {
-	Hash  hash.Hash
-	Checksum string
+// Checksum contains the hash function and the checksum we expect from a plugin.
+type Checksum struct {
+	Hasher  hash.Hash
+	Value string
 }
 
 // Install installs a plugin from a resource.
@@ -73,7 +73,7 @@ func (m *Manager) Install(resource string, installOpts *InstallOpts) (err error)
 	// If it's a remote resource, download it first.
 	m.logger.Infof("Installing plugin from %s...", resource)
 	if strings.HasPrefix(resource, "https://") || strings.HasPrefix(resource, "http://") {
-		installOpts.path, err = m.downloadPlugin(resource, installOpts.Hasher)
+		installOpts.path, err = m.downloadPlugin(resource, installOpts.Checksum)
 		if err != nil {
 			return err
 		}
@@ -257,7 +257,7 @@ func (m *Manager) pluginsDir() string {
 }
 
 // downloadPlugin downloads a plugin and returns the path to the temporary file it stored it to.
-func (m *Manager) downloadPlugin(url string, hasher Hasher) (string, error) {
+func (m *Manager) downloadPlugin(url string, checksum Checksum) (string, error) {
 	tmpDir, err := afero.TempDir(m.fs, os.TempDir(), "dcos-cli")
 	if err != nil {
 		return "", err
@@ -272,8 +272,8 @@ func (m *Manager) downloadPlugin(url string, hasher Hasher) (string, error) {
 	downloadedFilePath := filepath.Join(tmpDir, m.downloadFilename(resp))
 
 	var respReader io.Reader
-	if hasher.Hash != nil {
-		respReader = io.TeeReader(resp.Body, hasher.Hash)
+	if checksum.Hasher != nil {
+		respReader = io.TeeReader(resp.Body, checksum.Hasher)
 	} else {
 		respReader = resp.Body
 	}
@@ -281,7 +281,7 @@ func (m *Manager) downloadPlugin(url string, hasher Hasher) (string, error) {
 		return "", err
 	}
 
-	if hasher.Hash != nil && hex.EncodeToString(hasher.Hash.Sum(nil)) != hasher.Checksum {
+	if checksum.Hasher != nil && hex.EncodeToString(checksum.Hasher.Sum(nil)) != checksum.Value {
 		return "", errors.New("The checksum of the downloaded plugin is not what we expected")
 	}
 
