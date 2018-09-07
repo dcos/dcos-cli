@@ -282,8 +282,9 @@ func (m *Manager) downloadPlugin(url string, checksum Checksum) (string, error) 
 
 	if checksum.Hasher != nil {
 		m.logger.Debugf("Verifying checksum for %s...", url)
-		if hex.EncodeToString(checksum.Hasher.Sum(nil)) != checksum.Value {
-			return "", fmt.Errorf("computed checksum %s for %s, expected %s", hex.EncodeToString(checksum.Hasher.Sum(nil)), url, checksum.Value)
+		computedChecksum := hex.EncodeToString(checksum.Hasher.Sum(nil))
+		if computedChecksum != checksum.Value {
+			return "", fmt.Errorf("computed checksum %s for %s, expected %s", computedChecksum, url, checksum.Value)
 		}
 	}
 
