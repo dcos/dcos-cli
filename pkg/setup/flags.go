@@ -70,6 +70,9 @@ func (f *Flags) Resolve() error {
 			return err
 		}
 		f.caBundle = caBundle
+
+		// Don't prompt for fingerprint confirmation when a CA is explicitly passed.
+		f.noCheck = true
 	}
 	return f.loginFlags.Resolve()
 }
