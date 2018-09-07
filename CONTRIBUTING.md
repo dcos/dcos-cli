@@ -23,13 +23,15 @@ Please describe the problem you are addressing and your proposed solution.
 You can make sure your code conforms to our code style conventions by running
 `make lint` directories.
 
+Please also follow our [style guide](design/style.md) when updating user-facing
+parts of the CLI.
+
 ### Tests
 
 Please include test(s) with your changes. Make sure to separate integration and unit tests.
 
 You can use `make test` to run unit tests, in order to run integration tests please follow
 [these instructions](https://github.com/dcos/dcos-cli#integration-tests).
-
 
 ## Thanks!
 

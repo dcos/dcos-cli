@@ -54,7 +54,7 @@ available in the [DC/OS docs](https://dcos.io/docs/).
 2.  Change directory to the repo directory:
 
         cd project/path/outside/$GOPATH/dcos-cli
-        
+
     or:
 
         cd $GOPATH/src/github.com/dcos/dcos-cli
@@ -108,4 +108,4 @@ Tags are released to:
 
 ## Contributing
 
-Contributions are always welcome! Please refer to our [contributing guidelines](https://github.com/dcos/dcos-cli/blob/master/CONTRIBUTING.md) and [style guide](https://github.com/dcos/dcos-cli/blob/master/STYLEGUIDE.md) first.
+Contributions are always welcome! Please refer to our [contributing guidelines](CONTRIBUTING.md).

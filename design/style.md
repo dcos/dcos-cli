@@ -1,9 +1,11 @@
 # DC/OS CLI Style Guide
 
 ## Intro
+
 The DC/OS CLI is the main tool used by developers and operators to interact with DC/OS cluster and services running on the clusters. The teams developing features and CLI plugins should build the CLI per this style guide so that we offer a consistent and usable experience to users of DC/OS.
 
 ## Naming Commands
+
 * Generally top level commands are single nouns e.g. dcos job, dcos service
 * Top level commands are followed by verbs e.g. dcos job create, dcos cluster rename
 * Command names should always be a single, lowercase word without spaces, hyphens, underscores, or other word delimiters
@@ -22,22 +24,20 @@ The DC/OS CLI is the main tool used by developers and operators to interact with
   * Show - Show a description or definition aka Describe, Get
   * List - List all objects
 
-### Arguments/Flags
+### Arguments/Options
 
-Commands should support the following flags.
+CLI arguments should follow the [GNU standards][1] as much as possible.
+
+Commonly used options are:
 
 * `--help` and `-h` should always output one level of help
-* `--version` should always show the version of the plugin
 * `--json` outputs JSON
 * `--force` and `-f` to force
-* `--quiet` and `-q` to silence output
-* `-v` and `-vv` for verbose outputs (for verbose and very verbose)
+* `--quiet` and `-q` to silence standard output
+* `-v` and `-vv` for verbose outputs on stderr ("verbose" or "very verbose")
 * `--lines=N` to restrict amount of results
 
-Flags may or may not accept a value.
-
-* Flags should have smart defaults when no value is provided
-* Support both flags that have values preceded by "=" and values preceded by a space e.g. `dcos <command> <action> --<flag>=<value>` is the same as `dcos <command> <action> --<flag> <value>`
+Please refer to [this table][2] for other common option names.
 
 ## Prompts
 
@@ -50,7 +50,7 @@ $ dcos backup delete <id>
 Are you sure you want to delete this backup? [y/n]
 ```
 
-Commands should support passing confirmation via a flag `--yes` and `-y` to satisfy scriptability needs.
+Commands should support passing confirmation via `--yes` and `-y` options to satisfy scriptability needs.
 
 ```
 $ dcos backup delete <id> --yes
@@ -109,8 +109,6 @@ Description:
 
 Usage:
     dcos <command> <action>
-    dcos <command> <action>
-    …
 
 Examples:
     An optional section of example(s) on how to run the command.
@@ -123,23 +121,24 @@ Commands:
     …
 
 Options:
-    --<flag>
-        <flagDescription>
-    --<flag>
-        <flagDescription>
+    --<option>
+        <optionDescription>
+    --<option>
+        <optionDescription>
     …
 ```
 
 ### Error Messages
 
-Error messages shouldn’t be too low-level.
+In general on success there is no output, this follows a UNIX good practice ("No News Is Good News").
+However on errors the CLI must always display an informative message, it shouldn’t be too low-level.
 
-``` 
+```
 $ dcos cluster setup https://not-reachable.com
 Couldn’t reach https://not-reachable.com, is it a DC/OS cluster master node?
 ```
 
-If users want the low level error messages, they’d need to run the command with the verbose option: 
+If users want the low level error messages, they’d need to run the command with the verbose option:
 
 ```
 $ dcos -v cluster setup https://not-reachable.com
@@ -151,7 +150,7 @@ Couldn’t reach https://not-reachable.com, is it a DC/OS cluster master node?
 
 ### ✅ Do
 
-``` 
+```
 $ dcos <command> <subcommand>
 ```
 
@@ -163,7 +162,7 @@ $ dcos <command> --<subcommand>
 
 ### ✅ Do
 
-``` 
+```
 $ dcos <command> -h
 <Description>
 <Usage>
@@ -177,13 +176,13 @@ $ dcos <command> -h
 ```
 $ dcos <command> -h
 <Usage>
-<Flags>
+<Options>
 <Commands>
 ```
 
 ### ✅ Do
 
-``` 
+```
 $ dcos cluster setup https://not-reachable.com
 Couldn’t reach https://not-reachable.com, is it a DC/OS cluster master node?
 ```
@@ -194,3 +193,6 @@ Couldn’t reach https://not-reachable.com, is it a DC/OS cluster master node?
 $ dcos cluster setup https://not-reachable.com
 Error: couldn’t download CA certificates : dial tcp: lookup not-reachable.com on 127.0.0.53:53: no such host
 ```
+
+[1]: https://www.gnu.org/software/libc/manual/html_node/Argument-Syntax.html
+[2]: https://www.gnu.org/prep/standards/html_node/Option-Table.html#Option-Table
