@@ -327,9 +327,19 @@ func (s *Setup) installPlugin(name string, httpClient *httpclient.Client) error 
 	if !ok {
 		return fmt.Errorf("'%s' isn't available for '%s')", name, runtime.GOOS)
 	}
+
+	var checksum plugin.Checksum
+	for _, contentHash := range p.ContentHash {
+		switch contentHash.Algo {
+		case "sha256":
+			checksum.Hasher = sha256.New()
+			checksum.Value = contentHash.Value
+		}
+	}
 	return s.pluginManager.Install(p.URL, &plugin.InstallOpts{
 		Name:   pkgInfo.Package.Name,
 		Update: true,
+		Checksum: checksum,
 		PostInstall: func(fs afero.Fs, pluginDir string) error {
 			pkgInfoFilepath := filepath.Join(pluginDir, "package.json")
 			pkgInfoFile, err := fs.OpenFile(pkgInfoFilepath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)

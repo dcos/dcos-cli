@@ -43,8 +43,15 @@ type PackageInfo struct {
 
 // Plugin represents a CLI plugin resource.
 type Plugin struct {
-	Kind string `json:"kind"`
-	URL  string `json:"url"`
+	Kind        string        `json:"kind"`
+	URL         string        `json:"url"`
+	ContentHash []ContentHash `json:"contentHash"`
+}
+
+// ContentHash represents a CLI plugin resource content hash.
+type ContentHash struct {
+	Algo  string `json:"algo"`
+	Value string `json:"value"`
 }
 
 // DescribePackage returns information about the named package.
