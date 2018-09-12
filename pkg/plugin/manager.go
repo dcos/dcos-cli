@@ -76,6 +76,8 @@ func (m *Manager) Install(resource string, installOpts *InstallOpts) (err error)
 		if err != nil {
 			return err
 		}
+		// Remove the downloaded resource from the temp dir at the end of installation.
+		defer m.fs.RemoveAll(filepath.Dir(installOpts.path))
 	} else {
 		installOpts.path = resource
 	}
