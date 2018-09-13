@@ -344,7 +344,88 @@ _dcos_cluster_setup() {
 }
 
 _dcos_config() {
-    :
+    local i command
+
+    if ! __dcos_default_command_parse; then
+        return 
+    fi
+
+    local commands=("set" "show" "unset")
+    local flags=("--help")
+
+    if [ -z "$command" ]; then
+        case "$cur" in
+            --*)
+                __dcos_handle_compreply "${flags[@]}"
+                ;;
+            *)
+                __dcos_handle_compreply "${commands[@]}"
+                ;;
+        esac
+        return
+    fi
+
+    __dcos_handle_subcommand
+}
+
+_dcos_config_set() {
+    local i command
+
+    if ! __dcos_default_command_parse; then
+        return 
+    fi
+
+    local flags=("--help")
+
+    if [ -z "$command" ]; then
+        case "$cur" in
+            --*)
+                __dcos_handle_compreply "${flags[@]}"
+                ;;
+            *) ;;
+        esac
+        return
+    fi
+}
+
+_dcos_config_show() {
+    local i command
+
+    if ! __dcos_default_command_parse; then
+        return 
+    fi
+
+    local flags=("--help")
+
+    if [ -z "$command" ]; then
+        case "$cur" in
+            --*)
+                __dcos_handle_compreply "${flags[@]}"
+                ;;
+            *) ;;
+        esac
+        return
+    fi
+}
+
+_dcos_config_unset() {
+    local i command
+
+    if ! __dcos_default_command_parse; then
+        return 
+    fi
+
+    local flags=("--help")
+
+    if [ -z "$command" ]; then
+        case "$cur" in
+            --*)
+                __dcos_handle_compreply "${flags[@]}"
+                ;;
+            *) ;;
+        esac
+        return
+    fi
 }
 
 _dcos_plugin() {
