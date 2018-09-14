@@ -283,12 +283,14 @@ _dcos() {
     local commands=("auth" "cluster" "config" "help" "plugin")
     local flags=("--help" "--version")
 
-    local plugin_commands=$(dcos plugin list --commands)
-    commands+=(${plugin_commands[@]})
-    __dcos_debug "Found plugin commands ${plugin_commands[@]}"
+    local plugin_commands completion_dirs
 
-    local completion_dirs=$(dcos plugin list --completion-dirs)
-    __dcos_debug "Plugin completion directories ${completion_dirs[@]}"
+    read -r -a plugin_commands <<< "$(dcos plugin list --commands)"
+    commands+=("${plugin_commands[@]}")
+    __dcos_debug "Found plugin commands" "${plugin_commands[@]}"
+
+    completion_dirs=$(dcos plugin list --completion-dirs)
+    __dcos_debug "Plugin completion directories" "${completion_dirs[@]}"
 
 
     # no subcommand given, complete either flags or subcommands
