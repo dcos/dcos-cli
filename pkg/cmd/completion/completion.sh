@@ -283,7 +283,13 @@ _dcos() {
     local commands=("auth" "cluster" "config" "help" "plugin")
     local flags=("--help" "--version")
 
-    # TODO: add plugin commands relevant to currently attached cluster
+    local plugin_commands=$(dcos plugin list --commands)
+    commands+=(${plugin_commands[@]})
+    __dcos_debug "Found plugin commands ${plugin_commands[@]}"
+
+    local completion_dirs=$(dcos plugin list --completion-dirs)
+    __dcos_debug "Plugin completion directories ${completion_dirs[@]}"
+
 
     # no subcommand given, complete either flags or subcommands
     if [ -z "$command" ]; then
