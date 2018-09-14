@@ -94,14 +94,16 @@ func (s *Setup) Configure(flags *Flags, clusterURL string, attach bool) (*config
 		httpOpts = append(httpOpts, httpclient.TLS(tlsConfig))
 	}
 
-	// Login to get the ACS token.
-	httpClient := httpclient.New(cluster.URL(), httpOpts...)
-	acsToken, err := s.loginFlow.Start(flags.loginFlags, httpClient)
-	if err != nil {
-		return nil, err
+	// Login to get the ACS token, unless it is already present as an env var.
+	if cluster.ACSToken() == "" {
+		httpClient := httpclient.New(cluster.URL(), httpOpts...)
+		acsToken, err := s.loginFlow.Start(flags.loginFlags, httpClient)
+		if err != nil {
+			return nil, err
+		}
+		cluster.SetACSToken(acsToken)
 	}
-	cluster.SetACSToken(acsToken)
-	httpClient = httpclient.New(cluster.URL(), append(httpOpts, httpclient.ACSToken(acsToken))...)
+	httpClient := httpclient.New(cluster.URL(), append(httpOpts, httpclient.ACSToken(cluster.ACSToken()))...)
 
 	// Read cluster ID from cluster metadata.
 	metadata, err := dcos.NewClient(httpClient).Metadata()
@@ -337,8 +339,8 @@ func (s *Setup) installPlugin(name string, httpClient *httpclient.Client) error 
 		}
 	}
 	return s.pluginManager.Install(p.URL, &plugin.InstallOpts{
-		Name:   pkgInfo.Package.Name,
-		Update: true,
+		Name:     pkgInfo.Package.Name,
+		Update:   true,
 		Checksum: checksum,
 		PostInstall: func(fs afero.Fs, pluginDir string) error {
 			pkgInfoFilepath := filepath.Join(pluginDir, "package.json")
