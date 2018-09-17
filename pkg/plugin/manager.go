@@ -3,11 +3,11 @@ package plugin
 //go:generate goderive .
 
 import (
-	"encoding/hex"
-	"io"
 	"crypto/tls"
+	"encoding/hex"
 	"fmt"
 	"hash"
+	"io"
 	"mime"
 	"net/http"
 	"os"
@@ -63,8 +63,8 @@ type InstallOpts struct {
 
 // Checksum contains the hash function and the checksum we expect from a plugin.
 type Checksum struct {
-	Hasher  hash.Hash
-	Value string
+	Hasher hash.Hash
+	Value  string
 }
 
 // Install installs a plugin from a resource.
@@ -76,6 +76,8 @@ func (m *Manager) Install(resource string, installOpts *InstallOpts) (err error)
 		if err != nil {
 			return err
 		}
+		// Remove the downloaded resource from the temp dir at the end of installation.
+		defer m.fs.RemoveAll(filepath.Dir(installOpts.path))
 	} else {
 		installOpts.path = resource
 	}
@@ -383,6 +385,7 @@ func (m *Manager) installPlugin(installOpts *InstallOpts) error {
 	// Copy the plugin folder to its final location. We don't move it as this causes
 	// issues when the system's temp dir and the DC/OS dir are on different devices.
 	// See https://groups.google.com/forum/m/#!topic/golang-dev/5w7Jmg_iCJQ.
+	defer m.fs.RemoveAll(installOpts.stagingDir)
 	return fsutil.CopyDir(m.fs, installOpts.stagingDir, dest)
 }
 

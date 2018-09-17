@@ -7,7 +7,7 @@ __dcos_debug() {
     if [[ -n ${DCOS_COMP_DEBUG_FILE} ]]; then
         echo "${FUNCNAME[1]}: $*" >> "${DCOS_COMP_DEBUG_FILE}"
     fi
-} 
+}
 
 
 # Default behavior to get the next command from the current command. In the case of --help and maybe other situations
@@ -81,7 +81,11 @@ __dcos_handle_subcommand() {
             next_command=${last_command}_${subcommand}
             last_command=$next_command
 
-            $next_command
+            if declare -f $next_command > /dev/null; then
+                $next_command
+            else
+                __dcos_debug "${next_command} does not exist"
+            fi
             return
         fi
     done

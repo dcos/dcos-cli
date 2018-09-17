@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/dcos/dcos-cli/pkg/httpclient"
@@ -189,18 +190,20 @@ func (f *Flow) serviceToken(uid string) (string, error) {
 	}).SignedString(f.flags.privateKey)
 }
 
-// openBrowser opens the browser at a given cluster path.
-func (f *Flow) openBrowser(clusterPath string) error {
-	req, err := f.client.http.NewRequest("GET", clusterPath, nil)
-	if err != nil {
-		return err
+// openBrowser opens the browser at a given start flow URL.
+func (f *Flow) openBrowser(startFlowURL string) error {
+	// The start flow URL might be a relative or absolute URL.
+	if strings.HasPrefix(startFlowURL, "/") {
+		req, err := f.client.http.NewRequest("GET", startFlowURL, nil)
+		if err != nil {
+			return err
+		}
+		startFlowURL = req.URL.String()
 	}
-
-	urlToOpen := req.URL.String()
-	if err := f.opener.Open(urlToOpen); err != nil {
+	if err := f.opener.Open(startFlowURL); err != nil {
 		f.logger.Error(err)
 	}
 	msg := "If your browser didn't open, please follow this link:\n\n    %s\n\n"
-	fmt.Fprintf(f.errout, msg, urlToOpen)
+	fmt.Fprintf(f.errout, msg, startFlowURL)
 	return nil
 }
