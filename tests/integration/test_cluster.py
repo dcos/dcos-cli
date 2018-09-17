@@ -69,3 +69,7 @@ def test_cluster_setup_with_acs_token_env(default_cluster):
     assert code == 0
     assert out == ""
     assert err == ""
+
+    code, out, _ = exec_cmd(['dcos', 'config', 'show', 'core.dcos_acs_token'])
+    assert code == 0
+    assert out.rstrip() == env['DCOS_ACS_TOKEN']
