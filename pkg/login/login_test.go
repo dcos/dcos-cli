@@ -73,3 +73,21 @@ func TestProviders(t *testing.T) {
 		}
 	}
 }
+
+func TestSniffAuth(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/pkgpanda/active.buildinfo.full.json", func(w http.ResponseWriter, req *http.Request) {
+		assert.Equal(t, "HEAD", req.Method)
+		assert.Equal(t, "token=abc", req.Header.Get("Authorization"))
+		w.WriteHeader(403)
+	})
+
+	ts := httptest.NewServer(mux)
+	defer ts.Close()
+
+	client := NewClient(httpclient.New(ts.URL), &logrus.Logger{Out: ioutil.Discard})
+
+	resp, err := client.sniffAuth("abc")
+	require.NoError(t, err)
+	require.Equal(t, 403, resp.StatusCode)
+}
