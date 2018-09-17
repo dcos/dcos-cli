@@ -42,7 +42,7 @@ reading the `WWW-Authenticate` header DC/OS returns in the 401 response:
 {
   "dcos-oidc-auth0": {
     "authentication-type": "oidc-implicit-flow",
-    "client-method": "browser-prompt-authtoken",
+    "client-method": "browser-prompt-oidcidtoken-get-authtoken",
     "config": {
       "start_flow_url": "/login?redirect_uri=urn:ietf:wg:oauth:2.0:oob"
     },
@@ -94,14 +94,21 @@ Once the login provider is selected, its relevant credentials are read from comm
 and the user is being prompted for the missing ones (if any). The login provider's `client-method`
 is then triggered.
 
-Each login provider has one of these 4 login methods associated to it (`client-method`):
+Each login provider has one of these 5 login methods associated to it (`client-method`):
 
 - **dcos-usercredential-post-receive-authtoken**, **dcos-credential-post-receive-authtoken** :
     POST username and password to the `start_flow_url` endpoint.
 - **dcos-servicecredential-post-receive-authtoken** : Generate a login token from a service account
     private key. The login token is valid for 5 minutes. POST username and the generated token to the
     `start_flow_url` endpoint.
-- **browser-prompt-authtoken** : Open the DC/OS cluster UI in a browser, at the page referenced
-    in `start_flow_url`. The user is then expected to continue the flow in the browser, eventually
-    they are redirected to a page with a token to copy-paste from the browser to their terminal.
-    POST this token to `/acs/api/v1/auth/login`.
+- **browser-prompt-authtoken** : Open the browser at the page referenced in `start_flow_url`. The user
+    is then expected to continue the flow in the browser, eventually they are redirected to a page with
+    a login token to copy-paste from the browser to their terminal. POST this token to
+    `/acs/api/v1/auth/login`.
+- **browser-prompt-oidcidtoken-get-authtoken** : Open the browser at the page referenced in
+    `start_flow_url`. The user is then expected to continue the flow in the browser, eventually
+    they are redirected to a page with the authentication token to copy-paste from the browser
+    to their terminal. Make a HEAD request to a well-known resource with the appropriate
+    Authorization header in order to verify the token.
+
+> `start_flow_url` can either be an absolute URL or a cluster relative path.

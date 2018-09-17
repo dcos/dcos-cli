@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"github.com/dcos/dcos-cli/pkg/dcos"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
@@ -81,22 +82,28 @@ func (c *Client) Providers() (Providers, error) {
 // This method is used to determine which login provider is available when the /acs/api/v1/auth/providers
 // endpoint is not present.
 func (c *Client) challengeAuth() (string, error) {
-	req, err := c.http.NewRequest("HEAD", "/pkgpanda/active.buildinfo.full.json", nil)
+	resp, err := c.sniffAuth("")
 	if err != nil {
 		return "", err
 	}
-	req.Header.Del("Authorization")
-
-	resp, err := c.http.Do(req)
-	if err != nil {
-		return "", err
-	}
-	resp.Body.Close()
-
 	if resp.StatusCode != 401 {
 		return "", fmt.Errorf("expected status code 401, got %d", resp.StatusCode)
 	}
 	return resp.Header.Get("WWW-Authenticate"), nil
+}
+
+// sniffAuth sends an HTTP request with a given ACS token to a well-known resource.
+// It is mainly used to challenge auth or verify that an ACS token is valid.
+func (c *Client) sniffAuth(acsToken string) (*http.Response, error) {
+	var opts []httpclient.Option
+	if acsToken != "" {
+		opts = append(opts, httpclient.ACSToken(acsToken))
+	}
+	req, err := c.http.NewRequest("HEAD", "/pkgpanda/active.buildinfo.full.json", nil, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return c.http.Do(req)
 }
 
 // Login makes a POST requests to the login endpoint with the given credentials.

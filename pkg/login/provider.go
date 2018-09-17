@@ -18,7 +18,8 @@ const (
 
 // These are the different login client methods that the DC/OS CLI supports.
 const (
-	methodBrowserToken      = "browser-prompt-authtoken"
+	methodBrowserAuthToken  = "browser-prompt-authtoken"
+	methodBrowserOIDCToken  = "browser-prompt-oidcidtoken-get-authtoken"
 	methodCredential        = "dcos-credential-post-receive-authtoken"
 	methodServiceCredential = "dcos-servicecredential-post-receive-authtoken"
 	methodUserCredential    = "dcos-usercredential-post-receive-authtoken"
@@ -106,7 +107,7 @@ func defaultOIDCImplicitFlowProvider() (provider *Provider) {
 		ID:           "dcos-oidc-auth0",
 		Type:         OIDCImplicitFlow,
 		Description:  "Google, GitHub, or Microsoft",
-		ClientMethod: methodBrowserToken,
+		ClientMethod: methodBrowserOIDCToken,
 		Config: ProviderConfig{
 			StartFlowURL: "/login?redirect_uri=urn:ietf:wg:oauth:2.0:oob",
 		},

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -119,45 +120,64 @@ func (f *Flow) selectProvider(providers Providers) (*Provider, error) {
 }
 
 // TriggerMethod initiates the client login method of a given provider.
-func (f *Flow) triggerMethod(provider *Provider) (string, error) {
-	var loginEndpoint string
-	credentials := &Credentials{}
-
+func (f *Flow) triggerMethod(provider *Provider) (acsToken string, err error) {
 	for attempt := 1; ; attempt++ {
 		switch provider.ClientMethod {
 
 		// Read UID and password from command-line flags or prompt for them.
 		case methodCredential, methodUserCredential:
-			loginEndpoint = provider.Config.StartFlowURL
-			credentials.UID = f.uid()
-			credentials.Password = f.password()
+			acsToken, err = f.client.Login(provider.Config.StartFlowURL, &Credentials{
+				UID:      f.uid(),
+				Password: f.password(),
+			})
 
 		// Read UID from the command-line flags and generate a service login
 		// token from the --private-key. The token has a 5 minutes lifetime.
 		case methodServiceCredential:
-			credentials.UID = f.uid()
-			token, err := f.serviceToken(credentials.UID)
+			uid := f.uid()
+			token, err := f.serviceToken(uid)
 			if err != nil {
 				return "", err
 			}
-			credentials.Token = token
+			acsToken, err = f.client.Login("", &Credentials{UID: uid, Token: token})
 
 		// Open the browser at the `start_flow_url` location specified in the provider config.
 		// The user is then expected to continue the flow in the browser and copy paste the
-		// login token from the browser to their terminal.
-		case methodBrowserToken:
+		// token from the browser to their terminal.
+		case methodBrowserAuthToken, methodBrowserOIDCToken:
 			if attempt == 1 {
 				if err := f.openBrowser(provider.Config.StartFlowURL); err != nil {
 					return "", err
 				}
 			}
 			f.interactive = true
-			credentials.Token = f.prompt.Input("Enter token from the browser: ")
+			token := f.prompt.Input("Enter token from the browser: ")
+
+			// methodBrowserOIDCToken relies on a login token,
+			// it must be sent in order to get an ACS token back.
+			if provider.ClientMethod == methodBrowserOIDCToken {
+				acsToken, err = f.client.Login("", &Credentials{Token: token})
+				break
+			}
+
+			// With methodBrowserAuthToken, the user is passing the ACS token from the browser
+			// to the terminal directly. Send a HEAD request with an appropriate Authorization
+			// header to a well-known path in order to verify the token.
+			var resp *http.Response
+			resp, err = f.client.sniffAuth(token)
+			if err != nil {
+				return "", err
+			}
+			if resp.StatusCode == 401 {
+				err = errors.New("invalid auth token")
+			} else {
+				acsToken = token
+			}
 		}
-
-		acsToken, err := f.client.Login(loginEndpoint, credentials)
-
 		// In case of failure, let the user re-enter credentials 2 times.
+		if err != nil {
+			f.logger.Errorf("Error: %s", err)
+		}
 		if err == nil || !f.interactive || attempt >= 3 {
 			return acsToken, err
 		}
