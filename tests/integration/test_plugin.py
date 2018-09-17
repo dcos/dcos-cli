@@ -66,7 +66,7 @@ def test_plugin_verbosity(default_cluster):
         {
             'cmd': ['dcos', 'test'],
             'DCOS_VERBOSITY': None,
-            'DCOS_LOG_LEVEL': 'error',
+            'DCOS_LOG_LEVEL': None,
         },
         {
             'cmd': ['dcos', '-v', 'test'],

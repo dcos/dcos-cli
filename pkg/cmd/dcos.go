@@ -121,24 +121,13 @@ func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
 			execCmd.Stderr = ctx.ErrOut()
 			execCmd.Stdin = ctx.Input()
 
-			logLevel := "error"
-			verbosity := ""
+			execCmd.Env = append(os.Environ(), "DCOS_CLI_EXECUTABLE_PATH="+executablePath)
+
 			switch ctx.Logger().Level {
 			case logrus.DebugLevel:
-				logLevel = "debug"
-				verbosity = "2"
+				execCmd.Env = append(execCmd.Env, "DCOS_VERBOSITY=2", "DCOS_LOG_LEVEL=debug")
 			case logrus.InfoLevel:
-				logLevel = "info"
-				verbosity = "1"
-			}
-
-			execCmd.Env = append(
-				os.Environ(),
-				"DCOS_CLI_EXECUTABLE_PATH="+executablePath,
-				"DCOS_LOG_LEVEL="+logLevel,
-			)
-			if verbosity != "" {
-				execCmd.Env = append(execCmd.Env, "DCOS_VERBOSITY="+verbosity)
+				execCmd.Env = append(execCmd.Env, "DCOS_VERBOSITY=1", "DCOS_LOG_LEVEL=info")
 			}
 
 			err = execCmd.Run()
