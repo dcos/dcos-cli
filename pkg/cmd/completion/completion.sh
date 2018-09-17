@@ -20,8 +20,8 @@ __dcos_default_command_parse() {
     while [ "$c" -lt "$cword" ]; do
         i="${words[c]}"
         case "$i" in
-            --help)
-                # if help is present as a flag, cobra will ignore everything after so stop completion
+            --help|-h)
+                # if help is a flag, cobra stops parsing immediately so we return here
                 return 1
                 ;;
             -*) ;;
@@ -244,38 +244,278 @@ _dcos_cluster_attach() {
     fi
 }
 
-_dcos_cluster_help() {
-    :
-}
-
 _dcos_cluster_list() {
-    :
+    local i command
+
+    if ! __dcos_default_command_parse; then
+        return
+    fi
+
+    local flags=("--help" "--attached" "--json")
+
+    if [ -z "$command" ]; then
+        case "$cur" in
+            --*=*)
+                # don't support flag argument completion yet
+                return
+                ;;
+            --*)
+                __dcos_handle_compreply "${flags[@]}"
+                ;;
+            *) ;;
+        esac
+        return
+    fi
 }
 
 _dcos_cluster_remove() {
-    :
+    local i command
+
+    if ! __dcos_default_command_parse; then
+        return
+    fi
+
+    local flags=("--help" "--all" "--unavailable")
+
+    if [ -z "$command" ]; then
+        case "$cur" in
+            --*=*)
+                # don't support flag argument completion yet
+                return
+                ;;
+            --*)
+                __dcos_handle_compreply "${flags[@]}"
+                ;;
+            *) ;;
+        esac
+        return
+    fi
 }
 
 _dcos_cluster_rename() {
-    :
+    local i command
+
+    if ! __dcos_default_command_parse; then
+        return
+    fi
+
+    local flags=("--help")
+
+    if [ -z "$command" ]; then
+        case "$cur" in
+            --*)
+                __dcos_handle_compreply "${flags[@]}"
+                ;;
+            *) ;;
+        esac
+        return
+    fi
 }
 
 _dcos_cluster_setup() {
-    :
+    local i command
+
+    if ! __dcos_default_command_parse; then
+        return
+    fi
+
+    local flags=("--help"
+        "--ca-certs="
+        "--insecure"
+        "--name="
+        "--no-check"
+        "--no-plugin"
+        "--password="
+        "--password-file="
+        "--private-key="
+        "--provider="
+        "--username="
+    )
+
+    if [ -z "$command" ]; then
+        case "$cur" in
+            --*=*)
+                # don't support flag argument completion yet
+                return
+                ;;
+            --*)
+                __dcos_handle_compreply "${flags[@]}"
+                ;;
+            *) ;;
+        esac
+        return
+    fi
 }
 
 _dcos_config() {
-    :
+    local i command
+
+    if ! __dcos_default_command_parse; then
+        return 
+    fi
+
+    local commands=("set" "show" "unset")
+    local flags=("--help")
+
+    if [ -z "$command" ]; then
+        case "$cur" in
+            --*)
+                __dcos_handle_compreply "${flags[@]}"
+                ;;
+            *)
+                __dcos_handle_compreply "${commands[@]}"
+                ;;
+        esac
+        return
+    fi
+
+    __dcos_handle_subcommand
 }
 
-_dcos_help() {
-    :
+_dcos_config_set() {
+    local i command
+
+    if ! __dcos_default_command_parse; then
+        return 
+    fi
+
+    local flags=("--help")
+
+    if [ -z "$command" ]; then
+        case "$cur" in
+            --*)
+                __dcos_handle_compreply "${flags[@]}"
+                ;;
+            *) ;;
+        esac
+        return
+    fi
+}
+
+_dcos_config_show() {
+    local i command
+
+    if ! __dcos_default_command_parse; then
+        return 
+    fi
+
+    local flags=("--help")
+
+    if [ -z "$command" ]; then
+        case "$cur" in
+            --*)
+                __dcos_handle_compreply "${flags[@]}"
+                ;;
+            *) ;;
+        esac
+        return
+    fi
+}
+
+_dcos_config_unset() {
+    local i command
+
+    if ! __dcos_default_command_parse; then
+        return 
+    fi
+
+    local flags=("--help")
+
+    if [ -z "$command" ]; then
+        case "$cur" in
+            --*)
+                __dcos_handle_compreply "${flags[@]}"
+                ;;
+            *) ;;
+        esac
+        return
+    fi
 }
 
 _dcos_plugin() {
-    :
+    local i command
+
+    if ! __dcos_default_command_parse; then
+        return
+    fi
+
+    local commands=("add" "list" "remove")
+    local flags=("--help")
+
+    if [ -z "$command" ]; then
+        case "$cur" in
+            --*)
+                __dcos_handle_compreply "${flags[@]}"
+                ;;
+            *)
+                __dcos_handle_compreply "${commands[@]}"
+                ;;
+        esac
+        return
+    fi
+
+    __dcos_handle_subcommand
 }
 
+_dcos_plugin_add() {
+    local i command
+
+    if ! __dcos_default_command_parse; then
+        return
+    fi
+
+    local flags=("--help" "--update")
+
+    if [ -z "$command" ]; then
+        case "$cur" in
+            --*)
+                __dcos_handle_compreply "${flags[@]}"
+                ;;
+            *) ;;
+        esac
+        return
+    fi
+}
+
+_dcos_plugin_list() {
+    local i command
+
+    if ! __dcos_default_command_parse; then
+        return
+    fi
+
+    local flags=("--help" "--json")
+
+    if [ -z "$command" ]; then
+        case "$cur" in
+            --*)
+                __dcos_handle_compreply "${flags[@]}"
+                ;;
+            *) ;;
+        esac
+        return
+    fi
+}
+
+_dcos_plugin_remove() {
+    local i command
+
+    if ! __dcos_default_command_parse; then
+        return
+    fi
+
+    local flags=("--help")
+
+    if [ -z "$command" ]; then
+        case "$cur" in
+            --*)
+                __dcos_handle_compreply "${flags[@]}"
+                ;;
+            *) ;;
+        esac
+        return
+    fi
+}
 
 _dcos() {
 	local i c=1 command
@@ -299,11 +539,17 @@ _dcos() {
             # we're not worrying about flag arg completion yet though so it's safe to ignore that
             return
             ;;
+        help)
+            return
+            ;;
         --*)
             __dcos_handle_compreply "${flags[@]}"
             ;;
         *)
             # no command was given so list out possible subcommands
+            
+            # in real usage, $command will also end up being the argument given to the command, not sure yet
+            # how we want to handle that
             __dcos_handle_compreply "${commands[@]}"
             ;;
         esac
