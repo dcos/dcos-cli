@@ -95,14 +95,16 @@ func (s *Setup) Configure(flags *Flags, clusterURL string, attach bool) (*config
 	}
 
 	// Login to get the ACS token, unless it is already present as an env var.
-	if cluster.ACSToken() == "" {
+	acsToken := cluster.ACSToken()
+	if acsToken == "" {
 		httpClient := httpclient.New(cluster.URL(), httpOpts...)
-		acsToken, err := s.loginFlow.Start(flags.loginFlags, httpClient)
+		var err error
+		acsToken, err = s.loginFlow.Start(flags.loginFlags, httpClient)
 		if err != nil {
 			return nil, err
 		}
-		cluster.SetACSToken(acsToken)
 	}
+	cluster.SetACSToken(acsToken)
 	httpClient := httpclient.New(cluster.URL(), append(httpOpts, httpclient.ACSToken(cluster.ACSToken()))...)
 
 	// Read cluster ID from cluster metadata.
