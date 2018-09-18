@@ -81,13 +81,31 @@ __dcos_handle_subcommand() {
             next_command=${last_command}_${subcommand}
             last_command=$next_command
 
-            if declare -f $next_command > /dev/null; then
+            if declare -f "$next_command" > /dev/null; then
                 $next_command
             else
                 __dcos_debug "${next_command} does not exist"
             fi
             return
         fi
+    done
+}
+
+
+__dcos_source_plugin_completions() {
+    while $1; do
+        for file in "$1"/*; do
+            __dcos_debug "sourcing completions from $file"
+            case "$file" in
+                *.sh)
+                    # shellcheck disable=SC1090
+                    # disables shellcheck warning that it can't follow this source
+                    source "$file"
+                    ;;
+                *) ;;
+            esac
+        done
+        shift
     done
 }
 
@@ -570,6 +588,8 @@ _dcos() {
 __dcos_main() {
     __dcos_debug "$@"
 
+    # shellcheck disable=SC2034
+    # disable unused variable warning, prev is unused here
     local cur prev words cword last_command
     # give last_command the root prefix
     last_command="_dcos"
