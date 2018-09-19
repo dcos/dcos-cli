@@ -108,6 +108,16 @@ For example, if a `dcos-hello` executable in a plugin has a `hello` top level co
 
 Executables contained within plugins are called synchronously from the CLI by spawning a new child process. The CLI waits for the child process to complete. The CLI makes available its own executable path to the child via an ENV variable `DCOS_CLI_EXECUTABLE_PATH`.
 
+When a cluster is attached, the CLI will also pass the following ENV variables:
+
+- `DCOS_URL`: The base URL of the DC/OS cluster without a trailing slash (eg. `https://dcos.example.com`).
+- `DCOS_ACS_TOKEN`: The authentication token for the current user.
+- `DCOS_TLS_INSECURE`: Indicates whether the CLI is configured with an insecure TLS setup. This is set to
+                       `1` when the `DCOS_URL` scheme is `http://` or `core.ssl_verify` is set to `false`.
+- `DCOS_TLS_CA_PATH`: Unless `DCOS_TLS_INSECURE=1`, this env var indicates the path to the CA bundle to
+                      verify server certificates against. When it is not set, the system's CA bundle
+                      must be used.
+
 The child process has access to the standard out/standard error of the CLI process. It is not guaranteed to have access to any other file descriptors the parent may have opened.
 
 The child process is not started in a shell. If the command is not startable for any reason an error message is printed (not on the path, executable does not exist, binary incompatibility, etc).
