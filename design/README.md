@@ -6,6 +6,7 @@
 - [config](config.md)
 - [httpclient](httpclient.md)
 - [login](login.md)
+- [plugin](plugin.md)
 - [setup](setup.md)
 
 ## Style guide
