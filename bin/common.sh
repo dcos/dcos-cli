@@ -21,7 +21,7 @@ if [ "$(uname)" = "Windows_NT" ]; then
 else
   BIN=bin
   EXE=
-  : ${PYTHON:=python3.5${EXE}}
+  : ${PYTHON:=python3${EXE}}
 fi
 
 BASEDIR=$( cd "$(dirname $(dirname "${0}"))" > /dev/null; pwd -P )
