@@ -89,7 +89,7 @@ Using a Python virtual environment is recommended.
 
 ## Releasing
 
-Releasing a new version of the DC/OS CLI is done thourgh an
+Releasing a new version of the DC/OS CLI is done through an
 [automated Jenkins
 build](https://jenkins.mesosphere.com/service/jenkins/job/public-dcos-cluster-ops/job/mesosphere-dcos-cli/job/release/)
 which is triggered automatically for new tags and on pushes to master.
@@ -109,3 +109,4 @@ Tags are released to:
 ## Contributing
 
 Contributions are always welcome! Please refer to our [contributing guidelines](CONTRIBUTING.md).
+
