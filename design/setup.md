@@ -117,7 +117,7 @@ The [core plugin](https://github.com/dcos/dcos-core-cli) contains subcommands su
 package, service, task.
 
 When the core plugin can't be installed (eg. insufficient Cosmos permission or air-gapped environment),
-it then fallbacks to installing it from the DC/OS CLI binary itself, which bundles a core plugin.
+it then falls back to installing it from the DC/OS CLI binary itself, which bundles a core plugin.
 
 ### dcos-enterprise-cli
 

@@ -21,8 +21,7 @@ In its normalized form, an unpacked plugin is a directory with the following str
 An unpacked plugin has an env directory containing a bin directory which contains all the executables in
 the plugin and a plugin.toml file which defines information about the plugin.
 
-The bin folder is just a convention but in the next section we’ll see that it can be changed to something
-else.
+The bin directory is just a convention, it can be changed to something else as we'll see in the next section.
 
 A plugin may contain multiple executables, each of which can hold multiple top level commands. Which
 executables hold which top level commands is defined in the plugin.toml file. The file contains command
