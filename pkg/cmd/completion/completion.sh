@@ -96,7 +96,7 @@ __dcos_source_plugin_completions() {
     for dir in "$@"; do
         # skip if plugin doesn't have a completion directory
         if [[ -d $dir ]]; then
-            for file in "$1/"*; do
+            for file in "$1/bash/"*; do
                 __dcos_debug "sourcing completions from $file"
                 case "$file" in
                     *.sh)
