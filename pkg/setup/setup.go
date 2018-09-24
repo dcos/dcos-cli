@@ -40,6 +40,7 @@ type Opts struct {
 	LoginFlow     *login.Flow
 	ConfigManager *config.Manager
 	PluginManager *plugin.Manager
+	EnvLookup     func(key string) (string, bool)
 }
 
 // Setup represents a cluster setup.
@@ -51,6 +52,7 @@ type Setup struct {
 	loginFlow     *login.Flow
 	configManager *config.Manager
 	pluginManager *plugin.Manager
+	envLookup     func(key string) (string, bool)
 }
 
 // New creates a new setup.
@@ -63,6 +65,7 @@ func New(opts Opts) *Setup {
 		loginFlow:     opts.LoginFlow,
 		configManager: opts.ConfigManager,
 		pluginManager: opts.PluginManager,
+		envLookup:     opts.EnvLookup,
 	}
 }
 
@@ -95,7 +98,7 @@ func (s *Setup) Configure(flags *Flags, clusterURL string, attach bool) (*config
 	}
 
 	// Login to get the ACS token, unless it is already present as an env var.
-	acsToken := cluster.ACSToken()
+	acsToken, _ := s.envLookup("DCOS_CLUSTER_SETUP_ACS_TOKEN")
 	if acsToken == "" {
 		httpClient := httpclient.New(cluster.URL(), httpOpts...)
 		var err error

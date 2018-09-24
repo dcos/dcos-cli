@@ -182,6 +182,7 @@ func (ctx *Context) Setup(flags *setup.Flags, clusterURL string, attach bool) (*
 	return setup.New(setup.Opts{
 		Fs:            ctx.Fs(),
 		Errout:        ctx.ErrOut(),
+		EnvLookup:     ctx.EnvLookup,
 		Prompt:        ctx.Prompt(),
 		Logger:        ctx.Logger(),
 		LoginFlow:     ctx.loginFlow(),
