@@ -10,6 +10,7 @@ For a given DC/OS master URL, the package will:
 - Initiate a login.
 - Create a cluster config with the ACS token, the TLS configuration, and cluster name.
 - Attach the CLI to the newly created cluster config.
+- Automatically install "dcos-core-cli" and "dcos-enterprise-cli" plugins after the setup.
 
 ## Implementation
 
@@ -91,8 +92,8 @@ the Mesos `/state/summary` endpoint.
 
 ## Creating the cluster config
 
-Finally, when all the above steps have been completed, the cluster config is persisted on disk
-and the CLI is attached to it. A cluster config looks like this:
+When all the above steps have been completed, the cluster config is persisted on disk and the CLI is
+attached to it. A cluster config looks like this:
 
     # /home/user/.dcos/clusters/<cluster_id>/dcos.toml
     [core]
@@ -102,3 +103,29 @@ and the CLI is attached to it. A cluster config looks like this:
 
     [cluster]
     name= "<cluster_name>"
+
+## Automatically installing default plugins
+
+Finally, and unless the `--no-plugin` option is passed, the CLI will attempt to install "dcos-core-cli"
+and "dcos-enterprise-cli" plugins.
+
+These plugins download URLs are retrieved through Cosmos, where they are registered as packages.
+
+### dcos-core-cli
+
+The [core plugin](https://github.com/dcos/dcos-core-cli) contains subcommands such as marathon, job, node,
+package, service, task.
+
+When the core plugin can't be installed (eg. insufficient Cosmos permission or air-gapped environment),
+it then falls back to installing it from the DC/OS CLI binary itself, which bundles a core plugin.
+
+### dcos-enterprise-cli
+
+The [enterprise plugin](https://github.com/mesosphere/dcos-enterprise-cli) gets installed when an EE
+cluster is detected.
+
+This is determined through the [DC/OS variant](https://jira.mesosphere.com/browse/DCOS_OSS-2283) field
+(new in 1.12). For previous versions of DC/OS we won’t try to detect open / enterprise as it’d involve
+some hacks, but rather display a message saying “Please run “dcos package install dcos-enterprise-cli” if
+you use a DC/OS Enterprise cluster”. This message would also get displayed when the enterprise plugin
+installation fails, in that the process would still exit with a 0 status code as it's not a critical error.
