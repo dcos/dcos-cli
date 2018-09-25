@@ -37,7 +37,7 @@ def task_table(tasks):
 
     fields = OrderedDict([
         ("NAME", lambda t: t["name"]),
-        ("HOST", lambda t: t.slave()["hostname"]),
+        ("HOST", lambda t: _hostname(t)),
         ("USER", lambda t: t.user()),
         ("STATE", lambda t: t["state"].split("_")[-1][0]),
         ("ID", lambda t: t["id"]),
@@ -51,6 +51,13 @@ def task_table(tasks):
     tb.align["MESOS ID"] = "l"
 
     return tb
+
+
+def _hostname(task):
+    if task.slave() is None:
+        return EMPTY_ENTRY
+    else:
+        return task.slave()["hostname"]
 
 
 def app_table(apps, deployments):

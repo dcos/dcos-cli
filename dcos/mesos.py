@@ -367,7 +367,7 @@ class Master(object):
         slaves = self.slaves(fltr)
 
         if len(slaves) == 0:
-            raise DCOSException('No agent found with ID "{}".'.format(fltr))
+            return None
 
         elif len(slaves) > 1:
 
@@ -786,6 +786,17 @@ class Task(object):
         """
 
         return self.executor()['directory']
+
+    def fault_domain(self):
+        """ Fault domain for a given task
+
+        :returns: fault domain structure
+        :rtype: dict | None
+        """
+        if self.slave() is None:
+            return None
+        else:
+            return self.slave().fault_domain()
 
     def __getitem__(self, name):
         """Support the task[attr] syntax
