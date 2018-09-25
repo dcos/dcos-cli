@@ -111,6 +111,7 @@ __dcos_source_plugin_completions() {
     done
 }
 
+
 _dcos_auth() {
     local i command
 
@@ -549,11 +550,11 @@ _dcos() {
 
     local plugin_commands completion_dirs
 
-    read -r -a plugin_commands <<< "$(dcos plugin list --commands)"
+    while IFS=$'\n' read -r line; do plugin_commands+=("$line"); done < <(dcos plugin list --commands)
     commands+=("${plugin_commands[@]}")
     __dcos_debug "Found plugin commands" "${plugin_commands[@]}"
 
-    read -r -a completion_dirs <<< "$(dcos plugin list --completion-dirs)"
+    while IFS=$'\n' read -r line; do completion_dirs+=("$line"); done < <(dcos plugin list --completion-dirs)
     __dcos_debug "Plugin completion directories" "${completion_dirs[@]}"
     __dcos_source_plugin_completions "${completion_dirs[@]}"
 

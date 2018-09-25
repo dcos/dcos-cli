@@ -34,13 +34,13 @@ func newCmdPluginList(ctx api.Context) *cobra.Command {
 			} else if commands {
 				for _, plugin := range plugins {
 					for _, command := range plugin.Commands {
-						fmt.Fprintf(ctx.Out(), "%s ", command.Name)
+						fmt.Fprintln(ctx.Out(), command.Name)
 					}
 				}
 				return nil
 			} else if completionDirs {
 				for _, plugin := range plugins {
-					fmt.Fprintf(ctx.Out(), "%s ", plugin.CompletionDir())
+					fmt.Fprintln(ctx.Out(), plugin.CompletionDir())
 				}
 				return nil
 			}
