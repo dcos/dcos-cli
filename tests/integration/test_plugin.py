@@ -3,7 +3,7 @@ import os
 import shutil
 import sys
 
-from .common import exec_cmd, default_cluster, default_cluster_with_plugins  # noqa: F401
+from .common import setup_cluster, exec_cmd, default_cluster, default_cluster_with_plugins  # noqa: F401
 
 
 def test_plugin_list(default_cluster_with_plugins):
@@ -27,16 +27,7 @@ def test_plugin_list(default_cluster_with_plugins):
 
 
 def test_plugin_invocation(default_cluster):
-    plugins = {
-        'linux': os.path.join(_plugin_dir('dcos-test'), 'linux', 'dcos-test'),
-        'darwin': os.path.join(_plugin_dir('dcos-test'), 'darwin', 'dcos-test'),
-        'win32': os.path.join(_plugin_dir('dcos-test'), 'win32', 'dcos-test.exe'),
-    }
-
-    code, out, err = exec_cmd(['dcos', 'plugin', 'add', plugins[sys.platform]])
-    assert code == 0
-    assert err == ''
-    assert out == ''
+    _install_test_plugin()
 
     args = ['dcos', 'test', 'arg1', 'arg2']
     code, out, err = exec_cmd(args)
@@ -45,7 +36,7 @@ def test_plugin_invocation(default_cluster):
 
     assert out['args'][1:] == args[1:]
 
-    executable_path = out['env']['DCOS_CLI_EXECUTABLE_PATH']
+    executable_path = out['env'].get('DCOS_CLI_EXECUTABLE_PATH')
     if sys.platform == 'win32':
         # On Windows, "shutil.which" normalizes the path so the drive letter is not present.
         # This removes it from the value returned by the test plugin too.
@@ -55,12 +46,48 @@ def test_plugin_invocation(default_cluster):
         expected_executable_path = shutil.which("dcos")
     assert executable_path == expected_executable_path
 
+    assert out['env'].get('DCOS_URL') == default_cluster['dcos_url']
+    assert out['env'].get('DCOS_ACS_TOKEN') == default_cluster['acs_token']
+
+
+def test_plugin_invocation_tls():
+    with setup_cluster(scheme='https'):
+        _install_test_plugin()
+
+        code, out, _ = exec_cmd(['dcos', 'config', 'show', 'core.ssl_verify'])
+        assert code == 0
+        ca_path = out.rstrip()
+
+        code, out, err = exec_cmd(['dcos', 'test'])
+        assert code == 0
+        out = json.loads(out)
+
+        assert out['env'].get('DCOS_TLS_INSECURE') is None
+        assert out['env'].get('DCOS_TLS_CA_PATH') == ca_path
+
+        code, _, _ = exec_cmd(['dcos', 'config', 'set', 'core.ssl_verify', 'False'])
+        assert code == 0
+
+        code, out, err = exec_cmd(['dcos', 'test'])
+        assert code == 0
+        out = json.loads(out)
+
+        assert out['env'].get('DCOS_TLS_INSECURE') == '1'
+        assert out['env'].get('DCOS_TLS_CA_PATH') is None
+
+    with setup_cluster(scheme='http'):
+        _install_test_plugin()
+
+        code, out, err = exec_cmd(['dcos', 'test'])
+        assert code == 0
+        out = json.loads(out)
+
+        assert out['env'].get('DCOS_TLS_INSECURE') == '1'
+        assert out['env'].get('DCOS_TLS_CA_PATH') is None
+
 
 def test_plugin_verbosity(default_cluster):
-    code, out, err = exec_cmd(['dcos', 'plugin', 'add', _test_plugin_path()])
-    assert code == 0
-    assert err == ''
-    assert out == ''
+    _install_test_plugin()
 
     fixtures = [
         {
@@ -99,6 +126,13 @@ def test_plugin_verbosity(default_cluster):
         assert out['args'][1:] == ['test']
         assert out['env'].get('DCOS_VERBOSITY') == fixture['DCOS_VERBOSITY']
         assert out['env'].get('DCOS_LOG_LEVEL') == fixture['DCOS_LOG_LEVEL']
+
+
+def _install_test_plugin():
+    code, out, err = exec_cmd(['dcos', 'plugin', 'add', _test_plugin_path()])
+    assert code == 0
+    assert err == ''
+    assert out == ''
 
 
 def _test_plugin_path():
