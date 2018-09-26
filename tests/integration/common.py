@@ -3,6 +3,8 @@ import os
 import subprocess
 import uuid
 
+from contextlib import contextmanager
+
 import pytest
 
 
@@ -57,7 +59,7 @@ def exec_cmd(cmd, env=None, stdin=None, timeout=None):
 
 @pytest.fixture()
 def default_cluster():
-    cluster = _setup_cluster('DEFAULT')
+    cluster = _setup_cluster()
 
     yield cluster
 
@@ -67,7 +69,7 @@ def default_cluster():
 
 @pytest.fixture()
 def default_cluster_with_plugins():
-    cluster = _setup_cluster('DEFAULT', with_plugins=True)
+    cluster = _setup_cluster(with_plugins=True)
 
     yield cluster
 
@@ -75,7 +77,17 @@ def default_cluster_with_plugins():
     assert code == 0
 
 
-def _setup_cluster(name, with_plugins=False):
+@contextmanager
+def setup_cluster(**kwargs):
+    try:
+        cluster = _setup_cluster(**kwargs)
+        yield cluster
+    finally:
+        code, _, _ = exec_cmd(['dcos', 'cluster', 'remove', cluster['cluster_id']])
+        assert code == 0
+
+
+def _setup_cluster(name='DEFAULT', with_plugins=False, scheme='http', insecure=False):
     cluster = {
         'variant': os.environ.get('DCOS_TEST_' + name + '_CLUSTER_VARIANT'),
         'username': os.environ.get('DCOS_TEST_' + name + '_CLUSTER_USERNAME'),
@@ -83,14 +95,21 @@ def _setup_cluster(name, with_plugins=False):
         'name': 'test_cluster_' + str(uuid.uuid4()),
     }
 
-    cmd = 'dcos cluster setup --name={} --username={} --password={} http://{}'.format(
+    cmd = 'dcos cluster setup --name={} --username={} --password={} {}://{}'.format(
         cluster['name'],
         cluster['username'],
         cluster['password'],
+        scheme,
         os.environ.get('DCOS_TEST_' + name + '_CLUSTER_HOST'))
 
     if not with_plugins:
         cmd += ' --no-plugin'
+
+    if scheme == 'https':
+        cmd += ' --no-check'
+
+    if insecure:
+        cmd += ' --insecure'
 
     code, _, _ = exec_cmd(cmd.split(' '))
     assert code == 0
@@ -103,5 +122,9 @@ def _setup_cluster(name, with_plugins=False):
     cluster['dcos_url'] = clusters[0]['url']
     cluster['version'] = clusters[0]['version']
     cluster['cluster_id'] = clusters[0]['cluster_id']
+
+    code, out, _ = exec_cmd(['dcos', 'config', 'show', 'core.dcos_acs_token'])
+    assert code == 0
+    cluster['acs_token'] = out.rstrip()
 
     return cluster

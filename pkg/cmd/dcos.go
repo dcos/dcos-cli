@@ -8,12 +8,13 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 
 	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/cmd/auth"
-	"github.com/dcos/dcos-cli/pkg/cmd/cluster"
+	clustercmd "github.com/dcos/dcos-cli/pkg/cmd/cluster"
 	"github.com/dcos/dcos-cli/pkg/cmd/completion"
 	"github.com/dcos/dcos-cli/pkg/cmd/config"
 	plugincmd "github.com/dcos/dcos-cli/pkg/cmd/plugin"
@@ -37,7 +38,7 @@ func NewDCOSCommand(ctx api.Context) *cobra.Command {
 	cmd.AddCommand(
 		auth.NewCommand(ctx),
 		config.NewCommand(ctx),
-		cluster.NewCommand(ctx),
+		clustercmd.NewCommand(ctx),
 		plugincmd.NewCommand(ctx),
 		completion.NewCommand(ctx),
 	)
@@ -130,6 +131,18 @@ func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
 				execCmd.Env = append(execCmd.Env, "DCOS_VERBOSITY=1", "DCOS_LOG_LEVEL=info")
 			}
 
+			// Pass cluster specific env variables when a cluster is attached.
+			if cluster, err := ctx.Cluster(); err == nil {
+				execCmd.Env = append(execCmd.Env, "DCOS_URL="+cluster.URL())
+				execCmd.Env = append(execCmd.Env, "DCOS_ACS_TOKEN="+cluster.ACSToken())
+
+				insecure := cluster.TLS().Insecure || strings.HasPrefix(cluster.URL(), "http://")
+				if insecure {
+					execCmd.Env = append(execCmd.Env, "DCOS_TLS_INSECURE=1")
+				} else if cluster.TLS().RootCAsPath != "" {
+					execCmd.Env = append(execCmd.Env, "DCOS_TLS_CA_PATH="+cluster.TLS().RootCAsPath)
+				}
+			}
 			err = execCmd.Run()
 			if err != nil {
 				// Because we're silencing errors through Cobra, we need to print this separately.
