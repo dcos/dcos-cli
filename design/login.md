@@ -111,7 +111,7 @@ Each login provider has one of these 5 login methods associated to it (`client-m
     `/acs/api/v1/auth/login`.
 - **browser-prompt-oidcidtoken-get-authtoken** : Open the browser at the page referenced in
     `start_flow_url`. The user is then expected to continue the flow in the browser, eventually
-    they are redirected to a page with the authentication token to copy-paste from the browser
+    they are redirected to a page with an OpenID Connect ID token to copy-paste from the browser
     to their terminal. Make a HEAD request to a well-known resource with the appropriate
     Authorization header in order to verify the token.
 
