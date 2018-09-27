@@ -40,25 +40,24 @@ HTTPS URL:
 The setup command also accepts all the flags from the `dcos auth login` command as it triggers a login
 flow during the setup.
 
-### Detect security mode (HTTP only)
+### Detect the canonical cluster URL
 
-When the URL to setup has the http scheme, the CLI must check for the cluster's security mode.
+The first step of the setup flow is to detect the cluster canonical URL. This is done by making
+an HTTP HEAD request to the root path (eg. http://dcos.example.com/). If the response is one of
+the following redirect codes, the CLI will follow it, up to a maximum of 10 redirects:
 
-The CLI uses some heuristics to detect the DC/OS security mode:
+- 301 (Moved Permanently)
+- 302 (Found)
+- 303 (See Other)
+- 307 (Temporary Redirect)
+- 308 (Permanent Redirect)
 
-- If an HTTP HEAD request to the root path (eg. http://dcos.example.com/) returns a 200 status code,
-    the security mode is `disabled`. In such a case, the setup flow can be continued with the given URL.
+When there are more than 10 redirects or the status code of the last response is not 200,
+the setup flow errors-out. Otherwise, the URL associated with the last response is considered
+as the **canonical cluster URL**.
 
-- If the cluster returned a 307 status code, the security mode is either `permissive` or `strict`.
-    To distinguish both, another HEAD request to a well-known resource is done (the CA
-    bundle at `http://dcos.example.com/ca/dcos-ca.crt`). If the response status code is 200,
-    it's the `permissive` mode. If it's still a 307 redirection, then the cluster is in `strict` mode.
-
-In `permissive mode`, the use of HTTP is *discouraged*. The user is interactively asked if they want
-to switch to HTTPS.
-
-In `strict mode`, the use of HTTP is *disallowed*. A message indicates to the user that the CLI is
-continuing the cluster setup with HTTPS.
+When the canonical cluster URL is different than the one given in argument of the `dcos cluster setup`
+command, a warning indicates to the user that the setup will continue with this new URL.
 
 ### Install the root CA bundle (HTTPS only)
 
