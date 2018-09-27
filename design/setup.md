@@ -62,7 +62,7 @@ command, a warning indicates to the user that the setup will continue with this 
 ### Install the root CA bundle (HTTPS only)
 
 When the URL to setup has the https scheme (either originally, or has been switched from http to https
-afterwards during the security mode detection) and the `--insecure` option hasn't been passed, the CLI
+afterwards during the canonical URL detection) and the `--insecure` option hasn't been passed, the CLI
 must ensure that it is able to communicate with the server securely.
 
 The CLI first makes an HTTPS HEAD request to the cluster in order to check if the server certificate
