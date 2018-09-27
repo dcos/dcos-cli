@@ -23,4 +23,5 @@ func deriveDeepCopy(dst, src *Plugin) {
 		}
 		copy(dst.Commands, src.Commands)
 	}
+	dst.dir = src.dir
 }

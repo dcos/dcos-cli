@@ -81,7 +81,7 @@ __dcos_handle_subcommand() {
             next_command=${last_command}_${subcommand}
             last_command=$next_command
 
-            if declare -f $next_command > /dev/null; then
+            if declare -f "$next_command" > /dev/null; then
                 $next_command
             else
                 __dcos_debug "${next_command} does not exist"
@@ -91,8 +91,29 @@ __dcos_handle_subcommand() {
     done
 }
 
+
+__dcos_source_plugin_completions() {
+    for dir in "$@"; do
+        # skip if plugin doesn't have a completion directory
+        if [[ -d $dir ]]; then
+            for file in "$1/bash/"*; do
+                __dcos_debug "sourcing completions from $file"
+                case "$file" in
+                    *.sh)
+                        # shellcheck disable=SC1090
+                        # disables shellcheck warning that it can't follow this source
+                        source "$file"
+                        ;;
+                    *) ;;
+                esac
+            done
+        fi
+    done
+}
+
+
 _dcos_auth() {
-	local i command
+    local i command
 
     if ! __dcos_default_command_parse; then
         return
@@ -117,7 +138,7 @@ _dcos_auth() {
 }
 
 _dcos_auth_login() {
-	local i command
+    local i command
 
     if ! __dcos_default_command_parse; then
         return
@@ -148,7 +169,7 @@ _dcos_auth_login() {
 }
 
 _dcos_auth_list_providers() {
-	local i command
+    local i command
 
     if ! __dcos_default_command_parse; then
         return
@@ -172,7 +193,7 @@ _dcos_auth_list_providers() {
 }
 
 _dcos_auth_logout() {
-	local i command
+    local i command
 
     if ! __dcos_default_command_parse; then
         return
@@ -199,7 +220,7 @@ _dcos_cluster() {
     local i command
 
     if ! __dcos_default_command_parse; then
-        return 
+        return
     fi
 
     local commands=("attach" "help" "list" "remove" "rename" "setup")
@@ -320,16 +341,16 @@ _dcos_cluster_setup() {
     fi
 
     local flags=("--help"
-        "--ca-certs="
-        "--insecure"
-        "--name="
-        "--no-check"
-        "--no-plugin"
-        "--password="
-        "--password-file="
-        "--private-key="
-        "--provider="
-        "--username="
+    "--ca-certs="
+    "--insecure"
+    "--name="
+    "--no-check"
+    "--no-plugin"
+    "--password="
+    "--password-file="
+    "--private-key="
+    "--provider="
+    "--username="
     )
 
     if [ -z "$command" ]; then
@@ -351,7 +372,7 @@ _dcos_config() {
     local i command
 
     if ! __dcos_default_command_parse; then
-        return 
+        return
     fi
 
     local commands=("set" "show" "unset")
@@ -376,7 +397,7 @@ _dcos_config_set() {
     local i command
 
     if ! __dcos_default_command_parse; then
-        return 
+        return
     fi
 
     local flags=("--help")
@@ -396,7 +417,7 @@ _dcos_config_show() {
     local i command
 
     if ! __dcos_default_command_parse; then
-        return 
+        return
     fi
 
     local flags=("--help")
@@ -416,7 +437,7 @@ _dcos_config_unset() {
     local i command
 
     if ! __dcos_default_command_parse; then
-        return 
+        return
     fi
 
     local flags=("--help")
@@ -518,7 +539,7 @@ _dcos_plugin_remove() {
 }
 
 _dcos() {
-	local i c=1 command
+    local i c=1 command
 
     if ! __dcos_default_command_parse; then
         return
@@ -527,31 +548,38 @@ _dcos() {
     local commands=("auth" "cluster" "config" "help" "plugin")
     local flags=("--help" "--version")
 
-    # TODO: add plugin commands relevant to currently attached cluster
+    local plugin_commands completion_dirs
+
+    while IFS=$'\n' read -r line; do plugin_commands+=("$line"); done < <(dcos plugin list --commands)
+    commands+=("${plugin_commands[@]}")
+    __dcos_debug "Found plugin commands" "${plugin_commands[@]}"
+
+    while IFS=$'\n' read -r line; do completion_dirs+=("$line"); done < <(dcos plugin list --completion-dirs)
+    __dcos_debug "Plugin completion directories" "${completion_dirs[@]}"
+    __dcos_source_plugin_completions "${completion_dirs[@]}"
 
     # no subcommand given, complete either flags or subcommands
     if [ -z "$command" ]; then
         case "$cur" in
-        --*=*)
-            # TODO: don't support flag completion right now
-            # this does leave out the potential for detecting flags that take values but are separated like
-            # --flag value instead of --flag=value
-            # we're not worrying about flag arg completion yet though so it's safe to ignore that
-            return
-            ;;
-        help)
-            return
-            ;;
-        --*)
-            __dcos_handle_compreply "${flags[@]}"
-            ;;
-        *)
-            # no command was given so list out possible subcommands
-            
-            # in real usage, $command will also end up being the argument given to the command, not sure yet
-            # how we want to handle that
-            __dcos_handle_compreply "${commands[@]}"
-            ;;
+            --*=*)
+                # TODO: don't support flag completion right now
+                # this does leave out the potential for detecting flags that take values but are separated like
+                # --flag value instead of --flag=value
+                # we're not worrying about flag arg completion yet though so it's safe to ignore that
+                return
+                ;;
+            help)
+                return
+                ;;
+            --*)
+                __dcos_handle_compreply "${flags[@]}"
+                ;;
+            *)
+                # no command was given so list out possible subcommands
+                # in real usage, $command will also end up being the argument given to the command, not sure yet
+                # how we want to handle that
+                __dcos_handle_compreply "${commands[@]}"
+                ;;
         esac
         return
     fi
@@ -562,6 +590,8 @@ _dcos() {
 __dcos_main() {
     __dcos_debug "$@"
 
+    # shellcheck disable=SC2034
+    # disable unused variable warning, prev is unused here
     local cur prev words cword last_command
     # give last_command the root prefix
     last_command="_dcos"
