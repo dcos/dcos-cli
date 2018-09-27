@@ -160,18 +160,21 @@ func (f *Flow) triggerMethod(provider *Provider) (acsToken string, err error) {
 				break
 			}
 
-			// With methodBrowserAuthToken, the user is passing the ACS token from the browser
-			// to the terminal directly. Send a HEAD request with an appropriate Authorization
-			// header to a well-known path in order to verify the token.
+			// With methodBrowserAuthToken, the user is passing the authentication token from the browser
+			// to the terminal directly. Send a HEAD request with an appropriate Authorization header to a
+			// well-known path in order to verify the authentication token.
 			var resp *http.Response
 			resp, err = f.client.sniffAuth(token)
 			if err != nil {
 				return "", err
 			}
-			if resp.StatusCode == 401 {
-				err = errors.New("invalid auth token")
-			} else {
+			switch resp.StatusCode {
+			case 200, 403:
 				acsToken = token
+			case 401:
+				err = errors.New("invalid auth token")
+			default:
+				return "", fmt.Errorf("unexpected status code %d", resp.StatusCode)
 			}
 		}
 		// In case of failure, let the user re-enter credentials 2 times.
