@@ -18,6 +18,7 @@ import (
 	"github.com/dcos/dcos-cli/pkg/cmd/completion"
 	"github.com/dcos/dcos-cli/pkg/cmd/config"
 	plugincmd "github.com/dcos/dcos-cli/pkg/cmd/plugin"
+	"github.com/dcos/dcos-cli/pkg/corecli"
 	"github.com/dcos/dcos-cli/pkg/cosmos"
 	"github.com/dcos/dcos-cli/pkg/plugin"
 	"github.com/spf13/afero"
@@ -49,6 +50,17 @@ func NewDCOSCommand(ctx api.Context) *cobra.Command {
 
 		for _, plugin := range pluginManager.Plugins() {
 			for _, pluginCmd := range plugin.Commands {
+				cmd.AddCommand(newPluginCommand(ctx, pluginCmd))
+			}
+		}
+	} else {
+		// If a cluster is not attached, we load the bundled CLI data from an in-memory FS.
+		// This is only for the help message so if something goes wrong it's better not to fail
+		// and have the core commands missing from help.
+
+		tempCore, err := corecli.TempPlugin()
+		if err == nil {
+			for _, pluginCmd := range tempCore.Commands {
 				cmd.AddCommand(newPluginCommand(ctx, pluginCmd))
 			}
 		}
@@ -93,6 +105,15 @@ func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
 		SilenceErrors:      true, // Silences error message if command returns an exit code.
 		SilenceUsage:       true, // Silences usage information from the wrapper CLI on error.
 		RunE: func(_ *cobra.Command, _ []string) error {
+			// We don't support global plugins right now so no plugin should be run without
+			// a cluster.
+			// This helps with the tempCore hack we're doing above to make it look like the
+			// CLI has all the commands normally available when attached to a cluster.
+			_, err := ctx.Cluster()
+			if err != nil {
+				ctx.Logger().Error("Error: no cluster is attached")
+				return err
+			}
 			// Extract the specific arguments of a command from the context.
 			ctxArgs := ctx.Args()
 			var cmdArgs []string

@@ -1,6 +1,6 @@
 //+build !corecli
 
-package setup
+package corecli
 
 import "errors"
 
