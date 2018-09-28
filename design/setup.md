@@ -10,7 +10,7 @@ For a given DC/OS master URL, the package will:
 - Initiate a login.
 - Create a cluster config with the ACS token, the TLS configuration, and cluster name.
 - Attach the CLI to the newly created cluster config.
-- Automatically install "dcos-core-cli" and "dcos-enterprise-cli" plugins after the setup.
+- Automatically install "dcos-core-cli" and "dcos-enterprise-cli" plugins after the setup (experimental).
 
 ## Implementation
 
@@ -104,10 +104,10 @@ attached to it. A cluster config looks like this:
     [cluster]
     name= "<cluster_name>"
 
-## Automatically installing default plugins
+## Automatically installing default plugins (experimental)
 
-Finally, and unless the `--no-plugin` option is passed, the CLI will attempt to install "dcos-core-cli"
-and "dcos-enterprise-cli" plugins.
+Finally, when the `DCOS_CLI_EXPERIMENTAL_AUTOINSTALL_PLUGINS` env var is set, the CLI will attempt to
+auto-install "dcos-core-cli" and "dcos-enterprise-cli" plugins.
 
 These plugins download URLs are retrieved through Cosmos, where they are registered as packages.
 
