@@ -19,9 +19,9 @@ darwin linux windows: docker-image
 
 .PHONY: core-bundle
 core-bundle: docker-image
-	$(call inDocker,go-bindata -pkg corecli -o pkg/corecli/corecli_linux.gen.go -nometadata -tags "corecli" -prefix "build/linux" build/linux/core.zip)
-	$(call inDocker,go-bindata -pkg corecli -o pkg/corecli/corecli_darwin.gen.go -nometadata -tags "corecli" -prefix "build/darwin" build/darwin/core.zip)
-	$(call inDocker,go-bindata -pkg corecli -o pkg/corecli/corecli_windows.gen.go -nometadata -tags "corecli" -prefix "build/windows" build/windows/core.zip)
+	$(call inDocker,go-bindata -pkg corecli -o pkg/internal/corecli/corecli_linux.gen.go -nometadata -tags "corecli" -prefix "build/linux" build/linux/core.zip)
+	$(call inDocker,go-bindata -pkg corecli -o pkg/internal/corecli/corecli_darwin.gen.go -nometadata -tags "corecli" -prefix "build/darwin" build/darwin/core.zip)
+	$(call inDocker,go-bindata -pkg corecli -o pkg/internal/corecli/corecli_windows.gen.go -nometadata -tags "corecli" -prefix "build/windows" build/windows/core.zip)
 
 .PHONY: core-download
 core-download:
