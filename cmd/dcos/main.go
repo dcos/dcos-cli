@@ -66,14 +66,14 @@ func logrusLevel(errout io.Writer, verbosity int, logLevel string) logrus.Level 
 	case "debug":
 		fmt.Fprintln(errout, "The --log-level flag is deprecated. Please use the -vv flag.")
 		return logrus.DebugLevel
-	case "info", "warning":
+	case "info":
 		fmt.Fprintln(errout, "The --log-level flag is deprecated. Please use the -v flag.")
 		return logrus.InfoLevel
-	case "error", "critical":
+	case "error", "critical", "warning":
 		fmt.Fprintf(errout, "The --log-level=%s flag is deprecated. It is enabled by default.\n", logLevel)
 	}
-	// Without the verbose flag, default to error level.
-	return logrus.ErrorLevel
+	// Without the verbose flag, default to warning level.
+	return logrus.WarnLevel
 }
 
 // printVersion prints CLI version information.
