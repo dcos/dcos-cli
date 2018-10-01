@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/dcos/dcos-cli/pkg/config"
-	"github.com/dcos/dcos-cli/pkg/corecli"
+	"github.com/dcos/dcos-cli/pkg/internal/corecli"
 	"github.com/dcos/dcos-cli/pkg/cosmos"
 	"github.com/dcos/dcos-cli/pkg/dcos"
 	"github.com/dcos/dcos-cli/pkg/httpclient"

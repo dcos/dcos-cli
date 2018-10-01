@@ -18,7 +18,7 @@ import (
 	"github.com/dcos/dcos-cli/pkg/cmd/completion"
 	"github.com/dcos/dcos-cli/pkg/cmd/config"
 	plugincmd "github.com/dcos/dcos-cli/pkg/cmd/plugin"
-	"github.com/dcos/dcos-cli/pkg/corecli"
+	"github.com/dcos/dcos-cli/pkg/internal/corecli"
 	"github.com/dcos/dcos-cli/pkg/cosmos"
 	"github.com/dcos/dcos-cli/pkg/plugin"
 	"github.com/spf13/afero"
@@ -108,7 +108,8 @@ func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
 			// We don't support global plugins right now so no plugin should be run without
 			// a cluster.
 			// This helps with the tempCore hack we're doing above to make it look like the
-			// CLI has all the commands normally available when attached to a cluster.
+			// CLI has all the commands normally available when attached to a cluster but without
+			// letting you actually run the commands until you've attached to a cluster.
 			_, err := ctx.Cluster()
 			if err != nil {
 				ctx.Logger().Error("Error: no cluster is attached")
