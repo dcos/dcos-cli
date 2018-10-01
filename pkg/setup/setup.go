@@ -85,7 +85,6 @@ func (s *Setup) Configure(flags *Flags, clusterURL string, attach bool) (*config
 	httpOpts := []httpclient.Option{
 		httpclient.Timeout(5 * time.Second),
 		httpclient.Logger(s.logger),
-		httpclient.NoFollow(),
 	}
 
 	// Create the TLS configuration if it's an HTTPS URL.
@@ -95,6 +94,16 @@ func (s *Setup) Configure(flags *Flags, clusterURL string, attach bool) (*config
 			return nil, err
 		}
 		httpOpts = append(httpOpts, httpclient.TLS(tlsConfig))
+	}
+
+	// Make sure we follow redirects.
+	canonicalClusterURL, err := s.detectCanonicalClusterURL(cluster.URL(), httpOpts)
+	if err != nil {
+		return nil, err
+	}
+	if canonicalClusterURL != cluster.URL() {
+		s.logger.Warnf("Continuing cluster setup with: %s", canonicalClusterURL)
+		cluster.SetURL(canonicalClusterURL)
 	}
 
 	// Login to get the ACS token, unless it is already present as an env var.
@@ -151,6 +160,25 @@ func (s *Setup) Configure(flags *Flags, clusterURL string, attach bool) (*config
 
 	s.logger.Infof("%s is now setup", clusterURL)
 	return cluster, nil
+}
+
+// detectCanonicalClusterURL returns the URL with the response of the HEAD request.
+func (s *Setup) detectCanonicalClusterURL(clusterURL string, httpOpts []httpclient.Option) (string, error) {
+	httpClient := httpclient.New(clusterURL, httpOpts...)
+	req, err := httpClient.NewRequest("HEAD", "/", nil)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	if resp.StatusCode == 200 {
+		return strings.TrimRight(resp.Request.URL.String(), "/"), nil
+	}
+	return "", fmt.Errorf("couldn't detect a canonical cluster URL")
 }
 
 // configureTLS creates the TLS configuration for a given cluster URL and set of flags.
