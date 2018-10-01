@@ -46,7 +46,6 @@ func extractPlugin(fs afero.Fs) (string, error) {
 		return "", err
 	}
 
-	// Write out the data into a temp directory so that it's in the real filesystem for buildPlugin
 	pluginFile, err := afero.TempFile(fs, "/", "dcos-core-cli.zip")
 	if err != nil {
 		return "", err
