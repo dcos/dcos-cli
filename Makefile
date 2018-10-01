@@ -31,7 +31,7 @@ core-download:
 	wget https://downloads.dcos.io/cli/plugins/dcos-core-cli/1.12/windows/x86-64/dcos-core-cli.zip -O build/windows/core.zip
 
 .PHONY: install
-install: generate
+install:
 	go install ./cmd/dcos
 
 .PHONY: test
