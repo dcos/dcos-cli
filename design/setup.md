@@ -115,9 +115,6 @@ These plugins download URLs are retrieved through Cosmos, where they are registe
 The [core plugin](https://github.com/dcos/dcos-core-cli) contains subcommands such as marathon, job, node,
 package, service, task.
 
-When the core plugin can't be installed (eg. insufficient Cosmos permission or air-gapped environment),
-it then falls back to installing it from the DC/OS CLI binary itself, which bundles a core plugin.
-
 ### dcos-enterprise-cli
 
 The [enterprise plugin](https://github.com/mesosphere/dcos-enterprise-cli) gets installed when an EE
@@ -126,5 +123,4 @@ cluster is detected.
 This is determined through the [DC/OS variant](https://jira.mesosphere.com/browse/DCOS_OSS-2283) field
 (new in 1.12). For previous versions of DC/OS we won’t try to detect open / enterprise as it’d involve
 some hacks, but rather display a message saying “Please run “dcos package install dcos-enterprise-cli” if
-you use a DC/OS Enterprise cluster”. This message would also get displayed when the enterprise plugin
-installation fails, in that the process would still exit with a 0 status code as it's not a critical error.
+you use a DC/OS Enterprise cluster”.
