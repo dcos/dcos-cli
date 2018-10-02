@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/dcos/dcos-cli/pkg/config"
+	"github.com/dcos/dcos-cli/pkg/internal/corecli"
 	"github.com/dcos/dcos-cli/pkg/cosmos"
 	"github.com/dcos/dcos-cli/pkg/dcos"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
@@ -431,7 +432,7 @@ Do you trust it? [y/n] `
 // Though a user could install the core plugin manually, this will prevent usability regressions until
 // other features of DC/OS are there to allow the normal path to handle all cases.
 func (s *Setup) installBundledPlugin() error {
-	pluginData, err := Asset("core.zip")
+	pluginData, err := corecli.Asset("core.zip")
 	if err != nil {
 		return err
 	}
