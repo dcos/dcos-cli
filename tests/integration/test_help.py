@@ -17,8 +17,20 @@ Commands:
       Manage the DC/OS configuration file
   help
       Help about any command
+  job
+      Deploy and manage jobs in DC/OS
+  marathon
+      Deploy and manage applications to DC/OS
+  node
+      View DC/OS node information
+  package
+      Install and manage DC/OS software packages
   plugin
       Manage CLI plugins
+  service
+      Manage DC/OS services
+  task
+      Manage DC/OS tasks
 
 Options:
   --version
