@@ -87,23 +87,26 @@ func (s *Setup) Configure(flags *Flags, clusterURL string, attach bool) (*config
 		httpclient.Logger(s.logger),
 	}
 
-	// Create the TLS configuration if it's an HTTPS URL.
-	if strings.HasPrefix(cluster.URL(), "https://") {
-		tlsConfig, err := s.configureTLS(cluster.URL(), httpOpts, flags)
-		if err != nil {
-			return nil, err
+	for i := 0; i < 2 ; i++ {
+		// Make sure we follow redirects.
+		canonicalClusterURL, err := s.detectCanonicalClusterURL(cluster.URL(), httpOpts)
+		if err == nil {
+			if canonicalClusterURL != cluster.URL() {
+				s.logger.Warnf("Continuing cluster setup with: %s", canonicalClusterURL)
+				cluster.SetURL(canonicalClusterURL)
+			}
+			break
 		}
-		httpOpts = append(httpOpts, httpclient.TLS(tlsConfig))
-	}
+		if s.needsDCOSCABundle(err) {
+			tlsConfig, err := s.configureTLS(cluster.URL(), httpOpts, flags)
+			if err != nil {
+				return nil, err
+			}
+			httpOpts = append(httpOpts, httpclient.TLS(tlsConfig))
+			continue
+		}
 
-	// Make sure we follow redirects.
-	canonicalClusterURL, err := s.detectCanonicalClusterURL(cluster.URL(), httpOpts)
-	if err != nil {
 		return nil, err
-	}
-	if canonicalClusterURL != cluster.URL() {
-		s.logger.Warnf("Continuing cluster setup with: %s", canonicalClusterURL)
-		cluster.SetURL(canonicalClusterURL)
 	}
 
 	// Login to get the ACS token, unless it is already present as an env var.
@@ -190,15 +193,10 @@ func (s *Setup) configureTLS(clusterURL string, httpOpts []httpclient.Option, fl
 
 	// If no custom CA bundle is explicitly provided, download the cluster's CA bundle.
 	if len(flags.caBundle) == 0 {
-		needsDCOSCABundle, err := s.needsDCOSCABundle(clusterURL, httpOpts)
+		var err error
+		flags.caBundle, err = s.downloadDCOSCABundle(clusterURL, httpOpts, !flags.noCheck)
 		if err != nil {
 			return nil, err
-		}
-		if needsDCOSCABundle {
-			flags.caBundle, err = s.downloadDCOSCABundle(clusterURL, httpOpts, !flags.noCheck)
-			if err != nil {
-				return nil, err
-			}
 		}
 	}
 
@@ -220,27 +218,18 @@ func (s *Setup) configureTLS(clusterURL string, httpOpts []httpclient.Option, fl
 // is needed for setups where there is a load balancer serving proper certificates
 // in front of the cluster. In such cases the CLI shouldn't download the DC/OS CA
 // bundle and use it, as this would break the TLS setup.
-func (s *Setup) needsDCOSCABundle(clusterURL string, httpOpts []httpclient.Option) (bool, error) {
-	httpClient := httpclient.New(clusterURL, httpOpts...)
-	req, err := httpClient.NewRequest("HEAD", "/", nil)
-	if err != nil {
-		return false, err
-	}
-
-	resp, err := httpClient.Do(req)
+func (s *Setup) needsDCOSCABundle(err error) bool {
 	if err != nil {
 		urlErr, ok := err.(*url.Error)
 		if !ok {
-			return false, err
+			return false
 		}
 		if _, ok := urlErr.Err.(x509.UnknownAuthorityError); !ok {
-			return false, urlErr
+			return false
 		}
-		return true, nil
+		return true
 	}
-
-	resp.Body.Close()
-	return false, nil
+	return false
 }
 
 // downloadDCOSCABundle downloads the cluster certificate authority at "/ca/dcos-ca.crt".
