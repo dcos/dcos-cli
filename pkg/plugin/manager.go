@@ -144,6 +144,20 @@ func (m *Manager) Plugins() (plugins []*Plugin) {
 	return plugins
 }
 
+// Plugin finds a plugin identified by a given name.
+func (m *Manager) Plugin(name string) (*Plugin, error) {
+	pluginDirs, err := afero.ReadDir(m.fs, m.pluginsDir())
+	if err != nil {
+		return nil, err
+	}
+	for _, pluginDir := range pluginDirs {
+		if pluginDir.IsDir() && pluginDir.Name() == name {
+			return m.loadPlugin(pluginDir.Name())
+		}
+	}
+	return nil, fmt.Errorf("unknown plugin %s", name)
+}
+
 // loadPlugin loads a plugin based on its name.
 func (m *Manager) loadPlugin(name string) (*Plugin, error) {
 	m.logger.Infof("Loading plugin '%s'...", name)
