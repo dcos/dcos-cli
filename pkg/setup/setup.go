@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/dcos/dcos-cli/pkg/config"
-	"github.com/dcos/dcos-cli/pkg/internal/corecli"
 	"github.com/dcos/dcos-cli/pkg/cosmos"
 	"github.com/dcos/dcos-cli/pkg/dcos"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
@@ -151,8 +150,9 @@ func (s *Setup) Configure(flags *Flags, clusterURL string, attach bool) (*config
 		s.logger.Infof("You are now attached to cluster %s", cluster.ID())
 	}
 
-	// Install default plugins (dcos-core-cli and dcos-enterprise-cli).
-	if !flags.noPlugin {
+	// Install default plugins (dcos-core-cli and dcos-enterprise-cli) when the env var is present.
+	installPlugins, _ := s.envLookup("DCOS_CLI_EXPERIMENTAL_AUTOINSTALL_PLUGINS")
+	if installPlugins != "" {
 		s.pluginManager.SetCluster(cluster)
 		if err = s.installDefaultPlugins(httpClient); err != nil {
 			return nil, err
@@ -331,21 +331,9 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 	errEnterprise := <-enterpriseInstallErr
 
 	if errCore != nil {
-		// Check that the version is 1.12 and if so, try to install the bundled plugin.
-		if versionNumber(version.Version) != "1.12" {
-			return fmt.Errorf("unable to install DC/OS core CLI plugin: %s", errCore)
-		}
-		err = s.installBundledPlugin()
-		if err != nil {
-			return fmt.Errorf("unable to install DC/OS core CLI plugin: %s", err)
-		}
+		return errCore
 	}
-
-	if errEnterprise != nil {
-		// We don't error-out as failing to install the EE plugin isn't critical to the operation.
-		s.logger.Error(`In order to install the "dcos-enterprise-cli" plugin, make sure your user has the "dcos:adminrouter:package" permission and run "dcos package install dcos-enterprise-cli".`)
-	}
-	return nil
+	return errEnterprise
 }
 
 // installPlugin installs a plugin by its name. It gets the plugin's download URL through Cosmos.
@@ -420,43 +408,4 @@ Do you trust it? [y/n] `
 		cert.NotAfter,
 		fingerprintBuf.String(),
 	), "")
-}
-
-// installBundledPlugin installs the default core plugin bundled with the wrapper CLI.
-//
-// This will occur for two primary reasons:
-// 1. The cluster and the computer running setup are airgapped. By default the resources describing
-// where the core plugins are point to S3 which will be unreachable in an airgapped environment.
-// 2. The user running setup does not have permission to access Cosmos (dcos:adminrouter:package).
-//
-// Though a user could install the core plugin manually, this will prevent usability regressions until
-// other features of DC/OS are there to allow the normal path to handle all cases.
-func (s *Setup) installBundledPlugin() error {
-	pluginData, err := corecli.Asset("core.zip")
-	if err != nil {
-		return err
-	}
-
-	// Write out the data into a temp directory so that it's in the real filesystem for buildPlugin
-	pluginFile, err := afero.TempFile(s.fs, os.TempDir(), "dcos-core-cli.zip")
-	if err != nil {
-		return err
-	}
-	defer s.fs.Remove(pluginFile.Name())
-	defer pluginFile.Close()
-	_, err = pluginFile.Write(pluginData)
-	if err != nil {
-		return err
-	}
-
-	return s.pluginManager.Install(pluginFile.Name(), &plugin.InstallOpts{
-		Update: true,
-	})
-}
-
-// versionNumber takes in a version string and strips pulls out the number portion (strips off trailing -dev)
-func versionNumber(version string) string {
-	versionMatcher := regexp.MustCompile(`^(1.\d+)\D*`)
-	v := versionMatcher.FindStringSubmatch(version)
-	return v[1]
 }
