@@ -16,10 +16,11 @@ import (
 	"github.com/dcos/dcos-cli/pkg/cmd/auth"
 	clustercmd "github.com/dcos/dcos-cli/pkg/cmd/cluster"
 	"github.com/dcos/dcos-cli/pkg/cmd/completion"
-	"github.com/dcos/dcos-cli/pkg/cmd/config"
+	configcmd "github.com/dcos/dcos-cli/pkg/cmd/config"
 	plugincmd "github.com/dcos/dcos-cli/pkg/cmd/plugin"
-	"github.com/dcos/dcos-cli/pkg/internal/corecli"
+	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/cosmos"
+	"github.com/dcos/dcos-cli/pkg/internal/corecli"
 	"github.com/dcos/dcos-cli/pkg/plugin"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -38,30 +39,33 @@ func NewDCOSCommand(ctx api.Context) *cobra.Command {
 
 	cmd.AddCommand(
 		auth.NewCommand(ctx),
-		config.NewCommand(ctx),
+		configcmd.NewCommand(ctx),
 		clustercmd.NewCommand(ctx),
 		plugincmd.NewCommand(ctx),
 		completion.NewCommand(ctx),
 	)
 
 	// If a cluster is attached, we get its plugins.
+	var hasCorePlugin bool
 	if cluster, err := ctx.Cluster(); err == nil {
 		pluginManager := ctx.PluginManager(cluster)
-
 		for _, plugin := range pluginManager.Plugins() {
+			if plugin.Name == "dcos-core-cli" {
+				hasCorePlugin = true
+			}
 			for _, pluginCmd := range plugin.Commands {
-				cmd.AddCommand(newPluginCommand(ctx, pluginCmd))
+				cmd.AddCommand(newPluginCommand(ctx, pluginCmd, false))
 			}
 		}
-	} else {
-		// If a cluster is not attached, we load the bundled CLI data from an in-memory FS.
-		// This is only for the help message so if something goes wrong it's better not to fail
-		// and have the core commands missing from help.
+	}
 
-		tempCore, err := corecli.TempPlugin()
+	// When the dcos-core-cli plugin is not installed, we add dummy core commands
+	// based on data from the bundled core plugin. This will populate the help menu.
+	if !hasCorePlugin {
+		corePlugin, err := corecli.TempPlugin()
 		if err == nil {
-			for _, pluginCmd := range tempCore.Commands {
-				cmd.AddCommand(newPluginCommand(ctx, pluginCmd))
+			for _, pluginCmd := range corePlugin.Commands {
+				cmd.AddCommand(newPluginCommand(ctx, pluginCmd, true))
 			}
 		}
 	}
@@ -97,7 +101,7 @@ Use "{{.CommandPath}} [command] --help" for more information about a command.{{e
 	return cmd
 }
 
-func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
+func newPluginCommand(ctx api.Context, cmd plugin.Command, isDummyCoreCommand bool) *cobra.Command {
 	return &cobra.Command{
 		Use:                cmd.Name,
 		Short:              cmd.Description,
@@ -105,16 +109,27 @@ func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
 		SilenceErrors:      true, // Silences error message if command returns an exit code.
 		SilenceUsage:       true, // Silences usage information from the wrapper CLI on error.
 		RunE: func(_ *cobra.Command, _ []string) error {
-			// We don't support global plugins right now so no plugin should be run without
-			// a cluster.
-			// This helps with the tempCore hack we're doing above to make it look like the
-			// CLI has all the commands normally available when attached to a cluster but without
-			// letting you actually run the commands until you've attached to a cluster.
-			_, err := ctx.Cluster()
+			// We don't support global plugins right now so no plugin should be run without a cluster.
+			cluster, err := ctx.Cluster()
 			if err != nil {
 				ctx.Logger().Error("Error: no cluster is attached")
 				return err
 			}
+
+			// Extract the bundled core plugin when the user is trying to run a dummy core command.
+			if isDummyCoreCommand {
+				corePlugin, err := extractCorePlugin(ctx, cluster)
+				if err != nil {
+					return err
+				}
+				for _, coreCmd := range corePlugin.Commands {
+					if coreCmd.Name == cmd.Name {
+						cmd = coreCmd
+						break
+					}
+				}
+			}
+
 			// Extract the specific arguments of a command from the context.
 			ctxArgs := ctx.Args()
 			var cmdArgs []string
@@ -154,7 +169,7 @@ func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
 			}
 
 			// Pass cluster specific env variables when a cluster is attached.
-			if cluster, err := ctx.Cluster(); err == nil {
+			if cluster != nil {
 				execCmd.Env = append(execCmd.Env, "DCOS_URL="+cluster.URL())
 				execCmd.Env = append(execCmd.Env, "DCOS_ACS_TOKEN="+cluster.ACSToken())
 
@@ -173,6 +188,18 @@ func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
 			return err
 		},
 	}
+}
+
+// extractCorePlugin extracts the bundled core plugin into the plugins folder.
+func extractCorePlugin(ctx api.Context, cluster *config.Cluster) (*plugin.Plugin, error) {
+	ctx.Logger().Warn(`Extracting "dcos-core-cli"...`)
+
+	pluginManager := ctx.PluginManager(cluster)
+	err := corecli.InstallPlugin(ctx.Fs(), pluginManager)
+	if err != nil {
+		return nil, err
+	}
+	return pluginManager.Plugin("dcos-core-cli")
 }
 
 // updateCorePlugin updates the core CLI plugin.

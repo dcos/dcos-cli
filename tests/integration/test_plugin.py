@@ -128,6 +128,15 @@ def test_plugin_verbosity(default_cluster):
         assert out['env'].get('DCOS_LOG_LEVEL') == fixture['DCOS_LOG_LEVEL']
 
 
+def test_plugin_remove(default_cluster):
+    _install_test_plugin()
+
+    code, out, err = exec_cmd(['dcos', 'plugin', 'remove', 'dcos-test'])
+    assert code == 0
+    assert out == ''
+    assert err == ''
+
+
 def _install_test_plugin():
     code, out, err = exec_cmd(['dcos', 'plugin', 'add', _test_plugin_path()])
     assert code == 0
