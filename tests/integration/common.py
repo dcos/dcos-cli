@@ -88,6 +88,8 @@ def setup_cluster(**kwargs):
 
 
 def _setup_cluster(name='DEFAULT', with_plugins=False, scheme='http', insecure=False):
+    env = os.environ.copy()
+
     cluster = {
         'variant': os.environ.get('DCOS_TEST_' + name + '_CLUSTER_VARIANT'),
         'username': os.environ.get('DCOS_TEST_' + name + '_CLUSTER_USERNAME'),
@@ -102,8 +104,8 @@ def _setup_cluster(name='DEFAULT', with_plugins=False, scheme='http', insecure=F
         scheme,
         os.environ.get('DCOS_TEST_' + name + '_CLUSTER_HOST'))
 
-    if not with_plugins:
-        cmd += ' --no-plugin'
+    if with_plugins:
+        env['DCOS_CLI_EXPERIMENTAL_AUTOINSTALL_PLUGINS'] = "1"
 
     if scheme == 'https':
         cmd += ' --no-check'
@@ -111,7 +113,7 @@ def _setup_cluster(name='DEFAULT', with_plugins=False, scheme='http', insecure=F
     if insecure:
         cmd += ' --insecure'
 
-    code, _, _ = exec_cmd(cmd.split(' '))
+    code, _, _ = exec_cmd(cmd.split(' '), env=env)
     assert code == 0
 
     code, out, _ = exec_cmd(['dcos', 'cluster', 'list', '--json', '--attached'])

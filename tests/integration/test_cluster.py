@@ -53,9 +53,7 @@ def test_cluster_setup_non_superuser(default_cluster_with_plugins):
                                '--username', username, '--password', password])
     assert code == 0
     assert out == ""
-    assert err == ('In order to install the "dcos-enterprise-cli" plugin, '
-                   'make sure your user has the "dcos:adminrouter:package" '
-                   'permission and run "dcos package install dcos-enterprise-cli".\n')
+    assert err == ""
 
 
 def test_cluster_setup_with_acs_token_env(default_cluster):
