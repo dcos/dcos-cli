@@ -102,7 +102,7 @@ Use "{{.CommandPath}} [command] --help" for more information about a command.{{e
 }
 
 func newPluginCommand(ctx api.Context, cmd plugin.Command, isDummyCoreCommand bool) *cobra.Command {
-	return &cobra.Command{
+	cobraCmd := &cobra.Command{
 		Use:                cmd.Name,
 		Short:              cmd.Description,
 		DisableFlagParsing: true,
@@ -188,6 +188,50 @@ func newPluginCommand(ctx api.Context, cmd plugin.Command, isDummyCoreCommand bo
 			return err
 		},
 	}
+
+	cobraCmd.SetHelpFunc(func(_ *cobra.Command, args []string) {
+		executablePath, err := os.Executable()
+		if err != nil {
+			return
+		}
+
+		helpArgs := []string{cmd.Name, "--help"}
+
+		execCmd := exec.Command(cmd.Path, helpArgs...)
+		execCmd.Stdout = ctx.Out()
+		execCmd.Stderr = ctx.ErrOut()
+		execCmd.Stdin = ctx.Input()
+
+		execCmd.Env = append(os.Environ(), "DCOS_CLI_EXECUTABLE_PATH="+executablePath)
+
+		switch ctx.Logger().Level {
+		case logrus.DebugLevel:
+			execCmd.Env = append(execCmd.Env, "DCOS_VERBOSITY=2", "DCOS_LOG_LEVEL=debug")
+		case logrus.InfoLevel:
+			execCmd.Env = append(execCmd.Env, "DCOS_VERBOSITY=1", "DCOS_LOG_LEVEL=info")
+		}
+
+		// Pass cluster specific env variables when a cluster is attached.
+		if cluster, err := ctx.Cluster(); err == nil {
+			execCmd.Env = append(execCmd.Env, "DCOS_URL="+cluster.URL())
+			execCmd.Env = append(execCmd.Env, "DCOS_ACS_TOKEN="+cluster.ACSToken())
+
+			insecure := cluster.TLS().Insecure || strings.HasPrefix(cluster.URL(), "http://")
+			if insecure {
+				execCmd.Env = append(execCmd.Env, "DCOS_TLS_INSECURE=1")
+			} else if cluster.TLS().RootCAsPath != "" {
+				execCmd.Env = append(execCmd.Env, "DCOS_TLS_CA_PATH="+cluster.TLS().RootCAsPath)
+			}
+		}
+		err = execCmd.Run()
+		if err != nil {
+			// Because we're silencing errors through Cobra, we need to print this separately.
+			ctx.Logger().Debug(err)
+		}
+		return
+
+	})
+	return cobraCmd
 }
 
 // extractCorePlugin extracts the bundled core plugin into the plugins folder.
