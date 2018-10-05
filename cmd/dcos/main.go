@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/dcos/dcos-cli/api"
@@ -62,7 +63,7 @@ func logrusLevel(errout io.Writer, verbosity int, logLevel string) logrus.Level 
 		return logrus.InfoLevel
 	}
 
-	switch logLevel {
+	switch strings.ToLower(logLevel) {
 	case "debug":
 		fmt.Fprintln(errout, "The --log-level flag is deprecated. Please use the -vv flag.")
 		return logrus.DebugLevel
