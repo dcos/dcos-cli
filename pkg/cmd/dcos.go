@@ -165,7 +165,7 @@ func customHelpCommand(ctx api.Context, root *cobra.Command, plugins []*plugin.P
 		Simply type ` + root.Name() + ` help [path to command] for full details.`,
 		DisableFlagParsing: true,
 
-		Run: func(c *cobra.Command, args []string) {
+		RunE: func(c *cobra.Command, args []string) error {
 			cmd, remArgs, e := c.Root().Find(args)
 			if cmd == nil || e != nil {
 				c.Printf("Unknown help topic %#q\n", args)
@@ -174,17 +174,25 @@ func customHelpCommand(ctx api.Context, root *cobra.Command, plugins []*plugin.P
 				for _, p := range plugins {
 					for _, pluginCmd := range p.Commands {
 						if cmd.Name() == pluginCmd.Name {
+							// We don't support global plugins right now so no plugin should be run without a cluster.
+							_, err := ctx.Cluster()
+							if err != nil {
+								ctx.Logger().Error("Error: no cluster is attached")
+								return nil
+							}
+
 							args := []string{pluginCmd.Name}
 							args = append(args, remArgs...)
 							args = append(args, "--help")
 							_ = invokePlugin(ctx, pluginCmd, args)
-							return
+							return nil
 						}
 					}
 				}
 				cmd.InitDefaultHelpFlag() // make possible 'help' flag to be shown
 				cmd.Help()
 			}
+			return nil
 		},
 	}
 
@@ -236,18 +244,8 @@ func updateCorePlugin(ctx api.Context) error {
 	})
 }
 
+// invokePlugin calls the binary of a plugin, passing in the arguments it's been given.
 func invokePlugin(ctx api.Context, cmd plugin.Command, args []string) error {
-	// We don't support global plugins right now so no plugin should be run without
-	// a cluster.
-	// This helps with the tempCore hack we're doing above to make it look like the
-	// CLI has all the commands normally available when attached to a cluster but without
-	// letting you actually run the commands until you've attached to a cluster.
-	_, err := ctx.Cluster()
-	if err != nil {
-		ctx.Logger().Error("Error: no cluster is attached")
-		return err
-	}
-
 	executablePath, err := os.Executable()
 	if err != nil {
 		return err
