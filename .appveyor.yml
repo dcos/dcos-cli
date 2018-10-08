@@ -4,7 +4,7 @@ install:
 
 build: off
 
-clone_folder: c:\gopath\src\github.com\dcos\dcos-cli
+clone_folder: c:\dcos-cli
 
 environment:
   GOPATH: c:\gopath
@@ -14,5 +14,6 @@ environment:
 stack: go 1.11
 
 test_script:
+  - SET GO111MODULE=on
   - mingw32-make windows
   - mingw32-make test

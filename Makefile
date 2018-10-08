@@ -12,9 +12,9 @@ default:
 
 .PHONY: darwin linux windows
 darwin linux windows: docker-image
-	$(call inDocker,env GOOS=$(@) go build \
+	$(call inDocker,env GOOS=$(@) GO111MODULE=on go build \
 		-ldflags '-X $(PKG)/pkg/cli/version.version=$(VERSION)' \
-		-tags '$(GO_BUILD_TAGS)' \
+		-tags '$(GO_BUILD_TAGS)' -mod=vendor \
 		-o build/$(@)/dcos$($(@)_EXE) ./cmd/dcos)
 
 .PHONY: core-bundle
