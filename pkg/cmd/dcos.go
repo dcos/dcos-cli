@@ -163,8 +163,6 @@ func customHelpCommand(ctx api.Context, root *cobra.Command, plugins []*plugin.P
 		Short: "Help about any command",
 		Long: `Help provides help for any command in the application.
 		Simply type ` + root.Name() + ` help [path to command] for full details.`,
-		DisableFlagParsing: true,
-
 		RunE: func(c *cobra.Command, args []string) error {
 			cmd, remArgs, e := c.Root().Find(args)
 			if cmd == nil || e != nil {
@@ -184,7 +182,7 @@ func customHelpCommand(ctx api.Context, root *cobra.Command, plugins []*plugin.P
 							args := []string{pluginCmd.Name}
 							args = append(args, remArgs...)
 							args = append(args, "--help")
-							_ = invokePlugin(ctx, pluginCmd, args)
+							invokePlugin(ctx, pluginCmd, args)
 							return nil
 						}
 					}
