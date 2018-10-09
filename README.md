@@ -96,15 +96,15 @@ which is triggered automatically for new tags and on pushes to master.
 
 The binaries built from the master branch are continuously published to:
 
-   - https://downloads.dcos.io/binaries/cli/linux/x86-64/latest/dcos
-   - https://downloads.dcos.io/binaries/cli/darwin/x86-64/latest/dcos
-   - https://downloads.dcos.io/binaries/cli/windows/x86-64/latest/dcos.exe
+   - https://downloads.dcos.io/cli/releases/linux/x86-64/testing/master/dcos
+   - https://downloads.dcos.io/cli/releases/darwin/x86-64/testing/master/dcos
+   - https://downloads.dcos.io/cli/releases/windows/x86-64/testing/master/dcos.exe
 
 Tags are released to:
 
-   - https://downloads.dcos.io/binaries/cli/linux/x86-64/{tag}/dcos
-   - https://downloads.dcos.io/binaries/cli/darwin/x86-64/{tag}/dcos
-   - https://downloads.dcos.io/binaries/cli/windows/x86-64/{tag}/dcos.exe
+   - https://downloads.dcos.io/cli/releases/linux/x86-64/{tag}/dcos
+   - https://downloads.dcos.io/cli/releases/darwin/x86-64/{tag}/dcos
+   - https://downloads.dcos.io/cli/releases/windows/x86-64/{tag}/dcos.exe
 
 ## Contributing
 

@@ -7,15 +7,23 @@ import sys
 import boto3
 import requests
 
-version = os.environ.get("TAG_NAME") or "latest"
+version = os.environ.get("TAG_NAME") or "testing/master"
 
 s3_client = boto3.resource('s3', region_name='us-west-2').meta.client
 bucket = "downloads.dcos.io"
 artifacts = [
-    ("linux/dcos", "binaries/cli/linux/x86-64/{}/dcos".format(version)),
-    ("darwin/dcos", "binaries/cli/darwin/x86-64/{}/dcos".format(version)),
-    ("windows/dcos.exe", "binaries/cli/windows/x86-64/{}/dcos.exe".format(version))
+    ("linux/dcos", "cli/releases/linux/x86-64/{}/dcos".format(version)),
+    ("darwin/dcos", "cli/releases/darwin/x86-64/{}/dcos".format(version)),
+    ("windows/dcos.exe", "cli/releases/windows/x86-64/{}/dcos.exe".format(version))
 ]
+
+if version != "testing/master":
+    # For tag releases, still push to the legacy location.
+    artifacts.extend([
+        ("linux/dcos", "binaries/cli/linux/x86-64/{}/dcos".format(version)),
+        ("darwin/dcos", "binaries/cli/darwin/x86-64/{}/dcos".format(version)),
+        ("windows/dcos.exe", "binaries/cli/windows/x86-64/{}/dcos.exe".format(version))
+    ])
 
 # TODO: this should probably passed as argument.
 build_path = os.path.dirname(os.path.realpath(__file__)) + "/../build"
@@ -24,7 +32,7 @@ for f, bucket_key in artifacts:
     s3_client.upload_file(build_path + "/" + f, bucket, bucket_key)
 
 slack_token = os.environ.get("SLACK_API_TOKEN")
-if not slack_token or version == "latest":
+if not slack_token or version == "testing/master":
     sys.exit(0)
 
 attachment_text = version + " has been released!"
