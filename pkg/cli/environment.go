@@ -3,6 +3,7 @@ package cli
 import (
 	"io"
 	"os"
+	"os/user"
 
 	"github.com/spf13/afero"
 )
@@ -26,6 +27,9 @@ type Environment struct {
 	// EnvLookup lookups environment variables.
 	EnvLookup func(key string) (string, bool)
 
+	// UserLookup returns the current system user.
+	UserLookup func() (*user.User, error)
+
 	// Fs is an abstraction for the filesystem.
 	Fs afero.Fs
 }
@@ -33,11 +37,12 @@ type Environment struct {
 // NewOsEnvironment returns an environment backed by the os package.
 func NewOsEnvironment() *Environment {
 	return &Environment{
-		Args:      os.Args,
-		Input:     os.Stdin,
-		Out:       os.Stdout,
-		ErrOut:    os.Stderr,
-		EnvLookup: os.LookupEnv,
-		Fs:        afero.NewOsFs(),
+		Args:       os.Args,
+		Input:      os.Stdin,
+		Out:        os.Stdout,
+		ErrOut:     os.Stderr,
+		EnvLookup:  os.LookupEnv,
+		UserLookup: user.Current,
+		Fs:         afero.NewOsFs(),
 	}
 }

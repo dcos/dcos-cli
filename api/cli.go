@@ -2,6 +2,7 @@ package api
 
 import (
 	"io"
+	"os/user"
 
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
@@ -32,6 +33,9 @@ type Context interface {
 
 	// EnvLookup lookups environment variables.
 	EnvLookup(key string) (string, bool)
+
+	// User returns the current system user.
+	User() (*user.User, error)
 
 	// Fs returns the filesystem.
 	Fs() afero.Fs
