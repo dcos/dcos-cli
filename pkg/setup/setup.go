@@ -80,15 +80,24 @@ func (s *Setup) Configure(flags *Flags, clusterURL string, attach bool) (*config
 	// Create a Cluster and an HTTP client with the few information already available.
 	cluster := config.NewCluster(nil)
 	cluster.SetURL(clusterURL)
-	cluster.SetTLS(config.TLS{Insecure: flags.insecure})
 
 	httpOpts := []httpclient.Option{
 		httpclient.Timeout(5 * time.Second),
 		httpclient.Logger(s.logger),
 	}
 
-	for i := 0; i < 2 ; i++ {
-		// Make sure we follow redirects.
+	for i := 0; i < 2; i++ {
+		// When using an HTTPS URL, configure TLS for the HTTP client accordingly.
+		if strings.HasPrefix(clusterURL, "https://") {
+			tlsConfig, err := s.configureTLS(httpOpts, flags)
+			if err != nil {
+				return nil, err
+			}
+			cluster.SetTLS(config.TLS{Insecure: tlsConfig.InsecureSkipVerify})
+			httpOpts = append(httpOpts, httpclient.TLS(tlsConfig))
+		}
+
+		// Make sure we continue the setup flow with the canonical cluster URL.
 		canonicalClusterURL, err := s.detectCanonicalClusterURL(cluster.URL(), httpOpts)
 		if err == nil {
 			if canonicalClusterURL != cluster.URL() {
@@ -97,15 +106,15 @@ func (s *Setup) Configure(flags *Flags, clusterURL string, attach bool) (*config
 			}
 			break
 		}
-		if s.needsDCOSCABundle(err) {
-			tlsConfig, err := s.configureTLS(cluster.URL(), httpOpts, flags)
+
+		// Download the DC/OS CA bundle when getting an unknown authority error.
+		if s.isX509UnknownAuthorityError(err) && len(flags.caBundle) == 0 {
+			flags.caBundle, err = s.downloadDCOSCABundle(clusterURL, httpOpts)
 			if err != nil {
 				return nil, err
 			}
-			httpOpts = append(httpOpts, httpclient.TLS(tlsConfig))
 			continue
 		}
-
 		return nil, err
 	}
 
@@ -185,24 +194,16 @@ func (s *Setup) detectCanonicalClusterURL(clusterURL string, httpOpts []httpclie
 	return "", fmt.Errorf("couldn't detect a canonical cluster URL")
 }
 
-// configureTLS creates the TLS configuration for a given cluster URL and set of flags.
-func (s *Setup) configureTLS(clusterURL string, httpOpts []httpclient.Option, flags *Flags) (*tls.Config, error) {
+// configureTLS creates the TLS configuration for a given set of flags.
+func (s *Setup) configureTLS(httpOpts []httpclient.Option, flags *Flags) (*tls.Config, error) {
 	// Return early with an insecure TLS config when `--insecure` is passed.
 	if flags.insecure {
 		return &tls.Config{InsecureSkipVerify: true}, nil
 	}
 
-	// If no custom CA bundle is explicitly provided, download the cluster's CA bundle.
-	if len(flags.caBundle) == 0 {
-		var err error
-		flags.caBundle, err = s.downloadDCOSCABundle(clusterURL, httpOpts, !flags.noCheck)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	// Create a cert pool from the CA bundle PEM. The user is prompted for manual
-	// verification of the certificate authority, unless `--no-check` is passed.
+	// verification of the certificate authority, unless `--no-check` or `--ca-bundle`
+	// were explicitly passed.
 	var certPool *x509.CertPool
 	if len(flags.caBundle) > 0 {
 		var err error
@@ -214,27 +215,18 @@ func (s *Setup) configureTLS(clusterURL string, httpOpts []httpclient.Option, fl
 	return &tls.Config{RootCAs: certPool}, nil
 }
 
-// needsDCOSCABundle checks whether or not the cluster certificate is already trusted
-// by the sytem. This is done by making an HTTPS request to the cluster. This check
-// is needed for setups where there is a load balancer serving proper certificates
-// in front of the cluster. In such cases the CLI shouldn't download the DC/OS CA
-// bundle and use it, as this would break the TLS setup.
-func (s *Setup) needsDCOSCABundle(err error) bool {
-	if err != nil {
-		urlErr, ok := err.(*url.Error)
-		if !ok {
-			return false
-		}
-		if _, ok := urlErr.Err.(x509.UnknownAuthorityError); !ok {
-			return false
-		}
-		return true
+// isX509UnknownAuthorityError checks whether an error is of type x509.UnknownAuthorityError.
+func (s *Setup) isX509UnknownAuthorityError(err error) bool {
+	urlErr, ok := err.(*url.Error)
+	if !ok {
+		return false
 	}
-	return false
+	_, ok = urlErr.Err.(x509.UnknownAuthorityError)
+	return ok
 }
 
 // downloadDCOSCABundle downloads the cluster certificate authority at "/ca/dcos-ca.crt".
-func (s *Setup) downloadDCOSCABundle(clusterURL string, httpOpts []httpclient.Option, prompt bool) ([]byte, error) {
+func (s *Setup) downloadDCOSCABundle(clusterURL string, httpOpts []httpclient.Option) ([]byte, error) {
 	insecureHTTPClient := httpclient.New(clusterURL, append(httpOpts, httpclient.TLS(&tls.Config{
 		InsecureSkipVerify: true,
 	}))...)
