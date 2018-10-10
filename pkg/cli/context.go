@@ -3,6 +3,7 @@ package cli
 import (
 	"crypto/tls"
 	"io"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -15,7 +16,6 @@ import (
 	"github.com/dcos/dcos-cli/pkg/plugin"
 	"github.com/dcos/dcos-cli/pkg/prompt"
 	"github.com/dcos/dcos-cli/pkg/setup"
-	"github.com/mitchellh/go-homedir"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
@@ -58,6 +58,11 @@ func (ctx *Context) EnvLookup(key string) (string, bool) {
 	return ctx.env.EnvLookup(key)
 }
 
+// User returns the current system user.
+func (ctx *Context) User() (*user.User, error) {
+	return ctx.env.UserLookup()
+}
+
 // Fs returns the filesystem.
 func (ctx *Context) Fs() afero.Fs {
 	return ctx.env.Fs
@@ -93,18 +98,13 @@ func (ctx *Context) DCOSDir() string {
 	if dcosDir, ok := ctx.env.EnvLookup("DCOS_DIR"); ok {
 		return dcosDir
 	}
-
-	// We use github.com/mitchellh/go-homedir as os/user doesn't work well with cross-compilation.
-	// In the future this could instead be done through the "osusergo" build tag (added in Go 1.11).
-	// See https://tip.golang.org/doc/go1.11#os/user.
-	homeDir, err := homedir.Dir()
-	if err != nil {
-		// Not being able to detect the homedir is not critical. While it is
-		// very unlikely to happen, we can fallback to the current directory.
-		ctx.Logger().Debugf("Couldn't detect the home directory: %s", err)
-		return ""
+	if usr, err := ctx.env.UserLookup(); err == nil {
+		return filepath.Join(usr.HomeDir, ".dcos")
 	}
-	return filepath.Join(homeDir, ".dcos")
+
+	// Not being able to get the current user is not critical. While it is
+	// very unlikely to happen, we can fallback to the current directory.
+	return ""
 }
 
 // ConfigManager returns the ConfigManager for the context.

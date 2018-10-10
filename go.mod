@@ -5,7 +5,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/mattn/go-runewidth v0.0.2 // indirect
-	github.com/mitchellh/go-homedir v0.0.0-20180801233206-58046073cbff
+	github.com/mitchellh/go-homedir v0.0.0-20180801233206-58046073cbff // indirect
 	github.com/olekukonko/tablewriter v0.0.0-20180130162743-b8a9be070da4
 	github.com/pelletier/go-toml v1.1.0
 	github.com/pmezard/go-difflib v1.0.0 // indirect

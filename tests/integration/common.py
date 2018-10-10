@@ -116,6 +116,8 @@ def _setup_cluster(name='DEFAULT', with_plugins=False, scheme='http', insecure=F
     code, _, _ = exec_cmd(cmd.split(' '), env=env)
     assert code == 0
 
+    exec_cmd(['dcos', '-vv', 'plugin', 'list', '--completion-dirs'])
+
     code, out, _ = exec_cmd(['dcos', 'cluster', 'list', '--json', '--attached'])
     clusters = json.loads(out)
     assert len(clusters) == 1

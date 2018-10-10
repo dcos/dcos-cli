@@ -3,9 +3,11 @@ package mock
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os/user"
 
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/cluster/linker"
@@ -65,6 +67,9 @@ func NewEnvironment() *cli.Environment {
 		Fs:     afero.NewMemMapFs(),
 		EnvLookup: func(key string) (string, bool) {
 			return "", false
+		},
+		UserLookup: func() (*user.User, error) {
+			return nil, errors.New("no user")
 		},
 	}
 }
