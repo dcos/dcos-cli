@@ -1,7 +1,7 @@
 import json
 import os
 
-from .common import exec_cmd, default_cluster, default_cluster_with_plugins  # noqa: F401
+from .common import setup_cluster, exec_cmd, default_cluster, default_cluster_with_plugins  # noqa: F401
 
 
 def test_cluster_list(default_cluster):
@@ -68,3 +68,10 @@ def test_cluster_setup_with_acs_token_env(default_cluster):
     code, out, _ = exec_cmd(['dcos', 'config', 'show', 'core.dcos_acs_token'])
     assert code == 0
     assert out.rstrip() == env['DCOS_CLUSTER_SETUP_ACS_TOKEN']
+
+
+def test_cluster_setup_insecure():
+    with setup_cluster(scheme='https', insecure=True):
+        code, out, _ = exec_cmd(['dcos', 'config', 'show', 'core.ssl_verify'])
+        assert code == 0
+        assert out.rstrip() == "false"
