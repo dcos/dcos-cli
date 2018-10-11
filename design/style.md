@@ -128,6 +128,8 @@ Options:
     …
 ```
 
+Descriptions for commands or options should be an imperative and start with an upper case.
+
 ### Error Messages
 
 In general on success there is no output, this follows a UNIX good practice ("No News Is Good News").
