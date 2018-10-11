@@ -31,4 +31,8 @@ doc-docker: env-docker
 test-docker: env-docker
 	@bash bin/docker.sh test
 
+.PHONY: plugin
+plugin:
+	@python3 scripts/plugin/package_plugin.py
+
 .PHONY: env env-docker
