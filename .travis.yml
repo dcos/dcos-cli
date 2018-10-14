@@ -12,7 +12,7 @@ env:
  - NO_DOCKER=1 GO111MODULE=on
 
 before_install:
- - env GO111MODULE=off go get -u github.com/golang/lint/golint
+ - env GO111MODULE=off go get -u golang.org/x/lint/golint
 
 script:
  - make

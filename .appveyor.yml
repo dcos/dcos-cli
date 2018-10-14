@@ -1,6 +1,6 @@
 install:
   - SET PATH=C:\msys64\mingw64\bin;c:\gopath\bin;%PATH%
-  - go get -u github.com/golang/lint/golint
+  - go get -u golang.org/x/lint/golint
 
 build: off
 
