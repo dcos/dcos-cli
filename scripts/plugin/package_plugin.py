@@ -1,6 +1,8 @@
 
 import shutil
 import os
+import sys
+
 from os import path
 
 from distutils import dir_util, file_util
@@ -109,7 +111,8 @@ def main():
     # as __main__, it only packages a plugin for the current platform. It
     # assumes that pyinstaller has already created the binary prior to this
     # being run.
-    platform = os.uname().sysname.lower()
+    platform = sys.platform if sys.platform != 'win32' else 'windows'
+
     platform_build_path = path.join(build_path, platform)
 
     python_bin_dir = path.join(root_path, "python", "lib", "dcoscli", "dist")
