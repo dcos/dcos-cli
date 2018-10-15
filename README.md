@@ -94,17 +94,15 @@ Releasing a new version of the DC/OS CLI is done through an
 build](https://jenkins.mesosphere.com/service/jenkins/job/public-dcos-cluster-ops/job/mesosphere-dcos-cli/job/release/)
 which is triggered automatically for new tags and on pushes to master.
 
+Tagged versions can be found in the "Releases" page:
+
+    https://github.com/dcos/dcos-cli/releases
+
 The binaries built from the master branch are continuously published to:
 
-   - https://downloads.dcos.io/cli/releases/linux/x86-64/testing/master/dcos
-   - https://downloads.dcos.io/cli/releases/darwin/x86-64/testing/master/dcos
-   - https://downloads.dcos.io/cli/releases/windows/x86-64/testing/master/dcos.exe
-
-Tags are released to:
-
-   - https://downloads.dcos.io/cli/releases/linux/x86-64/{tag}/dcos
-   - https://downloads.dcos.io/cli/releases/darwin/x86-64/{tag}/dcos
-   - https://downloads.dcos.io/cli/releases/windows/x86-64/{tag}/dcos.exe
+   - https://downloads.dcos.io/cli/testing/binaries/dcos/linux/x86-64/master/dcos
+   - https://downloads.dcos.io/cli/testing/binaries/dcos/darwin/x86-64/master/dcos
+   - https://downloads.dcos.io/cli/testing/binaries/dcos/windows/x86-64/master/dcos.exe
 
 ## Contributing
 
