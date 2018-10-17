@@ -3,12 +3,17 @@ package login
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/dcos/dcos-cli/pkg/dcos"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/sirupsen/logrus"
+)
+
+var (
+	ErrAuthDisabled = errors.New("authentication disabled")
 )
 
 // Credentials is the payload for login POST requests.
@@ -86,7 +91,9 @@ func (c *Client) challengeAuth() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if resp.StatusCode != 401 {
+	if resp.StatusCode == 200 {
+		return "", ErrAuthDisabled
+	} else if resp.StatusCode != 401 {
 		return "", fmt.Errorf("expected status code 401, got %d", resp.StatusCode)
 	}
 	return resp.Header.Get("WWW-Authenticate"), nil
