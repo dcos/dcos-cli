@@ -124,7 +124,9 @@ func (s *Setup) Configure(flags *Flags, clusterURL string, attach bool) (*config
 		httpClient := httpclient.New(cluster.URL(), httpOpts...)
 		var err error
 		acsToken, err = s.loginFlow.Start(flags.loginFlags, httpClient)
-		if err != nil && err != login.ErrAuthDisabled {
+		if err == login.ErrAuthDisabled {
+			s.logger.Warn("This cluster does not have authorization enabled. Skipping.")
+		} else if err != nil {
 			return nil, err
 		}
 	}
