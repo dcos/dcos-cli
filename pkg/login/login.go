@@ -13,6 +13,8 @@ import (
 )
 
 var (
+	// ErrAuthDisabled is the error returned when attempting to get authentication providers
+	// from a cluster without authentication.
 	ErrAuthDisabled = errors.New("authentication disabled")
 )
 
