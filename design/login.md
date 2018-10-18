@@ -51,6 +51,10 @@ reading the `WWW-Authenticate` header DC/OS returns in the 401 response:
 }
 ```
 
+If the `Head` request returns a 200 response, authentication is disabled on this cluster. Setup will
+succeed and the cluster will be usable but any calls to `dcos auth login` or
+`dcos auth list-providers` will result in an error.
+
 ## Log in to a DC/OS cluster
 
 "Login" is the process of presenting some credentials to a DC/OS cluster within an HTTP request which is then,
