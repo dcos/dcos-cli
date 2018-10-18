@@ -83,7 +83,7 @@ not from a trusted anchor, the root CA bundle must be installed:
 The next steps is to login to the cluster, the setup command accepts the same flags as the
 `dcos auth login` command and acts similarly in this regard.
 
-If authorization is disabled on the cluster, a warning will be printed and this step will
+If authentication is disabled on the cluster, a warning will be printed and this step will
 be skipped.
 
 ### Cluster ID and name
