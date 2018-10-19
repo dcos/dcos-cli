@@ -92,8 +92,7 @@ func (c *Client) challengeAuth() (string, error) {
 	resp, err := c.sniffAuth("")
 	if err != nil {
 		return "", err
-	}
-	if resp.StatusCode == 200 {
+	} else if resp.StatusCode == 200 {
 		return "", ErrAuthDisabled
 	} else if resp.StatusCode != 401 {
 		return "", fmt.Errorf("expected status code 401, got %d", resp.StatusCode)

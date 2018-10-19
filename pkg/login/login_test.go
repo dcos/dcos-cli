@@ -57,6 +57,13 @@ func TestProviders(t *testing.T) {
 				w.Header().Add("WWW-Authenticate", fixture.authChallenge)
 				w.WriteHeader(401)
 			})
+		} else {
+			mux.HandleFunc("/pkgpanda/active.buildinfo.full.json", func(w http.ResponseWriter, req *http.Request) {
+				assert.Equal(t, "HEAD", req.Method)
+				assert.Equal(t, "", req.Header.Get("Authorization"))
+
+				w.WriteHeader(200)
+			})
 		}
 
 		ts := httptest.NewServer(mux)
