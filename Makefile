@@ -3,6 +3,7 @@ PKG=github.com/dcos/dcos-cli
 PKG_DIR=/go/src/$(PKG)
 IMAGE_NAME=dcos/dcos-cli
 VERSION?=$(shell git rev-parse HEAD)
+CORE_VERSION?=1.12-patch.0
 
 windows_EXE=.exe
 
@@ -26,9 +27,9 @@ core-bundle: docker-image
 .PHONY: core-download
 core-download:
 	mkdir -p build/linux build/darwin build/windows
-	wget https://downloads.dcos.io/cli/plugins/dcos-core-cli/1.12/linux/x86-64/dcos-core-cli.zip -O build/linux/core.zip
-	wget https://downloads.dcos.io/cli/plugins/dcos-core-cli/1.12/darwin/x86-64/dcos-core-cli.zip -O build/darwin/core.zip
-	wget https://downloads.dcos.io/cli/plugins/dcos-core-cli/1.12/windows/x86-64/dcos-core-cli.zip -O build/windows/core.zip
+	wget https://downloads.dcos.io/cli/releases/plugins/dcos-core-cli/linux/x86-64/dcos-core-cli-$(CORE_VERSION).zip -O build/linux/core.zip
+	wget https://downloads.dcos.io/cli/releases/plugins/dcos-core-cli/darwin/x86-64/dcos-core-cli-$(CORE_VERSION).zip -O build/darwin/core.zip
+	wget https://downloads.dcos.io/cli/releases/plugins/dcos-core-cli/windows/x86-64/dcos-core-cli-$(CORE_VERSION).zip -O build/windows/core.zip
 
 .PHONY: install
 install:
