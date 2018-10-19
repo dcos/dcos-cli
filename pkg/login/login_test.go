@@ -57,13 +57,6 @@ func TestProviders(t *testing.T) {
 				w.Header().Add("WWW-Authenticate", fixture.authChallenge)
 				w.WriteHeader(401)
 			})
-		} else {
-			mux.HandleFunc("/pkgpanda/active.buildinfo.full.json", func(w http.ResponseWriter, req *http.Request) {
-				assert.Equal(t, "HEAD", req.Method)
-				assert.Equal(t, "", req.Header.Get("Authorization"))
-
-				w.WriteHeader(200)
-			})
 		}
 
 		ts := httptest.NewServer(mux)
@@ -79,6 +72,22 @@ func TestProviders(t *testing.T) {
 			require.Error(t, err)
 		}
 	}
+}
+
+func TestNoAuth(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/pkgpanda/active.buildinfo.full.json", func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(200)
+	})
+
+	ts := httptest.NewServer(mux)
+	defer ts.Close()
+
+	client := NewClient(httpclient.New(ts.URL), &logrus.Logger{Out: ioutil.Discard})
+
+	_, err := client.Providers()
+	require.Error(t, err)
+	require.Equal(t, err, ErrAuthDisabled)
 }
 
 func TestSniffAuth(t *testing.T) {
