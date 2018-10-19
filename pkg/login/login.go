@@ -93,12 +93,15 @@ func (c *Client) challengeAuth() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if resp.StatusCode == 200 {
+
+	switch resp.StatusCode {
+	case 200:
 		return "", ErrAuthDisabled
-	} else if resp.StatusCode != 401 {
+	case 401:
+		return resp.Header.Get("WWW-Authenticate"), nil
+	default:
 		return "", fmt.Errorf("expected status code 401, got %d", resp.StatusCode)
 	}
-	return resp.Header.Get("WWW-Authenticate"), nil
 }
 
 // sniffAuth sends an HTTP request with a given ACS token to a well-known resource.
