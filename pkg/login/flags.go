@@ -3,6 +3,7 @@ package login
 import (
 	"bytes"
 	"crypto/rsa"
+	"strings"
 	"unicode"
 
 	"github.com/dcos/dcos-cli/pkg/fsutil"
@@ -117,6 +118,11 @@ func (f *Flags) Supports(provider *Provider) bool {
 		// The private key can't be passed interactively,
 		// if the flag is empty this provider is not supported.
 		return f.privateKey != nil
+	}
+	if strings.HasPrefix(provider.ClientMethod, "browser-") {
+		// A browser based login flow doesn't support passing a username, password, or private key
+		// from the command-line. It must be skipped implicitly in such cases.
+		return f.username == "" && f.password == "" && f.privateKey == nil
 	}
 	return f.privateKey == nil
 }

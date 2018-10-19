@@ -1,6 +1,7 @@
 package login
 
 import (
+	"io/ioutil"
 	"os"
 	"runtime"
 	"testing"
@@ -80,4 +81,16 @@ func TestResolvePasswordFromEnvVar(t *testing.T) {
 	entry := hook.LastEntry()
 	require.Equal(t, logrus.InfoLevel, entry.Level)
 	require.Equal(t, "Read password from environment.", entry.Message)
+}
+
+func TestSkipBrowserProviderImplicitly(t *testing.T) {
+	envLookup := func(key string) (string, bool) {
+		return "", false
+	}
+	logger := &logrus.Logger{Out: ioutil.Discard}
+	flags := NewFlags(afero.NewMemMapFs(), envLookup, logger)
+	flags.username = "username"
+	flags.password = "password"
+
+	require.False(t, flags.Supports(defaultOIDCImplicitFlowProvider()))
 }
