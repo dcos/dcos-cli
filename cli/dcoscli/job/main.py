@@ -14,7 +14,7 @@ from dcos.cosmos import get_cosmos_url
 from dcos.errors import DCOSException, DCOSHTTPException, DefaultError
 from dcoscli import tables
 from dcoscli.subcommand import default_command_info, default_doc
-from dcoscli.util import decorate_docopt_usage
+from dcoscli.util import cluster_version_check, decorate_docopt_usage
 
 
 logger = util.get_logger(__name__)
@@ -44,6 +44,7 @@ def main(argv):
 
 
 @decorate_docopt_usage
+@cluster_version_check
 def _main(argv):
 
     for i, arg in enumerate(argv):

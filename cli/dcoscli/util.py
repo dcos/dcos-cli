@@ -4,7 +4,7 @@ from functools import wraps
 
 import docopt
 
-from dcos import emitting
+from dcos import cluster, emitting
 
 emitter = emitting.FlatEmitter()
 
@@ -27,6 +27,47 @@ def decorate_docopt_usage(func):
             emitter.publish(e)
             return 1
         return result
+    return wrapper
+
+
+def cluster_version_check(func):
+    """ Checks that the version of the currently attached cluster is correct
+    for this version of the CLI. If not, prints a warning.
+
+    :param func: function
+    :type func: function
+    :return: wrapped function
+    :rtype: function
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        import re
+
+        attached = None
+        for c in cluster.get_clusters():
+            if c.is_attached():
+                attached = c
+                break
+
+        if attached is None:
+            return func(*args, **kwargs)
+
+        version = attached.get_dcos_version()
+        m = re.match(r'^(1\.[0-9]+)\D*', version)
+        if m is None:
+            return func(*args, **kwargs)
+
+        supported_version = "1.10"
+        major_version = m.group(1)
+
+        if major_version != supported_version:
+            message = ("The attached cluster is running DC/OS {} but this "
+                       "CLI only supports DC/OS {}."
+                       ).format(major_version, supported_version)
+            emitter.publish(message)
+
+        return func(*args, **kwargs)
+
     return wrapper
 
 
