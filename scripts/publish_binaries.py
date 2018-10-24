@@ -7,8 +7,7 @@ import sys
 import boto3
 import requests
 
-# TODO: the current DC/OS dev version (1.12) should be pulled dynamically (from the Github API?).
-version = os.environ.get("TAG_NAME") or "dcos-1.12"
+version = os.environ.get("TAG_NAME") or "dcos-1.10"
 
 s3_client = boto3.resource('s3', region_name='us-west-2').meta.client
 bucket = "downloads.dcos.io"
