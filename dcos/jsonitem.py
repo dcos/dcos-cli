@@ -136,7 +136,7 @@ def _find_type(value):
     :rtype: int|float|
     """
     to_try = [_parse_integer, _parse_number, _parse_boolean, _parse_array,
-              _parse_url, _parse_object, _parse_string]
+              _parse_object, _parse_url, _parse_string]
     while len(to_try) > 0:
         try:
             return to_try.pop(0)(value)

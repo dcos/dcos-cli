@@ -294,6 +294,17 @@ def test_update_app():
         assert stderr == b''
 
 
+def test_update_app_json():
+    with _zero_instance_app():
+        returncode, stdout, stderr = exec_command(
+            ['dcos', 'marathon', 'app', 'update', 'zero-instance-app',
+             "env='{\"key\":\"/value\"}'"])
+
+        assert returncode == 0
+        assert stdout.decode().startswith('Created deployment ')
+        assert stderr == b''
+
+
 def test_update_app_from_stdin():
     with _zero_instance_app():
         _update_app(
