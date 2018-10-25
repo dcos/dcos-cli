@@ -4,7 +4,7 @@ from functools import wraps
 
 import docopt
 
-from dcos import cluster, emitting
+from dcos import cluster, emitting, errors
 
 emitter = emitting.FlatEmitter()
 
@@ -64,7 +64,7 @@ def cluster_version_check(func):
             message = ("The attached cluster is running DC/OS {} but this "
                        "CLI only supports DC/OS {}."
                        ).format(major_version, supported_version)
-            emitter.publish(message)
+            emitter.publish(errors.DefaultError(message))
 
         return func(*args, **kwargs)
 
