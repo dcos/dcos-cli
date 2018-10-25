@@ -59,7 +59,7 @@ def cluster_version_check(func):
             message = ("The attached cluster is running DC/OS {} but this "
                        "CLI only supports DC/OS {}."
                        ).format(major_version, supported_version)
-            emitter.publish(message)
+            emitter.publish(errors.DefaultError(message))
 
         return func(*args, **kwargs)
 
