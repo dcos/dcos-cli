@@ -31,7 +31,7 @@ pipeline {
           accessKeyVariable: 'AWS_ACCESS_KEY_ID',
           secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'],
           [$class: 'StringBinding',
-          credentialsId: '0b513aad-e0e0-4a82-95f4-309a80a02ff9',
+          credentialsId: 'cee4eba4-5ac3-4b89-8d34-b0440b8b97d1',
           variable: 'DCOS_TEST_INSTALLER_URL'],
           [$class: 'FileBinding',
           credentialsId: '23743034-1ac4-49f7-b2e6-a661aee2d11b',
