@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -15,6 +16,15 @@ func main() {
 	if len(os.Args) == 3 && os.Args[1] == "test" && os.Args[2] == "--info" {
 		fmt.Println("Helper for integration tests")
 		os.Exit(0)
+	}
+
+	if len(os.Args) == 4 && os.Args[1] == "test" && os.Args[2] == "exit" {
+		code, err := strconv.Atoi(os.Args[3])
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			code = 1
+		}
+		os.Exit(code)
 	}
 
 	type Output struct {

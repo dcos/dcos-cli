@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"syscall"
 
 	"github.com/sirupsen/logrus"
 
@@ -278,6 +279,18 @@ func invokePlugin(ctx api.Context, cmd plugin.Command, args []string) error {
 	if err != nil {
 		// Because we're silencing errors through Cobra, we need to print this separately.
 		ctx.Logger().Debug(err)
+
+		// When the plugin command exits with a non-zero code, the main CLI process
+		// exit code should be the same.
+		//
+		// see https://jira.mesosphere.com/browse/DCOS_OSS-4399
+		if exiterr, ok := err.(*exec.ExitError); ok {
+			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
+				// TODO: have a more generic error handling system
+				// where errors can be associated with an exit code.
+				os.Exit(status.ExitStatus())
+			}
+		}
 	}
 	return err
 }

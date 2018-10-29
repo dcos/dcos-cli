@@ -128,6 +128,13 @@ def test_plugin_verbosity(default_cluster):
         assert out['env'].get('DCOS_LOG_LEVEL') == fixture['DCOS_LOG_LEVEL']
 
 
+def test_plugin_exit_code(default_cluster):
+    _install_test_plugin()
+
+    code, _, _ = exec_cmd(['dcos', 'test', 'exit', '43'])
+    assert code == 43
+
+
 def test_plugin_remove(default_cluster):
     _install_test_plugin()
 
