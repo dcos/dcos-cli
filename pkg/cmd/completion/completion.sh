@@ -550,11 +550,11 @@ _dcos() {
 
     local plugin_commands completion_dirs
 
-    while IFS=$'\n' read -r line; do plugin_commands+=("$line"); done < <(dcos plugin list --commands)
+    while IFS=$'\n' read -r line; do plugin_commands+=("$line"); done < <(dcos plugin list --commands 2> /dev/null)
     commands+=("${plugin_commands[@]}")
     __dcos_debug "Found plugin commands" "${plugin_commands[@]}"
 
-    while IFS=$'\n' read -r line; do completion_dirs+=("$line"); done < <(dcos plugin list --completion-dirs)
+    while IFS=$'\n' read -r line; do completion_dirs+=("$line"); done < <(dcos plugin list --completion-dirs 2> /dev/null)
     __dcos_debug "Plugin completion directories" "${completion_dirs[@]}"
     __dcos_source_plugin_completions "${completion_dirs[@]}"
 
