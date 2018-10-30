@@ -39,6 +39,6 @@ def test_update_core(default_cluster_with_plugins):
     ]
 
     for cmd in cmds:
-        code, out, err = exec_cmd(cmd)
+        code, out, _ = exec_cmd(cmd)
         assert code == 0
         assert out == ''
