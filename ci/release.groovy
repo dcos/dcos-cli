@@ -27,7 +27,7 @@ pipeline {
     stage("Release binaries to S3") {
       when {
         anyOf {
-          branch 'master'
+          branch '0.7.x'
           expression { env.TAG_NAME != null }
         }
       }
