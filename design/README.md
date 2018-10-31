@@ -4,7 +4,6 @@
 
 - [cli](cli.md)
 - [config](config.md)
-- [corecli](corecli.md)
 - [httpclient](httpclient.md)
 - [login](login.md)
 - [plugin](plugin.md)

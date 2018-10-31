@@ -10,7 +10,7 @@ For a given DC/OS master URL, the package will:
 - Initiate a login.
 - Create a cluster config with the ACS token, the TLS configuration, and cluster name.
 - Attach the CLI to the newly created cluster config.
-- Automatically install "dcos-core-cli" and "dcos-enterprise-cli" plugins after the setup (experimental).
+- Automatically install "dcos-core-cli" and "dcos-enterprise-cli" plugins after the setup.
 
 ## Implementation
 
@@ -106,12 +106,9 @@ attached to it. A cluster config looks like this:
     [cluster]
     name= "<cluster_name>"
 
-## Automatically installing default plugins (experimental)
+## Automatically installing default plugins
 
-Finally, when the `DCOS_CLI_EXPERIMENTAL_AUTOINSTALL_PLUGINS` env var is set, the CLI will attempt to
-auto-install "dcos-core-cli" and "dcos-enterprise-cli" plugins.
-
-These plugins download URLs are retrieved through Cosmos, where they are registered as packages.
+Finally, the CLI will attempt to auto-install "dcos-core-cli" and "dcos-enterprise-cli" plugins.
 
 ### dcos-core-cli
 
@@ -127,3 +124,23 @@ This is determined through the [DC/OS variant](https://jira.mesosphere.com/brows
 (new in 1.12). For previous versions of DC/OS we won’t try to detect open / enterprise as it’d involve
 some hacks, but rather display a message saying “Please run “dcos package install dcos-enterprise-cli” if
 you use a DC/OS Enterprise cluster”.
+
+### Installation mechanism
+
+The CLI will first try to auto-install a plugin using its canonical URL:
+
+- https://downloads.dcos.io/cli/{stability}/plugins/{plugin}/{platform}/x86-64/{plugin}-{dcos-version}-patch.x.zip
+
+The URL placeholders are defined as below:
+
+- `plugin` is either `dcos-core-cli` or `dcos-enterprise-cli`
+- `stability` is set to `testing` when the CLI is a dev build, otherwise defaults to `releases`
+- `platform` can either be `linux`, `darwin`, or `windows`
+- `dcos-version` is the major and minor version of the DC/OS cluster (eg. `1.13`)
+
+Failing to download the plugins from their canonical URL usually means that the CLI user operates from an
+air-gapped environment. In that case the CLI falls back to downloading the plugins through Cosmos, where they are registered as packages named `dcos-core-cli` and `dcos-enterprise-cli`.
+
+Failing to download the plugins from Cosmos usually means that the CLI user doesn't have the necessary
+permissions in order to interact with Cosmos. In that case the setup command fails with an error message
+indicating a web-page the user can go to in order to download the plugins manually.
