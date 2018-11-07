@@ -337,6 +337,10 @@
   this.FetchArtifacts = function(source, callback) {
     var artifacts = [];
 
+    // Append a random string to the end of the JSON
+    // file source URL to force it to never be cached.
+    source = source + '?nocache=' + (new Date()).getTime();
+
     $.getJSON(source, function(data) {
       $.each(data, function(key, val) {
         if (key != "artifacts") {
