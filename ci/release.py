@@ -17,9 +17,9 @@ if os.environ.get("TAG_NAME"):
         ("windows/dcos.exe", "cli/releases/binaries/dcos/windows/x86-64/{}/dcos.exe".format(version)),
 
         # For tag releases, still push to the legacy location.
-        ("linux/dcos",       "binaries/cli/linux/x86-64/{}/dcos".format(version)),
-        ("darwin/dcos",      "binaries/cli/darwin/x86-64/{}/dcos".format(version)),
-        ("windows/dcos.exe", "binaries/cli/windows/x86-64/{}/dcos.exe".format(version))
+        ("linux/dcos",       "binaries/cli/linux/x86-64/dcos-1.12/dcos".format(version)),
+        ("darwin/dcos",      "binaries/cli/darwin/x86-64/dcos-1.12/dcos".format(version)),
+        ("windows/dcos.exe", "binaries/cli/windows/x86-64/dcos-1.12/dcos.exe".format(version))
     ]
 else:
     version = os.environ.get("BRANCH_NAME")
