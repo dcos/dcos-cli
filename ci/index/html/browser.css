@@ -1,0 +1,29 @@
+#platforms {
+    display: inline-block;
+}
+
+#architectures {
+    display: inline-block;
+}
+
+#binaries [name=names]
+{
+    display: inline-block;
+    padding-bottom: 20px;
+}
+
+#binaries [name=versions]
+{
+    display: inline-block;
+    padding-bottom: 20px;
+}
+
+#plugins [name=names] {
+    display: inline-block;
+    padding-bottom: 20px;
+}
+
+#plugins [name=versions] {
+    display: inline-block;
+    padding-bottom: 20px;
+}
