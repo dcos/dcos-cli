@@ -7,6 +7,7 @@ import (
 
 	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/cli"
+	"github.com/dcos/dcos-cli/pkg/internal/corecli"
 	"github.com/spf13/cobra"
 )
 
@@ -22,6 +23,17 @@ func newCmdPluginList(ctx api.Context) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cluster, err := ctx.Cluster()
 			if err != nil {
+
+				// If no cluster is attached but we're asking for commands we want to have the core commands
+				// there so we pull them out of the temp core plugin.
+				if commands {
+					corePlugin, err := corecli.TempPlugin()
+					if err == nil {
+						for _, command := range corePlugin.Commands {
+							fmt.Fprintln(ctx.Out(), command.Name)
+						}
+					}
+				}
 				return err
 			}
 
