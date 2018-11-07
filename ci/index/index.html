@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+<meta content="utf-8" http-equiv="encoding">
+
+<link rel="stylesheet" type="text/css" href="html/browser.css">
+
+<script type="text/javascript" src="html/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="html/artifacts.js"></script>
+<script type="text/javascript" src="html/browser.js"></script>
+
+<title id="title"></title>
+</head>
+
+<body>
+<h1 id="header"></h1>
+
+<div id="platforms" class="selection"></div>
+<div id="architectures" class="selection"></div>
+
+<div id="binaries">
+  <h2 name="header"></h2>
+  <div name="names" class="selection"></div>
+  <div name="versions" class="selection"></div>
+  <div name="listings" class="listings"></div>
+</div>
+
+<div id="plugins">
+  <h2 name="header"></h2>
+  <div name="names" class="selection"></div>
+  <div name="versions" class="selection"></div>
+  <div name="listings" class="listings"></div>
+</div>
+
+<script type="text/javascript">
+  $(document).ready(function(){
+    RenderBrowser("html/artifacts.json");
+  });
+</script>
+</body>
+
+</html>
