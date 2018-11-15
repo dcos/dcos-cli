@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"path/filepath"
 	"strings"
 
 	"github.com/dcos/dcos-cli/api"
@@ -68,8 +69,14 @@ func newCmdClusterAttach(ctx api.Context) *cobra.Command {
 			case 1:
 				// One matching linked cluster, one matching cluster.
 				if matchingConf != nil {
+					matchingClusterID := filepath.Base(filepath.Dir(matchingConf.Path()))
+					// Cluster already set up locally, attach to it.
+					if matchingLinkedClusters[0].ID == matchingClusterID {
+						return attachTo(matchingConf)
+					}
 					return config.ErrTooManyConfigs
 				}
+
 				// One matching linked cluster, no matching cluster.
 				flags := setup.NewFlags(ctx.Fs(), ctx.EnvLookup, ctx.Logger())
 				flags.LoginFlags().SetProviderID(matchingLinkedClusters[0].LoginProvider.ID)
