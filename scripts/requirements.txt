@@ -6,7 +6,7 @@ click==6.7
 dcos-e2e==2018.06.21.0
 dcos_launch==0.1-dev
 dcos-test-utils==0.1
-requests==2.19.0
+requests==2.20.0
 urllib3==1.23
 -e ..
 -e ../cli
