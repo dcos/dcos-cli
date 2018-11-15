@@ -33,6 +33,10 @@ Please include test(s) with your changes. Make sure to separate integration and 
 You can use `make test` to run unit tests, in order to run integration tests please follow
 [these instructions](https://github.com/dcos/dcos-cli#integration-tests).
 
+### Changelog
+
+If your change is worth a mention in the [changelog](CHANGELOG.md), please add an entry there.
+
 ## Thanks!
 
 The DC/OS CLI Team
