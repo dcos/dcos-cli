@@ -98,7 +98,7 @@ func (s *Setup) Configure(flags *Flags, clusterURL string, attach bool) (*config
 		}
 
 		// Make sure we continue the setup flow with the canonical cluster URL.
-		canonicalClusterURL, err := s.detectCanonicalClusterURL(cluster.URL(), httpOpts)
+		canonicalClusterURL, err := detectCanonicalClusterURL(cluster.URL(), httpOpts)
 		if err == nil {
 			if canonicalClusterURL != cluster.URL() {
 				s.logger.Warnf("Continuing cluster setup with: %s", canonicalClusterURL)
@@ -178,7 +178,7 @@ func (s *Setup) Configure(flags *Flags, clusterURL string, attach bool) (*config
 }
 
 // detectCanonicalClusterURL returns the URL with the response of the HEAD request.
-func (s *Setup) detectCanonicalClusterURL(clusterURL string, httpOpts []httpclient.Option) (string, error) {
+func detectCanonicalClusterURL(clusterURL string, httpOpts []httpclient.Option) (string, error) {
 	httpClient := httpclient.New(clusterURL, httpOpts...)
 	req, err := httpClient.NewRequest("HEAD", "/", nil)
 	if err != nil {
