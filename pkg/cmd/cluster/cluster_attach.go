@@ -17,7 +17,10 @@ func newCmdClusterAttach(ctx api.Context) *cobra.Command {
 		Short: "Attach the CLI to a cluster",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			manager := ctx.ConfigManager()
+			manager, err := ctx.ConfigManager()
+			if err != nil {
+				return err
+			}
 
 			// We try to find a Config matching the argument given.
 			matchingConf, err := manager.Find(args[0], false)

@@ -25,7 +25,10 @@ func newCmdClusterLink(ctx api.Context) *cobra.Command {
 			}
 
 			var linkableCluster *config.Cluster
-			manager := ctx.ConfigManager()
+			manager, err := ctx.ConfigManager()
+			if err != nil {
+				return err
+			}
 			linkableClusterConfig, err := manager.Find(args[0], false)
 			if err != nil {
 				if err != config.ErrConfigNotFound {

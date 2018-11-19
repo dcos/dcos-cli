@@ -40,16 +40,16 @@ type Context interface {
 	Logger() *logrus.Logger
 
 	// DCOSDir returns the root directory for the DC/OS CLI.
-	DCOSDir() string
+	DCOSDir() (string, error)
 
 	// ConfigManager returns the ConfigManager for the context.
-	ConfigManager() *config.Manager
+	ConfigManager() (*config.Manager, error)
 
 	// Cluster returns the current cluster.
 	Cluster() (*config.Cluster, error)
 
 	// Clusters returns the configured clusters.
-	Clusters() []*config.Cluster
+	Clusters() ([]*config.Cluster, error)
 
 	// HTTPClient creates an httpclient.Client for a given cluster.
 	HTTPClient(c *config.Cluster, opts ...httpclient.Option) *httpclient.Client

@@ -3,6 +3,7 @@ package cli
 import (
 	"crypto/tls"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -89,36 +90,48 @@ func (ctx *Context) PluginManager(cluster *config.Cluster) *plugin.Manager {
 
 // DCOSDir returns the root directory for the DC/OS CLI.
 // It defaults to `~/.dcos` and can be overriden by the `DCOS_DIR` env var.
-func (ctx *Context) DCOSDir() string {
+func (ctx *Context) DCOSDir() (string, error) {
 	if dcosDir, ok := ctx.env.EnvLookup("DCOS_DIR"); ok {
-		return dcosDir
+		// Make sure DCOS_DIR is an absolute path, otherwise this causes issues with plugin invocation.
+		// See https://jira.mesosphere.com/browse/DCOS_OSS-4405
+		if !filepath.IsAbs(dcosDir) {
+			currentDir, err := os.Getwd()
+			if err != nil {
+				return "", err
+			}
+			dcosDir = filepath.Join(currentDir, dcosDir)
+		}
+		return dcosDir, nil
 	}
 
 	// We use github.com/mitchellh/go-homedir as os/user doesn't work well with cross-compilation.
-	// In the future this could instead be done through the "osusergo" build tag (added in Go 1.11).
-	// See https://tip.golang.org/doc/go1.11#os/user.
 	homeDir, err := homedir.Dir()
 	if err != nil {
-		// Not being able to detect the homedir is not critical. While it is
-		// very unlikely to happen, we can fallback to the current directory.
-		ctx.Logger().Debugf("Couldn't detect the home directory: %s", err)
-		return ""
+		return "", err
 	}
-	return filepath.Join(homeDir, ".dcos")
+	return filepath.Join(homeDir, ".dcos"), nil
 }
 
 // ConfigManager returns the ConfigManager for the context.
-func (ctx *Context) ConfigManager() *config.Manager {
+func (ctx *Context) ConfigManager() (*config.Manager, error) {
+	dcosDir, err := ctx.DCOSDir()
+	if err != nil {
+		return nil, err
+	}
 	return config.NewManager(config.ManagerOpts{
 		Fs:        ctx.env.Fs,
 		EnvLookup: ctx.env.EnvLookup,
-		Dir:       ctx.DCOSDir(),
-	})
+		Dir:       dcosDir,
+	}), nil
 }
 
 // Cluster returns the current cluster.
 func (ctx *Context) Cluster() (*config.Cluster, error) {
-	conf, err := ctx.ConfigManager().Current()
+	configManager, err := ctx.ConfigManager()
+	if err != nil {
+		return nil, err
+	}
+	conf, err := configManager.Current()
 	if err != nil {
 		return nil, err
 	}
@@ -126,14 +139,16 @@ func (ctx *Context) Cluster() (*config.Cluster, error) {
 }
 
 // Clusters returns the clusters.
-func (ctx *Context) Clusters() []*config.Cluster {
-	confs := ctx.ConfigManager().All()
+func (ctx *Context) Clusters() ([]*config.Cluster, error) {
+	configManager, err := ctx.ConfigManager()
+	if err != nil {
+		return nil, err
+	}
 	var clusters []*config.Cluster
-	for _, conf := range confs {
+	for _, conf := range configManager.All() {
 		clusters = append(clusters, config.NewCluster(conf))
 	}
-
-	return clusters
+	return clusters, nil
 }
 
 // HTTPClient creates an httpclient.Client for a given cluster.
@@ -174,6 +189,11 @@ func (ctx *Context) Login(flags *login.Flags, httpClient *httpclient.Client) (st
 
 // Setup configures a given cluster based on its URL and setup flags.
 func (ctx *Context) Setup(flags *setup.Flags, clusterURL string, attach bool) (*config.Cluster, error) {
+	configManager, err := ctx.ConfigManager()
+	if err != nil {
+		return nil, err
+	}
+
 	if !strings.HasPrefix(clusterURL, "https://") && !strings.HasPrefix(clusterURL, "http://") {
 		ctx.Logger().Info("Missing scheme in cluster URL, assuming HTTPS.")
 		clusterURL = "https://" + clusterURL
@@ -186,7 +206,7 @@ func (ctx *Context) Setup(flags *setup.Flags, clusterURL string, attach bool) (*
 		Prompt:        ctx.Prompt(),
 		Logger:        ctx.Logger(),
 		LoginFlow:     ctx.loginFlow(),
-		ConfigManager: ctx.ConfigManager(),
+		ConfigManager: configManager,
 		PluginManager: ctx.PluginManager(nil),
 	}).Configure(flags, clusterURL, attach)
 }

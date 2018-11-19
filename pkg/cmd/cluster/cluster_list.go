@@ -26,7 +26,12 @@ func newCmdClusterList(ctx api.Context) *cobra.Command {
 				filters = append(filters, lister.Linked())
 			}
 
-			items := lister.New(ctx.ConfigManager(), ctx.Logger()).List(filters...)
+			configManager, err := ctx.ConfigManager()
+			if err != nil {
+				return err
+			}
+
+			items := lister.New(configManager, ctx.Logger()).List(filters...)
 			if attachedOnly && len(items) == 0 {
 				return errors.New("no cluster is attached. Please run `dcos cluster attach <cluster-name>`")
 			}
