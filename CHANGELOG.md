@@ -7,6 +7,7 @@
   * Forward exit code from plugins
   * Discard stderr output during bash completion
   * Support bash completion when no cluster is attached
+  * Normalize domain in cluster URLs to lowercase (DCOS_OSS-4501)
 
 ## 0.7.1
 

@@ -54,7 +54,7 @@ the following redirect codes, the CLI will follow it, up to a maximum of 10 redi
 
 When there are more than 10 redirects or the status code of the last response is not 200,
 the setup flow errors-out. Otherwise, the URL associated with the last response is considered
-as the **canonical cluster URL**.
+as the **canonical cluster URL**. Its host gets normalized with lowercase characters.
 
 When the canonical cluster URL is different than the one given in argument of the `dcos cluster setup`
 command, a warning indicates to the user that the setup will continue with this new URL.
