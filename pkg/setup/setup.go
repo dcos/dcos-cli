@@ -191,6 +191,8 @@ func detectCanonicalClusterURL(clusterURL string, httpOpts []httpclient.Option) 
 	}
 
 	if resp.StatusCode == 200 {
+		resp.Request.URL.Host = strings.ToLower(resp.Request.URL.Host)
+
 		return strings.TrimRight(resp.Request.URL.String(), "/"), nil
 	}
 	return "", fmt.Errorf("couldn't detect a canonical cluster URL")
