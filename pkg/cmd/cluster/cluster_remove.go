@@ -28,9 +28,14 @@ func newCmdClusterRemove(ctx api.Context) *cobra.Command {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			configManager, err := ctx.ConfigManager()
+			if err != nil {
+				return err
+			}
+
 			// Remove a single cluster.
 			if len(args) == 1 {
-				conf, err := ctx.ConfigManager().Find(args[0], false)
+				conf, err := configManager.Find(args[0], false)
 				if err != nil {
 					return err
 				}
@@ -48,7 +53,7 @@ func newCmdClusterRemove(ctx api.Context) *cobra.Command {
 				filters = append(filters, lister.Status(lister.StatusUnavailable))
 			}
 
-			items := lister.New(ctx.ConfigManager(), ctx.Logger()).List(filters...)
+			items := lister.New(configManager, ctx.Logger()).List(filters...)
 
 			for _, item := range items {
 				if err := ctx.Fs().RemoveAll(item.Cluster().Dir()); err != nil {

@@ -12,7 +12,11 @@ func newCmdClusterRename(ctx api.Context) *cobra.Command {
 		Short: "Rename a configured cluster",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			conf, err := ctx.ConfigManager().Find(args[0], false)
+			manager, err := ctx.ConfigManager()
+			if err != nil {
+				return err
+			}
+			conf, err := manager.Find(args[0], false)
 			if err != nil {
 				return err
 			}

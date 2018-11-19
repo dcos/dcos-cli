@@ -19,7 +19,11 @@ func newCmdClusterUnlink(ctx api.Context) *cobra.Command {
 				return err
 			}
 
-			manager := ctx.ConfigManager()
+			manager, err := ctx.ConfigManager()
+			if err != nil {
+				return err
+			}
+
 			linkedClusterConfig, err := manager.Find(args[0], false)
 			if err != nil {
 				return err

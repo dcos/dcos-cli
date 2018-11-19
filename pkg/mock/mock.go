@@ -110,9 +110,9 @@ func (ctx *Context) SetClusters(clusters []*config.Cluster) {
 }
 
 // Clusters returns the configured clusters.
-func (ctx *Context) Clusters() []*config.Cluster {
+func (ctx *Context) Clusters() ([]*config.Cluster, error) {
 	if ctx.clusters != nil {
-		return ctx.clusters
+		return ctx.clusters, nil
 	}
 	return ctx.Context.Clusters()
 }

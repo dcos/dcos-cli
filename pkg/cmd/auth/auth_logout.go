@@ -13,7 +13,11 @@ func newCmdAuthLogout(ctx api.Context) *cobra.Command {
 		Short: "Log out the CLI from the current cluster",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			conf, err := ctx.ConfigManager().Current()
+			configManager, err := ctx.ConfigManager()
+			if err != nil {
+				return err
+			}
+			conf, err := configManager.Current()
 			if err != nil {
 				return err
 			}
