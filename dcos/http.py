@@ -50,7 +50,7 @@ def _is_request_to_dcos(url, toml_config=None):
     # request should match scheme + netloc
     def _request_match(expected_url, actual_url):
         return expected_url.scheme == actual_url.scheme and \
-                    expected_url.netloc == actual_url.netloc
+                    expected_url.netloc.lower() == actual_url.netloc.lower()
 
     is_request_to_cluster = _request_match(dcos_url, parsed_url) or \
         _request_match(cosmos_url, parsed_url)
