@@ -2,18 +2,21 @@
 
 ## Next
 
+## 0.7.2
+
 * Bugfixes
 
   * Forward exit code from plugins
   * Discard stderr output during bash completion
   * Support bash completion when no cluster is attached
   * Normalize domain in cluster URLs to lowercase (DCOS_OSS-4501)
+  * Updated login flow to fix provider selection when uid/password given (DCOS-45239)
 
 ## 0.7.1
 
 * Features
 
-  * Build the CLI with 1.12-patch.1 (#1370
+  * Build the CLI with 1.12-patch.1 (#1370)
 
 * Bugfixes
 
