@@ -72,7 +72,7 @@ func (prompt *Prompt) Select(msg string, choices interface{}) (int, error) {
 	choice := prompt.Input(fmt.Sprintf("(%d-%d): ", 1, choicesLen))
 	i, err := strconv.Atoi(choice)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("unable to parse selected input: %s", err)
 	}
 	if i < 1 || i > choicesLen {
 		return 0, fmt.Errorf("choice %d doesn't exist", i)

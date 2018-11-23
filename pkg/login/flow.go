@@ -86,6 +86,8 @@ func (f *Flow) Start(flags *Flags, httpClient *httpclient.Client) (string, error
 func (f *Flow) selectProvider(providers Providers) (*Provider, error) {
 	// Explicit provider selection.
 	if f.flags.providerID != "" {
+		// TODO: If a provider ID, a username, and a password are given
+		// we should return an error. This might break some use cases.
 		provider, ok := providers[f.flags.providerID]
 		if ok {
 			return provider, nil
@@ -96,6 +98,13 @@ func (f *Flow) selectProvider(providers Providers) (*Provider, error) {
 	// Extract login provider candidates for implicit or manual selection.
 	var providerCandidates []*Provider
 	for _, provider := range providers.Slice() {
+		// If both username and password are passed, we default to dcos-uid-password.
+		// The provider does not matter in the actual request we do to the cluster,
+		// the IAM might delegate the credential validation to a directory backend via LDAP.
+		if provider.Type == DCOSUIDPassword && f.flags.username != "" && f.flags.password != "" {
+			return provider, nil
+		}
+
 		if f.flags.Supports(provider) {
 			providerCandidates = append(providerCandidates, provider)
 		} else {
