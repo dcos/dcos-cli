@@ -44,18 +44,21 @@ func TestClusterAttachBothConfiguredAndLinked(t *testing.T) {
 	env := mock.NewEnvironment()
 	env.EnvLookup = func(key string) (string, bool) {
 		if key == "DCOS_DIR" {
-			return "", true
+			return ".", true
 		}
 		return "", false
 	}
+	ctx := mock.NewContext(env)
+	dcosDir, err := ctx.DCOSDir()
+	require.NoError(t, err)
 
 	newCluster := func(id, name, url string, attached bool) *config.Cluster {
 		conf := config.New(config.Opts{Fs: env.Fs})
 		conf.Set("core.dcos_url", url)
 		conf.Set("cluster.name", name)
-		conf.SetPath(filepath.Join("clusters", id, "dcos.toml"))
+		conf.SetPath(filepath.Join(dcosDir, "clusters", id, "dcos.toml"))
 		if attached {
-			_, err := env.Fs.Create(filepath.Join("clusters", id, "attached"))
+			_, err := env.Fs.Create(filepath.Join(dcosDir, "clusters", id, "attached"))
 			require.NoError(t, err)
 		}
 		require.NoError(t, conf.Persist())
@@ -77,7 +80,6 @@ func TestClusterAttachBothConfiguredAndLinked(t *testing.T) {
 	newCluster("1234-56789-01234", "current", ts.URL, true)
 
 	clusterID := "2234-56789-01234"
-	ctx := mock.NewContext(env)
 	cmd := newCmdClusterAttach(ctx)
 	cmd.SetArgs([]string{clusterID})
 
