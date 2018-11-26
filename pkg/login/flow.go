@@ -101,7 +101,7 @@ func (f *Flow) selectProvider(providers Providers) (*Provider, error) {
 		// If both username and password are passed, we default to dcos-uid-password.
 		// The provider does not matter in the actual request we do to the cluster,
 		// the IAM might delegate the credential validation to a directory backend via LDAP.
-		if provider.ID == DCOSUIDPassword && f.flags.username != "" && f.flags.password != "" {
+		if provider.Type == DCOSUIDPassword && f.flags.username != "" && f.flags.password != "" {
 			return provider, nil
 		}
 
