@@ -5,6 +5,21 @@ from requests import Response
 from dcos import config, http
 
 
+def test_is_request_to_dcos():
+    toml_config = config.Toml({
+        'core': {'dcos_url': "https://example.com"}
+    })
+
+    assert http._is_request_to_dcos(
+        "https://example.com/path", toml_config=toml_config)
+
+    assert http._is_request_to_dcos(
+        "https://EXAMPLE.com/path", toml_config=toml_config)
+
+    assert not http._is_request_to_dcos(
+        "https://foo.com/path", toml_config=toml_config)
+
+
 @patch('requests.request')
 def test_request_default_timeout_without_config(requests_mock):
     timeout = True
