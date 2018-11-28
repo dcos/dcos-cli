@@ -232,13 +232,7 @@ def test_describe_render():
     actual_labels = stdout_.pop("labels", None)
 
     for label, value in expected_labels.items():
-        if label == "DCOS_PACKAGE_METADATA":
-            # We covert the metadata into a dictionary
-            # so that failures in equality are more descriptive
-            assert base64_to_dict(value) == \
-                base64_to_dict(actual_labels.get(label))
-        else:
-            assert value == actual_labels.get(label)
+        assert value == actual_labels.get(label)
 
     assert stdout == stdout_
     assert stderr == b''
@@ -282,7 +276,7 @@ def test_describe_options():
     actual_labels = stdout_.pop("labels", None)
 
     for label, value in expected_labels.items():
-        if label in ["DCOS_PACKAGE_METADATA", "DCOS_PACKAGE_OPTIONS"]:
+        if label in ["DCOS_PACKAGE_OPTIONS"]:
             # We covert the metadata into a dictionary
             # so that failures in equality are more descriptive
             assert base64_to_dict(value) == \
@@ -480,9 +474,6 @@ def test_package_metadata():
     for label, value in expected_labels.items():
         assert value == six.b(app_labels.get(label))
 
-    assert expected_metadata == base64_to_dict(six.b(
-        app_labels.get('DCOS_PACKAGE_METADATA')))
-
     # test local package.json
     package = file_json(
         'tests/data/package/json/test_package_metadata.json')
@@ -495,32 +486,6 @@ def test_package_metadata():
 
     # uninstall helloworld
     _uninstall_helloworld()
-
-
-def test_images_in_metadata():
-    package_install('cassandra')
-
-    labels = _get_app_labels('/cassandra')
-    dcos_package_metadata = labels.get("DCOS_PACKAGE_METADATA")
-    images = json.loads(
-        base64.b64decode(dcos_package_metadata).decode('utf-8'))["images"]
-    assert images.get("icon-small") is not None
-    assert images.get("icon-medium") is not None
-    assert images.get("icon-large") is not None
-
-    # uninstall
-    stderr = (
-        b'Uninstalled package [cassandra] version [2.0.2-3.0.14]\n'
-        b'The DC/OS Apache Cassandra service is being uninstalled.\n\n'
-        b'For DC/OS versions from 1.10 no further action is required. '
-        b'For older DC/OS versions follow the instructions at https://docs.'
-        b'mesosphere.com/service-docs/cassandra/uninstall to remove any '
-        b'persistent state if required.\n'
-    )
-
-    package_uninstall('cassandra', stderr=stderr)
-    delete_zk_node('dcos-service-cassandra')
-    watch_all_deployments()
 
 
 def test_install_missing_package():
