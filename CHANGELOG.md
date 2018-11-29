@@ -2,6 +2,16 @@
 
 ## Next
 
+## 0.7.3
+
+* Features
+
+  * Build the CLI with 1.12-patch.2
+
+* Bugfixes
+
+  * Do not prompt for login provider selection when uid/password is given
+
 ## 0.7.2
 
 * Bugfixes
