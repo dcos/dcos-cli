@@ -140,7 +140,7 @@ func TestGet(t *testing.T) {
 	store.LoadTree(tree)
 
 	val := store.Get(keyURL)
-	require.Equal(t, "https://dcos-env.example.com", val)
+	require.Equal(t, "https://dcos.example.com", val)
 
 	val = store.Get(keyTLS)
 	require.Equal(t, "true", val)
