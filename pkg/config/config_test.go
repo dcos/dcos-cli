@@ -174,6 +174,25 @@ func TestSetAndUnset(t *testing.T) {
 	require.Nil(t, store.Get(keyURL))
 }
 
+func TestACSTokenIsUnsetOnURLUpdate(t *testing.T) {
+	store := New(Opts{})
+
+	store.Set(keyURL, "https://dcos.example.com")
+	store.Set(keyACSToken, "token_123")
+
+	require.Equal(t, "https://dcos.example.com", store.Get(keyURL))
+	require.Equal(t, "token_123", store.Get(keyACSToken))
+
+	// Updating the DC/OS URL should remove the ACS token property
+	store.Set(keyURL, "https://dcos2.example.com")
+	require.Nil(t, store.Get(keyACSToken))
+
+	// Unsetting the DC/OS URL should remove the ACS token property
+	store.Set(keyACSToken, "token_123")
+	store.Unset(keyURL)
+	require.Nil(t, store.Get(keyURL))
+}
+
 func TestKeys(t *testing.T) {
 	treeMap := map[string]interface{}{
 		"core": map[string]interface{}{

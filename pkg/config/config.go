@@ -164,6 +164,9 @@ func (c *Config) Get(key string) interface{} {
 // Set sets a key in the store.
 func (c *Config) Set(key string, val interface{}) {
 	switch key {
+	case keyURL:
+		// Make sure the ACS token is unset whenever the DC/OS URL is updated.
+		c.Unset(keyACSToken)
 	case keyTimeout:
 		// go-toml requires int64
 		val = cast.ToInt64(val)
@@ -177,6 +180,10 @@ func (c *Config) Set(key string, val interface{}) {
 
 // Unset deletes a given key from the Config.
 func (c *Config) Unset(key string) {
+	if key == keyURL {
+		// Unset the ACS token as well when removing the DC/OS URL.
+		c.Unset(keyACSToken)
+	}
 	keys := strings.Split(key, ".")
 
 	treeMap := c.tree.ToMap()
