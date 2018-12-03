@@ -30,10 +30,8 @@ const (
 
 // Environment variables for the DC/OS configuration.
 const (
-	envURL      = "DCOS_URL"
-	envACSToken = "DCOS_ACS_TOKEN"
-	envTLS      = "DCOS_SSL_VERIFY"
-	envTimeout  = "DCOS_TIMEOUT"
+	envTLS     = "DCOS_SSL_VERIFY"
+	envTimeout = "DCOS_TIMEOUT"
 )
 
 // Errors related to the Config.
@@ -70,10 +68,8 @@ type Config struct {
 func New(opts Opts) *Config {
 	if opts.EnvWhitelist == nil {
 		opts.EnvWhitelist = map[string]string{
-			keyURL:      envURL,
-			keyACSToken: envACSToken,
-			keyTLS:      envTLS,
-			keyTimeout:  envTimeout,
+			keyTLS:     envTLS,
+			keyTimeout: envTimeout,
 		}
 	}
 
