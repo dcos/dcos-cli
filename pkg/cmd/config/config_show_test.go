@@ -15,8 +15,8 @@ func TestConfigShowEnvVar(t *testing.T) {
 	env := mock.NewEnvironment()
 	env.Out = &out
 	env.EnvLookup = func(key string) (string, bool) {
-		if key == "DCOS_URL" {
-			return "https://dcos.example.org", true
+		if key == "DCOS_TIMEOUT" {
+			return "300", true
 		}
 		return "", false
 	}
@@ -26,10 +26,10 @@ func TestConfigShowEnvVar(t *testing.T) {
 		EnvLookup: env.EnvLookup,
 	})))
 	cmd := newCmdConfigShow(ctx)
-	cmd.SetArgs([]string{"core.dcos_url"})
+	cmd.SetArgs([]string{"core.timeout"})
 
 	err := cmd.Execute()
 	require.NoError(t, err)
 
-	require.Equal(t, "https://dcos.example.org\n", out.String())
+	require.Equal(t, "300\n", out.String())
 }
