@@ -9,6 +9,34 @@ __dcos_debug() {
     fi
 }
 
+# Since _get_comp_words_by_ref is not available in zsh
+# we need a ported version that can be sourced when using zsh.
+if [[ -n ${ZSH_VERSION:+set} ]] && ! type _get_comp_words_by_ref >/dev/null 2>&1; then
+_get_comp_words_by_ref () {
+        while [ $# -gt 0 ]; do
+                case "$1" in
+                cur)
+                        cur=${COMP_WORDS[COMP_CWORD]}
+                        ;;
+                prev)
+                        prev=${COMP_WORDS[COMP_CWORD-1]}
+                        ;;
+                words)
+                        words=("${COMP_WORDS[@]}")
+                        ;;
+                cword)
+                        cword=$COMP_CWORD
+                        ;;
+                -n)
+                        # assume COMP_WORDBREAKS is already set sanely
+                        shift
+                        ;;
+                esac
+                shift
+        done
+}
+fi
+
 
 # Default behavior to get the next command from the current command. In the case of --help and maybe other situations
 # in the future that should end completion, this returns 1, otherwise 0
@@ -96,16 +124,13 @@ __dcos_source_plugin_completions() {
     for dir in "$@"; do
         # skip if plugin doesn't have a completion directory
         if [[ -d $dir ]]; then
-            for file in "$1/bash/"*; do
+            # shellcheck disable=SC2044
+            # disables warning about using find in for loops
+            for file in $(find "$dir/bash" -type f -iname "*.sh"); do
                 __dcos_debug "sourcing completions from $file"
-                case "$file" in
-                    *.sh)
-                        # shellcheck disable=SC1090
-                        # disables shellcheck warning that it can't follow this source
-                        source "$file"
-                        ;;
-                    *) ;;
-                esac
+                # shellcheck disable=SC1090
+                # disables shellcheck warning that it can't follow this source
+                . "$file"
             done
         fi
     done
@@ -548,7 +573,8 @@ _dcos() {
     local commands=("auth" "cluster" "config" "help" "plugin")
     local flags=("--help" "--version")
 
-    local plugin_commands completion_dirs
+    local plugin_commands=()
+    local completion_dirs=()
 
     while IFS=$'\n' read -r line; do plugin_commands+=("$line"); done < <(dcos plugin list --commands 2> /dev/null)
     commands+=("${plugin_commands[@]}")
@@ -602,7 +628,7 @@ __dcos_main() {
     # be installed separately from bash
     _get_comp_words_by_ref -n "=:" cur prev words cword
 
-    __dcos_debug "Starting completion on $cur from ${words[*]}"
+    __dcos_debug "Starting completion on '$cur' from ${words[*]}"
 
     _dcos
 }
