@@ -2,6 +2,11 @@
 
 ## Next
 
+* Bugfixes
+
+  * Drop support for DCOS_URL and DCOS_ACS_TOKEN
+  * Unset the ACS token config key whenever the DC/OS URL is updated
+
 ## 0.7.3
 
 * Features
