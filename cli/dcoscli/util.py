@@ -61,8 +61,8 @@ def cluster_version_check(func):
         major_version = m.group(1)
 
         if major_version != supported_version:
-            message = ("The attached cluster is running DC/OS {} but this "
-                       "CLI only supports DC/OS {}."
+            message = ("Warning: The attached cluster is running DC/OS {} "
+                       "but this CLI only supports DC/OS {}."
                        ).format(major_version, supported_version)
             emitter.publish(errors.DefaultError(message))
 
