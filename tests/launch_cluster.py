@@ -8,6 +8,7 @@ import time
 
 from dcos_e2e.backends import AWS
 from dcos_e2e.cluster import Cluster
+from dcos_e2e.node import Output
 from passlib.hash import sha512_crypt
 
 if len(sys.argv) != 2:
@@ -38,10 +39,10 @@ extra_config = {
 dcos_config = {**cluster.base_config, **extra_config}
 
 cluster.install_dcos_from_url(
-    build_artifact=sys.argv[1],
+    dcos_installer=sys.argv[1],
     dcos_config=dcos_config,
-    log_output_live=True,
     ip_detect_path=cluster_backend.ip_detect_path,
+    output=Output.LOG_AND_CAPTURE,
 )
 
 cluster.wait_for_dcos_ee(
