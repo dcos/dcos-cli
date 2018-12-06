@@ -1,4 +1,4 @@
---find-links git+https://github.com/dcos/dcos-e2e.git@2018.08.03.0#egg=dcos-e2e-2018.08.03.0
+--find-links git+https://github.com/dcos/dcos-e2e.git@0f44912a3016b12d1b5bcc93bde0e19de7e2bf8e#egg=dcos-e2e-2018.11.30.0
 pytest==3.7.1
 flake8==3.5.0
-dcos-e2e==2018.08.03.0
+dcos-e2e==2018.11.30.0
