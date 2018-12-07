@@ -3,6 +3,7 @@ import datetime
 import mock
 import pytz
 
+from dcos.errors import DCOSException
 from dcos.mesos import Slave
 from dcoscli import tables
 
@@ -185,3 +186,21 @@ def _test_table(table_fn, fixture_fn, path):
     table = table_fn(fixture_fn)
     with open(path) as f:
         assert str(table) == f.read().strip('\n')
+
+
+def test_str_to_datetime():
+    date_fixtures = [
+        "2017-03-31T21:05:32.422+0000",
+        "2017-03-31T21:05:32.422+0700",
+        "2017-03-31T21:05:32.422-0400",
+        "2017-03-31T21:05:32.422-04:00",
+        "2017-03-31T21:05:32Z",
+        "2017-03-31T210532Z"
+    ]
+
+    for date in date_fixtures:
+        try:
+            tables._str_to_datetime(date)
+        except Exception as exception:
+            raise DCOSException("Error parsing {date}: {error}"
+                                .format(date=date, error=Exception))

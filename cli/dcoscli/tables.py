@@ -7,6 +7,7 @@ import textwrap
 
 from collections import OrderedDict
 
+import dateutil.parser
 import prettytable
 
 from dcos import auth, marathon, mesos, util
@@ -398,8 +399,8 @@ def _str_to_datetime(datetime_str):
     """
     if not datetime_str:
         return None
-    datetime_str = datetime_str.split('+')[0]
-    return datetime.datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%f")
+    # Used to parse ISO 8601 formatted date strings.
+    return dateutil.parser.parse(datetime_str)
 
 
 def _last_run_status(job):
