@@ -15,12 +15,12 @@ func NewCommand(ctx api.Context) *cobra.Command {
 		Use:       "completion",
 		Short:     "Output completion script for the DC/OS CLI",
 		Hidden:    true,
-		ValidArgs: []string{"bash"},
+		ValidArgs: []string{"bash", "zsh"},
 		Args:      cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			shell := args[0]
 			switch shell {
-			case "bash":
+			case "bash", "zsh":
 				return genBashCompletion(ctx)
 			default:
 				return fmt.Errorf("invalid shell '%s' given", shell)
