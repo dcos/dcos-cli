@@ -3,7 +3,7 @@ PKG=github.com/dcos/dcos-cli
 PKG_DIR=/go/src/$(PKG)
 IMAGE_NAME=dcos/dcos-cli
 VERSION?=$(shell git rev-parse HEAD)
-CORE_VERSION?=1.12-patch.2
+CORE_VERSION?=1.12-patch.3
 
 windows_EXE=.exe
 
