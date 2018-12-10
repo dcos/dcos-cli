@@ -2,6 +2,13 @@
 
 ## Next
 
+## 0.7.4
+
+* Features
+
+  * Build the CLI with 1.12-patch.3
+  * Enable bash completion to be compatible with zsh
+
 * Bugfixes
 
   * Drop support for DCOS_URL and DCOS_ACS_TOKEN
