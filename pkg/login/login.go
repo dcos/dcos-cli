@@ -20,7 +20,7 @@ var (
 
 // Credentials is the payload for login POST requests.
 type Credentials struct {
-	UID      string `json:"uid"`
+	UID      string `json:"uid,omitempty"`
 	Password string `json:"password,omitempty"`
 	Token    string `json:"token,omitempty"`
 }
