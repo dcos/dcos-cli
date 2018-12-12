@@ -2,6 +2,12 @@
 
 ## Next
 
+## 0.7.5
+
+* Bugfixes
+
+  * Fixed emitting empty uid value in login credentials
+
 ## 0.7.4
 
 * Features
