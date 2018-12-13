@@ -46,6 +46,11 @@ func NewClient(baseClient *httpclient.Client, logger *logrus.Logger) *Client {
 
 // Providers returns the supported login providers for a given DC/OS cluster.
 func (c *Client) Providers() (Providers, error) {
+	authHeader, err := c.challengeAuth()
+	if err != nil {
+		return nil, err
+	}
+
 	resp, err := c.http.Get("/acs/api/v1/auth/providers")
 	if err != nil {
 		return nil, err
@@ -58,17 +63,17 @@ func (c *Client) Providers() (Providers, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		if authHeader == "oauthjwt" {
+			// DC/OS Open Source >= 1.13.
+			provider := defaultOIDCImplicitFlowProvider()
+			providers[provider.ID] = provider
+		}
 		return providers, nil
 	}
 
+	// This is for DC/OS EE 1.7/1.8 and DC/OS Open Source < 1.13.
 	c.logger.Info("Falling back to the WWW-Authenticate challenge.")
-
-	// This is for DC/OS EE 1.7/1.8 and DC/OS Open Source.
-	authHeader, err := c.challengeAuth()
-	if err != nil {
-		return nil, err
-	}
-
 	switch authHeader {
 	case "oauthjwt":
 		// DC/OS Open Source

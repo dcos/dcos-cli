@@ -23,7 +23,7 @@ func TestProviders(t *testing.T) {
 		{nil, "unexisting-login-method", nil},
 		{
 			map[string]*Provider{"dcos-users": defaultDCOSUIDPasswordProvider()},
-			"",
+			"acsjwt",
 			Providers{"dcos-users": defaultDCOSUIDPasswordProvider()},
 		},
 		{
