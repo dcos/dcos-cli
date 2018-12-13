@@ -107,7 +107,7 @@ pipeline {
         stage("Run Windows integration tests") {
           agent {
             node {
-              label 'windows'
+              label 'winpy354'
               customWorkspace 'C:\\windows\\workspace'
             }
           }
