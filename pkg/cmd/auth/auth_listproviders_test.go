@@ -18,7 +18,9 @@ func TestAuthListProvidersTable(t *testing.T) {
 		expectTable func(table *tablewriter.Table)
 	}{
 		{
-			mock.Cluster{LoginProviders: login.Providers{
+			mock.Cluster{
+				AuthChallenge: "acsjwt",
+				LoginProviders: login.Providers{
 				"dcos-users":   &login.Provider{Type: login.DCOSUIDPassword},
 				"dcos-service": &login.Provider{Type: login.DCOSUIDServiceKey},
 			}},
