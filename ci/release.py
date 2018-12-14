@@ -51,7 +51,7 @@ slack_token = os.environ.get("SLACK_API_TOKEN")
 if not slack_token or not os.environ.get("TAG_NAME"):
     sys.exit(0)
 
-attachment_text = version + " has been released!"
+attachment_text = "The DC/OS CLI " + version + " has been released!"
 s3_urls = ["https://{}/{}".format(bucket, a[1]) for a in artifacts]
 
 try:
