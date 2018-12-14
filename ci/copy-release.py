@@ -36,7 +36,7 @@ slack_token = os.environ.get("SLACK_API_TOKEN")
 if not slack_token:
     sys.exit(0)
 
-attachment_text = tag_name + " has been released!"
+attachment_text = "The DC/OS CLI for " + dcos_version + " has been set to " + tag_name + "!"
 s3_urls = ["https://{}/{}".format(bucket, a.format("dcos-" + dcos_version)) for a in artifacts]
 
 try:
@@ -48,8 +48,8 @@ try:
         "attachments": [
             {
                 "color": "good",
-                "title": "dcos-core-cli",
-                "text":  "\n".join([attachment_text + " :tada:"] + s3_urls),
+                "title": "dcos-cli",
+                "text":  "\n".join([attachment_text + " :dcos:"] + s3_urls),
                 "fallback": "[dcos-core-cli] " + attachment_text
             }
         ]
