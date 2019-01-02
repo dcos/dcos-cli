@@ -82,6 +82,15 @@ kafka  10.0.2.3      2	RUNNING  1.1  123-456-789
 kafka2 10.0.2.3     99	RUNNING  2.0  123-456-789
 ```
 
+### stdout/stderr
+
+CLI main output, such as an ID, JSON or table outputs, should be written to stdout.
+
+Errors, deprecation notices, informational and debug messages should be written to stderr.
+
+When in doubt, one should wonder: "Would it make sense to pipe this output to another command?".
+If so, it probably belongs to stdout, otherwise stderr.
+
 ## Help
 
 Only output help for a single level to reduce cognitive load. For example:
