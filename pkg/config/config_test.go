@@ -174,6 +174,23 @@ func TestSetAndUnset(t *testing.T) {
 	require.Nil(t, store.Get(keyURL))
 }
 
+func TestSetTLS(t *testing.T) {
+	store := New(Opts{
+		Fs: afero.NewMemMapFs(),
+	})
+
+	require.Error(t, store.Set(keyTLS, "no"))
+	require.Error(t, store.Set(keyTLS, "/invalid/path"))
+
+	f, _ := afero.TempFile(store.Fs(), "/", "ca")
+	f.Write([]byte("Let's say I am an authority."))
+	require.NoError(t, store.Set("core.ssl_verify", f.Name()))
+	require.NoError(t, store.Set(keyTLS, "true"))
+	require.NoError(t, store.Set(keyTLS, "false"))
+	require.NoError(t, store.Set(keyTLS, "1"))
+	require.NoError(t, store.Set(keyTLS, "0"))
+}
+
 func TestACSTokenIsUnsetOnURLUpdate(t *testing.T) {
 	store := New(Opts{})
 
