@@ -162,20 +162,27 @@ func (c *Config) Get(key string) interface{} {
 }
 
 // Set sets a key in the store.
-func (c *Config) Set(key string, val interface{}) {
+func (c *Config) Set(key string, val interface{}) (err error) {
 	switch key {
 	case keyURL:
 		// Make sure the ACS token is unset whenever the DC/OS URL is updated.
 		c.Unset(keyACSToken)
 	case keyTimeout:
 		// go-toml requires int64
-		val = cast.ToInt64(val)
-		val = cast.ToBool(val)
+		val, err = cast.ToInt64E(val)
+	case keyTLS:
+		if _, err = cast.ToBoolE(val); err != nil {
+			_, err = c.fs.Stat(cast.ToString(val))
+		}
 	case keyPagination, keyReporting, keyPromptLogin:
+		val, err = cast.ToBoolE(val)
 	default:
-		val = cast.ToString(val)
+		val, err = cast.ToStringE(val)
 	}
-	c.tree.Set(key, val)
+	if err == nil {
+		c.tree.Set(key, val)
+	}
+	return err
 }
 
 // Unset deletes a given key from the Config.

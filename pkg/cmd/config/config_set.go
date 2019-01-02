@@ -18,7 +18,11 @@ func newCmdConfigSet(ctx api.Context) *cobra.Command {
 				return err
 			}
 			conf := cluster.Config()
-			conf.Set(args[0], args[1])
+			err = conf.Set(args[0], args[1])
+			if err != nil {
+				return err
+			}
+
 			err = conf.Persist()
 			if err != nil {
 				return err
