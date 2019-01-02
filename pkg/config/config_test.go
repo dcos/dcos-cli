@@ -104,7 +104,7 @@ name = "mr-cluster"
 	require.Equal(t, true, store.Get(keyPagination).(bool))
 	require.Equal(t, true, store.Get(keyReporting).(bool))
 	require.Equal(t, "https://mesos.example.com", store.Get(keyMesosMasterURL).(string))
-	require.Equal(t, true, store.Get(keyPrompLogin).(bool))
+	require.Equal(t, true, store.Get(keyPromptLogin).(bool))
 	require.Equal(t, "mr-cluster", store.Get(keyClusterName).(string))
 }
 

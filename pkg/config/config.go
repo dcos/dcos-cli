@@ -24,7 +24,7 @@ const (
 	keyPagination     = "core.pagination"
 	keyReporting      = "core.reporting"
 	keyMesosMasterURL = "core.mesos_master_url"
-	keyPrompLogin     = "core.prompt_login"
+	keyPromptLogin    = "core.prompt_login"
 	keyClusterName    = "cluster.name"
 )
 
@@ -170,8 +170,8 @@ func (c *Config) Set(key string, val interface{}) {
 	case keyTimeout:
 		// go-toml requires int64
 		val = cast.ToInt64(val)
-	case keyPagination, keyReporting, keyPrompLogin:
 		val = cast.ToBool(val)
+	case keyPagination, keyReporting, keyPromptLogin:
 	default:
 		val = cast.ToString(val)
 	}
