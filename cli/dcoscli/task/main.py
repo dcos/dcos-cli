@@ -188,6 +188,11 @@ def _task(task, all_, completed, json_):
 
     if json_:
         emitter.publish([t.dict() for t in tasks])
+        return 0
+
+    if len(tasks) == 0 and task is not None:
+            raise DCOSException(
+                'Cannot find a task with ID containing "{}"'.format(task))
     else:
         table = tables.task_table(tasks)
         output = six.text_type(table)
