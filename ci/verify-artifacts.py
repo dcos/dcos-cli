@@ -24,16 +24,19 @@ dcos_cli_repo = g.get_repo("dcos/dcos-cli")
 latest_0_5 = "0.5.0"
 latest_0_6 = "0.6.0"
 latest_0_7 = "0.7.0"
+latest_0_8 = "0.8.0"
 latest_overall = "0.7.0"
 latest_commit = dcos_cli_repo.get_commit('master').sha
 
 for tag in dcos_cli_repo.get_tags():
     if tag.name.startswith('0.5') and StrictVersion(latest_0_5) < StrictVersion(tag.name):
-            latest_0_5 = tag.name
+        latest_0_5 = tag.name
     elif tag.name.startswith('0.6') and StrictVersion(latest_0_6) < StrictVersion(tag.name):
-            latest_0_6 = tag.name
+        latest_0_6 = tag.name
     elif tag.name.startswith('0.7') and StrictVersion(latest_0_7) < StrictVersion(tag.name):
-            latest_0_7 = tag.name
+        latest_0_7 = tag.name
+    elif tag.name.startswith('0.8') and StrictVersion(latest_0_7) < StrictVersion(tag.name):
+        latest_0_8 = tag.name
 
     if StrictVersion(latest_overall) < StrictVersion(tag.name):
         latest_overall = tag.name
@@ -48,6 +51,12 @@ expectations = [
 #    (
 #        "https://downloads.dcos.io/binaries/cli/{}/x86-64/latest/dcos{}".format(platform, ext),
 #        latest_overall
+#    ),
+#
+#    Uncomment when DC/OS 1.13 is released.
+#    (
+#        "https://downloads.dcos.io/binaries/cli/{}/x86-64/dcos-1.13/dcos{}".format(platform, ext),
+#        latest_0_8
 #    ),
     (
         "https://downloads.dcos.io/binaries/cli/{}/x86-64/dcos-1.12/dcos{}".format(platform, ext),
