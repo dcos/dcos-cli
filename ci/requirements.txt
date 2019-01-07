@@ -1,2 +1,3 @@
 boto3==1.7.26
 requests==2.20.0
+PyGithub==1.43.4
