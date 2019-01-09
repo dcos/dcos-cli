@@ -42,17 +42,14 @@ for tag in dcos_cli_repo.get_tags():
         latest_overall = tag.name
 
 expectations = [
-#    The latest endpoints are not published yet, it should happen on the next 0.7.x tag release.
-#    The lines below could then be uncommented.
-#    (
-#        "https://downloads.dcos.io/cli/releases/binaries/dcos/{}/x86-64/latest/dcos{}".format(platform, ext),
-#        latest_overall
-#    ),
-#    (
-#        "https://downloads.dcos.io/binaries/cli/{}/x86-64/latest/dcos{}".format(platform, ext),
-#        latest_overall
-#    ),
-#
+    (
+        "https://downloads.dcos.io/cli/releases/binaries/dcos/{}/x86-64/latest/dcos{}".format(platform, ext),
+        latest_overall
+    ),
+    (
+        "https://downloads.dcos.io/binaries/cli/{}/x86-64/latest/dcos{}".format(platform, ext),
+        latest_overall
+    ),
 #    Uncomment when DC/OS 1.13 is released.
 #    (
 #        "https://downloads.dcos.io/binaries/cli/{}/x86-64/dcos-1.13/dcos{}".format(platform, ext),
