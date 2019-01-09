@@ -2,6 +2,12 @@
 
 ## Next
 
+## 0.7.7
+
+* Features
+
+  * Build the CLI with 1.12-patch.5
+
 ## 0.7.6
 
 * Features
