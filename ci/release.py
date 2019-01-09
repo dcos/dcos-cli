@@ -35,7 +35,12 @@ else:
     artifacts = [
         ("linux/dcos",       "cli/testing/binaries/dcos/linux/x86-64/{}/dcos".format(version)),
         ("darwin/dcos",      "cli/testing/binaries/dcos/darwin/x86-64/{}/dcos".format(version)),
-        ("windows/dcos.exe", "cli/testing/binaries/dcos/windows/x86-64/{}/dcos.exe".format(version))
+        ("windows/dcos.exe", "cli/testing/binaries/dcos/windows/x86-64/{}/dcos.exe".format(version)),
+
+        # TODO: remove when DC/OS 1.13 is released.
+        ("linux/dcos",       "binaries/cli/linux/x86-64/dcos-1.13/dcos"),
+        ("darwin/dcos",      "binaries/cli/darwin/x86-64/dcos-1.13/dcos"),
+        ("windows/dcos.exe", "binaries/cli/windows/x86-64/dcos-1.13/dcos.exe")
     ]
 
 s3_client = boto3.resource('s3', region_name='us-west-2').meta.client
