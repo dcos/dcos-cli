@@ -7,7 +7,9 @@ import sys
 import boto3
 import requests
 
-version = os.environ.get("TAG_NAME") or "dcos-1.11"
+version = os.environ.get("TAG_NAME")
+if not version:
+    sys.exit(0)
 
 s3_client = boto3.resource('s3', region_name='us-west-2').meta.client
 bucket = "downloads.dcos.io"
