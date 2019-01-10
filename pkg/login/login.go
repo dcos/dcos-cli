@@ -120,6 +120,11 @@ func (c *Client) sniffAuth(acsToken string) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
+	if acsToken == "" {
+		// When an empty ACS token is passed, we're challenging auth.
+		// Make sure the Authorization header is empty.
+		delete(req.Header, "Authorization")
+	}
 	return c.http.Do(req)
 }
 
