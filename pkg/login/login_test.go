@@ -107,3 +107,23 @@ func TestSniffAuth(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 403, resp.StatusCode)
 }
+
+func TestChallengeAuth(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/pkgpanda/active.buildinfo.full.json", func(w http.ResponseWriter, req *http.Request) {
+		assert.Equal(t, "HEAD", req.Method)
+
+		_, ok := req.Header["Authorization"]
+		assert.False(t, ok)
+		w.WriteHeader(403)
+	})
+
+	ts := httptest.NewServer(mux)
+	defer ts.Close()
+
+	client := NewClient(httpclient.New(ts.URL, httpclient.ACSToken("abc")), &logrus.Logger{Out: ioutil.Discard})
+
+	resp, err := client.sniffAuth("")
+	require.NoError(t, err)
+	require.Equal(t, 403, resp.StatusCode)
+}
