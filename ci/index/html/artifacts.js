@@ -348,7 +348,9 @@
         }
 
         $.each(val, function(i, path) {
-          artifacts.push(new Artifact(path));
+          if (!path.includes("latest")) {
+            artifacts.push(new Artifact(path));
+          }
         });
       });
 
