@@ -219,3 +219,12 @@ func (ctx *Context) loginFlow() *login.Flow {
 		Opener: ctx.Opener(),
 	})
 }
+
+// Deprecated warns that a feature is deprecated.
+// It returns an error when DCOS_CLI_FAIL_ON_DEPRECATION=1.
+func (ctx *Context) Deprecated(msg string) error {
+	return NewDeprecationHelper(DeprecationHelperOpts{
+		Output:    ctx.env.Out,
+		EnvLookup: ctx.env.EnvLookup,
+	})(msg)
+}

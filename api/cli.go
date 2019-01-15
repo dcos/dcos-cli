@@ -39,6 +39,10 @@ type Context interface {
 	// Logger returns the CLI logger.
 	Logger() *logrus.Logger
 
+	// Deprecated warns that a feature is deprecated.
+	// It returns an error when DCOS_CLI_FAIL_ON_DEPRECATION=1.
+	Deprecated(msg string) error
+
 	// DCOSDir returns the root directory for the DC/OS CLI.
 	DCOSDir() (string, error)
 
