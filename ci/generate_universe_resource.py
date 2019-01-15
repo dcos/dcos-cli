@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 # Usage example:
-#   ./generate_universe_resource.py dcos-core-cli 1.12-patch.2
+#   ./generate_universe_resource.py "https://downloads.dcos.io/cli/releases/plugins/dcos-core-cli/{platform}/x86-64/dcos-core-cli-1.12-patch.0.zip"
+
 
 import json
 import sys
@@ -10,8 +11,7 @@ import hashlib as hash
 import requests
 
 
-plugin_name = sys.argv[1]
-plugin_version = sys.argv[2]
+url_pattern = sys.argv[1]
 
 resource =	{
   "cli": {
@@ -20,8 +20,7 @@ resource =	{
 }
 
 for platform in ['linux', 'darwin', 'windows']:
-    url = "https://downloads.dcos.io/cli/releases/plugins/{}/{}/x86-64/{}-{}.zip".format(
-        plugin_name, platform, plugin_name, plugin_version)
+    url = url_pattern.format(platform=platform)
 
     sha = hash.sha256()
     r = requests.get(url, stream=True)
