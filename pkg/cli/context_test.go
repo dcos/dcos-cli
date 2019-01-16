@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"os"
 	"testing"
 
@@ -21,4 +22,35 @@ func TestRelativeDCOSDir(t *testing.T) {
 	}).DCOSDir()
 	require.NoError(t, err)
 	require.Equal(t, currentDir, dcosDir)
+}
+
+func TestDeprecation(t *testing.T) {
+	var out bytes.Buffer
+
+	err := NewContext(&Environment{
+		ErrOut: &out,
+		EnvLookup: func(key string) (string, bool) {
+			return "", false
+		},
+	}).Deprecated("This is not fatal")
+
+	require.NoError(t, err)
+	require.Equal(t, out.String(), "This is not fatal\n")
+}
+
+func TestFatalDeprecation(t *testing.T) {
+	var out bytes.Buffer
+
+	err := NewContext(&Environment{
+		ErrOut: &out,
+		EnvLookup: func(key string) (string, bool) {
+			if key == "DCOS_CLI_FAIL_ON_DEPRECATION" {
+				return "1", true
+			}
+			return "", false
+		},
+	}).Deprecated("This is fatal")
+
+	require.Error(t, err)
+	require.Equal(t, out.String(), "This is fatal\n")
 }

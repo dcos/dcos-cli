@@ -2,6 +2,8 @@ package cli
 
 import (
 	"crypto/tls"
+	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -223,8 +225,9 @@ func (ctx *Context) loginFlow() *login.Flow {
 // Deprecated warns that a feature is deprecated.
 // It returns an error when DCOS_CLI_FAIL_ON_DEPRECATION=1.
 func (ctx *Context) Deprecated(msg string) error {
-	return NewDeprecationHelper(DeprecationHelperOpts{
-		Output:    ctx.env.Out,
-		EnvLookup: ctx.env.EnvLookup,
-	})(msg)
+	fmt.Fprintln(ctx.ErrOut(), msg)
+	if _, ok := ctx.env.EnvLookup("DCOS_CLI_FAIL_ON_DEPRECATION"); ok {
+		return errors.New("usage of deprecated feature")
+	}
+	return nil
 }
