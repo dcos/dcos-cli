@@ -129,18 +129,22 @@ you use a DC/OS Enterprise cluster”.
 
 The CLI will first try to auto-install a plugin using its canonical URL:
 
-- https://downloads.dcos.io/cli/{stability}/plugins/{plugin}/{platform}/x86-64/{plugin}-{dcos-version}-patch.x.zip
+- https://{domain}/cli/{stability}/plugins/{plugin}/{platform}/x86-64/{plugin}-{dcos-version}-patch.{patch}.zip
 
 The URL placeholders are defined as below:
 
 - `plugin` is either `dcos-core-cli` or `dcos-enterprise-cli`
+- `domain` is `downloads.dcos.io` for `dcos-core-cli` and `downloads.mesosphere.io` for `dcos-enterprise-cli`
 - `stability` is set to `testing` when the CLI is a dev build, otherwise defaults to `releases`
 - `platform` can either be `linux`, `darwin`, or `windows`
 - `dcos-version` is the major and minor version of the DC/OS cluster (eg. `1.13`)
+- `patch` is set to `latest` for `releases` stability, and to `x` for `testing` stability.
 
 Failing to download the plugins from their canonical URL usually means that the CLI user operates from an
 air-gapped environment. In that case the CLI falls back to downloading the plugins through Cosmos, where they are registered as packages named `dcos-core-cli` and `dcos-enterprise-cli`.
 
 Failing to download the plugins from Cosmos usually means that the CLI user doesn't have the necessary
-permissions in order to interact with Cosmos. In that case the setup command fails with an error message
-indicating a web-page the user can go to in order to download the plugins manually.
+permissions in order to interact with Cosmos. In that case the setup command auto-extracts a
+`dcos-core-cli` bundled in the DC/OS CLI, and skips installation of `dcos-enterprise-cli`.
+The user will see an informative deprecation message indicating a web-page where they can go to in order
+to download the plugins manually (https://downloads.dcos.io/cli/index.html).
