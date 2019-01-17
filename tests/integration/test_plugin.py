@@ -23,7 +23,10 @@ def test_plugin_list(default_cluster_with_plugins):
 
     dcos_enterprise_cli = lines[2].split()
     assert dcos_enterprise_cli[0] == 'dcos-enterprise-cli'
-    assert dcos_enterprise_cli[1:] == ['backup', 'license', 'security']
+    assert 'backup' in dcos_enterprise_cli[1:]
+    assert 'license' in dcos_enterprise_cli[1:]
+    assert 'security' in dcos_enterprise_cli[1:]
+    assert len(dcos_enterprise_cli[1:]) == 3
 
 
 def test_plugin_invocation(default_cluster):
