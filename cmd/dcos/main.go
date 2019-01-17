@@ -89,10 +89,12 @@ func printVersion(ctx api.Context) {
 	dcosClient := dcos.NewClient(ctx.HTTPClient(cluster, httpclient.Timeout(3*time.Second)))
 	if dcosVersion, err := dcosClient.Version(); err == nil {
 		fmt.Fprintln(ctx.Out(), "dcos.version="+dcosVersion.Version)
+		fmt.Fprintln(ctx.Out(), "dcos.variant="+dcosVersion.DCOSVariant)
 		fmt.Fprintln(ctx.Out(), "dcos.commit="+dcosVersion.DCOSImageCommit)
 		fmt.Fprintln(ctx.Out(), "dcos.bootstrap-id="+dcosVersion.BootstrapID)
 	} else {
 		fmt.Fprintln(ctx.Out(), "dcos.version=N/A")
+		fmt.Fprintln(ctx.Out(), "dcos.variant=N/A")
 		fmt.Fprintln(ctx.Out(), "dcos.commit=N/A")
 		fmt.Fprintln(ctx.Out(), "dcos.bootstrap-id=N/A")
 	}
