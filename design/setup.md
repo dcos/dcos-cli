@@ -127,21 +127,23 @@ you use a DC/OS Enterprise cluster”.
 
 ### Installation mechanism
 
-The CLI will first try to auto-install a plugin using its canonical URL:
+The CLI will first try to auto-install a plugin using its canonical stable URL:
 
-- https://{domain}/cli/{stability}/plugins/{plugin}/{platform}/x86-64/{plugin}-{dcos-version}-patch.{patch}.zip
+- https://{domain}/cli/releases/plugins/{plugin}/{platform}/x86-64/{plugin}-{dcos-version}-patch.latest.zip
 
 The URL placeholders are defined as below:
 
 - `plugin` is either `dcos-core-cli` or `dcos-enterprise-cli`
 - `domain` is `downloads.dcos.io` for `dcos-core-cli` and `downloads.mesosphere.io` for `dcos-enterprise-cli`
-- `stability` is set to `testing` when the CLI is a dev build, otherwise defaults to `releases`
 - `platform` can either be `linux`, `darwin`, or `windows`
 - `dcos-version` is the major and minor version of the DC/OS cluster (eg. `1.13`)
-- `patch` is set to `latest` for `releases` stability, and to `x` for `testing` stability.
 
-Failing to download the plugins from their canonical URL usually means that the CLI user operates from an
-air-gapped environment. In that case the CLI falls back to downloading the plugins through Cosmos, where they are registered as packages named `dcos-core-cli` and `dcos-enterprise-cli`.
+When the canonical stable URL is not published yet (4XX response), the CLI tries the canonical testing URL:
+
+- https://{domain}/cli/testing/plugins/{plugin}/{platform}/x86-64/{plugin}-{dcos-version}-patch.x.zip
+
+Failing to download the plugins from their canonical URLs usually means that the CLI user operates from
+an air-gapped environment. In that case the CLI falls back to downloading the plugins through Cosmos, where they are registered as packages named `dcos-core-cli` and `dcos-enterprise-cli`.
 
 Failing to download the plugins from Cosmos usually means that the CLI user doesn't have the necessary
 permissions in order to interact with Cosmos. In that case the setup command auto-extracts a
