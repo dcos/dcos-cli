@@ -3,6 +3,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -32,9 +33,32 @@ const annotationUsageOptions string = "usage_options"
 // NewDCOSCommand creates the `dcos` command with its `auth`, `config`, and `cluster` subcommands.
 func NewDCOSCommand(ctx api.Context) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "dcos",
+		Use:  "dcos",
+		Args: cobra.ArbitraryArgs,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			cmd.SilenceUsage = true
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return cmd.Usage()
+			}
+			switch args[0] {
+			case "job", "marathon", "node", "package", "service", "task":
+				cluster, err := ctx.Cluster()
+				if err != nil {
+					return errors.New("no cluster is attached")
+				}
+				corePlugin, err := extractCorePlugin(ctx, cluster)
+				if err != nil {
+					return err
+				}
+				for _, coreCmd := range corePlugin.Commands {
+					if coreCmd.Name == args[0] {
+						return newPluginCommand(ctx, coreCmd).RunE(nil, nil)
+					}
+				}
+			}
+			return fmt.Errorf("unknown command %s", args[0])
 		},
 	}
 
@@ -47,36 +71,19 @@ func NewDCOSCommand(ctx api.Context) *cobra.Command {
 	)
 
 	// If a cluster is attached, we get its plugins.
-	var hasCorePlugin bool
 	if cluster, err := ctx.Cluster(); err == nil {
 		pluginManager := ctx.PluginManager(cluster)
 		for _, plugin := range pluginManager.Plugins() {
-			if plugin.Name == "dcos-core-cli" {
-				hasCorePlugin = true
-			}
 			for _, pluginCmd := range plugin.Commands {
-				cmd.AddCommand(newPluginCommand(ctx, pluginCmd, false))
+				cmd.AddCommand(newPluginCommand(ctx, pluginCmd))
 			}
 		}
-		cmd.SetHelpCommand(customHelpCommand(ctx, cmd, pluginManager.Plugins()))
-	}
-
-	// When the dcos-core-cli plugin is not installed, we add dummy core commands
-	// based on data from the bundled core plugin. This will populate the help menu.
-	if !hasCorePlugin {
-		corePlugin, err := corecli.TempPlugin()
-		if err == nil {
-			for _, pluginCmd := range corePlugin.Commands {
-				cmd.AddCommand(newPluginCommand(ctx, pluginCmd, true))
-			}
-		}
-		cmd.SetHelpCommand(customHelpCommand(ctx, cmd, []*plugin.Plugin{corePlugin}))
 	}
 
 	// This follows the CLI design guidelines for help formatting.
-	cmd.SetUsageTemplate(`Usage:{{if .Runnable}}
-  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
-  {{.CommandPath}} [command]{{end}}{{if .HasExample}}
+	cmd.SetUsageTemplate(`Usage:{{if .HasAvailableSubCommands}}
+  {{.CommandPath}} [command]{{else if .Runnable}}
+  {{.UseLine}}{{end}}{{if .HasExample}}
 
 Examples:
 {{.Example}}{{end}}{{if .HasAvailableSubCommands}}
@@ -104,7 +111,7 @@ Use "{{.CommandPath}} [command] --help" for more information about a command.{{e
 	return cmd
 }
 
-func newPluginCommand(ctx api.Context, cmd plugin.Command, isDummyCoreCommand bool) *cobra.Command {
+func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
 	return &cobra.Command{
 		Use:                cmd.Name,
 		Short:              cmd.Description,
@@ -112,27 +119,6 @@ func newPluginCommand(ctx api.Context, cmd plugin.Command, isDummyCoreCommand bo
 		SilenceErrors:      true, // Silences error message if command returns an exit code.
 		SilenceUsage:       true, // Silences usage information from the wrapper CLI on error.
 		RunE: func(_ *cobra.Command, _ []string) error {
-			// We don't support global plugins right now so no plugin should be run without a cluster.
-			cluster, err := ctx.Cluster()
-			if err != nil {
-				ctx.Logger().Error("Error: no cluster is attached")
-				return err
-			}
-
-			// Extract the bundled core plugin when the user is trying to run a dummy core command.
-			if isDummyCoreCommand {
-				corePlugin, err := extractCorePlugin(ctx, cluster)
-				if err != nil {
-					return err
-				}
-				for _, coreCmd := range corePlugin.Commands {
-					if coreCmd.Name == cmd.Name {
-						cmd = coreCmd
-						break
-					}
-				}
-			}
-
 			// Extract the specific arguments of a command from the context.
 			ctxArgs := ctx.Args()
 			var cmdArgs []string
@@ -156,45 +142,6 @@ func newPluginCommand(ctx api.Context, cmd plugin.Command, isDummyCoreCommand bo
 			return invokePlugin(ctx, cmd, cmdArgs)
 		},
 	}
-}
-
-func customHelpCommand(ctx api.Context, root *cobra.Command, plugins []*plugin.Plugin) *cobra.Command {
-	return &cobra.Command{
-		Use:   "help [command]",
-		Short: "Help about any command",
-		Long: `Help provides help for any command in the application.
-		Simply type ` + root.Name() + ` help [path to command] for full details.`,
-		RunE: func(c *cobra.Command, args []string) error {
-			cmd, remArgs, e := c.Root().Find(args)
-			if cmd == nil || e != nil {
-				c.Printf("Unknown help topic %#q\n", args)
-				c.Root().Usage()
-			} else {
-				for _, p := range plugins {
-					for _, pluginCmd := range p.Commands {
-						if cmd.Name() == pluginCmd.Name {
-							// We don't support global plugins right now so no plugin should be run without a cluster.
-							_, err := ctx.Cluster()
-							if err != nil {
-								ctx.Logger().Error("Error: no cluster is attached")
-								return nil
-							}
-
-							args := []string{pluginCmd.Name}
-							args = append(args, remArgs...)
-							args = append(args, "--help")
-							invokePlugin(ctx, pluginCmd, args)
-							return nil
-						}
-					}
-				}
-				cmd.InitDefaultHelpFlag() // make possible 'help' flag to be shown
-				cmd.Help()
-			}
-			return nil
-		},
-	}
-
 }
 
 // extractCorePlugin extracts the bundled core plugin into the plugins folder.

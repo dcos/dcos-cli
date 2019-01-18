@@ -24,10 +24,6 @@ def test_extract_core(default_cluster):
     pkgInfo = json.loads(out)
     assert pkgInfo['package']['name'] == 'dcos-core-cli'
 
-    code, out, err = exec_cmd(['dcos', 'plugin', 'remove', 'dcos-core-cli'])
-    assert code != 0
-    assert out == ''
-    assert err == "Error: the core plugin can't be removed\n"
 
 
 def test_update_core(default_cluster_with_plugins):
