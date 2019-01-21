@@ -93,7 +93,7 @@ func (ctx *Context) PluginManager(cluster *config.Cluster) *plugin.Manager {
 // DCOSDir returns the root directory for the DC/OS CLI.
 // It defaults to `~/.dcos` and can be overriden by the `DCOS_DIR` env var.
 func (ctx *Context) DCOSDir() (string, error) {
-	if dcosDir, ok := ctx.env.EnvLookup("DCOS_DIR"); ok {
+	if dcosDir, ok := ctx.env.EnvLookup(EnvDCOSDir); ok {
 		// Make sure DCOS_DIR is an absolute path, otherwise this causes issues with plugin invocation.
 		// See https://jira.mesosphere.com/browse/DCOS_OSS-4405
 		if !filepath.IsAbs(dcosDir) {

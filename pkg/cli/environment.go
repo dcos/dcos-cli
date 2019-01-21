@@ -14,6 +14,9 @@ const (
 	// in favor of something else, the CLI will instead rely on the new approach. When this env var
 	// is not exported, the CLI displays warnings when encountering deprecated features.
 	EnvStrictDeprecations = "DCOS_CLI_STRICT_DEPRECATIONS"
+
+	// EnvDCOSDir can be used to specify a custom directory for the DC/OS CLI data, which defaults to "~/.dcos".
+	EnvDCOSDir = "DCOS_DIR"
 )
 
 // Environment represents the CLI environment. It contains writers for stdout/stderr,

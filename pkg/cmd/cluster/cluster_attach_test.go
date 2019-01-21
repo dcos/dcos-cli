@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/cluster/linker"
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/mock"
@@ -20,7 +21,7 @@ func TestClusterAttach(t *testing.T) {
 		afero.NewMemMapFs(),
 	)
 	env.EnvLookup = func(key string) (string, bool) {
-		if key == "DCOS_DIR" {
+		if key == cli.EnvDCOSDir {
 			return filepath.Join("testdata", "cluster_attach", ".dcos"), true
 		}
 		return "", false
@@ -43,7 +44,7 @@ func TestClusterAttach(t *testing.T) {
 func TestClusterAttachBothConfiguredAndLinked(t *testing.T) {
 	env := mock.NewEnvironment()
 	env.EnvLookup = func(key string) (string, bool) {
-		if key == "DCOS_DIR" {
+		if key == cli.EnvDCOSDir {
 			return ".", true
 		}
 		return "", false
