@@ -223,10 +223,10 @@ func (ctx *Context) loginFlow() *login.Flow {
 }
 
 // Deprecated warns that a feature is deprecated.
-// It returns an error when DCOS_CLI_FAIL_ON_DEPRECATION=1.
+// It returns an error when DCOS_CLI_STRICT_DEPRECATIONS=1.
 func (ctx *Context) Deprecated(msg string) error {
 	fmt.Fprintln(ctx.ErrOut(), msg)
-	if _, ok := ctx.env.EnvLookup("DCOS_CLI_FAIL_ON_DEPRECATION"); ok {
+	if _, ok := ctx.env.EnvLookup(EnvStrictDeprecations); ok {
 		return errors.New("usage of deprecated feature")
 	}
 	return nil

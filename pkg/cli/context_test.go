@@ -44,7 +44,7 @@ func TestFatalDeprecation(t *testing.T) {
 	err := NewContext(&Environment{
 		ErrOut: &out,
 		EnvLookup: func(key string) (string, bool) {
-			if key == "DCOS_CLI_FAIL_ON_DEPRECATION" {
+			if key == EnvStrictDeprecations {
 				return "1", true
 			}
 			return "", false
