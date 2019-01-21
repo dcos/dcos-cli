@@ -14,7 +14,7 @@ func TestRelativeDCOSDir(t *testing.T) {
 
 	dcosDir, err := NewContext(&Environment{
 		EnvLookup: func(key string) (string, bool) {
-			if key == "DCOS_DIR" {
+			if key == EnvDCOSDir {
 				return ".", true
 			}
 			return "", false
