@@ -40,7 +40,7 @@ func NewDCOSCommand(ctx api.Context) *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
-				return cmd.Usage()
+				return cmd.Help()
 			}
 			switch args[0] {
 			case "job", "marathon", "node", "package", "service", "task":
@@ -146,7 +146,8 @@ func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
 
 // extractCorePlugin extracts the bundled core plugin into the plugins folder.
 func extractCorePlugin(ctx api.Context, cluster *config.Cluster) (*plugin.Plugin, error) {
-	ctx.Logger().Warn(`Extracting "dcos-core-cli"...`)
+	ctx.Logger().Warn(`Extracting "dcos-core-cli"...
+This setup is deprecated, see https://docs.mesosphere.com/1.12/cli/experiments/#automatic-installation-of-core-and-enterprise-cli-plugins for more information.`)
 
 	pluginManager := ctx.PluginManager(cluster)
 	err := corecli.InstallPlugin(ctx.Fs(), pluginManager)

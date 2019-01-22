@@ -17,11 +17,13 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/dcos"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
+	"github.com/dcos/dcos-cli/pkg/internal/corecli"
 	"github.com/dcos/dcos-cli/pkg/internal/cosmos"
 	"github.com/dcos/dcos-cli/pkg/login"
 	"github.com/dcos/dcos-cli/pkg/mesos"
@@ -29,6 +31,7 @@ import (
 	"github.com/dcos/dcos-cli/pkg/prompt"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
+	"github.com/vbauerster/mpb"
 )
 
 // Opts are options for a setup.
@@ -164,13 +167,10 @@ func (s *Setup) Configure(flags *Flags, clusterURL string, attach bool) (*config
 		s.logger.Infof("You are now attached to cluster %s", cluster.ID())
 	}
 
-	// Install default plugins (dcos-core-cli and dcos-enterprise-cli) when the env var is present.
-	installPlugins, _ := s.envLookup("DCOS_CLI_EXPERIMENTAL_AUTOINSTALL_PLUGINS")
-	if installPlugins != "" {
-		s.pluginManager.SetCluster(cluster)
-		if err = s.installDefaultPlugins(httpClient); err != nil {
-			return nil, err
-		}
+	// Install default plugins (dcos-core-cli and dcos-enterprise-cli).
+	s.pluginManager.SetCluster(cluster)
+	if err = s.installDefaultPlugins(httpClient); err != nil {
+		return nil, err
 	}
 
 	s.logger.Infof("%s is now setup", clusterURL)
@@ -293,38 +293,90 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 		return errors.New("DC/OS version of the cluster < 1.10, installation of the plugins aborted")
 	}
 
+	var wg sync.WaitGroup
+	pbar := mpb.New(mpb.WithOutput(s.errout), mpb.WithWaitGroup(&wg))
+	wg.Add(2)
+
 	// Install dcos-enterprise-cli.
-	enterpriseInstallErr := make(chan error)
 	go func() {
 		// Install dcos-enterprise-cli if the DC/OS variant metadata is "enterprise".
 		if version.DCOSVariant == "enterprise" {
-			enterpriseInstallErr <- s.installPlugin("dcos-enterprise-cli", httpClient)
-		}
-		if version.DCOSVariant == "" {
+			if err := s.installPlugin("dcos-enterprise-cli", httpClient, version, pbar); err != nil {
+				s.logger.Debug(err)
+			}
+		} else if version.DCOSVariant == "" {
 			// We add this message if the DC/OS variant is "" (DC/OS < 1.12)
 			// or if there was an error while installing the EE plugin.
 			s.logger.Error("Please run “dcos package install dcos-enterprise-cli” if you use a DC/OS Enterprise cluster")
 		}
-		close(enterpriseInstallErr)
+		wg.Done()
 	}()
 
 	// Install dcos-core-cli.
-	errCore := s.installPlugin("dcos-core-cli", httpClient)
-
-	// The installation of the core and EE plugins happen in parallel.
-	// We wait for the installation of the enterprise plugin before returning.
-	errEnterprise := <-enterpriseInstallErr
-
+	errCore := s.installPlugin("dcos-core-cli", httpClient, version, pbar)
+	wg.Done()
+	pbar.Wait()
 	if errCore != nil {
-		return errCore
+		// Extract the dcos-core-cli bundle if it coudln't be downloaded.
+		errCore = corecli.InstallPlugin(s.fs, s.pluginManager)
 	}
-	return errEnterprise
+	return errCore
 }
 
-// installPlugin installs a plugin by its name. It gets the plugin's download URL through Cosmos.
-func (s *Setup) installPlugin(name string, httpClient *httpclient.Client) error {
+// installPlugin installs a plugin by its name.
+func (s *Setup) installPlugin(name string, httpClient *httpclient.Client, version *dcos.Version, pbar *mpb.Progress) error {
 	s.logger.Infof("Installing %s...", name)
 
+	if err := s.installPluginFromCanonicalURL(name, version, pbar); err != nil {
+		s.logger.Debug(err)
+	} else {
+		return nil
+	}
+	return s.installPluginFromCosmos(name, httpClient, pbar)
+}
+
+// installPluginFromCanonicalURL installs a plugin using its canonical URL.
+func (s *Setup) installPluginFromCanonicalURL(name string, version *dcos.Version, pbar *mpb.Progress) error {
+	domain := "downloads.dcos.io"
+	if name == "dcos-enterprise-cli" {
+		domain = "downloads.mesosphere.io"
+	}
+	platform := runtime.GOOS
+
+	matches := regexp.MustCompile(`^(\d+)\.(\d+)\D*`).FindStringSubmatch(version.Version)
+	if matches == nil {
+		return fmt.Errorf("unable to parse DC/OS version %s", version.Version)
+	}
+	dcosVersion := matches[1] + "." + matches[2]
+
+	url := fmt.Sprintf(
+		"https://%s/cli/releases/plugins/%s/%s/x86-64/%s-%s-patch.latest.zip",
+		domain, name, platform, name, dcosVersion,
+	)
+	httpClient := httpclient.New("")
+	req, err := httpClient.NewRequest("HEAD", url, nil)
+	if err != nil {
+		return err
+	}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode >= 400 && resp.StatusCode < 500 {
+		url = fmt.Sprintf(
+			"https://%s/cli/testing/plugins/%s/%s/x86-64/%s-%s-patch.x.zip",
+			domain, name, platform, name, dcosVersion,
+		)
+	}
+	return s.pluginManager.Install(url, &plugin.InstallOpts{
+		Name:        name,
+		Update:      true,
+		ProgressBar: pbar,
+	})
+}
+
+// installPluginFromCosmos installs a plugin through Cosmos.
+func (s *Setup) installPluginFromCosmos(name string, httpClient *httpclient.Client, pbar *mpb.Progress) error {
 	// Get package information from Cosmos.
 	pkgInfo, err := cosmos.NewClient(httpClient).DescribePackage(name)
 	if err != nil {
@@ -346,9 +398,10 @@ func (s *Setup) installPlugin(name string, httpClient *httpclient.Client) error 
 		}
 	}
 	return s.pluginManager.Install(p.URL, &plugin.InstallOpts{
-		Name:     pkgInfo.Package.Name,
-		Update:   true,
-		Checksum: checksum,
+		Name:        pkgInfo.Package.Name,
+		Update:      true,
+		Checksum:    checksum,
+		ProgressBar: pbar,
 		PostInstall: func(fs afero.Fs, pluginDir string) error {
 			pkgInfoFilepath := filepath.Join(pluginDir, "package.json")
 			pkgInfoFile, err := fs.OpenFile(pkgInfoFilepath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)

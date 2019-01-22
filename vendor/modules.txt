@@ -1,9 +1,13 @@
+# github.com/VividCortex/ewma v1.1.1
+github.com/VividCortex/ewma
 # github.com/davecgh/go-spew v1.1.0
 github.com/davecgh/go-spew/spew
 # github.com/dgrijalva/jwt-go v3.2.0+incompatible
 github.com/dgrijalva/jwt-go
 # github.com/inconshreveable/mousetrap v1.0.0
 github.com/inconshreveable/mousetrap
+# github.com/mattn/go-isatty v0.0.4
+github.com/mattn/go-isatty
 # github.com/mattn/go-runewidth v0.0.2
 github.com/mattn/go-runewidth
 # github.com/mitchellh/go-homedir v0.0.0-20180801233206-58046073cbff
@@ -29,6 +33,11 @@ github.com/spf13/pflag
 # github.com/stretchr/testify v1.2.1
 github.com/stretchr/testify/require
 github.com/stretchr/testify/assert
+# github.com/vbauerster/mpb v3.3.3+incompatible
+github.com/vbauerster/mpb
+github.com/vbauerster/mpb/decor
+github.com/vbauerster/mpb/cwriter
+github.com/vbauerster/mpb/internal
 # golang.org/x/crypto v0.0.0-20180411161317-d6449816ce06
 golang.org/x/crypto/ssh/terminal
 # golang.org/x/sys v0.0.0-20180417080122-b126b21c05a9
