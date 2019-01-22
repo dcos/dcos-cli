@@ -327,12 +327,17 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 func (s *Setup) installPlugin(name string, httpClient *httpclient.Client, version *dcos.Version, pbar *mpb.Progress) error {
 	s.logger.Infof("Installing %s...", name)
 
-	if err := s.installPluginFromCanonicalURL(name, version, pbar); err != nil {
+	if skip, _ := s.envLookup("DCOS_CLUSTER_SETUP_SKIP_CANONICAL_URL_INSTALL"); skip != "1" {
+		err := s.installPluginFromCanonicalURL(name, version, pbar)
+		if err == nil {
+			return nil
+		}
 		s.logger.Debug(err)
-	} else {
-		return nil
 	}
-	return s.installPluginFromCosmos(name, httpClient, pbar)
+	if skip, _ := s.envLookup("DCOS_CLUSTER_SETUP_SKIP_COSMOS_INSTALL"); skip != "1" {
+		return s.installPluginFromCosmos(name, httpClient, pbar)
+	}
+	return errors.New("skipping plugin installation from Cosmos (DCOS_CLUSTER_SETUP_SKIP_COSMOS_INSTALL=1)")
 }
 
 // installPluginFromCanonicalURL installs a plugin using its canonical URL.
