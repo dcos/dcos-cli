@@ -67,16 +67,6 @@ def default_cluster():
     assert code == 0
 
 
-@pytest.fixture()
-def default_cluster_with_plugins():
-    cluster = _setup_cluster(with_plugins=True)
-
-    yield cluster
-
-    code, _, _ = exec_cmd(['dcos', 'cluster', 'remove', cluster['cluster_id']])
-    assert code == 0
-
-
 @contextmanager
 def setup_cluster(**kwargs):
     try:
@@ -87,7 +77,7 @@ def setup_cluster(**kwargs):
         assert code == 0
 
 
-def _setup_cluster(name='DEFAULT', with_plugins=False, scheme='http', insecure=False):
+def _setup_cluster(name='DEFAULT', scheme='http', insecure=False):
     env = os.environ.copy()
 
     cluster = {
@@ -103,9 +93,6 @@ def _setup_cluster(name='DEFAULT', with_plugins=False, scheme='http', insecure=F
         cluster['password'],
         scheme,
         os.environ.get('DCOS_TEST_' + name + '_CLUSTER_HOST'))
-
-    if with_plugins:
-        env['DCOS_CLI_EXPERIMENTAL_AUTOINSTALL_PLUGINS'] = "1"
 
     if scheme == 'https':
         cmd += ' --no-check'

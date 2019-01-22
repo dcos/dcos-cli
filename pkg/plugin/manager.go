@@ -24,6 +24,8 @@ import (
 	"github.com/pelletier/go-toml"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
+	"github.com/vbauerster/mpb"
+	"github.com/vbauerster/mpb/decor"
 )
 
 // Manager retrieves the plugins available for the current cluster
@@ -53,6 +55,8 @@ type InstallOpts struct {
 	// Checksum represents a CLI plugin resource content hash.
 	Checksum Checksum
 
+	ProgressBar *mpb.Progress
+
 	// PostInstall is a hook which can be invoked after plugin installation.
 	// It is invoked right before the plugin is moved to its final location.
 	PostInstall func(fs afero.Fs, pluginDir string) error
@@ -72,7 +76,7 @@ func (m *Manager) Install(resource string, installOpts *InstallOpts) (err error)
 	// If it's a remote resource, download it first.
 	m.logger.Infof("Installing plugin from %s...", resource)
 	if strings.HasPrefix(resource, "https://") || strings.HasPrefix(resource, "http://") {
-		installOpts.path, err = m.downloadPlugin(resource, installOpts.Checksum)
+		installOpts.path, err = m.downloadPlugin(resource, installOpts)
 		if err != nil {
 			return err
 		}
@@ -273,7 +277,7 @@ func (m *Manager) pluginsDir() string {
 }
 
 // downloadPlugin downloads a plugin and returns the path to the temporary file it stored it to.
-func (m *Manager) downloadPlugin(url string, checksum Checksum) (string, error) {
+func (m *Manager) downloadPlugin(url string, installOpts *InstallOpts) (string, error) {
 	tmpDir, err := afero.TempDir(m.fs, os.TempDir(), "dcos-cli")
 	if err != nil {
 		return "", err
@@ -288,23 +292,32 @@ func (m *Manager) downloadPlugin(url string, checksum Checksum) (string, error) 
 	downloadedFilePath := filepath.Join(tmpDir, m.downloadFilename(resp))
 
 	var respReader io.Reader
-	if checksum.Hasher != nil {
-		respReader = io.TeeReader(resp.Body, checksum.Hasher)
+	if installOpts.Checksum.Hasher != nil {
+		respReader = io.TeeReader(resp.Body, installOpts.Checksum.Hasher)
 	} else {
 		respReader = resp.Body
 	}
+
+	if installOpts.ProgressBar != nil && resp.ContentLength > 0 {
+		bar := installOpts.ProgressBar.AddBar(
+			resp.ContentLength,
+			mpb.PrependDecorators(decor.Name(installOpts.Name)),
+			mpb.AppendDecorators(decor.CountersKibiByte("% 6.1f / % 6.1f")),
+		)
+		respReader = bar.ProxyReader(respReader)
+	}
+
 	if err := fsutil.CopyReader(m.fs, respReader, downloadedFilePath, 0644); err != nil {
 		return "", err
 	}
 
-	if checksum.Hasher != nil {
+	if installOpts.Checksum.Hasher != nil {
 		m.logger.Debugf("Verifying checksum for %s...", url)
-		computedChecksum := hex.EncodeToString(checksum.Hasher.Sum(nil))
-		if computedChecksum != checksum.Value {
-			return "", fmt.Errorf("computed checksum %s for %s, expected %s", computedChecksum, url, checksum.Value)
+		computedChecksum := hex.EncodeToString(installOpts.Checksum.Hasher.Sum(nil))
+		if computedChecksum != installOpts.Checksum.Value {
+			return "", fmt.Errorf("computed checksum %s for %s, expected %s", computedChecksum, url, installOpts.Checksum.Value)
 		}
 	}
-
 	return downloadedFilePath, nil
 }
 
