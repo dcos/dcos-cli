@@ -73,3 +73,31 @@ def test_cluster_setup_insecure():
         code, out, _ = exec_cmd(['dcos', 'config', 'show', 'core.ssl_verify'])
         assert code == 0
         assert out.rstrip() == "false"
+
+
+def test_cluster_setup_cosmos_plugins():
+    env = {'DCOS_CLUSTER_SETUP_SKIP_CANONICAL_URL_INSTALL': '1'}
+    with setup_cluster(scheme='https', insecure=True, env=env):
+        code, out, err = exec_cmd(['dcos', 'plugin', 'list', '--json'])
+        assert code == 0
+
+        plugins = json.loads(out)
+
+        assert len(plugins) == 2
+        assert plugins[0]['name'] == 'dcos-core-cli'
+        assert plugins[1]['name'] == 'dcos-enterprise-cli'
+
+
+def test_cluster_setup_bundled_core_plugin():
+    env = {
+        'DCOS_CLUSTER_SETUP_SKIP_CANONICAL_URL_INSTALL': '1',
+        'DCOS_CLUSTER_SETUP_SKIP_COSMOS_INSTALL': '1',
+    }
+    with setup_cluster(scheme='https', insecure=True, env=env):
+        code, out, err = exec_cmd(['dcos', 'plugin', 'list', '--json'])
+        assert code == 0
+
+        plugins = json.loads(out)
+
+        assert len(plugins) == 1
+        assert plugins[0]['name'] == 'dcos-core-cli'
