@@ -1,9 +1,11 @@
-#platforms {
-    display: inline-block;
+body {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
 }
 
-#architectures {
+#platforms, #architectures {
     display: inline-block;
+    margin-top: 1.1em;
 }
 
 #binaries [name=names]

@@ -12,6 +12,7 @@ def upload_file(client, src, dst):
     types = {
       ".css": "text/css",
       ".html": "text/html",
+      ".ico": "image/x-icon",
       ".js": "text/javascript",
       ".json": "text/json",
     }
