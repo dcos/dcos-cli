@@ -112,7 +112,7 @@ Use "{{.CommandPath}} [command] --help" for more information about a command.{{e
 }
 
 func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
-	return &cobra.Command{
+	pluginCmd := &cobra.Command{
 		Use:                cmd.Name,
 		Short:              cmd.Description,
 		DisableFlagParsing: true,
@@ -142,6 +142,13 @@ func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
 			return invokePlugin(ctx, cmd, cmdArgs)
 		},
 	}
+	pluginCmd.SetHelpFunc(func(_ *cobra.Command, cmdArgs []string) {
+		args := []string{cmd.Name}
+		args = append(args, cmdArgs...)
+		args = append(args, "--help")
+		invokePlugin(ctx, cmd, args)
+	})
+	return pluginCmd
 }
 
 // extractCorePlugin extracts the bundled core plugin into the plugins folder.
