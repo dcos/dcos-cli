@@ -13,6 +13,11 @@ import (
 )
 
 func main() {
+	if len(os.Args) == 3 && os.Args[1] == "test" && os.Args[2] == "--help" {
+		fmt.Println("Help usage for dcos-test")
+		os.Exit(0)
+	}
+
 	if len(os.Args) == 3 && os.Args[1] == "test" && os.Args[2] == "--info" {
 		fmt.Println("Helper for integration tests")
 		os.Exit(0)

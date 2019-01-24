@@ -147,6 +147,15 @@ def test_plugin_remove(default_cluster):
     assert err == ''
 
 
+def test_plugin_help(default_cluster):
+    _install_test_plugin()
+
+    code, out, err = exec_cmd(['dcos', 'help', 'test'])
+    assert code == 0
+    assert err == ''
+    assert out == 'Help usage for dcos-test\n'
+
+
 def _install_test_plugin():
     code, out, err = exec_cmd(['dcos', 'plugin', 'add', _test_plugin_path()])
     assert code == 0
