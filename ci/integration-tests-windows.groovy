@@ -35,7 +35,7 @@ node('py36') {
                 script: '''bash -ec " \
                     python -m venv env >&2; \
                     source env/bin/activate; \
-                    pip install --upgrade pip >&2; \
+                    pip install --upgrade pip==18.1 >&2; \
                     pip install -r requirements.txt >&2; \
                     ./launch_aws_cluster.py"
                 ''',

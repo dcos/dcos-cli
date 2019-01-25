@@ -37,6 +37,7 @@ pipeline {
               cd scripts; \
               python3 -m venv env; \
               source env/bin/activate; \
+              pip install --upgrade pip==18.1 setuptools; \
               pip install -r requirements.txt; \
               dcos cluster remove --all; \
               ./run_integration_tests.py --e2e-backend=dcos_launch"
