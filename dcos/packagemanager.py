@@ -494,7 +494,7 @@ class CosmosPackageVersion():
             "list-versions", params)
 
         return list(
-            version for (version, releaseVersion) in
+            version for (version, release_version) in
             sorted(
                 response.json().get("results").items(),
                 key=lambda item: int(item[1]),  # release version
