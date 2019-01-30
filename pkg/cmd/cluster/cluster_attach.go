@@ -39,7 +39,7 @@ func newCmdClusterAttach(ctx api.Context) *cobra.Command {
 
 			currentCluster, err := ctx.Cluster()
 			if err != nil {
-				if err == config.ErrConfigNotFound {
+				if err == config.ErrNotAttached && matchingConf != nil {
 					return attachTo(matchingConf)
 				}
 				return err
