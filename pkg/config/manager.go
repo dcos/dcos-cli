@@ -30,6 +30,9 @@ type Manager struct {
 	dir       string
 }
 
+// ErrNotAttached indicates that no cluster is attached.
+var ErrNotAttached = errors.New("no cluster is attached")
+
 // ErrConfigNotFound means that the manager cannot find a config using a name/id.
 var ErrConfigNotFound = errors.New("no match found")
 
@@ -79,7 +82,7 @@ func (m *Manager) Current() (*Config, error) {
 		}
 	}
 	if currentConfig == nil {
-		return nil, errors.New("no cluster is attached")
+		return nil, ErrNotAttached
 	}
 	return currentConfig, nil
 }
