@@ -61,7 +61,12 @@ def get_package_commands(package_name):
 
     bin_dir = os.path.join(_package_dir(package_name),
                            constants.DCOS_SUBCOMMAND_ENV_SUBDIR,
-                           BIN_DIRECTORY)
+                           "bin")
+
+    if not os.path.exists(bin_dir) and util.is_windows_platform():
+        bin_dir = os.path.join(_package_dir(package_name),
+                               constants.DCOS_SUBCOMMAND_ENV_SUBDIR,
+                               "Scripts")
 
     executables = []
     for filename in os.listdir(bin_dir):
