@@ -527,7 +527,9 @@ def _install_with_binary(
         config.get_config_val("core.dcos_url"))
 
     try:
-        env_bin_dir = os.path.join(env_directory, BIN_DIRECTORY)
+        env_bin_dir = os.path.join(env_directory, 'bin')
+        if not os.path.exists(env_bin_dir) and util.is_windows_platform():
+            env_bin_dir = os.path.join(env_directory, "Scripts")
 
         if kind in ["executable", "zip"]:
             with util.temptext() as file_tmp:
@@ -550,25 +552,24 @@ def _install_with_binary(
                     with zipfile.ZipFile(binary_tmp) as zf:
                         zf.extractall(env_directory)
 
-            # check contents for package_name/env/bin folder structure
-            if not os.path.exists(env_bin_dir):
-                msg = (
-                    "CLI subcommand for [{}] has an unexpected format. "
-                    "Please contact the package maintainer".format(
-                        package_name))
-                raise DCOSException(msg)
+            # Check contents for package_name/env/bin folder structure.
+            # Don't fail if the env or Scripts folder doesn't exist,
+            # it is possible that a plugin.toml file specifies a custom
+            # path. The package format should be validated in a more thorough
+            # way during the refactoring of this command in Go.
+            if os.path.exists(env_bin_dir):
+                # make binar(ies) executable
+                for f in os.listdir(env_bin_dir):
+                    binary = os.path.join(env_bin_dir, f)
+                    if (f.startswith(constants.DCOS_COMMAND_PREFIX)):
+                        st = os.stat(binary)
+                        os.chmod(binary, st.st_mode | stat.S_IEXEC)
         else:
             msg = ("CLI subcommand for [{}] is an unsupported type: {}"
                    "Please contact the package maintainer".format(
                        package_name, kind))
             raise DCOSException(msg)
 
-        # make binar(ies) executable
-        for f in os.listdir(env_bin_dir):
-            binary = os.path.join(env_bin_dir, f)
-            if (f.startswith(constants.DCOS_COMMAND_PREFIX)):
-                st = os.stat(binary)
-                os.chmod(binary, st.st_mode | stat.S_IEXEC)
     except DCOSException:
         raise
     except Exception as e:
