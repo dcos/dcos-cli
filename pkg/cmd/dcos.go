@@ -3,7 +3,6 @@ package cmd
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -46,7 +45,7 @@ func NewDCOSCommand(ctx api.Context) *cobra.Command {
 			case "job", "marathon", "node", "package", "service", "task":
 				cluster, err := ctx.Cluster()
 				if err != nil {
-					return errors.New("no cluster is attached")
+					return config.ErrNotAttached
 				}
 				corePlugin, err := extractCorePlugin(ctx, cluster)
 				if err != nil {
