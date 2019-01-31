@@ -2,6 +2,10 @@
 
 ## Next
 
+* Features
+
+  * Bundle the 1.12-patch.6 core CLI
+
 * Bugfixes
 
   * Fix `cluster attach` when no cluster is attached and multiple clusters are configured
