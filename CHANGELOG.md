@@ -2,6 +2,8 @@
 
 ## Next
 
+## 0.7.8
+
 * Features
 
   * Bundle the 1.12-patch.6 core CLI
@@ -10,6 +12,7 @@
 
   * Fix `cluster attach` when no cluster is attached and multiple clusters are configured
   * Make sure the Auth token is empty when challenging auth
+  * Bump the timeout to 3 minutes for Cosmos `/package/describe` endpoint
 
 ## 0.7.7
 
