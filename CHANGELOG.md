@@ -2,6 +2,11 @@
 
 ## Next
 
+* Bugfixes
+
+  * Fix `cluster attach` when no cluster is attached and multiple clusters are configured
+  * Make sure the Auth token is empty when challenging auth
+
 ## 0.7.7
 
 * Features
