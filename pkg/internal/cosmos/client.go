@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/url"
+	"time"
 
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 )
@@ -63,7 +64,16 @@ func (c *Client) DescribePackage(name string) (*PackageInfo, error) {
 		return nil, err
 	}
 
-	req, err := c.http.NewRequest("POST", "/package/describe", &reqBody, httpclient.FailOnErrStatus(true))
+	req, err := c.http.NewRequest(
+		"POST",
+		"/package/describe",
+		&reqBody,
+
+		// Hardcode a 3 minutes timeout as Cosmos can take some time
+		// to respond when there are multiple configured repositories.
+		httpclient.Timeout(3*time.Minute),
+		httpclient.FailOnErrStatus(true),
+	)
 	if err != nil {
 		return nil, err
 	}
