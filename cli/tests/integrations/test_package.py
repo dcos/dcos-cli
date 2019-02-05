@@ -706,7 +706,7 @@ def test_uninstall_multiple_frameworknames(zk_znode):
     _uninstall_chronos(
         args=['--app-id=chronos-user-1'],
         returncode=1,
-        stderr='Uninstalled package [chronos] version [2.5.0-1]\n'
+        stderr='Uninstalled package [chronos] version [2.5.1]\n'
                'Unable to shutdown [chronos] service framework with name '
                '[chronos-user] because there are multiple framework ids '
                'matching this name: ')
@@ -714,7 +714,7 @@ def test_uninstall_multiple_frameworknames(zk_znode):
     _uninstall_chronos(
         args=['--app-id=chronos-user-2'],
         returncode=1,
-        stderr='Uninstalled package [chronos] version [2.5.0-1]\n'
+        stderr='Uninstalled package [chronos] version [2.5.1]\n'
                'Unable to shutdown [chronos] service framework with name '
                '[chronos-user] because there are multiple framework ids '
                'matching this name: ')
@@ -907,7 +907,7 @@ def _install_chronos(
         args=['--yes'],
         returncode=0,
         stdout=b'Installing Marathon app for package [chronos] '
-               b'version [2.5.0-1]\n',
+               b'version [2.5.1]\n',
         stderr=b'',
         pre_install_notes=(
             b'By Deploying, you agree to the Terms '
@@ -939,7 +939,7 @@ def _chronos_package(
         args=['--yes'],
         returncode=0,
         stdout=b'Installing Marathon app for package [chronos] '
-               b'version [2.5.0-1]\n',
+               b'version [2.5.1]\n',
         stderr=b'',
         pre_install_notes=(
             b'By Deploying, you agree to the Terms '
