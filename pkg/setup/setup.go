@@ -44,6 +44,7 @@ type Opts struct {
 	ConfigManager *config.Manager
 	PluginManager *plugin.Manager
 	EnvLookup     func(key string) (string, bool)
+	Deprecated    func(msg string) error
 }
 
 // Setup represents a cluster setup.
@@ -56,6 +57,7 @@ type Setup struct {
 	configManager *config.Manager
 	pluginManager *plugin.Manager
 	envLookup     func(key string) (string, bool)
+	deprecated    func(msg string) error
 }
 
 // New creates a new setup.
@@ -69,6 +71,7 @@ func New(opts Opts) *Setup {
 		configManager: opts.ConfigManager,
 		pluginManager: opts.PluginManager,
 		envLookup:     opts.EnvLookup,
+		deprecated:    opts.Deprecated,
 	}
 }
 
@@ -318,7 +321,7 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 	pbar.Wait()
 	if errCore != nil {
 		// Extract the dcos-core-cli bundle if it coudln't be downloaded.
-		errCore = corecli.InstallPlugin(s.fs, s.pluginManager)
+		errCore = corecli.InstallPlugin(s.fs, s.pluginManager, s.deprecated)
 	}
 	return errCore
 }

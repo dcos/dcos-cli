@@ -210,6 +210,7 @@ func (ctx *Context) Setup(flags *setup.Flags, clusterURL string, attach bool) (*
 		LoginFlow:     ctx.loginFlow(),
 		ConfigManager: configManager,
 		PluginManager: ctx.PluginManager(nil),
+		Deprecated:    ctx.Deprecated,
 	}).Configure(flags, clusterURL, attach)
 }
 
