@@ -152,11 +152,8 @@ func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
 
 // extractCorePlugin extracts the bundled core plugin into the plugins folder.
 func extractCorePlugin(ctx api.Context, cluster *config.Cluster) (*plugin.Plugin, error) {
-	ctx.Logger().Warn(`Extracting "dcos-core-cli"...
-This setup is deprecated, see https://docs.mesosphere.com/1.12/cli/experiments/#automatic-installation-of-core-and-enterprise-cli-plugins for more information.`)
-
 	pluginManager := ctx.PluginManager(cluster)
-	err := corecli.InstallPlugin(ctx.Fs(), pluginManager)
+	err := corecli.InstallPlugin(ctx.Fs(), pluginManager, ctx.Deprecated)
 	if err != nil {
 		return nil, err
 	}

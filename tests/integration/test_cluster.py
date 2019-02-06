@@ -101,3 +101,26 @@ def test_cluster_setup_bundled_core_plugin():
 
         assert len(plugins) == 1
         assert plugins[0]['name'] == 'dcos-core-cli'
+
+
+def test_cluster_setup_bundled_core_plugin_strict_mode():
+    env = {**os.environ.copy(), **{
+        'DCOS_CLUSTER_SETUP_SKIP_CANONICAL_URL_INSTALL': '1',
+        'DCOS_CLUSTER_SETUP_SKIP_COSMOS_INSTALL': '1',
+        'DCOS_CLI_STRICT_DEPRECATIONS': '1',
+    }}
+
+    cmd = 'dcos cluster setup --username={} --password={} http://{}'.format(
+        os.environ.get('DCOS_TEST_DEFAULT_CLUSTER_USERNAME'),
+        os.environ.get('DCOS_TEST_DEFAULT_CLUSTER_PASSWORD'),
+        os.environ.get('DCOS_TEST_DEFAULT_CLUSTER_HOST'))
+
+    code, out, err = exec_cmd(cmd.split(' '), env=env)
+
+    assert code != 0
+    assert out == ""
+    assert err == ("Extracting \"dcos-core-cli\"...\n"
+                   "This setup is deprecated, see "
+                   "https://docs.mesosphere.com/1.13/cli/plugins/ "
+                   "for more information.\n"
+                   "Error: usage of deprecated feature\n")

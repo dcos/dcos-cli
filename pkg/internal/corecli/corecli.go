@@ -59,7 +59,12 @@ func extractPlugin(fs afero.Fs) (string, error) {
 }
 
 // InstallPlugin installs the core plugin bundled with the CLI.
-func InstallPlugin(fs afero.Fs, pluginManager *plugin.Manager) error {
+func InstallPlugin(fs afero.Fs, pluginManager *plugin.Manager, deprecated func(msg string) error) error {
+	if err := deprecated(`Extracting "dcos-core-cli"...
+This setup is deprecated, see https://docs.mesosphere.com/1.13/cli/plugins/ for more information.`); err != nil {
+		return err
+	}
+
 	pluginFilePath, err := extractPlugin(fs)
 	if err != nil {
 		return err
