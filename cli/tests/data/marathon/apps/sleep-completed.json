@@ -1,6 +1,6 @@
 {
     "id": "test-app-completed",
-    "cmd": "sleep 1",
+    "cmd": "sleep 1000",
     "cpus": 0.1,
     "mem": 16,
     "instances": 1,
