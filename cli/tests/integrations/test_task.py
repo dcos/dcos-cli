@@ -177,16 +177,6 @@ def test_log_follow():
 
 def test_log_completed():
     """ Test `dcos task log --completed` """
-    # create a completed task
-    # ensure that tail lists nothing
-    # ensure that tail --completed lists a completed task
-    returncode, stdout, stderr = exec_command(
-        ['dcos', 'task', 'log', 'test-app-completed'])
-
-    assert returncode == 1
-    assert stdout == b''
-    assert stderr.startswith(b'No running tasks match ID [test-app-completed]')
-
     returncode, stdout, stderr = exec_command(
         ['dcos', 'task', 'log', '--completed', 'test-app-completed'])
     assert returncode == 0
