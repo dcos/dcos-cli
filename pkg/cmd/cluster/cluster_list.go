@@ -3,6 +3,7 @@ package cluster
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/cli"
@@ -14,6 +15,7 @@ import (
 func newCmdClusterList(ctx api.Context) *cobra.Command {
 	var attachedOnly bool
 	var jsonOutput bool
+	var names bool
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List the clusters configured and the ones linked to the current cluster",
@@ -42,6 +44,14 @@ func newCmdClusterList(ctx api.Context) *cobra.Command {
 				return enc.Encode(items)
 			}
 
+			if names {
+				for _, item := range items {
+					fmt.Fprintln(ctx.Out(), item.Name)
+					fmt.Fprintln(ctx.Out(), item.ID)
+				}
+				return nil
+			}
+
 			table := cli.NewTable(ctx.Out(), []string{"", "NAME", "ID", "STATUS", "VERSION", "URL"})
 			for _, item := range items {
 				var attached string
@@ -57,5 +67,7 @@ func newCmdClusterList(ctx api.Context) *cobra.Command {
 	}
 	cmd.Flags().BoolVar(&attachedOnly, "attached", false, "returns attached cluster only")
 	cmd.Flags().BoolVar(&jsonOutput, "json", false, "returns clusters in json format")
+	cmd.Flags().BoolVar(&names, "names", false, "print out a list of cluster names and IDs")
+	cmd.Flags().MarkHidden("names")
 	return cmd
 }
