@@ -274,6 +274,11 @@ _dcos_cluster_attach() {
     fi
 
     local flags=("--help")
+    local names=()
+
+    while IFS=$'\n' read -r line; do cluster_names+=("$line"); done < <(dcos cluster list --names 2> /dev/null)
+    names+=("${cluster_names[@]}")
+    __dcos_debug "Found cluster names and IDs" "${cluster_names[@]}"
 
     if [ -z "$command" ]; then
         case "$cur" in
@@ -284,7 +289,9 @@ _dcos_cluster_attach() {
             --*)
                 __dcos_handle_compreply "${flags[@]}"
                 ;;
-            *) ;;
+            *)
+                __dcos_handle_compreply "${names[@]}"
+                ;;
         esac
         return
     fi
@@ -387,7 +394,7 @@ _dcos_cluster_setup() {
             --*)
                 __dcos_handle_compreply "${flags[@]}"
                 ;;
-            *) ;;
+            *);;
         esac
         return
     fi
