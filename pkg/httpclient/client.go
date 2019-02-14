@@ -257,6 +257,11 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 	return resp, err
 }
 
+// BaseClient returns the base client.
+func (c *Client) BaseClient() *http.Client {
+	return c.baseClient
+}
+
 // BaseURL returns the HTTP client's base URL.
 func (c *Client) BaseURL() *url.URL {
 	baseURL, err := url.Parse(c.baseURL)
@@ -267,6 +272,11 @@ func (c *Client) BaseURL() *url.URL {
 		c.opts.Logger.Debug(err)
 	}
 	return baseURL
+}
+
+// Header returns the HTTP client's header.
+func (c *Client) Header() http.Header {
+	return c.opts.Header
 }
 
 // isText returns whether the Content-type header refers to a textual body.
