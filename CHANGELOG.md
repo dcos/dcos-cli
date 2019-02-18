@@ -2,6 +2,16 @@
 
 ## Next
 
+## 0.7.9
+
+* Security fixes
+
+  * Update from Go 1.11.2 to Go 1.11.5, it notably fixes a vulnerability in certificate validation (see https://github.com/golang/go/issues/29233)
+
+* Features
+
+  * Bundle the 1.12-patch.7 core CLI, it adds support for `--app-id` in the `dcos package describe` command
+
 ## 0.7.8
 
 * Features
