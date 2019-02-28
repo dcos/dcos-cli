@@ -21,7 +21,7 @@ dcos_launch_config = {
     'installer_url': os.environ['DCOS_TEST_INSTALLER_URL'],
     'platform': 'aws',
     'provider': 'onprem',
-    'aws_region': 'us-west-2',
+    'aws_region': 'us-east-1',
     'aws_key_name': 'default',
     'ssh_private_key_filename': os.environ['DCOS_TEST_SSH_KEY_PATH'],
     'os_name': 'cent-os-7-dcos-prereqs',
@@ -32,7 +32,7 @@ dcos_launch_config = {
     'dcos_config': {
         'cluster_name': 'DC/OS Licensing CLI Integration Tests',
         'resolvers': ['10.10.0.2'],
-        'dns_search': 'us-west-2.compute.internal',
+        'dns_search': 'us-east-1.compute.internal',
         'master_discovery': 'static',
         'exhibitor_storage_backend': 'static',
         'superuser_username': os.environ['DCOS_TEST_ADMIN_USERNAME'],

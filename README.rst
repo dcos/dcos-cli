@@ -80,7 +80,7 @@ Configure Environment and Run
 #. Configure the CLI, changing the values below as appropriate for your local
    installation of DC/OS::
 
-    dcos cluster setup http://dcos-ea-1234.us-west-2.elb.amazonaws.com
+    dcos cluster setup http://dcos-ea-1234.us-east-1.elb.amazonaws.com
 
 #. Get started by calling the DC/OS CLI help::
 
@@ -104,7 +104,7 @@ capabilities is to use `dcos-launch`_ with the configuration listed below::
     installer_url: ${CLI_TEST_INSTALLER_URL}
     platform: aws
     provider: onprem
-    aws_region: us-west-2
+    aws_region: us-east-1
     aws_key_name: ${CLI_TEST_SSH_KEY_NAME}
     ssh_private_key_filename: ${CLI_TEST_SSH_KEY_PATH}
     os_name: cent-os-7
@@ -116,7 +116,7 @@ capabilities is to use `dcos-launch`_ with the configuration listed below::
         cluster_name: DC/OS CLI Integration Tests
         resolvers:
             - 10.10.0.2
-        dns_search: us-west-2.compute.internal
+        dns_search: us-east-1.compute.internal
         master_discovery: static
 
 Where :code:`CLI_TEST_DEPLOYMENT_NAME` is a custom name set by the user,

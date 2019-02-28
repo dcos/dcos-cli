@@ -305,10 +305,10 @@ def test_task_fault_domain():
         'domain': {
             'fault_domain': {
                 'region': {
-                    'name': 'us-west-2'
+                    'name': 'us-east-1'
                 },
                 'zone': {
-                    'name': 'us-west-2a'
+                    'name': 'us-east-1a'
                 }
             }
         }
