@@ -509,7 +509,8 @@ def _list(json_, extra_field_names):
             for key in ('id', 'pid', 'version'):
                 master[key] = master_state.get(key)
         else:
-            master['type'] = 'master'
+            master['type'] = 'master (standby)'
+            master['region'] = region
     for slave in slaves:
         region, zone = util.get_fault_domain(slave)
         slave['type'] = 'agent'
