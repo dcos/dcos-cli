@@ -3,6 +3,10 @@ import os
 import shutil
 import sys
 
+from concurrent import futures
+
+import pytest
+
 from .common import setup_cluster, exec_cmd, default_cluster  # noqa: F401
 
 
@@ -87,6 +91,22 @@ def test_plugin_invocation_tls():
 
         assert out['env'].get('DCOS_TLS_INSECURE') == '1'
         assert out['env'].get('DCOS_TLS_CA_PATH') is None
+
+
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='Not yet concurrent-safe on Windows (DCOS_OSS-4843)')
+def test_plugin_concurrent_invocation(default_cluster):
+    _install_test_plugin()
+
+    with futures.ThreadPoolExecutor() as pool:
+        cmds = [pool.submit(exec_cmd, ['dcos', 'test', 'arg']) for _ in range(50)]
+
+        completed, _ = futures.wait(cmds, timeout=30)
+        assert len(completed) == 50
+
+        for cmd in completed:
+            code, out, err = cmd.result()
+            assert code == 0, out + err
 
 
 def test_plugin_verbosity(default_cluster):
