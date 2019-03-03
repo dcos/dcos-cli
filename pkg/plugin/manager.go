@@ -189,8 +189,8 @@ func (m *Manager) loadPlugin(name string) (*Plugin, error) {
 
 	// Save a deep copy of the plugin once it's loaded from the plugin.toml file.
 	persistedPlugin := &Plugin{}
-	deriveDeepCopy(persistedPlugin, plugin)
 	plugin.dir = pluginPath
+	deriveDeepCopy(persistedPlugin, plugin)
 
 	if len(plugin.Commands) == 0 {
 		plugin.Commands = m.findCommands(pluginPath)
