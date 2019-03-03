@@ -28,6 +28,11 @@ import (
 	"github.com/vbauerster/mpb/decor"
 )
 
+// ExistError indicates that a plugin installation failed because it's already installed.
+type ExistError struct {
+	error
+}
+
 // Manager retrieves the plugins available for the current cluster
 // by navigating into the filesystem.
 type Manager struct {
@@ -86,9 +91,17 @@ func (m *Manager) Install(resource string, installOpts *InstallOpts) (err error)
 		installOpts.path = resource
 	}
 
-	// The staging dir is where the plugin will be constructed
-	// before eventually getting moved to its final location.
-	installOpts.stagingDir, err = afero.TempDir(m.fs, os.TempDir(), "dcos-cli")
+	if err := m.fs.MkdirAll(m.tempDir(), 0755); err != nil {
+		return err
+	}
+
+	// The staging dir is where the plugin will be constructed before eventually getting moved to
+	// its final location. It relies on a temp directory inside the cluster directory instead of
+	// the system's temp directory, otherwise this would cause issues when the system's temp dir
+	// and the DC/OS dir are on different devices.
+	//
+	// See https://groups.google.com/forum/m/#!topic/golang-dev/5w7Jmg_iCJQ.
+	installOpts.stagingDir, err = afero.TempDir(m.fs, m.tempDir(), "dcos-cli")
 	if err != nil {
 		return err
 	}
@@ -196,7 +209,9 @@ func (m *Manager) loadPlugin(name string) (*Plugin, error) {
 
 	// Compare the normalized plugin with the saved copy to know whether or not the file should be updated.
 	if !reflect.DeepEqual(persistedPlugin, plugin) {
-		m.persistPlugin(plugin, pluginFilePath)
+		if err := m.persistPlugin(plugin, pluginFilePath); err != nil {
+			m.logger.Debug(err)
+		}
 	}
 	return plugin, nil
 }
@@ -261,19 +276,33 @@ func (m *Manager) unmarshalPlugin(plugin *Plugin, path string) error {
 }
 
 // persistPlugin saves a `plugin.toml` file representing the plugin.
-func (m *Manager) persistPlugin(plugin *Plugin, path string) {
-	pluginTOML, err := toml.Marshal(*plugin)
-	if err == nil {
-		err = afero.WriteFile(m.fs, path, pluginTOML, 0644)
+func (m *Manager) persistPlugin(plugin *Plugin, path string) error {
+	if err := m.fs.MkdirAll(m.tempDir(), 0755); err != nil {
+		return err
 	}
+
+	f, err := afero.TempFile(m.fs, m.tempDir(), "plugin.toml")
 	if err != nil {
-		m.logger.Debug(err)
+		return err
 	}
+
+	defer m.fs.Remove(f.Name())
+	defer f.Close()
+
+	if err := toml.NewEncoder(f).Encode(*plugin); err != nil {
+		return err
+	}
+	return m.fs.Rename(f.Name(), path)
 }
 
 // pluginsDir returns the path to the plugins directory.
 func (m *Manager) pluginsDir() string {
 	return filepath.Join(m.cluster.Dir(), "subcommands")
+}
+
+// tempDir returns the path to the temp directory.
+func (m *Manager) tempDir() string {
+	return filepath.Join(m.cluster.Dir(), "tmp")
 }
 
 // downloadPlugin downloads a plugin and returns the path to the temporary file it stored it to.
@@ -392,29 +421,24 @@ func (m *Manager) buildPlugin(installOpts *InstallOpts) error {
 func (m *Manager) installPlugin(installOpts *InstallOpts) error {
 	dest := filepath.Join(m.pluginsDir(), installOpts.Name)
 
-	if installOpts.Update {
-		if err := m.fs.RemoveAll(dest); err != nil {
-			return err
-		}
-	} else {
-		pluginDirExists, err := afero.DirExists(m.fs, dest)
-		if err != nil {
-			m.logger.Debug(err)
-		}
-		if pluginDirExists {
-			return fmt.Errorf("'%s' is already installed", installOpts.Name)
-		}
-	}
-
 	if err := m.fs.MkdirAll(filepath.Dir(dest), 0755); err != nil {
 		return err
 	}
 
-	// Copy the plugin folder to its final location. We don't move it as this causes
-	// issues when the system's temp dir and the DC/OS dir are on different devices.
-	// See https://groups.google.com/forum/m/#!topic/golang-dev/5w7Jmg_iCJQ.
-	defer m.fs.RemoveAll(installOpts.stagingDir)
-	return fsutil.CopyDir(m.fs, installOpts.stagingDir, dest)
+	if installOpts.Update {
+		if err := m.fs.RemoveAll(dest); err != nil {
+			return err
+		}
+	}
+
+	err := m.fs.Rename(installOpts.stagingDir, dest)
+	if err != nil {
+		defer m.fs.RemoveAll(installOpts.stagingDir)
+		if os.IsExist(err) {
+			return ExistError{fmt.Errorf("'%s' is already installed", installOpts.Name)}
+		}
+	}
+	return err
 }
 
 // httpClient returns the appropriate HTTP client for a given resource.
