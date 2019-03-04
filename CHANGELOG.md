@@ -2,6 +2,10 @@
 
 ## Next
 
+* Bugfixes
+
+  * Make the plugin runtime safe for concurrent usage
+
 ## 0.7.9
 
 * Security fixes

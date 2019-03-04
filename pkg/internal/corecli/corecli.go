@@ -65,8 +65,14 @@ func InstallPlugin(fs afero.Fs, pluginManager *plugin.Manager) error {
 		return err
 	}
 	defer fs.Remove(pluginFilePath)
-
-	return pluginManager.Install(pluginFilePath, &plugin.InstallOpts{
-		Update: true,
-	})
+	err = pluginManager.Install(pluginFilePath, &plugin.InstallOpts{})
+	if _, ok := err.(plugin.ExistError); ok {
+		// While it was not there at the beginning of the process execution, it is possible that the
+		// core plugin was either installed or auto-extracted by another concurrent CLI command invocation.
+		// We don't fail here as the core plugin is now installed and can be invoked safely.
+		//
+		// See https://jira.mesosphere.com/browse/DCOS_OSS-4843
+		return nil
+	}
+	return err
 }
