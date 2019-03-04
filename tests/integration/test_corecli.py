@@ -43,7 +43,7 @@ def test_extract_core_concurrently(default_cluster):
     assert err == ''
 
     with futures.ThreadPoolExecutor() as pool:
-        cmds = [pool.submit(exec_cmd, ['dcos', 'node']) for _ in range(50)]
+        cmds = [pool.submit(exec_cmd, ['dcos', 'node', 'list']) for _ in range(50)]
 
         completed, _ = futures.wait(cmds, timeout=60)
         assert len(completed) == 50
