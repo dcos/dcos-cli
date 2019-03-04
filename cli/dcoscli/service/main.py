@@ -43,8 +43,8 @@ def _cmds():
 
         cmds.Command(
             hierarchy=['service', 'log'],
-            arg_keys=['--follow', '--lines', '--ssh-config-file', '<service>',
-                      '<file>'],
+            arg_keys=['--follow', '--lines', '--ssh-config-file', '--user',
+                      '<service>', '<file>'],
             function=_log),
 
         cmds.Command(
@@ -115,7 +115,7 @@ def _shutdown(service_id):
     return 0
 
 
-def _log(follow, lines, ssh_config_file, service, file_):
+def _log(follow, lines, ssh_config_file, user, service, file_):
     """Prints the contents of the logs for a given service.  The service
     task is located by first identifying the marathon app running a
     framework named `service`.
@@ -126,6 +126,8 @@ def _log(follow, lines, ssh_config_file, service, file_):
     :type lines: int
     :param ssh_config_file: SSH config file.  Used for marathon.
     :type ssh_config_file: str | None
+    :param user: SSH user
+    :type user: str | None
     :param service: service name
     :type service: str
     :param file_: file path to read
@@ -144,7 +146,7 @@ def _log(follow, lines, ssh_config_file, service, file_):
                                 ' The systemd journal is always used for the'
                                 ' marathon log.')
 
-        return _log_marathon(follow, lines, ssh_config_file)
+        return _log_marathon(follow, lines, ssh_config_file, user)
     else:
         if ssh_config_file:
             raise DCOSException(
@@ -255,7 +257,7 @@ def _get_service_app(marathon_client, service_name):
         return apps[0]
 
 
-def _log_marathon(follow, lines, ssh_config_file):
+def _log_marathon(follow, lines, ssh_config_file, user):
     """Prints the contents of the marathon logs. Proxy through the master
     because marathon only runs on the master.
 
@@ -265,6 +267,8 @@ def _log_marathon(follow, lines, ssh_config_file):
     :type lines: int
     :param ssh_config_file: SSH config file.
     :type ssh_config_file: str | None
+    :param user: SSH user
+    :type user: str | None
     ;:returns: process return code
     :rtype: int
     """
@@ -280,6 +284,7 @@ def _log_marathon(follow, lines, ssh_config_file):
 
     ssh_options = ssh_util.get_ssh_options(
         ssh_config_file,
+        user=user,
         master_proxy=True)
     cmd = "ssh {0} {1} -- journalctl {2}-u {3}".format(
         ssh_options,

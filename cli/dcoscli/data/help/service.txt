@@ -6,7 +6,7 @@ Usage:
     dcos service --info
     dcos service --version
     dcos service [--completed --inactive --json]
-    dcos service log [--follow --lines=N --ssh-config-file=<path>]
+    dcos service log [--follow --lines=N --ssh-config-file=<path> --user=<user>]
                      <service> [<file>]
     dcos service shutdown <service-id>
 
