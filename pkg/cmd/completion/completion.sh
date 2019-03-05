@@ -9,6 +9,22 @@ __dcos_debug() {
     fi
 }
 
+
+# Checks if an array of subcommands contains a subcommand.
+# sage: __dcos_contains_subcommand <cmd> <arrays_of_subcommands>
+__dcos_contains_subcommand () {
+    local seeking=$1; shift
+    local res=1
+    for cmd; do
+        if [[ $cmd == "$seeking" ]]; then
+            res=0
+            break
+        fi
+    done
+    return $res
+}
+
+
 # Since _get_comp_words_by_ref is not available in zsh
 # we need a ported version that can be sourced when using zsh.
 if [[ -n ${ZSH_VERSION:+set} ]] && ! type _get_comp_words_by_ref >/dev/null 2>&1; then
