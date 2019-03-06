@@ -500,10 +500,10 @@ def _list(json_, extra_field_names):
     masters = mesos.MesosDNSClient().masters()
     master_state = client.get_master_state()
     slaves = client.get_state_summary()['slaves']
+    region, zone = util.get_fault_domain(master_state)
     for master in masters:
         if master['ip'] == master_state['hostname']:
             master['type'] = 'master (leader)'
-            region, zone = util.get_fault_domain(master_state)
             master['region'] = region
             master['zone'] = zone
             for key in ('id', 'pid', 'version'):
