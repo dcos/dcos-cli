@@ -1,10 +1,14 @@
 # CHANGELOG
 
-## Next
+## 0.7.10
 
 * Bugfixes
 
   * Make the plugin runtime safe for concurrent usage
+
+* Features
+
+  * Bundle the 1.12-patch.8 core CLI, it adds support for `--user` in the `dcos service log` command
 
 ## 0.7.9
 
