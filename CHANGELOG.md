@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.7.11
+
+* Features
+
+  * Bundle the 1.12-patch.9 core CLI, which fixes the `dcos node` command
+
 ## 0.7.10
 
 * Bugfixes
