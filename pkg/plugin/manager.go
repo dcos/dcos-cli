@@ -105,9 +105,16 @@ func (m *Manager) Install(resource string, installOpts *InstallOpts) (err error)
 	if err != nil {
 		return err
 	}
+	defer m.fs.RemoveAll(installOpts.stagingDir)
 
 	// Build the plugin into the staging directory.
 	err = m.buildPlugin(installOpts)
+	if err != nil {
+		return err
+	}
+
+	// Validate the plugin before installation.
+	err = m.validatePlugin(installOpts)
 	if err != nil {
 		return err
 	}
@@ -416,6 +423,23 @@ func (m *Manager) buildPlugin(installOpts *InstallOpts) error {
 	return nil
 }
 
+// validatePlugin validates that a plugin is properly structured.
+func (m *Manager) validatePlugin(installOpts *InstallOpts) error {
+	pluginDir := filepath.Join(installOpts.stagingDir, "env")
+
+	hasPluginTOML, err := afero.Exists(m.fs, filepath.Join(pluginDir, "plugin.toml"))
+	if err != nil {
+		m.logger.Debugf("Couldn't check if plugin.toml exists: %s", err)
+	}
+
+	if !hasPluginTOML && len(m.findCommands(pluginDir)) == 0 {
+		return fmt.Errorf("%s has no commands", installOpts.Name)
+	}
+
+	// TODO: verify that plugin binaries are executables?
+	return nil
+}
+
 // installPlugin installs a plugin from a staging dir into its final location.
 // "update" indicates whether an already existing plugin can be overwritten.
 func (m *Manager) installPlugin(installOpts *InstallOpts) error {
@@ -433,7 +457,6 @@ func (m *Manager) installPlugin(installOpts *InstallOpts) error {
 
 	err := m.fs.Rename(installOpts.stagingDir, dest)
 	if err != nil {
-		defer m.fs.RemoveAll(installOpts.stagingDir)
 		if os.IsExist(err) {
 			return ExistError{fmt.Errorf("'%s' is already installed", installOpts.Name)}
 		}
