@@ -3,6 +3,7 @@ package plugin
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/dcos/dcos-cli/api"
@@ -63,6 +64,7 @@ func newCmdPluginList(ctx api.Context) *cobra.Command {
 				for _, command := range plugin.Commands {
 					commands = append(commands, command.Name)
 				}
+				sort.Strings(commands)
 				table.Append([]string{plugin.Name, strings.Join(commands, " ")})
 			}
 			table.Render()
