@@ -81,6 +81,14 @@ def test_plugin_list(default_cluster):
     assert len(dcos_enterprise_cli[1:]) == 3
 
 
+def test_plugin_install_invalid_test(default_cluster):
+    filename = os.path.splitext(os.path.basename(__file__))[0]
+    code, out, err = exec_cmd(['dcos', 'plugin', 'add', __file__])
+    assert code == 1
+    assert err == 'Error: {} has no commands\n'.format(filename)
+    assert out == ''
+
+
 def test_plugin_invocation(default_cluster):
     _install_test_plugin()
 
