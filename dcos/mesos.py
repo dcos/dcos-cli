@@ -1294,6 +1294,14 @@ class TaskIO(object):
                     'container'] = {
                         'type': 'MESOS',
                         'tty_info': {}}
+            message[
+                'launch_nested_container_session'][
+                    'command'][
+                        'environment'] = {
+                            'variables': [{
+                                    'name': 'TERM',
+                                    'type': 'VALUE',
+                                    'value': 'xterm'}]}
 
         req_extra_args = {
             'stream': True,
