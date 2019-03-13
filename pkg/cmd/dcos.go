@@ -57,6 +57,7 @@ func NewDCOSCommand(ctx api.Context) *cobra.Command {
 					}
 				}
 			}
+			fmt.Fprintln(ctx.ErrOut(), cmd.UsageString())
 			return fmt.Errorf("unknown command %s", args[0])
 		},
 	}
