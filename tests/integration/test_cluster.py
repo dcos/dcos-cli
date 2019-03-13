@@ -4,6 +4,70 @@ import os
 from .common import setup_cluster, exec_cmd, default_cluster  # noqa: F401
 
 
+def test_cluster_help():
+    code, out, err = exec_cmd(['dcos', 'cluster'])
+    assert code == 0
+    assert err == ''
+    assert out == '''Manage your DC/OS clusters
+
+Usage:
+  dcos cluster [command]
+
+Commands:
+  attach
+      Attach the CLI to a cluster
+  link
+      Link the current cluster to another one
+  list
+      List the clusters configured and the ones linked to the current cluster
+  remove
+      Remove a configured cluster from the CLI
+  rename
+      Rename a configured cluster
+  setup
+      Set up the CLI to communicate with a cluster
+  unlink
+      Unlink the current cluster with one of its linked clusters
+
+Options:
+  -h, --help   help for cluster
+
+Use "dcos cluster [command] --help" for more information about a command.
+'''
+
+
+def test_cluster_invalid_usage():
+    code, out, err = exec_cmd(['dcos', 'cluster', 'not-a-command'])
+    assert code != 0
+    assert out == ''
+    assert err == '''Usage:
+  dcos cluster [command]
+
+Commands:
+  attach
+      Attach the CLI to a cluster
+  link
+      Link the current cluster to another one
+  list
+      List the clusters configured and the ones linked to the current cluster
+  remove
+      Remove a configured cluster from the CLI
+  rename
+      Rename a configured cluster
+  setup
+      Set up the CLI to communicate with a cluster
+  unlink
+      Unlink the current cluster with one of its linked clusters
+
+Options:
+  -h, --help   help for cluster
+
+Use "dcos cluster [command] --help" for more information about a command.
+
+Error: unknown command not-a-command
+'''
+
+
 def test_cluster_list(default_cluster):
     code, out, err = exec_cmd(['dcos', 'cluster', 'list'])
     assert code == 0
