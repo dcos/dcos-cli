@@ -5,8 +5,6 @@ import sys
 
 from concurrent import futures
 
-import pytest
-
 from .common import setup_cluster, exec_cmd, default_cluster  # noqa: F401
 
 
@@ -149,8 +147,6 @@ def test_plugin_invocation_tls():
         assert out['env'].get('DCOS_TLS_CA_PATH') is None
 
 
-@pytest.mark.skipif(sys.platform == 'win32',
-                    reason='Not yet concurrent-safe on Windows (DCOS_OSS-4843)')
 def test_plugin_concurrent_invocation(default_cluster):
     _install_test_plugin()
 

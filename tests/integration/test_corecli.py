@@ -1,6 +1,5 @@
 import json
 import os
-import sys
 
 from concurrent import futures
 
@@ -34,8 +33,6 @@ def test_extract_core(default_cluster):
 
 
 @pytest.mark.skipif(os.environ.get('DCOS_TEST_CORECLI') is None, reason="no core CLI bundle")
-@pytest.mark.skipif(sys.platform == 'win32',
-                    reason='Not yet concurrent-safe on Windows (DCOS_OSS-4843)')
 def test_extract_core_concurrently(default_cluster):
     code, out, err = exec_cmd(['dcos', 'plugin', 'remove', 'dcos-core-cli'])
     assert code == 0

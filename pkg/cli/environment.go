@@ -4,6 +4,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/dcos/dcos-cli/pkg/fsutil"
+
 	"github.com/spf13/afero"
 )
 
@@ -50,6 +52,6 @@ func NewOsEnvironment() *Environment {
 		Out:       os.Stdout,
 		ErrOut:    os.Stderr,
 		EnvLookup: os.LookupEnv,
-		Fs:        afero.NewOsFs(),
+		Fs:        fsutil.NewOsFs(),
 	}
 }
