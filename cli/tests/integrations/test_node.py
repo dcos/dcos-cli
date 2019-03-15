@@ -252,6 +252,15 @@ def test_node_ssh_slave_with_command():
                '/opt/mesosphere/bin/detect_ip'], 0, slave['hostname'])
 
 
+@pytest.mark.skipif(sys.platform == 'win32',
+                    reason='No pseudo terminal on windows')
+def test_node_ssh_slave_with_separated_command():
+    slave = mesos.DCOSClient().get_state_summary()['slaves'][0]
+    _node_ssh(['--mesos-id={}'.format(slave['id']), '--master-proxy', '--user',
+               os.environ.get('CLI_TEST_SSH_USER'), '--',
+               '/opt/mesosphere/bin/detect_ip'], 0, slave['hostname'])
+
+
 @pytest.mark.skipif(True, reason='The agent should be recommissioned,'
                                  ' but that feature does not exist yet.')
 def test_node_decommission():

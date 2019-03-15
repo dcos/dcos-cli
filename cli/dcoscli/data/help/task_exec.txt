@@ -2,7 +2,7 @@ Description:
     Launch an arbitrary command inside a running DC/OS task.
 
 Usage:
-    dcos-task-exec [--interactive --tty] <task> <cmd> [<args>...]
+    dcos-task-exec [--interactive --tty] <task> [--] <cmd> [<args>...]
 
 Command:
     exec

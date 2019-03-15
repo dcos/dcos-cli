@@ -23,6 +23,7 @@ Usage:
                   [--master-proxy]
                   [--option SSHOPT=VAL ...]
                   [--proxy-ip=<proxy-ip>]
+                  [--]
                   [<command>]
 
 Commands:
