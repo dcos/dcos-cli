@@ -170,16 +170,16 @@ def test_plugin_remove(default_cluster):
     _install_test_plugin()
 
     code, out, err = exec_cmd(['dcos', 'plugin', 'remove', 'dcos-test'])
-    assert code == 0
-    assert out == ''
     assert err == ''
+    assert out == ''
+    assert code == 0
 
 
 def _install_test_plugin():
     code, out, err = exec_cmd(['dcos', 'plugin', 'add', _test_plugin_path()])
-    assert code == 0
     assert err == ''
     assert out == ''
+    assert code == 0
 
 
 def _test_plugin_path():
