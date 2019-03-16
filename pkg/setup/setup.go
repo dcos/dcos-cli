@@ -2,6 +2,7 @@ package setup
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
@@ -20,6 +21,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/antihax/optional"
+	dcosclient "github.com/dcos/client-go/dcos"
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/dcos"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
@@ -386,27 +389,34 @@ func (s *Setup) installPluginFromCanonicalURL(name string, version *dcos.Version
 // installPluginFromCosmos installs a plugin through Cosmos.
 func (s *Setup) installPluginFromCosmos(name string, httpClient *httpclient.Client, pbar *mpb.Progress) error {
 	// Get package information from Cosmos.
-	pkgInfo, err := cosmos.NewClient(httpClient).DescribePackage(name)
+	cosmosClient, err := cosmos.NewClient()
+	if err != nil {
+		return err
+	}
+	pkg, _, err := cosmosClient.PackageDescribe(context.TODO(), &dcosclient.PackageDescribeOpts{
+		PackageDescribeRequest: optional.NewInterface(dcosclient.PackageDescribeRequest{
+			PackageName: name,
+		}),
+	})
 	if err != nil {
 		return err
 	}
 
-	// Get the download URL for the current platform.
-	p, ok := pkgInfo.Package.Resource.CLI.Plugins[runtime.GOOS]["x86-64"]
-	if !ok {
-		return fmt.Errorf("'%s' isn't available for '%s')", name, runtime.GOOS)
+	pluginInfo, err := cosmos.CLIPluginInfo(pkg, httpClient.BaseURL())
+	if err != nil {
+		return err
 	}
 
 	var checksum plugin.Checksum
-	for _, contentHash := range p.ContentHash {
+	for _, contentHash := range pluginInfo.ContentHash {
 		switch contentHash.Algo {
-		case "sha256":
+		case dcosclient.SHA256:
 			checksum.Hasher = sha256.New()
 			checksum.Value = contentHash.Value
 		}
 	}
-	return s.pluginManager.Install(p.URL, &plugin.InstallOpts{
-		Name:        pkgInfo.Package.Name,
+	return s.pluginManager.Install(pluginInfo.Url, &plugin.InstallOpts{
+		Name:        pkg.Package.Name,
 		Update:      true,
 		Checksum:    checksum,
 		ProgressBar: pbar,
@@ -417,7 +427,7 @@ func (s *Setup) installPluginFromCosmos(name string, httpClient *httpclient.Clie
 				return err
 			}
 			defer pkgInfoFile.Close()
-			return json.NewEncoder(pkgInfoFile).Encode(pkgInfo.Package)
+			return json.NewEncoder(pkgInfoFile).Encode(pkg.Package)
 		},
 	})
 }
