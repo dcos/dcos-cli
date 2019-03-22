@@ -931,7 +931,9 @@ def _ssh(leader, slave, option, config_file, user, master_proxy, proxy_ip,
 
     ssh_options = ssh_util.get_ssh_options(
         config_file, option, user, proxy_ip, master_proxy)
-    cmd = "ssh {0} {1} -- {2}".format(ssh_options, host, command)
+    cmd = "ssh {0} {1} -- '{2}'".format(ssh_options, host, command)
+    if ssh_options != '':
+        cmd = cmd + "\""
 
     emitter.publish(DefaultError("Running `{}`".format(cmd)))
     if not master_proxy and not proxy_ip:

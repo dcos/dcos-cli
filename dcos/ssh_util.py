@@ -95,7 +95,7 @@ def get_ssh_proxy_options(ssh_options, user_options='',
             "Please run `ssh-agent`, then add your private key with "
             "`ssh-add`.")
 
-    proxy_options = '-A -t {0} {1} {2} -- ssh'.format(
+    proxy_options = '-A -t {0} {1} {2} -- \"ssh'.format(
         ssh_options, user_options, proxy_ip)
     return proxy_options
 

@@ -286,7 +286,7 @@ def _log_marathon(follow, lines, ssh_config_file, user):
         ssh_config_file,
         user=user,
         master_proxy=True)
-    cmd = "ssh {0} {1} -- journalctl {2}-u {3}".format(
+    cmd = "ssh {0} {1} -- journalctl {2}-u {3}\"".format(
         ssh_options,
         leader_ip,
         journalctl_args,
