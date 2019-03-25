@@ -94,7 +94,7 @@ def dcos_help():
             .make_command_summary_string(sorted(results))
 
     emitter.publish(
-        "Command line utility for the Mesosphere Datacenter Operating\n"
+        "Command line utility for the Mesosphere Distributed Cloud Operating\n"
         "System (DC/OS). The Mesosphere DC/OS is a distributed operating\n"
         "system built around Apache Mesos. This utility provides tools\n"
         "for easy management of a DC/OS installation.\n")
