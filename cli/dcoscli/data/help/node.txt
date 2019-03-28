@@ -37,6 +37,8 @@ Commands:
         Delete a diagnostics bundle.
     diagnostics download
         Download a diagnostics bundle.
+    dns
+        Print the IP address(es) corresponding to a given dns-name
     list-components
         Print a list of available DC/OS components on specified node.
     log
@@ -111,3 +113,6 @@ Positional Arguments:
         Node to run command upon. A node can be any of the following: IP address,
         hostname, Mesos ID, or the keywords "all", "masters", "agents". You must use
         quotation marks around keywords.
+    <dns-name>
+        DNS name of which the IP addresses will be returned when running
+        `dcos node dns`.
