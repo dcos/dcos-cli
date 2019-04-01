@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 
 import boto3
 
@@ -44,6 +45,11 @@ def filter_objects(objects):
             filtered.append(o)
     return filtered
 
+def natural_sort(l):
+    convert = lambda text: int(text) if text.isdigit() else text.lower()
+    alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
+    return sorted(l, key = alphanum_key)
+
 
 client = boto3.client('s3', region_name='us-west-2')
 objects = client.list_objects(Bucket=BUCKET, Prefix=PREFIX)['Contents']
@@ -52,6 +58,7 @@ with open(ARTIFACTS_FILE, mode='w+') as f:
     contents = { "artifacts": [] }
     for o in filter_objects(objects):
         contents["artifacts"].append(format_path(o))
+    contents["artifacts"] = natural_sort(contents["artifacts"])
     f.write(json.dumps(contents))
 
 upload_file(client, ARTIFACTS_FILE, PREFIX + '/' + ARTIFACTS_FILE)
