@@ -52,9 +52,9 @@ def run_tests(e2e_backend, installer_url, dcos_license, dcos_url, admin_username
             dcos_config = {**cluster.base_config, **extra_config}
 
             cluster.install_dcos_from_url(
-                build_artifact=installer_url,
+                dcos_installer=installer_url,
                 dcos_config=dcos_config,
-                log_output_live=True,
+                ip_detect_path=AWS().ip_detect_path,
             )
 
             os.environ["CLI_TEST_SSH_KEY_PATH"] = str(cluster._cluster._ssh_key_path)
@@ -71,9 +71,9 @@ def run_tests(e2e_backend, installer_url, dcos_license, dcos_url, admin_username
             dcos_config = {**cluster.base_config, **extra_config}
 
             cluster.install_dcos_from_path(
-                build_artifact=dcos_ee_installer_path,
+                dcos_installer=dcos_ee_installer_path,
                 dcos_config=dcos_config,
-                log_output_live=True,
+                ip_detect_path=Docker().ip_detect_path,
             )
 
             _run_tests(cluster, admin_username, admin_password)
