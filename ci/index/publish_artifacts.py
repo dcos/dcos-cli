@@ -7,8 +7,8 @@ import re
 import boto3
 
 from publish_index import upload_file
-from publish_index import BUCKET
-from publish_index import PREFIX
+from publish_index import OSS_BUCKET, EE_BUCKET
+from publish_index import PREFIX, PREFIX_RELEASE
 from publish_index import ASSETS_FOLDER
 
 ARTIFACTS_FILE = ASSETS_FOLDER + "/artifacts.json"
@@ -52,12 +52,18 @@ def natural_sort(l):
 
 
 client = boto3.client('s3', region_name='us-west-2')
-objects = client.list_objects(Bucket=BUCKET, Prefix=PREFIX)['Contents']
+oss_objects = client.list_objects(Bucket=OSS_BUCKET, Prefix=PREFIX_RELEASE)['Contents']
+ee_objects = client.list_objects(Bucket=EE_BUCKET, Prefix=PREFIX_RELEASE)['Contents']
 
 with open(ARTIFACTS_FILE, mode='w+') as f:
     contents = { "artifacts": [] }
-    for o in filter_objects(objects):
+    for o in filter_objects(oss_objects):
         contents["artifacts"].append(format_path(o))
+    for o in filter_objects(ee_objects):
+        contents["artifacts"].append(format_path(o))
+
+    # Remove duplicates and order list.
+    contents["artifacts"] = list(dict.fromkeys(contents["artifacts"]))
     contents["artifacts"] = natural_sort(contents["artifacts"])
     f.write(json.dumps(contents))
 
