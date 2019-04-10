@@ -1,6 +1,8 @@
 import json
 import os
 
+import pytest
+
 from .common import setup_cluster, exec_cmd, default_cluster  # noqa: F401
 
 
@@ -152,6 +154,7 @@ def test_cluster_setup_cosmos_plugins():
         assert plugins[1]['name'] == 'dcos-enterprise-cli'
 
 
+@pytest.mark.skipif(os.environ.get('DCOS_TEST_CORECLI') is None, reason="no core CLI bundle")
 def test_cluster_setup_bundled_core_plugin():
     env = {
         'DCOS_CLUSTER_SETUP_SKIP_CANONICAL_URL_INSTALL': '1',
