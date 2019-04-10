@@ -1,8 +1,8 @@
 class DcosCli < Formula
   desc "The DC/OS command-line interface"
   homepage "https://docs.mesosphere.com/latest/cli/"
-  url "https://github.com/dcos/dcos-cli/archive/0.7.11.tar.gz"
-  sha256 "401e8b3e6903c8347103ac52b8a573d6979f0136afb039e5924ad63f0c5e12d7"
+  url "https://github.com/dcos/dcos-cli/archive/0.7.12.tar.gz"
+  sha256 "1792b2d3fafb210d023065e13beaf77d274845ccd188a86d9e1fa3c85a704727"
 
   depends_on "go" => :build
   depends_on "go-bindata" => :build
@@ -12,7 +12,7 @@ class DcosCli < Formula
     ENV["GOPATH"] = buildpath
     ENV["NO_DOCKER"] = "1"
 
-    ENV["VERSION"] = "0.7.11"
+    ENV["VERSION"] = "0.7.12"
     ENV["GO_BUILD_TAGS"] = "corecli"
 
     bin_path = buildpath/"src/github.com/dcos/dcos-cli"
