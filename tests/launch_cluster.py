@@ -23,7 +23,7 @@ if not test_license:
 private_key_path = os.environ.get('DCOS_TEST_SSH_KEY_PATH')
 aws_key_pair = ('default', private_key_path) if private_key_path else None
 
-cluster_backend = AWS(aws_key_pair=aws_key_pair)
+cluster_backend = AWS(aws_region='us-east-1', aws_key_pair=aws_key_pair)
 cluster = Cluster(cluster_backend=cluster_backend, agents=0, public_agents=0)
 
 username = 'testuser'
