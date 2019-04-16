@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.7.13
+
+* Features
+
+  * Bundle the 1.12-patch.11 core CLI, which fixes the `dcos task log` command again
+
 ## 0.7.12
 
 * Features
