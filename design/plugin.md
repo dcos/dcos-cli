@@ -4,6 +4,11 @@ The CLI plugin system formalizes how users extend the DC/OS CLI with custom subc
 
 A plugin provides one or multiple CLI subcommands, and various metadata around it.
 
+## Content
+- [Plugin Structure](#plugin-structure)
+- [Migration from legacy plugins or BIN plugins](#migration-from-legacy-plugins-or-BIN-plugins)
+- [Add autocompletion to a plugin](#add-autocompletion-to-a-plugin)
+
 ## Plugin structure
 
 In its normalized form, an unpacked plugin is a directory with the following structure:
@@ -130,3 +135,75 @@ When loading available plugins, the CLI will first look for a plugin.toml file, 
 - Binary executables names (the basename config option) follow the dcos-{subcommand} pattern.
 
 - Subcommand summaries (the description config option) are retrieved by calling the binary with the ./bin/{basename} {subcommand} --info command.
+
+## Add autocompletion to a plugin
+
+To add completion scripts to a plugin, a `completion/bash` directory needs to be created. Here is the structure of the `dcos-core-cli` plugin:
+
+```
+.
+├── bin
+│   ├── dcos
+├── completion
+│   └── bash
+│     ├── job.sh
+│     ├── marathon.sh
+│     ├── node.sh
+│     ├── package.sh
+│     ├── service.sh
+│     └── task.sh
+└── plugin.toml
+```
+
+The `completion/bash` directory contains all the autocompletion scripts for the `dcos-core-cli` and a custom plugin needs the same structure. Completion functions can be defined in one or more files in this directory. All files in the `completion/bash` will be sourced.
+
+To write completion scripts, create bash scripts that contain a completion function for every top-level command of the plugin. E.g., for the `dcos service` command in `dcos-core-cli`:
+
+```bash
+_dcos_service() {
+    local i command
+
+    if ! __dcos_default_command_parse; then
+        return
+    fi
+
+    local flags=(
+    "--help"
+    "--info"
+    "--version"
+    "--completed"
+    "--inactive"
+    "--json"
+    )
+
+    local commands=(
+    "log"
+    "shutdown"
+    )
+
+    if [ -z "$command" ]; then
+        case "$cur" in
+            --*)
+                __dcos_handle_compreply "${flags[@]}"
+                ;;
+            *)
+                __dcos_handle_compreply "${commands[@]}"
+                ;;
+        esac
+        return
+    fi
+
+    __dcos_handle_subcommand
+}
+
+```
+
+The naming scheme of the function for the top-level command is _very_ important: `_dcos_<top-level-cmd>()`. This function will be called if `dcos top-level-cmd <tab>` is entered on the command line. If this function does not exist, no further completion logic will be executed. Any further completion logic needs to be called from `_dcos_<top-level-cmd>()`.
+
+It is possible to use functions provided by [`dcos-cli`](https://github.com/dcos/dcos-cli/blob/master/pkg/cmd/completion/completion.sh) (`__dcos_default_command_parse`, `__dcos_handle_compreply`, `__dcos_handle_subcommand`) to write your completion logic since these functions will be available in the same shell session. Or you can create custom completion logic, for example have generated code, as long as there are functions following the naming scheme for the top-level commands that call into that logic.
+
+In `dcos-cli` and `dcos-core-cli` we follow this naming scheme for all top-level commands and subcommands.
+
+For more examples of completion functions, check [`dcos-cli`](https://github.com/dcos/dcos-cli/blob/master/pkg/cmd/completion/completion.sh) and [`dcos-core-cli`](https://github.com/dcos/dcos-core-cli/tree/1.13-patch.x/completion/bash).
+
+How to enable autocompletion for the DC/OS CLI is documented [here](https://docs.mesosphere.com/1.12/cli/autocompletion/). To enable completions for a plugin, it has to be added to the CLI.
