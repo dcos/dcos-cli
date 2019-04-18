@@ -2,15 +2,17 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"syscall"
 
+	"github.com/antihax/optional"
+	dcosclient "github.com/dcos/client-go/dcos"
 	"github.com/sirupsen/logrus"
 
 	"github.com/dcos/dcos-cli/api"
@@ -167,20 +169,27 @@ func updateCorePlugin(ctx api.Context) error {
 	if err != nil {
 		return err
 	}
-	httpClient := ctx.HTTPClient(cluster)
 
 	// Get package information from Cosmos.
-	pkgInfo, err := cosmos.NewClient(httpClient).DescribePackage("dcos-core-cli")
+	cosmosClient, err := cosmos.NewClient()
+	if err != nil {
+		return err
+	}
+	pkg, _, err := cosmosClient.PackageDescribe(context.TODO(), &dcosclient.PackageDescribeOpts{
+		CosmosPackageDescribeV1Request: optional.NewInterface(dcosclient.CosmosPackageDescribeV1Request{
+			PackageName: "dcos-core-cli",
+		}),
+	})
 	if err != nil {
 		return err
 	}
 
-	// Get the download URL for the current platform.
-	p, ok := pkgInfo.Package.Resource.CLI.Plugins[runtime.GOOS]["x86-64"]
-	if !ok {
-		return fmt.Errorf("'dcos-core-cli' isn't available for '%s')", runtime.GOOS)
+	pluginInfo, err := cosmos.CLIPluginInfo(pkg, ctx.HTTPClient(cluster).BaseURL())
+	if err != nil {
+		return err
 	}
-	return ctx.PluginManager(cluster).Install(p.URL, &plugin.InstallOpts{
+
+	return ctx.PluginManager(cluster).Install(pluginInfo.Url, &plugin.InstallOpts{
 		Name:   "dcos-core-cli",
 		Update: true,
 		PostInstall: func(fs afero.Fs, pluginDir string) error {
@@ -190,7 +199,7 @@ func updateCorePlugin(ctx api.Context) error {
 				return err
 			}
 			defer pkgInfoFile.Close()
-			return json.NewEncoder(pkgInfoFile).Encode(pkgInfo.Package)
+			return json.NewEncoder(pkgInfoFile).Encode(pkg.Package)
 		},
 	})
 }

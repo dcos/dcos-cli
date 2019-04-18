@@ -1,121 +1,49 @@
 package cosmos
 
 import (
-	"bytes"
-	"encoding/json"
+	"fmt"
 	"net/url"
-	"time"
+	"runtime"
 
-	"github.com/dcos/dcos-cli/pkg/httpclient"
+	"github.com/dcos/client-go/dcos"
 )
 
-// Client is a client for Cosmos.
-type Client struct {
-	http *httpclient.Client
-}
-
 // NewClient creates a new Cosmos client.
-func NewClient(baseClient *httpclient.Client) *Client {
-	return &Client{
-		http: baseClient,
-	}
-}
-
-// PackageInfo contains information about a DC/OS package.
-// It is mirroring the JSON response of the `/package/describe`
-// endpoint for unmarshalling convenience.
-type PackageInfo struct {
-	Package struct {
-		PackagingVersion      string `json:"packagingVersion"`
-		Name                  string `json:"name"`
-		Description           string `json:"description"`
-		Version               string `json:"version"`
-		ReleaseVersion        int    `json:"releaseVersion"`
-		MinDCOSReleaseVersion string `json:"minDcosReleaseVersion"`
-		Framework             bool   `json:"framework"`
-		Maintainer            string `json:"maintainer"`
-		Resource              struct {
-			CLI struct {
-				Plugins map[string]map[string]*Plugin `json:"binaries"`
-			} `json:"cli"`
-		} `json:"resource"`
-	} `json:"package"`
-}
-
-// Plugin represents a CLI plugin resource.
-type Plugin struct {
-	Kind        string        `json:"kind"`
-	URL         string        `json:"url"`
-	ContentHash []ContentHash `json:"contentHash"`
-}
-
-// ContentHash represents a CLI plugin resource content hash.
-type ContentHash struct {
-	Algo  string `json:"algo"`
-	Value string `json:"value"`
-}
-
-// DescribePackage returns information about the named package.
-func (c *Client) DescribePackage(name string) (*PackageInfo, error) {
-	reqBodyPayload := map[string]string{"packageName": name}
-
-	var reqBody bytes.Buffer
-	if err := json.NewEncoder(&reqBody).Encode(reqBodyPayload); err != nil {
-		return nil, err
-	}
-
-	req, err := c.http.NewRequest(
-		"POST",
-		"/package/describe",
-		&reqBody,
-
-		// Hardcode a 3 minutes timeout as Cosmos can take some time
-		// to respond when there are multiple configured repositories.
-		httpclient.Timeout(3*time.Minute),
-		httpclient.FailOnErrStatus(true),
-	)
+func NewClient() (*dcos.CosmosApiService, error) {
+	dcosClient, err := dcos.NewClient()
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set(
-		"Content-Type",
-		"application/vnd.dcos.package.describe-request+json;charset=utf-8;version=v1",
-	)
-	req.Header.Set(
-		"Accept",
-		"application/vnd.dcos.package.describe-response+json;charset=utf-8;version=v3",
-	)
-	resp, err := c.http.Do(req)
-	if err != nil {
-		return nil, err
+	return dcosClient.Cosmos, nil
+}
+
+// CLIPluginInfo extracts plugin resource data from the Cosmos package and for the current platform.
+func CLIPluginInfo(pkg dcos.CosmosPackageDescribeV3Response, baseURL *url.URL) (cliArtifact dcos.CosmosPackageResourceCliArtifact, err error) {
+	switch runtime.GOOS {
+	case "linux":
+		cliArtifact = pkg.Package.Resource.Cli.Binaries.Linux.X8664
+	case "darwin":
+		cliArtifact = pkg.Package.Resource.Cli.Binaries.Darwin.X8664
+	case "windows":
+		cliArtifact = pkg.Package.Resource.Cli.Binaries.Windows.X8664
+
 	}
-
-	defer resp.Body.Close()
-
-	var pkg PackageInfo
-	err = json.NewDecoder(resp.Body).Decode(&pkg)
-	if err != nil {
-		return nil, err
-	}
-
 	// Workaround for a Cosmos bug leading to wrong schemes in plugin resource URLs.
 	// This happens on setups with TLS termination proxies, where Cosmos might rewrite
 	// the scheme to HTTP while it is actually HTTPS. The other way around is also possible.
 	// See https://jira.mesosphere.com/browse/COPS-3052 for more context.
 	//
 	// To prevent this we're rewriting such URLs with the scheme set in `core.dcos_url`.
-	httpClientBaseURL := c.http.BaseURL()
-	for _, plugins := range pkg.Package.Resource.CLI.Plugins {
-		for _, plugin := range plugins {
-			pluginURL, err := url.Parse(plugin.URL)
-			if err != nil {
-				continue
-			}
-			if pluginURL.Hostname() == httpClientBaseURL.Hostname() {
-				pluginURL.Scheme = httpClientBaseURL.Scheme
-				plugin.URL = pluginURL.String()
-			}
-		}
+	pluginURL, err := url.Parse(cliArtifact.Url)
+	if err != nil {
+		return cliArtifact, err
 	}
-	return &pkg, err
+	if pluginURL.Hostname() == baseURL.Hostname() {
+		pluginURL.Scheme = baseURL.Scheme
+		cliArtifact.Url = pluginURL.String()
+	}
+	if cliArtifact.Url == "" {
+		err = fmt.Errorf("'%s' isn't available for '%s')", pkg.Package.Name, runtime.GOOS)
+	}
+	return cliArtifact, err
 }
