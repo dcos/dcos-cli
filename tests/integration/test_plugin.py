@@ -64,7 +64,10 @@ def test_plugin_list(default_cluster):
     assert err == ''
 
     lines = out.splitlines()
-    assert len(lines) == 3
+    if os.environ.get('DCOS_TEST_DEFAULT_CLUSTER_VARIANT') == 'open':
+        assert len(lines) == 2
+    else:
+        assert len(lines) == 3
 
     # heading
     assert lines[0].split() == ['NAME', 'COMMANDS']
@@ -73,12 +76,13 @@ def test_plugin_list(default_cluster):
     assert dcos_core_cli[0] == 'dcos-core-cli'
     assert dcos_core_cli[1:] == ['job', 'marathon', 'node', 'package', 'service', 'task']
 
-    dcos_enterprise_cli = lines[2].split()
-    assert dcos_enterprise_cli[0] == 'dcos-enterprise-cli'
-    assert 'backup' in dcos_enterprise_cli[1:]
-    assert 'license' in dcos_enterprise_cli[1:]
-    assert 'security' in dcos_enterprise_cli[1:]
-    assert len(dcos_enterprise_cli[1:]) == 3
+    if default_cluster['variant'] == 'enterprise':
+        dcos_enterprise_cli = lines[2].split()
+        assert dcos_enterprise_cli[0] == 'dcos-enterprise-cli'
+        assert 'backup' in dcos_enterprise_cli[1:]
+        assert 'license' in dcos_enterprise_cli[1:]
+        assert 'security' in dcos_enterprise_cli[1:]
+        assert len(dcos_enterprise_cli[1:]) == 3
 
 
 def test_plugin_install_invalid_test(default_cluster):
@@ -113,6 +117,8 @@ def test_plugin_invocation(default_cluster):
     assert out['env'].get('DCOS_ACS_TOKEN') == default_cluster['acs_token']
 
 
+@pytest.mark.skipif(os.environ.get('DCOS_TEST_DEFAULT_CLUSTER_VARIANT') == 'open',
+                    reason="No CA on DC/OS Open")
 def test_plugin_invocation_tls():
     with setup_cluster(scheme='https'):
         _install_test_plugin()
