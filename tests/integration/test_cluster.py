@@ -106,6 +106,8 @@ def test_empty_cluster_list():
     assert out == '[]\n'
 
 
+@pytest.mark.skipif(os.environ.get('DCOS_TEST_DEFAULT_CLUSTER_VARIANT') == 'open',
+                    reason="This test relies on the 'security' subcommand, only available on DC/OS EE.")
 def test_cluster_setup_non_superuser(default_cluster):
     username = 'nonsuperuser'
     password = 'nonsuperpassword'
@@ -149,9 +151,13 @@ def test_cluster_setup_cosmos_plugins():
 
         plugins = json.loads(out)
 
-        assert len(plugins) == 2
-        assert plugins[0]['name'] == 'dcos-core-cli'
-        assert plugins[1]['name'] == 'dcos-enterprise-cli'
+        if os.environ.get('DCOS_TEST_DEFAULT_CLUSTER_VARIANT') == 'open':
+            assert len(plugins) == 1
+            assert plugins[0]['name'] == 'dcos-core-cli'
+        else:
+            assert len(plugins) == 2
+            assert plugins[0]['name'] == 'dcos-core-cli'
+            assert plugins[1]['name'] == 'dcos-enterprise-cli'
 
 
 @pytest.mark.skipif(os.environ.get('DCOS_TEST_CORECLI') is None, reason="no core CLI bundle")

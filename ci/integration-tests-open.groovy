@@ -30,15 +30,9 @@ pipeline {
           credentialsId: 'a20fbd60-2528-4e00-9175-ebe2287906cf',
           accessKeyVariable: 'AWS_ACCESS_KEY_ID',
           secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'],
-          [$class: 'StringBinding',
-          credentialsId: '0b513aad-e0e0-4a82-95f4-309a80a02ff9',
-          variable: 'DCOS_TEST_INSTALLER_URL'],
           [$class: 'FileBinding',
           credentialsId: '23743034-1ac4-49f7-b2e6-a661aee2d11b',
-          variable: 'DCOS_TEST_SSH_KEY_PATH'],
-          [$class: 'StringBinding',
-          credentialsId: 'ca159ad3-7323-4564-818c-46a8f03e1389',
-          variable: 'DCOS_TEST_LICENSE']
+          variable: 'DCOS_TEST_SSH_KEY_PATH']
         ]) {
             sh '''
               bash -exc " \
@@ -47,8 +41,8 @@ pipeline {
                 source env/bin/activate; \
                 pip install -r requirements.txt; \
                 flake8 integration; \
-                export DCOS_TEST_VARIANT=enterprise; \
-                ./launch_cluster.py ${DCOS_TEST_INSTALLER_URL}"
+                export DCOS_TEST_VARIANT=open; \
+                ./launch_cluster.py https://downloads.dcos.io/dcos/testing/master/dcos_generate_config.sh"
             '''
             stash includes: 'tests/test_cluster.env.sh', name: 'test-cluster'
         }
