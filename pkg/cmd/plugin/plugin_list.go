@@ -15,6 +15,7 @@ import (
 // newCmdPluginList creates the `dcos plugin list` subcommand.
 func newCmdPluginList(ctx api.Context) *cobra.Command {
 	var jsonOutput bool
+	var quiet bool
 	var commands bool
 	var completionDirs bool
 	cmd := &cobra.Command{
@@ -44,6 +45,11 @@ func newCmdPluginList(ctx api.Context) *cobra.Command {
 				enc := json.NewEncoder(ctx.Out())
 				enc.SetIndent("", "    ")
 				return enc.Encode(plugins)
+			} else if quiet {
+				for _, plugin := range plugins {
+					fmt.Fprintln(ctx.Out(), plugin.Name)
+				}
+				return nil
 			} else if commands {
 				for _, plugin := range plugins {
 					for _, command := range plugin.Commands {
@@ -72,6 +78,7 @@ func newCmdPluginList(ctx api.Context) *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Print plugins in JSON format.")
+	cmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Only print plugin names.")
 	cmd.Flags().BoolVar(&commands, "commands", false,
 		"Prints out a list of the commands available through plugins")
 	cmd.Flags().BoolVar(&completionDirs, "completion-dirs", false,

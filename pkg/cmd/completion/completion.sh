@@ -587,7 +587,12 @@ _dcos_plugin_remove() {
             --*)
                 __dcos_handle_compreply "${flags[@]}"
                 ;;
-            *) ;;
+            *)
+                local plugins=()
+                while IFS=$'\n' read -r line; do plugin_ids+=("$line"); done < <(dcos plugin list --quiet 2> /dev/null)
+                plugins+=("${plugin_ids[@]}")
+                __dcos_handle_compreply "${plugins[@]}"
+                ;;
         esac
         return
     fi
