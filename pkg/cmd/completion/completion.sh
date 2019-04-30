@@ -448,6 +448,27 @@ _dcos_config() {
     __dcos_handle_subcommand
 }
 
+__dcos_complete_config_keys() {
+    local keys=(
+    "core.dcos_acs_token"
+    "core.dcos_url"
+    "core.mesos_master_url"
+    "core.pagination"
+    "core.ssl_verify"
+    "core.timeout"
+    "core.ssh_user"
+    "core.ssh_proxy_ip"
+    "core.reporting"
+    "core.prompt_login"
+    "cluster.name"
+    "job.url"
+    "job.service_name"
+    "marathon.url"
+    "package.cosmos_url"
+    )
+    __dcos_handle_compreply "${keys[@]}"
+}
+
 _dcos_config_set() {
     local i command
 
@@ -462,7 +483,9 @@ _dcos_config_set() {
             --*)
                 __dcos_handle_compreply "${flags[@]}"
                 ;;
-            *) ;;
+            *)
+                __dcos_complete_config_keys
+                ;;
         esac
         return
     fi
@@ -482,7 +505,9 @@ _dcos_config_show() {
             --*)
                 __dcos_handle_compreply "${flags[@]}"
                 ;;
-            *) ;;
+            *)
+                __dcos_complete_config_keys
+                ;;
         esac
         return
     fi
@@ -502,7 +527,9 @@ _dcos_config_unset() {
             --*)
                 __dcos_handle_compreply "${flags[@]}"
                 ;;
-            *) ;;
+            *)
+                __dcos_complete_config_keys
+                ;;
         esac
         return
     fi
