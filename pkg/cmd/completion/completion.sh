@@ -282,6 +282,14 @@ _dcos_cluster() {
     __dcos_handle_subcommand
 }
 
+__dcos_complete_cluster_names() {
+    local names=()
+    while IFS=$'\n' read -r line; do cluster_names+=("$line"); done < <(dcos cluster list --names 2> /dev/null)
+    names+=("${cluster_names[@]}")
+    __dcos_debug "Found cluster names and IDs" "${cluster_names[@]}"
+    __dcos_handle_compreply "${names[@]}"
+}
+
 _dcos_cluster_attach() {
     local i command
 
@@ -290,11 +298,6 @@ _dcos_cluster_attach() {
     fi
 
     local flags=("--help")
-    local names=()
-
-    while IFS=$'\n' read -r line; do cluster_names+=("$line"); done < <(dcos cluster list --names 2> /dev/null)
-    names+=("${cluster_names[@]}")
-    __dcos_debug "Found cluster names and IDs" "${cluster_names[@]}"
 
     if [ -z "$command" ]; then
         case "$cur" in
@@ -306,7 +309,7 @@ _dcos_cluster_attach() {
                 __dcos_handle_compreply "${flags[@]}"
                 ;;
             *)
-                __dcos_handle_compreply "${names[@]}"
+                __dcos_complete_cluster_names
                 ;;
         esac
         return
@@ -345,11 +348,6 @@ _dcos_cluster_remove() {
     fi
 
     local flags=("--help" "--all" "--unavailable")
-    local names=()
-
-    while IFS=$'\n' read -r line; do cluster_names+=("$line"); done < <(dcos cluster list --names 2> /dev/null)
-    names+=("${cluster_names[@]}")
-    __dcos_debug "Found cluster names and IDs" "${cluster_names[@]}"
 
     if [ -z "$command" ]; then
         case "$cur" in
@@ -361,7 +359,7 @@ _dcos_cluster_remove() {
                 __dcos_handle_compreply "${flags[@]}"
                 ;;
             *)
-                __dcos_handle_compreply "${names[@]}"
+                __dcos_complete_cluster_names
                 ;;
         esac
         return
@@ -382,7 +380,9 @@ _dcos_cluster_rename() {
             --*)
                 __dcos_handle_compreply "${flags[@]}"
                 ;;
-            *) ;;
+            *)
+                __dcos_complete_cluster_names
+                ;;
         esac
         return
     fi

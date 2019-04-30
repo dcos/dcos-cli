@@ -21,6 +21,18 @@ func newCmdClusterList(ctx api.Context) *cobra.Command {
 		Short: "List the clusters configured and the ones linked to the current cluster",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if names {
+				clusters, err := ctx.Clusters()
+				if err != nil {
+					return nil
+				}
+				for _, cluster := range clusters {
+					fmt.Fprintln(ctx.Out(), cluster.Name())
+					fmt.Fprintln(ctx.Out(), cluster.ID())
+				}
+				return nil
+			}
+
 			var filters []lister.Filter
 			if attachedOnly {
 				filters = append(filters, lister.AttachedOnly())
@@ -42,14 +54,6 @@ func newCmdClusterList(ctx api.Context) *cobra.Command {
 				enc := json.NewEncoder(ctx.Out())
 				enc.SetIndent("", "    ")
 				return enc.Encode(items)
-			}
-
-			if names {
-				for _, item := range items {
-					fmt.Fprintln(ctx.Out(), item.Name)
-					fmt.Fprintln(ctx.Out(), item.ID)
-				}
-				return nil
 			}
 
 			table := cli.NewTable(ctx.Out(), []string{"", "NAME", "ID", "STATUS", "VERSION", "URL"})
