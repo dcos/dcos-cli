@@ -191,3 +191,17 @@ def test_cluster_setup_bundled_core_plugin_strict_mode():
                    "https://docs.mesosphere.com/1.13/cli/plugins/ "
                    "for more information.\n"
                    "Error: usage of deprecated feature\n")
+
+
+def test_cluster_setup_missing_url():
+    code, out, err = exec_cmd(['dcos', 'cluster', 'setup'])
+    assert code != 0
+    assert out == ""
+    assert err.startswith('Error: missing cluster URL\n')
+
+
+def test_cluster_setup_too_many_args():
+    code, out, err = exec_cmd(['dcos', 'cluster', 'setup', 'https://1.example.com', 'https://2.example.com'])
+    assert code != 0
+    assert out == ""
+    assert err.startswith('Error: received 2 arguments [https://1.example.com https://2.example.com], expects a single cluster URL\n')
