@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import sys
+import time
 
 from concurrent import futures
 
@@ -223,13 +224,22 @@ def test_plugin_exit_code(default_cluster):
 def test_plugin_remove(default_cluster):
     _install_test_plugin()
 
-    code, out, err = exec_cmd(['dcos', 'plugin', 'remove', 'dcos-test'])
+    for _ in range(3):
+        code, out, err = exec_cmd(['dcos', 'plugin', 'remove', 'dcos-test'])
+        if sys.platform == 'win32' and code != 0:
+            # We've experienced flakiness with "Access is denied" errors on
+            # our Jenkins Windows nodes. Just retry if it happens, in the future
+            # we should reassess that it's still an issue and address it.
+            time.sleep(3)
+            continue
+        break
+
     assert err == ''
     assert out == ''
     assert code == 0
 
 
-def test_plugin_help(default_cluster):
+def test_plugin_help_usage(default_cluster):
     _install_test_plugin()
 
     code, out, err = exec_cmd(['dcos', 'help', 'test'])
