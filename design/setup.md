@@ -108,14 +108,13 @@ attached to it. A cluster config looks like this:
 
 ## Automatically installing default plugins
 
-Finally, the CLI will attempt to auto-install "dcos-core-cli" and "dcos-enterprise-cli" plugins.
+Finally, the CLI will attempt to auto-install "dcos-core-cli", "dcos-enterprise-cli", and plugins
+for the services currently running on the cluster.
 
-### dcos-core-cli
+### dcos-core-cli and dcos-enterprise-cli
 
 The [core plugin](https://github.com/dcos/dcos-core-cli) contains subcommands such as marathon, job, node,
 package, service, task.
-
-### dcos-enterprise-cli
 
 The [enterprise plugin](https://github.com/mesosphere/dcos-enterprise-cli) gets installed when an EE
 cluster is detected.
@@ -125,9 +124,7 @@ This is determined through the [DC/OS variant](https://jira.mesosphere.com/brows
 some hacks, but rather display a message saying “Please run “dcos package install dcos-enterprise-cli” if
 you use a DC/OS Enterprise cluster”.
 
-### Installation mechanism
-
-The CLI will first try to auto-install a plugin using its canonical stable URL:
+The CLI will first try to auto-install these plugins using their canonical stable URL:
 
 - https://{domain}/cli/releases/plugins/{plugin}/{platform}/x86-64/{plugin}-{dcos-version}-patch.latest.zip
 
@@ -138,7 +135,7 @@ The URL placeholders are defined as below:
 - `platform` can either be `linux`, `darwin`, or `windows`
 - `dcos-version` is the major and minor version of the DC/OS cluster (eg. `1.13`)
 
-When the canonical stable URL is not published yet (4XX response), the CLI tries the canonical testing URL:
+When the canonical stable URL is not published yet (4XX response), the CLI tries their canonical testing URL:
 
 - https://{domain}/cli/testing/plugins/{plugin}/{platform}/x86-64/{plugin}-{dcos-version}-patch.x.zip
 
@@ -150,3 +147,10 @@ permissions in order to interact with Cosmos. In that case the setup command aut
 `dcos-core-cli` bundled in the DC/OS CLI, and skips installation of `dcos-enterprise-cli`.
 The user will see an informative deprecation message indicating a web-page where they can go to in order
 to download the plugins manually (https://downloads.dcos.io/cli/index.html).
+
+### Service plugins
+
+The CLI also makes a request to the `/package/list` endpoint in order to get the list of services running
+on the cluster. If that requests fails (eg. insufficient permissions), the CLI skips auto-installation of
+service plugins. Otherwise, for each installed service, the CLI installs its plugin through Cosmos. This
+is done by making a request to `/package/describe` and downloading the CLI in the `package.resources.cli` field.
