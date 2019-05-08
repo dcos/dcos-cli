@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"syscall"
 
 	"github.com/antihax/optional"
 	dcosclient "github.com/dcos/client-go/dcos"
@@ -236,22 +235,20 @@ func invokePlugin(ctx api.Context, cmd plugin.Command, args []string) error {
 			execCmd.Env = append(execCmd.Env, "DCOS_TLS_CA_PATH="+cluster.TLS().RootCAsPath)
 		}
 	}
+
 	err = execCmd.Run()
 	if err != nil {
 		// Because we're silencing errors through Cobra, we need to print this separately.
 		ctx.Logger().Debug(err)
-
 		// When the plugin command exits with a non-zero code, the main CLI process
-		// exit code should be the same.
+		// exit code should be the same. ExitCode() returns -1 if the process
+		// hasn't exited or was terminated by a signal thus we have to check.
 		//
-		// see https://jira.mesosphere.com/browse/DCOS_OSS-4399
-		if exiterr, ok := err.(*exec.ExitError); ok {
-			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
-				// TODO: have a more generic error handling system
-				// where errors can be associated with an exit code.
-				os.Exit(status.ExitStatus())
-			}
+		// See https://jira.mesosphere.com/browse/DCOS_OSS-4399
+		if exitCode := execCmd.ProcessState.ExitCode(); exitCode > 0 {
+			os.Exit(exitCode)
 		}
+
 	}
 	return err
 }
