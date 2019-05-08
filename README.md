@@ -22,7 +22,7 @@ available in the [DC/OS docs](https://dcos.io/docs/).
 
 1.  [git](http://git-scm.com) must be installed to download the source
     code for the DC/OS CLI.
-2.  [go](https://golang.org/dl/) 1.11+ or docker.
+2.  [go](https://golang.org/dl/) 1.12+ or docker.
 3.  [win-bash](https://sourceforge.net/projects/win-bash/files/shell-complete/latest)
    must be installed if you are using Windows in order to run setup scripts
    from the Makefile.
