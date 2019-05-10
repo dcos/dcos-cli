@@ -304,7 +304,25 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 	pbar := mpb.New(mpb.WithOutput(s.errout), mpb.WithWaitGroup(&wg))
 	wg.Add(2)
 
-	installedPlugins := []string{"dcos-core-cli"}
+	cosmosClient, err := cosmos.NewClient()
+	if err != nil {
+		return err
+	}
+
+	result, _, err := cosmosClient.PackageList(context.TODO(), &dcosclient.PackageListOpts{
+		CosmosPackageListV1Request: optional.NewInterface(dcosclient.CosmosPackageListV1Request{}),
+	})
+	if err != nil {
+		s.logger.Debug(err)
+	} else {
+		for _, pkg := range result.Packages {
+			wg.Add(1)
+			go func(name string) {
+				s.installPluginFromCosmos(name, httpClient, pbar)
+				wg.Done()
+			}(pkg.PackageInformation.PackageDefinition.Name)
+		}
+	}
 
 	// Install dcos-enterprise-cli.
 	go func() {
@@ -312,8 +330,6 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 		if version.DCOSVariant == "enterprise" {
 			if err := s.installPlugin("dcos-enterprise-cli", httpClient, version, pbar); err != nil {
 				s.logger.Debug(err)
-			} else {
-				installedPlugins = append(installedPlugins, "dcos-enterprise-cli")
 			}
 		} else if version.DCOSVariant == "" {
 			// We add this message if the DC/OS variant is "" (DC/OS < 1.12)
@@ -336,13 +352,8 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 	}
 
 	var newCommands []string
-	for _, installedPlugin := range installedPlugins {
-		p, err := s.pluginManager.Plugin(installedPlugin)
-		if err != nil {
-			s.logger.Debug(err)
-			continue
-		}
-		for _, command := range p.Commands {
+	for _, installedPlugin := range s.pluginManager.Plugins() {
+		for _, command := range installedPlugin.Commands {
 			newCommands = append(newCommands, command.Name)
 		}
 	}
