@@ -154,3 +154,6 @@ The CLI also makes a request to the `/package/list` endpoint in order to get the
 on the cluster. If that requests fails (eg. insufficient permissions), the CLI skips auto-installation of
 service plugins. Otherwise, for each installed service, the CLI installs its plugin through Cosmos. This
 is done by making a request to `/package/describe` and downloading the CLI in the `package.resources.cli` field.
+
+If there are different versions of the same service installed on the cluster, the CLI installs the plugin
+for the most recent one.

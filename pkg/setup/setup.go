@@ -304,7 +304,11 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 	pbar := mpb.New(mpb.WithOutput(s.errout), mpb.WithWaitGroup(&wg))
 	wg.Add(2)
 
-	installedPlugins := []string{"dcos-core-cli"}
+	// Install plugins for currently installed packages.
+	go func() {
+		s.installPackageServicesPlugins(&wg, httpClient, pbar)
+		wg.Done()
+	}()
 
 	// Install dcos-enterprise-cli.
 	go func() {
@@ -312,8 +316,6 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 		if version.DCOSVariant == "enterprise" {
 			if err := s.installPlugin("dcos-enterprise-cli", httpClient, version, pbar); err != nil {
 				s.logger.Debug(err)
-			} else {
-				installedPlugins = append(installedPlugins, "dcos-enterprise-cli")
 			}
 		} else if version.DCOSVariant == "" {
 			// We add this message if the DC/OS variant is "" (DC/OS < 1.12)
@@ -325,7 +327,6 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 
 	// Install dcos-core-cli.
 	errCore := s.installPlugin("dcos-core-cli", httpClient, version, pbar)
-	wg.Done()
 	pbar.Wait()
 	if errCore != nil {
 		// Extract the dcos-core-cli bundle if it coudln't be downloaded.
@@ -336,19 +337,55 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 	}
 
 	var newCommands []string
-	for _, installedPlugin := range installedPlugins {
-		p, err := s.pluginManager.Plugin(installedPlugin)
-		if err != nil {
-			s.logger.Debug(err)
-			continue
-		}
-		for _, command := range p.Commands {
+	for _, installedPlugin := range s.pluginManager.Plugins() {
+		for _, command := range installedPlugin.Commands {
 			newCommands = append(newCommands, command.Name)
 		}
 	}
+
 	sort.Strings(newCommands)
 	fmt.Fprintf(s.errout, "New commands available: %s\n", strings.Join(newCommands, ", "))
 	return nil
+}
+
+// installPackageServicesPlugins installs CLI plugins for the services currently installed on the cluster.
+// When different versions of the same package are installed, it installs the plugin for the highest version.
+func (s *Setup) installPackageServicesPlugins(wg *sync.WaitGroup, httpClient *httpclient.Client, pbar *mpb.Progress) {
+	cosmosClient, err := cosmos.NewClient()
+	if err != nil {
+		s.logger.Debug(err)
+		return
+	}
+
+	pkgMap := make(map[string]dcosclient.CosmosPackage)
+	result, _, err := cosmosClient.PackageList(context.TODO(), &dcosclient.PackageListOpts{
+		CosmosPackageListV1Request: optional.NewInterface(dcosclient.CosmosPackageListV1Request{}),
+	})
+	if err != nil {
+		s.logger.Debug(err)
+		return
+	}
+
+	for _, pkg := range result.Packages {
+		pkgDefinition := pkg.PackageInformation.PackageDefinition
+
+		currentPkg, ok := pkgMap[pkgDefinition.Name]
+		if ok && currentPkg.ReleaseVersion >= pkgDefinition.ReleaseVersion {
+			continue
+		}
+		pkgMap[pkgDefinition.Name] = pkgDefinition
+	}
+
+	for _, pkg := range pkgMap {
+		wg.Add(1)
+		go func(name, version string) {
+			err := s.installPluginFromCosmos(name, version, httpClient, pbar)
+			if err != nil {
+				s.logger.Debug(err)
+			}
+			wg.Done()
+		}(pkg.Name, pkg.Version)
+	}
 }
 
 // installPlugin installs a plugin by its name.
@@ -363,7 +400,7 @@ func (s *Setup) installPlugin(name string, httpClient *httpclient.Client, versio
 		s.logger.Debug(err)
 	}
 	if skip, _ := s.envLookup("DCOS_CLUSTER_SETUP_SKIP_COSMOS_INSTALL"); skip != "1" {
-		return s.installPluginFromCosmos(name, httpClient, pbar)
+		return s.installPluginFromCosmos(name, "", httpClient, pbar)
 	}
 	return errors.New("skipping plugin installation from Cosmos (DCOS_CLUSTER_SETUP_SKIP_COSMOS_INSTALL=1)")
 }
@@ -409,7 +446,7 @@ func (s *Setup) installPluginFromCanonicalURL(name string, version *dcos.Version
 }
 
 // installPluginFromCosmos installs a plugin through Cosmos.
-func (s *Setup) installPluginFromCosmos(name string, httpClient *httpclient.Client, pbar *mpb.Progress) error {
+func (s *Setup) installPluginFromCosmos(name string, version string, httpClient *httpclient.Client, pbar *mpb.Progress) error {
 	// Get package information from Cosmos.
 	cosmosClient, err := cosmos.NewClient()
 	if err != nil {
@@ -417,7 +454,8 @@ func (s *Setup) installPluginFromCosmos(name string, httpClient *httpclient.Clie
 	}
 	pkg, _, err := cosmosClient.PackageDescribe(context.TODO(), &dcosclient.PackageDescribeOpts{
 		CosmosPackageDescribeV1Request: optional.NewInterface(dcosclient.CosmosPackageDescribeV1Request{
-			PackageName: name,
+			PackageName:    name,
+			PackageVersion: version,
 		}),
 	})
 	if err != nil {

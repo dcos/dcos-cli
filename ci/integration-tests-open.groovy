@@ -49,83 +49,79 @@ pipeline {
       }
     }
 
-    stage('Run integration tests') {
-      parallel {
-        stage("Run Linux integration tests") {
-          agent { label 'py36' }
+    stage("Run Linux integration tests") {
+      agent { label 'py36' }
 
-          steps {
-              unstash 'test-cluster'
-              unstash 'dcos-linux'
+      steps {
+          unstash 'test-cluster'
+          unstash 'dcos-linux'
 
-              sh '''
-                bash -exc " \
-                  export DCOS_TEST_CORECLI=1; \
-                  PATH=$PWD/build/linux:$PATH; \
-                  cd tests; \
-                  dcos cluster remove --all; \
-                  python3 -m venv env; \
-                  source env/bin/activate; \
-                  source test_cluster.env.sh; \
-                  pip install -U pip; \
-                  pip install -r requirements.txt; \
-                  pytest integration"
-              '''
-          }
+          sh '''
+            bash -exc " \
+              export DCOS_TEST_CORECLI=1; \
+              PATH=$PWD/build/linux:$PATH; \
+              cd tests; \
+              dcos cluster remove --all; \
+              python3 -m venv env; \
+              source env/bin/activate; \
+              source test_cluster.env.sh; \
+              pip install -U pip; \
+              pip install -r requirements.txt; \
+              pytest integration"
+          '''
+      }
+    }
+
+    stage("Run macOS integration tests") {
+      agent { label 'mac-hh-yosemite' }
+
+      steps {
+          unstash 'test-cluster'
+          unstash 'dcos-darwin'
+
+          sh '''
+            bash -exc " \
+              export LC_ALL=en_US.UTF-8; \
+              export PYTHONIOENCODING=utf-8; \
+              export DCOS_TEST_CORECLI=1; \
+              PATH=$PWD/build/darwin:$PATH; \
+              cd tests; \
+              dcos cluster remove --all; \
+              python3 -m venv env; \
+              source env/bin/activate; \
+              source test_cluster.env.sh; \
+              pip install -U pip; \
+              pip install -r requirements.txt; \
+              pytest integration"
+          '''
+      }
+    }
+
+    stage("Run Windows integration tests") {
+      agent {
+        node {
+          label 'windows'
+          customWorkspace 'C:\\windows\\workspace'
         }
+      }
 
-        stage("Run macOS integration tests") {
-          agent { label 'mac-hh-yosemite' }
+      steps {
+          unstash 'test-cluster'
+          unstash 'dcos-windows'
 
-          steps {
-              unstash 'test-cluster'
-              unstash 'dcos-darwin'
-
-              sh '''
-                bash -exc " \
-                  export LC_ALL=en_US.UTF-8; \
-                  export PYTHONIOENCODING=utf-8; \
-                  export DCOS_TEST_CORECLI=1; \
-                  PATH=$PWD/build/darwin:$PATH; \
-                  cd tests; \
-                  dcos cluster remove --all; \
-                  python3 -m venv env; \
-                  source env/bin/activate; \
-                  source test_cluster.env.sh; \
-                  pip install -U pip; \
-                  pip install -r requirements.txt; \
-                  pytest integration"
-              '''
-          }
-        }
-
-        stage("Run Windows integration tests") {
-          agent {
-            node {
-              label 'windows'
-              customWorkspace 'C:\\windows\\workspace'
-            }
-          }
-
-          steps {
-              unstash 'test-cluster'
-              unstash 'dcos-windows'
-
-              bat '''
-                bash -exc " \
-                  export PYTHONIOENCODING=utf-8; \
-                  export DCOS_TEST_CORECLI=1; \
-                  PATH=$PWD/build/windows:$PATH; \
-                  cd tests; \
-                  dcos cluster remove --all; \
-                  source test_cluster.env.sh; \
-                  python -m venv env; \
-                  env/Scripts/python -m pip install -U pip; \
-                  env/Scripts/pip install -r requirements.txt; \
-                  env/Scripts/pytest -vv integration"
-              '''
-          }
-        }
+          bat '''
+            bash -exc " \
+              export PYTHONIOENCODING=utf-8; \
+              export DCOS_TEST_CORECLI=1; \
+              PATH=$PWD/build/windows:$PATH; \
+              cd tests; \
+              dcos cluster remove --all; \
+              source test_cluster.env.sh; \
+              python -m venv env; \
+              env/Scripts/python -m pip install -U pip; \
+              env/Scripts/pip install -r requirements.txt; \
+              env/Scripts/pytest -vv integration"
+          '''
       }
     }
   }
