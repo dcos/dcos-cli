@@ -1,5 +1,6 @@
 import json
 import os
+import time
 
 import pytest
 
@@ -158,6 +159,43 @@ def test_cluster_setup_cosmos_plugins():
             assert len(plugins) == 2
             assert plugins[0]['name'] == 'dcos-core-cli'
             assert plugins[1]['name'] == 'dcos-enterprise-cli'
+
+
+def test_cluster_setup_framework_plugins():
+    with setup_cluster(scheme='https', insecure=True):
+        code, _, _ = exec_cmd(['dcos', 'package', 'install', '--app', '--yes', 'hello-world'])
+        assert code == 0
+
+    with setup_cluster(scheme='https', insecure=True):
+        code, out, _ = exec_cmd(['dcos', 'plugin', 'list', '--json'])
+        assert code == 0
+
+        plugins = json.loads(out)
+
+        if os.environ.get('DCOS_TEST_DEFAULT_CLUSTER_VARIANT') == 'open':
+            assert len(plugins) == 2
+            assert plugins[0]['name'] == 'dcos-core-cli'
+            assert plugins[1]['name'] == 'hello-world'
+        else:
+            assert len(plugins) == 3
+            assert plugins[0]['name'] == 'dcos-core-cli'
+            assert plugins[1]['name'] == 'dcos-enterprise-cli'
+            assert plugins[2]['name'] == 'hello-world'
+
+        code, _, _ = exec_cmd(['dcos', 'package', 'uninstall', '--yes', 'hello-world'])
+        assert code == 0
+
+        for _ in range(10):
+            code, out, _ = exec_cmd(['dcos', 'package', 'list', 'hello-world', '--json'])
+            assert code == 0
+
+            packages = json.loads(out)
+            if len(packages) == 0:
+                return
+
+            time.sleep(15)
+
+        pytest.fail("couldn't uninstall hello-world")
 
 
 @pytest.mark.skipif(os.environ.get('DCOS_TEST_CORECLI') is None, reason="no core CLI bundle")
