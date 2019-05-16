@@ -4,7 +4,7 @@ github.com/VividCortex/ewma
 github.com/antihax/optional
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
-# github.com/dcos/client-go v0.0.0-20190418124828-a5c3660ae957
+# github.com/dcos/client-go v0.0.0-20190509135418-77e5e2d8c202
 github.com/dcos/client-go/dcos
 # github.com/dgrijalva/jwt-go v3.2.0+incompatible
 github.com/dgrijalva/jwt-go
@@ -20,7 +20,7 @@ github.com/mattn/go-runewidth
 github.com/mitchellh/go-homedir
 # github.com/olekukonko/tablewriter v0.0.0-20180130162743-b8a9be070da4
 github.com/olekukonko/tablewriter
-# github.com/pelletier/go-toml v1.3.0
+# github.com/pelletier/go-toml v1.4.0
 github.com/pelletier/go-toml
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
@@ -39,16 +39,24 @@ github.com/spf13/pflag
 # github.com/stretchr/testify v1.3.0
 github.com/stretchr/testify/require
 github.com/stretchr/testify/assert
-# github.com/vbauerster/mpb v3.3.3+incompatible
+# github.com/vbauerster/mpb v3.4.0+incompatible
 github.com/vbauerster/mpb
 github.com/vbauerster/mpb/decor
 github.com/vbauerster/mpb/cwriter
 github.com/vbauerster/mpb/internal
-# golang.org/x/crypto v0.0.0-20190417174047-f416ebab96af
+# golang.org/x/crypto v0.0.0-20190506204251-e1dfcc566284
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/sys v0.0.0-20190416152802-12500544f89f
+golang.org/x/crypto/ed25519
+golang.org/x/crypto/pbkdf2
+golang.org/x/crypto/ed25519/internal/edwards25519
+# golang.org/x/sys v0.0.0-20190508220229-2d0786266e9c
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.3.0
+# golang.org/x/text v0.3.2
 golang.org/x/text/transform
 golang.org/x/text/unicode/norm
+# gopkg.in/square/go-jose.v2 v2.3.1
+gopkg.in/square/go-jose.v2
+gopkg.in/square/go-jose.v2/jwt
+gopkg.in/square/go-jose.v2/cipher
+gopkg.in/square/go-jose.v2/json
