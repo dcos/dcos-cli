@@ -21,9 +21,9 @@ func TestAuthListProvidersTable(t *testing.T) {
 			mock.Cluster{
 				AuthChallenge: "acsjwt",
 				LoginProviders: login.Providers{
-				"dcos-users":   &login.Provider{Type: login.DCOSUIDPassword},
-				"dcos-service": &login.Provider{Type: login.DCOSUIDServiceKey},
-			}},
+					"dcos-users":   &login.Provider{Type: login.DCOSUIDPassword},
+					"dcos-service": &login.Provider{Type: login.DCOSUIDServiceKey},
+				}},
 			func(table *tablewriter.Table) {
 				table.Append([]string{"dcos-service", "Log in using a DC/OS service user account (username and private key)"})
 				table.Append([]string{"dcos-users", "Log in using a standard DC/OS user account (username and password)"})

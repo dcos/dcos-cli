@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/dcos/dcos-cli/pkg/httpclient"
+	"github.com/dcos/dcos-cli/pkg/login/loginserver"
 	"github.com/dcos/dcos-cli/pkg/open"
 	"github.com/dcos/dcos-cli/pkg/prompt"
 	"github.com/dgrijalva/jwt-go"
@@ -152,15 +153,44 @@ func (f *Flow) triggerMethod(provider *Provider) (acsToken string, err error) {
 
 		// Open the browser at the `start_flow_url` location specified in the provider config.
 		// The user is then expected to continue the flow in the browser and copy paste the
-		// token from the browser to their terminal.
+		// token from the browser to their terminal. For the auth0 provider, the login token
+		// will be intercepted automatically through a temporary login server running on localhost.
 		case methodBrowserAuthToken, methodBrowserOIDCToken:
+			var token string
+			var loginServer *loginserver.LoginServer
+
 			if attempt == 1 {
-				if err := f.openBrowser(provider.Config.StartFlowURL); err != nil {
+				startFlowURL := provider.Config.StartFlowURL
+
+				// For the "dcos-oidc-auth0" login provider ID, we start a local web server
+				// in order to avoid copy-pasting the token from the browser to the terminal.
+				if provider.ID == DCOSOIDCAuth0 {
+					loginServer, err = loginserver.New(startFlowURL)
+					if err != nil {
+						return "", err
+					}
+					startFlowURL = loginServer.StartFlowURL()
+					go loginServer.Start()
+				}
+
+				if err := f.openBrowser(startFlowURL); err != nil {
 					return "", err
+				}
+
+				if loginServer != nil {
+					token = <-loginServer.Token()
+				}
+
+				if token == "" {
+					token = f.prompt.Input("Enter token from the browser: ")
+				} else {
+					// When the token comes from the local webserver there is no need to retry. In case of an
+					// error, retrying isn't needed (it can't be a typo, no copy-pasting was involved).
+					// Thus we raise the attempt counter to 3.
+					attempt = 3
 				}
 			}
 			f.interactive = true
-			token := f.prompt.Input("Enter token from the browser: ")
 
 			// methodBrowserOIDCToken relies on a login token,
 			// it must be sent in order to get an ACS token back.
@@ -187,7 +217,7 @@ func (f *Flow) triggerMethod(provider *Provider) (acsToken string, err error) {
 			}
 		}
 		// In case of failure, let the user re-enter credentials 2 times.
-		if err != nil {
+		if err != nil && attempt < 3 {
 			f.logger.Errorf("Error: %s", err)
 		}
 		if err == nil || !f.interactive || attempt >= 3 {

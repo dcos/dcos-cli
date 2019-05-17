@@ -128,6 +128,8 @@ The CLI then opens the user browser (using `xdg-open <url>` on Linux, `open <url
 
 - `redirect_uri`: refers to the URL where the local web server is listening.
 
+- `dcos_cli_flow`: identifies the CLI login flow, currently always set to `v1`.
+
 - `dcos_cli_csrf_token`: contains a 32 bytes base64 token created with the Go `crypto/rand` stdlib package.
 
 In case the browser didn't open (eg. SSH session on a remote machine), the user also sees the following
@@ -141,6 +143,31 @@ If your browser didn't open, please follow this link:
 
 On successful login, our [Auth0 universal login page](https://github.com/mesosphere/auth0-ui) is
 configured to make a `GET` request to the `redirect_uri`, once it has validated that it refers to a `localhost` URL, with 2 parameters:
+
+- `token` contains the login token.
+
+- `csrf` contains the CSRF token that was initially set in `dcos_cli_csrf_token`.
+
+For example:
+
+    http://localhost:8080?token=myLoginToken123&csrf=g6qAFJeHUz3OViQHPPnwkCSjo3BVZSn4QiqmtrlqElo=
+
+The Auth0 universal login page uses [fetch()](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch)
+in order to perform the request. As this is a cross-domain request, the local web server
+is configured to support CORS and will only accept requests from the `https://dcos.auth0.com` origin.
+
+Once the request is done, the local web server can verify the CSRF token, retrieve the login token
+and continue the login flow.
+The user sees a successful login message on the webpage, indicating that they can go back to their terminal.
+
+However, if this request fails (eg. the CLI runs on a remote machine), the login page falls back
+to printing the login token in a modal box, asking the user to copy-paste it to their terminal.
+The CLI will read it from stdin and continue the login flow.
+
+    http://my-cluster.example.com/login?redirect_uri=http://localhost:8080&dcos_cli_csrf_token=g6qAFJeHUz3OViQHPPnwkCSjo3BVZSn4QiqmtrlqElo=
+
+On successful login, our [Auth0 universal login page](https://github.com/mesosphere/auth0-ui) is
+configured to make a `POST` request to the `redirect_uri`, once it has validated that it refers to a `localhost` URL, with a JSON body containing 2 parameters:
 
 - `token` contains the login token.
 
