@@ -107,7 +107,8 @@ Each login provider has one of these 5 login methods associated to it (`client-m
     `start_flow_url` endpoint.
 - **browser-prompt-authtoken** : Open the browser at the page referenced in `start_flow_url`. The user
     is then expected to continue the flow in the browser, eventually they are redirected to a page with
-    a login token to copy-paste from the browser to their terminal. POST this token to
+    a login token to copy-paste from the browser to their terminal (in some cases the token will be
+    intercepted directly by the CLI, see `Local web server` section). POST this token to
     `/acs/api/v1/auth/login`.
 - **browser-prompt-oidcidtoken-get-authtoken** : Open the browser at the page referenced in
     `start_flow_url`. The user is then expected to continue the flow in the browser, eventually
@@ -116,3 +117,30 @@ Each login provider has one of these 5 login methods associated to it (`client-m
     Authorization header in order to verify the token.
 
 > `start_flow_url` can either be an absolute URL or a cluster relative path.
+
+## Local web server
+
+When initiating a flow for the `dcos-oidc-auth0` login provider ID, the CLI will spin-up
+a local web server on a free port. This is done by using port `0`.
+
+The CLI then tries to open the user browser (using `xdg-open <url>` on Linux, `open <url>` on macOS,
+`rundll32 url.dll,FileProtocolHandler <url>` on Windows) at the `start_flow_url` with an extra
+`redirect_uri` parameter (eg. `http://my-cluster.example.com/login?redirect_uri=http://localhost:8080`),
+which refers to the URL where the local web server is listening.
+
+In case the browser didn't open (eg. SSH session on a remote machine), the user also sees the following
+message:
+
+``` console
+If your browser didn't open, please follow this link:
+
+    http://my-cluster.example.com/login?redirect_uri=http://localhost:8080
+```
+
+On successful login, our [Auth0 universal login page](https://github.com/mesosphere/auth0-ui) is
+configured to make a `GET` request to the `redirect_uri`, with the token as a `token` query parameter.
+For example: `http://localhost:8080?token=myLoginToken123`
+
+The local web server can then retrieve the token and continue the login flow. If this request fails
+(eg. the CLI runs on a remote machine), the login page falls back to printing the token in a modal box,
+asking the user to copy-paste it to their terminal. The CLI will read it from stdin and continue the login flow.
