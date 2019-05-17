@@ -26,6 +26,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/olekukonko/tablewriter v0.0.0-20180130162743-b8a9be070da4
 	github.com/pelletier/go-toml v1.4.0
+	github.com/rs/cors v1.7.0
 	github.com/sirupsen/logrus v1.4.1
 	github.com/spf13/afero v1.2.2
 	github.com/spf13/cast v1.3.0

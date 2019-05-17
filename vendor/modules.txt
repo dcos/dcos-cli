@@ -24,6 +24,8 @@ github.com/olekukonko/tablewriter
 github.com/pelletier/go-toml
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
+# github.com/rs/cors v1.7.0
+github.com/rs/cors
 # github.com/sirupsen/logrus v1.4.1
 github.com/sirupsen/logrus
 github.com/sirupsen/logrus/hooks/test
