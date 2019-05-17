@@ -123,10 +123,12 @@ Each login provider has one of these 5 login methods associated to it (`client-m
 When initiating a flow for the `dcos-oidc-auth0` login provider ID, the CLI will spin-up
 a local web server on a free port. This is done by using port `0`.
 
-The CLI then tries to open the user browser (using `xdg-open <url>` on Linux, `open <url>` on macOS,
-`rundll32 url.dll,FileProtocolHandler <url>` on Windows) at the `start_flow_url` with an extra
-`redirect_uri` parameter (eg. `http://my-cluster.example.com/login?redirect_uri=http://localhost:8080`),
-which refers to the URL where the local web server is listening.
+The CLI then opens the user browser (using `xdg-open <url>` on Linux, `open <url>` on macOS,
+`rundll32 url.dll,FileProtocolHandler <url>` on Windows) at the `start_flow_url` with 2 extra query parameters:
+
+- `redirect_uri`: refers to the URL where the local web server is listening.
+
+- `dcos_cli_csrf_token`: contains a 32 bytes base64 token created with the Go `crypto/rand` stdlib package.
 
 In case the browser didn't open (eg. SSH session on a remote machine), the user also sees the following
 message:
@@ -134,12 +136,19 @@ message:
 ``` console
 If your browser didn't open, please follow this link:
 
-    http://my-cluster.example.com/login?redirect_uri=http://localhost:8080
+    http://my-cluster.example.com/login?redirect_uri=http://localhost:8080&dcos_cli_csrf_token=g6qAFJeHUz3OViQHPPnwkCSjo3BVZSn4QiqmtrlqElo=
 ```
 
 On successful login, our [Auth0 universal login page](https://github.com/mesosphere/auth0-ui) is
-configured to make a `GET` request to the `redirect_uri`, with the token as a `token` query parameter.
-For example: `http://localhost:8080?token=myLoginToken123`
+configured to make a `GET` request to the `redirect_uri`, once it has validated that it refers to a `localhost` URL, with 2 parameters:
+
+- `token` contains the login token.
+
+- `csrf` contains the CSRF token that was initially set in `dcos_cli_csrf_token`.
+
+For example:
+
+    http://localhost:8080?token=myLoginToken123&csrf=g6qAFJeHUz3OViQHPPnwkCSjo3BVZSn4QiqmtrlqElo=
 
 The local web server can then retrieve the token and continue the login flow. If this request fails
 (eg. the CLI runs on a remote machine), the login page falls back to printing the token in a modal box,
