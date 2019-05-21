@@ -150,6 +150,11 @@ For example:
 
     http://localhost:8080?token=myLoginToken123&csrf=g6qAFJeHUz3OViQHPPnwkCSjo3BVZSn4QiqmtrlqElo=
 
-The local web server can then retrieve the token and continue the login flow. If this request fails
-(eg. the CLI runs on a remote machine), the login page falls back to printing the token in a modal box,
-asking the user to copy-paste it to their terminal. The CLI will read it from stdin and continue the login flow.
+The Auth0 universal login page uses [fetch()](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch)
+in order to perform the request. As this is a cross-domain request, the local web server
+is configured to support CORS and will only accept requests from the `https://dcos.auth0.com` origin.
+
+Once the request is done, the local web server can retrieve the token and continue the login flow.
+If this request fails (eg. the CLI runs on a remote machine), the login page falls back to printing the
+token in a modal box, asking the user to copy-paste it to their terminal. The CLI will read it from stdin
+and continue the login flow.
