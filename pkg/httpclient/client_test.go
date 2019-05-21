@@ -176,6 +176,11 @@ func TestFailOnError(t *testing.T) {
 
 	_, err = client.Get("/", FailOnErrStatus(true))
 	require.Error(t, err)
+
+	httpErr, ok := err.(*HTTPError)
+	require.True(t, ok)
+	require.NotNil(t, httpErr.Response())
+	require.Equal(t, 404, httpErr.Response().StatusCode)
 }
 
 func TestDefaultUserAgent(t *testing.T) {

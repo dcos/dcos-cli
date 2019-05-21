@@ -112,7 +112,9 @@ func (c *Client) challengeAuth() (string, error) {
 // sniffAuth sends an HTTP request with a given ACS token to a well-known resource.
 // It is mainly used to challenge auth or verify that an ACS token is valid.
 func (c *Client) sniffAuth(acsToken string) (*http.Response, error) {
-	var opts []httpclient.Option
+	opts := []httpclient.Option{
+		httpclient.FailOnErrStatus(false),
+	}
 	if acsToken != "" {
 		opts = append(opts, httpclient.ACSToken(acsToken))
 	}

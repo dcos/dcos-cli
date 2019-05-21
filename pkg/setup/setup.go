@@ -387,7 +387,7 @@ func (s *Setup) installPluginFromCanonicalURL(name string, version *dcos.Version
 		domain, name, platform, name, dcosVersion,
 	)
 	httpClient := httpclient.New("")
-	req, err := httpClient.NewRequest("HEAD", url, nil)
+	req, err := httpClient.NewRequest("HEAD", url, nil, httpclient.FailOnErrStatus(false))
 	if err != nil {
 		return err
 	}
