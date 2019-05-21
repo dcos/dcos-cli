@@ -46,6 +46,21 @@ type Options struct {
 // ctxKey is a custom type to set values in request contexts.
 type ctxKey int
 
+// HTTPError represents an HTTP error, it is returned when FailOnErrStatus is enabled.
+type HTTPError struct {
+	resp *http.Response
+}
+
+// Error returns the error message.
+func (err *HTTPError) Error() string {
+	return fmt.Sprintf("HTTP %d error", err.resp.StatusCode)
+}
+
+// Response returns the HTTP error response.
+func (err *HTTPError) Response() *http.Response {
+	return err.resp
+}
+
 // ctxKeyFailOnErrStatus is a request context key which, when sets, indicates that
 // the HTTP client should return in error when it encounters an HTTP error (4XX / 5XX).
 const ctxKeyFailOnErrStatus ctxKey = 0
@@ -251,7 +266,7 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 		_, failOnErrStatus := req.Context().Value(ctxKeyFailOnErrStatus).(struct{})
 
 		if failOnErrStatus && resp.StatusCode >= 400 && resp.StatusCode < 600 {
-			return nil, fmt.Errorf("HTTP %d error", resp.StatusCode)
+			return nil, &HTTPError{resp}
 		}
 	}
 	return resp, err
