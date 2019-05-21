@@ -155,6 +155,8 @@ in order to perform the request. As this is a cross-domain request, the local we
 is configured to support CORS and will only accept requests from the `https://dcos.auth0.com` origin.
 
 Once the request is done, the local web server can retrieve the token and continue the login flow.
-If this request fails (eg. the CLI runs on a remote machine), the login page falls back to printing the
-token in a modal box, asking the user to copy-paste it to their terminal. The CLI will read it from stdin
-and continue the login flow.
+The user sees a successful login message on the webpage, indicating that they can go back to their terminal.
+
+However, if this request fails (eg. the CLI runs on a remote machine), the login page falls back
+to printing the token in a modal box, asking the user to copy-paste it to their terminal.
+The CLI will read it from stdin and continue the login flow.
