@@ -179,8 +179,8 @@ func TestFailOnError(t *testing.T) {
 
 	httpErr, ok := err.(*HTTPError)
 	require.True(t, ok)
-	require.NotNil(t, httpErr.Response())
-	require.Equal(t, 404, httpErr.Response().StatusCode)
+	require.NotNil(t, httpErr.Response)
+	require.Equal(t, 404, httpErr.Response.StatusCode)
 }
 
 func TestDefaultUserAgent(t *testing.T) {
