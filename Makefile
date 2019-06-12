@@ -34,7 +34,7 @@ core-download:
 
 .PHONY: install
 install:
-	go install ./cmd/dcos
+	go install -mod=vendor ./cmd/dcos
 
 .PHONY: test
 test: vet
