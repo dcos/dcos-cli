@@ -6,6 +6,9 @@ VERSION?=$(shell git rev-parse HEAD)
 CORE_VERSION?=1.13-patch.x
 CORE_STABILITY?=testing
 
+export GOFLAGS := -mod=vendor
+export GO111MODULE := on
+
 windows_EXE=.exe
 
 .PHONY: default
@@ -14,9 +17,9 @@ default:
 
 .PHONY: darwin linux windows
 darwin linux windows: docker-image
-	$(call inDocker,env GOOS=$(@) GO111MODULE=on CGO_ENABLED=0 go build \
+	$(call inDocker,env GOOS=$(@) CGO_ENABLED=0 go build \
 		-ldflags '-X $(PKG)/pkg/cli/version.version=$(VERSION)' \
-		-tags '$(GO_BUILD_TAGS)' -mod=vendor \
+		-tags '$(GO_BUILD_TAGS)' \
 		-o build/$(@)/dcos$($(@)_EXE) ./cmd/dcos)
 
 .PHONY: core-bundle
@@ -74,6 +77,8 @@ ifdef NO_DOCKER
 else
   define inDocker
     docker run \
+      -e GOFLAGS \
+      -e GO111MODULE \
       -v $(CURRENT_DIR):$(PKG_DIR) \
       -w $(PKG_DIR) \
       --rm \
