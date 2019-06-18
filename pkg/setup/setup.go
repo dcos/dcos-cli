@@ -358,33 +358,48 @@ func (s *Setup) installPackageServicesPlugins(wg *sync.WaitGroup, httpClient *ht
 	}
 
 	pkgMap := make(map[string]dcosclient.CosmosPackage)
-	result, _, err := cosmosClient.PackageList(context.TODO(), &dcosclient.PackageListOpts{
-		CosmosPackageListV1Request: optional.NewInterface(dcosclient.CosmosPackageListV1Request{}),
-	})
-	if err != nil {
-		s.logger.Debug(err)
-		return
-	}
 
-	for _, pkg := range result.Packages {
-		pkgDefinition := pkg.PackageInformation.PackageDefinition
-
-		currentPkg, ok := pkgMap[pkgDefinition.Name]
-		if ok && currentPkg.ReleaseVersion >= pkgDefinition.ReleaseVersion {
-			continue
+	cErr := make(chan error, 1)
+	cResult := make(chan dcosclient.CosmosPackageListV1Response, 1)
+	go func() {
+		result, _, err := cosmosClient.PackageList(context.TODO(), &dcosclient.PackageListOpts{
+			CosmosPackageListV1Request: optional.NewInterface(dcosclient.CosmosPackageListV1Request{}),
+		})
+		if err != nil {
+			cErr <- err
+		} else {
+			cResult <- result
 		}
-		pkgMap[pkgDefinition.Name] = pkgDefinition
-	}
+	}()
 
-	for _, pkg := range pkgMap {
-		wg.Add(1)
-		go func(name, version string) {
-			err := s.installPluginFromCosmos(name, version, httpClient, pbar)
-			if err != nil {
-				s.logger.Debug(err)
+	select {
+	case resErr := <-cErr:
+		s.logger.Debug(resErr)
+		return
+	case result := <-cResult:
+		for _, pkg := range result.Packages {
+			pkgDefinition := pkg.PackageInformation.PackageDefinition
+
+			currentPkg, ok := pkgMap[pkgDefinition.Name]
+			if ok && currentPkg.ReleaseVersion >= pkgDefinition.ReleaseVersion {
+				continue
 			}
-			wg.Done()
-		}(pkg.Name, pkg.Version)
+			pkgMap[pkgDefinition.Name] = pkgDefinition
+		}
+
+		for _, pkg := range pkgMap {
+			wg.Add(1)
+			go func(name, version string) {
+				err := s.installPluginFromCosmos(name, version, httpClient, pbar)
+				if err != nil {
+					s.logger.Debug(err)
+				}
+				wg.Done()
+			}(pkg.Name, pkg.Version)
+		}
+	case <-time.After(3 * time.Second):
+		s.logger.Debug(errors.New("the request to get all the services installed took more than 3 seconds, not installing their CLIs"))
+		return
 	}
 }
 
