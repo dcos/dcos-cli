@@ -65,6 +65,7 @@ pipeline {
           sh '''
             bash -exc " \
               export DCOS_TEST_CORECLI=1; \
+              export DCOS_CLI_EXPERIMENTAL_AUTOINSTALL_PACKAGE_CLIS=1; \
               PATH=$PWD/build/linux:$PATH; \
               cd tests; \
               dcos cluster remove --all; \
@@ -90,6 +91,7 @@ pipeline {
               export LC_ALL=en_US.UTF-8; \
               export PYTHONIOENCODING=utf-8; \
               export DCOS_TEST_CORECLI=1; \
+              export DCOS_CLI_EXPERIMENTAL_AUTOINSTALL_PACKAGE_CLIS=1; \
               PATH=$PWD/build/darwin:$PATH; \
               cd tests; \
               dcos cluster remove --all; \
@@ -119,6 +121,7 @@ pipeline {
             bash -exc " \
               export PYTHONIOENCODING=utf-8; \
               export DCOS_TEST_CORECLI=1; \
+              export DCOS_CLI_EXPERIMENTAL_AUTOINSTALL_PACKAGE_CLIS=1; \
               PATH=$PWD/build/windows:$PATH; \
               cd tests; \
               dcos cluster remove --all; \
