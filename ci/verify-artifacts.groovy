@@ -79,4 +79,20 @@ pipeline {
       }
     }
   }
+
+  post {
+    failure {
+      withCredentials([
+        string(credentialsId: "8b793652-f26a-422f-a9ba-0d1e47eb9d89", variable: "SLACK_TOKEN")
+      ]) {
+        slackSend (
+            channel: "#dcos-cli-ci",
+            color: "danger",
+            message: "CLI artifacts verification failed... :crying:\n${env.RUN_DISPLAY_URL}",
+            teamDomain: "mesosphere",
+            token: "${env.SLACK_TOKEN}",
+        )
+      }
+    }
+  }
 }
