@@ -50,11 +50,10 @@ expectations = [
         "https://downloads.dcos.io/binaries/cli/{}/x86-64/latest/dcos{}".format(platform, ext),
         latest_overall
     ),
-#    Uncomment when DC/OS 1.13 is released.
-#    (
-#        "https://downloads.dcos.io/binaries/cli/{}/x86-64/dcos-1.13/dcos{}".format(platform, ext),
-#        latest_0_8
-#    ),
+    (
+        "https://downloads.dcos.io/binaries/cli/{}/x86-64/dcos-1.13/dcos{}".format(platform, ext),
+        latest_0_8
+    ),
     (
         "https://downloads.dcos.io/binaries/cli/{}/x86-64/dcos-1.12/dcos{}".format(platform, ext),
         latest_0_7
