@@ -12,19 +12,11 @@ if os.environ.get("TAG_NAME"):
     version =  os.environ.get("TAG_NAME")
 
     artifacts = [
-        ("linux/dcos",       "cli/releases/binaries/dcos/linux/x86-64/latest/dcos"),
-        ("darwin/dcos",      "cli/releases/binaries/dcos/darwin/x86-64/latest/dcos"),
-        ("windows/dcos.exe", "cli/releases/binaries/dcos/windows/x86-64/latest/dcos.exe"),
-
         ("linux/dcos",       "cli/releases/binaries/dcos/linux/x86-64/{}/dcos".format(version)),
         ("darwin/dcos",      "cli/releases/binaries/dcos/darwin/x86-64/{}/dcos".format(version)),
         ("windows/dcos.exe", "cli/releases/binaries/dcos/windows/x86-64/{}/dcos.exe".format(version)),
 
         # For tag releases, still push to the legacy locations.
-        ("linux/dcos",       "binaries/cli/linux/x86-64/latest/dcos"),
-        ("darwin/dcos",      "binaries/cli/darwin/x86-64/latest/dcos"),
-        ("windows/dcos.exe", "binaries/cli/windows/x86-64/latest/dcos.exe"),
-
         ("linux/dcos",       "binaries/cli/linux/x86-64/{}/dcos".format(version)),
         ("darwin/dcos",      "binaries/cli/darwin/x86-64/{}/dcos".format(version)),
         ("windows/dcos.exe", "binaries/cli/windows/x86-64/{}/dcos.exe".format(version))
