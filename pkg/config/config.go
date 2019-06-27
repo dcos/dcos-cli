@@ -96,6 +96,27 @@ func Empty() *Config {
 	return New(Opts{})
 }
 
+// Keys returns the possible config keys. TODO: make all the keys constants.
+func Keys() map[string]string {
+	return map[string]string{
+		keyACSToken:          "the DC/OS authentication token",
+		keyURL:               "the public master URL of your DC/OS cluster",
+		keyMesosMasterURL:    "the Mesos master URL (defaults to 'core.dcos_url')",
+		keyPagination:        "indicates whether to paginate output (defaults to true)",
+		keyTLS:               "indicates whether to verify SSL certificates or set the path to the SSL certificates",
+		keyTimeout:           "the request timeout in seconds, with a minimum value of 1 second (defaults to 3 minutes)",
+		keySSHUser:           "the user used when using ssh to connect to a node of your DC/OS cluster (defaults to 'core')",
+		keySSHProxyHost:      "whether to use a fixed ssh proxy host (Bastion) for node SSH access",
+		keyReporting:         "whether to report usage events to Mesosphere",
+		keyPromptLogin:       "whether to prompt the user to log in when token expired, otherwise automatically initiate login",
+		keyClusterName:       "human readable name of cluster",
+		"job.url":            "API URL for talking to the Metronome scheduler",
+		"job.service_name":   "the name of the metronome cluster",
+		"marathon.url":       "base URL for talking to Marathon, overwrites the value specified in 'core.dcos_url'",
+		"package.cosmos_url": "base URL for talking to Cosmos, overwrites the value specified in 'core.dcos_url'",
+	}
+}
+
 // LoadPath populates the store based on a path to a TOML file.
 // If the file doesn't exist, an empty one is created.
 func (c *Config) LoadPath(path string) error {
