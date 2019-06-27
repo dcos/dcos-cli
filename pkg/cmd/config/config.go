@@ -21,6 +21,7 @@ func NewCommand(ctx api.Context) *cobra.Command {
 		},
 	}
 	cmd.AddCommand(
+		newCmdConfigKeys(ctx),
 		newCmdConfigSet(ctx),
 		newCmdConfigShow(ctx),
 		newCmdConfigUnset(ctx),

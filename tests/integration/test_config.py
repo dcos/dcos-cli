@@ -11,6 +11,8 @@ Usage:
   dcos config [command]
 
 Commands:
+  keys
+      Print all the keys that can be set in a configuration file
   set
       Add or set a property in the configuration file used for the current cluster
   show
@@ -33,6 +35,8 @@ def test_config_invalid_usage():
   dcos config [command]
 
 Commands:
+  keys
+      Print all the keys that can be set in a configuration file
   set
       Add or set a property in the configuration file used for the current cluster
   show

@@ -423,6 +423,14 @@ _dcos_cluster_setup() {
     fi
 }
 
+__dcos_complete_config_keys() {
+    local keys=()
+    while IFS=$'\n' read -r line; do config_keys+=("$line"); done < <(dcos config keys --quiet 2> /dev/null)
+    keys+=("${config_keys[@]}")
+    __dcos_debug "Found config keys" "${config_keys[@]}"
+    __dcos_handle_compreply "${keys[@]}"
+}
+
 _dcos_config() {
     local i command
 
@@ -439,7 +447,7 @@ _dcos_config() {
                 __dcos_handle_compreply "${flags[@]}"
                 ;;
             *)
-                __dcos_handle_compreply "${commands[@]}"
+                __dcos_complete_config_keys
                 ;;
         esac
         return
