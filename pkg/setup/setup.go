@@ -351,6 +351,12 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 // installPackageServicesPlugins installs CLI plugins for the services currently installed on the cluster.
 // When different versions of the same package are installed, it installs the plugin for the highest version.
 func (s *Setup) installPackageServicesPlugins(wg *sync.WaitGroup, httpClient *httpclient.Client, pbar *mpb.Progress) {
+	// Install all package CLIs when the env var is present.
+	installPackageCLIs, _ := s.envLookup("DCOS_CLI_EXPERIMENTAL_AUTOINSTALL_PACKAGE_CLIS")
+	if installPackageCLIs == "" {
+		return
+	}
+
 	cosmosClient, err := cosmos.NewClient()
 	if err != nil {
 		s.logger.Debug(err)
