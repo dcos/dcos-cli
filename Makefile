@@ -3,8 +3,6 @@ PKG=github.com/dcos/dcos-cli
 PKG_DIR=/go/src/$(PKG)
 IMAGE_NAME=dcos/dcos-cli
 VERSION?=$(shell git rev-parse HEAD)
-CORE_VERSION?=1.13-patch.x
-CORE_STABILITY?=testing
 
 export GOFLAGS := -mod=vendor
 export GO111MODULE := on
@@ -21,19 +19,6 @@ darwin linux windows: docker-image
 		-ldflags '-X $(PKG)/pkg/cli/version.version=$(VERSION)' \
 		-tags '$(GO_BUILD_TAGS)' \
 		-o build/$(@)/dcos$($(@)_EXE) ./cmd/dcos)
-
-.PHONY: core-bundle
-core-bundle: docker-image
-	$(call inDocker,go-bindata -pkg corecli -o pkg/internal/corecli/corecli_linux.gen.go -nometadata -tags "corecli" -prefix "build/linux" build/linux/core.zip)
-	$(call inDocker,go-bindata -pkg corecli -o pkg/internal/corecli/corecli_darwin.gen.go -nometadata -tags "corecli" -prefix "build/darwin" build/darwin/core.zip)
-	$(call inDocker,go-bindata -pkg corecli -o pkg/internal/corecli/corecli_windows.gen.go -nometadata -tags "corecli" -prefix "build/windows" build/windows/core.zip)
-
-.PHONY: core-download
-core-download:
-	mkdir -p build/linux build/darwin build/windows
-	wget https://downloads.dcos.io/cli/$(CORE_STABILITY)/plugins/dcos-core-cli/linux/x86-64/dcos-core-cli-$(CORE_VERSION).zip -O build/linux/core.zip
-	wget https://downloads.dcos.io/cli/$(CORE_STABILITY)/plugins/dcos-core-cli/darwin/x86-64/dcos-core-cli-$(CORE_VERSION).zip -O build/darwin/core.zip
-	wget https://downloads.dcos.io/cli/$(CORE_STABILITY)/plugins/dcos-core-cli/windows/x86-64/dcos-core-cli-$(CORE_VERSION).zip -O build/windows/core.zip
 
 .PHONY: install
 install:

@@ -100,8 +100,6 @@ While BIN plugins are not deprecated, they do not support the same set of featur
 
 As its name suggests, this command removes plugins (their name being given as arguments) locally by removing their directory from the filesystem.
 
-As the [core CLI is bundled](corecli.md) within the DC/OS CLI, removing the `dcos-core-cli` plugin triggers an error.
-
 ## dcos plugin list
 
 This command lists installed plugins, with their name, version, description and the subcommands they provide. It also accepts a --json flag.

@@ -27,7 +27,6 @@ import (
 	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/dcos"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
-	"github.com/dcos/dcos-cli/pkg/internal/corecli"
 	"github.com/dcos/dcos-cli/pkg/internal/cosmos"
 	"github.com/dcos/dcos-cli/pkg/login"
 	"github.com/dcos/dcos-cli/pkg/mesos"
@@ -329,11 +328,7 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 	errCore := s.installPlugin("dcos-core-cli", httpClient, version, pbar)
 	pbar.Wait()
 	if errCore != nil {
-		// Extract the dcos-core-cli bundle if it coudln't be downloaded.
-		errCore = corecli.InstallPlugin(s.fs, s.pluginManager, s.deprecated)
-		if errCore != nil {
-			return errCore
-		}
+		return errCore
 	}
 
 	var newCommands []string

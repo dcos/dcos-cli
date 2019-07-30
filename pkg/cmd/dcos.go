@@ -4,7 +4,6 @@ package cmd
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -20,8 +19,6 @@ import (
 	"github.com/dcos/dcos-cli/pkg/cmd/completion"
 	configcmd "github.com/dcos/dcos-cli/pkg/cmd/config"
 	plugincmd "github.com/dcos/dcos-cli/pkg/cmd/plugin"
-	"github.com/dcos/dcos-cli/pkg/config"
-	"github.com/dcos/dcos-cli/pkg/internal/corecli"
 	"github.com/dcos/dcos-cli/pkg/internal/cosmos"
 	"github.com/dcos/dcos-cli/pkg/plugin"
 	"github.com/spf13/afero"
@@ -37,29 +34,6 @@ func NewDCOSCommand(ctx api.Context) *cobra.Command {
 		Args: cobra.ArbitraryArgs,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			cmd.SilenceUsage = true
-		},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
-				return cmd.Help()
-			}
-			switch args[0] {
-			case "job", "marathon", "node", "package", "service", "task":
-				cluster, err := ctx.Cluster()
-				if err != nil {
-					return config.ErrNotAttached
-				}
-				corePlugin, err := extractCorePlugin(ctx, cluster)
-				if err != nil {
-					return err
-				}
-				for _, coreCmd := range corePlugin.Commands {
-					if coreCmd.Name == args[0] {
-						return newPluginCommand(ctx, coreCmd).RunE(nil, nil)
-					}
-				}
-			}
-			fmt.Fprintln(ctx.ErrOut(), cmd.UsageString())
-			return fmt.Errorf("unknown command %s", args[0])
 		},
 	}
 
@@ -150,16 +124,6 @@ func newPluginCommand(ctx api.Context, cmd plugin.Command) *cobra.Command {
 		invokePlugin(ctx, cmd, args)
 	})
 	return pluginCmd
-}
-
-// extractCorePlugin extracts the bundled core plugin into the plugins folder.
-func extractCorePlugin(ctx api.Context, cluster *config.Cluster) (*plugin.Plugin, error) {
-	pluginManager := ctx.PluginManager(cluster)
-	err := corecli.InstallPlugin(ctx.Fs(), pluginManager, ctx.Deprecated)
-	if err != nil {
-		return nil, err
-	}
-	return pluginManager.Plugin("dcos-core-cli")
 }
 
 // updateCorePlugin updates the core CLI plugin.
