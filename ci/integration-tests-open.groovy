@@ -12,9 +12,7 @@ pipeline {
       agent { label 'mesos-ubuntu' }
 
       steps {
-          sh 'make core-download'
-          sh 'make core-bundle'
-          sh 'GO_BUILD_TAGS=corecli make linux darwin windows'
+          sh 'make linux darwin windows'
           stash includes: 'build/linux/**', name: 'dcos-linux'
           stash includes: 'build/darwin/**', name: 'dcos-darwin'
           stash includes: 'build/windows/**', name: 'dcos-windows'
@@ -58,7 +56,6 @@ pipeline {
 
           sh '''
             bash -exc " \
-              export DCOS_TEST_CORECLI=1; \
               export DCOS_CLI_EXPERIMENTAL_AUTOINSTALL_PACKAGE_CLIS=1; \
               PATH=$PWD/build/linux:$PATH; \
               cd tests; \
@@ -84,7 +81,6 @@ pipeline {
             bash -exc " \
               export LC_ALL=en_US.UTF-8; \
               export PYTHONIOENCODING=utf-8; \
-              export DCOS_TEST_CORECLI=1; \
               export DCOS_CLI_EXPERIMENTAL_AUTOINSTALL_PACKAGE_CLIS=1; \
               PATH=$PWD/build/darwin:$PATH; \
               cd tests; \
@@ -114,7 +110,6 @@ pipeline {
           bat '''
             bash -exc " \
               export PYTHONIOENCODING=utf-8; \
-              export DCOS_TEST_CORECLI=1; \
               export DCOS_CLI_EXPERIMENTAL_AUTOINSTALL_PACKAGE_CLIS=1; \
               PATH=$PWD/build/windows:$PATH; \
               cd tests; \

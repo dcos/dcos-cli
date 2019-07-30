@@ -64,6 +64,8 @@ Commands:
       Install and manage DC/OS software packages
   plugin
       Manage CLI plugins
+  quota
+      Manage DC/OS quotas
   service
       Manage DC/OS services
   task
@@ -113,6 +115,8 @@ Commands:
       Install and manage DC/OS software packages
   plugin
       Manage CLI plugins
+  quota
+      Manage DC/OS quotas
   security
       DC/OS security related commands
   service

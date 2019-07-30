@@ -140,13 +140,8 @@ When the canonical stable URL is not published yet (4XX response), the CLI tries
 - https://{domain}/cli/testing/plugins/{plugin}/{platform}/x86-64/{plugin}-{dcos-version}-patch.x.zip
 
 Failing to download the plugins from their canonical URLs usually means that the CLI user operates from
-an air-gapped environment. In that case the CLI falls back to downloading the plugins through Cosmos, where they are registered as packages named `dcos-core-cli` and `dcos-enterprise-cli`.
-
-Failing to download the plugins from Cosmos usually means that the CLI user doesn't have the necessary
-permissions in order to interact with Cosmos. In that case the setup command auto-extracts a
-`dcos-core-cli` bundled in the DC/OS CLI, and skips installation of `dcos-enterprise-cli`.
-The user will see an informative deprecation message indicating a web-page where they can go to in order
-to download the plugins manually (https://downloads.dcos.io/cli/index.html).
+an air-gapped environment. In that case the CLI falls back to downloading the plugins through Cosmos, where they are registered as packages named `dcos-core-cli` and `dcos-enterprise-cli`. Air-gapped
+users can rely on the [Bootstrap Package registry](https://docs.mesosphere.com/latest/administering-clusters/repo/package-registry/quickstart/).
 
 ### Service plugins
 
