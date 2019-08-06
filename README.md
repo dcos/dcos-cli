@@ -7,7 +7,7 @@ clusters.
 ## Installation and usage
 
 If you're a **user** of DC/OS, please follow the [installation
-instructions](https://dcos.io/docs/latest/cli/install/). Otherwise,
+instructions](https://docs.d2iq.com/mesosphere/dcos/latest/cli/install/). Otherwise,
 follow the instructions below to set up your development environment.
 
 Detailed help and usage information is available through the dcos help
