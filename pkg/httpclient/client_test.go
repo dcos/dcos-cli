@@ -58,6 +58,30 @@ func TestPost(t *testing.T) {
 	require.Equal(t, "ok", string(respBody))
 }
 
+func TestPut(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "PUT", r.Method)
+		assert.Equal(t, "/path", r.URL.Path)
+		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+
+		body, err := ioutil.ReadAll(r.Body)
+		assert.NoError(t, err)
+
+		assert.Equal(t, `{"cluster":"DC/OS"}`, string(body))
+		w.Write([]byte("ok"))
+	}))
+	defer ts.Close()
+
+	client := New(ts.URL)
+
+	resp, err := client.Put("/path", "application/json", strings.NewReader(`{"cluster":"DC/OS"}`))
+	require.NoError(t, err)
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+	require.Equal(t, "ok", string(respBody))
+}
+
 func TestNewRequest(t *testing.T) {
 	client := New("https://dcos.io", ACSToken("acsToken"), Timeout(60*time.Second))
 

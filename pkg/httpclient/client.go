@@ -176,6 +176,16 @@ func (c *Client) Post(path string, contentType string, body io.Reader, opts ...O
 	return c.Do(req)
 }
 
+// Put issues a PUT to the specified DC/OS cluster path.
+func (c *Client) Put(path string, contentType string, body io.Reader, opts ...Option) (*http.Response, error) {
+	req, err := c.NewRequest("PUT", path, body, opts...)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", contentType)
+	return c.Do(req)
+}
+
 // Delete issues a DELETE to the specified DC/OS cluster path.
 func (c *Client) Delete(path string, opts ...Option) (*http.Response, error) {
 	req, err := c.NewRequest("DELETE", path, nil, opts...)
