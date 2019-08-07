@@ -24,6 +24,7 @@ func NewCommand(ctx api.Context) *cobra.Command {
 		newCmdClusterAttach(ctx),
 		newCmdClusterLink(ctx),
 		newCmdClusterList(ctx),
+		newCmdClusterOpen(ctx),
 		newCmdClusterRemove(ctx),
 		newCmdClusterRename(ctx),
 		newCmdClusterSetup(ctx),

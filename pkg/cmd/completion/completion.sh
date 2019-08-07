@@ -264,7 +264,7 @@ _dcos_cluster() {
         return
     fi
 
-    local commands=("attach" "help" "list" "remove" "rename" "setup")
+    local commands=("attach" "help" "list" "open" "remove" "rename" "setup")
     local flags=("--help")
 
     if [ -z "$command" ]; then
@@ -335,6 +335,28 @@ _dcos_cluster_list() {
                 __dcos_handle_compreply "${flags[@]}"
                 ;;
             *) ;;
+        esac
+        return
+    fi
+}
+
+_dcos_cluster_open() {
+    local i command
+
+    if ! __dcos_default_command_parse; then
+        return
+    fi
+
+    local flags=("--help")
+
+    if [ -z "$command" ]; then
+        case "$cur" in
+            --*)
+                __dcos_handle_compreply "${flags[@]}"
+                ;;
+            *)
+                __dcos_complete_cluster_names
+                ;;
         esac
         return
     fi
