@@ -74,7 +74,7 @@ func TestPut(t *testing.T) {
 
 	client := New(ts.URL)
 
-	resp, err := client.Post("/path", "application/json", strings.NewReader(`{"cluster":"DC/OS"}`))
+	resp, err := client.Put("/path", "application/json", strings.NewReader(`{"cluster":"DC/OS"}`))
 	require.NoError(t, err)
 
 	respBody, err := ioutil.ReadAll(resp.Body)
