@@ -8,10 +8,17 @@ import (
 
 // newCmdClusterOpen opens the current cluster UI in the user browser.
 func newCmdClusterOpen(ctx api.Context) *cobra.Command {
+
 	cmd := &cobra.Command{
-		Use:   "open",
-		Short: "Open the current cluster UI in the browser",
-		Args:  cobra.MaximumNArgs(1),
+		Use:   "open [<cluster>]",
+		Short: "Open a cluster UI in the browser",
+		Example: `
+  # Open the current cluster UI in the browser
+  dcos cluster open
+
+  # Open a specific cluster UI in the browser (using a name or ID of a configured cluster)
+  dcos cluster open my-cluster-1`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var cluster *config.Cluster
 

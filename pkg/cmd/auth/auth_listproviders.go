@@ -14,7 +14,7 @@ import (
 func newCmdAuthListProviders(ctx api.Context) *cobra.Command {
 	var jsonOutput bool
 	cmd := &cobra.Command{
-		Use:   "list-providers <url>",
+		Use:   "list-providers [<url>]",
 		Short: "List available login providers for a cluster",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
