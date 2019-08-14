@@ -8,20 +8,21 @@ def test_config_help():
     assert out == '''Manage the DC/OS configuration file
 
 Usage:
-  dcos config [command]
+    dcos config [command]
 
 Commands:
-  keys
-      Print all the keys that can be set in a configuration file
-  set
-      Add or set a property in the configuration file used for the current cluster
-  show
-      Print the configuration file related to the current cluster
-  unset
-      Remove a property from the configuration file used for the current cluster
+    keys
+        Print all the keys that can be set in a configuration file
+    set
+        Add or set a property in the configuration file used for the current cluster
+    show
+        Print the configuration file related to the current cluster
+    unset
+        Remove a property from the configuration file used for the current cluster
 
 Options:
-  -h, --help   help for config
+    -h, --help
+        help for config
 
 Use "dcos config [command] --help" for more information about a command.
 '''
@@ -32,20 +33,21 @@ def test_config_invalid_usage():
     assert code != 0
     assert out == ''
     assert err == '''Usage:
-  dcos config [command]
+    dcos config [command]
 
 Commands:
-  keys
-      Print all the keys that can be set in a configuration file
-  set
-      Add or set a property in the configuration file used for the current cluster
-  show
-      Print the configuration file related to the current cluster
-  unset
-      Remove a property from the configuration file used for the current cluster
+    keys
+        Print all the keys that can be set in a configuration file
+    set
+        Add or set a property in the configuration file used for the current cluster
+    show
+        Print the configuration file related to the current cluster
+    unset
+        Remove a property from the configuration file used for the current cluster
 
 Options:
-  -h, --help   help for config
+    -h, --help
+        help for config
 
 Use "dcos config [command] --help" for more information about a command.
 

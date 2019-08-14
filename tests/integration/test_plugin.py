@@ -18,18 +18,19 @@ def test_plugin_help():
     assert out == '''Manage CLI plugins
 
 Usage:
-  dcos plugin [command]
+    dcos plugin [command]
 
 Commands:
-  add
-      Add a CLI plugin
-  list
-      List CLI plugins
-  remove
-      Remove a CLI plugin
+    add
+        Add a CLI plugin
+    list
+        List CLI plugins
+    remove
+        Remove a CLI plugin
 
 Options:
-  -h, --help   help for plugin
+    -h, --help
+        help for plugin
 
 Use "dcos plugin [command] --help" for more information about a command.
 '''
@@ -40,18 +41,19 @@ def test_plugin_invalid_usage():
     assert code != 0
     assert out == ''
     assert err == '''Usage:
-  dcos plugin [command]
+    dcos plugin [command]
 
 Commands:
-  add
-      Add a CLI plugin
-  list
-      List CLI plugins
-  remove
-      Remove a CLI plugin
+    add
+        Add a CLI plugin
+    list
+        List CLI plugins
+    remove
+        Remove a CLI plugin
 
 Options:
-  -h, --help   help for plugin
+    -h, --help
+        help for plugin
 
 Use "dcos plugin [command] --help" for more information about a command.
 

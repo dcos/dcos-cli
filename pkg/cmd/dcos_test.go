@@ -22,27 +22,27 @@ func TestDCOSHelp(t *testing.T) {
 	require.NoError(t, cmd.Help())
 
 	var expectedHelp = `Usage:
-  dcos [command]
+    dcos [command]
 
 Commands:
-  auth
-      Authenticate to DC/OS cluster
-  cluster
-      Manage your DC/OS clusters
-  config
-      Manage the DC/OS configuration file
-  help
-      Help about any command
-  plugin
-      Manage CLI plugins
+    auth
+        Authenticate to DC/OS cluster
+    cluster
+        Manage your DC/OS clusters
+    config
+        Manage the DC/OS configuration file
+    help
+        Help about any command
+    plugin
+        Manage CLI plugins
 
 Options:
-  --version
-      Print version information
-  -v, -vv
-      Output verbosity (verbose or very verbose)
-  -h, --help
-      Show usage help
+    --version
+        Print version information
+    -v, -vv
+        Output verbosity (verbose or very verbose)
+    -h, --help
+        Show usage help
 
 Use "dcos [command] --help" for more information about a command.
 `

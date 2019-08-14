@@ -8,18 +8,19 @@ def test_auth_help():
     assert out == '''Authenticate to DC/OS cluster
 
 Usage:
-  dcos auth [command]
+    dcos auth [command]
 
 Commands:
-  list-providers
-      List available login providers for a cluster
-  login
-      Log in to the current cluster
-  logout
-      Log out the CLI from the current cluster
+    list-providers
+        List available login providers for a cluster
+    login
+        Log in to the current cluster
+    logout
+        Log out the CLI from the current cluster
 
 Options:
-  -h, --help   help for auth
+    -h, --help
+        help for auth
 
 Use "dcos auth [command] --help" for more information about a command.
 '''
@@ -30,18 +31,19 @@ def test_auth_invalid_usage():
     assert code != 0
     assert out == ''
     assert err == '''Usage:
-  dcos auth [command]
+    dcos auth [command]
 
 Commands:
-  list-providers
-      List available login providers for a cluster
-  login
-      Log in to the current cluster
-  logout
-      Log out the CLI from the current cluster
+    list-providers
+        List available login providers for a cluster
+    login
+        Log in to the current cluster
+    logout
+        Log out the CLI from the current cluster
 
 Options:
-  -h, --help   help for auth
+    -h, --help
+        help for auth
 
 Use "dcos auth [command] --help" for more information about a command.
 
