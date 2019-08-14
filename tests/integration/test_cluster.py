@@ -14,26 +14,29 @@ def test_cluster_help():
     assert out == '''Manage your DC/OS clusters
 
 Usage:
-  dcos cluster [command]
+    dcos cluster [command]
 
 Commands:
-  attach
-      Attach the CLI to a cluster
-  link
-      Link the current cluster to another one
-  list
-      List the clusters configured and the ones linked to the current cluster
-  remove
-      Remove a configured cluster from the CLI
-  rename
-      Rename a configured cluster
-  setup
-      Set up the CLI to communicate with a cluster
-  unlink
-      Unlink the current cluster with one of its linked clusters
+    attach
+        Attach the CLI to a cluster
+    link
+        Link the current cluster to another one
+    list
+        List the clusters configured and the ones linked to the current cluster
+    open
+        Open a cluster UI in the browser
+    remove
+        Remove a configured cluster from the CLI
+    rename
+        Rename a configured cluster
+    setup
+        Set up the CLI to communicate with a cluster
+    unlink
+        Unlink the current cluster with one of its linked clusters
 
 Options:
-  -h, --help   help for cluster
+    -h, --help
+        help for cluster
 
 Use "dcos cluster [command] --help" for more information about a command.
 '''
@@ -44,26 +47,29 @@ def test_cluster_invalid_usage():
     assert code != 0
     assert out == ''
     assert err == '''Usage:
-  dcos cluster [command]
+    dcos cluster [command]
 
 Commands:
-  attach
-      Attach the CLI to a cluster
-  link
-      Link the current cluster to another one
-  list
-      List the clusters configured and the ones linked to the current cluster
-  remove
-      Remove a configured cluster from the CLI
-  rename
-      Rename a configured cluster
-  setup
-      Set up the CLI to communicate with a cluster
-  unlink
-      Unlink the current cluster with one of its linked clusters
+    attach
+        Attach the CLI to a cluster
+    link
+        Link the current cluster to another one
+    list
+        List the clusters configured and the ones linked to the current cluster
+    open
+        Open a cluster UI in the browser
+    remove
+        Remove a configured cluster from the CLI
+    rename
+        Rename a configured cluster
+    setup
+        Set up the CLI to communicate with a cluster
+    unlink
+        Unlink the current cluster with one of its linked clusters
 
 Options:
-  -h, --help   help for cluster
+    -h, --help
+        help for cluster
 
 Use "dcos cluster [command] --help" for more information about a command.
 

@@ -4,10 +4,12 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"text/template"
 
 	"github.com/antihax/optional"
 	dcosclient "github.com/dcos/client-go/dcos"
@@ -23,18 +25,21 @@ import (
 	"github.com/dcos/dcos-cli/pkg/plugin"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
-const annotationUsageOptions string = "usage_options"
+const annotationUsageOptions string = `    --version
+        Print version information
+    -v, -vv
+        Output verbosity (verbose or very verbose)
+    -h, --help
+        Show usage help`
 
 // NewDCOSCommand creates the `dcos` command with its `auth`, `config`, and `cluster` subcommands.
 func NewDCOSCommand(ctx api.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  "dcos",
 		Args: cobra.ArbitraryArgs,
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			cmd.SilenceUsage = true
-		},
 	}
 
 	cmd.AddCommand(
@@ -55,33 +60,8 @@ func NewDCOSCommand(ctx api.Context) *cobra.Command {
 		}
 	}
 
-	// This follows the CLI design guidelines for help formatting.
-	cmd.SetUsageTemplate(`Usage:{{if .HasAvailableSubCommands}}
-  {{.CommandPath}} [command]{{else if .Runnable}}
-  {{.UseLine}}{{end}}{{if .HasExample}}
-
-Examples:
-{{.Example}}{{end}}{{if .HasAvailableSubCommands}}
-
-Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
-  {{.Name}}
-      {{.Short}}{{end}}{{end}}{{end}}{{if or .HasAvailableLocalFlags (ne (index .Annotations "` + annotationUsageOptions + `") "")}}
-
-Options:{{if ne (index .Annotations "` + annotationUsageOptions + `") ""}}{{index .Annotations "` + annotationUsageOptions + `"}}{{else}}
-{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
-
-Use "{{.CommandPath}} [command] --help" for more information about a command.{{end}}
-`)
-
-	cmd.Annotations = map[string]string{
-		annotationUsageOptions: `
-  --version
-      Print version information
-  -v, -vv
-      Output verbosity (verbose or very verbose)
-  -h, --help
-      Show usage help`,
-	}
+	cmd.SetUsageFunc(helpMenuFunc)
+	cmd.SilenceUsage = true
 
 	return cmd
 }
@@ -215,4 +195,49 @@ func invokePlugin(ctx api.Context, cmd plugin.Command, args []string) error {
 
 	}
 	return err
+}
+
+// help menu template that follow UX styleguide.
+func helpMenuFunc(command *cobra.Command) error {
+	tpl := template.New("top")
+	template.Must(tpl.Parse(`Usage:{{if .HasAvailableSubCommands}}
+    {{.CommandPath}} [command]{{else if .Runnable}}
+    {{.UseLine}}{{end}}{{if .HasExample}}
+
+Examples:
+    {{.Example}}{{end}}{{if .HasAvailableSubCommands}}
+
+Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+    {{.Name}}
+        {{.Short}}{{end}}{{end}}{{end}}
+`))
+
+	err := tpl.Execute(command.OutOrStdout(), command)
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintln(command.OutOrStdout(), "\nOptions:")
+	if command.Use == "dcos" {
+		fmt.Fprintln(command.OutOrStdout(), annotationUsageOptions)
+	} else if command.HasAvailableLocalFlags() {
+		command.LocalFlags().VisitAll(func(f *pflag.Flag) {
+			if f.Hidden {
+				return
+			}
+			if f.Shorthand != "" && f.Name != "" {
+				fmt.Fprintf(command.OutOrStdout(), "    -%s, --%s\n", f.Shorthand, f.Name)
+			} else if f.Shorthand != "" {
+				fmt.Fprintf(command.OutOrStdout(), "    -%s\n", f.Shorthand)
+			} else {
+				fmt.Fprintf(command.OutOrStdout(), "    --%s\n", f.Name)
+			}
+			fmt.Fprintln(command.OutOrStdout(), "        "+f.Usage)
+		})
+	}
+
+	if command.HasAvailableSubCommands() {
+		fmt.Fprintln(command.OutOrStdout(), "\n"+`Use "`+command.CommandPath()+` [command] --help" for more information about a command.`)
+	}
+	return nil
 }
