@@ -17,6 +17,7 @@ require (
 	github.com/go-openapi/strfmt v0.19.0 // indirect
 	github.com/go-openapi/swag v0.19.0 // indirect
 	github.com/go-openapi/validate v0.19.0 // indirect
+	github.com/hashicorp/go-version v1.2.0
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kr/pty v1.1.4 // indirect
