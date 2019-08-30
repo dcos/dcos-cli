@@ -32,6 +32,7 @@ import (
 	"github.com/dcos/dcos-cli/pkg/mesos"
 	"github.com/dcos/dcos-cli/pkg/plugin"
 	"github.com/dcos/dcos-cli/pkg/prompt"
+	goversion "github.com/hashicorp/go-version"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/vbauerster/mpb"
@@ -295,8 +296,8 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 		return fmt.Errorf("unable to get DC/OS version, installation of the plugins aborted: %s", err)
 	}
 
-	if regexp.MustCompile(`^1\.[7-9]\D*`).MatchString(version.Version) {
-		return errors.New("DC/OS version of the cluster < 1.10, installation of the plugins aborted")
+	if err = s.checkDefaultPluginsRequirements(version.Version); err != nil {
+		return err
 	}
 
 	var wg sync.WaitGroup
@@ -525,4 +526,26 @@ Do you trust it? [y/n] `
 		cert.NotAfter,
 		fingerprintBuf.String(),
 	), "")
+}
+
+// checkDefaultPluginsRequirements makes sure the default plugins can be installed.
+//
+// Currently the only requirement is to have DC/OS 1.10 or greater.
+func (s *Setup) checkDefaultPluginsRequirements(version string) error {
+	minVersion, err := goversion.NewVersion("1.10")
+	if err != nil {
+		return err
+	}
+
+	clusterVersion, err := goversion.NewVersion(version)
+	if err != nil {
+		// To avoid false-positives, we don't fail in case the cluster version cannot be parsed.
+		s.logger.Warnf(`Couldn't parse DC/OS version "%s".`, version)
+		return nil
+	}
+
+	if clusterVersion.LessThan(minVersion) {
+		return errors.New("DC/OS version of the cluster < 1.10, installation of the plugins aborted")
+	}
+	return nil
 }
