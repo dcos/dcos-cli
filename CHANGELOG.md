@@ -1,10 +1,29 @@
 # CHANGELOG
 
-## Next
+## 1.0.0
+
+* Breaking changes
+
+  *  Unbundle the dcos-core-cli plugin from the CLI. It is now auto-installed from Cosmos only (either through Universe or the Bootstrap Registry).
 
 * Features
 
-  * Auto-install CLI plugins for running services during `dcos cluster setup` when environment variable `DCOS_CLI_EXPERIMENTAL_AUTOINSTALL_PACKAGE_CLIS` set
-  * New command `dcos config keys` printing all the keys that can be set in a configuration file
+  * New command `dcos config keys` printing all the keys that can be set in a configuration file.
   * The new `dcos cluster open` can be used to open the currently attached cluster UI in the browser.
-  * Log into OSS without copy/pasting authentication token from browser.
+  * Log into DC/OS Open without copy/pasting authentication token from browser.
+  * Add cluster name completion to `dcos cluster rename`.
+  * Support arg completion for `dcos config`.
+  * Support autocompletion on `dcos plugin remove`.
+
+* Experimental features
+
+  * Auto-install CLI plugins for running services during `dcos cluster setup` when environment variable `DCOS_CLI_EXPERIMENTAL_AUTOINSTALL_PACKAGE_CLIS` set.
+
+* Fixes
+
+  * Loosen the DC/OS version check for plugin auto-installation, it was only accepting 1.XX versions.
+  * Improve error messages for `dcos cluster setup` args error
+
+* Testing
+
+  * Run integration tests against DC/OS Open as well.
