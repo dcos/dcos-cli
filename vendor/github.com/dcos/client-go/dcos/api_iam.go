@@ -36,7 +36,7 @@ Set up OIDC provider with the ID as specified in the URL, and with the config as
 */
 func (a *IAMApiService) ConfigureOIDCProvider(ctx context.Context, providerId string, iamoidcProviderConfig IamoidcProviderConfig) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Put")
+		localVarHttpMethod   = http.MethodPut
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -61,7 +61,7 @@ func (a *IAMApiService) ConfigureOIDCProvider(ctx context.Context, providerId st
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -91,6 +91,16 @@ func (a *IAMApiService) ConfigureOIDCProvider(ctx context.Context, providerId st
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -106,7 +116,7 @@ Set up a SAML provider with the ID as specified in the URL, and with the config 
 */
 func (a *IAMApiService) ConfigureSAMLProvider(ctx context.Context, providerId string, iamsamlProviderConfig IamsamlProviderConfig) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Put")
+		localVarHttpMethod   = http.MethodPut
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -131,7 +141,7 @@ func (a *IAMApiService) ConfigureSAMLProvider(ctx context.Context, providerId st
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -161,6 +171,16 @@ func (a *IAMApiService) ConfigureSAMLProvider(ctx context.Context, providerId st
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -176,7 +196,7 @@ Create a group.
 */
 func (a *IAMApiService) CreateGroup(ctx context.Context, gid string, iamGroupCreate IamGroupCreate) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Put")
+		localVarHttpMethod   = http.MethodPut
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -201,7 +221,7 @@ func (a *IAMApiService) CreateGroup(ctx context.Context, gid string, iamGroupCre
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -231,6 +251,16 @@ func (a *IAMApiService) CreateGroup(ctx context.Context, gid string, iamGroupCre
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -246,7 +276,7 @@ Add account to group.
 */
 func (a *IAMApiService) CreateGroupUser(ctx context.Context, gid string, uid string) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Put")
+		localVarHttpMethod   = http.MethodPut
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -272,7 +302,7 @@ func (a *IAMApiService) CreateGroupUser(ctx context.Context, gid string, uid str
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -300,6 +330,16 @@ func (a *IAMApiService) CreateGroupUser(ctx context.Context, gid string, uid str
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -314,7 +354,7 @@ Set new directory (LDAP) back-end configuration. Replace current configuration, 
 */
 func (a *IAMApiService) CreateLDAPConfiguration(ctx context.Context, iamldapConfiguration IamldapConfiguration) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Put")
+		localVarHttpMethod   = http.MethodPut
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -338,7 +378,7 @@ func (a *IAMApiService) CreateLDAPConfiguration(ctx context.Context, iamldapConf
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -368,6 +408,16 @@ func (a *IAMApiService) CreateLDAPConfiguration(ctx context.Context, iamldapConf
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -383,7 +433,7 @@ Create new ACL for resource with ID &#x60;rid&#x60; (description in body, no per
 */
 func (a *IAMApiService) CreateResourceACL(ctx context.Context, rid string, iamaclCreate IamaclCreate) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Put")
+		localVarHttpMethod   = http.MethodPut
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -408,7 +458,7 @@ func (a *IAMApiService) CreateResourceACL(ctx context.Context, rid string, iamac
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -438,6 +488,16 @@ func (a *IAMApiService) CreateResourceACL(ctx context.Context, rid string, iamac
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -453,7 +513,7 @@ Create user (uid in url, details incl. credentials in body).
 */
 func (a *IAMApiService) CreateUser(ctx context.Context, uid string, iamUserCreate IamUserCreate) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Put")
+		localVarHttpMethod   = http.MethodPut
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -478,7 +538,7 @@ func (a *IAMApiService) CreateUser(ctx context.Context, uid string, iamUserCreat
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -508,6 +568,16 @@ func (a *IAMApiService) CreateUser(ctx context.Context, uid string, iamUserCreat
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -522,7 +592,7 @@ Delete group.
 */
 func (a *IAMApiService) DeleteGroup(ctx context.Context, gid string) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Delete")
+		localVarHttpMethod   = http.MethodDelete
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -547,7 +617,7 @@ func (a *IAMApiService) DeleteGroup(ctx context.Context, gid string) (*http.Resp
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -575,6 +645,16 @@ func (a *IAMApiService) DeleteGroup(ctx context.Context, gid string) (*http.Resp
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -590,7 +670,7 @@ Delete user account from group.
 */
 func (a *IAMApiService) DeleteGroupUser(ctx context.Context, gid string, uid string) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Delete")
+		localVarHttpMethod   = http.MethodDelete
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -616,7 +696,7 @@ func (a *IAMApiService) DeleteGroupUser(ctx context.Context, gid string, uid str
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -644,6 +724,16 @@ func (a *IAMApiService) DeleteGroupUser(ctx context.Context, gid string, uid str
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -657,7 +747,7 @@ Delete current directory (LDAP) back-end configuration. This deactivates the LDA
 */
 func (a *IAMApiService) DeleteLDAPConfiguration(ctx context.Context) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Delete")
+		localVarHttpMethod   = http.MethodDelete
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -681,7 +771,7 @@ func (a *IAMApiService) DeleteLDAPConfiguration(ctx context.Context) (*http.Resp
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -709,6 +799,16 @@ func (a *IAMApiService) DeleteLDAPConfiguration(ctx context.Context) (*http.Resp
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -723,7 +823,7 @@ Delete provider (disables authentication with that provider).
 */
 func (a *IAMApiService) DeleteOIDCProvider(ctx context.Context, providerId string) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Delete")
+		localVarHttpMethod   = http.MethodDelete
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -748,7 +848,7 @@ func (a *IAMApiService) DeleteOIDCProvider(ctx context.Context, providerId strin
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -776,6 +876,16 @@ func (a *IAMApiService) DeleteOIDCProvider(ctx context.Context, providerId strin
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -790,7 +900,7 @@ Delete ACL of resource with ID &#x60;rid&#x60;.
 */
 func (a *IAMApiService) DeleteResourceACL(ctx context.Context, rid string) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Delete")
+		localVarHttpMethod   = http.MethodDelete
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -815,7 +925,7 @@ func (a *IAMApiService) DeleteResourceACL(ctx context.Context, rid string) (*htt
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -843,6 +953,16 @@ func (a *IAMApiService) DeleteResourceACL(ctx context.Context, rid string) (*htt
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -857,7 +977,7 @@ Delete provider (disables authentication with that provider).
 */
 func (a *IAMApiService) DeleteSAMLProvider(ctx context.Context, providerId string) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Delete")
+		localVarHttpMethod   = http.MethodDelete
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -882,7 +1002,7 @@ func (a *IAMApiService) DeleteSAMLProvider(ctx context.Context, providerId strin
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -910,6 +1030,16 @@ func (a *IAMApiService) DeleteSAMLProvider(ctx context.Context, providerId strin
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -924,7 +1054,7 @@ Delete account.
 */
 func (a *IAMApiService) DeleteUser(ctx context.Context, uid string) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Delete")
+		localVarHttpMethod   = http.MethodDelete
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -949,7 +1079,7 @@ func (a *IAMApiService) DeleteUser(ctx context.Context, uid string) (*http.Respo
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -977,6 +1107,95 @@ func (a *IAMApiService) DeleteUser(ctx context.Context, uid string) (*http.Respo
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
+		return localVarHttpResponse, newErr
+	}
+
+	return localVarHttpResponse, nil
+}
+
+/*
+IAMApiService Forbid all actions of given group to given resource.
+Forbid all actions of given group to given resource.
+ * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ * @param rid resource ID.
+ * @param gid group ID.
+*/
+func (a *IAMApiService) ForbidResourceGroupActions(ctx context.Context, rid string, gid string) (*http.Response, error) {
+	var (
+		localVarHttpMethod   = http.MethodDelete
+		localVarPostBody     interface{}
+		localVarFormFileName string
+		localVarFileName     string
+		localVarFileBytes    []byte
+	)
+
+	// create path and map variables
+	localVarPath := a.client.cfg.BasePath + "/acs/api/v1/acls/{rid}/groups/{gid}"
+	localVarPath = strings.Replace(localVarPath, "{"+"rid"+"}", fmt.Sprintf("%v", rid), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"gid"+"}", fmt.Sprintf("%v", gid), -1)
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := url.Values{}
+	localVarFormParams := url.Values{}
+
+	// to determine the Content-Type header
+	localVarHttpContentTypes := []string{}
+
+	// set Content-Type header
+	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
+	if localVarHttpContentType != "" {
+		localVarHeaderParams["Content-Type"] = localVarHttpContentType
+	}
+
+	// to determine the Accept header
+	localVarHttpHeaderAccepts := []string{"application/json"}
+
+	// set Accept header
+	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
+	if localVarHttpHeaderAccept != "" {
+		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
+	}
+	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	localVarHttpResponse, err := a.client.callAPI(r)
+	if err != nil || localVarHttpResponse == nil {
+		return localVarHttpResponse, err
+	}
+
+	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
+	localVarHttpResponse.Body.Close()
+	if err != nil {
+		return localVarHttpResponse, err
+	}
+
+	if localVarHttpResponse.StatusCode >= 300 {
+		newErr := GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHttpResponse.Status,
+		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -993,7 +1212,7 @@ Forbid single action for given account and resource.
 */
 func (a *IAMApiService) ForbidResourceUserAction(ctx context.Context, rid string, uid string, action string) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Delete")
+		localVarHttpMethod   = http.MethodDelete
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -1020,7 +1239,7 @@ func (a *IAMApiService) ForbidResourceUserAction(ctx context.Context, rid string
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -1048,6 +1267,16 @@ func (a *IAMApiService) ForbidResourceUserAction(ctx context.Context, rid string
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -1063,7 +1292,7 @@ Forbid all actions of given account to given resource.
 */
 func (a *IAMApiService) ForbidResourceUserActions(ctx context.Context, rid string, uid string) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Delete")
+		localVarHttpMethod   = http.MethodDelete
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -1089,7 +1318,7 @@ func (a *IAMApiService) ForbidResourceUserActions(ctx context.Context, rid strin
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -1117,6 +1346,16 @@ func (a *IAMApiService) ForbidResourceUserActions(ctx context.Context, rid strin
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -1133,7 +1372,7 @@ Forbid single action for given resource and group.
 */
 func (a *IAMApiService) ForbitResourceGroupAction(ctx context.Context, rid string, gid string, action string) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Delete")
+		localVarHttpMethod   = http.MethodDelete
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -1160,7 +1399,7 @@ func (a *IAMApiService) ForbitResourceGroupAction(ctx context.Context, rid strin
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -1188,74 +1427,15 @@ func (a *IAMApiService) ForbitResourceGroupAction(ctx context.Context, rid strin
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
-		return localVarHttpResponse, newErr
-	}
-
-	return localVarHttpResponse, nil
-}
-
-/*
-IAMApiService Forbid all actions of given group to given resource.
-Forbid all actions of given group to given resource.
- * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param rid resource ID.
- * @param gid group ID.
-*/
-func (a *IAMApiService) ForbitResourceGroupActions(ctx context.Context, rid string, gid string) (*http.Response, error) {
-	var (
-		localVarHttpMethod   = strings.ToUpper("Delete")
-		localVarPostBody     interface{}
-		localVarFormFileName string
-		localVarFileName     string
-		localVarFileBytes    []byte
-	)
-
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/acs/api/v1/acls/{rid}/groups/{gid}"
-	localVarPath = strings.Replace(localVarPath, "{"+"rid"+"}", fmt.Sprintf("%v", rid), -1)
-	localVarPath = strings.Replace(localVarPath, "{"+"gid"+"}", fmt.Sprintf("%v", gid), -1)
-
-	localVarHeaderParams := make(map[string]string)
-	localVarQueryParams := url.Values{}
-	localVarFormParams := url.Values{}
-
-	// to determine the Content-Type header
-	localVarHttpContentTypes := []string{}
-
-	// set Content-Type header
-	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
-	if localVarHttpContentType != "" {
-		localVarHeaderParams["Content-Type"] = localVarHttpContentType
-	}
-
-	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
-
-	// set Accept header
-	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
-	if localVarHttpHeaderAccept != "" {
-		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
-	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	localVarHttpResponse, err := a.client.callAPI(r)
-	if err != nil || localVarHttpResponse == nil {
-		return localVarHttpResponse, err
-	}
-
-	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
-	localVarHttpResponse.Body.Close()
-	if err != nil {
-		return localVarHttpResponse, err
-	}
-
-	if localVarHttpResponse.StatusCode >= 300 {
-		newErr := GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHttpResponse.Status,
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
 		}
 		return localVarHttpResponse, newErr
 	}
@@ -1271,7 +1451,7 @@ Get array of &#x60;ACL&#x60; objects.
 */
 func (a *IAMApiService) GetACLs(ctx context.Context) (IamAcls, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -1358,7 +1538,7 @@ Get specific &#x60;Group&#x60; object.
 */
 func (a *IAMApiService) GetGroup(ctx context.Context, gid string) (IamGroup, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -1422,6 +1602,16 @@ func (a *IAMApiService) GetGroup(ctx context.Context, gid string) (IamGroup, *ht
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
@@ -1446,7 +1636,7 @@ Retrieve permissions of this group.
 */
 func (a *IAMApiService) GetGroupPermissions(ctx context.Context, gid string) (IamGroupPermissions, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -1510,6 +1700,16 @@ func (a *IAMApiService) GetGroupPermissions(ctx context.Context, gid string) (Ia
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
@@ -1541,7 +1741,7 @@ type GetGroupUsersOpts struct {
 
 func (a *IAMApiService) GetGroupUsers(ctx context.Context, gid string, localVarOptionals *GetGroupUsersOpts) (IamGroupUsers, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -1608,6 +1808,16 @@ func (a *IAMApiService) GetGroupUsers(ctx context.Context, gid string, localVarO
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
@@ -1631,7 +1841,7 @@ Retrieve array of &#x60;Group&#x60; objects.
 */
 func (a *IAMApiService) GetGroups(ctx context.Context) (IamGroups, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -1694,6 +1904,16 @@ func (a *IAMApiService) GetGroups(ctx context.Context) (IamGroups, *http.Respons
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
@@ -1716,7 +1936,7 @@ This endpoint provides the IAM&#39;s JSON Web Key Set (JWKS), exposing public ke
 */
 func (a *IAMApiService) GetJWKS(ctx context.Context) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -1740,7 +1960,7 @@ func (a *IAMApiService) GetJWKS(ctx context.Context) (*http.Response, error) {
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -1768,6 +1988,16 @@ func (a *IAMApiService) GetJWKS(ctx context.Context) (*http.Response, error) {
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -1782,7 +2012,7 @@ Retrieve current directory (LDAP) back-end configuration.
 */
 func (a *IAMApiService) GetLDAPConfiguration(ctx context.Context) (IamldapConfiguration, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -1845,6 +2075,16 @@ func (a *IAMApiService) GetLDAPConfiguration(ctx context.Context) (IamldapConfig
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
@@ -1869,7 +2109,7 @@ Get configuration for a specific provider.
 */
 func (a *IAMApiService) GetOIDCProvider(ctx context.Context, providerId string) (IamoidcProviderConfig, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -1933,6 +2173,16 @@ func (a *IAMApiService) GetOIDCProvider(ctx context.Context, providerId string) 
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
@@ -1955,7 +2205,7 @@ Get an overview for the configured OIDC providers. The response contains a JSON 
 */
 func (a *IAMApiService) GetOIDCProviders(ctx context.Context) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -2022,7 +2272,7 @@ Retrieve single &#x60;ACL&#x60; object, for a specific resource.
 */
 func (a *IAMApiService) GetResourceACLs(ctx context.Context, rid string) (Iamacl, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -2086,6 +2336,16 @@ func (a *IAMApiService) GetResourceACLs(ctx context.Context, rid string) (Iamacl
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
@@ -2112,7 +2372,7 @@ Query whether action is allowed or not.
 */
 func (a *IAMApiService) GetResourceGroupAction(ctx context.Context, rid string, gid string, action string) (IamActionAllowed, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -2178,6 +2438,16 @@ func (a *IAMApiService) GetResourceGroupAction(ctx context.Context, rid string, 
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
@@ -2203,7 +2473,7 @@ Get allowed actions for given resource and group.
 */
 func (a *IAMApiService) GetResourceGroupActions(ctx context.Context, rid string, gid string) (IamActions, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -2268,6 +2538,16 @@ func (a *IAMApiService) GetResourceGroupActions(ctx context.Context, rid string,
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
@@ -2292,7 +2572,7 @@ Retrieve all permissions that are set for a specific resource.
 */
 func (a *IAMApiService) GetResourcePermissions(ctx context.Context, rid string) (IamaclPermissions, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -2356,6 +2636,16 @@ func (a *IAMApiService) GetResourcePermissions(ctx context.Context, rid string) 
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
@@ -2382,7 +2672,7 @@ Query whether action is allowed or not.
 */
 func (a *IAMApiService) GetResourceUserAction(ctx context.Context, rid string, uid string, action string) (IamActionAllowed, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -2448,6 +2738,16 @@ func (a *IAMApiService) GetResourceUserAction(ctx context.Context, rid string, u
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
@@ -2473,7 +2773,7 @@ Get allowed actions for given resource and user.
 */
 func (a *IAMApiService) GetResourceUserActions(ctx context.Context, rid string, uid string) (InlineResponse200, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -2538,6 +2838,16 @@ func (a *IAMApiService) GetResourceUserActions(ctx context.Context, rid string, 
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
@@ -2562,7 +2872,7 @@ Get configuration for a specific SAML provider.
 */
 func (a *IAMApiService) GetSAMLProvider(ctx context.Context, providerId string) (IamsamlProviderConfig, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -2626,6 +2936,16 @@ func (a *IAMApiService) GetSAMLProvider(ctx context.Context, providerId string) 
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
@@ -2650,7 +2970,7 @@ The IAM acts as SAML service provider (SP). A SAML identity provider (IdP) usual
 */
 func (a *IAMApiService) GetSAMLProviderACSCallbackURL(ctx context.Context, providerId string) (IamsamlacsCallbackUrlObject, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -2734,14 +3054,16 @@ IAMApiService Get SP metadata (XML).
 The IAM acts as SAML service provider (SP). This endpoint provides the SP metadata as an XML document. Certain identity providers (IdPs) may want to directly consume this document.
  * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  * @param providerId The ID of the SAML provider to retrieve the metadata for.
+@return string
 */
-func (a *IAMApiService) GetSAMLProviderSPMetadata(ctx context.Context, providerId string) (*http.Response, error) {
+func (a *IAMApiService) GetSAMLProviderSPMetadata(ctx context.Context, providerId string) (string, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
 		localVarFileBytes    []byte
+		localVarReturnValue  string
 	)
 
 	// create path and map variables
@@ -2762,7 +3084,7 @@ func (a *IAMApiService) GetSAMLProviderSPMetadata(ctx context.Context, providerI
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/samlmetadata+xml", "application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -2771,18 +3093,18 @@ func (a *IAMApiService) GetSAMLProviderSPMetadata(ctx context.Context, providerI
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
-		return nil, err
+		return localVarReturnValue, nil, err
 	}
 
 	localVarHttpResponse, err := a.client.callAPI(r)
 	if err != nil || localVarHttpResponse == nil {
-		return localVarHttpResponse, err
+		return localVarReturnValue, localVarHttpResponse, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
 	localVarHttpResponse.Body.Close()
 	if err != nil {
-		return localVarHttpResponse, err
+		return localVarReturnValue, localVarHttpResponse, err
 	}
 
 	if localVarHttpResponse.StatusCode >= 300 {
@@ -2790,10 +3112,29 @@ func (a *IAMApiService) GetSAMLProviderSPMetadata(ctx context.Context, providerI
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
-		return localVarHttpResponse, newErr
+		if localVarHttpResponse.StatusCode == 200 {
+			var v string
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
+		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
-	return localVarHttpResponse, nil
+	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := GenericOpenAPIError{
+			body:  localVarBody,
+			error: err.Error(),
+		}
+		return localVarReturnValue, localVarHttpResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHttpResponse, nil
 }
 
 /*
@@ -2803,7 +3144,7 @@ Get an overview for the configured SAML 2.0 providers. The response contains a J
 */
 func (a *IAMApiService) GetSAMLProviders(ctx context.Context) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -2870,7 +3211,7 @@ Get specific &#x60;User&#x60; object.
 */
 func (a *IAMApiService) GetUser(ctx context.Context, uid string) (IamUser, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -2934,6 +3275,16 @@ func (a *IAMApiService) GetUser(ctx context.Context, uid string) (IamUser, *http
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
@@ -2958,7 +3309,7 @@ Retrieve groups the user is member of.
 */
 func (a *IAMApiService) GetUserGroups(ctx context.Context, uid string) (IamUserGroups, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -3022,6 +3373,16 @@ func (a *IAMApiService) GetUserGroups(ctx context.Context, uid string) (IamUserG
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
@@ -3046,7 +3407,7 @@ Retrieve the permissions for this account with direct permissions distinguished 
 */
 func (a *IAMApiService) GetUserPermissions(ctx context.Context, uid string) (IamUserPermissions, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -3110,6 +3471,16 @@ func (a *IAMApiService) GetUserPermissions(ctx context.Context, uid string) (Iam
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
@@ -3140,7 +3511,7 @@ type GetUsersOpts struct {
 
 func (a *IAMApiService) GetUsers(ctx context.Context, localVarOptionals *GetUsersOpts) (IamUsers, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -3206,6 +3577,16 @@ func (a *IAMApiService) GetUsers(ctx context.Context, localVarOptionals *GetUser
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
@@ -3229,7 +3610,7 @@ Attempt to import a group of users from the configured directory (LDAP) back-end
 */
 func (a *IAMApiService) ImportLDAPGroup(ctx context.Context, iamldapImportGroupObject IamldapImportGroupObject) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Post")
+		localVarHttpMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -3253,7 +3634,7 @@ func (a *IAMApiService) ImportLDAPGroup(ctx context.Context, iamldapImportGroupO
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -3283,6 +3664,16 @@ func (a *IAMApiService) ImportLDAPGroup(ctx context.Context, iamldapImportGroupO
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -3297,7 +3688,7 @@ Attempt to import a user from the configured directory (LDAP) back-end.
 */
 func (a *IAMApiService) ImportLDAPUser(ctx context.Context, iamldapImportUserObject IamldapImportUserObject) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Post")
+		localVarHttpMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -3321,7 +3712,7 @@ func (a *IAMApiService) ImportLDAPUser(ctx context.Context, iamldapImportUserObj
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -3351,6 +3742,16 @@ func (a *IAMApiService) ImportLDAPUser(ctx context.Context, iamldapImportUserObj
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -3366,7 +3767,7 @@ Exchange user credentials (regular user account: uid and password; service user 
 */
 func (a *IAMApiService) Login(ctx context.Context, iamLoginObject IamLoginObject) (IamAuthToken, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Post")
+		localVarHttpMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -3431,6 +3832,16 @@ func (a *IAMApiService) Login(ctx context.Context, iamLoginObject IamLoginObject
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
@@ -3460,7 +3871,7 @@ type LoginWithProviderOpts struct {
 
 func (a *IAMApiService) LoginWithProvider(ctx context.Context, localVarOptionals *LoginWithProviderOpts) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -3528,7 +3939,7 @@ After successfully logging in to an OpenID Connect identity provider, the end-us
 */
 func (a *IAMApiService) OpenIDConnectCallbackURL(ctx context.Context) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -3596,7 +4007,7 @@ Permit single action for given resource and group.
 */
 func (a *IAMApiService) PermitResourceGroupAction(ctx context.Context, rid string, gid string, action string) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Put")
+		localVarHttpMethod   = http.MethodPut
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -3623,7 +4034,7 @@ func (a *IAMApiService) PermitResourceGroupAction(ctx context.Context, rid strin
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -3651,6 +4062,16 @@ func (a *IAMApiService) PermitResourceGroupAction(ctx context.Context, rid strin
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -3667,7 +4088,7 @@ Permit single action for given account and resource.
 */
 func (a *IAMApiService) PermitResourceUserAction(ctx context.Context, rid string, uid string, action string) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Put")
+		localVarHttpMethod   = http.MethodPut
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -3694,7 +4115,7 @@ func (a *IAMApiService) PermitResourceUserAction(ctx context.Context, rid string
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -3722,6 +4143,16 @@ func (a *IAMApiService) PermitResourceUserAction(ctx context.Context, rid string
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -3736,7 +4167,7 @@ The IAM acts as SAML service provider (SP). As part of the authentication flow, 
 */
 func (a *IAMApiService) SAMLProviderACSCallbackEndpoint(ctx context.Context, providerId string) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Post")
+		localVarHttpMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -3804,7 +4235,7 @@ Perform basic feature tests. Verify that the current directory (LDAP) configurat
 */
 func (a *IAMApiService) TestLDAPBackendConnection(ctx context.Context, iamldapTestCredentials IamldapTestCredentials) (IamldapTestResultObject, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Post")
+		localVarHttpMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -3829,7 +4260,7 @@ func (a *IAMApiService) TestLDAPBackendConnection(ctx context.Context, iamldapTe
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"*/*"}
+	localVarHttpHeaderAccepts := []string{"*/*", "application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -3879,6 +4310,16 @@ func (a *IAMApiService) TestLDAPBackendConnection(ctx context.Context, iamldapTe
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
@@ -3903,7 +4344,7 @@ Update existing group (description).
 */
 func (a *IAMApiService) UpdateGroup(ctx context.Context, gid string, iamGroupUpdate IamGroupUpdate) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Patch")
+		localVarHttpMethod   = http.MethodPatch
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -3928,7 +4369,7 @@ func (a *IAMApiService) UpdateGroup(ctx context.Context, gid string, iamGroupUpd
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -3958,6 +4399,16 @@ func (a *IAMApiService) UpdateGroup(ctx context.Context, gid string, iamGroupUpd
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -3973,7 +4424,7 @@ Update config for existing OIDC provider.
 */
 func (a *IAMApiService) UpdateOIDCProvider(ctx context.Context, providerId string, iamoidcProviderConfig IamoidcProviderConfig) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Patch")
+		localVarHttpMethod   = http.MethodPatch
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -3998,7 +4449,7 @@ func (a *IAMApiService) UpdateOIDCProvider(ctx context.Context, providerId strin
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -4028,6 +4479,16 @@ func (a *IAMApiService) UpdateOIDCProvider(ctx context.Context, providerId strin
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -4043,7 +4504,7 @@ Update ACL for resource with ID &#x60;rid&#x60;.
 */
 func (a *IAMApiService) UpdateResourceACL(ctx context.Context, rid string, iamaclUpdate IamaclUpdate) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Patch")
+		localVarHttpMethod   = http.MethodPatch
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -4068,7 +4529,7 @@ func (a *IAMApiService) UpdateResourceACL(ctx context.Context, rid string, iamac
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -4098,6 +4559,16 @@ func (a *IAMApiService) UpdateResourceACL(ctx context.Context, rid string, iamac
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -4113,7 +4584,7 @@ Update config for existing SAML provider.
 */
 func (a *IAMApiService) UpdateSAMLProvider(ctx context.Context, providerId string, iamsamlProviderConfig IamsamlProviderConfig) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Patch")
+		localVarHttpMethod   = http.MethodPatch
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -4138,7 +4609,7 @@ func (a *IAMApiService) UpdateSAMLProvider(ctx context.Context, providerId strin
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -4168,6 +4639,16 @@ func (a *IAMApiService) UpdateSAMLProvider(ctx context.Context, providerId strin
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
 		return localVarHttpResponse, newErr
 	}
 
@@ -4183,7 +4664,7 @@ Update existing user account (meta data and/or password).
 */
 func (a *IAMApiService) UpdateUser(ctx context.Context, uid string, iamUserUpdate IamUserUpdate) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Patch")
+		localVarHttpMethod   = http.MethodPatch
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -4208,7 +4689,7 @@ func (a *IAMApiService) UpdateUser(ctx context.Context, uid string, iamUserUpdat
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -4237,6 +4718,16 @@ func (a *IAMApiService) UpdateUser(ctx context.Context, uid string, iamUserUpdat
 		newErr := GenericOpenAPIError{
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
+		}
+		if localVarHttpResponse.StatusCode == 0 {
+			var v IamError
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
 		}
 		return localVarHttpResponse, newErr
 	}

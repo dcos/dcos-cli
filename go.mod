@@ -4,7 +4,7 @@ require (
 	github.com/VividCortex/ewma v1.1.1 // indirect
 	github.com/antihax/optional v0.0.0-20180407024304-ca021399b1a6
 	github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a // indirect
-	github.com/dcos/client-go v0.0.0-20190509135418-77e5e2d8c202
+	github.com/dcos/client-go v0.0.0-20190910161559-e3e16c6d1484
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/go-openapi/analysis v0.19.0 // indirect

@@ -10,8 +10,7 @@
 
 package dcos
 
-type CosmosPackageAddRepoV1Request struct {
-	Name  string `json:"name"`
-	Uri   string `json:"uri"`
-	Index *int32 `json:"index,omitempty"`
+type Metadata struct {
+	PUBLICIPV4 string `json:"PUBLIC_IPV4,omitempty"`
+	CLUSTER_ID string `json:"CLUSTER_ID,omitempty"`
 }

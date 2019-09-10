@@ -10,8 +10,6 @@
 
 package dcos
 
-type CosmosPackageAddRepoV1Request struct {
-	Name  string `json:"name"`
-	Uri   string `json:"uri"`
-	Index *int32 `json:"index,omitempty"`
+type CosmosPackageRenderV1Response struct {
+	MarathonJson map[string]interface{} `json:"marathonJson"`
 }

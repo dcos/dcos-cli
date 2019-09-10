@@ -10,8 +10,7 @@
 
 package dcos
 
-type CosmosPackageAddRepoV1Request struct {
-	Name  string `json:"name"`
-	Uri   string `json:"uri"`
-	Index *int32 `json:"index,omitempty"`
+type MetronomeV1Error struct {
+	Message string                    `json:"message,omitempty"`
+	Details []MetronomeV1ErrorDetails `json:"details,omitempty"`
 }

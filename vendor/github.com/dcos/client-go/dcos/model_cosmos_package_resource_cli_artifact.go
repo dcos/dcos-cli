@@ -11,7 +11,7 @@
 package dcos
 
 type CosmosPackageResourceCliArtifact struct {
-	ContentHash []CosmosHash `json:"contentHash"`
-	Kind        string       `json:"kind"`
-	Url         string       `json:"url"`
+	ContentHash []CosmosHash `json:"contentHash,omitempty"`
+	Kind        string       `json:"kind,omitempty"`
+	Url         string       `json:"url,omitempty"`
 }

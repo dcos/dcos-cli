@@ -11,6 +11,6 @@
 package dcos
 
 type CosmosHash struct {
-	Algo  CosmosHashAlgo `json:"algo"`
-	Value string         `json:"value"`
+	Algo  CosmosHashAlgo `json:"algo,omitempty"`
+	Value string         `json:"value,omitempty"`
 }

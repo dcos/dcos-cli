@@ -11,8 +11,5 @@
 package dcos
 
 type CosmosPackageUninstallV1Response struct {
-	AppId              string `json:"appId"`
-	PackageName        string `json:"packageName"`
-	PackageVersion     string `json:"packageVersion,omitempty"`
-	PostUninstallNotes string `json:"postUninstallNotes,omitempty"`
+	Results []CosmosPackageUninstallV1ResponseResults `json:"results"`
 }

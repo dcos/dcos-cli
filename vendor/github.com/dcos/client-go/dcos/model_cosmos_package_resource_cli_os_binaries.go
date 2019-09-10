@@ -11,5 +11,5 @@
 package dcos
 
 type CosmosPackageResourceCliOsBinaries struct {
-	X8664 CosmosPackageResourceCliArtifact `json:"x86-64"`
+	X8664 CosmosPackageResourceCliArtifact `json:"x86-64,omitempty"`
 }

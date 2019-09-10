@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.0.1
+
+* Fixes
+
+  * Fix `dcos package install dcos-core-cli` error on air-gapped environments.
+
 ## 1.0.0
 
 * Breaking changes

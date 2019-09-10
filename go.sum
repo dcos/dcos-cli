@@ -16,6 +16,8 @@ github.com/dcos/client-go v0.0.0-20190418124828-a5c3660ae957 h1:cSXScdOP3VTlXQtG
 github.com/dcos/client-go v0.0.0-20190418124828-a5c3660ae957/go.mod h1:dyBl1aNzJ19ktYyJ7trgCrwz0sBzDwaDkKR2mnXqFgU=
 github.com/dcos/client-go v0.0.0-20190509135418-77e5e2d8c202 h1:yD1zCtFFIi+64+RveUS/nm8fXCe3YVwfsZ2UTHzVJ84=
 github.com/dcos/client-go v0.0.0-20190509135418-77e5e2d8c202/go.mod h1:wDbV2eOyjoUmqPZ9cxE5VCc/YIPvriRYWWnYnF5bRoA=
+github.com/dcos/client-go v0.0.0-20190910161559-e3e16c6d1484 h1:lmN2mFdB7L5wntsIP/T0IRhC0h/umwdcDQeUL+ryKjE=
+github.com/dcos/client-go v0.0.0-20190910161559-e3e16c6d1484/go.mod h1:wDbV2eOyjoUmqPZ9cxE5VCc/YIPvriRYWWnYnF5bRoA=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumCAMpl/TFQ4/5kLM=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/docker/go-units v0.3.3/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDDbaIK4Dk=

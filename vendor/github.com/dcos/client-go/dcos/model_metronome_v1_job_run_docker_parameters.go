@@ -10,8 +10,7 @@
 
 package dcos
 
-type CosmosPackageAddRepoV1Request struct {
-	Name  string `json:"name"`
-	Uri   string `json:"uri"`
-	Index *int32 `json:"index,omitempty"`
+type MetronomeV1JobRunDockerParameters struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }

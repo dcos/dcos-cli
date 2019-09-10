@@ -12,10 +12,12 @@ package dcos
 
 import (
 	"context"
+	"fmt"
 	"github.com/antihax/optional"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 // Linger please
@@ -23,40 +25,34 @@ var (
 	_ context.Context
 )
 
-type CosmosApiService service
+type MetronomeApiService service
 
 /*
-CosmosApiService
-Show information about the package, including the required resources and configuration to start the service, and command line extensions that are included with the package.
+MetronomeApiService
+Create a new job.
  * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param optional nil or *PackageDescribeOpts - Optional Parameters:
- * @param "CosmosPackageDescribeV1Request" (optional.Interface of CosmosPackageDescribeV1Request) -
-@return CosmosPackageDescribeV3Response
+ * @param metronomeV1Job
+@return MetronomeV1Job
 */
-
-type PackageDescribeOpts struct {
-	CosmosPackageDescribeV1Request optional.Interface
-}
-
-func (a *CosmosApiService) PackageDescribe(ctx context.Context, localVarOptionals *PackageDescribeOpts) (CosmosPackageDescribeV3Response, *http.Response, error) {
+func (a *MetronomeApiService) V1CreateJob(ctx context.Context, metronomeV1Job MetronomeV1Job) (MetronomeV1Job, *http.Response, error) {
 	var (
 		localVarHttpMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
 		localVarFileBytes    []byte
-		localVarReturnValue  CosmosPackageDescribeV3Response
+		localVarReturnValue  MetronomeV1Job
 	)
 
 	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/package/describe"
+	localVarPath := a.client.cfg.BasePath + "/service/metronome/v1/jobs"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
 	// to determine the Content-Type header
-	localVarHttpContentTypes := []string{"application/vnd.dcos.package.describe-request+json;charset=utf-8;version=v1"}
+	localVarHttpContentTypes := []string{"application/json"}
 
 	// set Content-Type header
 	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
@@ -65,7 +61,7 @@ func (a *CosmosApiService) PackageDescribe(ctx context.Context, localVarOptional
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/vnd.dcos.package.describe-response+json;charset=utf-8;version=v3", "application/vnd.dcos.package.error+json;charset=utf-8;version=v1"}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -73,14 +69,7 @@ func (a *CosmosApiService) PackageDescribe(ctx context.Context, localVarOptional
 		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
 	}
 	// body params
-	if localVarOptionals != nil && localVarOptionals.CosmosPackageDescribeV1Request.IsSet() {
-		localVarOptionalCosmosPackageDescribeV1Request, localVarOptionalCosmosPackageDescribeV1Requestok := localVarOptionals.CosmosPackageDescribeV1Request.Value().(CosmosPackageDescribeV1Request)
-		if !localVarOptionalCosmosPackageDescribeV1Requestok {
-			return localVarReturnValue, nil, reportError("cosmosPackageDescribeV1Request should be CosmosPackageDescribeV1Request")
-		}
-		localVarPostBody = &localVarOptionalCosmosPackageDescribeV1Request
-	}
-
+	localVarPostBody = &metronomeV1Job
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
@@ -102,8 +91,8 @@ func (a *CosmosApiService) PackageDescribe(ctx context.Context, localVarOptional
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
-		if localVarHttpResponse.StatusCode == 200 {
-			var v CosmosPackageDescribeV3Response
+		if localVarHttpResponse.StatusCode == 201 {
+			var v MetronomeV1Job
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -112,8 +101,8 @@ func (a *CosmosApiService) PackageDescribe(ctx context.Context, localVarOptional
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
-		if localVarHttpResponse.StatusCode == 400 {
-			var v CosmosError
+		if localVarHttpResponse.StatusCode == 422 {
+			var v MetronomeV1Error
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -138,31 +127,33 @@ func (a *CosmosApiService) PackageDescribe(ctx context.Context, localVarOptional
 }
 
 /*
-CosmosApiService
-Runs a service from a Universe package.
+MetronomeApiService
+Create a new schedule
  * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param cosmosPackageInstallV1Request
-@return CosmosPackageInstallV1Response
+ * @param jobId
+ * @param metronomeV1JobSchedule
+@return MetronomeV1JobSchedule
 */
-func (a *CosmosApiService) PackageInstall(ctx context.Context, cosmosPackageInstallV1Request CosmosPackageInstallV1Request) (CosmosPackageInstallV1Response, *http.Response, error) {
+func (a *MetronomeApiService) V1CreateJobSchedules(ctx context.Context, jobId string, metronomeV1JobSchedule MetronomeV1JobSchedule) (MetronomeV1JobSchedule, *http.Response, error) {
 	var (
 		localVarHttpMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
 		localVarFileBytes    []byte
-		localVarReturnValue  CosmosPackageInstallV1Response
+		localVarReturnValue  MetronomeV1JobSchedule
 	)
 
 	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/package/install"
+	localVarPath := a.client.cfg.BasePath + "/service/metronome/v1/jobs/{jobId}/schedules"
+	localVarPath = strings.Replace(localVarPath, "{"+"jobId"+"}", fmt.Sprintf("%v", jobId), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
 	// to determine the Content-Type header
-	localVarHttpContentTypes := []string{"application/vnd.dcos.package.install-request+json;charset=utf-8;version=v1"}
+	localVarHttpContentTypes := []string{"application/json"}
 
 	// set Content-Type header
 	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
@@ -171,7 +162,7 @@ func (a *CosmosApiService) PackageInstall(ctx context.Context, cosmosPackageInst
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/vnd.dcos.package.install-response+json;charset=utf-8;version=v1", "application/vnd.dcos.package.error+json;charset=utf-8;version=v1"}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
@@ -179,7 +170,7 @@ func (a *CosmosApiService) PackageInstall(ctx context.Context, cosmosPackageInst
 		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
 	}
 	// body params
-	localVarPostBody = &cosmosPackageInstallV1Request
+	localVarPostBody = &metronomeV1JobSchedule
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
@@ -201,8 +192,8 @@ func (a *CosmosApiService) PackageInstall(ctx context.Context, cosmosPackageInst
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
-		if localVarHttpResponse.StatusCode == 200 {
-			var v CosmosPackageInstallV1Response
+		if localVarHttpResponse.StatusCode == 201 {
+			var v MetronomeV1JobSchedule
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -211,8 +202,8 @@ func (a *CosmosApiService) PackageInstall(ctx context.Context, cosmosPackageInst
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
-		if localVarHttpResponse.StatusCode == 400 {
-			var v CosmosError
+		if localVarHttpResponse.StatusCode == 401 {
+			var v MetronomeV1Error
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -221,8 +212,18 @@ func (a *CosmosApiService) PackageInstall(ctx context.Context, cosmosPackageInst
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
-		if localVarHttpResponse.StatusCode == 409 {
-			var v CosmosError
+		if localVarHttpResponse.StatusCode == 403 {
+			var v MetronomeV1Error
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
+		if localVarHttpResponse.StatusCode == 422 {
+			var v MetronomeV1Error
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -247,37 +248,30 @@ func (a *CosmosApiService) PackageInstall(ctx context.Context, cosmosPackageInst
 }
 
 /*
-CosmosApiService
-Lists all of the running DC/OS services started from a DC/OS package.
+MetronomeApiService
+Delete a job. All data about that job will be deleted.
  * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param optional nil or *PackageListOpts - Optional Parameters:
- * @param "CosmosPackageListV1Request" (optional.Interface of CosmosPackageListV1Request) -
-@return CosmosPackageListV1Response
+ * @param jobId
 */
-
-type PackageListOpts struct {
-	CosmosPackageListV1Request optional.Interface
-}
-
-func (a *CosmosApiService) PackageList(ctx context.Context, localVarOptionals *PackageListOpts) (CosmosPackageListV1Response, *http.Response, error) {
+func (a *MetronomeApiService) V1DeleteJob(ctx context.Context, jobId string) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = http.MethodPost
+		localVarHttpMethod   = http.MethodDelete
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
 		localVarFileBytes    []byte
-		localVarReturnValue  CosmosPackageListV1Response
 	)
 
 	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/package/list"
+	localVarPath := a.client.cfg.BasePath + "/service/metronome/v1/jobs/{jobId}"
+	localVarPath = strings.Replace(localVarPath, "{"+"jobId"+"}", fmt.Sprintf("%v", jobId), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
 	// to determine the Content-Type header
-	localVarHttpContentTypes := []string{"application/vnd.dcos.package.list-request+json;charset=utf-8;version=v1"}
+	localVarHttpContentTypes := []string{}
 
 	// set Content-Type header
 	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
@@ -286,36 +280,27 @@ func (a *CosmosApiService) PackageList(ctx context.Context, localVarOptionals *P
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/vnd.dcos.package.list-response+json;charset=utf-8;version=v1", "application/vnd.dcos.package.error+json;charset=utf-8;version=v1"}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
 	if localVarHttpHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
 	}
-	// body params
-	if localVarOptionals != nil && localVarOptionals.CosmosPackageListV1Request.IsSet() {
-		localVarOptionalCosmosPackageListV1Request, localVarOptionalCosmosPackageListV1Requestok := localVarOptionals.CosmosPackageListV1Request.Value().(CosmosPackageListV1Request)
-		if !localVarOptionalCosmosPackageListV1Requestok {
-			return localVarReturnValue, nil, reportError("cosmosPackageListV1Request should be CosmosPackageListV1Request")
-		}
-		localVarPostBody = &localVarOptionalCosmosPackageListV1Request
-	}
-
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
-		return localVarReturnValue, nil, err
+		return nil, err
 	}
 
 	localVarHttpResponse, err := a.client.callAPI(r)
 	if err != nil || localVarHttpResponse == nil {
-		return localVarReturnValue, localVarHttpResponse, err
+		return localVarHttpResponse, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
 	localVarHttpResponse.Body.Close()
 	if err != nil {
-		return localVarReturnValue, localVarHttpResponse, err
+		return localVarHttpResponse, err
 	}
 
 	if localVarHttpResponse.StatusCode >= 300 {
@@ -323,67 +308,49 @@ func (a *CosmosApiService) PackageList(ctx context.Context, localVarOptionals *P
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
-		if localVarHttpResponse.StatusCode == 200 {
-			var v CosmosPackageListV1Response
+		if localVarHttpResponse.StatusCode == 404 {
+			var v MetronomeV1Error
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
-				return localVarReturnValue, localVarHttpResponse, newErr
+				return localVarHttpResponse, newErr
 			}
 			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
+			return localVarHttpResponse, newErr
 		}
-		if localVarHttpResponse.StatusCode == 400 {
-			var v CosmosError
-			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHttpResponse, newErr
-			}
-			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
-		}
-		return localVarReturnValue, localVarHttpResponse, newErr
+		return localVarHttpResponse, newErr
 	}
 
-	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-	if err != nil {
-		newErr := GenericOpenAPIError{
-			body:  localVarBody,
-			error: err.Error(),
-		}
-		return localVarReturnValue, localVarHttpResponse, newErr
-	}
-
-	return localVarReturnValue, localVarHttpResponse, nil
+	return localVarHttpResponse, nil
 }
 
 /*
-CosmosApiService
-Lists the versions of a given package.
+MetronomeApiService
+Destroy a schedule
  * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param cosmosPackageListVersionsV1Request
-@return CosmosPackageListVersionsV1Response
+ * @param jobId
+ * @param scheduleId
 */
-func (a *CosmosApiService) PackageListVersions(ctx context.Context, cosmosPackageListVersionsV1Request CosmosPackageListVersionsV1Request) (CosmosPackageListVersionsV1Response, *http.Response, error) {
+func (a *MetronomeApiService) V1DeleteJobSchedulesByScheduleId(ctx context.Context, jobId string, scheduleId string) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = http.MethodPost
+		localVarHttpMethod   = http.MethodDelete
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
 		localVarFileBytes    []byte
-		localVarReturnValue  CosmosPackageListVersionsV1Response
 	)
 
 	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/package/list-versions"
+	localVarPath := a.client.cfg.BasePath + "/service/metronome/v1/jobs/{jobId}/schedules/{scheduleId}"
+	localVarPath = strings.Replace(localVarPath, "{"+"jobId"+"}", fmt.Sprintf("%v", jobId), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"scheduleId"+"}", fmt.Sprintf("%v", scheduleId), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
 	// to determine the Content-Type header
-	localVarHttpContentTypes := []string{"application/vnd.dcos.package.list-versions-request+json;charset=utf-8;version=v1"}
+	localVarHttpContentTypes := []string{}
 
 	// set Content-Type header
 	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
@@ -392,29 +359,27 @@ func (a *CosmosApiService) PackageListVersions(ctx context.Context, cosmosPackag
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/vnd.dcos.package.list-versions-response+json;charset=utf-8;version=v1", "application/vnd.dcos.package.error+json;charset=utf-8;version=v1"}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
 	if localVarHttpHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
 	}
-	// body params
-	localVarPostBody = &cosmosPackageListVersionsV1Request
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
-		return localVarReturnValue, nil, err
+		return nil, err
 	}
 
 	localVarHttpResponse, err := a.client.callAPI(r)
 	if err != nil || localVarHttpResponse == nil {
-		return localVarReturnValue, localVarHttpResponse, err
+		return localVarHttpResponse, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
 	localVarHttpResponse.Body.Close()
 	if err != nil {
-		return localVarReturnValue, localVarHttpResponse, err
+		return localVarHttpResponse, err
 	}
 
 	if localVarHttpResponse.StatusCode >= 300 {
@@ -422,83 +387,79 @@ func (a *CosmosApiService) PackageListVersions(ctx context.Context, cosmosPackag
 			body:  localVarBody,
 			error: localVarHttpResponse.Status,
 		}
-		if localVarHttpResponse.StatusCode == 200 {
-			var v CosmosPackageListVersionsV1Response
+		if localVarHttpResponse.StatusCode == 401 {
+			var v MetronomeV1Error
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
-				return localVarReturnValue, localVarHttpResponse, newErr
+				return localVarHttpResponse, newErr
 			}
 			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
+			return localVarHttpResponse, newErr
 		}
-		if localVarHttpResponse.StatusCode == 400 {
-			var v CosmosError
+		if localVarHttpResponse.StatusCode == 403 {
+			var v MetronomeV1Error
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
-				return localVarReturnValue, localVarHttpResponse, newErr
+				return localVarHttpResponse, newErr
 			}
 			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
+			return localVarHttpResponse, newErr
 		}
-		if localVarHttpResponse.StatusCode == 409 {
-			var v CosmosError
+		if localVarHttpResponse.StatusCode == 404 {
+			var v MetronomeV1Error
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
-				return localVarReturnValue, localVarHttpResponse, newErr
+				return localVarHttpResponse, newErr
 			}
 			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
+			return localVarHttpResponse, newErr
 		}
-		return localVarReturnValue, localVarHttpResponse, newErr
+		return localVarHttpResponse, newErr
 	}
 
-	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-	if err != nil {
-		newErr := GenericOpenAPIError{
-			body:  localVarBody,
-			error: err.Error(),
-		}
-		return localVarReturnValue, localVarHttpResponse, newErr
-	}
-
-	return localVarReturnValue, localVarHttpResponse, nil
+	return localVarHttpResponse, nil
 }
 
 /*
-CosmosApiService
-Generates the Marathon application definition for the package name, version, and optional configuration JSON object.
+MetronomeApiService
+Get the job with id &#x60;jobId&#x60;. You can specify optional embed arguments to get more embedded information.
  * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param optional nil or *PackageRenderOpts - Optional Parameters:
- * @param "CosmosPackageRenderV1Request" (optional.Interface of CosmosPackageRenderV1Request) -
-@return CosmosPackageRenderV1Response
+ * @param jobId
+ * @param optional nil or *V1GetJobOpts - Optional Parameters:
+ * @param "Embeded" (optional.Interface of []MetronomeEmbeded) -
+@return MetronomeV1Job
 */
 
-type PackageRenderOpts struct {
-	CosmosPackageRenderV1Request optional.Interface
+type V1GetJobOpts struct {
+	Embeded optional.Interface
 }
 
-func (a *CosmosApiService) PackageRender(ctx context.Context, localVarOptionals *PackageRenderOpts) (CosmosPackageRenderV1Response, *http.Response, error) {
+func (a *MetronomeApiService) V1GetJob(ctx context.Context, jobId string, localVarOptionals *V1GetJobOpts) (MetronomeV1Job, *http.Response, error) {
 	var (
-		localVarHttpMethod   = http.MethodPost
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
 		localVarFileBytes    []byte
-		localVarReturnValue  CosmosPackageRenderV1Response
+		localVarReturnValue  MetronomeV1Job
 	)
 
 	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/package/render"
+	localVarPath := a.client.cfg.BasePath + "/service/metronome/v1/jobs/{jobId}"
+	localVarPath = strings.Replace(localVarPath, "{"+"jobId"+"}", fmt.Sprintf("%v", jobId), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if localVarOptionals != nil && localVarOptionals.Embeded.IsSet() {
+		localVarQueryParams.Add("embeded", parameterToString(localVarOptionals.Embeded.Value(), "multi"))
+	}
 	// to determine the Content-Type header
-	localVarHttpContentTypes := []string{"application/vnd.dcos.package.render-request+json;charset=utf-8;version=v1"}
+	localVarHttpContentTypes := []string{}
 
 	// set Content-Type header
 	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
@@ -507,22 +468,13 @@ func (a *CosmosApiService) PackageRender(ctx context.Context, localVarOptionals 
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/vnd.dcos.package.render-response+json;charset=utf-8;version=v1", "application/vnd.dcos.package.error+json;charset=utf-8;version=v1"}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
 	if localVarHttpHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
 	}
-	// body params
-	if localVarOptionals != nil && localVarOptionals.CosmosPackageRenderV1Request.IsSet() {
-		localVarOptionalCosmosPackageRenderV1Request, localVarOptionalCosmosPackageRenderV1Requestok := localVarOptionals.CosmosPackageRenderV1Request.Value().(CosmosPackageRenderV1Request)
-		if !localVarOptionalCosmosPackageRenderV1Requestok {
-			return localVarReturnValue, nil, reportError("cosmosPackageRenderV1Request should be CosmosPackageRenderV1Request")
-		}
-		localVarPostBody = &localVarOptionalCosmosPackageRenderV1Request
-	}
-
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
@@ -545,251 +497,7 @@ func (a *CosmosApiService) PackageRender(ctx context.Context, localVarOptionals 
 			error: localVarHttpResponse.Status,
 		}
 		if localVarHttpResponse.StatusCode == 200 {
-			var v CosmosPackageRenderV1Response
-			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHttpResponse, newErr
-			}
-			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
-		}
-		if localVarHttpResponse.StatusCode == 400 {
-			var v CosmosError
-			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHttpResponse, newErr
-			}
-			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
-		}
-		return localVarReturnValue, localVarHttpResponse, newErr
-	}
-
-	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-	if err != nil {
-		newErr := GenericOpenAPIError{
-			body:  localVarBody,
-			error: err.Error(),
-		}
-		return localVarReturnValue, localVarHttpResponse, newErr
-	}
-
-	return localVarReturnValue, localVarHttpResponse, nil
-}
-
-/*
-CosmosApiService
-Adds a package repository (for example Universe) for use by DC/OS. To add a package repository to the beginning of the list set the index to zero (0). To add a package repository to the end of the list do not specify an index.
- * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param optional nil or *PackageRepositoryAddOpts - Optional Parameters:
- * @param "CosmosPackageAddRepoV1Request" (optional.Interface of CosmosPackageAddRepoV1Request) -
-@return CosmosPackageAddRepoV1Response
-*/
-
-type PackageRepositoryAddOpts struct {
-	CosmosPackageAddRepoV1Request optional.Interface
-}
-
-func (a *CosmosApiService) PackageRepositoryAdd(ctx context.Context, localVarOptionals *PackageRepositoryAddOpts) (CosmosPackageAddRepoV1Response, *http.Response, error) {
-	var (
-		localVarHttpMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		localVarFormFileName string
-		localVarFileName     string
-		localVarFileBytes    []byte
-		localVarReturnValue  CosmosPackageAddRepoV1Response
-	)
-
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/package/repository/add"
-
-	localVarHeaderParams := make(map[string]string)
-	localVarQueryParams := url.Values{}
-	localVarFormParams := url.Values{}
-
-	// to determine the Content-Type header
-	localVarHttpContentTypes := []string{"application/vnd.dcos.package.repository.add-request+json;charset=utf-8;version=v1"}
-
-	// set Content-Type header
-	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
-	if localVarHttpContentType != "" {
-		localVarHeaderParams["Content-Type"] = localVarHttpContentType
-	}
-
-	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/vnd.dcos.package.repository.add-response+json;charset=utf-8;version=v1", "application/vnd.dcos.package.error+json;charset=utf-8;version=v1"}
-
-	// set Accept header
-	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
-	if localVarHttpHeaderAccept != "" {
-		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
-	}
-	// body params
-	if localVarOptionals != nil && localVarOptionals.CosmosPackageAddRepoV1Request.IsSet() {
-		localVarOptionalCosmosPackageAddRepoV1Request, localVarOptionalCosmosPackageAddRepoV1Requestok := localVarOptionals.CosmosPackageAddRepoV1Request.Value().(CosmosPackageAddRepoV1Request)
-		if !localVarOptionalCosmosPackageAddRepoV1Requestok {
-			return localVarReturnValue, nil, reportError("cosmosPackageAddRepoV1Request should be CosmosPackageAddRepoV1Request")
-		}
-		localVarPostBody = &localVarOptionalCosmosPackageAddRepoV1Request
-	}
-
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
-	if err != nil {
-		return localVarReturnValue, nil, err
-	}
-
-	localVarHttpResponse, err := a.client.callAPI(r)
-	if err != nil || localVarHttpResponse == nil {
-		return localVarReturnValue, localVarHttpResponse, err
-	}
-
-	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
-	localVarHttpResponse.Body.Close()
-	if err != nil {
-		return localVarReturnValue, localVarHttpResponse, err
-	}
-
-	if localVarHttpResponse.StatusCode >= 300 {
-		newErr := GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHttpResponse.Status,
-		}
-		if localVarHttpResponse.StatusCode == 200 {
-			var v CosmosPackageAddRepoV1Response
-			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHttpResponse, newErr
-			}
-			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
-		}
-		if localVarHttpResponse.StatusCode == 400 {
-			var v CosmosError
-			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHttpResponse, newErr
-			}
-			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
-		}
-		if localVarHttpResponse.StatusCode == 409 {
-			var v CosmosError
-			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHttpResponse, newErr
-			}
-			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
-		}
-		return localVarReturnValue, localVarHttpResponse, newErr
-	}
-
-	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-	if err != nil {
-		newErr := GenericOpenAPIError{
-			body:  localVarBody,
-			error: err.Error(),
-		}
-		return localVarReturnValue, localVarHttpResponse, newErr
-	}
-
-	return localVarReturnValue, localVarHttpResponse, nil
-}
-
-/*
-CosmosApiService
-Deletes a package repository (for example Universe) from DC/OS.
- * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param optional nil or *PackageRepositoryDeleteOpts - Optional Parameters:
- * @param "CosmosPackageDeleteRepoV1Request" (optional.Interface of CosmosPackageDeleteRepoV1Request) -
-@return CosmosPackageDeleteRepoV1Response
-*/
-
-type PackageRepositoryDeleteOpts struct {
-	CosmosPackageDeleteRepoV1Request optional.Interface
-}
-
-func (a *CosmosApiService) PackageRepositoryDelete(ctx context.Context, localVarOptionals *PackageRepositoryDeleteOpts) (CosmosPackageDeleteRepoV1Response, *http.Response, error) {
-	var (
-		localVarHttpMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		localVarFormFileName string
-		localVarFileName     string
-		localVarFileBytes    []byte
-		localVarReturnValue  CosmosPackageDeleteRepoV1Response
-	)
-
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/package/repository/delete"
-
-	localVarHeaderParams := make(map[string]string)
-	localVarQueryParams := url.Values{}
-	localVarFormParams := url.Values{}
-
-	// to determine the Content-Type header
-	localVarHttpContentTypes := []string{"application/vnd.dcos.package.repository.delete-request+json;charset=utf-8;version=v1"}
-
-	// set Content-Type header
-	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
-	if localVarHttpContentType != "" {
-		localVarHeaderParams["Content-Type"] = localVarHttpContentType
-	}
-
-	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/vnd.dcos.package.repository.delete-response+json;charset=utf-8;version=v1", "application/vnd.dcos.package.error+json;charset=utf-8;version=v1"}
-
-	// set Accept header
-	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
-	if localVarHttpHeaderAccept != "" {
-		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
-	}
-	// body params
-	if localVarOptionals != nil && localVarOptionals.CosmosPackageDeleteRepoV1Request.IsSet() {
-		localVarOptionalCosmosPackageDeleteRepoV1Request, localVarOptionalCosmosPackageDeleteRepoV1Requestok := localVarOptionals.CosmosPackageDeleteRepoV1Request.Value().(CosmosPackageDeleteRepoV1Request)
-		if !localVarOptionalCosmosPackageDeleteRepoV1Requestok {
-			return localVarReturnValue, nil, reportError("cosmosPackageDeleteRepoV1Request should be CosmosPackageDeleteRepoV1Request")
-		}
-		localVarPostBody = &localVarOptionalCosmosPackageDeleteRepoV1Request
-	}
-
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
-	if err != nil {
-		return localVarReturnValue, nil, err
-	}
-
-	localVarHttpResponse, err := a.client.callAPI(r)
-	if err != nil || localVarHttpResponse == nil {
-		return localVarReturnValue, localVarHttpResponse, err
-	}
-
-	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
-	localVarHttpResponse.Body.Close()
-	if err != nil {
-		return localVarReturnValue, localVarHttpResponse, err
-	}
-
-	if localVarHttpResponse.StatusCode >= 300 {
-		newErr := GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHttpResponse.Status,
-		}
-		if localVarHttpResponse.StatusCode == 200 {
-			var v CosmosPackageDeleteRepoV1Response
-			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHttpResponse, newErr
-			}
-			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
-		}
-		if localVarHttpResponse.StatusCode == 400 {
-			var v CosmosError
+			var v MetronomeV1Job
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -799,7 +507,7 @@ func (a *CosmosApiService) PackageRepositoryDelete(ctx context.Context, localVar
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
 		if localVarHttpResponse.StatusCode == 404 {
-			var v CosmosError
+			var v MetronomeV1Error
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -824,31 +532,32 @@ func (a *CosmosApiService) PackageRepositoryDelete(ctx context.Context, localVar
 }
 
 /*
-CosmosApiService
-Enumerates the package repositories (for example Universe) that are already installed and in-use by DC/OS.
+MetronomeApiService
+Get the list of all runs for this jobId
  * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param body
-@return CosmosPackageListRepoV1Response
+ * @param jobId
+@return []MetronomeV1Job
 */
-func (a *CosmosApiService) PackageRepositoryList(ctx context.Context, body map[string]interface{}) (CosmosPackageListRepoV1Response, *http.Response, error) {
+func (a *MetronomeApiService) V1GetJobIdRuns(ctx context.Context, jobId string) ([]MetronomeV1Job, *http.Response, error) {
 	var (
-		localVarHttpMethod   = http.MethodPost
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
 		localVarFileBytes    []byte
-		localVarReturnValue  CosmosPackageListRepoV1Response
+		localVarReturnValue  []MetronomeV1Job
 	)
 
 	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/package/repository/list"
+	localVarPath := a.client.cfg.BasePath + "/service/metronome/v1/jobs/{jobId}/runs"
+	localVarPath = strings.Replace(localVarPath, "{"+"jobId"+"}", fmt.Sprintf("%v", jobId), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
 	// to determine the Content-Type header
-	localVarHttpContentTypes := []string{"application/vnd.dcos.package.repository.list-request+json;charset=utf-8;version=v1"}
+	localVarHttpContentTypes := []string{}
 
 	// set Content-Type header
 	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
@@ -857,15 +566,13 @@ func (a *CosmosApiService) PackageRepositoryList(ctx context.Context, body map[s
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/vnd.dcos.package.repository.list-response+json;charset=utf-8;version=v1"}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
 	if localVarHttpHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
 	}
-	// body params
-	localVarPostBody = &body
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
@@ -888,7 +595,27 @@ func (a *CosmosApiService) PackageRepositoryList(ctx context.Context, body map[s
 			error: localVarHttpResponse.Status,
 		}
 		if localVarHttpResponse.StatusCode == 200 {
-			var v CosmosPackageListRepoV1Response
+			var v []MetronomeV1Job
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
+		if localVarHttpResponse.StatusCode == 401 {
+			var v MetronomeV1Error
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
+		if localVarHttpResponse.StatusCode == 403 {
+			var v MetronomeV1Error
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -913,31 +640,34 @@ func (a *CosmosApiService) PackageRepositoryList(ctx context.Context, body map[s
 }
 
 /*
-CosmosApiService
-Lists all matching packages in the repository given a partial pattern. The character \\&#39;\\*\\&#39; can be used to match any number of characters.
+MetronomeApiService
+Get the job run for job jobId with id runId.
  * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param cosmosPackageSearchV1Request
-@return CosmosPackageSearchV1Response
+ * @param jobId
+ * @param runId
+@return MetronomeV1Job
 */
-func (a *CosmosApiService) PackageSearch(ctx context.Context, cosmosPackageSearchV1Request CosmosPackageSearchV1Request) (CosmosPackageSearchV1Response, *http.Response, error) {
+func (a *MetronomeApiService) V1GetJobRunByRunId(ctx context.Context, jobId string, runId string) (MetronomeV1Job, *http.Response, error) {
 	var (
-		localVarHttpMethod   = http.MethodPost
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
 		localVarFileBytes    []byte
-		localVarReturnValue  CosmosPackageSearchV1Response
+		localVarReturnValue  MetronomeV1Job
 	)
 
 	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/package/search"
+	localVarPath := a.client.cfg.BasePath + "/service/metronome/v1/jobs/{jobId}/runs/{runId}"
+	localVarPath = strings.Replace(localVarPath, "{"+"jobId"+"}", fmt.Sprintf("%v", jobId), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"runId"+"}", fmt.Sprintf("%v", runId), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
 	// to determine the Content-Type header
-	localVarHttpContentTypes := []string{"application/vnd.dcos.package.search-request+json;charset=utf-8;version=v1"}
+	localVarHttpContentTypes := []string{}
 
 	// set Content-Type header
 	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
@@ -946,15 +676,13 @@ func (a *CosmosApiService) PackageSearch(ctx context.Context, cosmosPackageSearc
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/vnd.dcos.package.search-response+json;charset=utf-8;version=v1", "application/vnd.dcos.package.error+json;charset=utf-8;version=v1"}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
 	if localVarHttpHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
 	}
-	// body params
-	localVarPostBody = &cosmosPackageSearchV1Request
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
@@ -977,7 +705,7 @@ func (a *CosmosApiService) PackageSearch(ctx context.Context, cosmosPackageSearc
 			error: localVarHttpResponse.Status,
 		}
 		if localVarHttpResponse.StatusCode == 200 {
-			var v CosmosPackageSearchV1Response
+			var v MetronomeV1Job
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -986,8 +714,8 @@ func (a *CosmosApiService) PackageSearch(ctx context.Context, cosmosPackageSearc
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
-		if localVarHttpResponse.StatusCode == 400 {
-			var v CosmosError
+		if localVarHttpResponse.StatusCode == 401 {
+			var v MetronomeV1Error
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -996,116 +724,8 @@ func (a *CosmosApiService) PackageSearch(ctx context.Context, cosmosPackageSearc
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
-		if localVarHttpResponse.StatusCode == 409 {
-			var v CosmosError
-			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHttpResponse, newErr
-			}
-			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
-		}
-		return localVarReturnValue, localVarHttpResponse, newErr
-	}
-
-	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-	if err != nil {
-		newErr := GenericOpenAPIError{
-			body:  localVarBody,
-			error: err.Error(),
-		}
-		return localVarReturnValue, localVarHttpResponse, newErr
-	}
-
-	return localVarReturnValue, localVarHttpResponse, nil
-}
-
-/*
-CosmosApiService
- * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param cosmosPackageUninstallV1Request
- * @param optional nil or *PackageUninstallOpts - Optional Parameters:
- * @param "Accept" (optional.String) -
-@return CosmosPackageUninstallV1Response
-*/
-
-type PackageUninstallOpts struct {
-	Accept optional.String
-}
-
-func (a *CosmosApiService) PackageUninstall(ctx context.Context, cosmosPackageUninstallV1Request CosmosPackageUninstallV1Request, localVarOptionals *PackageUninstallOpts) (CosmosPackageUninstallV1Response, *http.Response, error) {
-	var (
-		localVarHttpMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		localVarFormFileName string
-		localVarFileName     string
-		localVarFileBytes    []byte
-		localVarReturnValue  CosmosPackageUninstallV1Response
-	)
-
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/package/uninstall"
-
-	localVarHeaderParams := make(map[string]string)
-	localVarQueryParams := url.Values{}
-	localVarFormParams := url.Values{}
-
-	// to determine the Content-Type header
-	localVarHttpContentTypes := []string{"application/vnd.dcos.package.uninstall-request+json;charset=utf-8;version=v1"}
-
-	// set Content-Type header
-	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
-	if localVarHttpContentType != "" {
-		localVarHeaderParams["Content-Type"] = localVarHttpContentType
-	}
-
-	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/vnd.dcos.package.uninstall-response+json;charset=utf-8;version=v1", "application/vnd.dcos.package.error+json;charset=utf-8;version=v1"}
-
-	// set Accept header
-	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
-	if localVarHttpHeaderAccept != "" {
-		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
-	}
-	if localVarOptionals != nil && localVarOptionals.Accept.IsSet() {
-		localVarHeaderParams["Accept"] = parameterToString(localVarOptionals.Accept.Value(), "")
-	}
-	// body params
-	localVarPostBody = &cosmosPackageUninstallV1Request
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
-	if err != nil {
-		return localVarReturnValue, nil, err
-	}
-
-	localVarHttpResponse, err := a.client.callAPI(r)
-	if err != nil || localVarHttpResponse == nil {
-		return localVarReturnValue, localVarHttpResponse, err
-	}
-
-	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
-	localVarHttpResponse.Body.Close()
-	if err != nil {
-		return localVarReturnValue, localVarHttpResponse, err
-	}
-
-	if localVarHttpResponse.StatusCode >= 300 {
-		newErr := GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHttpResponse.Status,
-		}
-		if localVarHttpResponse.StatusCode == 200 {
-			var v CosmosPackageUninstallV1Response
-			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHttpResponse, newErr
-			}
-			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
-		}
-		if localVarHttpResponse.StatusCode == 400 {
-			var v CosmosError
+		if localVarHttpResponse.StatusCode == 403 {
+			var v MetronomeV1Error
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1115,17 +735,7 @@ func (a *CosmosApiService) PackageUninstall(ctx context.Context, cosmosPackageUn
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
 		if localVarHttpResponse.StatusCode == 404 {
-			var v CosmosError
-			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHttpResponse, newErr
-			}
-			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
-		}
-		if localVarHttpResponse.StatusCode == 409 {
-			var v CosmosError
+			var v MetronomeV1Error
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1150,37 +760,32 @@ func (a *CosmosApiService) PackageUninstall(ctx context.Context, cosmosPackageUn
 }
 
 /*
-CosmosApiService
-Describes a DC/OS Service
+MetronomeApiService
+Get the list of all schedules for this jobId.
  * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param optional nil or *ServiceDescribeOpts - Optional Parameters:
- * @param "CosmosServiceDescribeV1Request" (optional.Interface of CosmosServiceDescribeV1Request) -
-@return CosmosServiceDescribeV1Response
+ * @param jobId
+@return []MetronomeV1JobSchedule
 */
-
-type ServiceDescribeOpts struct {
-	CosmosServiceDescribeV1Request optional.Interface
-}
-
-func (a *CosmosApiService) ServiceDescribe(ctx context.Context, localVarOptionals *ServiceDescribeOpts) (CosmosServiceDescribeV1Response, *http.Response, error) {
+func (a *MetronomeApiService) V1GetJobSchedules(ctx context.Context, jobId string) ([]MetronomeV1JobSchedule, *http.Response, error) {
 	var (
-		localVarHttpMethod   = http.MethodPost
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
 		localVarFileBytes    []byte
-		localVarReturnValue  CosmosServiceDescribeV1Response
+		localVarReturnValue  []MetronomeV1JobSchedule
 	)
 
 	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/cosmos/service/describe"
+	localVarPath := a.client.cfg.BasePath + "/service/metronome/v1/jobs/{jobId}/schedules"
+	localVarPath = strings.Replace(localVarPath, "{"+"jobId"+"}", fmt.Sprintf("%v", jobId), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
 	// to determine the Content-Type header
-	localVarHttpContentTypes := []string{"application/vnd.dcos.service.describe-request+json;charset=utf-8;version=v1"}
+	localVarHttpContentTypes := []string{}
 
 	// set Content-Type header
 	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
@@ -1189,22 +794,13 @@ func (a *CosmosApiService) ServiceDescribe(ctx context.Context, localVarOptional
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/vnd.dcos.service.describe-response+json;charset=utf-8;version=v1"}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
 	if localVarHttpHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
 	}
-	// body params
-	if localVarOptionals != nil && localVarOptionals.CosmosServiceDescribeV1Request.IsSet() {
-		localVarOptionalCosmosServiceDescribeV1Request, localVarOptionalCosmosServiceDescribeV1Requestok := localVarOptionals.CosmosServiceDescribeV1Request.Value().(CosmosServiceDescribeV1Request)
-		if !localVarOptionalCosmosServiceDescribeV1Requestok {
-			return localVarReturnValue, nil, reportError("cosmosServiceDescribeV1Request should be CosmosServiceDescribeV1Request")
-		}
-		localVarPostBody = &localVarOptionalCosmosServiceDescribeV1Request
-	}
-
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
@@ -1227,7 +823,7 @@ func (a *CosmosApiService) ServiceDescribe(ctx context.Context, localVarOptional
 			error: localVarHttpResponse.Status,
 		}
 		if localVarHttpResponse.StatusCode == 200 {
-			var v CosmosServiceDescribeV1Response
+			var v []MetronomeV1JobSchedule
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1236,8 +832,18 @@ func (a *CosmosApiService) ServiceDescribe(ctx context.Context, localVarOptional
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
-		if localVarHttpResponse.StatusCode == 400 {
-			var v CosmosError
+		if localVarHttpResponse.StatusCode == 401 {
+			var v MetronomeV1Error
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
+		if localVarHttpResponse.StatusCode == 403 {
+			var v MetronomeV1Error
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1262,31 +868,34 @@ func (a *CosmosApiService) ServiceDescribe(ctx context.Context, localVarOptional
 }
 
 /*
-CosmosApiService
-Runs a service update.
+MetronomeApiService
+Get the schedule for jobId with schedule scheduleId
  * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param cosmosServiceUpdateV1Request
-@return CosmosServiceUpdateV1Response
+ * @param jobId
+ * @param scheduleId
+@return MetronomeV1JobSchedule
 */
-func (a *CosmosApiService) ServiceUpdate(ctx context.Context, cosmosServiceUpdateV1Request CosmosServiceUpdateV1Request) (CosmosServiceUpdateV1Response, *http.Response, error) {
+func (a *MetronomeApiService) V1GetJobSchedulesByScheduleId(ctx context.Context, jobId string, scheduleId string) (MetronomeV1JobSchedule, *http.Response, error) {
 	var (
-		localVarHttpMethod   = http.MethodPost
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
 		localVarFileBytes    []byte
-		localVarReturnValue  CosmosServiceUpdateV1Response
+		localVarReturnValue  MetronomeV1JobSchedule
 	)
 
 	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/cosmos/service/update"
+	localVarPath := a.client.cfg.BasePath + "/service/metronome/v1/jobs/{jobId}/schedules/{scheduleId}"
+	localVarPath = strings.Replace(localVarPath, "{"+"jobId"+"}", fmt.Sprintf("%v", jobId), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"scheduleId"+"}", fmt.Sprintf("%v", scheduleId), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
 	// to determine the Content-Type header
-	localVarHttpContentTypes := []string{"application/vnd.dcos.service.update-request+json;charset=utf-8;version=v1"}
+	localVarHttpContentTypes := []string{}
 
 	// set Content-Type header
 	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
@@ -1295,15 +904,13 @@ func (a *CosmosApiService) ServiceUpdate(ctx context.Context, cosmosServiceUpdat
 	}
 
 	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/vnd.dcos.service.update-response+json;charset=utf-8;version=v1"}
+	localVarHttpHeaderAccepts := []string{"application/json"}
 
 	// set Accept header
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
 	if localVarHttpHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
 	}
-	// body params
-	localVarPostBody = &cosmosServiceUpdateV1Request
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
 	if err != nil {
 		return localVarReturnValue, nil, err
@@ -1326,7 +933,7 @@ func (a *CosmosApiService) ServiceUpdate(ctx context.Context, cosmosServiceUpdat
 			error: localVarHttpResponse.Status,
 		}
 		if localVarHttpResponse.StatusCode == 200 {
-			var v CosmosServiceUpdateV1Response
+			var v MetronomeV1JobSchedule
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1335,8 +942,18 @@ func (a *CosmosApiService) ServiceUpdate(ctx context.Context, cosmosServiceUpdat
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
-		if localVarHttpResponse.StatusCode == 400 {
-			var v CosmosError
+		if localVarHttpResponse.StatusCode == 401 {
+			var v MetronomeV1Error
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
+		if localVarHttpResponse.StatusCode == 403 {
+			var v MetronomeV1Error
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1346,7 +963,7 @@ func (a *CosmosApiService) ServiceUpdate(ctx context.Context, cosmosServiceUpdat
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
 		if localVarHttpResponse.StatusCode == 404 {
-			var v CosmosError
+			var v MetronomeV1Error
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1355,8 +972,524 @@ func (a *CosmosApiService) ServiceUpdate(ctx context.Context, cosmosServiceUpdat
 			newErr.model = v
 			return localVarReturnValue, localVarHttpResponse, newErr
 		}
-		if localVarHttpResponse.StatusCode == 409 {
-			var v CosmosError
+		return localVarReturnValue, localVarHttpResponse, newErr
+	}
+
+	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := GenericOpenAPIError{
+			body:  localVarBody,
+			error: err.Error(),
+		}
+		return localVarReturnValue, localVarHttpResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHttpResponse, nil
+}
+
+/*
+MetronomeApiService
+Get the list of all jobs.
+ * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ * @param optional nil or *V1GetJobsOpts - Optional Parameters:
+ * @param "Embeded" (optional.Interface of []MetronomeEmbeded) -
+@return []MetronomeV1Job
+*/
+
+type V1GetJobsOpts struct {
+	Embeded optional.Interface
+}
+
+func (a *MetronomeApiService) V1GetJobs(ctx context.Context, localVarOptionals *V1GetJobsOpts) ([]MetronomeV1Job, *http.Response, error) {
+	var (
+		localVarHttpMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		localVarFormFileName string
+		localVarFileName     string
+		localVarFileBytes    []byte
+		localVarReturnValue  []MetronomeV1Job
+	)
+
+	// create path and map variables
+	localVarPath := a.client.cfg.BasePath + "/service/metronome/v1/jobs"
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := url.Values{}
+	localVarFormParams := url.Values{}
+
+	if localVarOptionals != nil && localVarOptionals.Embeded.IsSet() {
+		localVarQueryParams.Add("embeded", parameterToString(localVarOptionals.Embeded.Value(), "multi"))
+	}
+	// to determine the Content-Type header
+	localVarHttpContentTypes := []string{}
+
+	// set Content-Type header
+	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
+	if localVarHttpContentType != "" {
+		localVarHeaderParams["Content-Type"] = localVarHttpContentType
+	}
+
+	// to determine the Accept header
+	localVarHttpHeaderAccepts := []string{"application/json"}
+
+	// set Accept header
+	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
+	if localVarHttpHeaderAccept != "" {
+		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
+	}
+	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	if err != nil {
+		return localVarReturnValue, nil, err
+	}
+
+	localVarHttpResponse, err := a.client.callAPI(r)
+	if err != nil || localVarHttpResponse == nil {
+		return localVarReturnValue, localVarHttpResponse, err
+	}
+
+	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
+	localVarHttpResponse.Body.Close()
+	if err != nil {
+		return localVarReturnValue, localVarHttpResponse, err
+	}
+
+	if localVarHttpResponse.StatusCode >= 300 {
+		newErr := GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHttpResponse.Status,
+		}
+		if localVarHttpResponse.StatusCode == 200 {
+			var v []MetronomeV1Job
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
+		return localVarReturnValue, localVarHttpResponse, newErr
+	}
+
+	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := GenericOpenAPIError{
+			body:  localVarBody,
+			error: err.Error(),
+		}
+		return localVarReturnValue, localVarHttpResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHttpResponse, nil
+}
+
+/*
+MetronomeApiService
+Replaces an existing schedule.
+ * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ * @param jobId
+ * @param scheduleId
+ * @param metronomeV1JobSchedule
+*/
+func (a *MetronomeApiService) V1PutJobSchedulesByScheduleId(ctx context.Context, jobId string, scheduleId string, metronomeV1JobSchedule MetronomeV1JobSchedule) (*http.Response, error) {
+	var (
+		localVarHttpMethod   = http.MethodPut
+		localVarPostBody     interface{}
+		localVarFormFileName string
+		localVarFileName     string
+		localVarFileBytes    []byte
+	)
+
+	// create path and map variables
+	localVarPath := a.client.cfg.BasePath + "/service/metronome/v1/jobs/{jobId}/schedules/{scheduleId}"
+	localVarPath = strings.Replace(localVarPath, "{"+"jobId"+"}", fmt.Sprintf("%v", jobId), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"scheduleId"+"}", fmt.Sprintf("%v", scheduleId), -1)
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := url.Values{}
+	localVarFormParams := url.Values{}
+
+	// to determine the Content-Type header
+	localVarHttpContentTypes := []string{"application/json"}
+
+	// set Content-Type header
+	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
+	if localVarHttpContentType != "" {
+		localVarHeaderParams["Content-Type"] = localVarHttpContentType
+	}
+
+	// to determine the Accept header
+	localVarHttpHeaderAccepts := []string{"application/json"}
+
+	// set Accept header
+	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
+	if localVarHttpHeaderAccept != "" {
+		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
+	}
+	// body params
+	localVarPostBody = &metronomeV1JobSchedule
+	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	localVarHttpResponse, err := a.client.callAPI(r)
+	if err != nil || localVarHttpResponse == nil {
+		return localVarHttpResponse, err
+	}
+
+	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
+	localVarHttpResponse.Body.Close()
+	if err != nil {
+		return localVarHttpResponse, err
+	}
+
+	if localVarHttpResponse.StatusCode >= 300 {
+		newErr := GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHttpResponse.Status,
+		}
+		if localVarHttpResponse.StatusCode == 401 {
+			var v MetronomeV1Error
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
+		if localVarHttpResponse.StatusCode == 403 {
+			var v MetronomeV1Error
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
+		if localVarHttpResponse.StatusCode == 404 {
+			var v MetronomeV1Error
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
+		if localVarHttpResponse.StatusCode == 422 {
+			var v MetronomeV1Error
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
+		return localVarHttpResponse, newErr
+	}
+
+	return localVarHttpResponse, nil
+}
+
+/*
+MetronomeApiService
+Trigger a new job run.
+ * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ * @param jobId
+@return MetronomeV1Job
+*/
+func (a *MetronomeApiService) V1StartJobRun(ctx context.Context, jobId string) (MetronomeV1Job, *http.Response, error) {
+	var (
+		localVarHttpMethod   = http.MethodPost
+		localVarPostBody     interface{}
+		localVarFormFileName string
+		localVarFileName     string
+		localVarFileBytes    []byte
+		localVarReturnValue  MetronomeV1Job
+	)
+
+	// create path and map variables
+	localVarPath := a.client.cfg.BasePath + "/service/metronome/v1/jobs/{jobId}/runs"
+	localVarPath = strings.Replace(localVarPath, "{"+"jobId"+"}", fmt.Sprintf("%v", jobId), -1)
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := url.Values{}
+	localVarFormParams := url.Values{}
+
+	// to determine the Content-Type header
+	localVarHttpContentTypes := []string{}
+
+	// set Content-Type header
+	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
+	if localVarHttpContentType != "" {
+		localVarHeaderParams["Content-Type"] = localVarHttpContentType
+	}
+
+	// to determine the Accept header
+	localVarHttpHeaderAccepts := []string{"application/json"}
+
+	// set Accept header
+	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
+	if localVarHttpHeaderAccept != "" {
+		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
+	}
+	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	if err != nil {
+		return localVarReturnValue, nil, err
+	}
+
+	localVarHttpResponse, err := a.client.callAPI(r)
+	if err != nil || localVarHttpResponse == nil {
+		return localVarReturnValue, localVarHttpResponse, err
+	}
+
+	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
+	localVarHttpResponse.Body.Close()
+	if err != nil {
+		return localVarReturnValue, localVarHttpResponse, err
+	}
+
+	if localVarHttpResponse.StatusCode >= 300 {
+		newErr := GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHttpResponse.Status,
+		}
+		if localVarHttpResponse.StatusCode == 201 {
+			var v MetronomeV1Job
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
+		if localVarHttpResponse.StatusCode == 401 {
+			var v MetronomeV1Error
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
+		if localVarHttpResponse.StatusCode == 403 {
+			var v MetronomeV1Error
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
+		return localVarReturnValue, localVarHttpResponse, newErr
+	}
+
+	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := GenericOpenAPIError{
+			body:  localVarBody,
+			error: err.Error(),
+		}
+		return localVarReturnValue, localVarHttpResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHttpResponse, nil
+}
+
+/*
+MetronomeApiService
+Stop an existing job run
+ * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ * @param jobId
+ * @param runId
+*/
+func (a *MetronomeApiService) V1StopJobRunByRunId(ctx context.Context, jobId string, runId string) (*http.Response, error) {
+	var (
+		localVarHttpMethod   = http.MethodPost
+		localVarPostBody     interface{}
+		localVarFormFileName string
+		localVarFileName     string
+		localVarFileBytes    []byte
+	)
+
+	// create path and map variables
+	localVarPath := a.client.cfg.BasePath + "/service/metronome/v1/jobs/{jobId}/runs/{runId}/actions/stop"
+	localVarPath = strings.Replace(localVarPath, "{"+"jobId"+"}", fmt.Sprintf("%v", jobId), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"runId"+"}", fmt.Sprintf("%v", runId), -1)
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := url.Values{}
+	localVarFormParams := url.Values{}
+
+	// to determine the Content-Type header
+	localVarHttpContentTypes := []string{}
+
+	// set Content-Type header
+	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
+	if localVarHttpContentType != "" {
+		localVarHeaderParams["Content-Type"] = localVarHttpContentType
+	}
+
+	// to determine the Accept header
+	localVarHttpHeaderAccepts := []string{"application/json"}
+
+	// set Accept header
+	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
+	if localVarHttpHeaderAccept != "" {
+		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
+	}
+	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	localVarHttpResponse, err := a.client.callAPI(r)
+	if err != nil || localVarHttpResponse == nil {
+		return localVarHttpResponse, err
+	}
+
+	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
+	localVarHttpResponse.Body.Close()
+	if err != nil {
+		return localVarHttpResponse, err
+	}
+
+	if localVarHttpResponse.StatusCode >= 300 {
+		newErr := GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHttpResponse.Status,
+		}
+		if localVarHttpResponse.StatusCode == 401 {
+			var v MetronomeV1Error
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
+		if localVarHttpResponse.StatusCode == 403 {
+			var v MetronomeV1Error
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
+		if localVarHttpResponse.StatusCode == 404 {
+			var v MetronomeV1Error
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarHttpResponse, newErr
+		}
+		return localVarHttpResponse, newErr
+	}
+
+	return localVarHttpResponse, nil
+}
+
+/*
+MetronomeApiService
+Update an existing job.
+ * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ * @param jobId
+ * @param metronomeV1Job
+@return MetronomeV1Job
+*/
+func (a *MetronomeApiService) V1UpdateJob(ctx context.Context, jobId string, metronomeV1Job MetronomeV1Job) (MetronomeV1Job, *http.Response, error) {
+	var (
+		localVarHttpMethod   = http.MethodPut
+		localVarPostBody     interface{}
+		localVarFormFileName string
+		localVarFileName     string
+		localVarFileBytes    []byte
+		localVarReturnValue  MetronomeV1Job
+	)
+
+	// create path and map variables
+	localVarPath := a.client.cfg.BasePath + "/service/metronome/v1/jobs/{jobId}"
+	localVarPath = strings.Replace(localVarPath, "{"+"jobId"+"}", fmt.Sprintf("%v", jobId), -1)
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := url.Values{}
+	localVarFormParams := url.Values{}
+
+	// to determine the Content-Type header
+	localVarHttpContentTypes := []string{"application/json"}
+
+	// set Content-Type header
+	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
+	if localVarHttpContentType != "" {
+		localVarHeaderParams["Content-Type"] = localVarHttpContentType
+	}
+
+	// to determine the Accept header
+	localVarHttpHeaderAccepts := []string{"application/json"}
+
+	// set Accept header
+	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
+	if localVarHttpHeaderAccept != "" {
+		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
+	}
+	// body params
+	localVarPostBody = &metronomeV1Job
+	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	if err != nil {
+		return localVarReturnValue, nil, err
+	}
+
+	localVarHttpResponse, err := a.client.callAPI(r)
+	if err != nil || localVarHttpResponse == nil {
+		return localVarReturnValue, localVarHttpResponse, err
+	}
+
+	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
+	localVarHttpResponse.Body.Close()
+	if err != nil {
+		return localVarReturnValue, localVarHttpResponse, err
+	}
+
+	if localVarHttpResponse.StatusCode >= 300 {
+		newErr := GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHttpResponse.Status,
+		}
+		if localVarHttpResponse.StatusCode == 200 {
+			var v MetronomeV1Job
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
+		if localVarHttpResponse.StatusCode == 404 {
+			var v MetronomeV1Error
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
+		if localVarHttpResponse.StatusCode == 422 {
+			var v MetronomeV1Error
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
