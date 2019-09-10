@@ -41,6 +41,9 @@ dcos security secrets create-sa-secret.
 func (c *APIClient) LoginWithServiceAccount(ctx context.Context, opt ServiceAccountOptions) (IamAuthToken, *http.Response, error) {
 	var (
 		localEmptyIamToken IamAuthToken
+		key                *rsa.PrivateKey
+		ok                 bool
+		err                error
 	)
 
 	// We currently only support RS256 algorithm
@@ -49,18 +52,23 @@ func (c *APIClient) LoginWithServiceAccount(ctx context.Context, opt ServiceAcco
 	}
 
 	block, _ := pem.Decode([]byte(opt.PrivateKey))
-	if block == nil || block.Type != "PRIVATE KEY" {
-		return localEmptyIamToken, nil, fmt.Errorf("Invalid private key contents given")
+	if block == nil {
+		return localEmptyIamToken, nil, fmt.Errorf("Unable to decode private key PEM data")
 	}
 
+	// First try parsing it as PKCS8-encapsulated private key
 	parseResult, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
-		return localEmptyIamToken, nil, err
-	}
-
-	key, ok := parseResult.(*rsa.PrivateKey)
-	if !ok {
-		return localEmptyIamToken, nil, fmt.Errorf("Invalid private key contents given")
+		// If this fails, fall-back into parsing it as a plain PKCS1 private key
+		key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+		if err != nil {
+			return localEmptyIamToken, nil, fmt.Errorf("Unable to parse PKCS8 or PKCS1 private key")
+		}
+	} else {
+		key, ok = parseResult.(*rsa.PrivateKey)
+		if !ok {
+			return localEmptyIamToken, nil, fmt.Errorf("Unable to parse RSA private key")
+		}
 	}
 
 	// Create a new JWT signer

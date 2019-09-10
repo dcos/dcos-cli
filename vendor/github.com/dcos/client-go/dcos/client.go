@@ -39,8 +39,9 @@ var (
 // APIClient manages communication with the DC/OS API v1.0.0
 // In most cases there should be only one, shared, APIClient.
 type APIClient struct {
-	cfg    *Configuration
-	common service // Reuse a single struct instead of allocating one for each service on the heap.
+	cfg        *Configuration
+	dcosConfig *Config
+	common     service // Reuse a single struct instead of allocating one for each service on the heap.
 
 	// API Services
 
@@ -51,13 +52,16 @@ type APIClient struct {
 	IAM *IAMApiService
 
 	Secrets *SecretsApiService
+
+	Metadata  *MetadataApiService
+	Metronome *MetronomeApiService
 }
 
 type service struct {
 	client *APIClient
 }
 
-// NewClient creates a new DC/OS client with default configuration
+// NewClient creates a new DC/OS client with default Configuration
 func NewClient() (*APIClient, error) {
 	config, err := NewConfigManager(nil).Current()
 	if err != nil {
@@ -87,6 +91,7 @@ func NewClientWithConfig(config *Config) (*APIClient, error) {
 
 	c := &APIClient{}
 	c.cfg = cfg
+	c.dcosConfig = config
 	c.common.client = c
 
 	// API Services
@@ -94,8 +99,20 @@ func NewClientWithConfig(config *Config) (*APIClient, error) {
 	c.Edgelb = (*EdgelbApiService)(&c.common)
 	c.IAM = (*IAMApiService)(&c.common)
 	c.Secrets = (*SecretsApiService)(&c.common)
+	c.Metadata = (*MetadataApiService)(&c.common)
+	c.Metronome = (*MetronomeApiService)(&c.common)
 
 	return c, nil
+}
+
+// CurrentDCOSConfig returns a copy of dcos.Config used to create *APIClient.
+func (a *APIClient) CurrentDCOSConfig() Config {
+	return *a.dcosConfig
+}
+
+// HTTPClient returns a http.Client which does authenticated requests to DC/OS
+func (a *APIClient) HTTPClient() *http.Client {
+	return a.cfg.HTTPClient
 }
 
 func atoi(in string) (int, error) {

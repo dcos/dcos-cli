@@ -4,7 +4,7 @@ github.com/VividCortex/ewma
 github.com/antihax/optional
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
-# github.com/dcos/client-go v0.0.0-20190509135418-77e5e2d8c202
+# github.com/dcos/client-go v0.0.0-20190910161559-e3e16c6d1484
 github.com/dcos/client-go/dcos
 # github.com/dgrijalva/jwt-go v3.2.0+incompatible
 github.com/dgrijalva/jwt-go

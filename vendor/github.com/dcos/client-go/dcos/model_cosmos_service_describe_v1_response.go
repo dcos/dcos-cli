@@ -14,8 +14,8 @@ type CosmosServiceDescribeV1Response struct {
 	DowngradesTo []string      `json:"downgradesTo"`
 	Package      CosmosPackage `json:"package"`
 	// The result of merging the default package options with the user supplied options
-	ResolvedOptions map[string]map[string]interface{} `json:"resolvedOptions,omitempty"`
-	UpgradesTo      []string                          `json:"upgradesTo"`
+	ResolvedOptions map[string]interface{} `json:"resolvedOptions,omitempty"`
+	UpgradesTo      []string               `json:"upgradesTo"`
 	// The options the user provided to run the service
-	UserProvidedOptions map[string]map[string]interface{} `json:"userProvidedOptions,omitempty"`
+	UserProvidedOptions map[string]interface{} `json:"userProvidedOptions,omitempty"`
 }

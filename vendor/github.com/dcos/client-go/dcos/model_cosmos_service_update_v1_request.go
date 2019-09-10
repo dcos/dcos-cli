@@ -11,10 +11,10 @@
 package dcos
 
 type CosmosServiceUpdateV1Request struct {
-	AppId          string                            `json:"appId"`
-	Options        map[string]map[string]interface{} `json:"options,omitempty"`
-	PackageName    string                            `json:"packageName,omitempty"`
-	PackageVersion string                            `json:"packageVersion,omitempty"`
+	AppId          string                 `json:"appId"`
+	Options        map[string]interface{} `json:"options,omitempty"`
+	PackageName    string                 `json:"packageName,omitempty"`
+	PackageVersion string                 `json:"packageVersion,omitempty"`
 	// If true any stored configuration will be ignored when producing the updated service configuration.
 	Replace bool `json:"replace"`
 }

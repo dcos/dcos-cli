@@ -11,5 +11,5 @@
 package dcos
 
 type CosmosPackageResourceCli struct {
-	Binaries CosmosPackageResourceCliBinaries `json:"binaries"`
+	Binaries CosmosPackageResourceCliBinaries `json:"binaries,omitempty"`
 }

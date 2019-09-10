@@ -34,7 +34,7 @@ Get the entire configuration object including v1 and v2 pools.
 */
 func (a *EdgelbApiService) GetConfigContainer(ctx context.Context) (EdgelbConfigContainer, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -131,7 +131,7 @@ Returns a v1 or v2 load balancer pool based on a single name.
 */
 func (a *EdgelbApiService) GetPoolContainer(ctx context.Context, name string) (EdgelbPoolContainer, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -228,7 +228,7 @@ Healthcheck endpoint.
 */
 func (a *EdgelbApiService) Ping(ctx context.Context) (string, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -325,7 +325,7 @@ Creates a new load balancer pool.
 */
 func (a *EdgelbApiService) V2CreatePool(ctx context.Context, edgelbV2Pool EdgelbV2Pool) (EdgelbV2Pool, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Post")
+		localVarHttpMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -433,7 +433,7 @@ Deletes a single load balancer pool based on the name supplied.
 */
 func (a *EdgelbApiService) V2DeletePool(ctx context.Context, name string) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Delete")
+		localVarHttpMethod   = http.MethodDelete
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -531,7 +531,7 @@ Returns a v2 load balancer pool based on a single name.
 */
 func (a *EdgelbApiService) V2GetPool(ctx context.Context, name string) (EdgelbV2Pool, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -638,7 +638,7 @@ Get all load balancer pools.
 */
 func (a *EdgelbApiService) V2GetPools(ctx context.Context) ([]EdgelbV2Pool, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -736,7 +736,7 @@ Updates a new load balancer pool.
 */
 func (a *EdgelbApiService) V2UpdatePool(ctx context.Context, name string, edgelbV2Pool EdgelbV2Pool) (EdgelbV2Pool, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Put")
+		localVarHttpMethod   = http.MethodPut
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -835,7 +835,7 @@ Returns the installed Edge-LB package version.
 */
 func (a *EdgelbApiService) Version(ctx context.Context) (string, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string

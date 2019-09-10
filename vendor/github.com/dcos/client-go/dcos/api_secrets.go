@@ -37,7 +37,7 @@ Create a secret in the store at the path.
 */
 func (a *SecretsApiService) CreateSecret(ctx context.Context, store string, pathToSecret string, secretsV1Secret SecretsV1Secret) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Put")
+		localVarHttpMethod   = http.MethodPut
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -108,7 +108,7 @@ Delete a secret.
 */
 func (a *SecretsApiService) DeleteSecret(ctx context.Context, store string, pathToSecret string) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Delete")
+		localVarHttpMethod   = http.MethodDelete
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -185,7 +185,7 @@ type GetSecretOpts struct {
 
 func (a *SecretsApiService) GetSecret(ctx context.Context, store string, pathToSecret string, localVarOptionals *GetSecretOpts) (SecretsV1Secret, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -278,7 +278,7 @@ Update existing secret in the specified store.
 */
 func (a *SecretsApiService) UpdateSecret(ctx context.Context, store string, pathToSecret string, secretsV1Secret SecretsV1Secret) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Patch")
+		localVarHttpMethod   = http.MethodPatch
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string

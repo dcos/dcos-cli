@@ -11,6 +11,6 @@
 package dcos
 
 type CosmosPackageManager struct {
-	PackageName       string `json:"packageName"`
+	PackageName       string `json:"packageName,omitempty"`
 	MinPackageVersion string `json:"minPackageVersion,omitempty"`
 }
