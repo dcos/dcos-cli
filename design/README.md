@@ -9,6 +9,11 @@
 - [plugin](plugin.md)
 - [setup](setup.md)
 
+
 ## Style guide
 
 [Style guide](style.md) for the DC/OS CLI and its plugins.
+
+## Release process
+
+Learn about the [CLI release process](release.md).
