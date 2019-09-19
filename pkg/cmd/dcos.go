@@ -132,7 +132,7 @@ func updateCorePlugin(ctx api.Context) error {
 		return err
 	}
 
-	return ctx.PluginManager(cluster).Install(pluginInfo.Url, &plugin.InstallOpts{
+	_, err = ctx.PluginManager(cluster).Install(pluginInfo.Url, &plugin.InstallOpts{
 		Name:   "dcos-core-cli",
 		Update: true,
 		PostInstall: func(fs afero.Fs, pluginDir string) error {
@@ -145,6 +145,7 @@ func updateCorePlugin(ctx api.Context) error {
 			return json.NewEncoder(pkgInfoFile).Encode(pkg.Package)
 		},
 	})
+	return err
 }
 
 // invokePlugin calls the binary of a plugin, passing in the arguments it's been given.
