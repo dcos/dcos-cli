@@ -252,7 +252,7 @@ def test_plugin_help_usage(default_cluster):
 
 def _install_test_plugin():
     code, out, err = exec_cmd(['dcos', 'plugin', 'add', _test_plugin_path()])
-    assert err == ''
+    assert err == 'New commands available: test\n'
     assert out == ''
     assert code == 0
 

@@ -1,6 +1,9 @@
 package plugin
 
-import "path/filepath"
+import (
+	"path/filepath"
+	"sort"
+)
 
 // Plugin is the structure representation of a `plugin.toml file.
 // It also contains JSON tags for the `dcos plugin list --json` command.
@@ -26,4 +29,13 @@ func (p *Plugin) Dir() string {
 // CompletionDir returns the absolute path to the directory holding the plugin's completion script files
 func (p *Plugin) CompletionDir() string {
 	return filepath.Join(p.Dir(), "completion")
+}
+
+// CommandNames returns the commands available in the plugin as a sorted list of names.
+func (p *Plugin) CommandNames() (commands []string) {
+	for _, command := range p.Commands {
+		commands = append(commands, command.Name)
+	}
+	sort.Strings(commands)
+	return commands
 }

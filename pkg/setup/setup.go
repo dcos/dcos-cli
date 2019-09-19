@@ -333,10 +333,8 @@ func (s *Setup) installDefaultPlugins(httpClient *httpclient.Client) error {
 	}
 
 	var newCommands []string
-	for _, installedPlugin := range s.pluginManager.Plugins() {
-		for _, command := range installedPlugin.Commands {
-			newCommands = append(newCommands, command.Name)
-		}
+	for _, p := range s.pluginManager.Plugins() {
+		newCommands = append(newCommands, p.CommandNames()...)
 	}
 
 	sort.Strings(newCommands)
@@ -440,11 +438,12 @@ func (s *Setup) installPluginFromCanonicalURL(name string, version *dcos.Version
 			domain, name, platform, name, dcosVersion,
 		)
 	}
-	return s.pluginManager.Install(url, &plugin.InstallOpts{
+	_, err = s.pluginManager.Install(url, &plugin.InstallOpts{
 		Name:        name,
 		Update:      true,
 		ProgressBar: pbar,
 	})
+	return err
 }
 
 // installPluginFromCosmos installs a plugin through Cosmos.
@@ -477,7 +476,7 @@ func (s *Setup) installPluginFromCosmos(name string, version string, httpClient 
 			checksum.Value = contentHash.Value
 		}
 	}
-	return s.pluginManager.Install(pluginInfo.Url, &plugin.InstallOpts{
+	_, err = s.pluginManager.Install(pluginInfo.Url, &plugin.InstallOpts{
 		Name:        pkg.Package.Name,
 		Update:      true,
 		Checksum:    checksum,
@@ -492,6 +491,7 @@ func (s *Setup) installPluginFromCosmos(name string, version string, httpClient 
 			return json.NewEncoder(pkgInfoFile).Encode(pkg.Package)
 		},
 	})
+	return err
 }
 
 // promptCA prompts information about the certificate authority to the user.

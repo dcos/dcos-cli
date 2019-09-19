@@ -1,6 +1,9 @@
 package plugin
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/plugin"
 	"github.com/spf13/cobra"
@@ -18,7 +21,14 @@ func newCmdPluginAdd(ctx api.Context) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return ctx.PluginManager(cluster).Install(args[0], installOpts)
+
+			p, err := ctx.PluginManager(cluster).Install(args[0], installOpts)
+			if err != nil {
+				return err
+			}
+
+			fmt.Fprintf(ctx.ErrOut(), "New commands available: %s\n", strings.Join(p.CommandNames(), ", "))
+			return nil
 		},
 	}
 	cmd.Flags().BoolVarP(&installOpts.Update, "update", "u", false, "")

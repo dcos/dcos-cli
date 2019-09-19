@@ -63,6 +63,9 @@ func TestLoadPluginWithMultipleCommands(t *testing.T) {
 			t.FailNow()
 		}
 	}
+
+	// Command names should be sorted.
+	require.Equal(t, []string{"no-test", "test"}, plugins[0].CommandNames())
 }
 
 func pluginManager(t *testing.T, name string) *Manager {
