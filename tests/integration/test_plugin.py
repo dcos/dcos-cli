@@ -77,7 +77,7 @@ def test_plugin_list(default_cluster):
 
     dcos_core_cli = lines[1].split()
     assert dcos_core_cli[0] == 'dcos-core-cli'
-    assert dcos_core_cli[1:] == ['job', 'marathon', 'node', 'package', 'quota', 'service', 'task']
+    assert dcos_core_cli[1:] == ['diagnostics', 'job', 'marathon', 'node', 'package', 'quota', 'service', 'task']
 
     if default_cluster['variant'] == 'enterprise':
         dcos_enterprise_cli = lines[2].split()

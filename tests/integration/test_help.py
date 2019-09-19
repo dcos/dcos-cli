@@ -52,6 +52,8 @@ Commands:
         Manage your DC/OS clusters
     config
         Manage the DC/OS configuration file
+    diagnostics
+        Create and manage DC/OS diagnostics bundles
     help
         Help about any command
     job
@@ -101,6 +103,8 @@ Commands:
         Manage your DC/OS clusters
     config
         Manage the DC/OS configuration file
+    diagnostics
+        Create and manage DC/OS diagnostics bundles
     help
         Help about any command
     job
