@@ -33,6 +33,11 @@ Please include test(s) with your changes. Make sure to separate integration and 
 You can use `make test` to run unit tests, in order to run integration tests please follow
 [these instructions](https://github.com/dcos/dcos-cli#integration-tests).
 
+## Completion scripts
+
+If your PR introduces a new command or adds/updates CLI flags, make sure to update the completion
+script as well, it can be found in `./pkg/cmd/completion/completion.sh`.
+
 ## Thanks!
 
 The DC/OS CLI Team
