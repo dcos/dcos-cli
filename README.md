@@ -22,12 +22,12 @@ available in the [DC/OS docs](https://dcos.io/docs/).
 
 1.  [git](http://git-scm.com) must be installed to download the source
     code for the DC/OS CLI.
-2.  [go](https://golang.org/dl/) 1.12+ or docker.
+2.  [go](https://golang.org/dl/) 1.12+ or Docker.
 3.  [win-bash](https://sourceforge.net/projects/win-bash/files/shell-complete/latest)
    must be installed if you are using Windows in order to run setup scripts
    from the Makefile.
 
-### Using Docker
+### Instructions
 
 1.  Clone git repo for the dcos cli:
 
@@ -37,30 +37,11 @@ available in the [DC/OS docs](https://dcos.io/docs/).
 
         cd dcos-cli
 
-3.  Build the binary:
+3.  Build the binary (using Docker):
 
         make
 
-### Using Go
-
-1.  Clone git repo for the dcos cli:
-
-        git clone git@github.com:dcos/dcos-cli.git
-
-    or:
-
-        go get github.com/dcos/dcos-cli
-
-2.  Change directory to the repo directory:
-
-        cd project/path/outside/$GOPATH/dcos-cli
-
-    or:
-
-        cd $GOPATH/src/github.com/dcos/dcos-cli
-        export GO111MODULE=on
-
-3.  Build the binary:
+    or Using Go (1.12+):
 
         export NO_DOCKER=1
         make
@@ -94,17 +75,18 @@ Releasing a new version of the DC/OS CLI is done through an
 build](https://jenkins.mesosphere.com/service/jenkins/job/public-dcos-cluster-ops/job/mesosphere-dcos-cli/job/release/)
 which is triggered automatically for new tags and on pushes to master.
 
-Tagged versions can be found in the "Releases" page:
+The latest binaries (built from the latest tag) are published to:
 
-    https://github.com/dcos/dcos-cli/releases
+- https://downloads.dcos.io/cli/releases/binaries/dcos/linux/x86-64/latest/dcos
+- https://downloads.dcos.io/cli/releases/binaries/dcos/darwin/x86-64/latest/dcos
+- https://downloads.dcos.io/cli/releases/binaries/dcos/windows/x86-64/latest/dcos.exe
 
-The binaries built from the master branch are continuously published to:
+The testing binaries (built from the master branch continuously) are published to:
 
-   - https://downloads.dcos.io/cli/testing/binaries/dcos/linux/x86-64/master/dcos
-   - https://downloads.dcos.io/cli/testing/binaries/dcos/darwin/x86-64/master/dcos
-   - https://downloads.dcos.io/cli/testing/binaries/dcos/windows/x86-64/master/dcos.exe
+- https://downloads.dcos.io/cli/testing/binaries/dcos/linux/x86-64/master/dcos
+- https://downloads.dcos.io/cli/testing/binaries/dcos/darwin/x86-64/master/dcos
+- https://downloads.dcos.io/cli/testing/binaries/dcos/windows/x86-64/master/dcos.exe
 
 ## Contributing
 
 Contributions are always welcome! Please refer to our [contributing guidelines](CONTRIBUTING.md).
-
