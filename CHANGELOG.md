@@ -5,6 +5,7 @@
 * Features
 
   * Pass plugin config as environment variables.
+  * Pass `DCOS_CLI_VERSION` when invoking plugins.
 
 ## 1.0.1
 

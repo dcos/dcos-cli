@@ -19,6 +19,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/dcos/dcos-cli/api"
+	"github.com/dcos/dcos-cli/pkg/cli/version"
 	"github.com/dcos/dcos-cli/pkg/cmd/auth"
 	clustercmd "github.com/dcos/dcos-cli/pkg/cmd/cluster"
 	"github.com/dcos/dcos-cli/pkg/cmd/completion"
@@ -160,6 +161,7 @@ func invokePlugin(ctx api.Context, cmd plugin.Command, args []string) error {
 	execCmd.Stdin = ctx.Input()
 
 	execCmd.Env = append(os.Environ(), "DCOS_CLI_EXECUTABLE_PATH="+executablePath)
+	execCmd.Env = append(execCmd.Env, "DCOS_CLI_VERSION="+version.Version())
 
 	switch ctx.Logger().Level {
 	case logrus.DebugLevel:

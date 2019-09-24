@@ -112,6 +112,8 @@ For example, if a `dcos-hello` executable in a plugin has a `hello` top level co
 
 Executables contained within plugins are called synchronously from the CLI by spawning a new child process. The CLI waits for the child process to complete. The CLI makes available its own executable path to the child via an ENV variable `DCOS_CLI_EXECUTABLE_PATH`.
 
+The CLI version is passed in the `DCOS_CLI_VERSION` ENV variable.
+
 When a cluster is attached, the CLI will also pass the following ENV variables:
 
 - `DCOS_URL`: The base URL of the DC/OS cluster without a trailing slash (eg. `https://dcos.example.com`).
