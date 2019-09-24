@@ -57,18 +57,21 @@ func TestPluginEnv(t *testing.T) {
 	cluster := config.NewCluster(nil)
 	cluster.SetURL("https://dcos.example.com")
 	cluster.SetACSToken("abc")
+	cluster.SetTLS(config.TLS{Insecure: false})
 	cluster.Config().Set("hello.world", "foo")
 	cluster.Config().Set("hallo.world", "foo")
 
 	env := pluginEnv("/path/to/me", "hello", logrus.DebugLevel, cluster)
 
-	require.Contains(t, env, "DCOS_CLI_EXECUTABLE_PATH=/path/to/me")
-	require.Contains(t, env, "DCOS_CLI_VERSION="+version.Version())
-	require.Contains(t, env, "DCOS_VERBOSITY=2")
-	require.Contains(t, env, "DCOS_URL=https://dcos.example.com")
-	require.Contains(t, env, "DCOS_ACS_TOKEN=abc")
-	require.Contains(t, env, "DCOS_HELLO_WORLD=foo")
-	require.NotContains(t, env, "DCOS_HALLO_WORLD=foo")
+	require.ElementsMatch(t, env, []string{
+		"DCOS_ACS_TOKEN=abc",
+		"DCOS_CLI_EXECUTABLE_PATH=/path/to/me",
+		"DCOS_CLI_VERSION=" + version.Version(),
+		"DCOS_HELLO_WORLD=foo",
+		"DCOS_LOG_LEVEL=debug",
+		"DCOS_URL=https://dcos.example.com",
+		"DCOS_VERBOSITY=2",
+	})
 }
 
 func TestCmdConfigEnvKey(t *testing.T) {
