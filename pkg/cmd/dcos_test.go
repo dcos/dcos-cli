@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/dcos/dcos-cli/pkg/cli/version"
+	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/mock"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -48,6 +51,24 @@ Use "dcos [command] --help" for more information about a command.
 `
 
 	require.Equal(t, expectedHelp, out.String())
+}
+
+func TestPluginEnv(t *testing.T) {
+	cluster := config.NewCluster(nil)
+	cluster.SetURL("https://dcos.example.com")
+	cluster.SetACSToken("abc")
+	cluster.Config().Set("hello.world", "foo")
+	cluster.Config().Set("hallo.world", "foo")
+
+	env := pluginEnv("/path/to/me", "hello", logrus.DebugLevel, cluster)
+
+	require.Contains(t, env, "DCOS_CLI_EXECUTABLE_PATH=/path/to/me")
+	require.Contains(t, env, "DCOS_CLI_VERSION="+version.Version())
+	require.Contains(t, env, "DCOS_VERBOSITY=2")
+	require.Contains(t, env, "DCOS_URL=https://dcos.example.com")
+	require.Contains(t, env, "DCOS_ACS_TOKEN=abc")
+	require.Contains(t, env, "DCOS_HELLO_WORLD=foo")
+	require.NotContains(t, env, "DCOS_HALLO_WORLD=foo")
 }
 
 func TestCmdConfigEnvKey(t *testing.T) {
