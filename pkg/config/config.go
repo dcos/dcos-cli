@@ -96,7 +96,7 @@ func Empty() *Config {
 	return New(Opts{})
 }
 
-// Keys returns the possible config keys. TODO: make all the keys constants.
+// Keys returns the possible config keys.
 func Keys() map[string]string {
 	return map[string]string{
 		keyACSToken:       "the DC/OS authentication token",
