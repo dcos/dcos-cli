@@ -208,7 +208,6 @@ def test_plugin_verbosity(default_cluster):
     for fixture in fixtures:
         code, out, _ = exec_cmd(fixture['cmd'])
         assert code == 0
-        assert code == 0
         out = json.loads(out)
 
         assert out['args'][1:] == ['test']
@@ -221,6 +220,20 @@ def test_plugin_exit_code(default_cluster):
 
     code, _, _ = exec_cmd(['dcos', 'test', 'exit', '43'])
     assert code == 43
+
+
+def test_plugin_config_env(default_cluster):
+    _install_test_plugin()
+
+    code, _, _ = exec_cmd(['dcos', 'config', 'set', 'test.escape_sequence', 'bar'])
+    assert code == 0
+
+    code, out, _ = exec_cmd(['dcos', 'test'])
+    assert code == 0
+    out = json.loads(out)
+
+    assert out['args'][1:] == ['test']
+    assert out['env'].get('DCOS_TEST_ESCAPE_SEQUENCE') == 'bar'
 
 
 def test_plugin_remove(default_cluster):

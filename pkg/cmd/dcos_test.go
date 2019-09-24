@@ -49,3 +49,9 @@ Use "dcos [command] --help" for more information about a command.
 
 	require.Equal(t, expectedHelp, out.String())
 }
+
+func TestCmdConfigEnvKey(t *testing.T) {
+	require.Equal(t, "DCOS_HELLO_WORLD", cmdConfigEnvKey("hello", "world"))
+	require.Equal(t, "DCOS_HELLO_WORLD_FOO", cmdConfigEnvKey("hello-world", "foo"))
+	require.Equal(t, "DCOS_HELLO_AROUND_THE_WORLD", cmdConfigEnvKey("hello", "around_the_world"))
+}

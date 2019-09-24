@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Next
+
+* Features
+
+  * Pass plugin config as environment variables.
+
 ## 1.0.1
 
 * Fixes

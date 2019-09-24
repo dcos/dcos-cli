@@ -14,6 +14,9 @@ import (
 	"github.com/antihax/optional"
 	dcosclient "github.com/dcos/client-go/dcos"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	"github.com/dcos/dcos-cli/api"
 	"github.com/dcos/dcos-cli/pkg/cmd/auth"
@@ -23,9 +26,6 @@ import (
 	plugincmd "github.com/dcos/dcos-cli/pkg/cmd/plugin"
 	"github.com/dcos/dcos-cli/pkg/internal/cosmos"
 	"github.com/dcos/dcos-cli/pkg/plugin"
-	"github.com/spf13/afero"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 const annotationUsageOptions string = `    --version
@@ -179,6 +179,17 @@ func invokePlugin(ctx api.Context, cmd plugin.Command, args []string) error {
 		} else if cluster.TLS().RootCAsPath != "" {
 			execCmd.Env = append(execCmd.Env, "DCOS_TLS_CA_PATH="+cluster.TLS().RootCAsPath)
 		}
+
+		// Create env entries based on the subcommand config.
+		if cmdConfig, ok := cluster.Config().ToMap()[cmd.Name].(map[string]interface{}); ok {
+			for key, val := range cmdConfig {
+				execCmd.Env = append(execCmd.Env, fmt.Sprintf(
+					"%s=%v",
+					cmdConfigEnvKey(cmd.Name, key),
+					val,
+				))
+			}
+		}
 	}
 
 	err = execCmd.Run()
@@ -196,6 +207,17 @@ func invokePlugin(ctx api.Context, cmd plugin.Command, args []string) error {
 
 	}
 	return err
+}
+
+// cmdConfigEnvKey returns the environment variable key to use for a given command config.
+//
+// For example, it will return `DCOS_HELLO_WORLD` for a config named `hello.world`.
+func cmdConfigEnvKey(cmdName, configKey string) string {
+	return fmt.Sprintf(
+		"DCOS_%s_%s",
+		strings.ToUpper(strings.ReplaceAll(cmdName, "-", "_")),
+		strings.ToUpper(configKey),
+	)
 }
 
 // help menu template that follow UX styleguide.
