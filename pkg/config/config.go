@@ -96,20 +96,23 @@ func Empty() *Config {
 	return New(Opts{})
 }
 
-// Keys returns the possible config keys. TODO: make all the keys constants.
+// Keys returns the possible config keys.
 func Keys() map[string]string {
 	return map[string]string{
-		keyACSToken:          "the DC/OS authentication token",
-		keyURL:               "the public master URL of your DC/OS cluster",
-		keyMesosMasterURL:    "the Mesos master URL (defaults to 'core.dcos_url')",
-		keyPagination:        "indicates whether to paginate output (defaults to true)",
-		keyTLS:               "indicates whether to verify SSL certificates or set the path to the SSL certificates",
-		keyTimeout:           "the request timeout in seconds, with a minimum value of 1 second (defaults to 3 minutes)",
-		keySSHUser:           "the user used when using ssh to connect to a node of your DC/OS cluster (defaults to 'core')",
-		keySSHProxyHost:      "whether to use a fixed ssh proxy host (Bastion) for node SSH access",
-		keyReporting:         "whether to report usage events to Mesosphere",
-		keyPromptLogin:       "whether to prompt the user to log in when token expired, otherwise automatically initiate login",
-		keyClusterName:       "human readable name of cluster",
+		keyACSToken:       "the DC/OS authentication token",
+		keyURL:            "the public master URL of your DC/OS cluster",
+		keyMesosMasterURL: "the Mesos master URL (defaults to 'core.dcos_url')",
+		keyPagination:     "indicates whether to paginate output (defaults to true)",
+		keyTLS:            "indicates whether to verify SSL certificates or set the path to the SSL certificates",
+		keyTimeout:        "the request timeout in seconds, with a minimum value of 1 second (defaults to 3 minutes)",
+		keySSHUser:        "the user used when using ssh to connect to a node of your DC/OS cluster (defaults to 'core')",
+		keySSHProxyHost:   "whether to use a fixed ssh proxy host (Bastion) for node SSH access",
+		keyReporting:      "whether to report usage events to Mesosphere",
+		keyPromptLogin:    "whether to prompt the user to log in when token expired, otherwise automatically initiate login",
+		keyClusterName:    "human readable name of cluster",
+
+		// These are configuration sections for the dcos-core-cli plugin.
+		// Ideally they should be defined by the plugin itself in its plugin.toml file.
 		"job.url":            "API URL for talking to the Metronome scheduler",
 		"job.service_name":   "the name of the metronome cluster",
 		"marathon.url":       "base URL for talking to Marathon, overwrites the value specified in 'core.dcos_url'",
@@ -180,6 +183,11 @@ func (c *Config) Get(key string) interface{} {
 	default:
 		return node
 	}
+}
+
+// ToMap recursively generates a representation of the config using Go built-in structures.
+func (c *Config) ToMap() map[string]interface{} {
+	return c.tree.ToMap()
 }
 
 // Set sets a key in the store.

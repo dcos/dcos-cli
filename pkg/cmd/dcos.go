@@ -14,18 +14,20 @@ import (
 	"github.com/antihax/optional"
 	dcosclient "github.com/dcos/client-go/dcos"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	"github.com/dcos/dcos-cli/api"
+	"github.com/dcos/dcos-cli/pkg/cli/version"
 	"github.com/dcos/dcos-cli/pkg/cmd/auth"
 	clustercmd "github.com/dcos/dcos-cli/pkg/cmd/cluster"
 	"github.com/dcos/dcos-cli/pkg/cmd/completion"
 	configcmd "github.com/dcos/dcos-cli/pkg/cmd/config"
 	plugincmd "github.com/dcos/dcos-cli/pkg/cmd/plugin"
+	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/internal/cosmos"
 	"github.com/dcos/dcos-cli/pkg/plugin"
-	"github.com/spf13/afero"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 const annotationUsageOptions string = `    --version
@@ -150,36 +152,21 @@ func updateCorePlugin(ctx api.Context) error {
 
 // invokePlugin calls the binary of a plugin, passing in the arguments it's been given.
 func invokePlugin(ctx api.Context, cmd plugin.Command, args []string) error {
-	executablePath, err := os.Executable()
-	if err != nil {
-		return err
-	}
 	execCmd := exec.Command(cmd.Path, args...)
 	execCmd.Stdout = ctx.Out()
 	execCmd.Stderr = ctx.ErrOut()
 	execCmd.Stdin = ctx.Input()
 
-	execCmd.Env = append(os.Environ(), "DCOS_CLI_EXECUTABLE_PATH="+executablePath)
-
-	switch ctx.Logger().Level {
-	case logrus.DebugLevel:
-		execCmd.Env = append(execCmd.Env, "DCOS_VERBOSITY=2", "DCOS_LOG_LEVEL=debug")
-	case logrus.InfoLevel:
-		execCmd.Env = append(execCmd.Env, "DCOS_VERBOSITY=1", "DCOS_LOG_LEVEL=info")
+	executablePath, err := os.Executable()
+	if err != nil {
+		return err
 	}
-
-	// Pass cluster specific env variables when a cluster is attached.
-	if cluster, err := ctx.Cluster(); err == nil {
-		execCmd.Env = append(execCmd.Env, "DCOS_URL="+cluster.URL())
-		execCmd.Env = append(execCmd.Env, "DCOS_ACS_TOKEN="+cluster.ACSToken())
-
-		insecure := cluster.TLS().Insecure || strings.HasPrefix(cluster.URL(), "http://")
-		if insecure {
-			execCmd.Env = append(execCmd.Env, "DCOS_TLS_INSECURE=1")
-		} else if cluster.TLS().RootCAsPath != "" {
-			execCmd.Env = append(execCmd.Env, "DCOS_TLS_CA_PATH="+cluster.TLS().RootCAsPath)
-		}
+	cluster, err := ctx.Cluster()
+	if err != nil && err != config.ErrNotAttached {
+		return err
 	}
+	execCmdEnv := pluginEnv(executablePath, cmd.Name, ctx.Logger().Level, cluster)
+	execCmd.Env = append(os.Environ(), execCmdEnv...)
 
 	err = execCmd.Run()
 	if err != nil {
@@ -196,6 +183,55 @@ func invokePlugin(ctx api.Context, cmd plugin.Command, args []string) error {
 
 	}
 	return err
+}
+
+// pluginEnv returns the environment variables to pass to a given plugin.
+func pluginEnv(executablePath string, cmdName string, logLevel logrus.Level, cluster *config.Cluster) (env []string) {
+	env = append(env, "DCOS_CLI_EXECUTABLE_PATH="+executablePath)
+	env = append(env, "DCOS_CLI_VERSION="+version.Version())
+
+	switch logLevel {
+	case logrus.DebugLevel:
+		env = append(env, "DCOS_VERBOSITY=2", "DCOS_LOG_LEVEL=debug")
+	case logrus.InfoLevel:
+		env = append(env, "DCOS_VERBOSITY=1", "DCOS_LOG_LEVEL=info")
+	}
+
+	// Pass cluster specific env variables when a cluster is attached.
+	if cluster != nil {
+		env = append(env, "DCOS_URL="+cluster.URL())
+		env = append(env, "DCOS_ACS_TOKEN="+cluster.ACSToken())
+
+		insecure := cluster.TLS().Insecure || strings.HasPrefix(cluster.URL(), "http://")
+		if insecure {
+			env = append(env, "DCOS_TLS_INSECURE=1")
+		} else if cluster.TLS().RootCAsPath != "" {
+			env = append(env, "DCOS_TLS_CA_PATH="+cluster.TLS().RootCAsPath)
+		}
+
+		// Create env entries based on the subcommand config.
+		if cmdConfig, ok := cluster.Config().ToMap()[cmdName].(map[string]interface{}); ok {
+			for key, val := range cmdConfig {
+				env = append(env, fmt.Sprintf(
+					"%s=%v",
+					cmdConfigEnvKey(cmdName, key),
+					val,
+				))
+			}
+		}
+	}
+	return env
+}
+
+// cmdConfigEnvKey returns the environment variable key to use for a given command config.
+//
+// For example, it will return `DCOS_HELLO_WORLD` for a config named `hello.world`.
+func cmdConfigEnvKey(cmdName, configKey string) string {
+	return fmt.Sprintf(
+		"DCOS_%s_%s",
+		strings.ToUpper(strings.ReplaceAll(cmdName, "-", "_")),
+		strings.ToUpper(configKey),
+	)
 }
 
 // help menu template that follow UX styleguide.

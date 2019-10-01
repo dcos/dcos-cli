@@ -112,6 +112,8 @@ For example, if a `dcos-hello` executable in a plugin has a `hello` top level co
 
 Executables contained within plugins are called synchronously from the CLI by spawning a new child process. The CLI waits for the child process to complete. The CLI makes available its own executable path to the child via an ENV variable `DCOS_CLI_EXECUTABLE_PATH`.
 
+The CLI version is passed in the `DCOS_CLI_VERSION` ENV variable.
+
 When a cluster is attached, the CLI will also pass the following ENV variables:
 
 - `DCOS_URL`: The base URL of the DC/OS cluster without a trailing slash (eg. `https://dcos.example.com`).
@@ -121,6 +123,15 @@ When a cluster is attached, the CLI will also pass the following ENV variables:
 - `DCOS_TLS_CA_PATH`: Unless `DCOS_TLS_INSECURE=1`, this env var indicates the path to the CA bundle to
                       verify server certificates against. When it is not set, the system's CA bundle
                       must be used.
+
+The CLI will also pass the subcommand config as additional environment variables with the following format:
+
+    DCOS_{COMMAND}_{CONFIG}={VALUE}
+
+Where `COMMAND` is the uppercase subcommand name, if the command contains hyphens, they are replaced by underscores.
+And `CONFIG` is the uppercase config key in the command section.
+
+For instance, when the `hello` subcommand has a config value (`dcos config set hello.world foo`), it will be passed when the subcommand is invoked (as `DCOS_HELLO_WORLD=foo`).
 
 The child process has access to the standard out/standard error of the CLI process. It is not guaranteed to have access to any other file descriptors the parent may have opened.
 
