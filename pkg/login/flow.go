@@ -167,29 +167,39 @@ func (f *Flow) triggerMethod(provider *Provider) (acsToken string, err error) {
 				if provider.ID == DCOSOIDCAuth0 {
 					loginServer, err = loginserver.New(startFlowURL)
 					if err != nil {
-						return "", err
+						f.logger.Error(err)
+					} else {
+						startFlowURL = loginServer.StartFlowURL()
+						go loginServer.Start()
+						defer loginServer.Close()
 					}
-					startFlowURL = loginServer.StartFlowURL()
-					go loginServer.Start()
 				}
 
 				if err := f.openBrowser(startFlowURL); err != nil {
-					return "", err
-				}
+					// Being unable to open the browser is not critical, a message was prompted
+					// to the user with the URL they should go to in order to start the login flow.
+					f.logger.Info(err)
 
-				if loginServer != nil {
+					// However we close and don't use the web server in this scenario, as the CLI might
+					// be running on a non-desktop environment so the we server would be stuck waiting.
+					// Falling back to reading from STDIN is safer here.
+					//
+					// See https://jira.mesosphere.com/browse/DCOS_OSS-5591
+					loginServer.Close()
+				} else if loginServer != nil {
 					token = <-loginServer.Token()
-				}
 
-				if token == "" {
-					token = f.prompt.Input("Enter token from the browser: ")
-				} else {
 					// When the token comes from the local webserver there is no need to retry. In case of an
 					// error, retrying isn't needed (it can't be a typo, no copy-pasting was involved).
 					// Thus we raise the attempt counter to 3.
 					attempt = 3
 				}
 			}
+
+			if token == "" {
+				token = f.prompt.Input("Enter token from the browser: ")
+			}
+
 			f.interactive = true
 
 			// methodBrowserOIDCToken relies on a login token,
@@ -262,10 +272,12 @@ func (f *Flow) openBrowser(startFlowURL string) error {
 		}
 		startFlowURL = req.URL.String()
 	}
-	if err := f.opener.Open(startFlowURL); err != nil {
-		f.logger.Error(err)
-	}
+
 	msg := "If your browser didn't open, please follow this link:\n\n    %s\n\n"
 	fmt.Fprintf(f.errout, msg, startFlowURL)
+
+	if err := f.opener.Open(startFlowURL); err != nil {
+		return err
+	}
 	return nil
 }

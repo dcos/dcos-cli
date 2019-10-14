@@ -21,3 +21,11 @@ func NewOsOpener(logger *logrus.Logger) *OsOpener {
 		logger: logger,
 	}
 }
+
+// OpenerFunc is a func adapter for the Opener interface.
+type OpenerFunc func(string) error
+
+// Open invokes the OpenerFunc.
+func (f OpenerFunc) Open(resource string) error {
+	return f(resource)
+}
