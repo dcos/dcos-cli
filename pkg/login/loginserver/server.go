@@ -68,16 +68,11 @@ func New(startFlowURL string) (*LoginServer, error) {
 	u.RawQuery = q.Encode()
 	ls.startFlowURL = u.String()
 
-	return ls, nil
-}
-
-// Start starts the login server.
-func (ls *LoginServer) Start() error {
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{"https://dcos.auth0.com"},
 	})
 
-	return http.Serve(ls.listener, c.Handler(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	ls.srv = &http.Server{Handler: c.Handler(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		var loginData LoginData
 
 		err := json.NewDecoder(req.Body).Decode(&loginData)
@@ -90,7 +85,19 @@ func (ls *LoginServer) Start() error {
 			return
 		}
 		ls.tokenCh <- loginData.Token
-	})))
+	}))}
+
+	return ls, nil
+}
+
+// Start starts the login server.
+func (ls *LoginServer) Start() error {
+	return ls.srv.Serve(ls.listener)
+}
+
+// Close closes the login server.
+func (ls *LoginServer) Close() error {
+	return ls.srv.Close()
 }
 
 // StartFlowURL returns the start flow URL for the login server based flow.
