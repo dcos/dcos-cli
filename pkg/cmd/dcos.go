@@ -152,7 +152,7 @@ func updateCorePlugin(ctx api.Context) error {
 
 // invokePlugin calls the binary of a plugin, passing in the arguments it's been given.
 func invokePlugin(ctx api.Context, cmd plugin.Command, args []string) error {
-	execCmd := exec.Command(cmd.Path, args...)
+	execCmd := exec.Command(cmd.Path, args...) // nolint: gosec
 	execCmd.Stdout = ctx.Out()
 	execCmd.Stderr = ctx.ErrOut()
 	execCmd.Stdin = ctx.Input()

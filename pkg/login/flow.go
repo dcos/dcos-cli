@@ -145,8 +145,8 @@ func (f *Flow) triggerMethod(provider *Provider) (acsToken string, err error) {
 		// token from the --private-key. The token has a 5 minutes lifetime.
 		case methodServiceCredential:
 			uid := f.uid()
-			token, err := f.serviceToken(uid)
-			if err != nil {
+			token, e := f.serviceToken(uid)
+			if e != nil {
 				return "", err
 			}
 			acsToken, err = f.client.Login("", &Credentials{UID: uid, Token: token})

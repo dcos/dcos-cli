@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/spf13/afero"
 )
@@ -143,7 +144,10 @@ func unzipFile(fs afero.Fs, f *zip.File, dest string) error {
 	}
 	defer rc.Close()
 
-	fpath := filepath.Join(dest, f.Name)
+	fpath, err := sanitizeExtractPath(dest, f.Name)
+	if err != nil {
+		return err
+	}
 
 	if f.FileInfo().IsDir() {
 		return fs.MkdirAll(fpath, f.FileInfo().Mode())
@@ -153,4 +157,13 @@ func unzipFile(fs afero.Fs, f *zip.File, dest string) error {
 		return err
 	}
 	return CopyReader(fs, rc, fpath, f.Mode())
+}
+
+// see: https://snyk.io/research/zip-slip-vulnerability
+func sanitizeExtractPath(destination string, filePath string) (string, error) {
+	destpath := filepath.Join(destination, filePath)
+	if !strings.HasPrefix(destpath, filepath.Clean(destination)+string(os.PathSeparator)) {
+		return "", fmt.Errorf("%s: illegal file path", filePath)
+	}
+	return destpath, nil
 }

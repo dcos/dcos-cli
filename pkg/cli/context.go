@@ -91,7 +91,7 @@ func (ctx *Context) PluginManager(cluster *config.Cluster) *plugin.Manager {
 }
 
 // DCOSDir returns the root directory for the DC/OS CLI.
-// It defaults to `~/.dcos` and can be overriden by the `DCOS_DIR` env var.
+// It defaults to `~/.dcos` and can be overridden by the `DCOS_DIR` env var.
 func (ctx *Context) DCOSDir() (string, error) {
 	if dcosDir, ok := ctx.env.EnvLookup(EnvDCOSDir); ok {
 		// Make sure DCOS_DIR is an absolute path, otherwise this causes issues with plugin invocation.
@@ -164,7 +164,7 @@ func (ctx *Context) HTTPClient(c *config.Cluster, opts ...httpclient.Option) *ht
 		baseOpts = append(baseOpts, httpclient.Timeout(c.Timeout()))
 	}
 	tlsOpt := httpclient.TLS(&tls.Config{
-		InsecureSkipVerify: c.TLS().Insecure,
+		InsecureSkipVerify: c.TLS().Insecure, // nolint: gosec
 		RootCAs:            c.TLS().RootCAs,
 	})
 

@@ -99,7 +99,7 @@ func (s *Setup) Configure(flags *Flags, clusterURL string, attach bool) (*config
 	for i := 0; i < 2; i++ {
 		// When using an HTTPS URL, configure TLS for the HTTP client accordingly.
 		if strings.HasPrefix(clusterURL, "https://") {
-			tlsConfig, err := s.configureTLS(httpOpts, flags)
+			tlsConfig, err := s.configureTLS(flags)
 			if err != nil {
 				return nil, err
 			}
@@ -206,10 +206,10 @@ func detectCanonicalClusterURL(clusterURL string, httpOpts []httpclient.Option) 
 }
 
 // configureTLS creates the TLS configuration for a given set of flags.
-func (s *Setup) configureTLS(httpOpts []httpclient.Option, flags *Flags) (*tls.Config, error) {
+func (s *Setup) configureTLS(flags *Flags) (*tls.Config, error) {
 	// Return early with an insecure TLS config when `--insecure` is passed.
 	if flags.insecure {
-		return &tls.Config{InsecureSkipVerify: true}, nil
+		return &tls.Config{InsecureSkipVerify: true}, nil // nolint: gosec
 	}
 
 	// Create a cert pool from the CA bundle PEM. The user is prompted for manual
@@ -239,7 +239,7 @@ func (s *Setup) isX509UnknownAuthorityError(err error) bool {
 // downloadDCOSCABundle downloads the cluster certificate authority at "/ca/dcos-ca.crt".
 func (s *Setup) downloadDCOSCABundle(clusterURL string, httpOpts []httpclient.Option) ([]byte, error) {
 	insecureHTTPClient := httpclient.New(clusterURL, append(httpOpts, httpclient.TLS(&tls.Config{
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: true, // nolint: gosec
 	}))...)
 
 	resp, err := insecureHTTPClient.Get("/ca/dcos-ca.crt")

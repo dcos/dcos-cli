@@ -58,6 +58,9 @@ func New(baseClient *httpclient.Client, logger *logrus.Logger) *Linker {
 // Link sends a link request to /cluster/v1/links using a given client.
 func (l *Linker) Link(link *Link) error {
 	message, err := json.Marshal(link)
+	if err != nil {
+		return err
+	}
 
 	l.logger.Info("Linking the cluster...")
 	resp, err := l.http.Post(
