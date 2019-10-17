@@ -7,6 +7,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	toml "github.com/pelletier/go-toml"
 	"github.com/spf13/afero"
@@ -62,6 +63,7 @@ type Config struct {
 	envWhitelist map[string]string
 	envLookup    func(key string) (string, bool)
 	fs           afero.Fs
+	timeout      time.Duration
 }
 
 // New creates a Config based on functional options.
