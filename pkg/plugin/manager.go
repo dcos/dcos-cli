@@ -267,7 +267,7 @@ func (m *Manager) findCommands(pluginDir string) (commands []Command) {
 
 // commandDescription gets the command info summary by invoking the binary with the `--info` flag.
 func (m *Manager) commandDescription(cmd Command) (desc string) {
-	infoCmd, err := exec.Command(cmd.Path, cmd.Name, "--info").Output()
+	infoCmd, err := exec.Command(cmd.Path, cmd.Name, "--info").Output() // nolint: gosec
 	if err != nil {
 		m.logger.Debugf("Couldn't get info summary for the '%s' command: %s", cmd.Name, err)
 	} else {
@@ -490,7 +490,7 @@ func (m *Manager) httpClient(url string) *httpclient.Client {
 			httpOpts,
 			httpclient.ACSToken(m.cluster.ACSToken()),
 			httpclient.TLS(&tls.Config{
-				InsecureSkipVerify: m.cluster.TLS().Insecure,
+				InsecureSkipVerify: m.cluster.TLS().Insecure, // nolint: gosec
 				RootCAs:            m.cluster.TLS().RootCAs,
 			}),
 		)

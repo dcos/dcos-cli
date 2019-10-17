@@ -16,7 +16,7 @@ import (
 // TOML keys for the DC/OS configuration.
 const (
 	keyURL            = "core.dcos_url"
-	keyACSToken       = "core.dcos_acs_token"
+	keyACSToken       = "core.dcos_acs_token" // nolint: gosec
 	keyTLS            = "core.ssl_verify"
 	keyTimeout        = "core.timeout"
 	keySSHUser        = "core.ssh_user"

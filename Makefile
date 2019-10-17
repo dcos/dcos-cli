@@ -34,8 +34,7 @@ vet: lint
 
 .PHONY: lint
 lint: docker-image
-	# Can be simplified once https://github.com/golang/lint/issues/320 is fixed.
-	$(call inDocker,golint -set_exit_status ./cmd/... ./pkg/...)
+	$(call inDocker, golangci-lint run)
 
 .PHONY: generate
 generate: docker-image

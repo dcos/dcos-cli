@@ -14,9 +14,9 @@ const (
 
 // These are the different login provider types that the DC/OS CLI supports.
 const (
-	DCOSUIDPassword     = "dcos-uid-password"
+	DCOSUIDPassword     = "dcos-uid-password" // nolint: gosec
 	DCOSUIDServiceKey   = "dcos-uid-servicekey"
-	DCOSUIDPasswordLDAP = "dcos-uid-password-ldap"
+	DCOSUIDPasswordLDAP = "dcos-uid-password-ldap" // nolint: gosec
 	SAMLSpInitiated     = "saml-sp-initiated"
 	OIDCAuthCodeFlow    = "oidc-authorization-code-flow"
 	OIDCImplicitFlow    = "oidc-implicit-flow"

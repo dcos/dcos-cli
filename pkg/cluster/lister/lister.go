@@ -159,7 +159,7 @@ func (l *Lister) httpClient(cluster *config.Cluster) *httpclient.Client {
 		httpclient.ACSToken(cluster.ACSToken()),
 		httpclient.Timeout(3*time.Second),
 		httpclient.TLS(&tls.Config{
-			InsecureSkipVerify: cluster.TLS().Insecure,
+			InsecureSkipVerify: cluster.TLS().Insecure, // nolint: gosec
 			RootCAs:            cluster.TLS().RootCAs,
 		}),
 	)

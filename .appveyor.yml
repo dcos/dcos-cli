@@ -1,6 +1,6 @@
 install:
   - SET PATH=C:\msys64\mingw64\bin;c:\gopath\bin;%PATH%
-  - go get -u golang.org/x/lint/golint
+  - go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
 
 build: off
 
@@ -11,7 +11,7 @@ environment:
   NO_DOCKER: 1
   GO111MODULE: off
 
-stack: go 1.11
+stack: go 1.12
 
 test_script:
   - SET GO111MODULE=on
