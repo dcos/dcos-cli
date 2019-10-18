@@ -10,7 +10,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"github.com/dcos/dcos-cli/constants"
 	"io"
 	"io/ioutil"
 	"net/url"
@@ -22,6 +21,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/dcos/dcos-cli/constants"
 
 	"github.com/antihax/optional"
 	dcosclient "github.com/dcos/client-go/dcos"
@@ -50,7 +51,7 @@ type Opts struct {
 	PluginManager *plugin.Manager
 	EnvLookup     func(key string) (string, bool)
 	Deprecated    func(msg string) error
-	Timeout		  time.Duration
+	Timeout       time.Duration
 }
 
 // Setup represents a cluster setup.
@@ -64,7 +65,7 @@ type Setup struct {
 	pluginManager *plugin.Manager
 	envLookup     func(key string) (string, bool)
 	deprecated    func(msg string) error
-	timeout		  time.Duration
+	timeout       time.Duration
 }
 
 // New creates a new setup.

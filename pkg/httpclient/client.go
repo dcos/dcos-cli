@@ -6,7 +6,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/dcos/dcos-cli/constants"
 	"io"
 	"mime"
 	"net"
@@ -17,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dcos/dcos-cli/constants"
 	"github.com/dcos/dcos-cli/pkg/cli/version"
 	"github.com/sirupsen/logrus"
 )
@@ -135,7 +135,6 @@ func New(baseURL string, opts ...Option) *Client {
 		baseURL: baseURL,
 		baseClient: &http.Client{
 			Transport: &http.Transport{
-
 				// Allow http_proxy, https_proxy, and no_proxy.
 				Proxy: http.ProxyFromEnvironment,
 
