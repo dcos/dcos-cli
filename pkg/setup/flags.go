@@ -16,6 +16,7 @@ type Flags struct {
 	insecure     bool
 	loginFlags   *login.Flags
 	fs           afero.Fs
+	noTimeout    bool
 }
 
 // NewFlags creates flags for a cluster setup.
@@ -51,6 +52,12 @@ func (f *Flags) Register(flags *pflag.FlagSet) {
 		"name",
 		"",
 		"Specify a custom name for the cluster.",
+	)
+	flags.BoolVar(
+		&f.noTimeout,
+		"no-timeout",
+		false,
+		"Specify if HTTP timeout should be disabled. Useful for slow remote connections.",
 	)
 	f.loginFlags.Register(flags)
 }

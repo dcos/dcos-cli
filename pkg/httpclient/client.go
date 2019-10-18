@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/dcos/dcos-cli/constants"
 	"io"
 	"mime"
 	"net"
@@ -118,11 +119,16 @@ func New(baseURL string, opts ...Option) *Client {
 		// Default request timeout to 3 minutes. We don't use http.Client.Timeout on purpose as the
 		// current approach allows to change the timeout on a per-request basis. The same client can
 		// be shared for requests with different timeouts.
-		Timeout: 3 * time.Minute,
+		Timeout: constants.HTTPTimeout,
 	}
 
 	for _, opt := range opts {
 		opt(&options)
+	}
+
+	dialTimeout := constants.DialTimeout
+	if options.Timeout == 0 {
+		dialTimeout = 0
 	}
 
 	return &Client{
@@ -135,11 +141,11 @@ func New(baseURL string, opts ...Option) *Client {
 
 				// Set a 10 seconds timeout for the connection to be established.
 				DialContext: (&net.Dialer{
-					Timeout: 10 * time.Second,
+					Timeout: dialTimeout,
 				}).DialContext,
 
 				// Set it to 10 seconds as well for the TLS handshake when using HTTPS.
-				TLSHandshakeTimeout: 10 * time.Second,
+				TLSHandshakeTimeout: dialTimeout,
 
 				// The client will be dealing with a single host (the one in baseURL),
 				// set max idle connections to 30 regardless of the host.

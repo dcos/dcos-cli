@@ -160,9 +160,8 @@ func (ctx *Context) HTTPClient(c *config.Cluster, opts ...httpclient.Option) *ht
 	if c.ACSToken() != "" {
 		baseOpts = append(baseOpts, httpclient.ACSToken(c.ACSToken()))
 	}
-	if c.Timeout() > 0 {
-		baseOpts = append(baseOpts, httpclient.Timeout(c.Timeout()))
-	}
+	baseOpts = append(baseOpts, httpclient.Timeout(c.Timeout()))
+
 	tlsOpt := httpclient.TLS(&tls.Config{
 		InsecureSkipVerify: c.TLS().Insecure, // nolint: gosec
 		RootCAs:            c.TLS().RootCAs,

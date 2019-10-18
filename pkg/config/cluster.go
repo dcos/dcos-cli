@@ -2,6 +2,7 @@ package config
 
 import (
 	"crypto/x509"
+	"github.com/dcos/dcos-cli/constants"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -93,13 +94,16 @@ func (c *Cluster) SetTLS(tls TLS) {
 
 // Timeout returns the HTTP request timeout once the connection is established.
 func (c *Cluster) Timeout() time.Duration {
-	timeout := c.config.Get("core.timeout")
+	timeout := c.config.Get(keyTimeout)
+	if timeout == nil {
+		return constants.HTTPTimeout
+	}
 	return time.Duration(cast.ToInt64(timeout)) * time.Second
 }
 
 // SetTimeout sets the HTTP request timeout once the connection is established.
 func (c *Cluster) SetTimeout(timeout time.Duration) {
-	c.config.Set("core.timeout", timeout.Seconds())
+	c.config.Set(keyTimeout, timeout.Seconds())
 }
 
 // ID returns the ID of the cluster.

@@ -10,6 +10,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"github.com/dcos/dcos-cli/constants"
 	"io"
 	"io/ioutil"
 	"net/url"
@@ -49,6 +50,7 @@ type Opts struct {
 	PluginManager *plugin.Manager
 	EnvLookup     func(key string) (string, bool)
 	Deprecated    func(msg string) error
+	Timeout		  time.Duration
 }
 
 // Setup represents a cluster setup.
@@ -62,6 +64,7 @@ type Setup struct {
 	pluginManager *plugin.Manager
 	envLookup     func(key string) (string, bool)
 	deprecated    func(msg string) error
+	timeout		  time.Duration
 }
 
 // New creates a new setup.
@@ -76,6 +79,7 @@ func New(opts Opts) *Setup {
 		pluginManager: opts.PluginManager,
 		envLookup:     opts.EnvLookup,
 		deprecated:    opts.Deprecated,
+		timeout:       opts.Timeout,
 	}
 }
 
@@ -90,9 +94,14 @@ func (s *Setup) Configure(flags *Flags, clusterURL string, attach bool) (*config
 	// Create a Cluster and an HTTP client with the few information already available.
 	cluster := config.NewCluster(nil)
 	cluster.SetURL(clusterURL)
+	if flags.noTimeout {
+		cluster.SetTimeout(0)
+	} else {
+		cluster.SetTimeout(constants.HTTPTimeout)
+	}
 
 	httpOpts := []httpclient.Option{
-		httpclient.Timeout(5 * time.Second),
+		httpclient.Timeout(cluster.Timeout()),
 		httpclient.Logger(s.logger),
 	}
 
