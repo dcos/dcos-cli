@@ -2,11 +2,12 @@ package config
 
 import (
 	"crypto/x509"
-	"github.com/dcos/dcos-cli/constants"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/dcos/dcos-cli/constants"
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
