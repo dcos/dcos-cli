@@ -422,7 +422,7 @@ _dcos_cluster_setup() {
     "--insecure"
     "--name="
     "--no-check"
-    "--no-plugin"
+    "--no-timeout"
     "--password="
     "--password-file="
     "--private-key="
