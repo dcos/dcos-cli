@@ -2,10 +2,17 @@
 
 ## Next
 
+## 1.1.0
+
 * Features
 
   * Pass plugin config as environment variables.
   * Pass `DCOS_CLI_VERSION` when invoking plugins.
+  * Add `--no-timeout` option to `cluster setup`
+
+* Fixes
+
+  * Discard the local login server on non-desktop environment
 
 ## 1.0.1
 
