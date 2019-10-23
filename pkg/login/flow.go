@@ -32,6 +32,7 @@ type Flow struct {
 	prompt      *prompt.Prompt
 	logger      *logrus.Logger
 	opener      open.Opener
+	loginServer *loginserver.LoginServer
 	flags       *Flags
 	interactive bool
 }
@@ -157,48 +158,20 @@ func (f *Flow) triggerMethod(provider *Provider) (acsToken string, err error) {
 		// will be intercepted automatically through a temporary login server running on localhost.
 		case methodBrowserAuthToken, methodBrowserOIDCToken:
 			var token string
-			var loginServer *loginserver.LoginServer
 
 			if attempt == 1 {
-				startFlowURL := provider.Config.StartFlowURL
-
-				// For the "dcos-oidc-auth0" login provider ID, we start a local web server
-				// in order to avoid copy-pasting the token from the browser to the terminal.
-				if provider.ID == DCOSOIDCAuth0 {
-					loginServer, err = loginserver.New(startFlowURL)
-					if err != nil {
-						f.logger.Error(err)
-					} else {
-						startFlowURL = loginServer.StartFlowURL()
-						go loginServer.Start()
-						defer loginServer.Close()
-					}
-				}
-
-				if err := f.openBrowser(startFlowURL); err != nil {
-					// Being unable to open the browser is not critical, a message was prompted
-					// to the user with the URL they should go to in order to start the login flow.
-					f.logger.Info(err)
-
-					// However we close and don't use the web server in this scenario, as the CLI might
-					// be running on a non-desktop environment so the we server would be stuck waiting.
-					// Falling back to reading from STDIN is safer here.
-					//
-					// See https://jira.mesosphere.com/browse/DCOS_OSS-5591
-					if loginServer != nil {
-						loginServer.Close()
-					}
-				} else if loginServer != nil {
-					token = <-loginServer.Token()
-
-					// When the token comes from the local webserver there is no need to retry. In case of an
-					// error, retrying isn't needed (it can't be a typo, no copy-pasting was involved).
-					// Thus we raise the attempt counter to 3.
-					attempt = 3
-				}
+				f.initBrowserFlow(provider)
 			}
 
-			if token == "" {
+			if f.loginServer != nil {
+				token = <-f.loginServer.Token()
+				f.loginServer.Close()
+
+				// When the token comes from the local webserver there is no need to retry. In case of an
+				// error, retrying isn't needed (it can't be a typo, no copy-pasting was involved).
+				// Thus we raise the attempt counter to 3.
+				attempt = 3
+			} else {
 				token = f.prompt.Input("Enter token from the browser: ")
 			}
 
@@ -234,6 +207,43 @@ func (f *Flow) triggerMethod(provider *Provider) (acsToken string, err error) {
 		}
 		if err == nil || !f.interactive || attempt >= 3 {
 			return acsToken, err
+		}
+	}
+}
+
+// initBrowserFlow initiates a browser based flow.
+//
+// It opens the browser and starts a local login server when applicable.
+func (f *Flow) initBrowserFlow(provider *Provider) {
+	startFlowURL := provider.Config.StartFlowURL
+
+	// For the "dcos-oidc-auth0" login provider ID, we start a local web server
+	// in order to avoid copy-pasting the token from the browser to the terminal.
+	if provider.ID == DCOSOIDCAuth0 {
+		var err error
+		f.loginServer, err = loginserver.New(startFlowURL)
+		if err != nil {
+			f.logger.Error(err)
+		} else {
+			startFlowURL = f.loginServer.StartFlowURL()
+			go f.loginServer.Start()
+		}
+	}
+
+	err := f.openBrowser(startFlowURL)
+	if err != nil {
+		// Being unable to open the browser is not critical, a message was prompted
+		// to the user with the URL they should go to in order to start the login flow.
+		f.logger.Info(err)
+
+		// However we close and don't use the web server in this scenario, as the CLI might
+		// be running on a non-desktop environment so the server would be stuck waiting.
+		// Falling back to reading from STDIN is safer here.
+		//
+		// See https://jira.mesosphere.com/browse/DCOS_OSS-5591
+		if f.loginServer != nil {
+			f.loginServer.Close()
+			f.loginServer = nil
 		}
 	}
 }
