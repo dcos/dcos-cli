@@ -187,24 +187,35 @@ func TestLogger(t *testing.T) {
 }
 
 func TestFailOnError(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(404)
-	}))
-	defer ts.Close()
+	var tests = []struct {
+		data        []byte
+		expectedErr string
+	}{
+		{[]byte{}, "HTTP 404 error"},
+		{[]byte("some data"), "HTTP 404 error: some data"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.expectedErr, func(t *testing.T) {
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(404)
+				w.Write(tt.data)
+			}))
+			defer ts.Close()
 
-	client := New(ts.URL)
+			client := New(ts.URL)
 
-	resp, err := client.Get("/")
-	require.NoError(t, err)
-	require.Equal(t, resp.StatusCode, 404)
+			resp, err := client.Get("/")
+			require.NoError(t, err)
+			require.Equal(t, resp.StatusCode, 404)
 
-	_, err = client.Get("/", FailOnErrStatus(true))
-	require.Error(t, err)
+			_, err = client.Get("/", FailOnErrStatus(true))
+			require.Error(t, err)
 
-	httpErr, ok := err.(*HTTPError)
-	require.True(t, ok)
-	require.NotNil(t, httpErr.Response)
-	require.Equal(t, 404, httpErr.Response.StatusCode)
+			httpErr, ok := err.(*HTTPError)
+			require.True(t, ok)
+			require.EqualError(t, httpErr, tt.expectedErr)
+		})
+	}
 }
 
 func TestDefaultUserAgent(t *testing.T) {

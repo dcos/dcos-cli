@@ -50,10 +50,14 @@ type ctxKey int
 // HTTPError represents an HTTP error, it is returned when FailOnErrStatus is enabled.
 type HTTPError struct {
 	Response *http.Response
+	Body []byte
 }
 
 // Error returns the error message.
 func (err *HTTPError) Error() string {
+	if err.Body != nil {
+		return fmt.Sprintf("HTTP %d error: %s", err.Response.StatusCode, err.Body)
+	}
 	return fmt.Sprintf("HTTP %d error", err.Response.StatusCode)
 }
 
@@ -276,7 +280,12 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 		_, failOnErrStatus := req.Context().Value(ctxKeyFailOnErrStatus).(struct{})
 
 		if failOnErrStatus && resp.StatusCode >= 400 && resp.StatusCode < 600 {
-			return nil, &HTTPError{Response: resp}
+			buf := make([]byte, 50)
+			n, err := io.ReadFull(resp.Body, buf)
+			if n == 0 || (err != nil && err != io.EOF && err != io.ErrUnexpectedEOF) {
+				return nil, &HTTPError{Response: resp}
+			}
+			return nil, &HTTPError{Response: resp, Body: buf[:n]}
 		}
 	}
 	return resp, err
