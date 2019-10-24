@@ -185,7 +185,9 @@ func (f *Flow) triggerMethod(provider *Provider) (acsToken string, err error) {
 					// Falling back to reading from STDIN is safer here.
 					//
 					// See https://jira.mesosphere.com/browse/DCOS_OSS-5591
-					loginServer.Close()
+					if loginServer != nil {
+						loginServer.Close()
+					}
 				} else if loginServer != nil {
 					token = <-loginServer.Token()
 

@@ -97,34 +97,49 @@ func TestTriggerMethodOIDCWithLoginServer(t *testing.T) {
 
 func TestTriggerMethodOIDCWithoutLoginServer(t *testing.T) {
 
-	// We're simulating a container environment where the browser can't be opened.
-	// See https://jira.mesosphere.com/browse/DCOS_OSS-5591
-	opener := open.OpenerFunc(func(_ string) error {
-		return errors.New("couldn't open browser, I'm just a container")
-	})
+	testCases := []struct {
+		provider *Provider
+	}{
+		{
+			// We're simulating a container environment where the browser can't be opened.
+			// See https://jira.mesosphere.com/browse/DCOS_OSS-5591
+			defaultOIDCImplicitFlowProvider(),
+		},
+		{
+			// Non-regression test for a panic on browser login flows other than auth0.
+			// https://jira.mesosphere.com/browse/DCOS-60349
+			shibbolethLoginProvider(),
+		},
+	}
 
-	expectedLoginToken := "dummy_login_token"
-	expectedACSToken := "dummy_acs_token"
+	for _, tc := range testCases {
+		expectedLoginToken := "dummy_login_token"
+		expectedACSToken := "dummy_acs_token"
 
-	ts := httptest.NewServer(mockLoginEndpoint(t, expectedLoginToken, expectedACSToken))
-	defer ts.Close()
+		ts := httptest.NewServer(mockLoginEndpoint(t, expectedLoginToken, expectedACSToken))
+		defer ts.Close()
 
-	logger := &logrus.Logger{Out: ioutil.Discard}
+		logger := &logrus.Logger{Out: ioutil.Discard}
 
-	var in bytes.Buffer
-	in.WriteString(expectedLoginToken)
+		var in bytes.Buffer
+		in.WriteString(expectedLoginToken)
 
-	flow := NewFlow(FlowOpts{
-		Prompt: prompt.New(&in, ioutil.Discard),
-		Logger: logger,
-		Opener: opener,
-	})
+		opener := open.OpenerFunc(func(_ string) error {
+			return errors.New("couldn't open browser, I'm just a container")
+		})
 
-	flow.client = NewClient(httpclient.New(ts.URL), logger)
+		flow := NewFlow(FlowOpts{
+			Prompt: prompt.New(&in, ioutil.Discard),
+			Logger: logger,
+			Opener: opener,
+		})
 
-	acsToken, err := flow.triggerMethod(defaultOIDCImplicitFlowProvider())
-	require.NoError(t, err)
-	require.Equal(t, expectedACSToken, acsToken)
+		flow.client = NewClient(httpclient.New(ts.URL), logger)
+
+		acsToken, err := flow.triggerMethod(tc.provider)
+		require.NoError(t, err)
+		require.Equal(t, expectedACSToken, acsToken)
+	}
 }
 
 func mockLoginEndpoint(t *testing.T, expectedLoginToken, acsToken string) http.Handler {
@@ -147,4 +162,15 @@ func mockLoginEndpoint(t *testing.T, expectedLoginToken, acsToken string) http.H
 		assert.NoError(t, err)
 	})
 	return mux
+}
+
+func shibbolethLoginProvider() *Provider {
+	return &Provider{
+		ID:           "shib-integration-test",
+		Type:         OIDCImplicitFlow,
+		ClientMethod: methodBrowserOIDCToken,
+		Config: ProviderConfig{
+			StartFlowURL: "/login?redirect_uri=urn:ietf:wg:oauth:2.0:oob",
+		},
+	}
 }
