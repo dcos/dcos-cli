@@ -15,7 +15,7 @@ func TestCurrent(t *testing.T) {
 
 	fixturesDir := filepath.Join(wd, "testdata")
 
-	fixtures := []struct {
+	testCases := []struct {
 		name       string
 		envLookup  func(key string) (val string, ok bool)
 		shouldFail bool
@@ -47,20 +47,20 @@ func TestCurrent(t *testing.T) {
 		}, true},
 	}
 
-	for _, fixture := range fixtures {
-		dcosDir := filepath.Join(fixturesDir, fixture.name, ".dcos")
+	for _, tc := range testCases {
+		dcosDir := filepath.Join(fixturesDir, tc.name, ".dcos")
 		manager := NewManager(ManagerOpts{
 			Dir:       dcosDir,
-			EnvLookup: fixture.envLookup,
+			EnvLookup: tc.envLookup,
 		})
 
-		t.Run(fixture.name, func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			conf, err := manager.Current()
-			if fixture.shouldFail {
+			if tc.shouldFail {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, fixture.name, conf.Get("cluster.name").(string))
+				require.Equal(t, tc.name, conf.Get("cluster.name").(string))
 			}
 		})
 	}
@@ -72,7 +72,7 @@ func TestFind(t *testing.T) {
 
 	fixturesDir := filepath.Join(wd, "testdata")
 
-	fixtures := []struct {
+	testCases := []struct {
 		name       string
 		search     string
 		shouldFail bool
@@ -83,19 +83,19 @@ func TestFind(t *testing.T) {
 		{"multi_config_with_same_name", "97193161", false},
 	}
 
-	for _, fixture := range fixtures {
-		dcosDir := filepath.Join(fixturesDir, fixture.name, ".dcos")
+	for _, tc := range testCases {
+		dcosDir := filepath.Join(fixturesDir, tc.name, ".dcos")
 		manager := NewManager(ManagerOpts{
 			Dir: dcosDir,
 		})
 
-		t.Run(fixture.name, func(t *testing.T) {
-			conf, err := manager.Find(fixture.search, false)
-			if fixture.shouldFail {
+		t.Run(tc.name, func(t *testing.T) {
+			conf, err := manager.Find(tc.search, false)
+			if tc.shouldFail {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, fixture.name, conf.Get("cluster.name").(string))
+				require.Equal(t, tc.name, conf.Get("cluster.name").(string))
 				require.Equal(t, "https://success.example.com", conf.Get("core.dcos_url").(string))
 			}
 		})

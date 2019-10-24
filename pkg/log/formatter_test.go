@@ -17,7 +17,7 @@ func TestFormat(t *testing.T) {
 		Formatter: formatter,
 	}
 
-	fixtures := []struct {
+	testCases := []struct {
 		entry  *logrus.Entry
 		expOut string
 	}{
@@ -40,9 +40,9 @@ func TestFormat(t *testing.T) {
 		},
 	}
 
-	for _, fixture := range fixtures {
-		out, err := formatter.Format(fixture.entry)
+	for _, tc := range testCases {
+		out, err := formatter.Format(tc.entry)
 		require.NoError(t, err)
-		require.Equal(t, fixture.expOut, string(out))
+		require.Equal(t, tc.expOut, string(out))
 	}
 }

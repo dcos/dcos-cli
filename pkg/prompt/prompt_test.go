@@ -25,7 +25,7 @@ func TestPassword(t *testing.T) {
 }
 
 func TestSelect(t *testing.T) {
-	fixtures := []struct {
+	testCases := []struct {
 		input         string
 		expectError   bool
 		expectedValue int
@@ -38,23 +38,23 @@ func TestSelect(t *testing.T) {
 		{"4\n", true, 0},
 	}
 
-	for _, fixture := range fixtures {
+	for _, tc := range testCases {
 		var buf bytes.Buffer
-		prompt := New(strings.NewReader(fixture.input), &buf)
+		prompt := New(strings.NewReader(tc.input), &buf)
 
 		i, err := prompt.Select("Please choose:", []string{"a", "b", "c"})
-		if fixture.expectError {
+		if tc.expectError {
 			require.Error(t, err)
 		} else {
 			require.NoError(t, err)
-			require.Equal(t, fixture.expectedValue, i)
+			require.Equal(t, tc.expectedValue, i)
 		}
 
 	}
 }
 
 func TestConfirm(t *testing.T) {
-	fixtures := []struct {
+	testCases := []struct {
 		input         string
 		defaultChoice string
 		expectError   bool
@@ -74,12 +74,12 @@ func TestConfirm(t *testing.T) {
 		{"\n", "no", true},
 	}
 
-	for _, fixture := range fixtures {
+	for _, tc := range testCases {
 		var buf bytes.Buffer
-		prompt := New(strings.NewReader(fixture.input), &buf)
+		prompt := New(strings.NewReader(tc.input), &buf)
 
-		err := prompt.Confirm("Please confirm:", fixture.defaultChoice)
-		if fixture.expectError {
+		err := prompt.Confirm("Please confirm:", tc.defaultChoice)
+		if tc.expectError {
 			require.Error(t, err)
 		} else {
 			require.NoError(t, err)
