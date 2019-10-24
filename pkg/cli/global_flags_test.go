@@ -7,7 +7,7 @@ import (
 )
 
 func TestParseGlobalFlags(t *testing.T) {
-	fixtures := []struct {
+	testCases := []struct {
 		args        []string
 		argsWoFlags []string
 		flags       GlobalFlags
@@ -47,10 +47,10 @@ func TestParseGlobalFlags(t *testing.T) {
 		},
 	}
 
-	for _, fixture := range fixtures {
+	for _, tc := range testCases {
 		var gf GlobalFlags
-		args := gf.Parse(fixture.args)
-		require.Equal(t, fixture.flags, gf)
-		require.Equal(t, fixture.argsWoFlags, args)
+		args := gf.Parse(tc.args)
+		require.Equal(t, tc.flags, gf)
+		require.Equal(t, tc.argsWoFlags, args)
 	}
 }

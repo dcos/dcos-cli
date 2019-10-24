@@ -27,7 +27,7 @@ func TestResolveUsernameFromEnvVar(t *testing.T) {
 }
 
 func TestResolvePasswordFromFile(t *testing.T) {
-	fixtures := []struct {
+	testCases := []struct {
 		passwordFileContents string
 		passwordFilePerm     os.FileMode
 		expectedPassword     string
@@ -37,13 +37,13 @@ func TestResolvePasswordFromFile(t *testing.T) {
 		{"123456", 0644, ""},
 	}
 
-	for _, fixture := range fixtures {
+	for _, tc := range testCases {
 		fs := afero.NewMemMapFs()
 		err := afero.WriteFile(
 			fs,
 			"/password.txt",
-			[]byte(fixture.passwordFileContents),
-			fixture.passwordFilePerm,
+			[]byte(tc.passwordFileContents),
+			tc.passwordFilePerm,
 		)
 		require.NoError(t, err)
 
@@ -54,8 +54,8 @@ func TestResolvePasswordFromFile(t *testing.T) {
 		flags := NewFlags(fs, envLookup, logger)
 		flags.passwordFile = "/password.txt"
 		err = flags.Resolve()
-		if fixture.expectedPassword != "" {
-			require.Equal(t, fixture.expectedPassword, flags.password)
+		if tc.expectedPassword != "" {
+			require.Equal(t, tc.expectedPassword, flags.password)
 		} else {
 			// Secure files are not supported on Windows.
 			if runtime.GOOS != "windows" {

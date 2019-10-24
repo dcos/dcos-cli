@@ -14,7 +14,7 @@ import (
 )
 
 func TestProviders(t *testing.T) {
-	fixtures := []struct {
+	testCases := []struct {
 		providersEndpoint map[string]*Provider
 		authChallenge     string
 		expectedProviders Providers
@@ -38,23 +38,23 @@ func TestProviders(t *testing.T) {
 		},
 	}
 
-	for _, fixture := range fixtures {
+	for _, tc := range testCases {
 		mux := http.NewServeMux()
 
-		if fixture.providersEndpoint != nil {
+		if tc.providersEndpoint != nil {
 			mux.HandleFunc("/acs/api/v1/auth/providers", func(w http.ResponseWriter, req *http.Request) {
 				assert.Equal(t, "GET", req.Method)
-				err := json.NewEncoder(w).Encode(&fixture.providersEndpoint)
+				err := json.NewEncoder(w).Encode(&tc.providersEndpoint)
 				assert.NoError(t, err)
 			})
 		}
 
-		if fixture.authChallenge != "" {
+		if tc.authChallenge != "" {
 			mux.HandleFunc("/pkgpanda/active.buildinfo.full.json", func(w http.ResponseWriter, req *http.Request) {
 				assert.Equal(t, "HEAD", req.Method)
 				assert.Equal(t, "", req.Header.Get("Authorization"))
 
-				w.Header().Add("WWW-Authenticate", fixture.authChallenge)
+				w.Header().Add("WWW-Authenticate", tc.authChallenge)
 				w.WriteHeader(401)
 			})
 		}
@@ -65,9 +65,9 @@ func TestProviders(t *testing.T) {
 		client := NewClient(httpclient.New(ts.URL), &logrus.Logger{Out: ioutil.Discard})
 
 		providers, err := client.Providers()
-		if fixture.expectedProviders != nil {
+		if tc.expectedProviders != nil {
 			require.NoError(t, err)
-			require.Equal(t, fixture.expectedProviders, providers)
+			require.Equal(t, tc.expectedProviders, providers)
 		} else {
 			require.Error(t, err)
 		}

@@ -229,7 +229,7 @@ func TestDefaultUserAgent(t *testing.T) {
 func TestIsText(t *testing.T) {
 	client := New("")
 
-	fixtures := []struct {
+	testCases := []struct {
 		contentType string
 		isText      bool
 	}{
@@ -239,7 +239,7 @@ func TestIsText(t *testing.T) {
 		{"application/vnd.dcos.package.describe-response+json;charset=utf-8;version=v3", true},
 		{"application/octet-stream", false},
 	}
-	for _, fixture := range fixtures {
-		require.Equal(t, fixture.isText, client.isText(fixture.contentType))
+	for _, tc := range testCases {
+		require.Equal(t, tc.isText, client.isText(tc.contentType))
 	}
 }

@@ -13,7 +13,7 @@ import (
 )
 
 func TestAuthListProvidersTable(t *testing.T) {
-	fixtures := []struct {
+	testCases := []struct {
 		cluster     mock.Cluster
 		expectTable func(table *tablewriter.Table)
 	}{
@@ -43,8 +43,8 @@ func TestAuthListProvidersTable(t *testing.T) {
 		},
 	}
 
-	for _, fixture := range fixtures {
-		ts := mock.NewTestServer(fixture.cluster)
+	for _, tc := range testCases {
+		ts := mock.NewTestServer(tc.cluster)
 		defer ts.Close()
 
 		var out bytes.Buffer
@@ -59,7 +59,7 @@ func TestAuthListProvidersTable(t *testing.T) {
 
 		var exp bytes.Buffer
 		table := cli.NewTable(&exp, []string{"PROVIDER ID", "LOGIN METHOD"})
-		fixture.expectTable(table)
+		tc.expectTable(table)
 		table.Render()
 		require.Equal(t, exp.String(), out.String())
 	}
