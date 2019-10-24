@@ -2,6 +2,12 @@
 
 ## Next
 
+## 1.1.1
+
+* Fixes
+
+  * Fix panic on non-desktop environments with browser login flows other than auth0
+
 ## 1.1.0
 
 * Features
