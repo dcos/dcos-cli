@@ -16,6 +16,17 @@ func TestInput(t *testing.T) {
 	require.Equal(t, "this", val)
 }
 
+func TestInputMultiline(t *testing.T) {
+	var buf bytes.Buffer
+	prompt := New(strings.NewReader("this\nthat\n"), &buf)
+
+	val := prompt.Input("")
+	require.Equal(t, "this", val)
+
+	val = prompt.Input("")
+	require.Equal(t, "that", val)
+}
+
 func TestPassword(t *testing.T) {
 	var buf bytes.Buffer
 	prompt := New(strings.NewReader("pass\n"), &buf)
@@ -49,7 +60,6 @@ func TestSelect(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedValue, i)
 		}
-
 	}
 }
 

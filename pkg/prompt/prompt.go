@@ -29,10 +29,10 @@ func New(input io.Reader, output io.Writer) *Prompt {
 // Input prompts for a string input.
 func (prompt *Prompt) Input(msg string) string {
 	fmt.Fprint(prompt.out, msg)
-	scanner := bufio.NewScanner(prompt.in)
-	scanner.Scan()
 
-	return scanner.Text()
+	var text string
+	fmt.Fscanln(prompt.in, &text)
+	return text
 }
 
 // Password prompts for a password. It is similar to input, except that it doesn't echo back to the terminal.
