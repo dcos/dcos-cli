@@ -2,6 +2,10 @@
 
 ## Next
 
+* Fixes
+
+  * Do not consume all input data on prompts.
+
 ## 1.1.1
 
 * Fixes
