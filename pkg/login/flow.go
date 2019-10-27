@@ -32,6 +32,7 @@ type Flow struct {
 	prompt      *prompt.Prompt
 	logger      *logrus.Logger
 	opener      open.Opener
+	loginServer *loginserver.LoginServer
 	flags       *Flags
 	interactive bool
 }
@@ -134,106 +135,129 @@ func (f *Flow) triggerMethod(provider *Provider) (acsToken string, err error) {
 	for attempt := 1; ; attempt++ {
 		switch provider.ClientMethod {
 
-		// Read UID and password from command-line flags or prompt for them.
 		case methodCredential, methodUserCredential:
-			acsToken, err = f.client.Login(provider.Config.StartFlowURL, &Credentials{
-				UID:      f.uid(),
-				Password: f.password(),
-			})
+			acsToken, err = f.loginUIDPassword(provider.Config.StartFlowURL)
 
-		// Read UID from the command-line flags and generate a service login
-		// token from the --private-key. The token has a 5 minutes lifetime.
 		case methodServiceCredential:
-			uid := f.uid()
-			token, e := f.serviceToken(uid)
-			if e != nil {
-				return "", err
-			}
-			acsToken, err = f.client.Login("", &Credentials{UID: uid, Token: token})
+			acsToken, err = f.loginService()
 
-		// Open the browser at the `start_flow_url` location specified in the provider config.
-		// The user is then expected to continue the flow in the browser and copy paste the
-		// token from the browser to their terminal. For the auth0 provider, the login token
-		// will be intercepted automatically through a temporary login server running on localhost.
 		case methodBrowserAuthToken, methodBrowserOIDCToken:
-			var token string
-			var loginServer *loginserver.LoginServer
-
 			if attempt == 1 {
-				startFlowURL := provider.Config.StartFlowURL
-
-				// For the "dcos-oidc-auth0" login provider ID, we start a local web server
-				// in order to avoid copy-pasting the token from the browser to the terminal.
-				if provider.ID == DCOSOIDCAuth0 {
-					loginServer, err = loginserver.New(startFlowURL)
-					if err != nil {
-						f.logger.Error(err)
-					} else {
-						startFlowURL = loginServer.StartFlowURL()
-						go loginServer.Start()
-						defer loginServer.Close()
-					}
-				}
-
-				if err := f.openBrowser(startFlowURL); err != nil {
-					// Being unable to open the browser is not critical, a message was prompted
-					// to the user with the URL they should go to in order to start the login flow.
-					f.logger.Info(err)
-
-					// However we close and don't use the web server in this scenario, as the CLI might
-					// be running on a non-desktop environment so the we server would be stuck waiting.
-					// Falling back to reading from STDIN is safer here.
-					//
-					// See https://jira.mesosphere.com/browse/DCOS_OSS-5591
-					if loginServer != nil {
-						loginServer.Close()
-					}
-				} else if loginServer != nil {
-					token = <-loginServer.Token()
-
-					// When the token comes from the local webserver there is no need to retry. In case of an
-					// error, retrying isn't needed (it can't be a typo, no copy-pasting was involved).
-					// Thus we raise the attempt counter to 3.
-					attempt = 3
-				}
+				f.initBrowserFlow(provider)
 			}
-
-			if token == "" {
-				token = f.prompt.Input("Enter token from the browser: ")
-			}
-
-			f.interactive = true
-
-			// methodBrowserOIDCToken relies on a login token,
-			// it must be sent in order to get an ACS token back.
-			if provider.ClientMethod == methodBrowserOIDCToken {
-				acsToken, err = f.client.Login("", &Credentials{Token: token})
-				break
-			}
-
-			// With methodBrowserAuthToken, the user is passing the authentication token from the browser
-			// to the terminal directly. Send a HEAD request with an appropriate Authorization header to a
-			// well-known path in order to verify the authentication token.
-			var resp *http.Response
-			resp, err = f.client.sniffAuth(token)
-			if err != nil {
-				return "", err
-			}
-			switch resp.StatusCode {
-			case 200, 403:
-				acsToken = token
-			case 401:
-				err = errors.New("invalid auth token")
-			default:
-				return "", fmt.Errorf("unexpected status code %d", resp.StatusCode)
-			}
+			acsToken, err = f.loginBrowser(provider)
 		}
+
 		// In case of failure, let the user re-enter credentials 2 times.
 		if err != nil && attempt < 3 {
 			f.logger.Errorf("Error: %s", err)
 		}
 		if err == nil || !f.interactive || attempt >= 3 {
 			return acsToken, err
+		}
+	}
+}
+
+// loginUIDPassword initiates a UID/password login flow.
+//
+// It reads UID and password from command-line flags or prompts for them.
+func (f *Flow) loginUIDPassword(startFlowURL string) (string, error) {
+	return f.client.Login(startFlowURL, &Credentials{
+		UID:      f.uid(),
+		Password: f.password(),
+	})
+}
+
+// loginService initiates a login flow for service accounts.
+//
+// It reads UID from the command-line flags and generates a service login
+// token from the --private-key. The token has a 5 minutes lifetime.
+func (f *Flow) loginService() (string, error) {
+	uid := f.uid()
+	token, err := f.serviceToken(uid)
+	if err != nil {
+		return "", err
+	}
+	return f.client.Login("", &Credentials{UID: uid, Token: token})
+}
+
+// loginBrowser initiates a login flow for browser-based providers.
+//
+// It opens the browser at the `start_flow_url` location specified in the provider config.
+// The user is then expected to continue the flow in the browser and copy paste the
+// token from the browser to their terminal. For the auth0 provider, the login token
+// will be intercepted automatically through a temporary login server running on localhost.
+func (f *Flow) loginBrowser(provider *Provider) (string, error) {
+	var token string
+
+	if f.loginServer != nil {
+		token = <-f.loginServer.Token()
+		f.loginServer.Close()
+	} else {
+		token = f.prompt.Input("Enter token from the browser: ")
+
+		// Only set interactive to true when the token comes from STDIN. In case of an error when
+		// using the login server, retrying isn't needed (it can't be a typo, no copy-pasting was involved).
+		f.interactive = true
+	}
+
+	// methodBrowserOIDCToken relies on a login token,
+	// it must be sent in order to get an ACS token back.
+	if provider.ClientMethod == methodBrowserOIDCToken {
+		return f.client.Login("", &Credentials{Token: token})
+	}
+
+	// With methodBrowserAuthToken, the user is passing the authentication token from the browser
+	// to the terminal directly. Send a HEAD request with an appropriate Authorization header to a
+	// well-known path in order to verify the authentication token.
+	var resp *http.Response
+	resp, err := f.client.sniffAuth(token)
+	if err != nil {
+		return "", err
+	}
+	switch resp.StatusCode {
+	case 200, 403:
+		return token, nil
+	case 401:
+		return "", errors.New("invalid auth token")
+	default:
+		return "", fmt.Errorf("unexpected status code %d", resp.StatusCode)
+	}
+}
+
+// initBrowserFlow initiates a browser based flow.
+//
+// It opens the browser and starts a local login server when applicable.
+func (f *Flow) initBrowserFlow(provider *Provider) {
+	startFlowURL := provider.Config.StartFlowURL
+
+	// For the "dcos-oidc-auth0" login provider ID, we start a local web server
+	// in order to avoid copy-pasting the token from the browser to the terminal.
+	if provider.ID == DCOSOIDCAuth0 {
+		var err error
+		f.loginServer, err = loginserver.New(startFlowURL)
+		if err != nil {
+			f.logger.Error(err)
+		} else {
+			startFlowURL = f.loginServer.StartFlowURL()
+			go f.loginServer.Start()
+		}
+	}
+
+	err := f.openBrowser(startFlowURL)
+	if err != nil {
+		// Being unable to open the browser is not critical, a message was prompted
+		// to the user with the URL they should go to in order to start the login flow.
+		f.logger.Info(err)
+
+		// However we close and don't use the web server in this scenario, as the CLI might
+		// be running on a non-desktop environment so the server would be stuck waiting.
+		// Falling back to reading from STDIN is safer here.
+		//
+		// See https://jira.mesosphere.com/browse/DCOS_OSS-5591
+		if f.loginServer != nil {
+			f.loginServer.Close()
+			f.loginServer = nil
 		}
 	}
 }

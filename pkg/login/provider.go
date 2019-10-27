@@ -103,7 +103,7 @@ func defaultDCOSUIDPasswordProvider() (provider *Provider) {
 		Description:  "Default DC/OS login provider",
 		ClientMethod: methodUserCredential,
 		Config: ProviderConfig{
-			StartFlowURL: "/acs/api/v1/auth/login",
+			StartFlowURL: defaultLoginEndpoint,
 		},
 	}
 }
