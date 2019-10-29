@@ -87,6 +87,8 @@ The testing binaries (built from the master branch continuously) are published t
 - https://downloads.dcos.io/cli/testing/binaries/dcos/darwin/x86-64/master/dcos
 - https://downloads.dcos.io/cli/testing/binaries/dcos/windows/x86-64/master/dcos.exe
 
+The release proces is described [here](https://github.com/dcos/dcos-cli/blob/master/design/release.md#release-process)
+
 ## Contributing
 
 Contributions are always welcome! Please refer to our [contributing guidelines](CONTRIBUTING.md).
