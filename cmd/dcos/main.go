@@ -30,9 +30,7 @@ func main() {
 				"True (will then use CA certificates from certifi), " +
 				"or False (will then send insecure requests).\n"
 			fmt.Fprint(env.ErrOut, msg)
-			os.Exit(1)
 		}
-		fmt.Fprintf(env.ErrOut, "ERROR: %s\n", err)
 		os.Exit(1)
 	}
 }
