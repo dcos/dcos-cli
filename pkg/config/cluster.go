@@ -14,6 +14,18 @@ import (
 	"github.com/spf13/cast"
 )
 
+type SSLError struct {
+	msg error
+}
+
+func (e *SSLError) Error() string {
+	return e.msg.Error()
+}
+
+func NewSSLError(e error) *SSLError {
+	return &SSLError{msg: e}
+}
+
 // Cluster is a subset representation of a DC/OS CLI configuration.
 //
 // It is a proxy struct on top of a config which provides user-friendly getters and setters for common

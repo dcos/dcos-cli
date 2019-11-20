@@ -164,7 +164,7 @@ func (ctx *Context) HTTPClient(c *config.Cluster, opts ...httpclient.Option) (*h
 
 	clusterTLS, err := c.TLS()
 	if err != nil {
-		return nil, fmt.Errorf("cannot create HTTP Client: %s", err)
+		return nil, config.NewSSLError(err)
 	}
 	tlsOpt := httpclient.TLS(&tls.Config{
 		InsecureSkipVerify: clusterTLS.Insecure, // nolint: gosec

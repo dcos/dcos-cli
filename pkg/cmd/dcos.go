@@ -172,7 +172,7 @@ func invokePlugin(ctx api.Context, cmd plugin.Command, args []string) error {
 	if cluster != nil {
 		_, err := cluster.TLS()
 		if err != nil {
-			return fmt.Errorf("ssl_verify configuration is invalid: %s", err)
+			return config.NewSSLError(err)
 		}
 	}
 	execCmdEnv := pluginEnv(executablePath, cmd.Name, ctx.Logger().Level, cluster)

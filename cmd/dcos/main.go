@@ -12,6 +12,7 @@ import (
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/cli/version"
 	"github.com/dcos/dcos-cli/pkg/cmd"
+	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/dcos"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/sirupsen/logrus"
@@ -19,10 +20,20 @@ import (
 
 func main() {
 	env := cli.NewOsEnvironment()
-	if err := run(env); err != nil {
+	err := run(env)
+	if err != nil {
+		if _, ok := err.(*config.SSLError); ok {
+			msg := "Error: An SSL error occurred. To configure your SSL settings, please " +
+				"run: 'dcos config set core.ssl_verify <value>'\n" +
+				"<value>: Whether to verify SSL certs for HTTPS or path to certs. " +
+				"Valid values are a path to a CA_BUNDLE, " +
+				"True (will then use CA certificates from certifi), " +
+				"or False (will then send insecure requests).\n"
+			fmt.Fprint(env.ErrOut, msg)
+			os.Exit(1)
+		}
 		fmt.Fprintf(env.ErrOut, "ERROR: %s\n", err)
 		os.Exit(1)
-
 	}
 }
 

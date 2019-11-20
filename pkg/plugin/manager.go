@@ -491,7 +491,7 @@ func (m *Manager) httpClient(url string) (*httpclient.Client, error) {
 	}
 	clusterTLS, err := m.cluster.TLS()
 	if err != nil {
-		return nil, fmt.Errorf("cannot create HTTP client: %s", err)
+		return nil, config.NewSSLError(err)
 	}
 	if strings.HasPrefix(url, m.cluster.URL()) {
 		httpOpts = append(
