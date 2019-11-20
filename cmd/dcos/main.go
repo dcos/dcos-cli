@@ -18,8 +18,11 @@ import (
 )
 
 func main() {
-	if err := run(cli.NewOsEnvironment()); err != nil {
+	env := cli.NewOsEnvironment()
+	if err := run(env); err != nil {
+		fmt.Fprintf(env.ErrOut, "ERROR: %s\n", err)
 		os.Exit(1)
+
 	}
 }
 
@@ -86,7 +89,11 @@ func printVersion(ctx api.Context) {
 		return
 	}
 
-	dcosClient := dcos.NewClient(ctx.HTTPClient(cluster, httpclient.Timeout(3*time.Second)))
+	httpClient, err := ctx.HTTPClient(cluster, httpclient.Timeout(3*time.Second))
+	if err != nil {
+		return
+	}
+	dcosClient := dcos.NewClient(httpClient)
 	if dcosVersion, err := dcosClient.Version(); err == nil {
 		fmt.Fprintln(ctx.Out(), "dcos.version="+dcosVersion.Version)
 		fmt.Fprintln(ctx.Out(), "dcos.variant="+dcosVersion.DCOSVariant)

@@ -30,7 +30,11 @@ func newCmdClusterUnlink(ctx api.Context) *cobra.Command {
 			}
 			linkedCluster := config.NewCluster(linkedClusterConfig)
 
-			attachedClient := linker.New(ctx.HTTPClient(attachedCluster), ctx.Logger())
+			httpClient, err := ctx.HTTPClient(attachedCluster)
+			if err != nil {
+				return err
+			}
+			attachedClient := linker.New(httpClient, ctx.Logger())
 			return attachedClient.Unlink(linkedCluster.ID())
 		},
 	}

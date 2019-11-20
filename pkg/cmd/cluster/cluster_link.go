@@ -52,7 +52,11 @@ func newCmdClusterLink(ctx api.Context) *cobra.Command {
 				return errors.New("cannot link a cluster to itself")
 			}
 
-			client := login.NewClient(ctx.HTTPClient(linkableCluster), ctx.Logger())
+			httpClient, err := ctx.HTTPClient(linkableCluster)
+			if err != nil {
+				return err
+			}
+			client := login.NewClient(httpClient, ctx.Logger())
 			rawProviders, err := client.Providers()
 			if err != nil {
 				return err
@@ -97,7 +101,11 @@ func newCmdClusterLink(ctx api.Context) *cobra.Command {
 				},
 			}
 
-			attachedClient := linker.New(ctx.HTTPClient(attachedCluster), ctx.Logger())
+			httpClient, err = ctx.HTTPClient(attachedCluster)
+			if err != nil {
+				return err
+			}
+			attachedClient := linker.New(httpClient, ctx.Logger())
 			return attachedClient.Link(linkRequest)
 		},
 	}

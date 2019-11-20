@@ -18,7 +18,11 @@ func newCmdAuthLogin(ctx api.Context) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			acsToken, err := ctx.Login(flags, ctx.HTTPClient(cluster))
+			httpClient, err := ctx.HTTPClient(cluster)
+			if err != nil {
+				return err
+			}
+			acsToken, err := ctx.Login(flags, httpClient)
 			if err != nil {
 				return err
 			}

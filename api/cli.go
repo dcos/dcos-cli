@@ -56,7 +56,7 @@ type Context interface {
 	Clusters() ([]*config.Cluster, error)
 
 	// HTTPClient creates an httpclient.Client for a given cluster.
-	HTTPClient(c *config.Cluster, opts ...httpclient.Option) *httpclient.Client
+	HTTPClient(c *config.Cluster, opts ...httpclient.Option) (*httpclient.Client, error)
 
 	// Prompt returns a *prompt.Prompt.
 	Prompt() *prompt.Prompt

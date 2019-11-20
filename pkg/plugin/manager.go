@@ -323,7 +323,11 @@ func (m *Manager) downloadPlugin(url string, installOpts *InstallOpts) (string, 
 		return "", err
 	}
 
-	resp, err := m.httpClient(url).Get(url)
+	client, err := m.httpClient(url)
+	if err != nil {
+		return "", err
+	}
+	resp, err := client.Get(url)
 	if err != nil {
 		return "", err
 	}
@@ -480,22 +484,26 @@ func (m *Manager) installPlugin(installOpts *InstallOpts) error {
 }
 
 // httpClient returns the appropriate HTTP client for a given resource.
-func (m *Manager) httpClient(url string) *httpclient.Client {
+func (m *Manager) httpClient(url string) (*httpclient.Client, error) {
 	httpOpts := []httpclient.Option{
 		httpclient.Logger(m.logger),
 		httpclient.FailOnErrStatus(true),
+	}
+	clusterTLS, err := m.cluster.TLS()
+	if err != nil {
+		return nil, fmt.Errorf("cannot create HTTP client: %s", err)
 	}
 	if strings.HasPrefix(url, m.cluster.URL()) {
 		httpOpts = append(
 			httpOpts,
 			httpclient.ACSToken(m.cluster.ACSToken()),
 			httpclient.TLS(&tls.Config{
-				InsecureSkipVerify: m.cluster.TLS().Insecure, // nolint: gosec
-				RootCAs:            m.cluster.TLS().RootCAs,
+				InsecureSkipVerify: clusterTLS.Insecure, // nolint: gosec
+				RootCAs:            clusterTLS.RootCAs,
 			}),
 		)
 	}
-	return httpclient.New("", httpOpts...)
+	return httpclient.New("", httpOpts...), nil
 }
 
 // newStreamReader updates the progress bar as it reads from the io.Reader,
