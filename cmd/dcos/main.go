@@ -27,7 +27,7 @@ func main() {
 				"run: 'dcos config set core.ssl_verify <value>'\n" +
 				"<value>: Whether to verify SSL certs for HTTPS or path to certs. " +
 				"Valid values are a path to a CA_BUNDLE, " +
-				"True (will then use CA certificates from certifi), " +
+				"True (will then use system CA certificates), " +
 				"or False (will then send insecure requests).\n"
 			fmt.Fprint(env.ErrOut, msg)
 		}
