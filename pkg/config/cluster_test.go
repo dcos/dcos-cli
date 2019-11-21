@@ -14,15 +14,17 @@ func TestGetters(t *testing.T) {
 
 	conf.Set("core.dcos_url", "https://dcos.example.com")
 	conf.Set("core.dcos_acs_token", "token_zj8Tb0vhQw")
-	conf.Set("core.ssl_verify", "/path/to/dcos_ca.crt")
 	conf.Set("core.timeout", 15)
 	conf.Set("cluster.name", "mr-cluster")
 
 	cluster := NewCluster(conf)
 
+	clusterTLS, err := cluster.TLS()
+
+	require.NoError(t, err)
 	require.Equal(t, "https://dcos.example.com", cluster.URL())
 	require.Equal(t, "token_zj8Tb0vhQw", cluster.ACSToken())
-	require.Equal(t, true, cluster.TLS().Insecure)
+	require.Equal(t, false, clusterTLS.Insecure)
 	require.Equal(t, 15*time.Second, cluster.Timeout())
 	require.Equal(t, "mr-cluster", cluster.Name())
 }
@@ -71,17 +73,25 @@ func TestGetTLS(t *testing.T) {
 		{"False", true},
 		{"false", true},
 		{"0", true},
-		{"/path/to/unexisting/ca", true},
 	}
 
 	for _, exp := range expectedTLSInsecureSkipVerify {
 		t.Run(exp.val.(string), func(t *testing.T) {
 			conf := Empty()
-			conf.Set("core.ssl_verify", exp.val)
+			err := conf.Set("core.ssl_verify", exp.val)
+			require.NoError(t, err)
 			cluster := NewCluster(conf)
-			require.Equal(t, exp.insecure, cluster.TLS().Insecure)
+			clusterTLS, err := cluster.TLS()
+			require.NoError(t, err)
+			require.Equal(t, exp.insecure, clusterTLS.Insecure)
 		})
 	}
+}
+
+func TestSetTLSWithNotExistingFile(t *testing.T) {
+	conf := Empty()
+	err := conf.Set("core.ssl_verify", "/path/to/unexisting/ca")
+	require.Error(t, err)
 }
 
 func TestGetTLSWithInvalidCA(t *testing.T) {
@@ -97,10 +107,13 @@ I am no authority.
 	f, _ := afero.TempFile(conf.Fs(), "/", "ca")
 	f.Write(ca)
 
-	conf.Set("core.ssl_verify", f.Name())
+	err := conf.Set("core.ssl_verify", f.Name())
+	require.NoError(t, err)
 	cluster := NewCluster(conf)
 
-	tlsConfig := cluster.TLS()
+	tlsConfig, err := cluster.TLS()
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "cannot decode the PEM root certificate(s) into a cert pool:")
 	require.Equal(t, true, tlsConfig.Insecure)
 	require.Equal(t, f.Name(), tlsConfig.RootCAsPath)
 	require.Nil(t, tlsConfig.RootCAs)
@@ -141,7 +154,8 @@ NT4Sf75bbjkawxsKnddRgK2dILw//sQdOXmSJboaStNrHS5joczy
 	conf.Set("core.ssl_verify", f.Name())
 	cluster := NewCluster(conf)
 
-	tlsConfig := cluster.TLS()
+	tlsConfig, err := cluster.TLS()
+	require.NoError(t, err)
 	require.Equal(t, false, tlsConfig.Insecure)
 	require.Equal(t, f.Name(), tlsConfig.RootCAsPath)
 

@@ -154,7 +154,7 @@ func (ctx *Context) Clusters() ([]*config.Cluster, error) {
 }
 
 // HTTPClient creates an httpclient.Client for a given cluster.
-func (ctx *Context) HTTPClient(c *config.Cluster, opts ...httpclient.Option) *httpclient.Client {
+func (ctx *Context) HTTPClient(c *config.Cluster, opts ...httpclient.Option) (*httpclient.Client, error) {
 	var baseOpts []httpclient.Option
 
 	if c.ACSToken() != "" {
@@ -162,15 +162,19 @@ func (ctx *Context) HTTPClient(c *config.Cluster, opts ...httpclient.Option) *ht
 	}
 	baseOpts = append(baseOpts, httpclient.Timeout(c.Timeout()))
 
+	clusterTLS, err := c.TLS()
+	if err != nil {
+		return nil, config.NewSSLError(err)
+	}
 	tlsOpt := httpclient.TLS(&tls.Config{
-		InsecureSkipVerify: c.TLS().Insecure, // nolint: gosec
-		RootCAs:            c.TLS().RootCAs,
+		InsecureSkipVerify: clusterTLS.Insecure, // nolint: gosec
+		RootCAs:            clusterTLS.RootCAs,
 	})
 
 	baseOpts = append(baseOpts, tlsOpt, httpclient.Logger(ctx.Logger()))
 	opts = append(baseOpts, opts...)
 
-	return httpclient.New(c.URL(), opts...)
+	return httpclient.New(c.URL(), opts...), nil
 }
 
 // Prompt is able to prompt for input, password or choices.

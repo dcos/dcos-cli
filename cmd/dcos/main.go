@@ -12,13 +12,25 @@ import (
 	"github.com/dcos/dcos-cli/pkg/cli"
 	"github.com/dcos/dcos-cli/pkg/cli/version"
 	"github.com/dcos/dcos-cli/pkg/cmd"
+	"github.com/dcos/dcos-cli/pkg/config"
 	"github.com/dcos/dcos-cli/pkg/dcos"
 	"github.com/dcos/dcos-cli/pkg/httpclient"
 	"github.com/sirupsen/logrus"
 )
 
 func main() {
-	if err := run(cli.NewOsEnvironment()); err != nil {
+	env := cli.NewOsEnvironment()
+	err := run(env)
+	if err != nil {
+		if _, ok := err.(*config.SSLError); ok {
+			msg := "Error: An SSL error occurred. To configure your SSL settings, please " +
+				"run: 'dcos config set core.ssl_verify <value>'\n" +
+				"<value>: Whether to verify SSL certs for HTTPS or path to certs. " +
+				"Valid values are a path to a CA_BUNDLE, " +
+				"True (will then use CA certificates from certifi), " +
+				"or False (will then send insecure requests).\n"
+			fmt.Fprint(env.ErrOut, msg)
+		}
 		os.Exit(1)
 	}
 }
@@ -86,7 +98,11 @@ func printVersion(ctx api.Context) {
 		return
 	}
 
-	dcosClient := dcos.NewClient(ctx.HTTPClient(cluster, httpclient.Timeout(3*time.Second)))
+	httpClient, err := ctx.HTTPClient(cluster, httpclient.Timeout(3*time.Second))
+	if err != nil {
+		return
+	}
+	dcosClient := dcos.NewClient(httpClient)
 	if dcosVersion, err := dcosClient.Version(); err == nil {
 		fmt.Fprintln(ctx.Out(), "dcos.version="+dcosVersion.Version)
 		fmt.Fprintln(ctx.Out(), "dcos.variant="+dcosVersion.DCOSVariant)

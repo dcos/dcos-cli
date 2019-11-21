@@ -129,7 +129,11 @@ func updateCorePlugin(ctx api.Context) error {
 		return err
 	}
 
-	pluginInfo, err := cosmos.CLIPluginInfo(pkg, ctx.HTTPClient(cluster).BaseURL())
+	httpClient, err := ctx.HTTPClient(cluster)
+	if err != nil {
+		return err
+	}
+	pluginInfo, err := cosmos.CLIPluginInfo(pkg, httpClient.BaseURL())
 	if err != nil {
 		return err
 	}
@@ -164,6 +168,12 @@ func invokePlugin(ctx api.Context, cmd plugin.Command, args []string) error {
 	cluster, err := ctx.Cluster()
 	if err != nil && err != config.ErrNotAttached {
 		return err
+	}
+	if cluster != nil {
+		_, err := cluster.TLS()
+		if err != nil {
+			return config.NewSSLError(err)
+		}
 	}
 	execCmdEnv := pluginEnv(executablePath, cmd.Name, ctx.Logger().Level, cluster)
 	execCmd.Env = append(os.Environ(), execCmdEnv...)
@@ -202,13 +212,6 @@ func pluginEnv(executablePath string, cmdName string, logLevel logrus.Level, clu
 		env = append(env, "DCOS_URL="+cluster.URL())
 		env = append(env, "DCOS_ACS_TOKEN="+cluster.ACSToken())
 
-		insecure := cluster.TLS().Insecure || strings.HasPrefix(cluster.URL(), "http://")
-		if insecure {
-			env = append(env, "DCOS_TLS_INSECURE=1")
-		} else if cluster.TLS().RootCAsPath != "" {
-			env = append(env, "DCOS_TLS_CA_PATH="+cluster.TLS().RootCAsPath)
-		}
-
 		// Create env entries based on the subcommand config.
 		if cmdConfig, ok := cluster.Config().ToMap()[cmdName].(map[string]interface{}); ok {
 			for key, val := range cmdConfig {
@@ -218,6 +221,14 @@ func pluginEnv(executablePath string, cmdName string, logLevel logrus.Level, clu
 					val,
 				))
 			}
+		}
+
+		clusterTLS, _ := cluster.TLS()
+		insecure := clusterTLS.Insecure || strings.HasPrefix(cluster.URL(), "http://")
+		if insecure {
+			env = append(env, "DCOS_TLS_INSECURE=1")
+		} else if clusterTLS.RootCAsPath != "" {
+			env = append(env, "DCOS_TLS_CA_PATH="+clusterTLS.RootCAsPath)
 		}
 	}
 	return env

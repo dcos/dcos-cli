@@ -153,14 +153,23 @@ func (l *Lister) List(filters ...Filter) []*Item {
 }
 
 func (l *Lister) httpClient(cluster *config.Cluster) *httpclient.Client {
+	clusterTLS, err := cluster.TLS()
+	if err != nil {
+		// Allow listing clusters without proper tls configuration.
+		// TLS will be reconfigured after cluster setup
+		// since attach and other commands will fail.
+		clusterTLS = config.TLS{
+			Insecure: true,
+		}
+	}
 	return httpclient.New(
 		cluster.URL(),
 		httpclient.Logger(l.logger),
 		httpclient.ACSToken(cluster.ACSToken()),
 		httpclient.Timeout(3*time.Second),
 		httpclient.TLS(&tls.Config{
-			InsecureSkipVerify: cluster.TLS().Insecure, // nolint: gosec
-			RootCAs:            cluster.TLS().RootCAs,
+			InsecureSkipVerify: clusterTLS.Insecure, // nolint: gosec
+			RootCAs:            clusterTLS.RootCAs,
 		}),
 	)
 }

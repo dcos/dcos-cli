@@ -2,6 +2,7 @@ package config
 
 import (
 	"crypto/x509"
+	"fmt"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -12,6 +13,18 @@ import (
 	"github.com/spf13/afero"
 	"github.com/spf13/cast"
 )
+
+type SSLError struct {
+	msg error
+}
+
+func (e *SSLError) Error() string {
+	return e.msg.Error()
+}
+
+func NewSSLError(e error) *SSLError {
+	return &SSLError{msg: e}
+}
 
 // Cluster is a subset representation of a DC/OS CLI configuration.
 //
@@ -53,14 +66,23 @@ func (c *Cluster) SetACSToken(acsToken string) {
 	c.config.Set("core.dcos_acs_token", acsToken)
 }
 
-// TLS returns the configuration for TLS clients.
-func (c *Cluster) TLS() TLS {
+// SetTLS returns the configuration for TLS clients.
+func (c *Cluster) SetTLS(tls TLS) {
+	c.config.Set("core.ssl_verify", tls.String())
+}
+
+// CheckTLS returns error if provided certificate is invalid
+func (c *Cluster) TLS() (TLS, error) {
 	tlsVal := cast.ToString(c.config.Get("core.ssl_verify"))
+
+	if tlsVal == "" {
+		return TLS{Insecure: false}, nil
+	}
 
 	// Try to cast the value to a bool, true means we verify
 	// server certificates, false means we skip verification.
 	if verify, err := strconv.ParseBool(tlsVal); err == nil {
-		return TLS{Insecure: !verify}
+		return TLS{Insecure: !verify}, nil
 	}
 
 	// The value is not a string representing a bool thus it is a path to a root CA bundle.
@@ -69,7 +91,7 @@ func (c *Cluster) TLS() TLS {
 		return TLS{
 			Insecure:    true,
 			RootCAsPath: tlsVal,
-		}
+		}, fmt.Errorf("can't read %s: %s", tlsVal, err)
 	}
 
 	// Decode the PEM root certificate(s) into a cert pool.
@@ -78,19 +100,14 @@ func (c *Cluster) TLS() TLS {
 		return TLS{
 			Insecure:    true,
 			RootCAsPath: tlsVal,
-		}
+		}, fmt.Errorf("cannot decode the PEM root certificate(s) into a cert pool: %s", tlsVal)
 	}
 
 	// The cert pool has been successfully created, store it in the TLS config.
 	return TLS{
 		RootCAs:     certPool,
 		RootCAsPath: tlsVal,
-	}
-}
-
-// SetTLS returns the configuration for TLS clients.
-func (c *Cluster) SetTLS(tls TLS) {
-	c.config.Set("core.ssl_verify", tls.String())
+	}, nil
 }
 
 // Timeout returns the HTTP request timeout once the connection is established.

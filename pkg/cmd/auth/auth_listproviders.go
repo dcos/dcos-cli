@@ -24,7 +24,11 @@ func newCmdAuthListProviders(ctx api.Context) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				client = login.NewClient(ctx.HTTPClient(cluster), ctx.Logger())
+				httpClient, err := ctx.HTTPClient(cluster)
+				if err != nil {
+					return err
+				}
+				client = login.NewClient(httpClient, ctx.Logger())
 			} else {
 				httpClient := httpclient.New(args[0], httpclient.Logger(ctx.Logger()))
 				client = login.NewClient(httpClient, ctx.Logger())
