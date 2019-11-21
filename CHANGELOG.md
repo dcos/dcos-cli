@@ -2,9 +2,12 @@
 
 ## Next
 
+## 1.1.2
+
 * Fixes
 
   * Do not consume all input data on prompts.
+  * Check TLS configuration before calling plugins.
 
 ## 1.1.1
 
