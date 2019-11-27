@@ -9,9 +9,7 @@ version, and Z the patch version):
 
 - Create a `X.Y.Z` tag and push it to the Github repo
 
-- After a few minutes the tag will appear as job in https://jenkins.mesosphere.com/service/jenkins/job/public-dcos-cluster-ops/job/mesosphere-dcos-cli/job/release/view/tags/,
-  trigger a build for the job (this can be done by clicking the clock icon on the table item,
-  or by opening the job and clicking `Build now`).
+- After a few minutes the tag will appear as job in https://jenkins.mesosphere.com/service/jenkins/job/public-dcos-cluster-ops/job/mesosphere-dcos-cli/job/release/view/tags/, trigger a build for the job (this can be done by clicking the clock icon on the table item, or by opening the job and clicking `Build now`).
 
 - Open a PR to https://github.com/Homebrew/homebrew-core to bump the `dcos-cli` package.
   An example can be seen here: https://github.com/Homebrew/homebrew-core/pull/43775
@@ -71,10 +69,36 @@ $ ./generate_universe_resource.py "https://downloads.dcos.io/cli/releases/plugin
 
 ### Release a plugin to the Bootstrap Registry
 
-Once a plugin is release in the Universe (the PR is merged), it can be released in the Bootstrap Registry as
-well. This is useful to air-gapped customers.
+Once a plugin is released in the Universe (the PR is merged), it can be released in the Bootstrap Registry as
+well. This is useful for air-gapped customers.
 
 In order to do so, open a PR to dcos-enterprise which bumps the plugin version in the Bootstrap Registry.
 See https://github.com/mesosphere/dcos-enterprise/pull/6580 for example.
 
 The plugin package URL and sha1sum can be found at https://downloads.mesosphere.com/universe/packages/packages.html.
+
+# Updating the used development version
+
+This refers to the action of creating a new branch based on the master branch and then bumping the DC/OS version in the master branch, e.g. https://github.com/dcos/dcos/commit/da1be1a3851c5f85fd3613396b2b0ef11051d058 where a 2.0 branch got created and the DC/OS dev version was updated to 2.1.0-dev.
+
+## Scenario: DC/OS 2.2 is the new DC/OS dev version
+
+### dcos-core-cli
+
+Create a new branch 2.2-patch.x (based on 2.1-patch.x) in https://github.com/dcos/dcos-core-cli.
+
+In the 2.1-patch.x branch, the integration tests Jenkinsfiles need to be updated to use the 2.1 DC/OS installer instead of the master DC/OS installer. Such a change can be seen in https://github.com/dcos/dcos-core-cli/commit/c0ebd5f1e7789f0b49f3e06c6933c81d7e2039cb.
+
+CLI nightly integration tests need to be updated to run the 2.2-patch.x branch (the new dev version). In https://jenkins.mesosphere.com/service/jenkins/job/public-dcos-cluster-ops/job/mesosphere-dcos-cli/job/core/job/integration-tests-nightly/configure, go to Pipeline > Definition > SCM > Branches to build > Branch Specifier (blank for `any`) and update the field to `refs/heads/2.2-patch.x`.
+
+In the following jobs, update the sha1 string parameter to 2.2-patch.x :
+
+- https://jenkins.mesosphere.com/service/jenkins/job/public-dcos-cluster-ops/job/mesosphere-dcos-cli/job/core/job/integration-tests-linux/configure
+
+- https://jenkins.mesosphere.com/service/jenkins/job/public-dcos-cluster-ops/job/mesosphere-dcos-cli/job/core/job/integration-tests-mac/configure
+
+- https://jenkins.mesosphere.com/service/jenkins/job/public-dcos-cluster-ops/job/mesosphere-dcos-cli/job/core/job/integration-tests-windows/configure
+
+### dcos-enterprise-cli
+
+Create a 2.2-patch.x branch in https://github.com/mesosphere/dcos-enterprise-cli.
