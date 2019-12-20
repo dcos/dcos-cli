@@ -1,5 +1,9 @@
 #!/usr/bin/env groovy
 
+@Library("sec_ci_libs@v2-latest") _
+
+def master_branches = ["master", ] as String[]
+
 pipeline {
   agent none
 
@@ -8,6 +12,12 @@ pipeline {
   }
 
   stages {
+    stage("Authorization") {
+      steps {
+        user_is_authorized(master_branches, "8b793652-f26a-422f-a9ba-0d1e47eb9d89", "#mesosphere-dev")
+      }
+    }
+    
     stage("Build binaries") {
       agent { label 'mesos-ubuntu' }
 
