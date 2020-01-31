@@ -7,7 +7,7 @@ pipeline {
     APPLE_DEVACC = credentials('TEMP_APPLE_DEVELOPER_ACCOUNT')
     GOLANG_VER = "1.13.7"
     GON_VER = "0.2.2"
-    ID_HASH = "5C99CF2B12B186C69A37BD21DFF24ACBE10560CF"
+SHA1_CERTIFICATE_ID = "5C99CF2B12B186C69A37BD21DFF24ACBE10560CF"
   }
 
   options {
@@ -33,7 +33,7 @@ pipeline {
               security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k test jenkins-${JOB_NAME}
               xcrun altool --notarization-history 0 -u "${APPLE_DEVACC_USR}" -p "${APPLE_DEVACC_PSW}"
             '''
-          sh 'security find-identity -v | grep -q ${ID_HASH}'
+          sh 'security find-identity -v | grep -q ${SHA1_CERTIFICATE_ID}'
           sh '''
             bash -exc " \
               export VERSION=\"${TAG_NAME:-$GIT_COMMIT}\";
