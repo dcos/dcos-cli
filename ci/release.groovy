@@ -46,7 +46,9 @@ pipeline {
               export AC_USERNAME="${APPLE_DEVACC_USR}"
               export AC_PASSWORD="${APPLE_DEVACC_PSW}"
               gon ci/release.hcl
+              unzip -o build/darwin/dcos.zip -d build/darwin
           '''
+
           stash includes: 'build/**', name: 'dcos-binaries'
         }
       }
