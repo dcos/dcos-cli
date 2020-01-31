@@ -1,3 +1,4 @@
 build/
 env/
 .pytest_cache
+usr/*
