@@ -2,7 +2,7 @@ source = ["./build/darwin/dcos"]
 bundle_id = "com.mesosphere.dcos.cli"
 
 sign {
-  application_identity = "Developer ID Application: Christopher Molosso (LUBCYUGDL9)"
+  application_identity = "Developer ID Application: Mesosphere Inc. (JQJDUUPXFN)"
 }
 
 zip {
