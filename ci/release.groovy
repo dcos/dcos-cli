@@ -24,21 +24,25 @@ pipeline {
         withCredentials(bindings: [certificate(credentialsId: 'APPLE_DEVELOPER_ID_APPLICATION_CERTIFICATE', \
                                        keystoreVariable: 'SIGNING_CERTIFICATE', \
                                        passwordVariable: 'SIGNING_CERTIFICATE_PASSWORD')]) {
-          ansiColor('xterm') {
+        ansiColor('xterm') {
+            script {
+                String alphabet = (('A'..'Z')+('a'..'z')+('0'..'9')).join('')
+                def rand = new Random()
+                env.RANDOM_KEYCHAIN_PW = (1..24).collect { alphabet[ rand.nextInt( alphabet.length() ) ] }.join('')
+            }
             sh '''
                 security delete-keychain jenkins-${JOB_NAME} || :
-                security create-keychain -p test jenkins-${JOB_NAME}
-                security unlock-keychain -p test jenkins-${JOB_NAME}
+                security create-keychain -p ${RANDOM_KEYCHAIN_PW} jenkins-${JOB_NAME}
+                security unlock-keychain -p ${RANDOM_KEYCHAIN_PW} jenkins-${JOB_NAME}
                 security list-keychains -d user -s jenkins-${JOB_NAME}
                 security default-keychain -s jenkins-${JOB_NAME}
                 cat ${SIGNING_CERTIFICATE} > cert.p12
                 security import cert.p12 -k jenkins-${JOB_NAME} -P ${SIGNING_CERTIFICATE_PASSWORD} -T /usr/bin/codesign
-                security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k test jenkins-${JOB_NAME}
-                xcrun altool --notarization-history 0 -u "${APPLE_DEVACC_USR}" -p "${APPLE_DEVACC_PSW}"
-              '''
+                security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k ${RANDOM_KEYCHAIN_PW} jenkins-${JOB_NAME}
+                '''
             sh 'security find-identity -v | grep -q ${SHA1_CERTIFICATE_ID}'
             sh '''
-              bash -exc " \
+                bash -exc " \
                 export VERSION=\"${TAG_NAME:-$GIT_COMMIT}\";
                 make linux darwin windows"
             '''
@@ -86,6 +90,13 @@ pipeline {
                 ./release.py"
             '''
         }
+      }
+    }
+  }
+    post {
+    always {
+      node(label:'mac') {
+        sh 'security lock-keychain jenkins-${JOB_NAME}'
       }
     }
   }
