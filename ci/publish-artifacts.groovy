@@ -16,7 +16,7 @@ pipeline {
       steps {
         withCredentials([
           [$class: 'AmazonWebServicesCredentialsBinding',
-          credentialsId: 'a20fbd60-2528-4e00-9175-ebe2287906cf',
+          credentialsId: 'mesosphere-ci-marathon',
           accessKeyVariable: 'AWS_ACCESS_KEY_ID',
           secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']
         ]) {
