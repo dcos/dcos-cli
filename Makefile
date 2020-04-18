@@ -17,7 +17,7 @@ default:
 darwin linux windows: docker-image
 	$(call inDocker,env GOOS=$(@) CGO_ENABLED=0 go build \
 		-ldflags '-X $(PKG)/pkg/cli/version.version=$(VERSION)' \
-		-tags '$(GO_BUILD_TAGS)' \
+		-a -tags netgo -ldflags '-w' \
 		-o build/$(@)/dcos$($(@)_EXE) ./cmd/dcos)
 
 .PHONY: install
