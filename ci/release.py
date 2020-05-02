@@ -14,23 +14,23 @@ if os.environ.get("TAG_NAME"):
     artifacts = [
         ("linux/dcos",       "cli/releases/binaries/dcos/linux/x86-64/latest/dcos"),
         ("darwin/dcos",      "cli/releases/binaries/dcos/darwin/x86-64/latest/dcos"),
-        ("darwin/dcos.zip",      "cli/releases/binaries/dcos/darwin/x86-64/latest/dcos.zip"),
+        ("darwin/dcos.zip",  "cli/releases/binaries/dcos/darwin/x86-64/latest/dcos.zip"),
         ("windows/dcos.exe", "cli/releases/binaries/dcos/windows/x86-64/latest/dcos.exe"),
 
         ("linux/dcos",       "cli/releases/binaries/dcos/linux/x86-64/{}/dcos".format(version)),
         ("darwin/dcos",      "cli/releases/binaries/dcos/darwin/x86-64/{}/dcos".format(version)),
-        ("darwin/dcos.zip",      "cli/releases/binaries/dcos/darwin/x86-64/{}/dcos.zip".format(version)),
+        ("darwin/dcos.zip",  "cli/releases/binaries/dcos/darwin/x86-64/{}/dcos.zip".format(version)),
         ("windows/dcos.exe", "cli/releases/binaries/dcos/windows/x86-64/{}/dcos.exe".format(version)),
 
         # For tag releases, still push to the legacy locations.
         ("linux/dcos",       "binaries/cli/linux/x86-64/latest/dcos"),
         ("darwin/dcos",      "binaries/cli/darwin/x86-64/latest/dcos"),
-        ("darwin/dcos.zip",      "binaries/cli/darwin/x86-64/latest/dcos.zip"),
+        ("darwin/dcos.zip",  "binaries/cli/darwin/x86-64/latest/dcos.zip"),
         ("windows/dcos.exe", "binaries/cli/windows/x86-64/latest/dcos.exe"),
 
         ("linux/dcos",       "binaries/cli/linux/x86-64/{}/dcos".format(version)),
         ("darwin/dcos",      "binaries/cli/darwin/x86-64/{}/dcos".format(version)),
-        ("darwin/dcos.zip",      "binaries/cli/darwin/x86-64/{}/dcos.zip".format(version)),
+        ("darwin/dcos.zip",  "binaries/cli/darwin/x86-64/{}/dcos.zip".format(version)),
         ("windows/dcos.exe", "binaries/cli/windows/x86-64/{}/dcos.exe".format(version))
     ]
 else:
@@ -39,7 +39,7 @@ else:
     artifacts = [
         ("linux/dcos",       "cli/testing/binaries/dcos/linux/x86-64/{}/dcos".format(version)),
         ("darwin/dcos",      "cli/testing/binaries/dcos/darwin/x86-64/{}/dcos".format(version)),
-        ("darwin/dcos.zip",      "cli/testing/binaries/dcos/darwin/x86-64/{}/dcos.zip".format(version)),
+        ("darwin/dcos.zip",  "cli/testing/binaries/dcos/darwin/x86-64/{}/dcos.zip".format(version)),
         ("windows/dcos.exe", "cli/testing/binaries/dcos/windows/x86-64/{}/dcos.exe".format(version))
     ]
 

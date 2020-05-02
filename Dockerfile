@@ -5,4 +5,4 @@ RUN go get -u \
     github.com/awalterschulze/goderive \
     github.com/br-lewis/go-bindata/...
 
-RUN curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.21.0
+RUN curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.26.0
