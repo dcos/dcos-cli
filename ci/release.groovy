@@ -2,7 +2,7 @@
 
 pipeline {
   agent none
-   environment {
+  environment {
     GITHUB_TOKEN = credentials('gh-token-mesosphere-ci-dcos-deploy')
     APPLE_DEVACC = credentials('APPLE_DEVELOPER_ACCOUNT')
     GOLANG_VER = "1.13.7"
@@ -20,6 +20,9 @@ pipeline {
         label "mac"
       }
 
+      environment {
+        NO_DOCKER = true
+      }
       steps {
         withCredentials(bindings: [certificate(credentialsId: 'APPLE_DEVELOPER_ID_APPLICATION_CERTIFICATE', \
                                        keystoreVariable: 'SIGNING_CERTIFICATE', \
