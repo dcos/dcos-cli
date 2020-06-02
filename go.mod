@@ -34,7 +34,7 @@ require (
 	github.com/spf13/cobra v0.0.2
 	github.com/spf13/pflag v1.0.1
 	github.com/stretchr/objx v0.2.0 // indirect
-	github.com/stretchr/testify v1.3.0
+	github.com/stretchr/testify v1.6.0
 	github.com/vbauerster/mpb v3.4.0+incompatible
 	golang.org/x/crypto v0.0.0-20190506204251-e1dfcc566284
 	golang.org/x/net v0.0.0-20190503192946-f4e77d36d62c // indirect
