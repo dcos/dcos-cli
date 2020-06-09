@@ -9,7 +9,6 @@ clone_folder: c:\dcos-cli
 environment:
   GOPATH: c:\gopath
   NO_DOCKER: 1
-  GO111MODULE: off
 
 stack: go 1.14
 image: Visual Studio 2019
