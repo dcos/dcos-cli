@@ -10,8 +10,7 @@ environment:
   GOPATH: c:\gopath
   NO_DOCKER: 1
 
-stack: go 1.14
-image: Visual Studio 2019
+stack: go 1.12
 
 test_script:
   - SET GO111MODULE=on
