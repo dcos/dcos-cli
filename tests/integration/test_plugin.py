@@ -77,7 +77,7 @@ def test_plugin_list(default_cluster):
 
     dcos_core_cli = lines[1].split()
     assert dcos_core_cli[0] == 'dcos-core-cli'
-    assert dcos_core_cli[1:] == ['diagnostics', 'job', 'marathon', 'node', 'package', 'quota', 'service', 'task']
+    assert dcos_core_cli[1:] == ['calico', 'diagnostics', 'job', 'marathon', 'node', 'package', 'quota', 'service', 'task']
 
     if default_cluster['variant'] == 'enterprise':
         dcos_enterprise_cli = lines[2].split()
@@ -120,8 +120,7 @@ def test_plugin_invocation(default_cluster):
     assert out['env'].get('DCOS_ACS_TOKEN') == default_cluster['acs_token']
 
 
-@pytest.mark.skipif(os.environ.get('DCOS_TEST_DEFAULT_CLUSTER_VARIANT') == 'open',
-                    reason="No CA on DC/OS Open")
+@pytest.mark.skip(reason="Cluster created with terraform have untrusted certificate")
 def test_plugin_invocation_tls():
     with setup_cluster(scheme='https'):
         _install_test_plugin()

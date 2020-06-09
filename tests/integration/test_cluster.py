@@ -124,7 +124,7 @@ def test_cluster_setup_non_superuser(default_cluster):
     exec_cmd(['dcos', 'security', 'org', 'users',
               'create', username, '--password', password])
 
-    code, out, err = exec_cmd(['dcos', 'cluster', 'setup', default_cluster['dcos_url'],
+    code, out, err = exec_cmd(['dcos', 'cluster', 'setup', '--insecure', default_cluster['dcos_url'],
                                '--username', username, '--password', password])
     assert code == 0
     assert out == ""
@@ -134,7 +134,7 @@ def test_cluster_setup_with_acs_token_env(default_cluster):
     env = os.environ.copy()
     env['DCOS_CLUSTER_SETUP_ACS_TOKEN'] = default_cluster['acs_token']
 
-    code, out, err = exec_cmd(['dcos', 'cluster', 'setup', default_cluster['dcos_url']], env=env)
+    code, out, err = exec_cmd(['dcos', 'cluster', 'setup', '--insecure', default_cluster['dcos_url']], env=env)
     assert code == 0
     assert out == ""
 
