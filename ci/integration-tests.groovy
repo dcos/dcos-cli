@@ -4,8 +4,28 @@
 
 def master_branches = ["master", ] as String[]
 
+def credentials = [
+        [$class           : 'AmazonWebServicesCredentialsBinding',
+         credentialsId    : 'a20fbd60-2528-4e00-9175-ebe2287906cf',
+         accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+         secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'],
+        [$class       : 'FileBinding',
+         credentialsId: '23743034-1ac4-49f7-b2e6-a661aee2d11b',
+         variable     : 'CLI_TEST_SSH_KEY_PATH'],
+        [$class       : 'StringBinding',
+         credentialsId: '0b513aad-e0e0-4a82-95f4-309a80a02ff9',
+         variable     : 'DCOS_TEST_INSTALLER_URL'],
+        [$class       : 'StringBinding',
+         credentialsId: 'ca159ad3-7323-4564-818c-46a8f03e1389',
+         variable     : 'DCOS_TEST_LICENSE'],
+        [$class          : 'UsernamePasswordMultiBinding',
+         credentialsId   : '323df884-742b-4099-b8b7-d764e5eb9674',
+         usernameVariable: 'DCOS_TEST_DEFAULT_CLUSTER_USERNAME',
+         passwordVariable: 'DCOS_TEST_DEFAULT_CLUSTER_PASSWORD']
+]
+
 pipeline {
-  agent none
+  agent { label 'mesos' }
 
   options {
     timeout(time: 6, unit: 'HOURS')
@@ -14,10 +34,10 @@ pipeline {
   stages {
     stage("Authorization") {
       steps {
-        user_is_authorized(master_branches, "8b793652-f26a-422f-a9ba-0d1e47eb9d89", "#mesosphere-dev")
+        user_is_authorized(master_branches, "8b793652-f26a-422f-a9ba-0d1e47eb9d89", "#dcos-cli-ci")
       }
     }
-    
+
     stage("Build binaries") {
       agent { label 'mesos-ubuntu' }
 
@@ -29,37 +49,16 @@ pipeline {
       }
     }
 
-    stage("Launch DC/OS cluster") {
-      agent { label 'py36' }
-
+    stage("Launch AWS Cluster") {
       steps {
-        withCredentials([
-          [$class: 'AmazonWebServicesCredentialsBinding',
-          credentialsId: 'a20fbd60-2528-4e00-9175-ebe2287906cf',
-          accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-          secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'],
-          [$class: 'StringBinding',
-          credentialsId: '0b513aad-e0e0-4a82-95f4-309a80a02ff9',
-          variable: 'DCOS_TEST_INSTALLER_URL'],
-          [$class: 'FileBinding',
-          credentialsId: '23743034-1ac4-49f7-b2e6-a661aee2d11b',
-          variable: 'DCOS_TEST_SSH_KEY_PATH'],
-          [$class: 'StringBinding',
-          credentialsId: 'ca159ad3-7323-4564-818c-46a8f03e1389',
-          variable: 'DCOS_TEST_LICENSE']
-        ]) {
-            sh '''
-              bash -exc " \
-                cd tests; \
-                python3 -m venv env; \
-                source env/bin/activate; \
-                pip install -r requirements.txt; \
-                flake8 integration; \
-                export DCOS_TEST_VARIANT=enterprise; \
-                ./launch_cluster.py ${DCOS_TEST_INSTALLER_URL}"
-            '''
-            stash includes: 'tests/test_cluster.env.sh', name: 'test-cluster'
-        }
+          retry(5) {
+              withCredentials(credentials) {
+                  script {
+                      master_ip = sh(script: 'cd scripts && ./launch_aws_cluster.sh', returnStdout: true).trim()
+                  }
+                  stash includes: 'scripts/**/*', name: 'terraform'
+              }
+          }
       }
     }
 
@@ -67,22 +66,29 @@ pipeline {
       agent { label 'py36' }
 
       steps {
-          unstash 'test-cluster'
           unstash 'dcos-linux'
 
-          sh '''
-            bash -exc " \
-              export DCOS_CLI_EXPERIMENTAL_AUTOINSTALL_PACKAGE_CLIS=1; \
-              PATH=$PWD/build/linux:$PATH; \
-              cd tests; \
-              dcos cluster remove --all; \
-              python3 -m venv env; \
-              source env/bin/activate; \
-              source test_cluster.env.sh; \
-              pip install -U pip; \
-              pip install -r requirements.txt; \
-              pytest integration"
-          '''
+          withEnv(["DCOS_TEST_DEFAULT_CLUSTER_HOST=${master_ip}"]) {
+              withCredentials(credentials) {
+                  sh '''
+                    bash -exc " \
+                      export DCOS_CLI_EXPERIMENTAL_AUTOINSTALL_PACKAGE_CLIS=1; \
+                      PATH=$PWD/build/linux:$PATH; \
+                      cd tests; \
+                      dcos cluster remove --all; \
+                      python3 -m venv env; \
+                      source env/bin/activate; \
+                      pip install -U pip; \
+                      pip install -r requirements.txt; \
+                      pytest integration --junitxml=tests.xml"
+                  '''
+              }
+          }
+      }
+      post {
+          always {
+              junit 'tests/tests.xml'
+          }
       }
     }
 
@@ -90,24 +96,27 @@ pipeline {
       agent { label 'mac-hh-yosemite' }
 
       steps {
-          unstash 'test-cluster'
           unstash 'dcos-darwin'
 
-          sh '''
-            bash -exc " \
-              export LC_ALL=en_US.UTF-8; \
-              export PYTHONIOENCODING=utf-8; \
-              export DCOS_CLI_EXPERIMENTAL_AUTOINSTALL_PACKAGE_CLIS=1; \
-              PATH=$PWD/build/darwin:$PATH; \
-              cd tests; \
-              dcos cluster remove --all; \
-              python3 -m venv env; \
-              source env/bin/activate; \
-              source test_cluster.env.sh; \
-              pip install -U pip; \
-              pip install -r requirements.txt; \
-              pytest integration"
-          '''
+          withEnv(["DCOS_TEST_DEFAULT_CLUSTER_HOST=${master_ip}"]) {
+              withCredentials(credentials) {
+                  sh '''
+                    bash -exc " \
+                      export LC_ALL=en_US.UTF-8; \
+                      export PYTHONIOENCODING=utf-8; \
+                      export DCOS_CLI_EXPERIMENTAL_AUTOINSTALL_PACKAGE_CLIS=1; \
+                      PATH=$PWD/build/darwin:$PATH; \
+                      cd tests; \
+                      dcos cluster remove --all; \
+                      python3 -m venv env; \
+                      source env/bin/activate; \
+                      source test_cluster.env.sh; \
+                      pip install -U pip; \
+                      pip install -r requirements.txt; \
+                      pytest integration"
+                  '''
+              }
+          }
       }
     }
 
@@ -120,23 +129,41 @@ pipeline {
       }
 
       steps {
-          unstash 'test-cluster'
           unstash 'dcos-windows'
 
-          bat '''
-            bash -exc " \
-              export PYTHONIOENCODING=utf-8; \
-              export DCOS_CLI_EXPERIMENTAL_AUTOINSTALL_PACKAGE_CLIS=1; \
-              PATH=$PWD/build/windows:$PATH; \
-              cd tests; \
-              dcos cluster remove --all; \
-              source test_cluster.env.sh; \
-              python -m venv env; \
-              env/Scripts/python -m pip install -U pip; \
-              env/Scripts/pip install -r requirements.txt; \
-              env/Scripts/pytest -vv integration"
-          '''
+          withEnv(["DCOS_TEST_DEFAULT_CLUSTER_HOST=${master_ip}"]) {
+              withCredentials(credentials) {
+                  bat '''
+                    bash -exc " \
+                      export PYTHONIOENCODING=utf-8; \
+                      export DCOS_CLI_EXPERIMENTAL_AUTOINSTALL_PACKAGE_CLIS=1; \
+                      PATH=$PWD/build/windows:$PATH; \
+                      cd tests; \
+                      dcos cluster remove --all; \
+                      source test_cluster.env.sh; \
+                      python -m venv env; \
+                      env/Scripts/python -m pip install -U pip; \
+                      env/Scripts/pip install -r requirements.txt; \
+                      env/Scripts/pytest -vv integration"
+                  '''
+              }
+          }
       }
     }
+  }
+
+  post {
+        cleanup {
+            echo 'Delete AWS Cluster'
+            unstash 'terraform'
+            withCredentials(credentials) {
+                sh('''
+                  cd scripts && \
+                  export AWS_REGION="us-east-1" && \
+                  export TF_INPUT=false && \
+                  export TF_IN_AUTOMATION=1 && \
+                  ./terraform destroy -auto-approve -no-color 1> /dev/null''')
+            }
+        }
   }
 }

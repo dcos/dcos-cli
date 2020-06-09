@@ -48,6 +48,8 @@ def test_dcos_help_with_default_oss_plugins(default_cluster):
 Commands:
     auth
         Authenticate to DC/OS cluster
+    calico
+        Manage Calico in DC/OS
     cluster
         Manage your DC/OS clusters
     config
@@ -99,6 +101,8 @@ Commands:
         Authenticate to DC/OS cluster
     backup
         Access DC/OS backup functionality
+    calico
+        Manage Calico in DC/OS
     cluster
         Manage your DC/OS clusters
     config
