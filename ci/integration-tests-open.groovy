@@ -25,7 +25,7 @@ def credentials = [
 ]
 
 pipeline {
-    agent none
+    agent { label 'mesos' }
 
     options {
         timeout(time: 6, unit: 'HOURS')
@@ -169,6 +169,21 @@ pipeline {
           '''
                     }
                 }
+            }
+        }
+    }
+
+    post {
+        cleanup {
+            echo 'Delete AWS Cluster'
+            unstash 'terraform'
+            withCredentials(credentials) {
+                sh('''
+                  cd scripts && \
+                  export AWS_REGION="us-east-1" && \
+                  export TF_INPUT=false && \
+                  export TF_IN_AUTOMATION=1 && \
+                  ./terraform destroy -auto-approve -no-color 1> /dev/null''')
             }
         }
     }
