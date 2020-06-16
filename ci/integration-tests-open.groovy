@@ -79,7 +79,7 @@ pipeline {
                 pip install -r requirements.txt; \
                 flake8 integration; \
                 export DCOS_TEST_VARIANT=open; \
-                ./launch_cluster.py https://downloads.dcos.io/dcos/testing/master/dcos_generate_config.sh"
+                ./create_user_with_pass.py"
                 '''
                         stash includes: 'tests/test_cluster.env.sh', name: 'test-cluster'
                     }
