@@ -4,14 +4,15 @@ import pytest
 
 from .common import exec_cmd, default_cluster  # noqa: F401
 
+
 @pytest.mark.parametrize("cmd", [['dcos', 'package', 'install', 'dcos-core-cli'],
-                                ['dcos', 'package', 'install', 'dcos-core-cli', '--cli'],
-                                ['dcos', 'package', 'install', 'dcos-core-cli', '--yes'],
-                                ['dcos', '-vv', 'package', 'install', 'dcos-core-cli']])
+                                 ['dcos', 'package', 'install', 'dcos-core-cli', '--cli'],
+                                 ['dcos', 'package', 'install', 'dcos-core-cli', '--yes'],
+                                 ['dcos', '-vv', 'package', 'install', 'dcos-core-cli']])
 def test_update_core(cmd, default_cluster):
-        code, out, _ = exec_cmd(cmd)
-        assert code == 0
-        assert out == ''
+    code, out, _ = exec_cmd(cmd)
+    assert code == 0
+    assert out == ''
 
 
 @pytest.mark.skipif(
