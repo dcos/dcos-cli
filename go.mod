@@ -32,7 +32,7 @@ require (
 	github.com/spf13/afero v1.2.2
 	github.com/spf13/cast v1.3.0
 	github.com/spf13/cobra v0.0.2
-	github.com/spf13/pflag v1.0.1
+	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.3.0
 	github.com/vbauerster/mpb v3.4.0+incompatible
