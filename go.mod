@@ -19,7 +19,6 @@ require (
 	github.com/go-openapi/validate v0.19.0 // indirect
 	github.com/hashicorp/go-version v1.2.0
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
-	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kr/pty v1.1.4 // indirect
 	github.com/mailru/easyjson v0.0.0-20190403194419-1ea4449da983 // indirect
 	github.com/mattn/go-isatty v0.0.4 // indirect
@@ -28,7 +27,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.0-20180130162743-b8a9be070da4
 	github.com/pelletier/go-toml v1.4.0
 	github.com/rs/cors v1.7.0
-	github.com/sirupsen/logrus v1.4.1
+	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/afero v1.2.2
 	github.com/spf13/cast v1.3.0
 	github.com/spf13/cobra v0.0.2
