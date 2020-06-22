@@ -77,7 +77,7 @@ def setup_cluster(**kwargs):
         assert code == 0
 
 
-def _setup_cluster(name='DEFAULT', scheme='http', insecure=False, env={}):
+def _setup_cluster(name='DEFAULT', scheme='https', insecure=True, env={}):
     env = {**os.environ.copy(), **env}
     cluster = {
         'variant': os.environ.get('DCOS_TEST_' + name + '_CLUSTER_VARIANT'),
