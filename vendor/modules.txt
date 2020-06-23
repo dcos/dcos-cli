@@ -12,7 +12,7 @@ github.com/dcos/client-go/dcos
 # github.com/dgrijalva/jwt-go v3.2.0+incompatible
 ## explicit
 github.com/dgrijalva/jwt-go
-# github.com/hashicorp/go-version v1.2.0
+# github.com/hashicorp/go-version v1.2.1
 ## explicit
 github.com/hashicorp/go-version
 # github.com/inconshreveable/mousetrap v1.0.0
