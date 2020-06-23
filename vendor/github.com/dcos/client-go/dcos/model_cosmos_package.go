@@ -43,4 +43,6 @@ type CosmosPackage struct {
 	Version      string               `json:"version"`
 	Website      string               `json:"website,omitempty"`
 	Manager      CosmosPackageManager `json:"manager,omitempty"`
+	// When this DC/OS package was last updated
+	LastUpdated int64 `json:"lastUpdated,omitempty"`
 }
