@@ -33,19 +33,25 @@ func (f *Flags) Register(flags *pflag.FlagSet) {
 		&f.insecure,
 		"insecure",
 		false,
-		"Allow requests to bypass TLS certificate verification (insecure).",
+		"Allow requests to bypass TLS certificate verification (insecure)."+
+			" It controls whether a client verifies the"+
+			" server's certificate chain and host name."+
+			" If flag is specified, TLS accepts any certificate"+
+			" presented by the server and any host name in that certificate."+
+			" In this mode, TLS is susceptible to man-in-the-middle attacks."+
+			" This should be used only for testing.",
 	)
 	flags.BoolVar(
 		&f.noCheck,
 		"no-check",
 		false,
-		"Do not check CA certficate downloaded from cluster (insecure). Applies to Enterprise DC/OS only.",
+		"Do not ask user for certificate confirmation (insecure). Applies to Enterprise DC/OS only.",
 	)
 	flags.StringVar(
 		&f.caBundlePath,
 		"ca-certs",
 		"",
-		"Specify the path to a file with trusted CAs to verify requests against.",
+		"Specify the path to a file with trusted CAs to verify requests against. This also sets --no-check.",
 	)
 	flags.StringVar(
 		&f.name,
