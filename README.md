@@ -1,4 +1,4 @@
-# DC/OS Command Line Interface
+# DC/OS Command Line Interface [![Build Status](https://jenkins.mesosphere.com/service/jenkins/buildStatus/icon?job=public-dcos-cluster-ops/mesosphere-dcos-cli/integration-tests)](https://jenkins.mesosphere.com/service/jenkins/job/public-dcos-cluster-ops/job/mesosphere-dcos-cli/job/integration-tests/)
 
 The DC/OS Command Line Interface (CLI) is a cross-platform command line
 utility that provides a user-friendly yet powerful way to manage DC/OS
