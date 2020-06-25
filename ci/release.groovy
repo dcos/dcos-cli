@@ -50,7 +50,7 @@ pipeline {
                 make linux darwin windows"
             '''
             sh 'mkdir -p ${WORKSPACE}/usr/local/bin'
-            sh 'wget -O /tmp/gon.zip https://github.com/mitchellh/gon/releases/download/v\${GON_VER}/gon_\${GON_VER}_macos.zip && unzip /tmp/gon.zip -d ${WORKSPACE}/usr/local/bin'
+            sh 'wget -O /tmp/gon.zip https://github.com/mitchellh/gon/releases/download/v\${GON_VER}/gon_\${GON_VER}_macos.zip && unzip -o /tmp/gon.zip -d ${WORKSPACE}/usr/local/bin'
             sh '''
                 export PATH=$PATH:${WORKSPACE}/usr/local/bin
                 export AC_USERNAME="${APPLE_DEVACC_USR}"
