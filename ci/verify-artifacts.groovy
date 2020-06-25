@@ -1,5 +1,9 @@
 #!/usr/bin/env groovy
 
+def GITHUB_TOKEN = string(credentialsId: 'd146870f-03b0-4f6a-ab70-1d09757a51fc', variable: 'GITHUB_TOKEN')
+def SLACK_TOKEN = string(credentialsId: '8b793652-f26a-422f-a9ba-0d1e47eb9d89', variable: 'SLACK_TOKEN')
+
+
 pipeline {
   agent none
 
@@ -14,19 +18,15 @@ pipeline {
           agent { label 'py36' }
 
           steps {
-            withCredentials([
-              [$class: 'StringBinding',
-              credentialsId: 'd146870f-03b0-4f6a-ab70-1d09757a51fc',
-              variable: 'GITHUB_TOKEN']
-            ]) {
-                sh '''
-                  bash -exc " \
-                    cd ci; \
-                    python3 -m venv env; \
-                    source env/bin/activate; \
-                    pip install -r requirements.txt; \
-                    ./verify-artifacts.py"
-                '''
+            withCredentials([GITHUB_TOKEN]) {
+              sh '''
+                bash -exc " \
+                  cd ci; \
+                  python3 -m venv env; \
+                  source env/bin/activate; \
+                  pip install -r requirements.txt; \
+                  ./verify-artifacts.py"
+              '''
             }
           }
         }
@@ -34,19 +34,15 @@ pipeline {
         stage("Verify macOS artifacts") {
           agent { label 'mac-hh-yosemite' }
           steps {
-            withCredentials([
-              [$class: 'StringBinding',
-              credentialsId: 'd146870f-03b0-4f6a-ab70-1d09757a51fc',
-              variable: 'GITHUB_TOKEN']
-            ]) {
-                sh '''
-                  bash -exc " \
-                    cd ci; \
-                    python3 -m venv env; \
-                    source env/bin/activate; \
-                    pip install -r requirements.txt; \
-                    ./verify-artifacts.py"
-                '''
+            withCredentials([GITHUB_TOKEN]) {
+              sh '''
+                bash -exc " \
+                  cd ci; \
+                  python3 -m venv env; \
+                  source env/bin/activate; \
+                  pip install -r requirements.txt; \
+                  ./verify-artifacts.py"
+              '''
             }
           }
         }
@@ -60,19 +56,15 @@ pipeline {
           }
 
           steps {
-            withCredentials([
-              [$class: 'StringBinding',
-              credentialsId: 'd146870f-03b0-4f6a-ab70-1d09757a51fc',
-              variable: 'GITHUB_TOKEN']
-            ]) {
-                bat '''
-                  bash -exc " \
-                    cd ci; \
-                    python -m venv env; \
-                    env/Scripts/python -m pip install -U pip; \
-                    env/Scripts/pip install -r requirements.txt; \
-                    env/Scripts/python ./verify-artifacts.py"
-                '''
+            withCredentials([GITHUB_TOKEN]) {
+              bat '''
+                bash -exc " \
+                  cd ci; \
+                  python -m venv env; \
+                  env/Scripts/python -m pip install -U pip; \
+                  env/Scripts/pip install -r requirements.txt; \
+                  env/Scripts/python ./verify-artifacts.py"
+              '''
             }
           }
         }
@@ -82,15 +74,13 @@ pipeline {
 
   post {
     failure {
-      withCredentials([
-        string(credentialsId: "8b793652-f26a-422f-a9ba-0d1e47eb9d89", variable: "SLACK_TOKEN")
-      ]) {
+      withCredentials([SLACK_TOKEN]) {
         slackSend (
-            channel: "#dcos-cli-ci",
-            color: "danger",
-            message: "CLI artifacts verification failed... :crying:\n${env.RUN_DISPLAY_URL}",
-            teamDomain: "mesosphere",
-            token: "${env.SLACK_TOKEN}",
+          channel: "#dcos-cli-ci",
+          color: "danger",
+          message: "CLI artifacts verification failed... :crying:\n${env.RUN_DISPLAY_URL}",
+          teamDomain: "mesosphere",
+          token: "${env.SLACK_TOKEN}",
         )
       }
     }
