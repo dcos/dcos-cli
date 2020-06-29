@@ -2,6 +2,13 @@
 
 ## Next
 
+## 1.1.3
+
+* Fixes
+
+  * Update dependencies (#1537).
+  * Improve help message about security flags (#1535).
+
 ## 1.1.2
 
 * Fixes
