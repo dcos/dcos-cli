@@ -32,7 +32,7 @@ pipeline {
   }
 
   stages {
-    stage('Check authorization') {
+    stage("Authorization") {
       when {
         expression { env.CHANGE_ID != null }
       }
