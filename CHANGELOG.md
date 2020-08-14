@@ -2,6 +2,10 @@
 
 ## Next
 
+* Fixes
+
+  * Accepts `DCOS_CLUSTER_SETUP_ACS_TOKEN` in `dcos auth login` (#1550)
+
 ## 1.1.3
 
 * Fixes
