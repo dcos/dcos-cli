@@ -2,6 +2,11 @@
 
 ## Next
 
+* Fixes
+
+  * Read auth token without echoing it (#1551)
+  * Overcome Windows 254 characters limit on Windows (#1551)
+
 ## 1.1.3
 
 * Fixes
