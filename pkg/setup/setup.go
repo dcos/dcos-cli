@@ -233,7 +233,7 @@ func (s *Setup) configureTLS(flags *Flags) (*tls.Config, error) {
 			return nil, err
 		}
 	}
-	return &tls.Config{RootCAs: certPool}, nil
+	return &tls.Config{RootCAs: certPool, MinVersion: tls.VersionTLS12}, nil
 }
 
 // isX509UnknownAuthorityError checks whether an error is of type x509.UnknownAuthorityError.
