@@ -194,7 +194,7 @@ func (f *Flow) loginBrowser(provider *Provider) (string, error) {
 		token = <-f.loginServer.Token()
 		f.loginServer.Close()
 	} else {
-		token = f.prompt.Input("Enter token from the browser: ")
+		token = f.prompt.Password("Enter token from the browser (it will NOT be visible): ")
 
 		// Only set interactive to true when the token comes from STDIN. In case of an error when
 		// using the login server, retrying isn't needed (it can't be a typo, no copy-pasting was involved).

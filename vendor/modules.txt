@@ -43,7 +43,7 @@ github.com/rs/cors
 ## explicit
 github.com/sirupsen/logrus
 github.com/sirupsen/logrus/hooks/test
-# github.com/spf13/afero v1.2.2
+# github.com/spf13/afero v1.3.4
 ## explicit
 github.com/spf13/afero
 github.com/spf13/afero/mem
@@ -66,19 +66,18 @@ github.com/vbauerster/mpb
 github.com/vbauerster/mpb/cwriter
 github.com/vbauerster/mpb/decor
 github.com/vbauerster/mpb/internal
-# golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9
+# golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de
 ## explicit
 golang.org/x/crypto/ed25519
 golang.org/x/crypto/ed25519/internal/edwards25519
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/sys v0.0.0-20200602225109-6fdc65e7d980
+# golang.org/x/sys v0.0.0-20200817085935-3ff754bf58a9
 ## explicit
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.3.2
-## explicit
+# golang.org/x/text v0.3.3
 golang.org/x/text/transform
 golang.org/x/text/unicode/norm
 # gopkg.in/square/go-jose.v2 v2.5.1
