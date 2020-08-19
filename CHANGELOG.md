@@ -4,6 +4,7 @@
 
 * Fixes
 
+  * Accepts `DCOS_CLUSTER_SETUP_ACS_TOKEN` in `dcos auth login` (#1550)
   * Read auth token without echoing it (#1551)
   * Overcome Windows 254 characters limit on Windows (#1551)
 

@@ -22,9 +22,13 @@ func newCmdAuthLogin(ctx api.Context) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			acsToken, err := ctx.Login(flags, httpClient)
-			if err != nil {
-				return err
+			// Login to get the ACS token, unless it is already present as an env var.
+			acsToken, _ := ctx.EnvLookup("DCOS_CLUSTER_SETUP_ACS_TOKEN")
+			if acsToken == "" {
+				acsToken, err = ctx.Login(flags, httpClient)
+				if err != nil {
+					return err
+				}
 			}
 			cluster.SetACSToken(acsToken)
 			err = cluster.Config().Persist()
