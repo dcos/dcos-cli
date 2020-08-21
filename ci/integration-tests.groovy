@@ -43,7 +43,7 @@ pipeline {
     }
 
     stage("Build binaries") {
-      agent { label 'mesos-ubuntu' }
+      agent { label 'mesos' }
 
       steps {
           sh 'make linux darwin windows'

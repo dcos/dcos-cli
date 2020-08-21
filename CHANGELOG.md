@@ -7,6 +7,8 @@
   * Accepts `DCOS_CLUSTER_SETUP_ACS_TOKEN` in `dcos auth login` (#1550)
   * Read auth token without echoing it (#1551)
   * Overcome Windows 254 characters limit on Windows (#1551)
+  * Update Go to 1.15 – support only macOS 10.12 Sierra or later (#1552)
+  * Require TLS 1.2 or above (#1552)
 
 ## 1.1.3
 
