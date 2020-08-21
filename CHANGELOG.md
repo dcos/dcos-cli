@@ -2,7 +2,7 @@
 
 ## Next
 
-* Fixes
+## 1.2.0
 
   * Accepts `DCOS_CLUSTER_SETUP_ACS_TOKEN` in `dcos auth login` (#1550)
   * Read auth token without echoing it (#1551)
