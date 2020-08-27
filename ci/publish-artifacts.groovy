@@ -16,7 +16,7 @@ pipeline {
       steps {
         withCredentials([
           [$class: 'AmazonWebServicesCredentialsBinding',
-          credentialsId: 'dcos-package-publishing',
+          credentialsId: '5492b4d8-ec34-4c86-bf71-929b4ec7cfc3',
           accessKeyVariable: 'AWS_ACCESS_KEY_ID',
           secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']
         ]) {
