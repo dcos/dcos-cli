@@ -41,7 +41,7 @@ github.com/rs/cors
 ## explicit
 github.com/sirupsen/logrus
 github.com/sirupsen/logrus/hooks/test
-# github.com/spf13/afero v1.3.4
+# github.com/spf13/afero v1.4.0
 ## explicit
 github.com/spf13/afero
 github.com/spf13/afero/mem
