@@ -12,10 +12,6 @@ matrix:
           - $HOME/Library/Caches/go-build
           - $HOME/gopath/pkg/mod
           
-os:
- - linux
- - osx
-
 language: go
 
 go: "1.15.x"
