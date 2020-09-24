@@ -4,6 +4,9 @@ install:
 
 build: off
 
+cache:
+  - '%LocalAppData%\go-build'
+
 clone_folder: c:\dcos-cli
 
 environment:
