@@ -17,8 +17,6 @@ github.com/dgrijalva/jwt-go
 github.com/hashicorp/go-version
 # github.com/inconshreveable/mousetrap v1.0.0
 github.com/inconshreveable/mousetrap
-# github.com/konsorten/go-windows-terminal-sequences v1.0.3
-github.com/konsorten/go-windows-terminal-sequences
 # github.com/mattn/go-isatty v0.0.12
 ## explicit
 github.com/mattn/go-isatty
@@ -39,7 +37,7 @@ github.com/pmezard/go-difflib/difflib
 # github.com/rs/cors v1.7.0
 ## explicit
 github.com/rs/cors
-# github.com/sirupsen/logrus v1.6.0
+# github.com/sirupsen/logrus v1.7.0
 ## explicit
 github.com/sirupsen/logrus
 github.com/sirupsen/logrus/hooks/test
