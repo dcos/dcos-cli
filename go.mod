@@ -15,7 +15,7 @@ require (
 	github.com/pelletier/go-toml v1.8.0
 	github.com/rs/cors v1.7.0
 	github.com/sirupsen/logrus v1.6.0
-	github.com/spf13/afero v1.3.4
+	github.com/spf13/afero v1.5.0
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
