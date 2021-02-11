@@ -11,7 +11,7 @@ require (
 	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/olekukonko/tablewriter v0.0.4
+	github.com/olekukonko/tablewriter v0.0.5
 	github.com/pelletier/go-toml v1.8.0
 	github.com/rs/cors v1.7.0
 	github.com/sirupsen/logrus v1.6.0
