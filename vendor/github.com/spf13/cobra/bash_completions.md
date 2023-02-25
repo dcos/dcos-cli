@@ -105,7 +105,7 @@ the completion algorithm if entered manually, e.g. in:
 
 ```bash
 # kubectl get rc [tab][tab]
-backend        frontend       database
+backend        frontend       database 
 ```
 
 Note that without declaring `rc` as an alias, the completion algorithm would show the list of nouns
@@ -266,7 +266,7 @@ and you'll get something like
 
 ```bash
 # kubectl exec [tab][tab][tab]
--c            --container=  -p            --pod=
+-c            --container=  -p            --pod=  
 ```
 
 # Specify valid filename extensions for flags that take a filename
@@ -292,7 +292,7 @@ In this example we use --filename= and expect to get a json or yaml file as the 
 Now when you run a command with this filename flag you'll get something like
 
 ```bash
-# kubectl create -f
+# kubectl create -f 
 test/                         example/                      rpmbuild/
 hello.yml                     test.json
 ```

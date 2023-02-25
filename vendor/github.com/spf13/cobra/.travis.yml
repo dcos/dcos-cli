@@ -25,5 +25,5 @@ matrix:
       go: 1.13.x
       script: make cobra_generator
 
-script:
+script: 
  - make test
