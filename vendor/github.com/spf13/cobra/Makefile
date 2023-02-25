@@ -9,7 +9,7 @@ endif
 
 default: all
 
-all: fmt vet test cobra_generator
+all: fmt vet test cobra_generator	
 
 fmt:
 	$(info ******************** checking formatting ********************)

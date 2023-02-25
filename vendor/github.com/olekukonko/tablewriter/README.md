@@ -351,11 +351,11 @@ table.Render()
 
 ##### Output 8
 ```
-NAME             	STATUS  	ROLE   	VERSION
-node1.example.com	Ready   	compute	1.11
-node2.example.com	Ready   	compute	1.11
-node3.example.com	Ready   	compute	1.11
-node4.example.com	NotReady	compute	1.11
+NAME             	STATUS  	ROLE   	VERSION 
+node1.example.com	Ready   	compute	1.11   	
+node2.example.com	Ready   	compute	1.11   	
+node3.example.com	Ready   	compute	1.11   	
+node4.example.com	NotReady	compute	1.11   	
 ```
 
 #### Render table into a string
