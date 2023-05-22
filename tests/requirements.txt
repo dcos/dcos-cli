@@ -1,4 +1,4 @@
 attrs==18.2.0
 pytest==4.1.1
 flake8==3.5.0
-requests==2.21.0
+requests==2.31.0
